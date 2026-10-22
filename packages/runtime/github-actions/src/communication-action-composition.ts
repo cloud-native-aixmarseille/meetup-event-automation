@@ -8,12 +8,14 @@ import { CommunicationAction } from "./communication-action.js";
 import { CommunicationComposition } from "./communication-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 export class CommunicationActionComposition {
+	private readonly runtime = new GithubActionsComposition();
+
 	communicationAction(): CommunicationAction {
 		return new CommunicationAction({
-			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
-			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			publicationUrlInput: this.runtime.publicationUrlInput(),
+			runtimeInput: this.runtime.runtimeInput(),
 			communicationRuntime: this.communicationRuntime(),
-			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			conferenceHallInput: this.runtime.conferenceHallInput(),
 			communicationDiagnosticProjection:
 				new JourneyPolicyComposition().communicationDiagnosticProjection(),
 		});
@@ -24,7 +26,7 @@ export class CommunicationActionComposition {
 				CommunicationComposition.createCommunicationContainer(input).get(
 					ManageMeetupCommunications,
 				),
-			communicationInput: new GithubActionsComposition().communicationInput(),
+			communicationInput: this.runtime.communicationInput(),
 			automationConfigFactory:
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),

@@ -8,13 +8,14 @@ import { YamlIssueFormProjectionComposition } from "@meetup-automation/yaml-issu
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { SpeakerSyncAction } from "./speaker-sync-action.js";
 export class SpeakerActionComposition {
+	private readonly runtime = new GithubActionsComposition();
+
 	speakerSyncAction(): SpeakerSyncAction {
 		return new SpeakerSyncAction({
-			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			conferenceHallInput: this.runtime.conferenceHallInput(),
 			automationConfigFactory:
 				new JourneyPolicyComposition().automationConfigFactory(),
-			speakerSyncFailureReport:
-				new GithubActionsComposition().speakerSyncFailureReport(),
+			speakerSyncFailureReport: this.runtime.speakerSyncFailureReport(),
 			createSynchronizeSourceSpeakers: (...args) =>
 				new JourneyComposition().synchronizeSourceSpeakers(...args),
 			createConferenceHallProposalSource: (...args) =>

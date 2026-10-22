@@ -4,9 +4,11 @@ import { AttentionComposition } from "./attention-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { OrganizerFeedback } from "./organizer-feedback.js";
 export class AttentionActionComposition {
+	private readonly runtime = new GithubActionsComposition();
+
 	attentionAction(): AttentionAction {
 		return new AttentionAction({
-			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
+			publicationUrlInput: this.runtime.publicationUrlInput(),
 			createAttention: (input) => {
 				const container = AttentionComposition.create(input);
 				return {
@@ -14,8 +16,8 @@ export class AttentionActionComposition {
 					attention: container.get(ManageMeetupAttention),
 				};
 			},
-			runtimeInput: new GithubActionsComposition().runtimeInput(),
-			attentionStages: new GithubActionsComposition().attentionStages(),
+			runtimeInput: this.runtime.runtimeInput(),
+			attentionStages: this.runtime.attentionStages(),
 		});
 	}
 }

@@ -113,6 +113,15 @@ Bindings resolve lazily as singletons within that invocation; credentials and
 cached catalogs do not carry into another invocation. Bind replacements before
 resolving dependent use cases.
 
+`GithubActionsComposition` owns an Inversify container for shared runtime input,
+configuration, and reporting services. Each action composition reuses one
+instance. Explicit `toResolvedValue` bindings declare their dependencies without
+reflection metadata. Locale-specific messages, date formatters, presenters, and
+repository-bound organizer feedback use typed factory bindings: each factory
+call receives its operation inputs and creates a separate instance. Tests can
+use `GithubActionsComposition.createContainer()` to replace services before
+resolving their consumers.
+
 Inversify imports, container identifiers, and lookups stay in runtime
 composition roots. Use explicit constructor dependencies elsewhere; do not add
 decorators or automatic constructor discovery. Package-local composition classes

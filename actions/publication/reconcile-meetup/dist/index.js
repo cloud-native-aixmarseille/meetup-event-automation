@@ -39,6 +39,734 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// node_modules/.pnpm/reflect-metadata@0.2.2/node_modules/reflect-metadata/ReflectLite.js
+var require_ReflectLite = __commonJS({
+  "node_modules/.pnpm/reflect-metadata@0.2.2/node_modules/reflect-metadata/ReflectLite.js"() {
+    var Reflect2;
+    (function(Reflect3) {
+      (function(factory) {
+        var root = typeof globalThis === "object" ? globalThis : typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : sloppyModeThis();
+        var exporter = makeExporter(Reflect3);
+        if (typeof root.Reflect !== "undefined") {
+          exporter = makeExporter(root.Reflect, exporter);
+        }
+        factory(exporter, root);
+        if (typeof root.Reflect === "undefined") {
+          root.Reflect = Reflect3;
+        }
+        function makeExporter(target, previous) {
+          return function(key, value) {
+            Object.defineProperty(target, key, { configurable: true, writable: true, value });
+            if (previous)
+              previous(key, value);
+          };
+        }
+        function sloppyModeThis() {
+          throw new ReferenceError("globalThis could not be found. Please polyfill globalThis before loading this module.");
+        }
+      })(function(exporter, root) {
+        var supportsSymbol = typeof Symbol === "function";
+        var toPrimitiveSymbol = supportsSymbol && typeof Symbol.toPrimitive !== "undefined" ? Symbol.toPrimitive : fail("Symbol.toPrimitive not found.");
+        var iteratorSymbol = supportsSymbol && typeof Symbol.iterator !== "undefined" ? Symbol.iterator : fail("Symbol.iterator not found.");
+        var functionPrototype = Object.getPrototypeOf(Function);
+        var _Map = typeof Map === "function" && typeof Map.prototype.entries === "function" ? Map : fail("A valid Map constructor could not be found.");
+        var _Set = typeof Set === "function" && typeof Set.prototype.entries === "function" ? Set : fail("A valid Set constructor could not be found.");
+        var _WeakMap = typeof WeakMap === "function" ? WeakMap : fail("A valid WeakMap constructor could not be found.");
+        var registrySymbol = supportsSymbol ? /* @__PURE__ */ Symbol.for("@reflect-metadata:registry") : void 0;
+        var metadataRegistry = GetOrCreateMetadataRegistry();
+        var metadataProvider = CreateMetadataProvider(metadataRegistry);
+        function decorate3(decorators, target, propertyKey, attributes) {
+          if (!IsUndefined(propertyKey)) {
+            if (!IsArray(decorators))
+              throw new TypeError();
+            if (!IsObject(target))
+              throw new TypeError();
+            if (!IsObject(attributes) && !IsUndefined(attributes) && !IsNull(attributes))
+              throw new TypeError();
+            if (IsNull(attributes))
+              attributes = void 0;
+            propertyKey = ToPropertyKey(propertyKey);
+            return DecorateProperty(decorators, target, propertyKey, attributes);
+          } else {
+            if (!IsArray(decorators))
+              throw new TypeError();
+            if (!IsConstructor(target))
+              throw new TypeError();
+            return DecorateConstructor(decorators, target);
+          }
+        }
+        exporter("decorate", decorate3);
+        function metadata(metadataKey, metadataValue) {
+          function decorator(target, propertyKey) {
+            if (!IsObject(target))
+              throw new TypeError();
+            if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey))
+              throw new TypeError();
+            OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+          }
+          return decorator;
+        }
+        exporter("metadata", metadata);
+        function defineMetadata(metadataKey, metadataValue, target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          return OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
+        }
+        exporter("defineMetadata", defineMetadata);
+        function hasMetadata(metadataKey, target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          return OrdinaryHasMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("hasMetadata", hasMetadata);
+        function hasOwnMetadata(metadataKey, target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          return OrdinaryHasOwnMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("hasOwnMetadata", hasOwnMetadata);
+        function getMetadata(metadataKey, target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          return OrdinaryGetMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("getMetadata", getMetadata);
+        function getOwnMetadata(metadataKey, target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          return OrdinaryGetOwnMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("getOwnMetadata", getOwnMetadata);
+        function getMetadataKeys(target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          return OrdinaryMetadataKeys(target, propertyKey);
+        }
+        exporter("getMetadataKeys", getMetadataKeys);
+        function getOwnMetadataKeys(target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          return OrdinaryOwnMetadataKeys(target, propertyKey);
+        }
+        exporter("getOwnMetadataKeys", getOwnMetadataKeys);
+        function deleteMetadata(metadataKey, target, propertyKey) {
+          if (!IsObject(target))
+            throw new TypeError();
+          if (!IsUndefined(propertyKey))
+            propertyKey = ToPropertyKey(propertyKey);
+          var provider = GetMetadataProvider(
+            target,
+            propertyKey,
+            /*Create*/
+            false
+          );
+          if (IsUndefined(provider))
+            return false;
+          return provider.OrdinaryDeleteMetadata(metadataKey, target, propertyKey);
+        }
+        exporter("deleteMetadata", deleteMetadata);
+        function DecorateConstructor(decorators, target) {
+          for (var i = decorators.length - 1; i >= 0; --i) {
+            var decorator = decorators[i];
+            var decorated = decorator(target);
+            if (!IsUndefined(decorated) && !IsNull(decorated)) {
+              if (!IsConstructor(decorated))
+                throw new TypeError();
+              target = decorated;
+            }
+          }
+          return target;
+        }
+        function DecorateProperty(decorators, target, propertyKey, descriptor) {
+          for (var i = decorators.length - 1; i >= 0; --i) {
+            var decorator = decorators[i];
+            var decorated = decorator(target, propertyKey, descriptor);
+            if (!IsUndefined(decorated) && !IsNull(decorated)) {
+              if (!IsObject(decorated))
+                throw new TypeError();
+              descriptor = decorated;
+            }
+          }
+          return descriptor;
+        }
+        function OrdinaryHasMetadata(MetadataKey, O3, P2) {
+          var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O3, P2);
+          if (hasOwn)
+            return true;
+          var parent = OrdinaryGetPrototypeOf(O3);
+          if (!IsNull(parent))
+            return OrdinaryHasMetadata(MetadataKey, parent, P2);
+          return false;
+        }
+        function OrdinaryHasOwnMetadata(MetadataKey, O3, P2) {
+          var provider = GetMetadataProvider(
+            O3,
+            P2,
+            /*Create*/
+            false
+          );
+          if (IsUndefined(provider))
+            return false;
+          return ToBoolean(provider.OrdinaryHasOwnMetadata(MetadataKey, O3, P2));
+        }
+        function OrdinaryGetMetadata(MetadataKey, O3, P2) {
+          var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O3, P2);
+          if (hasOwn)
+            return OrdinaryGetOwnMetadata(MetadataKey, O3, P2);
+          var parent = OrdinaryGetPrototypeOf(O3);
+          if (!IsNull(parent))
+            return OrdinaryGetMetadata(MetadataKey, parent, P2);
+          return void 0;
+        }
+        function OrdinaryGetOwnMetadata(MetadataKey, O3, P2) {
+          var provider = GetMetadataProvider(
+            O3,
+            P2,
+            /*Create*/
+            false
+          );
+          if (IsUndefined(provider))
+            return;
+          return provider.OrdinaryGetOwnMetadata(MetadataKey, O3, P2);
+        }
+        function OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O3, P2) {
+          var provider = GetMetadataProvider(
+            O3,
+            P2,
+            /*Create*/
+            true
+          );
+          provider.OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O3, P2);
+        }
+        function OrdinaryMetadataKeys(O3, P2) {
+          var ownKeys = OrdinaryOwnMetadataKeys(O3, P2);
+          var parent = OrdinaryGetPrototypeOf(O3);
+          if (parent === null)
+            return ownKeys;
+          var parentKeys = OrdinaryMetadataKeys(parent, P2);
+          if (parentKeys.length <= 0)
+            return ownKeys;
+          if (ownKeys.length <= 0)
+            return parentKeys;
+          var set = new _Set();
+          var keys = [];
+          for (var _i3 = 0, ownKeys_1 = ownKeys; _i3 < ownKeys_1.length; _i3++) {
+            var key = ownKeys_1[_i3];
+            var hasKey = set.has(key);
+            if (!hasKey) {
+              set.add(key);
+              keys.push(key);
+            }
+          }
+          for (var _a2 = 0, parentKeys_1 = parentKeys; _a2 < parentKeys_1.length; _a2++) {
+            var key = parentKeys_1[_a2];
+            var hasKey = set.has(key);
+            if (!hasKey) {
+              set.add(key);
+              keys.push(key);
+            }
+          }
+          return keys;
+        }
+        function OrdinaryOwnMetadataKeys(O3, P2) {
+          var provider = GetMetadataProvider(
+            O3,
+            P2,
+            /*create*/
+            false
+          );
+          if (!provider) {
+            return [];
+          }
+          return provider.OrdinaryOwnMetadataKeys(O3, P2);
+        }
+        function Type(x3) {
+          if (x3 === null)
+            return 1;
+          switch (typeof x3) {
+            case "undefined":
+              return 0;
+            case "boolean":
+              return 2;
+            case "string":
+              return 3;
+            case "symbol":
+              return 4;
+            case "number":
+              return 5;
+            case "object":
+              return x3 === null ? 1 : 6;
+            default:
+              return 6;
+          }
+        }
+        function IsUndefined(x3) {
+          return x3 === void 0;
+        }
+        function IsNull(x3) {
+          return x3 === null;
+        }
+        function IsSymbol(x3) {
+          return typeof x3 === "symbol";
+        }
+        function IsObject(x3) {
+          return typeof x3 === "object" ? x3 !== null : typeof x3 === "function";
+        }
+        function ToPrimitive(input, PreferredType) {
+          switch (Type(input)) {
+            case 0:
+              return input;
+            case 1:
+              return input;
+            case 2:
+              return input;
+            case 3:
+              return input;
+            case 4:
+              return input;
+            case 5:
+              return input;
+          }
+          var hint = PreferredType === 3 ? "string" : PreferredType === 5 ? "number" : "default";
+          var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
+          if (exoticToPrim !== void 0) {
+            var result = exoticToPrim.call(input, hint);
+            if (IsObject(result))
+              throw new TypeError();
+            return result;
+          }
+          return OrdinaryToPrimitive(input, hint === "default" ? "number" : hint);
+        }
+        function OrdinaryToPrimitive(O3, hint) {
+          if (hint === "string") {
+            var toString_1 = O3.toString;
+            if (IsCallable(toString_1)) {
+              var result = toString_1.call(O3);
+              if (!IsObject(result))
+                return result;
+            }
+            var valueOf = O3.valueOf;
+            if (IsCallable(valueOf)) {
+              var result = valueOf.call(O3);
+              if (!IsObject(result))
+                return result;
+            }
+          } else {
+            var valueOf = O3.valueOf;
+            if (IsCallable(valueOf)) {
+              var result = valueOf.call(O3);
+              if (!IsObject(result))
+                return result;
+            }
+            var toString_2 = O3.toString;
+            if (IsCallable(toString_2)) {
+              var result = toString_2.call(O3);
+              if (!IsObject(result))
+                return result;
+            }
+          }
+          throw new TypeError();
+        }
+        function ToBoolean(argument) {
+          return !!argument;
+        }
+        function ToString(argument) {
+          return "" + argument;
+        }
+        function ToPropertyKey(argument) {
+          var key = ToPrimitive(
+            argument,
+            3
+            /* String */
+          );
+          if (IsSymbol(key))
+            return key;
+          return ToString(key);
+        }
+        function IsArray(argument) {
+          return Array.isArray ? Array.isArray(argument) : argument instanceof Object ? argument instanceof Array : Object.prototype.toString.call(argument) === "[object Array]";
+        }
+        function IsCallable(argument) {
+          return typeof argument === "function";
+        }
+        function IsConstructor(argument) {
+          return typeof argument === "function";
+        }
+        function IsPropertyKey(argument) {
+          switch (Type(argument)) {
+            case 3:
+              return true;
+            case 4:
+              return true;
+            default:
+              return false;
+          }
+        }
+        function GetMethod(V3, P2) {
+          var func = V3[P2];
+          if (func === void 0 || func === null)
+            return void 0;
+          if (!IsCallable(func))
+            throw new TypeError();
+          return func;
+        }
+        function GetIterator(obj) {
+          var method = GetMethod(obj, iteratorSymbol);
+          if (!IsCallable(method))
+            throw new TypeError();
+          var iterator2 = method.call(obj);
+          if (!IsObject(iterator2))
+            throw new TypeError();
+          return iterator2;
+        }
+        function IteratorValue(iterResult) {
+          return iterResult.value;
+        }
+        function IteratorStep(iterator2) {
+          var result = iterator2.next();
+          return result.done ? false : result;
+        }
+        function IteratorClose(iterator2) {
+          var f = iterator2["return"];
+          if (f)
+            f.call(iterator2);
+        }
+        function OrdinaryGetPrototypeOf(O3) {
+          var proto = Object.getPrototypeOf(O3);
+          if (typeof O3 !== "function" || O3 === functionPrototype)
+            return proto;
+          if (proto !== functionPrototype)
+            return proto;
+          var prototype = O3.prototype;
+          var prototypeProto = prototype && Object.getPrototypeOf(prototype);
+          if (prototypeProto == null || prototypeProto === Object.prototype)
+            return proto;
+          var constructor = prototypeProto.constructor;
+          if (typeof constructor !== "function")
+            return proto;
+          if (constructor === O3)
+            return proto;
+          return constructor;
+        }
+        function fail(e) {
+          throw e;
+        }
+        function CreateMetadataRegistry() {
+          var fallback;
+          if (!IsUndefined(registrySymbol) && typeof root.Reflect !== "undefined" && !(registrySymbol in root.Reflect) && typeof root.Reflect.defineMetadata === "function") {
+            fallback = CreateFallbackProvider(root.Reflect);
+          }
+          var first;
+          var second;
+          var rest;
+          var targetProviderMap = new _WeakMap();
+          var registry = {
+            registerProvider,
+            getProvider,
+            setProvider
+          };
+          return registry;
+          function registerProvider(provider) {
+            if (!Object.isExtensible(registry)) {
+              throw new Error("Cannot add provider to a frozen registry.");
+            }
+            switch (true) {
+              case fallback === provider:
+                break;
+              case IsUndefined(first):
+                first = provider;
+                break;
+              case first === provider:
+                break;
+              case IsUndefined(second):
+                second = provider;
+                break;
+              case second === provider:
+                break;
+              default:
+                if (rest === void 0)
+                  rest = new _Set();
+                rest.add(provider);
+                break;
+            }
+          }
+          function getProviderNoCache(O3, P2) {
+            if (!IsUndefined(first)) {
+              if (first.isProviderFor(O3, P2))
+                return first;
+              if (!IsUndefined(second)) {
+                if (second.isProviderFor(O3, P2))
+                  return first;
+                if (!IsUndefined(rest)) {
+                  var iterator2 = GetIterator(rest);
+                  while (true) {
+                    var next = IteratorStep(iterator2);
+                    if (!next) {
+                      return void 0;
+                    }
+                    var provider = IteratorValue(next);
+                    if (provider.isProviderFor(O3, P2)) {
+                      IteratorClose(iterator2);
+                      return provider;
+                    }
+                  }
+                }
+              }
+            }
+            if (!IsUndefined(fallback) && fallback.isProviderFor(O3, P2)) {
+              return fallback;
+            }
+            return void 0;
+          }
+          function getProvider(O3, P2) {
+            var providerMap = targetProviderMap.get(O3);
+            var provider;
+            if (!IsUndefined(providerMap)) {
+              provider = providerMap.get(P2);
+            }
+            if (!IsUndefined(provider)) {
+              return provider;
+            }
+            provider = getProviderNoCache(O3, P2);
+            if (!IsUndefined(provider)) {
+              if (IsUndefined(providerMap)) {
+                providerMap = new _Map();
+                targetProviderMap.set(O3, providerMap);
+              }
+              providerMap.set(P2, provider);
+            }
+            return provider;
+          }
+          function hasProvider(provider) {
+            if (IsUndefined(provider))
+              throw new TypeError();
+            return first === provider || second === provider || !IsUndefined(rest) && rest.has(provider);
+          }
+          function setProvider(O3, P2, provider) {
+            if (!hasProvider(provider)) {
+              throw new Error("Metadata provider not registered.");
+            }
+            var existingProvider = getProvider(O3, P2);
+            if (existingProvider !== provider) {
+              if (!IsUndefined(existingProvider)) {
+                return false;
+              }
+              var providerMap = targetProviderMap.get(O3);
+              if (IsUndefined(providerMap)) {
+                providerMap = new _Map();
+                targetProviderMap.set(O3, providerMap);
+              }
+              providerMap.set(P2, provider);
+            }
+            return true;
+          }
+        }
+        function GetOrCreateMetadataRegistry() {
+          var metadataRegistry2;
+          if (!IsUndefined(registrySymbol) && IsObject(root.Reflect) && Object.isExtensible(root.Reflect)) {
+            metadataRegistry2 = root.Reflect[registrySymbol];
+          }
+          if (IsUndefined(metadataRegistry2)) {
+            metadataRegistry2 = CreateMetadataRegistry();
+          }
+          if (!IsUndefined(registrySymbol) && IsObject(root.Reflect) && Object.isExtensible(root.Reflect)) {
+            Object.defineProperty(root.Reflect, registrySymbol, {
+              enumerable: false,
+              configurable: false,
+              writable: false,
+              value: metadataRegistry2
+            });
+          }
+          return metadataRegistry2;
+        }
+        function CreateMetadataProvider(registry) {
+          var metadata2 = new _WeakMap();
+          var provider = {
+            isProviderFor: function(O3, P2) {
+              var targetMetadata = metadata2.get(O3);
+              if (IsUndefined(targetMetadata))
+                return false;
+              return targetMetadata.has(P2);
+            },
+            OrdinaryDefineOwnMetadata: OrdinaryDefineOwnMetadata2,
+            OrdinaryHasOwnMetadata: OrdinaryHasOwnMetadata2,
+            OrdinaryGetOwnMetadata: OrdinaryGetOwnMetadata2,
+            OrdinaryOwnMetadataKeys: OrdinaryOwnMetadataKeys2,
+            OrdinaryDeleteMetadata
+          };
+          metadataRegistry.registerProvider(provider);
+          return provider;
+          function GetOrCreateMetadataMap(O3, P2, Create) {
+            var targetMetadata = metadata2.get(O3);
+            var createdTargetMetadata = false;
+            if (IsUndefined(targetMetadata)) {
+              if (!Create)
+                return void 0;
+              targetMetadata = new _Map();
+              metadata2.set(O3, targetMetadata);
+              createdTargetMetadata = true;
+            }
+            var metadataMap = targetMetadata.get(P2);
+            if (IsUndefined(metadataMap)) {
+              if (!Create)
+                return void 0;
+              metadataMap = new _Map();
+              targetMetadata.set(P2, metadataMap);
+              if (!registry.setProvider(O3, P2, provider)) {
+                targetMetadata.delete(P2);
+                if (createdTargetMetadata) {
+                  metadata2.delete(O3);
+                }
+                throw new Error("Wrong provider for target.");
+              }
+            }
+            return metadataMap;
+          }
+          function OrdinaryHasOwnMetadata2(MetadataKey, O3, P2) {
+            var metadataMap = GetOrCreateMetadataMap(
+              O3,
+              P2,
+              /*Create*/
+              false
+            );
+            if (IsUndefined(metadataMap))
+              return false;
+            return ToBoolean(metadataMap.has(MetadataKey));
+          }
+          function OrdinaryGetOwnMetadata2(MetadataKey, O3, P2) {
+            var metadataMap = GetOrCreateMetadataMap(
+              O3,
+              P2,
+              /*Create*/
+              false
+            );
+            if (IsUndefined(metadataMap))
+              return void 0;
+            return metadataMap.get(MetadataKey);
+          }
+          function OrdinaryDefineOwnMetadata2(MetadataKey, MetadataValue, O3, P2) {
+            var metadataMap = GetOrCreateMetadataMap(
+              O3,
+              P2,
+              /*Create*/
+              true
+            );
+            metadataMap.set(MetadataKey, MetadataValue);
+          }
+          function OrdinaryOwnMetadataKeys2(O3, P2) {
+            var keys = [];
+            var metadataMap = GetOrCreateMetadataMap(
+              O3,
+              P2,
+              /*Create*/
+              false
+            );
+            if (IsUndefined(metadataMap))
+              return keys;
+            var keysObj = metadataMap.keys();
+            var iterator2 = GetIterator(keysObj);
+            var k2 = 0;
+            while (true) {
+              var next = IteratorStep(iterator2);
+              if (!next) {
+                keys.length = k2;
+                return keys;
+              }
+              var nextValue = IteratorValue(next);
+              try {
+                keys[k2] = nextValue;
+              } catch (e) {
+                try {
+                  IteratorClose(iterator2);
+                } finally {
+                  throw e;
+                }
+              }
+              k2++;
+            }
+          }
+          function OrdinaryDeleteMetadata(MetadataKey, O3, P2) {
+            var metadataMap = GetOrCreateMetadataMap(
+              O3,
+              P2,
+              /*Create*/
+              false
+            );
+            if (IsUndefined(metadataMap))
+              return false;
+            if (!metadataMap.delete(MetadataKey))
+              return false;
+            if (metadataMap.size === 0) {
+              var targetMetadata = metadata2.get(O3);
+              if (!IsUndefined(targetMetadata)) {
+                targetMetadata.delete(P2);
+                if (targetMetadata.size === 0) {
+                  metadata2.delete(targetMetadata);
+                }
+              }
+            }
+            return true;
+          }
+        }
+        function CreateFallbackProvider(reflect) {
+          var defineMetadata2 = reflect.defineMetadata, hasOwnMetadata2 = reflect.hasOwnMetadata, getOwnMetadata2 = reflect.getOwnMetadata, getOwnMetadataKeys2 = reflect.getOwnMetadataKeys, deleteMetadata2 = reflect.deleteMetadata;
+          var metadataOwner = new _WeakMap();
+          var provider = {
+            isProviderFor: function(O3, P2) {
+              var metadataPropertySet = metadataOwner.get(O3);
+              if (!IsUndefined(metadataPropertySet) && metadataPropertySet.has(P2)) {
+                return true;
+              }
+              if (getOwnMetadataKeys2(O3, P2).length) {
+                if (IsUndefined(metadataPropertySet)) {
+                  metadataPropertySet = new _Set();
+                  metadataOwner.set(O3, metadataPropertySet);
+                }
+                metadataPropertySet.add(P2);
+                return true;
+              }
+              return false;
+            },
+            OrdinaryDefineOwnMetadata: defineMetadata2,
+            OrdinaryHasOwnMetadata: hasOwnMetadata2,
+            OrdinaryGetOwnMetadata: getOwnMetadata2,
+            OrdinaryOwnMetadataKeys: getOwnMetadataKeys2,
+            OrdinaryDeleteMetadata: deleteMetadata2
+          };
+          return provider;
+        }
+        function GetMetadataProvider(O3, P2, Create) {
+          var registeredProvider = metadataRegistry.getProvider(O3, P2);
+          if (!IsUndefined(registeredProvider)) {
+            return registeredProvider;
+          }
+          if (Create) {
+            if (metadataRegistry.setProvider(O3, P2, metadataProvider)) {
+              return metadataProvider;
+            }
+            throw new Error("Illegal state.");
+          }
+          return void 0;
+        }
+      });
+    })(Reflect2 || (Reflect2 = {}));
+  }
+});
+
 // node_modules/.pnpm/tunnel@0.0.6/node_modules/tunnel/lib/tunnel.js
 var require_tunnel = __commonJS({
   "node_modules/.pnpm/tunnel@0.0.6/node_modules/tunnel/lib/tunnel.js"(exports) {
@@ -27170,733 +27898,7696 @@ var require_dist = __commonJS({
   }
 });
 
-// node_modules/.pnpm/reflect-metadata@0.2.2/node_modules/reflect-metadata/ReflectLite.js
-var require_ReflectLite = __commonJS({
-  "node_modules/.pnpm/reflect-metadata@0.2.2/node_modules/reflect-metadata/ReflectLite.js"() {
-    var Reflect2;
-    (function(Reflect3) {
-      (function(factory) {
-        var root = typeof globalThis === "object" ? globalThis : typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : sloppyModeThis();
-        var exporter = makeExporter(Reflect3);
-        if (typeof root.Reflect !== "undefined") {
-          exporter = makeExporter(root.Reflect, exporter);
+// node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/common/calculations/isPromise.js
+function isPromise(object) {
+  const isObjectOrFunction = typeof object === "object" && object !== null || typeof object === "function";
+  return isObjectOrFunction && typeof object.then === "function";
+}
+
+// node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/services/calculations/stringifyServiceIdentifier.js
+function stringifyServiceIdentifier(serviceIdentifier) {
+  switch (typeof serviceIdentifier) {
+    case "string":
+    case "symbol":
+      return serviceIdentifier.toString();
+    case "function":
+      return serviceIdentifier.name;
+    default:
+      throw new Error(`Unexpected ${typeof serviceIdentifier} service id type`);
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/services/models/LazyServiceIdentifier.js
+var islazyServiceIdentifierSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/common/islazyServiceIdentifier");
+var LazyServiceIdentifier = class {
+  [islazyServiceIdentifierSymbol];
+  #buildServiceId;
+  constructor(buildServiceId) {
+    this.#buildServiceId = buildServiceId;
+    this[islazyServiceIdentifierSymbol] = true;
+  }
+  static is(value) {
+    return typeof value === "object" && value !== null && value[islazyServiceIdentifierSymbol] === true;
+  }
+  unwrap() {
+    return this.#buildServiceId();
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/index.js
+var import_lite = __toESM(require_ReflectLite(), 1);
+
+// node_modules/.pnpm/@inversifyjs+reflect-metadata-utils@1.5.0_reflect-metadata@0.2.2/node_modules/@inversifyjs/reflect-metadata-utils/lib/reflectMetadata/utils/getOwnReflectMetadata.js
+function getOwnReflectMetadata(target, metadataKey, propertyKey) {
+  return Reflect.getOwnMetadata(metadataKey, target, propertyKey);
+}
+
+// node_modules/.pnpm/@inversifyjs+reflect-metadata-utils@1.5.0_reflect-metadata@0.2.2/node_modules/@inversifyjs/reflect-metadata-utils/lib/reflectMetadata/utils/setReflectMetadata.js
+function setReflectMetadata(target, metadataKey, metadata, propertyKey) {
+  Reflect.defineMetadata(metadataKey, metadata, target, propertyKey);
+}
+
+// node_modules/.pnpm/@inversifyjs+reflect-metadata-utils@1.5.0_reflect-metadata@0.2.2/node_modules/@inversifyjs/reflect-metadata-utils/lib/reflectMetadata/utils/updateOwnReflectMetadata.js
+function updateOwnReflectMetadata(target, metadataKey, buildDefaultValue, callback, propertyKey) {
+  const metadata = getOwnReflectMetadata(target, metadataKey, propertyKey) ?? buildDefaultValue();
+  const updatedMetadata = callback(metadata);
+  Reflect.defineMetadata(metadataKey, updatedMetadata, target, propertyKey);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/actions/getBindingId.js
+var ID_METADATA = "@inversifyjs/container/bindingId";
+function getBindingId() {
+  const bindingId = getOwnReflectMetadata(Object, ID_METADATA) ?? 0;
+  if (bindingId === Number.MAX_SAFE_INTEGER) {
+    setReflectMetadata(Object, ID_METADATA, Number.MIN_SAFE_INTEGER);
+  } else {
+    updateOwnReflectMetadata(Object, ID_METADATA, () => bindingId, (id) => id + 1);
+  }
+  return bindingId;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/models/BindingScope.js
+var bindingScopeValues = {
+  Request: "Request",
+  Singleton: "Singleton",
+  Transient: "Transient"
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/models/BindingType.js
+var bindingTypeValues = {
+  ConstantValue: "ConstantValue",
+  DynamicValue: "DynamicValue",
+  Factory: "Factory",
+  Instance: "Instance",
+  ResolvedValue: "ResolvedValue",
+  ServiceRedirection: "ServiceRedirection"
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/chain.js
+function* chain(...iterables) {
+  for (const iterable of iterables) {
+    yield* iterable;
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/models/OneToManyMapStar.js
+var NOT_FOUND_INDEX = -1;
+var OneToManyMapStar = class _OneToManyMapStar {
+  #modelToRelationMap;
+  #relationToModelsMaps;
+  #spec;
+  constructor(spec) {
+    this.#modelToRelationMap = /* @__PURE__ */ new Map();
+    this.#relationToModelsMaps = {};
+    for (const specProperty of Reflect.ownKeys(spec)) {
+      this.#relationToModelsMaps[specProperty] = /* @__PURE__ */ new Map();
+    }
+    this.#spec = spec;
+  }
+  add(model, relation) {
+    this.#buildOrGetModelArray(model).push(relation);
+    for (const relationKey of Reflect.ownKeys(relation)) {
+      this.#buildOrGetRelationModels(relationKey, relation[relationKey]).push(model);
+    }
+  }
+  clone() {
+    const modelToCloneModelMap = this.#buildModelToCloneModelMap();
+    const relationToCloneRelationMap = this.#buildRelationToRelationModelMap();
+    const properties = Reflect.ownKeys(this.#spec);
+    const clone = this._buildNewInstance(this.#spec);
+    this.#pushRelationEntriesIntoRelationMap(this.#modelToRelationMap, clone.#modelToRelationMap, modelToCloneModelMap, relationToCloneRelationMap);
+    for (const property of properties) {
+      this.#pushModelEntriesIntoModelMap(this.#relationToModelsMaps[property], clone.#relationToModelsMaps[property], modelToCloneModelMap);
+    }
+    return clone;
+  }
+  get(key, value) {
+    return this.#relationToModelsMaps[key].get(value);
+  }
+  getAllKeys(key) {
+    return this.#relationToModelsMaps[key].keys();
+  }
+  removeByRelation(key, value) {
+    const models = this.get(key, value);
+    if (models === void 0) {
+      return;
+    }
+    const uniqueModelsSet = new Set(models);
+    for (const model of uniqueModelsSet) {
+      const relations = this.#modelToRelationMap.get(model);
+      if (relations === void 0) {
+        throw new Error("Expecting model relation, none found");
+      }
+      for (const relation of relations) {
+        if (relation[key] === value) {
+          this.#removeModelFromRelationMaps(model, relation);
         }
-        factory(exporter, root);
-        if (typeof root.Reflect === "undefined") {
-          root.Reflect = Reflect3;
+      }
+      this.#modelToRelationMap.delete(model);
+    }
+  }
+  _buildNewInstance(spec) {
+    return new _OneToManyMapStar(spec);
+  }
+  _cloneModel(model) {
+    return model;
+  }
+  _cloneRelation(relation) {
+    return relation;
+  }
+  #buildModelToCloneModelMap() {
+    const modelToCloneModelMap = /* @__PURE__ */ new Map();
+    for (const model of this.#modelToRelationMap.keys()) {
+      const clonedModel = this._cloneModel(model);
+      modelToCloneModelMap.set(model, clonedModel);
+    }
+    return modelToCloneModelMap;
+  }
+  #buildRelationToRelationModelMap() {
+    const relationToCloneRelationMap = /* @__PURE__ */ new Map();
+    for (const relations of this.#modelToRelationMap.values()) {
+      for (const relation of relations) {
+        const clonedRelation = this._cloneRelation(relation);
+        relationToCloneRelationMap.set(relation, clonedRelation);
+      }
+    }
+    return relationToCloneRelationMap;
+  }
+  #buildOrGetModelArray(model) {
+    let relations = this.#modelToRelationMap.get(model);
+    if (relations === void 0) {
+      relations = [];
+      this.#modelToRelationMap.set(model, relations);
+    }
+    return relations;
+  }
+  #buildOrGetRelationModels(relationKey, relationValue) {
+    let models = this.#relationToModelsMaps[relationKey].get(relationValue);
+    if (models === void 0) {
+      models = [];
+      this.#relationToModelsMaps[relationKey].set(relationValue, models);
+    }
+    return models;
+  }
+  #getCloneModel(model, modelToCloneModelMap) {
+    const clonedModel = modelToCloneModelMap.get(model);
+    if (clonedModel === void 0) {
+      throw new Error("Expecting model to be cloned, none found");
+    }
+    return clonedModel;
+  }
+  #getCloneRelation(relation, relationToCloneRelationMap) {
+    const clonedRelation = relationToCloneRelationMap.get(relation);
+    if (clonedRelation === void 0) {
+      throw new Error("Expecting relation to be cloned, none found");
+    }
+    return clonedRelation;
+  }
+  #pushModelEntriesIntoModelMap(source, target, modelToCloneModelMap) {
+    for (const [relationValue, models] of source) {
+      const modelsClone = new Array();
+      for (const model of models) {
+        modelsClone.push(this.#getCloneModel(model, modelToCloneModelMap));
+      }
+      target.set(relationValue, modelsClone);
+    }
+  }
+  #pushRelationEntriesIntoRelationMap(source, target, modelToCloneModelMap, relationToCloneRelationMap) {
+    for (const [model, relations] of source) {
+      const relationsClone = new Array();
+      for (const relation of relations) {
+        relationsClone.push(this.#getCloneRelation(relation, relationToCloneRelationMap));
+      }
+      target.set(this.#getCloneModel(model, modelToCloneModelMap), relationsClone);
+    }
+  }
+  #removeModelFromRelationMaps(model, relation) {
+    for (const relationKey of Reflect.ownKeys(relation)) {
+      this.#removeModelFromRelationMap(model, relationKey, relation[relationKey]);
+    }
+  }
+  #removeModelFromRelationMap(model, relationKey, relationValue) {
+    const relationModels = this.#relationToModelsMaps[relationKey].get(relationValue);
+    if (relationModels !== void 0) {
+      const index = relationModels.indexOf(model);
+      if (index !== NOT_FOUND_INDEX) {
+        relationModels.splice(index, 1);
+      }
+      if (relationModels.length === 0) {
+        this.#relationToModelsMaps[relationKey].delete(relationValue);
+      }
+    }
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/models/WeakList.js
+var DEFAULT_MINIMUM_LENGTH_TO_REALLOCATE = 8;
+var DEFAULT_MODULUS_TO_REALLOCATE_ON_PUSH = 1024;
+var MIN_DEAD_REFS_FOR_REALLOCATION_PERCENTAGE = 0.5;
+var WeakList = class {
+  #list;
+  #minimumLengthToReallocate;
+  #modulusToReallocateOnPush;
+  constructor() {
+    this.#list = [];
+    this.#minimumLengthToReallocate = DEFAULT_MINIMUM_LENGTH_TO_REALLOCATE;
+    this.#modulusToReallocateOnPush = DEFAULT_MODULUS_TO_REALLOCATE_ON_PUSH;
+  }
+  *[Symbol.iterator]() {
+    let deadRefCount = 0;
+    for (const weakRef of this.#list) {
+      const value = weakRef.deref();
+      if (value === void 0) {
+        ++deadRefCount;
+      } else {
+        yield value;
+      }
+    }
+    if (this.#list.length >= this.#minimumLengthToReallocate && this.#shouldReallocate(deadRefCount)) {
+      this.#reallocate(deadRefCount);
+    }
+  }
+  push(value) {
+    const weakRef = new WeakRef(value);
+    this.#list.push(weakRef);
+    if (this.#list.length >= this.#minimumLengthToReallocate && this.#list.length % this.#modulusToReallocateOnPush === 0) {
+      let deadRefCount = 0;
+      for (const ref of this.#list) {
+        if (ref.deref() === void 0) {
+          ++deadRefCount;
         }
-        function makeExporter(target, previous) {
-          return function(key, value) {
-            Object.defineProperty(target, key, { configurable: true, writable: true, value });
-            if (previous)
-              previous(key, value);
+      }
+      if (this.#shouldReallocate(deadRefCount)) {
+        this.#reallocate(deadRefCount);
+      }
+    }
+  }
+  #reallocate(deadRefCount) {
+    const newList = new Array(this.#list.length - deadRefCount);
+    let i = 0;
+    for (const ref of this.#list) {
+      if (ref.deref()) {
+        newList[i++] = ref;
+      }
+    }
+    this.#list = newList;
+  }
+  #shouldReallocate(deadRefCount) {
+    return deadRefCount >= this.#list.length * MIN_DEAD_REFS_FOR_REALLOCATION_PERCENTAGE;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/services/ActivationsService.js
+var ActivationRelationKind;
+(function(ActivationRelationKind2) {
+  ActivationRelationKind2["moduleId"] = "moduleId";
+  ActivationRelationKind2["serviceId"] = "serviceId";
+})(ActivationRelationKind || (ActivationRelationKind = {}));
+var ActivationsService = class _ActivationsService {
+  #activationMaps;
+  #getParent;
+  #serviceToActivationSubscribersOnceMap;
+  constructor(getParent, activationMaps) {
+    this.#activationMaps = activationMaps ?? new OneToManyMapStar({
+      moduleId: {
+        isOptional: true
+      },
+      serviceId: {
+        isOptional: false
+      }
+    });
+    this.#getParent = getParent;
+    this.#serviceToActivationSubscribersOnceMap = /* @__PURE__ */ new Map();
+  }
+  static build(getParent) {
+    return new _ActivationsService(getParent);
+  }
+  add(activation, relation) {
+    this.#activationMaps.add(activation, relation);
+    this.#triggerActivationAdded(relation[ActivationRelationKind.serviceId], activation);
+  }
+  subscribeOnce(serviceIdentifier, subscriber) {
+    let subscribersOnce = this.#serviceToActivationSubscribersOnceMap.get(serviceIdentifier);
+    if (subscribersOnce === void 0) {
+      subscribersOnce = new WeakList();
+      this.#serviceToActivationSubscribersOnceMap.set(serviceIdentifier, subscribersOnce);
+    }
+    subscribersOnce.push(subscriber);
+  }
+  clone() {
+    const clone = new _ActivationsService(this.#getParent, this.#activationMaps.clone());
+    return clone;
+  }
+  get(serviceIdentifier) {
+    const activations = this.#activationMaps.get(ActivationRelationKind.serviceId, serviceIdentifier);
+    const parentActivations = this.#getParent()?.get(serviceIdentifier);
+    if (activations === void 0) {
+      return parentActivations;
+    }
+    if (parentActivations === void 0) {
+      return activations;
+    }
+    return chain(activations, parentActivations);
+  }
+  removeAllByModuleId(moduleId) {
+    this.#activationMaps.removeByRelation(ActivationRelationKind.moduleId, moduleId);
+  }
+  removeAllByServiceId(serviceId) {
+    this.#activationMaps.removeByRelation(ActivationRelationKind.serviceId, serviceId);
+  }
+  #triggerActivationAdded(serviceId, activation) {
+    const subscribersOnce = this.#serviceToActivationSubscribersOnceMap.get(serviceId);
+    if (subscribersOnce !== void 0) {
+      for (const subscriber of subscribersOnce) {
+        subscriber.onActivationAdded(serviceId, activation);
+      }
+      this.#serviceToActivationSubscribersOnceMap.delete(serviceId);
+    }
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/reflectMetadata/data/classMetadataReflectKey.js
+var classMetadataReflectKey = "@inversifyjs/core/classMetadataReflectKey";
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/getDefaultClassMetadata.js
+function getDefaultClassMetadata() {
+  return {
+    constructorArguments: [],
+    lifecycle: {
+      postConstructMethodNames: /* @__PURE__ */ new Set(),
+      preDestroyMethodNames: /* @__PURE__ */ new Set()
+    },
+    properties: /* @__PURE__ */ new Map(),
+    scope: void 0
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/reflectMetadata/data/pendingClassMetadataCountReflectKey.js
+var pendingClassMetadataCountReflectKey = "@inversifyjs/core/pendingClassMetadataCountReflectKey";
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/isPendingClassMetadata.js
+function isPendingClassMetadata(type) {
+  const pendingClassMetadataCount = getOwnReflectMetadata(type, pendingClassMetadataCountReflectKey);
+  return pendingClassMetadataCount !== void 0 && pendingClassMetadataCount !== 0;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/error/models/InversifyCoreError.js
+var isAppErrorSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/core/InversifyCoreError");
+var InversifyCoreError = class _InversifyCoreError extends Error {
+  [isAppErrorSymbol];
+  kind;
+  constructor(kind, message, options) {
+    super(message, options);
+    this[isAppErrorSymbol] = true;
+    this.kind = kind;
+  }
+  static is(value) {
+    return typeof value === "object" && value !== null && value[isAppErrorSymbol] === true;
+  }
+  static isErrorOfKind(value, kind) {
+    return _InversifyCoreError.is(value) && value.kind === kind;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/error/models/InversifyCoreErrorKind.js
+var InversifyCoreErrorKind;
+(function(InversifyCoreErrorKind2) {
+  InversifyCoreErrorKind2[InversifyCoreErrorKind2["injectionDecoratorConflict"] = 0] = "injectionDecoratorConflict";
+  InversifyCoreErrorKind2[InversifyCoreErrorKind2["missingInjectionDecorator"] = 1] = "missingInjectionDecorator";
+  InversifyCoreErrorKind2[InversifyCoreErrorKind2["planning"] = 2] = "planning";
+  InversifyCoreErrorKind2[InversifyCoreErrorKind2["planningMaxDepthExceeded"] = 3] = "planningMaxDepthExceeded";
+  InversifyCoreErrorKind2[InversifyCoreErrorKind2["resolution"] = 4] = "resolution";
+  InversifyCoreErrorKind2[InversifyCoreErrorKind2["unknown"] = 5] = "unknown";
+})(InversifyCoreErrorKind || (InversifyCoreErrorKind = {}));
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/models/MaybeClassElementMetadataKind.js
+var MaybeClassElementMetadataKind;
+(function(MaybeClassElementMetadataKind2) {
+  MaybeClassElementMetadataKind2[MaybeClassElementMetadataKind2["unknown"] = 32] = "unknown";
+})(MaybeClassElementMetadataKind || (MaybeClassElementMetadataKind = {}));
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/throwAtInvalidClassMetadata.js
+function throwAtInvalidClassMetadata(type, classMetadata) {
+  const errors = [];
+  for (let i = 0; i < classMetadata.constructorArguments.length; ++i) {
+    const constructorArgument = classMetadata.constructorArguments[i];
+    if (constructorArgument === void 0 || constructorArgument.kind === MaybeClassElementMetadataKind.unknown) {
+      errors.push(`  - Missing or incomplete metadata for type "${type.name}" at constructor argument with index ${i.toString()}.
+Every constructor parameter must be decorated either with @inject, @multiInject or @unmanaged decorator.`);
+    }
+  }
+  for (const [propertyKey, property] of classMetadata.properties) {
+    if (property.kind === MaybeClassElementMetadataKind.unknown) {
+      errors.push(`  - Missing or incomplete metadata for type "${type.name}" at property "${propertyKey.toString()}".
+This property must be decorated either with @inject or @multiInject decorator.`);
+    }
+  }
+  if (errors.length === 0) {
+    throw new InversifyCoreError(InversifyCoreErrorKind.unknown, `Unexpected class metadata for type "${type.name}" with uncompletion traces.
+This might be caused by one of the following reasons:
+
+1. A third party library is targeting inversify reflection metadata.
+2. A bug is causing the issue. Consider submiting an issue to fix it.`);
+  }
+  throw new InversifyCoreError(InversifyCoreErrorKind.missingInjectionDecorator, `Invalid class metadata at type ${type.name}:
+
+${errors.join("\n\n")}`);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/validateConstructorMetadataArray.js
+function validateConstructorMetadataArray(type, value) {
+  const undefinedIndexes = [];
+  if (value.length < type.length) {
+    throw new InversifyCoreError(InversifyCoreErrorKind.missingInjectionDecorator, `Found unexpected missing metadata on type "${type.name}". "${type.name}" constructor requires at least ${type.length.toString()} arguments, found ${value.length.toString()} instead.
+Are you using @inject, @multiInject or @unmanaged decorators in every non optional constructor argument?
+
+If you're using typescript and want to rely on auto injection, set "emitDecoratorMetadata" compiler option to true`);
+  }
+  for (let i = 0; i < value.length; ++i) {
+    const element = value[i];
+    if (element === void 0) {
+      undefinedIndexes.push(i);
+    }
+  }
+  if (undefinedIndexes.length > 0) {
+    throw new InversifyCoreError(InversifyCoreErrorKind.missingInjectionDecorator, `Found unexpected missing metadata on type "${type.name}" at constructor indexes "${undefinedIndexes.join('", "')}".
+
+Are you using @inject, @multiInject or @unmanaged decorators at those indexes?
+
+If you're using typescript and want to rely on auto injection, set "emitDecoratorMetadata" compiler option to true`);
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/getClassMetadata.js
+function getClassMetadata(type) {
+  const classMetadata = getOwnReflectMetadata(type, classMetadataReflectKey) ?? getDefaultClassMetadata();
+  if (isPendingClassMetadata(type)) {
+    throwAtInvalidClassMetadata(type, classMetadata);
+  } else {
+    validateConstructorMetadataArray(type, classMetadata.constructorArguments);
+    return classMetadata;
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/buildInstanceBinding.js
+function buildInstanceBinding(autobindOptions, serviceIdentifier) {
+  const classMetadata = getClassMetadata(serviceIdentifier);
+  const scope = classMetadata.scope ?? autobindOptions.scope;
+  return {
+    cache: {
+      isRight: false,
+      value: void 0
+    },
+    id: getBindingId(),
+    implementationType: serviceIdentifier,
+    isSatisfiedBy: () => true,
+    moduleId: void 0,
+    onActivation: void 0,
+    onDeactivation: void 0,
+    scope,
+    serviceIdentifier,
+    type: bindingTypeValues.Instance
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneBindingCache.js
+function cloneBindingCache(cache) {
+  if (cache.isRight) {
+    return {
+      isRight: true,
+      value: cache.value
+    };
+  }
+  return cache;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneConstantValueBinding.js
+function cloneConstantValueBinding(binding) {
+  return {
+    cache: cloneBindingCache(binding.cache),
+    id: binding.id,
+    isSatisfiedBy: binding.isSatisfiedBy,
+    moduleId: binding.moduleId,
+    onActivation: binding.onActivation,
+    onDeactivation: binding.onDeactivation,
+    scope: binding.scope,
+    serviceIdentifier: binding.serviceIdentifier,
+    type: binding.type,
+    // The value is not cloned as it's a resolved value
+    value: binding.value
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneDynamicValueBinding.js
+function cloneDynamicValueBinding(binding) {
+  return {
+    cache: cloneBindingCache(binding.cache),
+    id: binding.id,
+    isSatisfiedBy: binding.isSatisfiedBy,
+    moduleId: binding.moduleId,
+    onActivation: binding.onActivation,
+    onDeactivation: binding.onDeactivation,
+    scope: binding.scope,
+    serviceIdentifier: binding.serviceIdentifier,
+    type: binding.type,
+    // The value is not cloned
+    value: binding.value
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneFactoryBinding.js
+function cloneFactoryBinding(binding) {
+  return {
+    cache: cloneBindingCache(binding.cache),
+    factory: binding.factory,
+    id: binding.id,
+    isSatisfiedBy: binding.isSatisfiedBy,
+    moduleId: binding.moduleId,
+    onActivation: binding.onActivation,
+    onDeactivation: binding.onDeactivation,
+    scope: binding.scope,
+    serviceIdentifier: binding.serviceIdentifier,
+    type: binding.type
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneInstanceBinding.js
+function cloneInstanceBinding(binding) {
+  return {
+    cache: cloneBindingCache(binding.cache),
+    id: binding.id,
+    implementationType: binding.implementationType,
+    isSatisfiedBy: binding.isSatisfiedBy,
+    moduleId: binding.moduleId,
+    onActivation: binding.onActivation,
+    onDeactivation: binding.onDeactivation,
+    scope: binding.scope,
+    serviceIdentifier: binding.serviceIdentifier,
+    type: binding.type
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneResolvedValueBinding.js
+function cloneResolvedValueBinding(binding) {
+  return {
+    cache: cloneBindingCache(binding.cache),
+    factory: binding.factory,
+    id: binding.id,
+    isSatisfiedBy: binding.isSatisfiedBy,
+    metadata: binding.metadata,
+    moduleId: binding.moduleId,
+    onActivation: binding.onActivation,
+    onDeactivation: binding.onDeactivation,
+    scope: binding.scope,
+    serviceIdentifier: binding.serviceIdentifier,
+    type: binding.type
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneServiceRedirectionBinding.js
+function cloneServiceRedirectionBinding(binding) {
+  return {
+    id: binding.id,
+    isSatisfiedBy: binding.isSatisfiedBy,
+    moduleId: binding.moduleId,
+    serviceIdentifier: binding.serviceIdentifier,
+    targetServiceIdentifier: binding.targetServiceIdentifier,
+    type: binding.type
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneBinding.js
+function cloneBinding(binding) {
+  switch (binding.type) {
+    case bindingTypeValues.ConstantValue:
+      return cloneConstantValueBinding(binding);
+    case bindingTypeValues.DynamicValue:
+      return cloneDynamicValueBinding(binding);
+    case bindingTypeValues.Factory:
+      return cloneFactoryBinding(binding);
+    case bindingTypeValues.Instance:
+      return cloneInstanceBinding(binding);
+    case bindingTypeValues.ResolvedValue:
+      return cloneResolvedValueBinding(binding);
+    case bindingTypeValues.ServiceRedirection:
+      return cloneServiceRedirectionBinding(binding);
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/services/BindingService.js
+var BindingRelationKind;
+(function(BindingRelationKind2) {
+  BindingRelationKind2["id"] = "id";
+  BindingRelationKind2["moduleId"] = "moduleId";
+  BindingRelationKind2["serviceId"] = "serviceId";
+})(BindingRelationKind || (BindingRelationKind = {}));
+var OneToManyBindingMapStar = class _OneToManyBindingMapStar extends OneToManyMapStar {
+  _buildNewInstance(spec) {
+    return new _OneToManyBindingMapStar(spec);
+  }
+  _cloneModel(model) {
+    return cloneBinding(model);
+  }
+};
+var BindingService = class _BindingService {
+  #autobindOptions;
+  #bindingMaps;
+  #getParent;
+  constructor(getParent, autobindOptions, bindingMaps) {
+    this.#bindingMaps = bindingMaps ?? new OneToManyBindingMapStar({
+      id: {
+        isOptional: false
+      },
+      moduleId: {
+        isOptional: true
+      },
+      serviceId: {
+        isOptional: false
+      }
+    });
+    this.#getParent = getParent;
+    this.#autobindOptions = autobindOptions;
+  }
+  static build(getParent, autobindOptions) {
+    return new _BindingService(getParent, autobindOptions);
+  }
+  clone() {
+    const clone = new _BindingService(this.#getParent, this.#autobindOptions, this.#bindingMaps.clone());
+    return clone;
+  }
+  get(serviceIdentifier) {
+    const bindings = this.getNonParentBindings(serviceIdentifier) ?? this.#getParent()?.get(serviceIdentifier);
+    if (bindings !== void 0) {
+      return bindings;
+    }
+    const autoBoundBinding = this.#tryAutobind(serviceIdentifier);
+    return autoBoundBinding === void 0 ? autoBoundBinding : [autoBoundBinding];
+  }
+  *getChained(serviceIdentifier) {
+    const currentBindings = this.getNonParentBindings(serviceIdentifier);
+    if (currentBindings !== void 0) {
+      yield* currentBindings;
+    }
+    const parent = this.#getParent();
+    if (parent === void 0) {
+      if (currentBindings === void 0) {
+        const autobindBindings = this.#tryAutobind(serviceIdentifier);
+        if (autobindBindings !== void 0) {
+          yield autobindBindings;
+        }
+      }
+    } else {
+      yield* parent.getChained(serviceIdentifier);
+    }
+  }
+  getBoundServices() {
+    const serviceIdentifierSet = new Set(this.#bindingMaps.getAllKeys(BindingRelationKind.serviceId));
+    const parent = this.#getParent();
+    if (parent !== void 0) {
+      for (const serviceIdentifier of parent.getBoundServices()) {
+        serviceIdentifierSet.add(serviceIdentifier);
+      }
+    }
+    return serviceIdentifierSet;
+  }
+  getById(id) {
+    return this.#bindingMaps.get(BindingRelationKind.id, id) ?? this.#getParent()?.getById(id);
+  }
+  getByModuleId(moduleId) {
+    return this.#bindingMaps.get(BindingRelationKind.moduleId, moduleId) ?? this.#getParent()?.getByModuleId(moduleId);
+  }
+  getNonParentBindings(serviceId) {
+    return this.#bindingMaps.get(BindingRelationKind.serviceId, serviceId);
+  }
+  getNonParentBoundServices() {
+    return this.#bindingMaps.getAllKeys(BindingRelationKind.serviceId);
+  }
+  removeById(id) {
+    this.#bindingMaps.removeByRelation(BindingRelationKind.id, id);
+  }
+  removeAllByModuleId(moduleId) {
+    this.#bindingMaps.removeByRelation(BindingRelationKind.moduleId, moduleId);
+  }
+  removeAllByServiceId(serviceId) {
+    this.#bindingMaps.removeByRelation(BindingRelationKind.serviceId, serviceId);
+  }
+  set(binding) {
+    const relation = {
+      [BindingRelationKind.id]: binding.id,
+      [BindingRelationKind.serviceId]: binding.serviceIdentifier
+    };
+    if (binding.moduleId !== void 0) {
+      relation[BindingRelationKind.moduleId] = binding.moduleId;
+    }
+    this.#bindingMaps.add(binding, relation);
+  }
+  #tryAutobind(serviceIdentifier) {
+    if (this.#autobindOptions === void 0 || typeof serviceIdentifier !== "function") {
+      return void 0;
+    }
+    const binding = buildInstanceBinding(this.#autobindOptions, serviceIdentifier);
+    this.set(binding);
+    return binding;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/services/DeactivationsService.js
+var DeactivationRelationKind;
+(function(DeactivationRelationKind2) {
+  DeactivationRelationKind2["moduleId"] = "moduleId";
+  DeactivationRelationKind2["serviceId"] = "serviceId";
+})(DeactivationRelationKind || (DeactivationRelationKind = {}));
+var DeactivationsService = class _DeactivationsService {
+  #deactivationMaps;
+  #getParent;
+  constructor(getParent, deactivationMaps) {
+    this.#deactivationMaps = deactivationMaps ?? new OneToManyMapStar({
+      moduleId: {
+        isOptional: true
+      },
+      serviceId: {
+        isOptional: false
+      }
+    });
+    this.#getParent = getParent;
+  }
+  static build(getParent) {
+    return new _DeactivationsService(getParent);
+  }
+  add(deactivation, relation) {
+    this.#deactivationMaps.add(deactivation, relation);
+  }
+  clone() {
+    const clone = new _DeactivationsService(this.#getParent, this.#deactivationMaps.clone());
+    return clone;
+  }
+  get(serviceIdentifier) {
+    const deactivationIterables = [];
+    const deactivations = this.#deactivationMaps.get(DeactivationRelationKind.serviceId, serviceIdentifier);
+    if (deactivations !== void 0) {
+      deactivationIterables.push(deactivations);
+    }
+    const parentDeactivations = this.#getParent()?.get(serviceIdentifier);
+    if (parentDeactivations !== void 0) {
+      deactivationIterables.push(parentDeactivations);
+    }
+    if (deactivationIterables.length === 0) {
+      return void 0;
+    }
+    return chain(...deactivationIterables);
+  }
+  removeAllByModuleId(moduleId) {
+    this.#deactivationMaps.removeByRelation(DeactivationRelationKind.moduleId, moduleId);
+  }
+  removeAllByServiceId(serviceId) {
+    this.#deactivationMaps.removeByRelation(DeactivationRelationKind.serviceId, serviceId);
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/models/ClassElementMetadataKind.js
+var ClassElementMetadataKind;
+(function(ClassElementMetadataKind2) {
+  ClassElementMetadataKind2[ClassElementMetadataKind2["multipleInjection"] = 0] = "multipleInjection";
+  ClassElementMetadataKind2[ClassElementMetadataKind2["singleInjection"] = 1] = "singleInjection";
+  ClassElementMetadataKind2[ClassElementMetadataKind2["unmanaged"] = 2] = "unmanaged";
+})(ClassElementMetadataKind || (ClassElementMetadataKind = {}));
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildClassElementMetadataFromMaybeClassElementMetadata.js
+function buildClassElementMetadataFromMaybeClassElementMetadata(buildDefaultMetadata, buildMetadataFromMaybeManagedMetadata) {
+  return (...params) => (metadata) => {
+    if (metadata === void 0) {
+      return buildDefaultMetadata(...params);
+    }
+    if (metadata.kind === ClassElementMetadataKind.unmanaged) {
+      throw new InversifyCoreError(InversifyCoreErrorKind.injectionDecoratorConflict, "Unexpected injection found. Multiple @inject, @multiInject or @unmanaged decorators found");
+    }
+    return buildMetadataFromMaybeManagedMetadata(metadata, ...params);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildDefaultManagedMetadata.js
+function buildDefaultManagedMetadata(kind, serviceIdentifier, options) {
+  if (kind === ClassElementMetadataKind.multipleInjection) {
+    return {
+      chained: options?.chained ?? false,
+      kind,
+      name: void 0,
+      optional: false,
+      tags: /* @__PURE__ */ new Map(),
+      value: serviceIdentifier
+    };
+  } else {
+    return {
+      kind,
+      name: void 0,
+      optional: false,
+      tags: /* @__PURE__ */ new Map(),
+      value: serviceIdentifier
+    };
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/assertMetadataFromTypescriptIfManaged.js
+function assertMetadataFromTypescriptIfManaged(metadata) {
+  if (metadata.kind !== MaybeClassElementMetadataKind.unknown && metadata.isFromTypescriptParamType !== true) {
+    throw new InversifyCoreError(InversifyCoreErrorKind.injectionDecoratorConflict, "Unexpected injection found. Multiple @inject, @multiInject or @unmanaged decorators found");
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildManagedMetadataFromMaybeManagedMetadata.js
+function buildManagedMetadataFromMaybeManagedMetadata(metadata, kind, serviceIdentifier, options) {
+  assertMetadataFromTypescriptIfManaged(metadata);
+  if (kind === ClassElementMetadataKind.multipleInjection) {
+    return {
+      ...metadata,
+      chained: options?.chained ?? false,
+      kind,
+      value: serviceIdentifier
+    };
+  } else {
+    return {
+      ...metadata,
+      kind,
+      value: serviceIdentifier
+    };
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildManagedMetadataFromMaybeClassElementMetadata.js
+var buildManagedMetadataFromMaybeClassElementMetadata = buildClassElementMetadataFromMaybeClassElementMetadata(buildDefaultManagedMetadata, buildManagedMetadataFromMaybeManagedMetadata);
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/decorator/models/DecoratorInfoKind.js
+var DecoratorInfoKind;
+(function(DecoratorInfoKind2) {
+  DecoratorInfoKind2[DecoratorInfoKind2["method"] = 0] = "method";
+  DecoratorInfoKind2[DecoratorInfoKind2["parameter"] = 1] = "parameter";
+  DecoratorInfoKind2[DecoratorInfoKind2["property"] = 2] = "property";
+})(DecoratorInfoKind || (DecoratorInfoKind = {}));
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildDefaultUnmanagedMetadata.js
+function buildDefaultUnmanagedMetadata() {
+  return {
+    kind: ClassElementMetadataKind.unmanaged
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildUnmanagedMetadataFromMaybeManagedMetadata.js
+function buildUnmanagedMetadataFromMaybeManagedMetadata(metadata) {
+  assertMetadataFromTypescriptIfManaged(metadata);
+  if (hasManagedMetadata(metadata)) {
+    throw new InversifyCoreError(InversifyCoreErrorKind.injectionDecoratorConflict, "Unexpected injection found. Found @unmanaged injection with additional @named, @optional, @tagged or @targetName injections");
+  }
+  return buildDefaultUnmanagedMetadata();
+}
+function hasManagedMetadata(metadata) {
+  return metadata.name !== void 0 || metadata.optional || metadata.tags.size > 0;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildUnmanagedMetadataFromMaybeClassElementMetadata.js
+var buildUnmanagedMetadataFromMaybeClassElementMetadata = buildClassElementMetadataFromMaybeClassElementMetadata(buildDefaultUnmanagedMetadata, buildUnmanagedMetadataFromMaybeManagedMetadata);
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/models/ResolvedValueElementMetadataKind.js
+var ResolvedValueElementMetadataKind;
+(function(ResolvedValueElementMetadataKind2) {
+  ResolvedValueElementMetadataKind2[ResolvedValueElementMetadataKind2["multipleInjection"] = 0] = "multipleInjection";
+  ResolvedValueElementMetadataKind2[ResolvedValueElementMetadataKind2["singleInjection"] = 1] = "singleInjection";
+})(ResolvedValueElementMetadataKind || (ResolvedValueElementMetadataKind = {}));
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildGetPlanOptionsFromPlanParams.js
+function buildGetPlanOptionsFromPlanParams(params) {
+  if (params.rootConstraints.isMultiple) {
+    return {
+      chained: params.rootConstraints.chained,
+      isMultiple: true,
+      name: params.rootConstraints.name,
+      optional: params.rootConstraints.isOptional ?? false,
+      serviceIdentifier: params.rootConstraints.serviceIdentifier,
+      tag: params.rootConstraints.tag
+    };
+  } else {
+    return {
+      isMultiple: false,
+      name: params.rootConstraints.name,
+      optional: params.rootConstraints.isOptional ?? false,
+      serviceIdentifier: params.rootConstraints.serviceIdentifier,
+      tag: params.rootConstraints.tag
+    };
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/models/BindingConstraintsImplementation.js
+var BindingConstraintsImplementation = class _BindingConstraintsImplementation {
+  #node;
+  constructor(node) {
+    this.#node = node;
+  }
+  get name() {
+    return this.#node.elem.name;
+  }
+  get serviceIdentifier() {
+    return this.#node.elem.serviceIdentifier;
+  }
+  get tags() {
+    return this.#node.elem.tags;
+  }
+  getAncestor() {
+    this.#node.elem.getAncestorsCalled = true;
+    if (this.#node.previous === void 0) {
+      return void 0;
+    }
+    return new _BindingConstraintsImplementation(this.#node.previous);
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isPlanServiceRedirectionBindingNode.js
+var REDIRECTION_KEY = "redirection";
+function isPlanServiceRedirectionBindingNode(node) {
+  return REDIRECTION_KEY in node;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveServiceRedirectionBindingNode.js
+function resolveBindingNode(params, planBindingNode) {
+  if (isPlanServiceRedirectionBindingNode(planBindingNode)) {
+    return resolveServiceRedirectionBindingNode(params, planBindingNode);
+  }
+  return [planBindingNode.resolve(params)];
+}
+function resolveServiceRedirectionBindingNode(params, node) {
+  if (node.redirection.bindings === void 0) {
+    return [];
+  }
+  if (Array.isArray(node.redirection.bindings)) {
+    return node.redirection.bindings.flatMap((binding) => resolveBindingNode(params, binding));
+  }
+  return resolveBindingNode(params, node.redirection.bindings);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveMultipleBindingServiceNode.js
+function resolveMultipleBindingServiceNode(params, bindings) {
+  const resolvedValues = [];
+  for (const binding of bindings) {
+    if (isPlanServiceRedirectionBindingNode(binding)) {
+      resolvedValues.push(...resolveServiceRedirectionBindingNode(params, binding));
+    } else {
+      resolvedValues.push(binding.resolve(params));
+    }
+  }
+  if (resolvedValues.some(isPromise)) {
+    return Promise.all(resolvedValues);
+  }
+  return resolvedValues;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/PlanMultipleBindingServiceNodeImplementation.js
+var PlanMultipleBindingServiceNodeImplementation = class {
+  bindings;
+  serviceIdentifier;
+  isContextFree;
+  constructor(bindings, serviceIdentifier) {
+    this.bindings = bindings;
+    this.serviceIdentifier = serviceIdentifier;
+    this.isContextFree = true;
+  }
+  resolve(params) {
+    return resolveMultipleBindingServiceNode(params, this.bindings);
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/DynamicallyResolvableBindingNode.js
+var isDynamicallyResolvableBindingNodeSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/core/DynamicallyResolvableBindingNode");
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isDynamicallyResolvableBindingNode.js
+function isDynamicallyResolvableBindingNode(node) {
+  return node[isDynamicallyResolvableBindingNodeSymbol] === true;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/PlanSingleBindingServiceNode.js
+var UNDEFINED_RESOLVE = () => void 0;
+var RESOLVE_KEY = "resolve";
+var PlanSingleBindingServiceNodeImplementation = class {
+  serviceIdentifier;
+  isContextFree;
+  resolve;
+  #binding;
+  constructor(serviceIdentifier) {
+    this.serviceIdentifier = serviceIdentifier;
+    this.isContextFree = true;
+    this.resolve = UNDEFINED_RESOLVE;
+  }
+  get bindings() {
+    return this.#binding;
+  }
+  set bindings(value) {
+    this.#binding = value;
+    if (value === void 0) {
+      this.resolve = UNDEFINED_RESOLVE;
+    } else {
+      this.resolve = Object.hasOwn(value, RESOLVE_KEY) ? value.resolve : value.resolve.bind(value);
+      if (isDynamicallyResolvableBindingNode(value)) {
+        const serviceNodeWeakReference = new WeakRef(this);
+        value.addOnResolverChangedHandler((newResolver) => {
+          const serviceNode = serviceNodeWeakReference.deref();
+          if (serviceNode !== void 0) {
+            serviceNode.resolve = newResolver;
+          }
+        });
+      }
+    }
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildFilteredServiceBindings.js
+function buildFilteredServiceBindings(params, bindingConstraints, options) {
+  const serviceIdentifier = options?.customServiceIdentifier ?? bindingConstraints.serviceIdentifier;
+  const serviceBindings = options?.chained === true ? [...params.operations.getBindingsChained(serviceIdentifier)] : [...params.operations.getBindings(serviceIdentifier) ?? []];
+  const filteredBindings = serviceBindings.filter((binding) => binding.isSatisfiedBy(bindingConstraints));
+  if (filteredBindings.length === 0 && params.autobindOptions !== void 0 && typeof serviceIdentifier === "function") {
+    const binding = buildInstanceBinding(params.autobindOptions, serviceIdentifier);
+    params.operations.setBinding(binding);
+    if (binding.isSatisfiedBy(bindingConstraints)) {
+      filteredBindings.push(binding);
+    }
+  }
+  return filteredBindings;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/stringifyBinding.js
+function stringifyBinding(binding) {
+  switch (binding.type) {
+    case bindingTypeValues.Instance:
+      return `[ type: "${binding.type}", serviceIdentifier: "${stringifyServiceIdentifier(binding.serviceIdentifier)}", scope: "${binding.scope}", implementationType: "${binding.implementationType.name}" ]`;
+    case bindingTypeValues.ServiceRedirection:
+      return `[ type: "${binding.type}", serviceIdentifier: "${stringifyServiceIdentifier(binding.serviceIdentifier)}", redirection: "${stringifyServiceIdentifier(binding.targetServiceIdentifier)}" ]`;
+    default:
+      return `[ type: "${binding.type}", serviceIdentifier: "${stringifyServiceIdentifier(binding.serviceIdentifier)}", scope: "${binding.scope}" ]`;
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/throwErrorWhenUnexpectedBindingsAmountFound.js
+var SINGLE_SERVICE_NODE_BINDINGS = 1;
+function throwErrorWhenUnexpectedBindingsAmountFound(bindingNodes, isOptional, bindingConstraintNode) {
+  const serviceIdentifier = bindingConstraintNode.elem.serviceIdentifier;
+  const parentServiceIdentifier = bindingConstraintNode.previous?.elem.serviceIdentifier;
+  if (Array.isArray(bindingNodes)) {
+    throwErrorWhenMultipleUnexpectedBindingsAmountFound(bindingNodes, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraintNode.elem);
+  } else {
+    throwErrorWhenSingleUnexpectedBindingFound(bindingNodes, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraintNode.elem);
+  }
+}
+function throwBindingNotFoundError(serviceIdentifier, parentServiceIdentifier, bindingConstraints) {
+  const errorMessage = `No bindings found for service: "${stringifyServiceIdentifier(serviceIdentifier)}".
+
+Trying to resolve bindings for "${stringifyParentServiceIdentifier(serviceIdentifier, parentServiceIdentifier)}".${stringifyBindingConstraints(bindingConstraints)}`;
+  throw new InversifyCoreError(InversifyCoreErrorKind.planning, errorMessage);
+}
+function throwErrorWhenMultipleUnexpectedBindingsAmountFound(bindingNodes, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraints) {
+  if (bindingNodes.length === SINGLE_SERVICE_NODE_BINDINGS) {
+    return;
+  }
+  if (bindingNodes.length === 0) {
+    if (!isOptional) {
+      throwBindingNotFoundError(serviceIdentifier, parentServiceIdentifier, bindingConstraints);
+    }
+  } else {
+    const errorMessage = `Ambiguous bindings found for service: "${stringifyServiceIdentifier(serviceIdentifier)}".
+
+Registered bindings:
+
+${bindingNodes.map((bindingNode) => stringifyBinding(bindingNode.binding)).join("\n")}
+
+Trying to resolve bindings for "${stringifyParentServiceIdentifier(serviceIdentifier, parentServiceIdentifier)}".${stringifyBindingConstraints(bindingConstraints)}`;
+    throw new InversifyCoreError(InversifyCoreErrorKind.planning, errorMessage);
+  }
+}
+function throwErrorWhenSingleUnexpectedBindingFound(bindingNode, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraints) {
+  if (bindingNode === void 0 && !isOptional) {
+    throwBindingNotFoundError(serviceIdentifier, parentServiceIdentifier, bindingConstraints);
+  }
+}
+function stringifyParentServiceIdentifier(serviceIdentifier, parentServiceIdentifier) {
+  return parentServiceIdentifier === void 0 ? `${stringifyServiceIdentifier(serviceIdentifier)} (Root service)` : stringifyServiceIdentifier(parentServiceIdentifier);
+}
+function stringifyBindingConstraints(bindingConstraints) {
+  const stringifiedTags = bindingConstraints.tags.size === 0 ? "" : `
+- tags:
+  - ${[...bindingConstraints.tags.keys()].map((key) => key.toString()).join("\n  - ")}`;
+  return `
+
+Binding constraints:
+- service identifier: ${stringifyServiceIdentifier(bindingConstraints.serviceIdentifier)}
+- name: ${bindingConstraints.name?.toString() ?? "-"}${stringifiedTags}`;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/curryBuildPlanServiceNodeFromOptions.js
+function curryBuildPlanServiceNodeFromOptions(buildServiceNodeBindings3) {
+  return (params, bindingConstraintsList, options) => {
+    const serviceIdentifier = options.serviceIdentifier;
+    const updatedBindingConstraintsList = bindingConstraintsList.concat({
+      getAncestorsCalled: false,
+      name: options.name,
+      serviceIdentifier,
+      tags: options.tags
+    });
+    const bindingConstraints = new BindingConstraintsImplementation(updatedBindingConstraintsList.last);
+    const chained = options.isMultiple && options.chained;
+    const filteredServiceBindings = buildFilteredServiceBindings(params, bindingConstraints, {
+      chained
+    });
+    const serviceNodeBindings = [];
+    if (options.isMultiple) {
+      const serviceNode2 = new PlanMultipleBindingServiceNodeImplementation(serviceNodeBindings, serviceIdentifier);
+      serviceNodeBindings.push(...buildServiceNodeBindings3(params, updatedBindingConstraintsList, filteredServiceBindings, serviceNode2, options));
+      serviceNode2.isContextFree = !updatedBindingConstraintsList.last.elem.getAncestorsCalled;
+      return serviceNode2;
+    }
+    const serviceNode = new PlanSingleBindingServiceNodeImplementation(serviceIdentifier);
+    serviceNodeBindings.push(...buildServiceNodeBindings3(params, updatedBindingConstraintsList, filteredServiceBindings, serviceNode, options));
+    serviceNode.isContextFree = !updatedBindingConstraintsList.last.elem.getAncestorsCalled;
+    throwErrorWhenUnexpectedBindingsAmountFound(serviceNodeBindings, options.optional, updatedBindingConstraintsList.last);
+    const [planBindingNode] = serviceNodeBindings;
+    serviceNode.bindings = planBindingNode;
+    return serviceNode;
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/error/calculations/isStackOverflowError.js
+var STACK_OVERFLOW_PATTERNS = /stack space|call stack|too much recursion/i;
+var SPIDER_MONKEY_REGEXP = /too much recursion/;
+function isStackOverflowError(error2) {
+  try {
+    if (!(error2 instanceof Error)) {
+      return false;
+    }
+    return (
+      // V8 and JavaScriptCore typically throw RangeError
+      error2 instanceof RangeError && STACK_OVERFLOW_PATTERNS.test(error2.message) || error2.name === "InternalError" && SPIDER_MONKEY_REGEXP.test(error2.message)
+    );
+  } catch (innerError) {
+    return innerError instanceof SyntaxError && innerError.message.includes("Stack overflow");
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/handlePlanError.js
+function extractLikelyCircularDependency(params) {
+  const serviceIdentifiers = /* @__PURE__ */ new Set();
+  for (const serviceIdentifier of params.servicesBranch) {
+    if (serviceIdentifiers.has(serviceIdentifier)) {
+      return [...serviceIdentifiers, serviceIdentifier];
+    }
+    serviceIdentifiers.add(serviceIdentifier);
+  }
+  return [...serviceIdentifiers];
+}
+function handlePlanError(params, error2) {
+  if (isStackOverflowError(error2) || InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planningMaxDepthExceeded)) {
+    const stringifiedCircularDependencies = stringifyServiceIdentifierTrace(extractLikelyCircularDependency(params));
+    throw new InversifyCoreError(InversifyCoreErrorKind.planning, `Circular dependency found: ${stringifiedCircularDependencies}`, { cause: error2 });
+  }
+  throw error2;
+}
+function stringifyServiceIdentifierTrace(serviceIdentifiers) {
+  const serviceIdentifiersArray = [...serviceIdentifiers];
+  if (serviceIdentifiersArray.length === 0) {
+    return "(No dependency trace)";
+  }
+  return serviceIdentifiersArray.map(stringifyServiceIdentifier).join(" -> ");
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/LazyPlanServiceNode.js
+var isLazyPlanServiceNodeSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/core/LazyPlanServiceNode");
+var LazyPlanServiceNode = class {
+  [isLazyPlanServiceNodeSymbol];
+  _serviceIdentifier;
+  _serviceNode;
+  constructor(serviceNode, serviceIdentifier) {
+    this[isLazyPlanServiceNodeSymbol] = true;
+    this._serviceNode = serviceNode;
+    this._serviceIdentifier = serviceIdentifier;
+  }
+  get bindings() {
+    return this._getNode().bindings;
+  }
+  get isContextFree() {
+    return this._getNode().isContextFree;
+  }
+  get serviceIdentifier() {
+    return this._serviceIdentifier;
+  }
+  set bindings(bindings) {
+    this._getNode().bindings = bindings;
+  }
+  set isContextFree(isContextFree) {
+    this._getNode().isContextFree = isContextFree;
+  }
+  static is(value) {
+    return typeof value === "object" && value !== null && value[isLazyPlanServiceNodeSymbol] === true;
+  }
+  invalidate() {
+    this._serviceNode = void 0;
+  }
+  isExpanded() {
+    return this._serviceNode !== void 0;
+  }
+  resolve(params) {
+    return this._getNode().resolve(params);
+  }
+  _getNode() {
+    if (this._serviceNode === void 0) {
+      this._serviceNode = this._buildPlanServiceNode();
+    }
+    return this._serviceNode;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/buildBuildServiceNodeOptionsFromPlanParamsConstraints.js
+function buildBuildServiceNodeOptionsFromPlanParamsConstraints(constraints) {
+  const tags = /* @__PURE__ */ new Map();
+  if (constraints.tag !== void 0) {
+    tags.set(constraints.tag.key, constraints.tag.value);
+  }
+  if (constraints.isMultiple) {
+    return {
+      chained: constraints.chained,
+      isMultiple: constraints.isMultiple,
+      name: constraints.name,
+      optional: constraints.isOptional ?? false,
+      serviceIdentifier: constraints.serviceIdentifier,
+      tags
+    };
+  }
+  return {
+    isMultiple: constraints.isMultiple,
+    name: constraints.name,
+    optional: constraints.isOptional ?? false,
+    serviceIdentifier: constraints.serviceIdentifier,
+    tags
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/models/SingleImmutableLinkedList.js
+var SingleImmutableLinkedList = class _SingleImmutableLinkedList {
+  last;
+  length;
+  constructor(last, length) {
+    this.last = last;
+    this.length = length;
+  }
+  concat(elem) {
+    return new _SingleImmutableLinkedList({
+      elem,
+      previous: this.last
+    }, this.length + 1);
+  }
+  [Symbol.iterator]() {
+    let node = this.last;
+    return {
+      next: () => {
+        if (node === void 0) {
+          return {
+            done: true,
+            value: void 0
           };
         }
-        function sloppyModeThis() {
-          throw new ReferenceError("globalThis could not be found. Please polyfill globalThis before loading this module.");
+        const elem = node.elem;
+        node = node.previous;
+        return {
+          done: false,
+          value: elem
+        };
+      }
+    };
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildPlanBindingConstraintsList.js
+function buildPlanBindingConstraintsList(params) {
+  const tags = /* @__PURE__ */ new Map();
+  if (params.rootConstraints.tag !== void 0) {
+    tags.set(params.rootConstraints.tag.key, params.rootConstraints.tag.value);
+  }
+  return new SingleImmutableLinkedList({
+    elem: {
+      getAncestorsCalled: false,
+      name: params.rootConstraints.name,
+      serviceIdentifier: params.rootConstraints.serviceIdentifier,
+      tags
+    },
+    previous: void 0
+  }, 1);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/curryBuildPlanServiceNode.js
+function curryBuildPlanServiceNode(buildServiceNodeBindings3) {
+  return (params) => {
+    const bindingConstraintsList = buildPlanBindingConstraintsList(params);
+    const bindingConstraints = new BindingConstraintsImplementation(bindingConstraintsList.last);
+    const chained = params.rootConstraints.isMultiple && params.rootConstraints.chained;
+    const filteredServiceBindings = buildFilteredServiceBindings(params, bindingConstraints, {
+      chained
+    });
+    const serviceNodeBindings = [];
+    if (params.rootConstraints.isMultiple) {
+      const serviceNode2 = new PlanMultipleBindingServiceNodeImplementation(serviceNodeBindings, params.rootConstraints.serviceIdentifier);
+      serviceNodeBindings.push(...buildServiceNodeBindings3(params, bindingConstraintsList, filteredServiceBindings, serviceNode2, buildBuildServiceNodeOptionsFromPlanParamsConstraints(params.rootConstraints)));
+      serviceNode2.isContextFree = !bindingConstraintsList.last.elem.getAncestorsCalled;
+      return serviceNode2;
+    }
+    const serviceNode = new PlanSingleBindingServiceNodeImplementation(params.rootConstraints.serviceIdentifier);
+    serviceNodeBindings.push(...buildServiceNodeBindings3(params, bindingConstraintsList, filteredServiceBindings, serviceNode, buildBuildServiceNodeOptionsFromPlanParamsConstraints(params.rootConstraints)));
+    serviceNode.isContextFree = !bindingConstraintsList.last.elem.getAncestorsCalled;
+    throwErrorWhenUnexpectedBindingsAmountFound(serviceNodeBindings, params.rootConstraints.isOptional ?? false, bindingConstraintsList.last);
+    const [planBindingNode] = serviceNodeBindings;
+    serviceNode.bindings = planBindingNode;
+    return serviceNode;
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/cacheResolvedValue.js
+function cacheResolvedValue(binding, resolvedValue) {
+  if (isPromise(resolvedValue)) {
+    binding.cache = {
+      isRight: true,
+      value: resolvedValue
+    };
+    return resolvedValue.then((syncResolvedValue) => cacheSyncResolvedValue(binding, syncResolvedValue));
+  }
+  return cacheSyncResolvedValue(binding, resolvedValue);
+}
+function cacheSyncResolvedValue(binding, resolvedValue) {
+  binding.cache = {
+    isRight: true,
+    value: resolvedValue
+  };
+  return resolvedValue;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingActivationsFromIteratorAsync.js
+async function resolveBindingActivationsFromIteratorAsync(params, value, activationsIterator) {
+  let activatedValue = await value;
+  let activationIteratorResult = activationsIterator.next();
+  while (activationIteratorResult.done !== true) {
+    activatedValue = await activationIteratorResult.value(params.context, activatedValue);
+    activationIteratorResult = activationsIterator.next();
+  }
+  return activatedValue;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingActivationsFromIterator.js
+function resolveBindingActivationsFromIterator(params, value, activationsIterator) {
+  let activatedValue = value;
+  let activationIteratorResult = activationsIterator.next();
+  while (activationIteratorResult.done !== true) {
+    const nextActivatedValue = activationIteratorResult.value(params.context, activatedValue);
+    if (isPromise(nextActivatedValue)) {
+      return resolveBindingActivationsFromIteratorAsync(params, nextActivatedValue, activationsIterator);
+    } else {
+      activatedValue = nextActivatedValue;
+    }
+    activationIteratorResult = activationsIterator.next();
+  }
+  return activatedValue;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingServiceActivations.js
+function resolveBindingServiceActivations(params, serviceIdentifier, value) {
+  const activations = params.context.getActivations(serviceIdentifier);
+  if (activations === void 0) {
+    return value;
+  }
+  if (isPromise(value)) {
+    return resolveBindingActivationsFromIteratorAsync(params, value, activations[Symbol.iterator]());
+  }
+  return resolveBindingActivationsFromIterator(params, value, activations[Symbol.iterator]());
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingActivations.js
+function resolveBindingActivations(params, binding, value) {
+  let activationResult = value;
+  if (binding.onActivation !== void 0) {
+    const onActivation = binding.onActivation;
+    if (isPromise(activationResult)) {
+      activationResult = activationResult.then((resolved) => onActivation(params.context, resolved));
+    } else {
+      activationResult = onActivation(params.context, activationResult);
+    }
+  }
+  return resolveBindingServiceActivations(params, binding.serviceIdentifier, activationResult);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveScoped.js
+function resolveScoped(node, resolve4) {
+  const binding = node.binding;
+  switch (binding.scope) {
+    case bindingScopeValues.Singleton: {
+      return (params) => {
+        if (binding.cache.isRight) {
+          return binding.cache.value;
         }
-      })(function(exporter, root) {
-        var supportsSymbol = typeof Symbol === "function";
-        var toPrimitiveSymbol = supportsSymbol && typeof Symbol.toPrimitive !== "undefined" ? Symbol.toPrimitive : fail("Symbol.toPrimitive not found.");
-        var iteratorSymbol = supportsSymbol && typeof Symbol.iterator !== "undefined" ? Symbol.iterator : fail("Symbol.iterator not found.");
-        var functionPrototype = Object.getPrototypeOf(Function);
-        var _Map = typeof Map === "function" && typeof Map.prototype.entries === "function" ? Map : fail("A valid Map constructor could not be found.");
-        var _Set = typeof Set === "function" && typeof Set.prototype.entries === "function" ? Set : fail("A valid Set constructor could not be found.");
-        var _WeakMap = typeof WeakMap === "function" ? WeakMap : fail("A valid WeakMap constructor could not be found.");
-        var registrySymbol = supportsSymbol ? /* @__PURE__ */ Symbol.for("@reflect-metadata:registry") : void 0;
-        var metadataRegistry = GetOrCreateMetadataRegistry();
-        var metadataProvider = CreateMetadataProvider(metadataRegistry);
-        function decorate3(decorators, target, propertyKey, attributes) {
-          if (!IsUndefined(propertyKey)) {
-            if (!IsArray(decorators))
-              throw new TypeError();
-            if (!IsObject(target))
-              throw new TypeError();
-            if (!IsObject(attributes) && !IsUndefined(attributes) && !IsNull(attributes))
-              throw new TypeError();
-            if (IsNull(attributes))
-              attributes = void 0;
-            propertyKey = ToPropertyKey(propertyKey);
-            return DecorateProperty(decorators, target, propertyKey, attributes);
+        const resolvedValue = resolveBindingActivations(params, binding, resolve4(params, node));
+        return cacheResolvedValue(binding, resolvedValue);
+      };
+    }
+    case bindingScopeValues.Request: {
+      return (params) => {
+        if (params.requestScopeCache?.has(binding.id) === true) {
+          return params.requestScopeCache.get(binding.id);
+        }
+        const resolvedValue = resolveBindingActivations(params, binding, resolve4(params, node));
+        (params.requestScopeCache ??= /* @__PURE__ */ new Map()).set(binding.id, resolvedValue);
+        return resolvedValue;
+      };
+    }
+    case bindingScopeValues.Transient:
+      return (params) => resolveBindingActivations(params, binding, resolve4(params, node));
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/ConstantValueBindingNode.js
+var ConstantValueBindingNode = class {
+  binding;
+  resolve;
+  constructor(binding) {
+    this.binding = binding;
+    this.resolve = resolveScoped(this, (_params, node) => node.binding.value);
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveScopedWithNoActivations.js
+function resolveScopedWithNoActivations(binding, resolve4) {
+  switch (binding.scope) {
+    case bindingScopeValues.Singleton: {
+      return (params) => {
+        if (binding.cache.isRight) {
+          return binding.cache.value;
+        }
+        const resolvedValue = resolve4(params);
+        return cacheResolvedValue(binding, resolvedValue);
+      };
+    }
+    case bindingScopeValues.Request: {
+      return (params) => {
+        if (params.requestScopeCache?.has(binding.id) === true) {
+          return params.requestScopeCache.get(binding.id);
+        }
+        const resolvedValue = resolve4(params);
+        (params.requestScopeCache ??= /* @__PURE__ */ new Map()).set(binding.id, resolvedValue);
+        return resolvedValue;
+      };
+    }
+    case bindingScopeValues.Transient:
+      return resolve4;
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveServiceActivations.js
+function resolveServiceActivations(serviceIdentifier) {
+  return (params, value) => {
+    const activations = params.context.getActivations(serviceIdentifier);
+    if (activations === void 0) {
+      return value;
+    }
+    if (isPromise(value)) {
+      return resolveBindingActivationsFromIteratorAsync(params, value, activations[Symbol.iterator]());
+    }
+    return resolveBindingActivationsFromIterator(params, value, activations[Symbol.iterator]());
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsDynamicValueBindingNodeResolver.js
+function buildNoActivationsDynamicValueBindingNodeResolver(node, areServiceActivations) {
+  const serviceIdentifier = node.binding.serviceIdentifier;
+  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
+  const resolveNode = resolveActivations === void 0 ? (params) => node.binding.value(params.context) : (params) => resolveActivations(params, node.binding.value(params.context));
+  return resolveScopedWithNoActivations(node.binding, resolveNode);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/DynamicValueBindingNode.js
+var resolveScopedDynamicValueBindingNode = (node) => resolveScoped(node, (params, node2) => node2.binding.value(params.context));
+var DynamicValueBindingNode = class {
+  binding;
+  [isDynamicallyResolvableBindingNodeSymbol];
+  resolve;
+  #onResolverChangedHandlers;
+  constructor(binding, params) {
+    this.binding = binding;
+    this[isDynamicallyResolvableBindingNodeSymbol] = true;
+    const areServiceActivations = params.operations.getActivations(binding.serviceIdentifier) !== void 0;
+    this.#onResolverChangedHandlers = void 0;
+    this.resolve = this.#buildDynamicValueBindingNodeResolver(areServiceActivations);
+    if (!areServiceActivations && this.#areNoBindingActivationsDefined()) {
+      params.operations.subscribeActivationAddedOnce(binding.serviceIdentifier, this);
+    }
+  }
+  onActivationAdded() {
+    this.resolve = this.#buildDynamicValueBindingNodeResolver(true);
+    if (this.#onResolverChangedHandlers !== void 0) {
+      for (const handler2 of this.#onResolverChangedHandlers) {
+        handler2(this.resolve);
+      }
+    }
+  }
+  addOnResolverChangedHandler(callback) {
+    if (this.#onResolverChangedHandlers === void 0) {
+      this.#onResolverChangedHandlers = [];
+    }
+    this.#onResolverChangedHandlers.push(callback);
+  }
+  #buildDynamicValueBindingNodeResolver(areServiceActivations) {
+    if (this.#areNoBindingActivationsDefined()) {
+      return buildNoActivationsDynamicValueBindingNodeResolver(this, areServiceActivations);
+    }
+    return resolveScopedDynamicValueBindingNode(this);
+  }
+  #areNoBindingActivationsDefined() {
+    return this.binding.onActivation === void 0;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/FactoryBindingNodeImplementation.js
+var FactoryBindingNodeImplementation = class {
+  binding;
+  resolve;
+  constructor(binding) {
+    this.binding = binding;
+    this.resolve = resolveScoped(this, (params, node) => node.binding.factory(params.context));
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingConstructorParams.js
+function resolveInstanceBindingConstructorParams(params, node) {
+  const constructorResolvedValues = [];
+  let promiseValueFound = false;
+  for (const constructorParam of node.constructorParams) {
+    const resolvedValue = constructorParam.resolve(params);
+    if (!promiseValueFound && isPromise(resolvedValue)) {
+      promiseValueFound = true;
+    }
+    constructorResolvedValues.push(resolvedValue);
+  }
+  return promiseValueFound ? Promise.all(constructorResolvedValues) : constructorResolvedValues;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingNode.js
+function resolveInstanceBindingNode(resolveInstanceBindingConstructorParams2, resolveInstanceBindingNodeAsyncFromConstructorParams2, resolveInstanceBindingNodeFromConstructorParams2) {
+  return (params, node) => {
+    const constructorValues = resolveInstanceBindingConstructorParams2(params, node);
+    if (isPromise(constructorValues)) {
+      return resolveInstanceBindingNodeAsyncFromConstructorParams2(constructorValues, params, node);
+    }
+    return resolveInstanceBindingNodeFromConstructorParams2(constructorValues, params, node);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolvePostConstruct.js
+function resolvePostConstruct(instance, binding, postConstructMethodName) {
+  const postConstructResult = invokePostConstruct(instance, binding, postConstructMethodName);
+  if (isPromise(postConstructResult)) {
+    return postConstructResult.then(() => instance);
+  }
+  return instance;
+}
+function invokePostConstruct(instance, binding, postConstructMethodName) {
+  if (postConstructMethodName in instance) {
+    if (typeof instance[postConstructMethodName] === "function") {
+      let postConstructResult;
+      try {
+        postConstructResult = instance[postConstructMethodName]();
+      } catch (error2) {
+        throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Unexpected error found when calling "${postConstructMethodName.toString()}" @postConstruct decorated method on class "${binding.implementationType.name}"`, {
+          cause: error2
+        });
+      }
+      if (isPromise(postConstructResult)) {
+        return invokePostConstructAsync(binding, postConstructMethodName, postConstructResult);
+      }
+    } else {
+      throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Expecting a "${postConstructMethodName.toString()}" method when resolving "${binding.implementationType.name}" class @postConstruct decorated method, a non function property was found instead.`);
+    }
+  } else {
+    throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Expecting a "${postConstructMethodName.toString()}" property when resolving "${binding.implementationType.name}" class @postConstruct decorated method, none found.`);
+  }
+}
+async function invokePostConstructAsync(binding, postConstructMethodName, postConstructResult) {
+  try {
+    await postConstructResult;
+  } catch (error2) {
+    throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Unexpected error found when calling "${postConstructMethodName.toString()}" @postConstruct decorated method on class "${binding.implementationType.name}"`, {
+      cause: error2
+    });
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/setInstanceProperties.js
+function setInstanceProperties(params, instance, node) {
+  const propertyAssignmentPromises = [];
+  for (const [propertyKey, propertyNode] of node.propertyParams) {
+    const metadata = node.classMetadata.properties.get(propertyKey);
+    if (metadata === void 0) {
+      throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Expecting metadata at property "${propertyKey.toString()}", none found`);
+    }
+    if (metadata.kind !== ClassElementMetadataKind.unmanaged && propertyNode.bindings !== void 0) {
+      instance[propertyKey] = propertyNode.resolve(params);
+      if (isPromise(instance[propertyKey])) {
+        propertyAssignmentPromises.push((async () => {
+          instance[propertyKey] = await instance[propertyKey];
+        })());
+      }
+    }
+  }
+  if (propertyAssignmentPromises.length > 0) {
+    return Promise.all(propertyAssignmentPromises).then(() => void 0);
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingNodeFromConstructorParams.js
+function resolveAllPostConstructMethods(instance, binding, postConstructMethodNames) {
+  if (postConstructMethodNames.size === 0) {
+    return instance;
+  }
+  let result = instance;
+  for (const methodName of postConstructMethodNames) {
+    if (isPromise(result)) {
+      result = result.then((resolvedInstance) => resolvePostConstruct(resolvedInstance, binding, methodName));
+    } else {
+      result = resolvePostConstruct(result, binding, methodName);
+    }
+  }
+  return result;
+}
+function resolveInstanceBindingNodeFromConstructorParams(constructorValues, params, node) {
+  const instance = new node.binding.implementationType(...constructorValues);
+  const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+  if (isPromise(propertiesAssignmentResult)) {
+    return propertiesAssignmentResult.then(() => resolveAllPostConstructMethods(instance, node.binding, node.classMetadata.lifecycle.postConstructMethodNames));
+  }
+  return resolveAllPostConstructMethods(instance, node.binding, node.classMetadata.lifecycle.postConstructMethodNames);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingNodeAsyncFromConstructorParams.js
+async function resolveInstanceBindingNodeAsyncFromConstructorParams(constructorValues, params, node) {
+  const constructorResolvedValues = await constructorValues;
+  return resolveInstanceBindingNodeFromConstructorParams(constructorResolvedValues, params, node);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildConstructorArgumentsResolver.js
+function buildConstructorArgumentsResolver(node, resolveAsyncValues, resolveActivations) {
+  const constructorArgumentsCount = node.classMetadata.constructorArguments.length;
+  function resolveConstructorValues(params) {
+    const values = new Array(constructorArgumentsCount);
+    for (let index = 0; index < constructorArgumentsCount; index++) {
+      values[index] = node.constructorParams[index].resolve(params);
+    }
+    return values;
+  }
+  if (node.classMetadata.properties.size === 0) {
+    if (resolveActivations === void 0) {
+      return function resolveNode(params) {
+        const values = resolveConstructorValues(params);
+        function build(...resolvedValues) {
+          return new node.binding.implementationType(...resolvedValues);
+        }
+        return resolveAsyncValues(...values, build);
+      };
+    }
+    return function resolveNode(params) {
+      const values = resolveConstructorValues(params);
+      const build = (...resolvedValues) => resolveActivations(params, new node.binding.implementationType(...resolvedValues));
+      return resolveAsyncValues(...values, build);
+    };
+  }
+  if (resolveActivations === void 0) {
+    return function resolveNode(params) {
+      const values = resolveConstructorValues(params);
+      function build(...resolvedValues) {
+        const instance = new node.binding.implementationType(...resolvedValues);
+        const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+        if (isPromise(propertiesAssignmentResult)) {
+          return propertiesAssignmentResult.then(() => instance);
+        }
+        return instance;
+      }
+      return resolveAsyncValues(...values, build);
+    };
+  }
+  return function resolveNode(params) {
+    const values = resolveConstructorValues(params);
+    const build = (...resolvedValues) => {
+      const instance = new node.binding.implementationType(...resolvedValues);
+      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+      if (isPromise(propertiesAssignmentResult)) {
+        return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
+      }
+      return resolveActivations(params, instance);
+    };
+    return resolveAsyncValues(...values, build);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveFour.js
+var TWO_PARAMS = 2;
+var THREE_PARAMS = 3;
+var FOUR_PARAMS = 4;
+function resolveFour(value1, value2, value3, value4, build) {
+  if (isPromise(value1)) {
+    if (isPromise(value2)) {
+      if (isPromise(value3)) {
+        if (isPromise(value4)) {
+          return new Promise((resolve4, reject) => {
+            let resolvedValues = 0;
+            let resolvedValue1;
+            let resolvedValue2;
+            let resolvedValue3;
+            let resolvedValue4;
+            void value1.then((resolvedValue) => {
+              if (++resolvedValues === FOUR_PARAMS) {
+                resolve4(build(resolvedValue, resolvedValue2, resolvedValue3, resolvedValue4));
+              } else {
+                resolvedValue1 = resolvedValue;
+              }
+            }).catch(reject);
+            void value2.then((resolvedValue) => {
+              if (++resolvedValues === FOUR_PARAMS) {
+                resolve4(build(resolvedValue1, resolvedValue, resolvedValue3, resolvedValue4));
+              } else {
+                resolvedValue2 = resolvedValue;
+              }
+            }).catch(reject);
+            void value3.then((resolvedValue) => {
+              if (++resolvedValues === FOUR_PARAMS) {
+                resolve4(build(resolvedValue1, resolvedValue2, resolvedValue, resolvedValue4));
+              } else {
+                resolvedValue3 = resolvedValue;
+              }
+            }).catch(reject);
+            void value4.then((resolvedValue) => {
+              if (++resolvedValues === FOUR_PARAMS) {
+                resolve4(build(resolvedValue1, resolvedValue2, resolvedValue3, resolvedValue));
+              } else {
+                resolvedValue4 = resolvedValue;
+              }
+            }).catch(reject);
+          });
+        }
+        return new Promise((resolve4, reject) => {
+          let resolvedValues = 0;
+          let resolvedValue1;
+          let resolvedValue2;
+          let resolvedValue3;
+          void value1.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue, resolvedValue2, resolvedValue3, value4));
+            } else {
+              resolvedValue1 = resolvedValue;
+            }
+          }).catch(reject);
+          void value2.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue1, resolvedValue, resolvedValue3, value4));
+            } else {
+              resolvedValue2 = resolvedValue;
+            }
+          }).catch(reject);
+          void value3.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue1, resolvedValue2, resolvedValue, value4));
+            } else {
+              resolvedValue3 = resolvedValue;
+            }
+          }).catch(reject);
+        });
+      }
+      if (isPromise(value4)) {
+        return new Promise((resolve4, reject) => {
+          let resolvedValues = 0;
+          let resolvedValue1;
+          let resolvedValue2;
+          let resolvedValue4;
+          void value1.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue, resolvedValue2, value3, resolvedValue4));
+            } else {
+              resolvedValue1 = resolvedValue;
+            }
+          }).catch(reject);
+          void value2.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue1, resolvedValue, value3, resolvedValue4));
+            } else {
+              resolvedValue2 = resolvedValue;
+            }
+          }).catch(reject);
+          void value4.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue1, resolvedValue2, value3, resolvedValue));
+            } else {
+              resolvedValue4 = resolvedValue;
+            }
+          }).catch(reject);
+        });
+      }
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue1;
+        let resolvedValue2;
+        void value1.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(resolvedValue, resolvedValue2, value3, value4));
           } else {
-            if (!IsArray(decorators))
-              throw new TypeError();
-            if (!IsConstructor(target))
-              throw new TypeError();
-            return DecorateConstructor(decorators, target);
+            resolvedValue1 = resolvedValue;
           }
-        }
-        exporter("decorate", decorate3);
-        function metadata(metadataKey, metadataValue) {
-          function decorator(target, propertyKey) {
-            if (!IsObject(target))
-              throw new TypeError();
-            if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey))
-              throw new TypeError();
-            OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
-          }
-          return decorator;
-        }
-        exporter("metadata", metadata);
-        function defineMetadata(metadataKey, metadataValue, target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          return OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
-        }
-        exporter("defineMetadata", defineMetadata);
-        function hasMetadata(metadataKey, target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          return OrdinaryHasMetadata(metadataKey, target, propertyKey);
-        }
-        exporter("hasMetadata", hasMetadata);
-        function hasOwnMetadata(metadataKey, target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          return OrdinaryHasOwnMetadata(metadataKey, target, propertyKey);
-        }
-        exporter("hasOwnMetadata", hasOwnMetadata);
-        function getMetadata(metadataKey, target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          return OrdinaryGetMetadata(metadataKey, target, propertyKey);
-        }
-        exporter("getMetadata", getMetadata);
-        function getOwnMetadata(metadataKey, target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          return OrdinaryGetOwnMetadata(metadataKey, target, propertyKey);
-        }
-        exporter("getOwnMetadata", getOwnMetadata);
-        function getMetadataKeys(target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          return OrdinaryMetadataKeys(target, propertyKey);
-        }
-        exporter("getMetadataKeys", getMetadataKeys);
-        function getOwnMetadataKeys(target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          return OrdinaryOwnMetadataKeys(target, propertyKey);
-        }
-        exporter("getOwnMetadataKeys", getOwnMetadataKeys);
-        function deleteMetadata(metadataKey, target, propertyKey) {
-          if (!IsObject(target))
-            throw new TypeError();
-          if (!IsUndefined(propertyKey))
-            propertyKey = ToPropertyKey(propertyKey);
-          var provider = GetMetadataProvider(
-            target,
-            propertyKey,
-            /*Create*/
-            false
-          );
-          if (IsUndefined(provider))
-            return false;
-          return provider.OrdinaryDeleteMetadata(metadataKey, target, propertyKey);
-        }
-        exporter("deleteMetadata", deleteMetadata);
-        function DecorateConstructor(decorators, target) {
-          for (var i = decorators.length - 1; i >= 0; --i) {
-            var decorator = decorators[i];
-            var decorated = decorator(target);
-            if (!IsUndefined(decorated) && !IsNull(decorated)) {
-              if (!IsConstructor(decorated))
-                throw new TypeError();
-              target = decorated;
-            }
-          }
-          return target;
-        }
-        function DecorateProperty(decorators, target, propertyKey, descriptor) {
-          for (var i = decorators.length - 1; i >= 0; --i) {
-            var decorator = decorators[i];
-            var decorated = decorator(target, propertyKey, descriptor);
-            if (!IsUndefined(decorated) && !IsNull(decorated)) {
-              if (!IsObject(decorated))
-                throw new TypeError();
-              descriptor = decorated;
-            }
-          }
-          return descriptor;
-        }
-        function OrdinaryHasMetadata(MetadataKey, O3, P2) {
-          var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O3, P2);
-          if (hasOwn)
-            return true;
-          var parent = OrdinaryGetPrototypeOf(O3);
-          if (!IsNull(parent))
-            return OrdinaryHasMetadata(MetadataKey, parent, P2);
-          return false;
-        }
-        function OrdinaryHasOwnMetadata(MetadataKey, O3, P2) {
-          var provider = GetMetadataProvider(
-            O3,
-            P2,
-            /*Create*/
-            false
-          );
-          if (IsUndefined(provider))
-            return false;
-          return ToBoolean(provider.OrdinaryHasOwnMetadata(MetadataKey, O3, P2));
-        }
-        function OrdinaryGetMetadata(MetadataKey, O3, P2) {
-          var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O3, P2);
-          if (hasOwn)
-            return OrdinaryGetOwnMetadata(MetadataKey, O3, P2);
-          var parent = OrdinaryGetPrototypeOf(O3);
-          if (!IsNull(parent))
-            return OrdinaryGetMetadata(MetadataKey, parent, P2);
-          return void 0;
-        }
-        function OrdinaryGetOwnMetadata(MetadataKey, O3, P2) {
-          var provider = GetMetadataProvider(
-            O3,
-            P2,
-            /*Create*/
-            false
-          );
-          if (IsUndefined(provider))
-            return;
-          return provider.OrdinaryGetOwnMetadata(MetadataKey, O3, P2);
-        }
-        function OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O3, P2) {
-          var provider = GetMetadataProvider(
-            O3,
-            P2,
-            /*Create*/
-            true
-          );
-          provider.OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O3, P2);
-        }
-        function OrdinaryMetadataKeys(O3, P2) {
-          var ownKeys = OrdinaryOwnMetadataKeys(O3, P2);
-          var parent = OrdinaryGetPrototypeOf(O3);
-          if (parent === null)
-            return ownKeys;
-          var parentKeys = OrdinaryMetadataKeys(parent, P2);
-          if (parentKeys.length <= 0)
-            return ownKeys;
-          if (ownKeys.length <= 0)
-            return parentKeys;
-          var set = new _Set();
-          var keys = [];
-          for (var _i3 = 0, ownKeys_1 = ownKeys; _i3 < ownKeys_1.length; _i3++) {
-            var key = ownKeys_1[_i3];
-            var hasKey = set.has(key);
-            if (!hasKey) {
-              set.add(key);
-              keys.push(key);
-            }
-          }
-          for (var _a2 = 0, parentKeys_1 = parentKeys; _a2 < parentKeys_1.length; _a2++) {
-            var key = parentKeys_1[_a2];
-            var hasKey = set.has(key);
-            if (!hasKey) {
-              set.add(key);
-              keys.push(key);
-            }
-          }
-          return keys;
-        }
-        function OrdinaryOwnMetadataKeys(O3, P2) {
-          var provider = GetMetadataProvider(
-            O3,
-            P2,
-            /*create*/
-            false
-          );
-          if (!provider) {
-            return [];
-          }
-          return provider.OrdinaryOwnMetadataKeys(O3, P2);
-        }
-        function Type(x3) {
-          if (x3 === null)
-            return 1;
-          switch (typeof x3) {
-            case "undefined":
-              return 0;
-            case "boolean":
-              return 2;
-            case "string":
-              return 3;
-            case "symbol":
-              return 4;
-            case "number":
-              return 5;
-            case "object":
-              return x3 === null ? 1 : 6;
-            default:
-              return 6;
-          }
-        }
-        function IsUndefined(x3) {
-          return x3 === void 0;
-        }
-        function IsNull(x3) {
-          return x3 === null;
-        }
-        function IsSymbol(x3) {
-          return typeof x3 === "symbol";
-        }
-        function IsObject(x3) {
-          return typeof x3 === "object" ? x3 !== null : typeof x3 === "function";
-        }
-        function ToPrimitive(input, PreferredType) {
-          switch (Type(input)) {
-            case 0:
-              return input;
-            case 1:
-              return input;
-            case 2:
-              return input;
-            case 3:
-              return input;
-            case 4:
-              return input;
-            case 5:
-              return input;
-          }
-          var hint = PreferredType === 3 ? "string" : PreferredType === 5 ? "number" : "default";
-          var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
-          if (exoticToPrim !== void 0) {
-            var result = exoticToPrim.call(input, hint);
-            if (IsObject(result))
-              throw new TypeError();
-            return result;
-          }
-          return OrdinaryToPrimitive(input, hint === "default" ? "number" : hint);
-        }
-        function OrdinaryToPrimitive(O3, hint) {
-          if (hint === "string") {
-            var toString_1 = O3.toString;
-            if (IsCallable(toString_1)) {
-              var result = toString_1.call(O3);
-              if (!IsObject(result))
-                return result;
-            }
-            var valueOf = O3.valueOf;
-            if (IsCallable(valueOf)) {
-              var result = valueOf.call(O3);
-              if (!IsObject(result))
-                return result;
-            }
+        }).catch(reject);
+        void value2.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(resolvedValue1, resolvedValue, value3, value4));
           } else {
-            var valueOf = O3.valueOf;
-            if (IsCallable(valueOf)) {
-              var result = valueOf.call(O3);
-              if (!IsObject(result))
-                return result;
+            resolvedValue2 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    if (isPromise(value3)) {
+      if (isPromise(value4)) {
+        return new Promise((resolve4, reject) => {
+          let resolvedValues = 0;
+          let resolvedValue1;
+          let resolvedValue3;
+          let resolvedValue4;
+          void value1.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue, value2, resolvedValue3, resolvedValue4));
+            } else {
+              resolvedValue1 = resolvedValue;
             }
-            var toString_2 = O3.toString;
-            if (IsCallable(toString_2)) {
-              var result = toString_2.call(O3);
-              if (!IsObject(result))
-                return result;
+          }).catch(reject);
+          void value3.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue1, value2, resolvedValue, resolvedValue4));
+            } else {
+              resolvedValue3 = resolvedValue;
+            }
+          }).catch(reject);
+          void value4.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(resolvedValue1, value2, resolvedValue3, resolvedValue));
+            } else {
+              resolvedValue4 = resolvedValue;
+            }
+          }).catch(reject);
+        });
+      }
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue1;
+        let resolvedValue3;
+        void value1.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(resolvedValue, value2, resolvedValue3, value4));
+          } else {
+            resolvedValue1 = resolvedValue;
+          }
+        }).catch(reject);
+        void value3.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(resolvedValue1, value2, resolvedValue, value4));
+          } else {
+            resolvedValue3 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    if (isPromise(value4)) {
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue1;
+        let resolvedValue4;
+        void value1.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(resolvedValue, value2, value3, resolvedValue4));
+          } else {
+            resolvedValue1 = resolvedValue;
+          }
+        }).catch(reject);
+        void value4.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(resolvedValue1, value2, value3, resolvedValue));
+          } else {
+            resolvedValue4 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    return value1.then(async (resolvedValue1) => build(resolvedValue1, value2, value3, value4));
+  }
+  if (isPromise(value2)) {
+    if (isPromise(value3)) {
+      if (isPromise(value4)) {
+        return new Promise((resolve4, reject) => {
+          let resolvedValues = 0;
+          let resolvedValue2;
+          let resolvedValue3;
+          let resolvedValue4;
+          void value2.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(value1, resolvedValue, resolvedValue3, resolvedValue4));
+            } else {
+              resolvedValue2 = resolvedValue;
+            }
+          }).catch(reject);
+          void value3.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(value1, resolvedValue2, resolvedValue, resolvedValue4));
+            } else {
+              resolvedValue3 = resolvedValue;
+            }
+          }).catch(reject);
+          void value4.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS) {
+              resolve4(build(value1, resolvedValue2, resolvedValue3, resolvedValue));
+            } else {
+              resolvedValue4 = resolvedValue;
+            }
+          }).catch(reject);
+        });
+      }
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue2;
+        let resolvedValue3;
+        void value2.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(value1, resolvedValue, resolvedValue3, value4));
+          } else {
+            resolvedValue2 = resolvedValue;
+          }
+        }).catch(reject);
+        void value3.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(value1, resolvedValue2, resolvedValue, value4));
+          } else {
+            resolvedValue3 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    if (isPromise(value4)) {
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue2;
+        let resolvedValue4;
+        void value2.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(value1, resolvedValue, value3, resolvedValue4));
+          } else {
+            resolvedValue2 = resolvedValue;
+          }
+        }).catch(reject);
+        void value4.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(value1, resolvedValue2, value3, resolvedValue));
+          } else {
+            resolvedValue4 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    return value2.then(async (resolvedValue2) => build(value1, resolvedValue2, value3, value4));
+  }
+  if (isPromise(value3)) {
+    if (isPromise(value4)) {
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue3;
+        let resolvedValue4;
+        void value3.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(value1, value2, resolvedValue, resolvedValue4));
+          } else {
+            resolvedValue3 = resolvedValue;
+          }
+        }).catch(reject);
+        void value4.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS) {
+            resolve4(build(value1, value2, resolvedValue3, resolvedValue));
+          } else {
+            resolvedValue4 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    return value3.then(async (resolvedValue3) => build(value1, value2, resolvedValue3, value4));
+  }
+  if (isPromise(value4)) {
+    return value4.then(async (resolvedValue4) => build(value1, value2, value3, resolvedValue4));
+  }
+  return build(value1, value2, value3, value4);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildFourConstructorArgumentResolver.js
+function buildFourConstructorArgumentResolver(node, resolveActivations) {
+  if (node.classMetadata.properties.size === 0) {
+    if (resolveActivations === void 0) {
+      return function resolveNode(params) {
+        const resolvedValue0 = node.constructorParams[0].resolve(params);
+        const resolvedValue1 = node.constructorParams[1].resolve(params);
+        const resolvedValue2 = node.constructorParams[2].resolve(params);
+        const resolvedValue3 = node.constructorParams[3].resolve(params);
+        return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32));
+      };
+    }
+    return function resolveNode(params) {
+      const resolvedValue0 = node.constructorParams[0].resolve(params);
+      const resolvedValue1 = node.constructorParams[1].resolve(params);
+      const resolvedValue2 = node.constructorParams[2].resolve(params);
+      const resolvedValue3 = node.constructorParams[3].resolve(params);
+      return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => resolveActivations(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
+    };
+  }
+  if (resolveActivations === void 0) {
+    const finalizeInstance2 = (params, instance) => {
+      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+      if (isPromise(propertiesAssignmentResult)) {
+        return propertiesAssignmentResult.then(() => instance);
+      }
+      return instance;
+    };
+    return function resolveNode(params) {
+      const resolvedValue0 = node.constructorParams[0].resolve(params);
+      const resolvedValue1 = node.constructorParams[1].resolve(params);
+      const resolvedValue2 = node.constructorParams[2].resolve(params);
+      const resolvedValue3 = node.constructorParams[3].resolve(params);
+      return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
+    };
+  }
+  const finalizeInstance = (params, instance) => {
+    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+    if (isPromise(propertiesAssignmentResult)) {
+      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
+    }
+    return resolveActivations(params, instance);
+  };
+  return function resolveNode(params) {
+    const resolvedValue0 = node.constructorParams[0].resolve(params);
+    const resolvedValue1 = node.constructorParams[1].resolve(params);
+    const resolvedValue2 = node.constructorParams[2].resolve(params);
+    const resolvedValue3 = node.constructorParams[3].resolve(params);
+    return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => finalizeInstance(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneConstructorArgumentResolver.js
+function buildOneConstructorArgumentResolver(node, resolveActivations) {
+  if (node.classMetadata.properties.size === 0) {
+    if (resolveActivations === void 0) {
+      return function resolveNode(params) {
+        const resolvedValue = node.constructorParams[0].resolve(params);
+        if (isPromise(resolvedValue)) {
+          return resolvedValue.then((resolvedValue2) => new node.binding.implementationType(resolvedValue2));
+        }
+        return new node.binding.implementationType(resolvedValue);
+      };
+    }
+    return function resolveNode(params) {
+      const resolvedValue = node.constructorParams[0].resolve(params);
+      if (isPromise(resolvedValue)) {
+        return resolvedValue.then((resolvedValue2) => resolveActivations(params, new node.binding.implementationType(resolvedValue2)));
+      }
+      return resolveActivations(params, new node.binding.implementationType(resolvedValue));
+    };
+  }
+  if (resolveActivations === void 0) {
+    const finalizeInstance2 = (params, instance) => {
+      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+      if (isPromise(propertiesAssignmentResult)) {
+        return propertiesAssignmentResult.then(() => instance);
+      }
+      return instance;
+    };
+    return function resolveNode(params) {
+      const resolvedValue = node.constructorParams[0].resolve(params);
+      if (isPromise(resolvedValue)) {
+        return resolvedValue.then((resolvedValue2) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue2)));
+      }
+      return finalizeInstance2(params, new node.binding.implementationType(resolvedValue));
+    };
+  }
+  const finalizeInstance = (params, instance) => {
+    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+    if (isPromise(propertiesAssignmentResult)) {
+      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
+    }
+    return resolveActivations(params, instance);
+  };
+  return function resolveNode(params) {
+    const resolvedValue = node.constructorParams[0].resolve(params);
+    if (isPromise(resolvedValue)) {
+      return resolvedValue.then((resolvedValue2) => finalizeInstance(params, new node.binding.implementationType(resolvedValue2)));
+    }
+    return finalizeInstance(params, new node.binding.implementationType(resolvedValue));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveThree.js
+var TWO_PARAMS2 = 2;
+var THREE_PARAMS2 = 3;
+function resolveThree(value1, value2, value3, build) {
+  if (isPromise(value1)) {
+    if (isPromise(value2)) {
+      if (isPromise(value3)) {
+        return new Promise((resolve4, reject) => {
+          let resolvedValues = 0;
+          let resolvedValue1;
+          let resolvedValue2;
+          let resolvedValue3;
+          void value1.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS2) {
+              resolve4(build(resolvedValue, resolvedValue2, resolvedValue3));
+            } else {
+              resolvedValue1 = resolvedValue;
+            }
+          }).catch(reject);
+          void value2.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS2) {
+              resolve4(build(resolvedValue1, resolvedValue, resolvedValue3));
+            } else {
+              resolvedValue2 = resolvedValue;
+            }
+          }).catch(reject);
+          void value3.then((resolvedValue) => {
+            if (++resolvedValues === THREE_PARAMS2) {
+              resolve4(build(resolvedValue1, resolvedValue2, resolvedValue));
+            } else {
+              resolvedValue3 = resolvedValue;
+            }
+          }).catch(reject);
+        });
+      }
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue1;
+        let resolvedValue2;
+        void value1.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS2) {
+            resolve4(build(resolvedValue, resolvedValue2, value3));
+          } else {
+            resolvedValue1 = resolvedValue;
+          }
+        }).catch(reject);
+        void value2.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS2) {
+            resolve4(build(resolvedValue1, resolvedValue, value3));
+          } else {
+            resolvedValue2 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    if (isPromise(value3)) {
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue1;
+        let resolvedValue3;
+        void value1.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS2) {
+            resolve4(build(resolvedValue, value2, resolvedValue3));
+          } else {
+            resolvedValue1 = resolvedValue;
+          }
+        }).catch(reject);
+        void value3.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS2) {
+            resolve4(build(resolvedValue1, value2, resolvedValue));
+          } else {
+            resolvedValue3 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    return value1.then(async (resolvedValue1) => build(resolvedValue1, value2, value3));
+  }
+  if (isPromise(value2)) {
+    if (isPromise(value3)) {
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue2;
+        let resolvedValue3;
+        void value2.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS2) {
+            resolve4(build(value1, resolvedValue, resolvedValue3));
+          } else {
+            resolvedValue2 = resolvedValue;
+          }
+        }).catch(reject);
+        void value3.then((resolvedValue) => {
+          if (++resolvedValues === TWO_PARAMS2) {
+            resolve4(build(value1, resolvedValue2, resolvedValue));
+          } else {
+            resolvedValue3 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    return value2.then(async (resolvedValue2) => build(value1, resolvedValue2, value3));
+  }
+  if (isPromise(value3)) {
+    return value3.then(async (resolvedValue3) => build(value1, value2, resolvedValue3));
+  }
+  return build(value1, value2, value3);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildThreeConstructorArgumentResolver.js
+function buildThreeConstructorArgumentResolver(node, resolveActivations) {
+  if (node.classMetadata.properties.size === 0) {
+    if (resolveActivations === void 0) {
+      return function resolveNode(params) {
+        const resolvedValue0 = node.constructorParams[0].resolve(params);
+        const resolvedValue1 = node.constructorParams[1].resolve(params);
+        const resolvedValue2 = node.constructorParams[2].resolve(params);
+        return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22));
+      };
+    }
+    return function resolveNode(params) {
+      const resolvedValue0 = node.constructorParams[0].resolve(params);
+      const resolvedValue1 = node.constructorParams[1].resolve(params);
+      const resolvedValue2 = node.constructorParams[2].resolve(params);
+      return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => resolveActivations(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22)));
+    };
+  }
+  if (resolveActivations === void 0) {
+    const finalizeInstance2 = (params, instance) => {
+      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+      if (isPromise(propertiesAssignmentResult)) {
+        return propertiesAssignmentResult.then(() => instance);
+      }
+      return instance;
+    };
+    return function resolveNode(params) {
+      const resolvedValue0 = node.constructorParams[0].resolve(params);
+      const resolvedValue1 = node.constructorParams[1].resolve(params);
+      const resolvedValue2 = node.constructorParams[2].resolve(params);
+      return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22)));
+    };
+  }
+  const finalizeInstance = (params, instance) => {
+    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+    if (isPromise(propertiesAssignmentResult)) {
+      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
+    }
+    return resolveActivations(params, instance);
+  };
+  return function resolveNode(params) {
+    const resolvedValue0 = node.constructorParams[0].resolve(params);
+    const resolvedValue1 = node.constructorParams[1].resolve(params);
+    const resolvedValue2 = node.constructorParams[2].resolve(params);
+    return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => finalizeInstance(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22)));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveTwo.js
+var PARAMS = 2;
+function resolveTwo(value1, value2, build) {
+  if (isPromise(value1)) {
+    if (isPromise(value2)) {
+      return new Promise((resolve4, reject) => {
+        let resolvedValues = 0;
+        let resolvedValue1;
+        let resolvedValue2;
+        void value1.then((resolvedValue) => {
+          if (++resolvedValues === PARAMS) {
+            resolve4(build(resolvedValue, resolvedValue2));
+          } else {
+            resolvedValue1 = resolvedValue;
+          }
+        }).catch(reject);
+        void value2.then((resolvedValue) => {
+          if (++resolvedValues === PARAMS) {
+            resolve4(build(resolvedValue1, resolvedValue));
+          } else {
+            resolvedValue2 = resolvedValue;
+          }
+        }).catch(reject);
+      });
+    }
+    return value1.then(async (resolvedValue1) => build(resolvedValue1, value2));
+  }
+  if (isPromise(value2)) {
+    return value2.then(async (resolvedValue2) => build(value1, resolvedValue2));
+  }
+  return build(value1, value2);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildTwoConstructorArgumentResolver.js
+function buildTwoConstructorArgumentResolver(node, resolveActivations) {
+  if (node.classMetadata.properties.size === 0) {
+    if (resolveActivations === void 0) {
+      return function resolveNode(params) {
+        const resolvedValue0 = node.constructorParams[0].resolve(params);
+        const resolvedValue1 = node.constructorParams[1].resolve(params);
+        return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => new node.binding.implementationType(resolvedValue02, resolvedValue12));
+      };
+    }
+    return function resolveNode(params) {
+      const resolvedValue0 = node.constructorParams[0].resolve(params);
+      const resolvedValue1 = node.constructorParams[1].resolve(params);
+      return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => resolveActivations(params, new node.binding.implementationType(resolvedValue02, resolvedValue12)));
+    };
+  }
+  if (resolveActivations === void 0) {
+    const finalizeInstance2 = (params, instance) => {
+      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+      if (isPromise(propertiesAssignmentResult)) {
+        return propertiesAssignmentResult.then(() => instance);
+      }
+      return instance;
+    };
+    return function resolveNode(params) {
+      const resolvedValue0 = node.constructorParams[0].resolve(params);
+      const resolvedValue1 = node.constructorParams[1].resolve(params);
+      return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue02, resolvedValue12)));
+    };
+  }
+  const finalizeInstance = (params, instance) => {
+    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+    if (isPromise(propertiesAssignmentResult)) {
+      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
+    }
+    return resolveActivations(params, instance);
+  };
+  return function resolveNode(params) {
+    const resolvedValue0 = node.constructorParams[0].resolve(params);
+    const resolvedValue1 = node.constructorParams[1].resolve(params);
+    return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => finalizeInstance(params, new node.binding.implementationType(resolvedValue02, resolvedValue12)));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroConstructorArgumentsResolver.js
+function buildZeroConstructorArgumentsResolver(node, resolveActivations) {
+  if (node.classMetadata.properties.size === 0) {
+    if (resolveActivations === void 0) {
+      return function resolveNode(_params) {
+        return new node.binding.implementationType();
+      };
+    }
+    return function resolveNode(params) {
+      return resolveActivations(params, new node.binding.implementationType());
+    };
+  }
+  if (resolveActivations === void 0) {
+    return function resolveNode(params) {
+      const instance = new node.binding.implementationType();
+      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+      if (isPromise(propertiesAssignmentResult)) {
+        return propertiesAssignmentResult.then(() => instance);
+      }
+      return instance;
+    };
+  }
+  return function resolveNode(params) {
+    const instance = new node.binding.implementationType();
+    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
+    if (isPromise(propertiesAssignmentResult)) {
+      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
+    }
+    return resolveActivations(params, instance);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveMany.js
+function resolveMany(...args) {
+  const build = args[args.length - 1];
+  const values = args.slice(0, -1);
+  for (const value of values) {
+    if (isPromise(value)) {
+      return Promise.all(values).then(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+        (resolvedValues) => build(...resolvedValues)
+      );
+    }
+  }
+  return build(...values);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsInstanceBindingNodeResolver.js
+var ZERO_CONSTRUCTOR_ARGUMENTS = 0;
+var ONE_CONSTRUCTOR_ARGUMENT = 1;
+var TWO_CONSTRUCTOR_ARGUMENTS = 2;
+var THREE_CONSTRUCTOR_ARGUMENTS = 3;
+var FOUR_CONSTRUCTOR_ARGUMENTS = 4;
+function buildNoActivationsInstanceBindingNodeResolver(node, areServiceActivations) {
+  const serviceIdentifier = node.binding.serviceIdentifier;
+  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
+  let resolveNode;
+  switch (node.classMetadata.constructorArguments.length) {
+    case ZERO_CONSTRUCTOR_ARGUMENTS:
+      resolveNode = buildZeroConstructorArgumentsResolver(node, resolveActivations);
+      break;
+    case ONE_CONSTRUCTOR_ARGUMENT:
+      resolveNode = buildOneConstructorArgumentResolver(node, resolveActivations);
+      break;
+    case TWO_CONSTRUCTOR_ARGUMENTS:
+      resolveNode = buildTwoConstructorArgumentResolver(node, resolveActivations);
+      break;
+    case THREE_CONSTRUCTOR_ARGUMENTS:
+      resolveNode = buildThreeConstructorArgumentResolver(node, resolveActivations);
+      break;
+    case FOUR_CONSTRUCTOR_ARGUMENTS:
+      resolveNode = buildFourConstructorArgumentResolver(node, resolveActivations);
+      break;
+    default:
+      resolveNode = buildConstructorArgumentsResolver(node, resolveMany, resolveActivations);
+  }
+  return resolveScopedWithNoActivations(node.binding, resolveNode);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/getGeneratedResolverId.js
+var nextGeneratedResolverId = 0;
+function getGeneratedResolverId() {
+  return nextGeneratedResolverId++;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildConstructorArgumentsResolverJit.js
+function buildConstructorArgumentsResolverJit(node, implementationType, resolveAsyncValues, resolveActivations) {
+  const id = getGeneratedResolverId().toString();
+  const constructorArgumentsCount = node.classMetadata.constructorArguments.length;
+  const constructorArgumentIndexes = Array.from({ length: constructorArgumentsCount }, (_2, index) => index);
+  const constructorValuesConcatenation = constructorArgumentIndexes.map((index) => `value$${index.toString()}`).join(", ");
+  let constructorValuesDeclarations = "";
+  for (const index of constructorArgumentIndexes) {
+    constructorValuesDeclarations += `const value$${index.toString()} = node$${id}.constructorParams[${index.toString()}].resolve(params$${id});
+`;
+  }
+  const propertiesArgumentsCount = node.classMetadata.properties.size;
+  const propertiesArgumentIndexes = Array.from({ length: propertiesArgumentsCount }, (_2, index) => index);
+  const propertiesValuesConcatenation = propertiesArgumentIndexes.map((index) => `property$${index.toString()}`).join(", ");
+  let propertyValuesDeclarations = `let propertyIterator = node$${id}.propertyParams.entries();
+`;
+  for (const index of propertiesArgumentIndexes) {
+    propertyValuesDeclarations += `const propertyNode$${index.toString()} = propertyIterator.next().value;
+  const propertyKey$${index.toString()} = propertyNode$${index.toString()}[0];
+  const propertyBound$${index.toString()} = propertyNode$${index.toString()}[1].bindings !== undefined;
+  const property$${index.toString()} = propertyBound$${index.toString()} ? propertyNode$${index.toString()}[1].resolve(params$${id}) : undefined;
+`;
+  }
+  const propertyAssignments = propertiesArgumentIndexes.map((index) => `if (propertyBound$${index.toString()}) { instance[propertyKey$${index.toString()}] = property$${index.toString()}; }`).join("      \n");
+  const resolveAsyncValuesArguments = [
+    constructorValuesConcatenation,
+    propertiesValuesConcatenation
+  ].filter((value) => value.length > 0).join(", ");
+  const resolveAsyncValuesBuildArguments = resolveAsyncValuesArguments;
+  if (resolveActivations === void 0) {
+    const buildResolveNodeBody2 = propertiesArgumentsCount === 0 ? `return function resolveNode$${id}(params$${id}) {
+  ${constructorValuesDeclarations}
+
+  return resolveAsyncValues$${id}(
+    ${constructorValuesConcatenation},
+    function (${constructorValuesConcatenation}) {
+      return new ctor$${id}(${constructorValuesConcatenation});
+    },
+  );
+}` : `return function resolveNode$${id}(params$${id}) {
+  ${constructorValuesDeclarations}
+
+  ${propertyValuesDeclarations}
+
+  return resolveAsyncValues$${id}(
+    ${resolveAsyncValuesArguments},
+    function (${resolveAsyncValuesBuildArguments}) {
+      const instance = new ctor$${id}(${constructorValuesConcatenation});
+
+      ${propertyAssignments}
+
+      return instance;
+    },
+  );
+}`;
+    const buildResolveNode2 = new Function(`node$${id}`, `ctor$${id}`, `resolveAsyncValues$${id}`, buildResolveNodeBody2);
+    return buildResolveNode2(node, implementationType, resolveAsyncValues);
+  }
+  const buildResolveNodeBody = propertiesArgumentsCount === 0 ? `return function resolveNode$${id}(params$${id}) {
+  ${constructorValuesDeclarations}
+
+  return resolveAsyncValues$${id}(
+    ${constructorValuesConcatenation},
+    function (${constructorValuesConcatenation}) {
+      return activate$${id}(
+        params$${id},
+        new ctor$${id}(${constructorValuesConcatenation}),
+      );
+    },
+  );
+}` : `return function resolveNode$${id}(params$${id}) {
+  ${constructorValuesDeclarations}
+
+  ${propertyValuesDeclarations}
+
+  return resolveAsyncValues$${id}(
+    ${resolveAsyncValuesArguments},
+    function (${resolveAsyncValuesBuildArguments}) {
+      const instance = new ctor$${id}(${constructorValuesConcatenation});
+
+      ${propertyAssignments}
+
+      return activate$${id}(
+        params$${id},
+        instance,
+      );
+    },
+  );
+}`;
+  const buildResolveNode = new Function(`node$${id}`, `ctor$${id}`, `activate$${id}`, `resolveAsyncValues$${id}`, buildResolveNodeBody);
+  return buildResolveNode(node, implementationType, resolveActivations, resolveAsyncValues);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneConstructorArgumentResolverJit.js
+function buildOneConstructorArgumentResolverJit(node, implementationType, resolveActivations) {
+  const id = getGeneratedResolverId().toString();
+  if (resolveActivations === void 0) {
+    const buildResolveNode2 = new Function(`node$${id}`, `ctor$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
+        const resolvedValue$${id} = node$${id}.constructorParams[0].resolve(params$${id});
+
+        if (isPromise$${id}(resolvedValue$${id})) {
+          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
+            return new ctor$${id}(resolvedValue$${id});
+          });
+        }
+
+        return new ctor$${id}(resolvedValue$${id});
+      };`);
+    return buildResolveNode2(node, implementationType, isPromise);
+  }
+  const buildResolveNode = new Function(`node$${id}`, `ctor$${id}`, `activate$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
+        const resolvedValue$${id} = node$${id}.constructorParams[0].resolve(params$${id});
+
+        if (isPromise$${id}(resolvedValue$${id})) {
+          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
+            return activate$${id}(params$${id}, new ctor$${id}(resolvedValue$${id}));
+          });
+        }
+
+        return activate$${id}(params$${id}, new ctor$${id}(resolvedValue$${id}));
+      };`);
+  return buildResolveNode(node, implementationType, resolveActivations, isPromise);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOnePropertyArgumentResolverJit.js
+function buildOnePropertyArgumentResolverJit(node, implementationType, resolveActivations) {
+  const id = getGeneratedResolverId().toString();
+  if (resolveActivations === void 0) {
+    const buildResolveNode2 = new Function(`node$${id}`, `ctor$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
+        const propertyEntry$${id} = node$${id}.propertyParams.entries().next().value;
+        const propertyKey$${id} = propertyEntry$${id}[0];
+        const instance$${id} = new ctor$${id}();
+
+        if (propertyEntry$${id}[1].bindings === undefined) {
+          return instance$${id};
+        }
+
+        const resolvedValue$${id} = propertyEntry$${id}[1].resolve(params$${id});
+
+        if (isPromise$${id}(resolvedValue$${id})) {
+          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
+            instance$${id}[propertyKey$${id}] = resolvedValue$${id};
+            return instance$${id};
+          });
+        }
+
+        instance$${id}[propertyKey$${id}] = resolvedValue$${id};
+        return instance$${id};
+      };`);
+    return buildResolveNode2(node, implementationType, isPromise);
+  }
+  const buildResolveNode = new Function(`node$${id}`, `ctor$${id}`, `activate$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
+        const propertyEntry$${id} = node$${id}.propertyParams.entries().next().value;
+        const propertyKey$${id} = propertyEntry$${id}[0];
+        const instance$${id} = new ctor$${id}();
+
+        if (propertyEntry$${id}[1].bindings === undefined) {
+          return activate$${id}(params$${id}, instance$${id});
+        }
+
+        const resolvedValue$${id} = propertyEntry$${id}[1].resolve(params$${id});
+
+        if (isPromise$${id}(resolvedValue$${id})) {
+          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
+            instance$${id}[propertyKey$${id}] = resolvedValue$${id};
+            return activate$${id}(params$${id}, instance$${id});
+          });
+        }
+
+        instance$${id}[propertyKey$${id}] = resolvedValue$${id};
+        return activate$${id}(params$${id}, instance$${id});
+      };`);
+  return buildResolveNode(node, implementationType, resolveActivations, isPromise);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildResolveMany.js
+function buildResolveMany(node) {
+  const id = getGeneratedResolverId().toString();
+  const argumentsCount = node.classMetadata.constructorArguments.length + node.classMetadata.properties.size;
+  const argumentIndexes = Array.from({ length: argumentsCount }, (_2, index) => index);
+  const valueConcatenation = argumentIndexes.map((index) => `value$${index.toString()}`).join(", ");
+  const resolvedValueConcatenation = argumentIndexes.map((index) => `resolvedValue$${index.toString()}`).join(", ");
+  const parametersConcatenation = [valueConcatenation, `build$${id}`].filter((value) => value.length > 0).join(", ");
+  const isPromiseChecks = argumentIndexes.map((index) => `isPromise$${id}(value$${index.toString()})`).join(" || ") || "false";
+  const buildResolveManyFunction = new Function(`isPromise$${id}`, `return function resolveMany$${id}(${parametersConcatenation}) {
+  if (${isPromiseChecks}) {
+    return Promise.all([${valueConcatenation}]).then(
+      function ([${resolvedValueConcatenation}]) {
+        return build$${id}(${resolvedValueConcatenation});
+      },
+    );
+  }
+
+  return build$${id}(${valueConcatenation});
+};`);
+  return buildResolveManyFunction(isPromise);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroConstructorArgumentsResolverJit.js
+function buildZeroConstructorArgumentsResolverJit(implementationType, resolveActivations) {
+  const id = getGeneratedResolverId().toString();
+  if (resolveActivations === void 0) {
+    const buildResolveNode2 = (
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      new Function(`ctor$${id}`, `return function resolveNode$${id}(params$${id}) {
+        return new ctor$${id}();
+      };`)
+    );
+    return buildResolveNode2(implementationType);
+  }
+  const buildResolveNode = (
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    new Function(`ctor$${id}`, `activate$${id}`, `return function resolveNode$${id}(params$${id}) {
+        return activate$${id}(params$${id}, new ctor$${id}());
+      };`)
+  );
+  return buildResolveNode(implementationType, resolveActivations);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsInstanceBindingNodeResolverJit.js
+var ZERO_CONSTRUCTOR_ARGUMENTS2 = 0;
+var ONE_CONSTRUCTOR_ARGUMENT2 = 1;
+var TWO_CONSTRUCTOR_ARGUMENTS2 = 2;
+var THREE_CONSTRUCTOR_ARGUMENTS2 = 3;
+var FOUR_CONSTRUCTOR_ARGUMENTS2 = 4;
+function buildNoActivationsInstanceBindingNodeResolverJit(node, areServiceActivations) {
+  const implementationType = node.binding.implementationType;
+  const serviceIdentifier = node.binding.serviceIdentifier;
+  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
+  let resolveNode;
+  switch (node.classMetadata.constructorArguments.length + node.classMetadata.properties.size) {
+    case ZERO_CONSTRUCTOR_ARGUMENTS2:
+      resolveNode = buildZeroConstructorArgumentsResolverJit(implementationType, resolveActivations);
+      break;
+    case ONE_CONSTRUCTOR_ARGUMENT2:
+      resolveNode = node.classMetadata.properties.size === 0 ? buildOneConstructorArgumentResolverJit(node, implementationType, resolveActivations) : buildOnePropertyArgumentResolverJit(node, implementationType, resolveActivations);
+      break;
+    case TWO_CONSTRUCTOR_ARGUMENTS2:
+      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, resolveTwo, resolveActivations);
+      break;
+    case THREE_CONSTRUCTOR_ARGUMENTS2:
+      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, resolveThree, resolveActivations);
+      break;
+    case FOUR_CONSTRUCTOR_ARGUMENTS2:
+      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, resolveFour, resolveActivations);
+      break;
+    default:
+      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, buildResolveMany(node), resolveActivations);
+  }
+  return resolveScopedWithNoActivations(node.binding, resolveNode);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/InstanceBindingNodeImplementation.js
+var resolveInstanceBindingNode2 = resolveInstanceBindingNode(resolveInstanceBindingConstructorParams, resolveInstanceBindingNodeAsyncFromConstructorParams, resolveInstanceBindingNodeFromConstructorParams);
+var resolveScopedInstanceBindingNode = (node) => resolveScoped(node, resolveInstanceBindingNode2);
+var InstanceBindingNodeImplementation = class {
+  binding;
+  classMetadata;
+  [isDynamicallyResolvableBindingNodeSymbol];
+  constructorParams;
+  propertyParams;
+  resolve;
+  #jitEnabled;
+  #onResolverChangedHandlers;
+  constructor(binding, classMetadata, params) {
+    this.binding = binding;
+    this.classMetadata = classMetadata;
+    this[isDynamicallyResolvableBindingNodeSymbol] = true;
+    this.constructorParams = [];
+    this.propertyParams = /* @__PURE__ */ new Map();
+    this.#jitEnabled = params.jitEnabled;
+    const areServiceActivations = params.operations.getActivations(binding.serviceIdentifier) !== void 0;
+    this.#onResolverChangedHandlers = void 0;
+    this.resolve = this.#buildInstanceBindingNodeResolver(areServiceActivations);
+    if (!areServiceActivations && this.#areNoBindingActivationsNorPostConstructsDefined()) {
+      params.operations.subscribeActivationAddedOnce(binding.serviceIdentifier, this);
+    }
+  }
+  onActivationAdded() {
+    this.resolve = this.#buildInstanceBindingNodeResolver(true);
+    if (this.#onResolverChangedHandlers !== void 0) {
+      for (const handler2 of this.#onResolverChangedHandlers) {
+        handler2(this.resolve);
+      }
+    }
+  }
+  addOnResolverChangedHandler(callback) {
+    if (this.#onResolverChangedHandlers === void 0) {
+      this.#onResolverChangedHandlers = [];
+    }
+    this.#onResolverChangedHandlers.push(callback);
+  }
+  #buildInstanceBindingNodeResolver(areServiceActivations) {
+    if (this.#areNoBindingActivationsNorPostConstructsDefined()) {
+      if (this.#jitEnabled && this.binding.scope !== bindingScopeValues.Singleton) {
+        return buildNoActivationsInstanceBindingNodeResolverJit(this, areServiceActivations);
+      } else {
+        return buildNoActivationsInstanceBindingNodeResolver(this, areServiceActivations);
+      }
+    }
+    return resolveScopedInstanceBindingNode(this);
+  }
+  #areNoBindingActivationsNorPostConstructsDefined() {
+    return this.classMetadata.lifecycle.postConstructMethodNames.size === 0 && this.binding.onActivation === void 0;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/PlanServiceRedirectionBindingNodeImplementation.js
+var PlanServiceRedirectionBindingNodeImplementation = class {
+  binding;
+  #redirection;
+  #resolve;
+  constructor(binding) {
+    this.binding = binding;
+    this.#redirection = void 0;
+    this.#resolve = void 0;
+  }
+  get redirection() {
+    return this.#redirection;
+  }
+  set redirection(value) {
+    this.#redirection = value;
+    if (value.bindings === void 0) {
+      this.#resolve = () => void 0;
+    } else {
+      if (Array.isArray(value.bindings)) {
+        this.#resolve = () => {
+          throw new InversifyCoreError(InversifyCoreErrorKind.planning, "Unexpected resolver call for multiple bindings redirection");
+        };
+      } else {
+        this.#resolve = (params) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          value.bindings.resolve(params)
+        );
+      }
+    }
+  }
+  resolve(params) {
+    return this.#resolve(params);
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveResolvedValueBindingParams.js
+function resolveResolvedValueBindingParams(params, node) {
+  const paramsResolvedValues = [];
+  let promiseValueFound = false;
+  for (const param of node.params) {
+    const resolvedValue = param.resolve(params);
+    if (!promiseValueFound && isPromise(resolvedValue)) {
+      promiseValueFound = true;
+    }
+    paramsResolvedValues.push(resolvedValue);
+  }
+  return promiseValueFound ? Promise.all(paramsResolvedValues) : paramsResolvedValues;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveResolvedValueBindingNode.js
+function resolveResolvedValueBindingNode(params, node) {
+  const paramValues = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolveResolvedValueBindingParams(params, node)
+  );
+  if (isPromise(paramValues)) {
+    return paramValues.then((resolvedParamValues) => node.binding.factory(...resolvedParamValues));
+  }
+  return node.binding.factory(...paramValues);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildFourResolvedValueArgumentResolver.js
+function buildFourResolvedValueArgumentResolver(node, resolveActivations) {
+  if (resolveActivations === void 0) {
+    return function resolveNode(params) {
+      const resolvedValue0 = node.params[0].resolve(params);
+      const resolvedValue1 = node.params[1].resolve(params);
+      const resolvedValue2 = node.params[2].resolve(params);
+      const resolvedValue3 = node.params[3].resolve(params);
+      return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32));
+    };
+  }
+  return function resolveNode(params) {
+    const resolvedValue0 = node.params[0].resolve(params);
+    const resolvedValue1 = node.params[1].resolve(params);
+    const resolvedValue2 = node.params[2].resolve(params);
+    const resolvedValue3 = node.params[3].resolve(params);
+    return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => resolveActivations(params, node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneResolvedValueArgumentResolver.js
+function buildOneResolvedValueArgumentResolver(node, resolveActivations) {
+  if (resolveActivations === void 0) {
+    return function resolveNode(params) {
+      const resolvedValue = node.params[0].resolve(params);
+      if (isPromise(resolvedValue)) {
+        return resolvedValue.then((resolvedValue2) => node.binding.factory(resolvedValue2));
+      }
+      return node.binding.factory(resolvedValue);
+    };
+  }
+  return function resolveNode(params) {
+    const resolvedValue = node.params[0].resolve(params);
+    if (isPromise(resolvedValue)) {
+      return resolvedValue.then((resolvedValue2) => resolveActivations(params, node.binding.factory(resolvedValue2)));
+    }
+    return resolveActivations(params, node.binding.factory(resolvedValue));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildThreeResolvedValueArgumentResolver.js
+function buildThreeResolvedValueArgumentResolver(node, resolveActivations) {
+  if (resolveActivations === void 0) {
+    return function resolveNode(params) {
+      const resolvedValue0 = node.params[0].resolve(params);
+      const resolvedValue1 = node.params[1].resolve(params);
+      const resolvedValue2 = node.params[2].resolve(params);
+      return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22));
+    };
+  }
+  return function resolveNode(params) {
+    const resolvedValue0 = node.params[0].resolve(params);
+    const resolvedValue1 = node.params[1].resolve(params);
+    const resolvedValue2 = node.params[2].resolve(params);
+    return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => resolveActivations(params, node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22)));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildTwoResolvedValueArgumentResolver.js
+function buildTwoResolvedValueArgumentResolver(node, resolveActivations) {
+  if (resolveActivations === void 0) {
+    return function resolveNode(params) {
+      const resolvedValue0 = node.params[0].resolve(params);
+      const resolvedValue1 = node.params[1].resolve(params);
+      return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => node.binding.factory(resolvedValue02, resolvedValue12));
+    };
+  }
+  return function resolveNode(params) {
+    const resolvedValue0 = node.params[0].resolve(params);
+    const resolvedValue1 = node.params[1].resolve(params);
+    return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => resolveActivations(params, node.binding.factory(resolvedValue02, resolvedValue12)));
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroResolvedValueArgumentsResolver.js
+function buildZeroResolvedValueArgumentsResolver(node, resolveActivations) {
+  if (resolveActivations === void 0) {
+    return function resolveNode(_params) {
+      return node.binding.factory();
+    };
+  }
+  return function resolveNode(params) {
+    return resolveActivations(params, node.binding.factory());
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsResolvedValueBindingNodeResolver.js
+var ZERO_PARAMS = 0;
+var ONE_PARAM = 1;
+var TWO_PARAMS3 = 2;
+var THREE_PARAMS3 = 3;
+var FOUR_PARAMS2 = 4;
+function buildNoActivationsResolvedValueBindingNodeResolver(node, areServiceActivations) {
+  const serviceIdentifier = node.binding.serviceIdentifier;
+  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
+  let resolveNode;
+  switch (node.binding.metadata.arguments.length) {
+    case ZERO_PARAMS:
+      resolveNode = buildZeroResolvedValueArgumentsResolver(node, resolveActivations);
+      break;
+    case ONE_PARAM:
+      resolveNode = buildOneResolvedValueArgumentResolver(node, resolveActivations);
+      break;
+    case TWO_PARAMS3:
+      resolveNode = buildTwoResolvedValueArgumentResolver(node, resolveActivations);
+      break;
+    case THREE_PARAMS3:
+      resolveNode = buildThreeResolvedValueArgumentResolver(node, resolveActivations);
+      break;
+    case FOUR_PARAMS2:
+      resolveNode = buildFourResolvedValueArgumentResolver(node, resolveActivations);
+      break;
+    default:
+      resolveNode = resolveActivations === void 0 ? (params) => resolveResolvedValueBindingNode(params, node) : (params) => resolveActivations(params, resolveResolvedValueBindingNode(params, node));
+  }
+  return resolveScopedWithNoActivations(node.binding, resolveNode);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneResolvedValueArgumentResolverJit.js
+function buildOneResolvedValueArgumentResolverJit(node, resolveActivations) {
+  const id = getGeneratedResolverId().toString();
+  if (resolveActivations === void 0) {
+    const buildResolveNode2 = new Function(`node$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
+      const resolvedValue$${id} = node$${id}.params[0].resolve(params$${id});
+
+      if (isPromise$${id}(resolvedValue$${id})) {
+        return resolvedValue$${id}.then(function (resolvedValue$${id}) {
+          return node$${id}.binding.factory(resolvedValue$${id});
+        });
+      }
+
+      return node$${id}.binding.factory(resolvedValue$${id});
+    };`);
+    return buildResolveNode2(node, isPromise);
+  }
+  const buildResolveNode = new Function(`node$${id}`, `activate$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
+      const resolvedValue$${id} = node$${id}.params[0].resolve(params$${id});
+
+      if (isPromise$${id}(resolvedValue$${id})) {
+        return resolvedValue$${id}.then(function (resolvedValue$${id}) {
+          return activate$${id}(params$${id}, node$${id}.binding.factory(resolvedValue$${id}));
+        });
+      }
+
+      return activate$${id}(params$${id}, node$${id}.binding.factory(resolvedValue$${id}));
+    };`);
+  return buildResolveNode(node, resolveActivations, isPromise);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildResolvedValueArgumentsResolverJit.js
+function buildResolvedValueArgumentsResolverJit(node, resolveAsyncValues, resolveActivations) {
+  const id = getGeneratedResolverId().toString();
+  const argumentIndexes = Array.from({ length: node.binding.metadata.arguments.length }, (_2, index) => index);
+  const resolvedValueConcatenation = argumentIndexes.map((index) => `value$${index.toString()}`).join(", ");
+  let resolvedValueDeclarations = "";
+  for (const index of argumentIndexes) {
+    resolvedValueDeclarations += `const value$${index.toString()} = node$${id}.params[${index.toString()}].resolve(params$${id});
+`;
+  }
+  if (resolveActivations === void 0) {
+    const buildResolveNode2 = new Function(`node$${id}`, `resolveAsyncValues$${id}`, `return function resolveNode$${id}(params$${id}) {
+  ${resolvedValueDeclarations}
+
+  return resolveAsyncValues$${id}(
+    ${resolvedValueConcatenation},
+    function (${resolvedValueConcatenation}) {
+      return node$${id}.binding.factory(${resolvedValueConcatenation});
+    },
+  );
+}`);
+    return buildResolveNode2(node, resolveAsyncValues);
+  }
+  const buildResolveNode = new Function(`node$${id}`, `activate$${id}`, `resolveAsyncValues$${id}`, `return function resolveNode$${id}(params$${id}) {
+  ${resolvedValueDeclarations}
+
+  return resolveAsyncValues$${id}(
+    ${resolvedValueConcatenation},
+    function (${resolvedValueConcatenation}) {
+      return activate$${id}(
+        params$${id},
+        node$${id}.binding.factory(${resolvedValueConcatenation}),
+      );
+    },
+  );
+}`);
+  return buildResolveNode(node, resolveActivations, resolveAsyncValues);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroResolvedValueArgumentsResolverJit.js
+function buildZeroResolvedValueArgumentsResolverJit(node, resolveActivations) {
+  const id = getGeneratedResolverId().toString();
+  if (resolveActivations === void 0) {
+    const buildResolveNode2 = new Function(`node$${id}`, `return function resolveNode$${id}(params$${id}) {
+      return node$${id}.binding.factory();
+    };`);
+    return buildResolveNode2(node);
+  }
+  const buildResolveNode = new Function(`node$${id}`, `activate$${id}`, `return function resolveNode$${id}(params$${id}) {
+      return activate$${id}(params$${id}, node$${id}.binding.factory());
+    };`);
+  return buildResolveNode(node, resolveActivations);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsResolvedValueBindingNodeResolverJit.js
+var ZERO_PARAMS2 = 0;
+var ONE_PARAM2 = 1;
+var TWO_PARAMS4 = 2;
+var THREE_PARAMS4 = 3;
+var FOUR_PARAMS3 = 4;
+function buildNoActivationsResolvedValueBindingNodeResolverJit(node, areServiceActivations) {
+  const serviceIdentifier = node.binding.serviceIdentifier;
+  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
+  let resolveNode;
+  switch (node.binding.metadata.arguments.length) {
+    case ZERO_PARAMS2:
+      resolveNode = buildZeroResolvedValueArgumentsResolverJit(node, resolveActivations);
+      break;
+    case ONE_PARAM2:
+      resolveNode = buildOneResolvedValueArgumentResolverJit(node, resolveActivations);
+      break;
+    case TWO_PARAMS4:
+      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveTwo, resolveActivations);
+      break;
+    case THREE_PARAMS4:
+      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveThree, resolveActivations);
+      break;
+    case FOUR_PARAMS3:
+      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveFour, resolveActivations);
+      break;
+    default:
+      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveMany, resolveActivations);
+  }
+  return resolveScopedWithNoActivations(node.binding, resolveNode);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/ResolvedValueBindingNodeImplementation.js
+var resolveScopedResolvedValueBindingNode = (node) => resolveScoped(node, resolveResolvedValueBindingNode);
+var ResolvedValueBindingNodeImplementation = class {
+  binding;
+  [isDynamicallyResolvableBindingNodeSymbol];
+  params;
+  resolve;
+  #jitEnabled;
+  #onResolverChangedHandlers;
+  constructor(binding, params) {
+    this.binding = binding;
+    this[isDynamicallyResolvableBindingNodeSymbol] = true;
+    this.params = [];
+    this.#jitEnabled = params.jitEnabled;
+    const areServiceActivations = params.operations.getActivations(binding.serviceIdentifier) !== void 0;
+    this.#onResolverChangedHandlers = void 0;
+    this.resolve = this.#buildResolvedValueBindingNodeResolver(areServiceActivations);
+    if (!areServiceActivations && this.#areNoBindingActivationsDefined()) {
+      params.operations.subscribeActivationAddedOnce(binding.serviceIdentifier, this);
+    }
+  }
+  onActivationAdded() {
+    this.resolve = this.#buildResolvedValueBindingNodeResolver(true);
+    if (this.#onResolverChangedHandlers !== void 0) {
+      for (const handler2 of this.#onResolverChangedHandlers) {
+        handler2(this.resolve);
+      }
+    }
+  }
+  addOnResolverChangedHandler(callback) {
+    if (this.#onResolverChangedHandlers === void 0) {
+      this.#onResolverChangedHandlers = [];
+    }
+    this.#onResolverChangedHandlers.push(callback);
+  }
+  #buildResolvedValueBindingNodeResolver(areServiceActivations) {
+    if (this.#areNoBindingActivationsDefined()) {
+      if (this.#jitEnabled && this.binding.scope !== bindingScopeValues.Singleton) {
+        return buildNoActivationsResolvedValueBindingNodeResolverJit(this, areServiceActivations);
+      } else {
+        return buildNoActivationsResolvedValueBindingNodeResolver(this, areServiceActivations);
+      }
+    }
+    return resolveScopedResolvedValueBindingNode(this);
+  }
+  #areNoBindingActivationsDefined() {
+    return this.binding.onActivation === void 0;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/curryBuildServiceNodeBindings.js
+function curryBuildServiceNodeBindings(subplan3) {
+  const buildInstancePlanBindingNode = curryBuildInstancePlanBindingNode(subplan3);
+  const buildResolvedValuePlanBindingNode = curryBuildResolvedValuePlanBindingNode(subplan3);
+  const buildServiceNodeBindings3 = (params, bindingConstraintsList, serviceBindings, parentNode, buildServiceNodeOptions) => {
+    const serviceIdentifier = isPlanServiceRedirectionBindingNode(parentNode) ? parentNode.binding.targetServiceIdentifier : parentNode.serviceIdentifier;
+    params.servicesBranch.push(serviceIdentifier);
+    const planBindingNodes = [];
+    for (const binding of serviceBindings) {
+      if (binding.type === bindingTypeValues.Factory) {
+        planBindingNodes.push(new FactoryBindingNodeImplementation(binding));
+        continue;
+      }
+      switch (binding.type) {
+        case bindingTypeValues.ConstantValue: {
+          planBindingNodes.push(new ConstantValueBindingNode(binding));
+          break;
+        }
+        case bindingTypeValues.DynamicValue: {
+          planBindingNodes.push(new DynamicValueBindingNode(binding, params));
+          break;
+        }
+        case bindingTypeValues.Instance: {
+          planBindingNodes.push(buildInstancePlanBindingNode(params, binding, bindingConstraintsList));
+          break;
+        }
+        case bindingTypeValues.ResolvedValue: {
+          planBindingNodes.push(buildResolvedValuePlanBindingNode(params, binding, bindingConstraintsList));
+          break;
+        }
+        case bindingTypeValues.ServiceRedirection: {
+          const planBindingNode = buildServiceRedirectionPlanBindingNode(params, bindingConstraintsList, binding, buildServiceNodeOptions);
+          planBindingNodes.push(planBindingNode);
+          break;
+        }
+      }
+    }
+    params.servicesBranch.pop();
+    return planBindingNodes;
+  };
+  const buildServiceRedirectionPlanBindingNode = curryBuildServiceRedirectionPlanBindingNode(subplan3);
+  return buildServiceNodeBindings3;
+}
+function curryBuildInstancePlanBindingNode(subplan3) {
+  return (params, binding, bindingConstraintsList) => {
+    const classMetadata = params.operations.getClassMetadata(binding.implementationType);
+    const childNode = new InstanceBindingNodeImplementation(binding, classMetadata, params);
+    const subplanParams = {
+      autobindOptions: params.autobindOptions,
+      jitEnabled: params.jitEnabled,
+      node: childNode,
+      operations: params.operations,
+      servicesBranch: params.servicesBranch
+    };
+    return subplan3(subplanParams, bindingConstraintsList);
+  };
+}
+function curryBuildResolvedValuePlanBindingNode(subplan3) {
+  return (params, binding, bindingConstraintsList) => {
+    const childNode = new ResolvedValueBindingNodeImplementation(binding, params);
+    const subplanParams = {
+      autobindOptions: params.autobindOptions,
+      jitEnabled: params.jitEnabled,
+      node: childNode,
+      operations: params.operations,
+      servicesBranch: params.servicesBranch
+    };
+    return subplan3(subplanParams, bindingConstraintsList);
+  };
+}
+function curryBuildServiceRedirectionPlanBindingNode(subplan3) {
+  return (params, bindingConstraintsList, binding, buildServiceNodeOptions) => {
+    const childNode = new PlanServiceRedirectionBindingNodeImplementation(binding);
+    const subplanParams = {
+      autobindOptions: params.autobindOptions,
+      buildServiceNodeOptions: {
+        ...buildServiceNodeOptions,
+        serviceIdentifier: binding.targetServiceIdentifier
+      },
+      jitEnabled: params.jitEnabled,
+      node: childNode,
+      operations: params.operations,
+      servicesBranch: params.servicesBranch
+    };
+    return subplan3(subplanParams, bindingConstraintsList);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/buildBuildServiceNodeOptionsFromClassElementMetadata.js
+function buildBuildServiceNodeOptionsFromClassElementMetadata(elementMetadata) {
+  const serviceIdentifier = LazyServiceIdentifier.is(elementMetadata.value) ? elementMetadata.value.unwrap() : elementMetadata.value;
+  if (elementMetadata.kind === ClassElementMetadataKind.multipleInjection) {
+    return {
+      chained: elementMetadata.chained,
+      isMultiple: true,
+      name: elementMetadata.name,
+      optional: elementMetadata.optional,
+      serviceIdentifier,
+      tags: elementMetadata.tags
+    };
+  }
+  return {
+    isMultiple: false,
+    name: elementMetadata.name,
+    optional: elementMetadata.optional,
+    serviceIdentifier,
+    tags: elementMetadata.tags
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/buildBuildServiceNodeOptionsFromResolvedValueElementMetadata.js
+function buildBuildServiceNodeOptionsFromResolvedValueElementMetadata(elementMetadata) {
+  const serviceIdentifier = LazyServiceIdentifier.is(elementMetadata.value) ? elementMetadata.value.unwrap() : elementMetadata.value;
+  if (elementMetadata.kind === ResolvedValueElementMetadataKind.multipleInjection) {
+    return {
+      chained: elementMetadata.chained,
+      isMultiple: true,
+      name: elementMetadata.name,
+      optional: elementMetadata.optional,
+      serviceIdentifier,
+      tags: elementMetadata.tags
+    };
+  }
+  return {
+    isMultiple: false,
+    name: elementMetadata.name,
+    optional: elementMetadata.optional,
+    serviceIdentifier,
+    tags: elementMetadata.tags
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildConstructorNoParamNode.js
+var CONSTRUCTOR_NO_PARAM_NODE = {
+  isNoParam: true,
+  resolve: () => void 0
+};
+function buildConstructorNoParamNode() {
+  return CONSTRUCTOR_NO_PARAM_NODE;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isInstanceBindingNode.js
+function isInstanceBindingNode(node) {
+  return node.binding.type === bindingTypeValues.Instance;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/tryBuildGetPlanOptionsFromBuildServiceNodeOptions.js
+function tryBuildGetPlanOptionsFromBuildServiceNodeOptions(options) {
+  let tag;
+  if (options.tags.size === 0) {
+    tag = void 0;
+  } else if (options.tags.size === 1) {
+    const [key, value] = options.tags.entries().next().value;
+    tag = { key, value };
+  } else {
+    return void 0;
+  }
+  const serviceIdentifier = LazyServiceIdentifier.is(options.serviceIdentifier) ? options.serviceIdentifier.unwrap() : options.serviceIdentifier;
+  if (options.isMultiple) {
+    return {
+      chained: options.chained,
+      isMultiple: true,
+      name: options.name,
+      optional: options.optional,
+      serviceIdentifier,
+      tag
+    };
+  } else {
+    return {
+      isMultiple: false,
+      name: options.name,
+      optional: options.optional,
+      serviceIdentifier,
+      tag
+    };
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/tryBuildGetPlanOptionsFromManagedClassElementMetadata.js
+function tryBuildGetPlanOptionsFromManagedClassElementMetadata(elementMetadata) {
+  let tag;
+  if (elementMetadata.tags.size === 0) {
+    tag = void 0;
+  } else if (elementMetadata.tags.size === 1) {
+    const [key, value] = elementMetadata.tags.entries().next().value;
+    tag = { key, value };
+  } else {
+    return void 0;
+  }
+  const serviceIdentifier = LazyServiceIdentifier.is(elementMetadata.value) ? elementMetadata.value.unwrap() : elementMetadata.value;
+  if (elementMetadata.kind === ClassElementMetadataKind.multipleInjection) {
+    return {
+      chained: elementMetadata.chained,
+      isMultiple: true,
+      name: elementMetadata.name,
+      optional: elementMetadata.optional,
+      serviceIdentifier,
+      tag
+    };
+  } else {
+    return {
+      isMultiple: false,
+      name: elementMetadata.name,
+      optional: elementMetadata.optional,
+      serviceIdentifier,
+      tag
+    };
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/tryBuildGetPlanOptionsFromResolvedValueElementMetadata.js
+function tryBuildGetPlanOptionsFromResolvedValueElementMetadata(resolvedValueElementMetadata) {
+  let tag;
+  if (resolvedValueElementMetadata.tags.size === 0) {
+    tag = void 0;
+  } else if (resolvedValueElementMetadata.tags.size === 1) {
+    const [key, value] = resolvedValueElementMetadata.tags.entries().next().value;
+    tag = { key, value };
+  } else {
+    return void 0;
+  }
+  const serviceIdentifier = LazyServiceIdentifier.is(resolvedValueElementMetadata.value) ? resolvedValueElementMetadata.value.unwrap() : resolvedValueElementMetadata.value;
+  if (resolvedValueElementMetadata.kind === ResolvedValueElementMetadataKind.multipleInjection) {
+    return {
+      chained: resolvedValueElementMetadata.chained,
+      isMultiple: true,
+      name: resolvedValueElementMetadata.name,
+      optional: resolvedValueElementMetadata.optional,
+      serviceIdentifier,
+      tag
+    };
+  } else {
+    return {
+      isMultiple: false,
+      name: resolvedValueElementMetadata.name,
+      optional: resolvedValueElementMetadata.optional,
+      serviceIdentifier,
+      tag
+    };
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/cacheNonRootPlanServiceNode.js
+function cacheNonRootPlanServiceNode(getPlanOptions, operations, planServiceNode, context3) {
+  if (getPlanOptions !== void 0 && (LazyPlanServiceNode.is(planServiceNode) && !planServiceNode.isExpanded() || planServiceNode.isContextFree)) {
+    const planResult = {
+      tree: {
+        root: planServiceNode
+      }
+    };
+    operations.setPlan(getPlanOptions, planResult);
+  } else {
+    operations.setNonCachedServiceNode(planServiceNode, context3);
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/currySubplan.js
+var MAX_PLAN_DEPTH = 500;
+var LazySubPlanServiceNode = class extends LazyPlanServiceNode {
+  #params;
+  #buildLazyPlanServiceNodeFromOptions;
+  #bindingConstraintsList;
+  #options;
+  constructor(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode) {
+    super(serviceNode, options.serviceIdentifier);
+    this.#buildLazyPlanServiceNodeFromOptions = buildLazyPlanServiceNodeFromOptions;
+    this.#params = params;
+    this.#bindingConstraintsList = bindingConstraintsList;
+    this.#options = options;
+  }
+  _buildPlanServiceNode() {
+    return this.#buildLazyPlanServiceNodeFromOptions(this.#params, this.#bindingConstraintsList, this.#options);
+  }
+};
+function currySubplan(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
+  const subplanInstanceBindingNode = currySubplanInstanceBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
+  const subplanRedirectionBindingNode = currySubplanRedirectionBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
+  const subplanResolvedValueBindingNode = currySubplanResolvedValueBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
+  return (params, bindingConstraintsList) => {
+    if (isInstanceBindingNode(params.node)) {
+      return subplanInstanceBindingNode(params, params.node, bindingConstraintsList);
+    } else {
+      if (isPlanServiceRedirectionBindingNode(params.node)) {
+        return subplanRedirectionBindingNode(params, params.node, bindingConstraintsList);
+      } else {
+        return subplanResolvedValueBindingNode(params, params.node, bindingConstraintsList);
+      }
+    }
+  };
+}
+function currySubplanInstanceBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
+  const handlePlanServiceNodeBuildFromClassElementMetadata = curryHandlePlanServiceNodeBuildFromClassElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
+  return (params, node, bindingConstraintsList) => {
+    const classMetadata = node.classMetadata;
+    for (const [index, elementMetadata] of classMetadata.constructorArguments.entries()) {
+      node.constructorParams[index] = handlePlanServiceNodeBuildFromClassElementMetadata(params, bindingConstraintsList, elementMetadata) ?? buildConstructorNoParamNode();
+    }
+    for (const [propertyKey, elementMetadata] of classMetadata.properties) {
+      const planServiceNode = handlePlanServiceNodeBuildFromClassElementMetadata(params, bindingConstraintsList, elementMetadata);
+      if (planServiceNode !== void 0) {
+        node.propertyParams.set(propertyKey, planServiceNode);
+      }
+    }
+    return params.node;
+  };
+}
+function currySubplanRedirectionBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
+  const handlePlanServiceNodeBuildFromRedirectionSubplanParams = curryHandlePlanServiceNodeBuildFromRedirectionSubplanParams(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
+  return (params, node, bindingConstraintsList) => {
+    const redirectionSubplanParams = {
+      autobindOptions: params.autobindOptions,
+      buildServiceNodeOptions: params.buildServiceNodeOptions,
+      jitEnabled: params.jitEnabled,
+      node,
+      operations: params.operations,
+      servicesBranch: params.servicesBranch
+    };
+    node.redirection = handlePlanServiceNodeBuildFromRedirectionSubplanParams(redirectionSubplanParams, bindingConstraintsList);
+    return node;
+  };
+}
+function currySubplanResolvedValueBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
+  const handlePlanServiceNodeBuildFromResolvedValueElementMetadata = curryHandlePlanServiceNodeBuildFromResolvedValueElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
+  return (params, node, bindingConstraintsList) => {
+    const resolvedValueMetadata = node.binding.metadata;
+    for (const [index, elementMetadata] of resolvedValueMetadata.arguments.entries()) {
+      node.params[index] = handlePlanServiceNodeBuildFromResolvedValueElementMetadata(params, bindingConstraintsList, elementMetadata);
+    }
+    return params.node;
+  };
+}
+function curryHandlePlanServiceNodeBuildFromClassElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
+  return (params, bindingConstraintsList, elementMetadata) => {
+    if (elementMetadata.kind === ClassElementMetadataKind.unmanaged) {
+      return void 0;
+    }
+    if (bindingConstraintsList.length > MAX_PLAN_DEPTH) {
+      throw new InversifyCoreError(InversifyCoreErrorKind.planningMaxDepthExceeded, "Maximum plan depth exceeded. This is likely caused by a circular dependency.");
+    }
+    const getPlanOptions = tryBuildGetPlanOptionsFromManagedClassElementMetadata(elementMetadata);
+    if (getPlanOptions !== void 0) {
+      const planResult = params.operations.getPlan(getPlanOptions);
+      if (planResult !== void 0 && planResult.tree.root.isContextFree) {
+        return planResult.tree.root;
+      }
+    }
+    const options = buildBuildServiceNodeOptionsFromClassElementMetadata(elementMetadata);
+    const serviceNode = buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
+    const lazyPlanServiceNode = new LazySubPlanServiceNode(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode);
+    cacheNonRootPlanServiceNode(getPlanOptions, params.operations, lazyPlanServiceNode, {
+      bindingConstraintsList,
+      buildServiceNodeOptions: options
+    });
+    return lazyPlanServiceNode;
+  };
+}
+function curryHandlePlanServiceNodeBuildFromRedirectionSubplanParams(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
+  return (params, bindingConstraintsList) => {
+    const getPlanOptions = tryBuildGetPlanOptionsFromBuildServiceNodeOptions(params.buildServiceNodeOptions);
+    if (getPlanOptions !== void 0) {
+      const planResult = params.operations.getPlan(getPlanOptions);
+      if (planResult !== void 0 && planResult.tree.root.isContextFree) {
+        return planResult.tree.root;
+      }
+    }
+    const options = params.buildServiceNodeOptions;
+    const serviceNode = buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
+    const lazyPlanServiceNode = new LazySubPlanServiceNode(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode);
+    cacheNonRootPlanServiceNode(getPlanOptions, params.operations, lazyPlanServiceNode, {
+      bindingConstraintsList,
+      buildServiceNodeOptions: options
+    });
+    return lazyPlanServiceNode;
+  };
+}
+function curryHandlePlanServiceNodeBuildFromResolvedValueElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
+  return (params, bindingConstraintsList, elementMetadata) => {
+    if (bindingConstraintsList.length > MAX_PLAN_DEPTH) {
+      throw new InversifyCoreError(InversifyCoreErrorKind.planningMaxDepthExceeded, "Maximum plan depth exceeded. This is likely caused by a circular dependency.");
+    }
+    const getPlanOptions = tryBuildGetPlanOptionsFromResolvedValueElementMetadata(elementMetadata);
+    if (getPlanOptions !== void 0) {
+      const planResult = params.operations.getPlan(getPlanOptions);
+      if (planResult !== void 0 && planResult.tree.root.isContextFree) {
+        return planResult.tree.root;
+      }
+    }
+    const options = buildBuildServiceNodeOptionsFromResolvedValueElementMetadata(elementMetadata);
+    const serviceNode = buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
+    const lazyPlanServiceNode = new LazySubPlanServiceNode(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode);
+    cacheNonRootPlanServiceNode(getPlanOptions, params.operations, lazyPlanServiceNode, {
+      bindingConstraintsList,
+      buildServiceNodeOptions: options
+    });
+    return lazyPlanServiceNode;
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/plan.js
+var LazyRootPlanServiceNode = class extends LazyPlanServiceNode {
+  #params;
+  constructor(params, serviceNode) {
+    super(serviceNode, serviceNode.serviceIdentifier);
+    this.#params = params;
+  }
+  _buildPlanServiceNode() {
+    return buildPlanServiceNode(this.#params);
+  }
+};
+var buildPlanServiceNodeFromOptions = curryBuildPlanServiceNodeFromOptions(circularBuildServiceNodeBindings);
+var subplan = currySubplan(buildPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions);
+var buildServiceNodeBindings = curryBuildServiceNodeBindings(subplan);
+function circularBuildServiceNodeBindings(params, bindingConstraintsList, serviceBindings, parentNode, buildServiceNodeOptions) {
+  return buildServiceNodeBindings(params, bindingConstraintsList, serviceBindings, parentNode, buildServiceNodeOptions);
+}
+var buildPlanServiceNode = curryBuildPlanServiceNode(buildServiceNodeBindings);
+function plan(params) {
+  try {
+    const getPlanOptions = buildGetPlanOptionsFromPlanParams(params);
+    const planResultFromCache = params.operations.getPlan(getPlanOptions);
+    if (planResultFromCache !== void 0) {
+      return planResultFromCache;
+    }
+    const serviceNode = buildPlanServiceNode(params);
+    const planResult = {
+      tree: {
+        root: new LazyRootPlanServiceNode(params, serviceNode)
+      }
+    };
+    params.operations.setPlan(getPlanOptions, planResult);
+    return planResult;
+  } catch (error2) {
+    handlePlanError(params, error2);
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isConstructorNoParamNode.js
+function isConstructorNoParamNode(value) {
+  return value.isNoParam === true;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/CacheBindingInvalidationKind.js
+var CacheBindingInvalidationKind;
+(function(CacheBindingInvalidationKind2) {
+  CacheBindingInvalidationKind2["bindingAdded"] = "bindingAdded";
+  CacheBindingInvalidationKind2["bindingRemoved"] = "bindingRemoved";
+})(CacheBindingInvalidationKind || (CacheBindingInvalidationKind = {}));
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/curryLazyBuildPlanServiceNodeFromOptions.js
+function curryLazyBuildPlanServiceNodeFromOptions(buildServiceNodeBindings3) {
+  const buildPlanServiceNodeFromOptions2 = curryBuildPlanServiceNodeFromOptions(buildServiceNodeBindings3);
+  return (params, bindingConstraintsList, options) => {
+    try {
+      return buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
+    } catch (error2) {
+      if (InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planning)) {
+        return void 0;
+      }
+      throw error2;
+    }
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/addServiceNodeBindingIfContextFree.js
+var subplan2 = currySubplan(buildPlanServiceNodeFromOptions, circularLazyBuildPlanServiceNodeFromOptions);
+var buildServiceNodeBindings2 = curryBuildServiceNodeBindings(subplan2);
+var lazyBuildPlanServiceNodeFromOptions = curryLazyBuildPlanServiceNodeFromOptions(buildServiceNodeBindings2);
+function circularLazyBuildPlanServiceNodeFromOptions(params, bindingConstraintsList, options) {
+  return lazyBuildPlanServiceNodeFromOptions(params, bindingConstraintsList, options);
+}
+function addServiceNodeBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildServiceNodeOptions) {
+  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
+    return {
+      isContextFreeBinding: true,
+      shouldInvalidateServiceNode: false
+    };
+  }
+  const bindingConstraints = new BindingConstraintsImplementation(bindingConstraintsList.last);
+  if (!binding.isSatisfiedBy(bindingConstraints) || bindingConstraintsList.last.elem.getAncestorsCalled) {
+    return {
+      isContextFreeBinding: !bindingConstraintsList.last.elem.getAncestorsCalled,
+      shouldInvalidateServiceNode: false
+    };
+  }
+  return addServiceNodeSatisfiedBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildServiceNodeOptions);
+}
+function addServiceNodeSatisfiedBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildServiceNodeOptions) {
+  let serviceNodeBinding;
+  try {
+    [serviceNodeBinding] = buildServiceNodeBindings2(params, bindingConstraintsList, [binding], serviceNode, buildServiceNodeOptions);
+  } catch (error2) {
+    if (isStackOverflowError(error2) || InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planningMaxDepthExceeded)) {
+      return {
+        isContextFreeBinding: false,
+        shouldInvalidateServiceNode: true
+      };
+    }
+    throw error2;
+  }
+  return addServiceNodeBindingNodeIfContextFree(serviceNode, serviceNodeBinding);
+}
+function addServiceNodeBindingNodeIfContextFree(serviceNode, serviceNodeBinding) {
+  if (Array.isArray(serviceNode.bindings)) {
+    serviceNode.bindings.push(serviceNodeBinding);
+  } else {
+    if (serviceNode.bindings === void 0) {
+      serviceNode.bindings = serviceNodeBinding;
+    } else {
+      if (!LazyPlanServiceNode.is(serviceNode)) {
+        throw new InversifyCoreError(InversifyCoreErrorKind.planning, "Unexpected non-lazy plan service node. This is likely a bug in the planning logic. Please, report this issue");
+      }
+      return {
+        isContextFreeBinding: true,
+        shouldInvalidateServiceNode: true
+      };
+    }
+  }
+  return {
+    isContextFreeBinding: true,
+    shouldInvalidateServiceNode: false
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/addRootServiceNodeBindingIfContextFree.js
+function addRootServiceNodeBindingIfContextFree(params, serviceNode, binding) {
+  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
+    return {
+      isContextFreeBinding: true,
+      shouldInvalidateServiceNode: false
+    };
+  }
+  const bindingConstraintsList = buildPlanBindingConstraintsList(params);
+  return addServiceNodeBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildBuildServiceNodeOptionsFromPlanParamsConstraints(params.rootConstraints));
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/removeServiceNodeBindingIfContextFree.js
+function removeServiceNodeBindingIfContextFree(serviceNode, binding, bindingConstraintsList, optionalBindings) {
+  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
+    return {
+      bindingNodeRemoved: void 0,
+      isContextFreeBinding: true
+    };
+  }
+  const bindingConstraints = new BindingConstraintsImplementation(bindingConstraintsList.last);
+  if (!binding.isSatisfiedBy(bindingConstraints) || bindingConstraintsList.last.elem.getAncestorsCalled) {
+    return {
+      bindingNodeRemoved: void 0,
+      isContextFreeBinding: !bindingConstraintsList.last.elem.getAncestorsCalled
+    };
+  }
+  let bindingNodeRemoved;
+  if (Array.isArray(serviceNode.bindings)) {
+    serviceNode.bindings = serviceNode.bindings.filter((bindingNode) => {
+      if (bindingNode.binding === binding) {
+        bindingNodeRemoved = bindingNode;
+        return false;
+      }
+      return true;
+    });
+  } else {
+    if (serviceNode.bindings?.binding === binding) {
+      bindingNodeRemoved = serviceNode.bindings;
+      if (optionalBindings) {
+        serviceNode.bindings = void 0;
+      } else {
+        if (!LazyPlanServiceNode.is(serviceNode)) {
+          throw new InversifyCoreError(InversifyCoreErrorKind.planning, "Unexpected non-lazy plan service node. This is likely a bug in the planning logic. Please, report this issue");
+        }
+        serviceNode.invalidate();
+      }
+    }
+  }
+  return {
+    bindingNodeRemoved,
+    isContextFreeBinding: true
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/removeRootServiceNodeBindingIfContextFree.js
+function removeRootServiceNodeBindingIfContextFree(params, serviceNode, binding) {
+  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
+    return {
+      bindingNodeRemoved: void 0,
+      isContextFreeBinding: true
+    };
+  }
+  const bindingConstraintsList = buildPlanBindingConstraintsList(params);
+  return removeServiceNodeBindingIfContextFree(serviceNode, binding, bindingConstraintsList, params.rootConstraints.isOptional ?? false);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/services/PlanResultCacheService.js
+var NO_OPTIONS_INDEX = 0;
+var CHAINED_MASK = 4;
+var IS_MULTIPLE_MASK = 2;
+var OPTIONAL_MASK = 1;
+var MAP_ARRAY_LENGTH = 8;
+var PlanResultCacheService = class {
+  #jitEnabled;
+  #serviceIdToNonCachedServiceNodeMapMap;
+  #serviceIdToValuePlanMap;
+  #namedServiceIdToValuePlanMap;
+  #namedTaggedServiceIdToValuePlanMap;
+  #taggedServiceIdToValuePlanMap;
+  #subscribers;
+  constructor(jitEnabled) {
+    this.#jitEnabled = jitEnabled;
+    this.#serviceIdToNonCachedServiceNodeMapMap = /* @__PURE__ */ new Map();
+    this.#serviceIdToValuePlanMap = this.#buildInitializedMapArray();
+    this.#namedServiceIdToValuePlanMap = this.#buildInitializedMapArray();
+    this.#namedTaggedServiceIdToValuePlanMap = this.#buildInitializedMapArray();
+    this.#taggedServiceIdToValuePlanMap = this.#buildInitializedMapArray();
+    this.#subscribers = new WeakList();
+  }
+  clearCache() {
+    for (const map of this.#getMaps()) {
+      map.clear();
+    }
+    for (const subscriber of this.#subscribers) {
+      subscriber.clearCache();
+    }
+  }
+  getByServiceIdentifier(serviceIdentifier) {
+    return this.#serviceIdToValuePlanMap[NO_OPTIONS_INDEX].get(serviceIdentifier);
+  }
+  get(options) {
+    if (options.name === void 0) {
+      if (options.tag === void 0) {
+        return this.#getMapFromMapArray(this.#serviceIdToValuePlanMap, options).get(options.serviceIdentifier);
+      } else {
+        return this.#getMapFromMapArray(this.#taggedServiceIdToValuePlanMap, options).get(options.serviceIdentifier)?.get(options.tag.key)?.get(options.tag.value);
+      }
+    } else {
+      if (options.tag === void 0) {
+        return this.#getMapFromMapArray(this.#namedServiceIdToValuePlanMap, options).get(options.serviceIdentifier)?.get(options.name);
+      } else {
+        return this.#getMapFromMapArray(this.#namedTaggedServiceIdToValuePlanMap, options).get(options.serviceIdentifier)?.get(options.name)?.get(options.tag.key)?.get(options.tag.value);
+      }
+    }
+  }
+  invalidateServiceBinding(invalidation) {
+    this.#invalidateServiceMap(invalidation);
+    this.#invalidateNamedServiceMap(invalidation);
+    this.#invalidateNamedTaggedServiceMap(invalidation);
+    this.#invalidateTaggedServiceMap(invalidation);
+    this.#invalidateNonCachedServiceNodeSetMap(invalidation);
+    for (const subscriber of this.#subscribers) {
+      subscriber.invalidateServiceBinding(invalidation);
+    }
+  }
+  set(options, planResult) {
+    if (options.name === void 0) {
+      if (options.tag === void 0) {
+        this.#getMapFromMapArray(this.#serviceIdToValuePlanMap, options).set(options.serviceIdentifier, planResult);
+      } else {
+        this.#getOrBuildMapValueFromMapMap(this.#getOrBuildMapValueFromMapMap(this.#getMapFromMapArray(this.#taggedServiceIdToValuePlanMap, options), options.serviceIdentifier), options.tag.key).set(options.tag.value, planResult);
+      }
+    } else {
+      if (options.tag === void 0) {
+        this.#getOrBuildMapValueFromMapMap(this.#getMapFromMapArray(this.#namedServiceIdToValuePlanMap, options), options.serviceIdentifier).set(options.name, planResult);
+      } else {
+        this.#getOrBuildMapValueFromMapMap(this.#getOrBuildMapValueFromMapMap(this.#getOrBuildMapValueFromMapMap(this.#getMapFromMapArray(this.#namedTaggedServiceIdToValuePlanMap, options), options.serviceIdentifier), options.name), options.tag.key).set(options.tag.value, planResult);
+      }
+    }
+  }
+  setNonCachedServiceNode(node, context3) {
+    let nonCachedMap = this.#serviceIdToNonCachedServiceNodeMapMap.get(node.serviceIdentifier);
+    if (nonCachedMap === void 0) {
+      nonCachedMap = /* @__PURE__ */ new Map();
+      this.#serviceIdToNonCachedServiceNodeMapMap.set(node.serviceIdentifier, nonCachedMap);
+    }
+    nonCachedMap.set(node, context3);
+  }
+  subscribe(subscriber) {
+    this.#subscribers.push(subscriber);
+  }
+  #buildInitializedMapArray() {
+    const mapArray = new Array(MAP_ARRAY_LENGTH);
+    for (let i = 0; i < mapArray.length; ++i) {
+      mapArray[i] = /* @__PURE__ */ new Map();
+    }
+    return mapArray;
+  }
+  #buildUpdatePlanParams(invalidation, index, name, tag) {
+    const isMultiple = (index & IS_MULTIPLE_MASK) !== 0;
+    let planParamsConstraint;
+    if (isMultiple) {
+      const isChained = (index & IS_MULTIPLE_MASK & CHAINED_MASK) !== 0;
+      planParamsConstraint = {
+        chained: isChained,
+        isMultiple,
+        serviceIdentifier: invalidation.binding.serviceIdentifier
+      };
+    } else {
+      planParamsConstraint = {
+        isMultiple,
+        serviceIdentifier: invalidation.binding.serviceIdentifier
+      };
+    }
+    const isOptional = (index & OPTIONAL_MASK) !== 0;
+    if (isOptional) {
+      planParamsConstraint.isOptional = true;
+    }
+    if (name !== void 0) {
+      planParamsConstraint.name = name;
+    }
+    if (tag !== void 0) {
+      planParamsConstraint.tag = tag;
+    }
+    return {
+      autobindOptions: void 0,
+      jitEnabled: this.#jitEnabled,
+      operations: invalidation.operations,
+      rootConstraints: planParamsConstraint,
+      servicesBranch: []
+    };
+  }
+  #getOrBuildMapValueFromMapMap(map, key) {
+    let valueMap = map.get(key);
+    if (valueMap === void 0) {
+      valueMap = /* @__PURE__ */ new Map();
+      map.set(key, valueMap);
+    }
+    return valueMap;
+  }
+  #getMapFromMapArray(mapArray, options) {
+    return mapArray[this.#getMapArrayIndex(options)];
+  }
+  #getMaps() {
+    return [
+      this.#serviceIdToNonCachedServiceNodeMapMap,
+      ...this.#serviceIdToValuePlanMap,
+      ...this.#namedServiceIdToValuePlanMap,
+      ...this.#namedTaggedServiceIdToValuePlanMap,
+      ...this.#taggedServiceIdToValuePlanMap
+    ];
+  }
+  #getMapArrayIndex(options) {
+    if (options.isMultiple) {
+      return (options.chained ? CHAINED_MASK : 0) | (options.optional ? OPTIONAL_MASK : 0) | IS_MULTIPLE_MASK;
+    } else {
+      return options.optional ? OPTIONAL_MASK : 0;
+    }
+  }
+  #invalidateNamedServiceMap(invalidation) {
+    for (const [index, map] of this.#namedServiceIdToValuePlanMap.entries()) {
+      const servicePlans = map.get(invalidation.binding.serviceIdentifier);
+      if (servicePlans !== void 0) {
+        for (const [name, servicePlan] of servicePlans.entries()) {
+          this.#updatePlan(invalidation, servicePlan, index, name, void 0);
+        }
+      }
+    }
+  }
+  #invalidateNamedTaggedServiceMap(invalidation) {
+    for (const [index, map] of this.#namedTaggedServiceIdToValuePlanMap.entries()) {
+      const servicePlanMapMapMap = map.get(invalidation.binding.serviceIdentifier);
+      if (servicePlanMapMapMap !== void 0) {
+        for (const [name, servicePlanMapMap] of servicePlanMapMapMap.entries()) {
+          for (const [tag, servicePlanMap] of servicePlanMapMap.entries()) {
+            for (const [tagValue, servicePlan] of servicePlanMap.entries()) {
+              this.#updatePlan(invalidation, servicePlan, index, name, {
+                key: tag,
+                value: tagValue
+              });
             }
           }
-          throw new TypeError();
         }
-        function ToBoolean(argument) {
-          return !!argument;
-        }
-        function ToString(argument) {
-          return "" + argument;
-        }
-        function ToPropertyKey(argument) {
-          var key = ToPrimitive(
-            argument,
-            3
-            /* String */
-          );
-          if (IsSymbol(key))
-            return key;
-          return ToString(key);
-        }
-        function IsArray(argument) {
-          return Array.isArray ? Array.isArray(argument) : argument instanceof Object ? argument instanceof Array : Object.prototype.toString.call(argument) === "[object Array]";
-        }
-        function IsCallable(argument) {
-          return typeof argument === "function";
-        }
-        function IsConstructor(argument) {
-          return typeof argument === "function";
-        }
-        function IsPropertyKey(argument) {
-          switch (Type(argument)) {
-            case 3:
-              return true;
-            case 4:
-              return true;
-            default:
-              return false;
+      }
+    }
+  }
+  #invalidateNonCachePlanBindingNodeDescendents(planBindingNode) {
+    switch (planBindingNode.binding.type) {
+      case bindingTypeValues.ServiceRedirection:
+        this.#invalidateNonCachePlanServiceNode(planBindingNode.redirection);
+        break;
+      case bindingTypeValues.Instance:
+        for (const constructorParam of planBindingNode.constructorParams) {
+          if (!isConstructorNoParamNode(constructorParam)) {
+            this.#invalidateNonCachePlanServiceNode(constructorParam);
           }
         }
-        function GetMethod(V3, P2) {
-          var func = V3[P2];
-          if (func === void 0 || func === null)
-            return void 0;
-          if (!IsCallable(func))
-            throw new TypeError();
-          return func;
+        for (const propertyParam of planBindingNode.propertyParams.values()) {
+          this.#invalidateNonCachePlanServiceNode(propertyParam);
         }
-        function GetIterator(obj) {
-          var method = GetMethod(obj, iteratorSymbol);
-          if (!IsCallable(method))
-            throw new TypeError();
-          var iterator2 = method.call(obj);
-          if (!IsObject(iterator2))
-            throw new TypeError();
-          return iterator2;
+        break;
+      case bindingTypeValues.ResolvedValue:
+        for (const resolvedValue of planBindingNode.params) {
+          this.#invalidateNonCachePlanServiceNode(resolvedValue);
         }
-        function IteratorValue(iterResult) {
-          return iterResult.value;
-        }
-        function IteratorStep(iterator2) {
-          var result = iterator2.next();
-          return result.done ? false : result;
-        }
-        function IteratorClose(iterator2) {
-          var f = iterator2["return"];
-          if (f)
-            f.call(iterator2);
-        }
-        function OrdinaryGetPrototypeOf(O3) {
-          var proto = Object.getPrototypeOf(O3);
-          if (typeof O3 !== "function" || O3 === functionPrototype)
-            return proto;
-          if (proto !== functionPrototype)
-            return proto;
-          var prototype = O3.prototype;
-          var prototypeProto = prototype && Object.getPrototypeOf(prototype);
-          if (prototypeProto == null || prototypeProto === Object.prototype)
-            return proto;
-          var constructor = prototypeProto.constructor;
-          if (typeof constructor !== "function")
-            return proto;
-          if (constructor === O3)
-            return proto;
-          return constructor;
-        }
-        function fail(e) {
-          throw e;
-        }
-        function CreateMetadataRegistry() {
-          var fallback;
-          if (!IsUndefined(registrySymbol) && typeof root.Reflect !== "undefined" && !(registrySymbol in root.Reflect) && typeof root.Reflect.defineMetadata === "function") {
-            fallback = CreateFallbackProvider(root.Reflect);
-          }
-          var first;
-          var second;
-          var rest;
-          var targetProviderMap = new _WeakMap();
-          var registry = {
-            registerProvider,
-            getProvider,
-            setProvider
-          };
-          return registry;
-          function registerProvider(provider) {
-            if (!Object.isExtensible(registry)) {
-              throw new Error("Cannot add provider to a frozen registry.");
-            }
-            switch (true) {
-              case fallback === provider:
-                break;
-              case IsUndefined(first):
-                first = provider;
-                break;
-              case first === provider:
-                break;
-              case IsUndefined(second):
-                second = provider;
-                break;
-              case second === provider:
-                break;
-              default:
-                if (rest === void 0)
-                  rest = new _Set();
-                rest.add(provider);
-                break;
-            }
-          }
-          function getProviderNoCache(O3, P2) {
-            if (!IsUndefined(first)) {
-              if (first.isProviderFor(O3, P2))
-                return first;
-              if (!IsUndefined(second)) {
-                if (second.isProviderFor(O3, P2))
-                  return first;
-                if (!IsUndefined(rest)) {
-                  var iterator2 = GetIterator(rest);
-                  while (true) {
-                    var next = IteratorStep(iterator2);
-                    if (!next) {
-                      return void 0;
-                    }
-                    var provider = IteratorValue(next);
-                    if (provider.isProviderFor(O3, P2)) {
-                      IteratorClose(iterator2);
-                      return provider;
-                    }
-                  }
-                }
+        break;
+      default:
+    }
+  }
+  #invalidateNonCachePlanServiceNode(planServiceNode) {
+    const serviceNonCachedMap = this.#serviceIdToNonCachedServiceNodeMapMap.get(planServiceNode.serviceIdentifier);
+    if (serviceNonCachedMap === void 0 || !serviceNonCachedMap.has(planServiceNode)) {
+      return;
+    }
+    serviceNonCachedMap.delete(planServiceNode);
+    this.#invalidateNonCachePlanServiceNodeDescendents(planServiceNode);
+  }
+  #invalidateNonCachePlanServiceNodeDescendents(planServiceNode) {
+    if (LazyPlanServiceNode.is(planServiceNode) && !planServiceNode.isExpanded()) {
+      return;
+    }
+    if (planServiceNode.bindings === void 0) {
+      return;
+    }
+    if (Array.isArray(planServiceNode.bindings)) {
+      for (const binding of planServiceNode.bindings) {
+        this.#invalidateNonCachePlanBindingNodeDescendents(binding);
+      }
+    } else {
+      this.#invalidateNonCachePlanBindingNodeDescendents(planServiceNode.bindings);
+    }
+  }
+  #invalidateNonCachedServiceNodeSetMap(invalidation) {
+    const serviceNonCachedServiceNodeMap = this.#serviceIdToNonCachedServiceNodeMapMap.get(invalidation.binding.serviceIdentifier);
+    if (serviceNonCachedServiceNodeMap !== void 0) {
+      switch (invalidation.kind) {
+        case CacheBindingInvalidationKind.bindingAdded:
+          for (const [serviceNode, context3] of serviceNonCachedServiceNodeMap) {
+            const result = addServiceNodeBindingIfContextFree({
+              autobindOptions: void 0,
+              jitEnabled: this.#jitEnabled,
+              operations: invalidation.operations,
+              servicesBranch: []
+            }, serviceNode, invalidation.binding, context3.bindingConstraintsList, context3.buildServiceNodeOptions);
+            if (result.isContextFreeBinding) {
+              if (result.shouldInvalidateServiceNode && LazyPlanServiceNode.is(serviceNode)) {
+                this.#invalidateNonCachePlanServiceNodeDescendents(serviceNode);
+                serviceNode.invalidate();
               }
+            } else {
+              this.clearCache();
             }
-            if (!IsUndefined(fallback) && fallback.isProviderFor(O3, P2)) {
-              return fallback;
-            }
-            return void 0;
           }
-          function getProvider(O3, P2) {
-            var providerMap = targetProviderMap.get(O3);
-            var provider;
-            if (!IsUndefined(providerMap)) {
-              provider = providerMap.get(P2);
-            }
-            if (!IsUndefined(provider)) {
-              return provider;
-            }
-            provider = getProviderNoCache(O3, P2);
-            if (!IsUndefined(provider)) {
-              if (IsUndefined(providerMap)) {
-                providerMap = new _Map();
-                targetProviderMap.set(O3, providerMap);
+          break;
+        case CacheBindingInvalidationKind.bindingRemoved:
+          for (const [serviceNode, context3] of serviceNonCachedServiceNodeMap) {
+            const result = removeServiceNodeBindingIfContextFree(serviceNode, invalidation.binding, context3.bindingConstraintsList, context3.buildServiceNodeOptions.optional);
+            if (result.isContextFreeBinding) {
+              if (result.bindingNodeRemoved !== void 0) {
+                this.#invalidateNonCachePlanBindingNodeDescendents(result.bindingNodeRemoved);
               }
-              providerMap.set(P2, provider);
+            } else {
+              this.clearCache();
             }
-            return provider;
           }
-          function hasProvider(provider) {
-            if (IsUndefined(provider))
-              throw new TypeError();
-            return first === provider || second === provider || !IsUndefined(rest) && rest.has(provider);
-          }
-          function setProvider(O3, P2, provider) {
-            if (!hasProvider(provider)) {
-              throw new Error("Metadata provider not registered.");
-            }
-            var existingProvider = getProvider(O3, P2);
-            if (existingProvider !== provider) {
-              if (!IsUndefined(existingProvider)) {
-                return false;
-              }
-              var providerMap = targetProviderMap.get(O3);
-              if (IsUndefined(providerMap)) {
-                providerMap = new _Map();
-                targetProviderMap.set(O3, providerMap);
-              }
-              providerMap.set(P2, provider);
-            }
-            return true;
-          }
-        }
-        function GetOrCreateMetadataRegistry() {
-          var metadataRegistry2;
-          if (!IsUndefined(registrySymbol) && IsObject(root.Reflect) && Object.isExtensible(root.Reflect)) {
-            metadataRegistry2 = root.Reflect[registrySymbol];
-          }
-          if (IsUndefined(metadataRegistry2)) {
-            metadataRegistry2 = CreateMetadataRegistry();
-          }
-          if (!IsUndefined(registrySymbol) && IsObject(root.Reflect) && Object.isExtensible(root.Reflect)) {
-            Object.defineProperty(root.Reflect, registrySymbol, {
-              enumerable: false,
-              configurable: false,
-              writable: false,
-              value: metadataRegistry2
+          break;
+      }
+    }
+  }
+  #invalidateServiceMap(invalidation) {
+    for (const [index, map] of this.#serviceIdToValuePlanMap.entries()) {
+      const servicePlan = map.get(invalidation.binding.serviceIdentifier);
+      this.#updatePlan(invalidation, servicePlan, index, void 0, void 0);
+    }
+  }
+  #invalidateTaggedServiceMap(invalidation) {
+    for (const [index, map] of this.#taggedServiceIdToValuePlanMap.entries()) {
+      const servicePlanMapMap = map.get(invalidation.binding.serviceIdentifier);
+      if (servicePlanMapMap !== void 0) {
+        for (const [tag, servicePlanMap] of servicePlanMapMap.entries()) {
+          for (const [tagValue, servicePlan] of servicePlanMap.entries()) {
+            this.#updatePlan(invalidation, servicePlan, index, void 0, {
+              key: tag,
+              value: tagValue
             });
           }
-          return metadataRegistry2;
         }
-        function CreateMetadataProvider(registry) {
-          var metadata2 = new _WeakMap();
-          var provider = {
-            isProviderFor: function(O3, P2) {
-              var targetMetadata = metadata2.get(O3);
-              if (IsUndefined(targetMetadata))
-                return false;
-              return targetMetadata.has(P2);
-            },
-            OrdinaryDefineOwnMetadata: OrdinaryDefineOwnMetadata2,
-            OrdinaryHasOwnMetadata: OrdinaryHasOwnMetadata2,
-            OrdinaryGetOwnMetadata: OrdinaryGetOwnMetadata2,
-            OrdinaryOwnMetadataKeys: OrdinaryOwnMetadataKeys2,
-            OrdinaryDeleteMetadata
-          };
-          metadataRegistry.registerProvider(provider);
-          return provider;
-          function GetOrCreateMetadataMap(O3, P2, Create) {
-            var targetMetadata = metadata2.get(O3);
-            var createdTargetMetadata = false;
-            if (IsUndefined(targetMetadata)) {
-              if (!Create)
-                return void 0;
-              targetMetadata = new _Map();
-              metadata2.set(O3, targetMetadata);
-              createdTargetMetadata = true;
-            }
-            var metadataMap = targetMetadata.get(P2);
-            if (IsUndefined(metadataMap)) {
-              if (!Create)
-                return void 0;
-              metadataMap = new _Map();
-              targetMetadata.set(P2, metadataMap);
-              if (!registry.setProvider(O3, P2, provider)) {
-                targetMetadata.delete(P2);
-                if (createdTargetMetadata) {
-                  metadata2.delete(O3);
-                }
-                throw new Error("Wrong provider for target.");
-              }
-            }
-            return metadataMap;
-          }
-          function OrdinaryHasOwnMetadata2(MetadataKey, O3, P2) {
-            var metadataMap = GetOrCreateMetadataMap(
-              O3,
-              P2,
-              /*Create*/
-              false
-            );
-            if (IsUndefined(metadataMap))
-              return false;
-            return ToBoolean(metadataMap.has(MetadataKey));
-          }
-          function OrdinaryGetOwnMetadata2(MetadataKey, O3, P2) {
-            var metadataMap = GetOrCreateMetadataMap(
-              O3,
-              P2,
-              /*Create*/
-              false
-            );
-            if (IsUndefined(metadataMap))
-              return void 0;
-            return metadataMap.get(MetadataKey);
-          }
-          function OrdinaryDefineOwnMetadata2(MetadataKey, MetadataValue, O3, P2) {
-            var metadataMap = GetOrCreateMetadataMap(
-              O3,
-              P2,
-              /*Create*/
-              true
-            );
-            metadataMap.set(MetadataKey, MetadataValue);
-          }
-          function OrdinaryOwnMetadataKeys2(O3, P2) {
-            var keys = [];
-            var metadataMap = GetOrCreateMetadataMap(
-              O3,
-              P2,
-              /*Create*/
-              false
-            );
-            if (IsUndefined(metadataMap))
-              return keys;
-            var keysObj = metadataMap.keys();
-            var iterator2 = GetIterator(keysObj);
-            var k2 = 0;
-            while (true) {
-              var next = IteratorStep(iterator2);
-              if (!next) {
-                keys.length = k2;
-                return keys;
-              }
-              var nextValue = IteratorValue(next);
-              try {
-                keys[k2] = nextValue;
-              } catch (e) {
-                try {
-                  IteratorClose(iterator2);
-                } finally {
-                  throw e;
-                }
-              }
-              k2++;
-            }
-          }
-          function OrdinaryDeleteMetadata(MetadataKey, O3, P2) {
-            var metadataMap = GetOrCreateMetadataMap(
-              O3,
-              P2,
-              /*Create*/
-              false
-            );
-            if (IsUndefined(metadataMap))
-              return false;
-            if (!metadataMap.delete(MetadataKey))
-              return false;
-            if (metadataMap.size === 0) {
-              var targetMetadata = metadata2.get(O3);
-              if (!IsUndefined(targetMetadata)) {
-                targetMetadata.delete(P2);
-                if (targetMetadata.size === 0) {
-                  metadata2.delete(targetMetadata);
-                }
-              }
-            }
-            return true;
-          }
-        }
-        function CreateFallbackProvider(reflect) {
-          var defineMetadata2 = reflect.defineMetadata, hasOwnMetadata2 = reflect.hasOwnMetadata, getOwnMetadata2 = reflect.getOwnMetadata, getOwnMetadataKeys2 = reflect.getOwnMetadataKeys, deleteMetadata2 = reflect.deleteMetadata;
-          var metadataOwner = new _WeakMap();
-          var provider = {
-            isProviderFor: function(O3, P2) {
-              var metadataPropertySet = metadataOwner.get(O3);
-              if (!IsUndefined(metadataPropertySet) && metadataPropertySet.has(P2)) {
-                return true;
-              }
-              if (getOwnMetadataKeys2(O3, P2).length) {
-                if (IsUndefined(metadataPropertySet)) {
-                  metadataPropertySet = new _Set();
-                  metadataOwner.set(O3, metadataPropertySet);
-                }
-                metadataPropertySet.add(P2);
-                return true;
-              }
-              return false;
-            },
-            OrdinaryDefineOwnMetadata: defineMetadata2,
-            OrdinaryHasOwnMetadata: hasOwnMetadata2,
-            OrdinaryGetOwnMetadata: getOwnMetadata2,
-            OrdinaryOwnMetadataKeys: getOwnMetadataKeys2,
-            OrdinaryDeleteMetadata: deleteMetadata2
-          };
-          return provider;
-        }
-        function GetMetadataProvider(O3, P2, Create) {
-          var registeredProvider = metadataRegistry.getProvider(O3, P2);
-          if (!IsUndefined(registeredProvider)) {
-            return registeredProvider;
-          }
-          if (Create) {
-            if (metadataRegistry.setProvider(O3, P2, metadataProvider)) {
-              return metadataProvider;
-            }
-            throw new Error("Illegal state.");
-          }
-          return void 0;
-        }
-      });
-    })(Reflect2 || (Reflect2 = {}));
+      }
+    }
   }
+  #updatePlan(invalidation, servicePlan, index, name, tag) {
+    if (servicePlan !== void 0 && LazyPlanServiceNode.is(servicePlan.tree.root)) {
+      const planParams = this.#buildUpdatePlanParams(invalidation, index, name, tag);
+      switch (invalidation.kind) {
+        case CacheBindingInvalidationKind.bindingAdded:
+          {
+            const result = addRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
+            if (result.isContextFreeBinding) {
+              if (result.shouldInvalidateServiceNode) {
+                this.#invalidateNonCachePlanServiceNodeDescendents(servicePlan.tree.root);
+                servicePlan.tree.root.invalidate();
+              }
+            } else {
+              this.clearCache();
+            }
+          }
+          break;
+        case CacheBindingInvalidationKind.bindingRemoved:
+          {
+            const result = removeRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
+            if (result.isContextFreeBinding) {
+              if (result.bindingNodeRemoved !== void 0) {
+                this.#invalidateNonCachePlanBindingNodeDescendents(result.bindingNodeRemoved);
+              }
+            } else {
+              this.clearCache();
+            }
+          }
+          break;
+      }
+    }
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/handleResolveError.js
+var INDEX_NOT_FOUND = -1;
+function handleResolveError(params, error2) {
+  if (isStackOverflowError(error2) || InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planningMaxDepthExceeded)) {
+    const stringifiedCircularDependencies = stringifyServiceIdentifierTrace2(extractLikelyCircularDependency2(params));
+    throw new InversifyCoreError(InversifyCoreErrorKind.planning, `Circular dependency found: ${stringifiedCircularDependencies}`, { cause: error2 });
+  }
+  throw error2;
+}
+function extractLikelyCircularDependency2(params) {
+  const root = params.planResult.tree.root;
+  const stack = [];
+  function depthFirstSearch(node) {
+    const existingIndex = stack.indexOf(node);
+    if (existingIndex !== INDEX_NOT_FOUND) {
+      const cycleNodes = [
+        ...stack.slice(existingIndex),
+        node
+      ];
+      return cycleNodes.map((n) => n.serviceIdentifier);
+    }
+    stack.push(node);
+    try {
+      for (const child of getChildServiceNodes(node)) {
+        const result2 = depthFirstSearch(child);
+        if (result2 !== void 0) {
+          return result2;
+        }
+      }
+    } finally {
+      stack.pop();
+    }
+    return void 0;
+  }
+  const result = depthFirstSearch(root);
+  return result ?? [];
+}
+function getChildServiceNodes(serviceNode) {
+  const children = [];
+  const bindings = serviceNode.bindings;
+  if (bindings === void 0) {
+    return children;
+  }
+  const processBindingNode = (bindingNode) => {
+    if (isPlanServiceRedirectionBindingNode(bindingNode)) {
+      children.push(...getChildServiceNodes(bindingNode.redirection));
+      return;
+    }
+    switch (bindingNode.binding.type) {
+      case bindingTypeValues.Instance: {
+        const instanceNode = bindingNode;
+        for (const ctorParam of instanceNode.constructorParams) {
+          if (!isConstructorNoParamNode(ctorParam)) {
+            children.push(ctorParam);
+          }
+        }
+        for (const propParam of instanceNode.propertyParams.values()) {
+          children.push(propParam);
+        }
+        break;
+      }
+      case bindingTypeValues.ResolvedValue: {
+        const resolvedValueNode = bindingNode;
+        for (const param of resolvedValueNode.params) {
+          children.push(param);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  };
+  if (Array.isArray(bindings)) {
+    for (const bindingNode of bindings) {
+      processBindingNode(bindingNode);
+    }
+  } else {
+    processBindingNode(bindings);
+  }
+  return children;
+}
+function stringifyServiceIdentifierTrace2(serviceIdentifiers) {
+  const serviceIdentifiersArray = [...serviceIdentifiers];
+  if (serviceIdentifiersArray.length === 0) {
+    return "(No dependency trace)";
+  }
+  return serviceIdentifiersArray.map(stringifyServiceIdentifier).join(" -> ");
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolve.js
+function resolve(params) {
+  try {
+    const serviceNode = params.planResult.tree.root;
+    return serviceNode.resolve(params);
+  } catch (error2) {
+    handleResolveError(params, error2);
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/isScopedBinding.js
+function isScopedBinding(binding) {
+  return binding.scope !== void 0;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingPreDestroy.js
+function resolveBindingPreDestroy(params, binding) {
+  if (binding.type === bindingTypeValues.Instance) {
+    const classMetadata = params.getClassMetadata(binding.implementationType);
+    const instance = binding.cache.value;
+    if (isPromise(instance)) {
+      return instance.then((instance2) => resolveInstancePreDestroyMethods(classMetadata, instance2));
+    } else {
+      return resolveInstancePreDestroyMethods(classMetadata, instance);
+    }
+  }
+}
+function resolveInstancePreDestroyMethod(instance, methodName) {
+  if (typeof instance[methodName] === "function") {
+    const result = instance[methodName]();
+    return result;
+  }
+}
+function resolveInstancePreDestroyMethods(classMetadata, instance) {
+  const preDestroyMethodNames = classMetadata.lifecycle.preDestroyMethodNames;
+  if (preDestroyMethodNames.size === 0) {
+    return;
+  }
+  let result = void 0;
+  for (const methodName of preDestroyMethodNames) {
+    if (result === void 0) {
+      result = resolveInstancePreDestroyMethod(instance, methodName);
+    } else {
+      result = result.then(() => resolveInstancePreDestroyMethod(instance, methodName));
+    }
+  }
+  return result;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingServiceDeactivations.js
+function resolveBindingServiceDeactivations(params, serviceIdentifier, value) {
+  const deactivations = params.getDeactivations(serviceIdentifier);
+  if (deactivations === void 0) {
+    return void 0;
+  }
+  if (isPromise(value)) {
+    return resolveBindingDeactivationsFromIteratorAsync(value, deactivations[Symbol.iterator]());
+  }
+  return resolveBindingDeactivationsFromIterator(value, deactivations[Symbol.iterator]());
+}
+function resolveBindingDeactivationsFromIterator(value, deactivationsIterator) {
+  let deactivationIteratorResult = deactivationsIterator.next();
+  while (deactivationIteratorResult.done !== true) {
+    const nextDeactivationValue = deactivationIteratorResult.value(value);
+    if (isPromise(nextDeactivationValue)) {
+      return resolveBindingDeactivationsFromIteratorAsync(value, deactivationsIterator);
+    }
+    deactivationIteratorResult = deactivationsIterator.next();
+  }
+}
+async function resolveBindingDeactivationsFromIteratorAsync(value, deactivationsIterator) {
+  const resolvedValue = await value;
+  let deactivationIteratorResult = deactivationsIterator.next();
+  while (deactivationIteratorResult.done !== true) {
+    await deactivationIteratorResult.value(resolvedValue);
+    deactivationIteratorResult = deactivationsIterator.next();
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingDeactivations.js
+function resolveBindingDeactivations(params, binding) {
+  const preDestroyResult = resolveBindingPreDestroy(params, binding);
+  if (preDestroyResult === void 0) {
+    return resolveBindingDeactivationsAfterPreDestroy(params, binding);
+  }
+  return preDestroyResult.then(() => resolveBindingDeactivationsAfterPreDestroy(params, binding));
+}
+function resolveBindingDeactivationsAfterPreDestroy(params, binding) {
+  const bindingCache = binding.cache;
+  if (isPromise(bindingCache.value)) {
+    return bindingCache.value.then((resolvedValue) => resolveBindingDeactivationsAfterPreDestroyFromValue(params, binding, resolvedValue));
+  }
+  return resolveBindingDeactivationsAfterPreDestroyFromValue(params, binding, bindingCache.value);
+}
+function resolveBindingDeactivationsAfterPreDestroyFromValue(params, binding, resolvedValue) {
+  let deactivationResult = void 0;
+  if (binding.onDeactivation !== void 0) {
+    const bindingDeactivation = binding.onDeactivation;
+    deactivationResult = bindingDeactivation(resolvedValue);
+  }
+  if (deactivationResult === void 0) {
+    return resolveBindingServiceDeactivations(params, binding.serviceIdentifier, resolvedValue);
+  } else {
+    return deactivationResult.then(() => resolveBindingServiceDeactivations(params, binding.serviceIdentifier, resolvedValue));
+  }
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingsDeactivations.js
+function resolveBindingsDeactivations(params, bindings) {
+  if (bindings === void 0) {
+    return;
+  }
+  const singletonScopedBindings = filterCachedSinglentonScopedBindings(bindings);
+  const deactivationPromiseResults = [];
+  for (const binding of singletonScopedBindings) {
+    const deactivationResult = resolveBindingDeactivations(params, binding);
+    if (deactivationResult !== void 0) {
+      deactivationPromiseResults.push(deactivationResult);
+    }
+  }
+  if (deactivationPromiseResults.length > 0) {
+    return Promise.all(deactivationPromiseResults).then(() => void 0);
+  }
+}
+function filterCachedSinglentonScopedBindings(bindings) {
+  const filteredBindings = [];
+  for (const binding of bindings) {
+    if (isScopedBinding(binding) && binding.scope === bindingScopeValues.Singleton && binding.cache.isRight) {
+      filteredBindings.push(binding);
+    }
+  }
+  return filteredBindings;
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveModuleDeactivations.js
+function resolveModuleDeactivations(params, moduleId) {
+  const bindings = params.getBindingsFromModule(moduleId);
+  return resolveBindingsDeactivations(params, bindings);
+}
+
+// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveServiceDeactivations.js
+function resolveServiceDeactivations(params, serviceIdentifier) {
+  const bindings = params.getBindings(serviceIdentifier);
+  return resolveBindingsDeactivations(params, bindings);
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/models/BindingIdentifier.js
+var bindingIdentifierSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/container/bindingIdentifier");
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingIdentifier.js
+function isBindingIdentifier(value) {
+  return typeof value === "object" && value !== null && value[bindingIdentifierSymbol] === true;
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/binding/utils/BindingConstraintUtils.js
+var BindingConstraintUtils = class {
+  static always = (_bindingConstraints) => {
+    return true;
+  };
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/error/models/InversifyContainerError.js
+var isAppErrorSymbol2 = /* @__PURE__ */ Symbol.for("@inversifyjs/container/InversifyContainerError");
+var InversifyContainerError = class _InversifyContainerError extends Error {
+  [isAppErrorSymbol2];
+  kind;
+  constructor(kind, message, options) {
+    super(message, options);
+    this[isAppErrorSymbol2] = true;
+    this.kind = kind;
+  }
+  static is(value) {
+    return typeof value === "object" && value !== null && value[isAppErrorSymbol2] === true;
+  }
+  static isErrorOfKind(value, kind) {
+    return _InversifyContainerError.is(value) && value.kind === kind;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/error/models/InversifyContainerErrorKind.js
+var InversifyContainerErrorKind;
+(function(InversifyContainerErrorKind2) {
+  InversifyContainerErrorKind2[InversifyContainerErrorKind2["invalidOperation"] = 0] = "invalidOperation";
+})(InversifyContainerErrorKind || (InversifyContainerErrorKind = {}));
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/buildBindingIdentifier.js
+function buildBindingIdentifier(binding) {
+  return {
+    [bindingIdentifierSymbol]: true,
+    id: binding.id
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraints.js
+function isAnyAncestorBindingConstraints(condition) {
+  return (constraints) => {
+    for (let ancestorMetadata = constraints.getAncestor(); ancestorMetadata !== void 0; ancestorMetadata = ancestorMetadata.getAncestor()) {
+      if (condition(ancestorMetadata)) {
+        return true;
+      }
+    }
+    return false;
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithName.js
+function isBindingConstraintsWithName(name) {
+  return (constraints) => constraints.name === name;
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraintsWithName.js
+function isAnyAncestorBindingConstraintsWithName(name) {
+  return isAnyAncestorBindingConstraints(isBindingConstraintsWithName(name));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithServiceId.js
+function isBindingConstraintsWithServiceId(serviceId) {
+  return (constraints) => constraints.serviceIdentifier === serviceId;
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraintsWithServiceId.js
+function isAnyAncestorBindingConstraintsWithServiceId(serviceId) {
+  return isAnyAncestorBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithTag.js
+function isBindingConstraintsWithTag(tag, value) {
+  return (constraints) => constraints.tags.has(tag) && constraints.tags.get(tag) === value;
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraintsWithTag.js
+function isAnyAncestorBindingConstraintsWithTag(tag, value) {
+  return isAnyAncestorBindingConstraints(isBindingConstraintsWithTag(tag, value));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithNoNameNorTags.js
+function isBindingConstraintsWithNoNameNorTags(constraints) {
+  return constraints.name === void 0 && constraints.tags.size === 0;
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isMultipleResolvedValueMetadataInjectOptions.js
+function isMultipleResolvedValueMetadataInjectOptions(options) {
+  return options.isMultiple === true;
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraints.js
+function isNoAncestorBindingConstraints(condition) {
+  const isAnyAncestorBindingConstraintsConstraint = isAnyAncestorBindingConstraints(condition);
+  return (constraints) => {
+    return !isAnyAncestorBindingConstraintsConstraint(constraints);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraintsWithName.js
+function isNoAncestorBindingConstraintsWithName(name) {
+  return isNoAncestorBindingConstraints(isBindingConstraintsWithName(name));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraintsWithServiceId.js
+function isNoAncestorBindingConstraintsWithServiceId(serviceId) {
+  return isNoAncestorBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraintsWithTag.js
+function isNoAncestorBindingConstraintsWithTag(tag, value) {
+  return isNoAncestorBindingConstraints(isBindingConstraintsWithTag(tag, value));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraints.js
+function isNotParentBindingConstraints(condition) {
+  return (constraints) => {
+    const ancestorMetadata = constraints.getAncestor();
+    return ancestorMetadata === void 0 || !condition(ancestorMetadata);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraintsWithName.js
+function isNotParentBindingConstraintsWithName(name) {
+  return isNotParentBindingConstraints(isBindingConstraintsWithName(name));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraintsWithServiceId.js
+function isNotParentBindingConstraintsWithServiceId(serviceId) {
+  return isNotParentBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraintsWithTag.js
+function isNotParentBindingConstraintsWithTag(tag, value) {
+  return isNotParentBindingConstraints(isBindingConstraintsWithTag(tag, value));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraints.js
+function isParentBindingConstraints(condition) {
+  return (constraints) => {
+    const ancestorMetadata = constraints.getAncestor();
+    return ancestorMetadata !== void 0 && condition(ancestorMetadata);
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraintsWithName.js
+function isParentBindingConstraintsWithName(name) {
+  return isParentBindingConstraints(isBindingConstraintsWithName(name));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraintsWithServiceId.js
+function isParentBindingConstraintsWithServiceId(serviceId) {
+  return isParentBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraintsWithTag.js
+function isParentBindingConstraintsWithTag(tag, value) {
+  return isParentBindingConstraints(isBindingConstraintsWithTag(tag, value));
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isResolvedValueMetadataInjectOptions.js
+function isResolvedValueMetadataInjectOptions(options) {
+  return typeof options === "object" && !LazyServiceIdentifier.is(options);
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/models/BindingFluentSyntaxImplementation.js
+var BindInFluentSyntaxImplementation = class {
+  #binding;
+  constructor(binding) {
+    this.#binding = binding;
+  }
+  getIdentifier() {
+    return buildBindingIdentifier(this.#binding);
+  }
+  inRequestScope() {
+    this.#binding.scope = bindingScopeValues.Request;
+    return new BindWhenOnFluentSyntaxImplementation(this.#binding);
+  }
+  inSingletonScope() {
+    this.#binding.scope = bindingScopeValues.Singleton;
+    return new BindWhenOnFluentSyntaxImplementation(this.#binding);
+  }
+  inTransientScope() {
+    this.#binding.scope = bindingScopeValues.Transient;
+    return new BindWhenOnFluentSyntaxImplementation(this.#binding);
+  }
+};
+var BindToFluentSyntaxImplementation = class {
+  #callback;
+  #containerModuleId;
+  #defaultScope;
+  #serviceIdentifier;
+  constructor(callback, containerModuleId, defaultScope, serviceIdentifier) {
+    this.#callback = callback;
+    this.#containerModuleId = containerModuleId;
+    this.#defaultScope = defaultScope;
+    this.#serviceIdentifier = serviceIdentifier;
+  }
+  to(type) {
+    const classMetadata = getClassMetadata(type);
+    const binding = {
+      cache: {
+        isRight: false,
+        value: void 0
+      },
+      id: getBindingId(),
+      implementationType: type,
+      isSatisfiedBy: BindingConstraintUtils.always,
+      moduleId: this.#containerModuleId,
+      onActivation: void 0,
+      onDeactivation: void 0,
+      scope: classMetadata.scope ?? this.#defaultScope,
+      serviceIdentifier: this.#serviceIdentifier,
+      type: bindingTypeValues.Instance
+    };
+    this.#callback(binding);
+    return new BindInWhenOnFluentSyntaxImplementation(binding);
+  }
+  toSelf() {
+    if (typeof this.#serviceIdentifier !== "function") {
+      throw new Error('"toSelf" function can only be applied when a newable function is used as service identifier');
+    }
+    return this.to(this.#serviceIdentifier);
+  }
+  toConstantValue(value) {
+    const binding = {
+      cache: {
+        isRight: false,
+        value: void 0
+      },
+      id: getBindingId(),
+      isSatisfiedBy: BindingConstraintUtils.always,
+      moduleId: this.#containerModuleId,
+      onActivation: void 0,
+      onDeactivation: void 0,
+      scope: bindingScopeValues.Singleton,
+      serviceIdentifier: this.#serviceIdentifier,
+      type: bindingTypeValues.ConstantValue,
+      value
+    };
+    this.#callback(binding);
+    return new BindWhenOnFluentSyntaxImplementation(binding);
+  }
+  toDynamicValue(builder) {
+    const binding = {
+      cache: {
+        isRight: false,
+        value: void 0
+      },
+      id: getBindingId(),
+      isSatisfiedBy: BindingConstraintUtils.always,
+      moduleId: this.#containerModuleId,
+      onActivation: void 0,
+      onDeactivation: void 0,
+      scope: this.#defaultScope,
+      serviceIdentifier: this.#serviceIdentifier,
+      type: bindingTypeValues.DynamicValue,
+      value: builder
+    };
+    this.#callback(binding);
+    return new BindInWhenOnFluentSyntaxImplementation(binding);
+  }
+  toResolvedValue(factory, injectOptions) {
+    const binding = {
+      cache: {
+        isRight: false,
+        value: void 0
+      },
+      factory,
+      id: getBindingId(),
+      isSatisfiedBy: BindingConstraintUtils.always,
+      metadata: this.#buildResolvedValueMetadata(injectOptions),
+      moduleId: this.#containerModuleId,
+      onActivation: void 0,
+      onDeactivation: void 0,
+      scope: this.#defaultScope,
+      serviceIdentifier: this.#serviceIdentifier,
+      type: bindingTypeValues.ResolvedValue
+    };
+    this.#callback(binding);
+    return new BindInWhenOnFluentSyntaxImplementation(binding);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  toFactory(builder) {
+    const binding = {
+      cache: {
+        isRight: false,
+        value: void 0
+      },
+      factory: builder,
+      id: getBindingId(),
+      isSatisfiedBy: BindingConstraintUtils.always,
+      moduleId: this.#containerModuleId,
+      onActivation: void 0,
+      onDeactivation: void 0,
+      scope: bindingScopeValues.Singleton,
+      serviceIdentifier: this.#serviceIdentifier,
+      type: bindingTypeValues.Factory
+    };
+    this.#callback(binding);
+    return new BindWhenOnFluentSyntaxImplementation(binding);
+  }
+  toService(service) {
+    const binding = {
+      id: getBindingId(),
+      isSatisfiedBy: BindingConstraintUtils.always,
+      moduleId: this.#containerModuleId,
+      serviceIdentifier: this.#serviceIdentifier,
+      targetServiceIdentifier: service,
+      type: bindingTypeValues.ServiceRedirection
+    };
+    this.#callback(binding);
+  }
+  #buildResolvedValueMetadata(options) {
+    const resolvedValueMetadata = {
+      arguments: (options ?? []).map((injectOption) => {
+        if (isResolvedValueMetadataInjectOptions(injectOption)) {
+          if (isMultipleResolvedValueMetadataInjectOptions(injectOption)) {
+            return {
+              chained: injectOption.chained ?? false,
+              kind: ResolvedValueElementMetadataKind.multipleInjection,
+              name: injectOption.name,
+              optional: injectOption.optional ?? false,
+              tags: new Map((injectOption.tags ?? []).map((tag) => [
+                tag.key,
+                tag.value
+              ])),
+              value: injectOption.serviceIdentifier
+            };
+          } else {
+            return {
+              kind: ResolvedValueElementMetadataKind.singleInjection,
+              name: injectOption.name,
+              optional: injectOption.optional ?? false,
+              tags: new Map((injectOption.tags ?? []).map((tag) => [
+                tag.key,
+                tag.value
+              ])),
+              value: injectOption.serviceIdentifier
+            };
+          }
+        } else {
+          return {
+            kind: ResolvedValueElementMetadataKind.singleInjection,
+            name: void 0,
+            optional: false,
+            tags: /* @__PURE__ */ new Map(),
+            value: injectOption
+          };
+        }
+      })
+    };
+    return resolvedValueMetadata;
+  }
+};
+var BindOnFluentSyntaxImplementation = class {
+  #binding;
+  constructor(binding) {
+    this.#binding = binding;
+  }
+  getIdentifier() {
+    return buildBindingIdentifier(this.#binding);
+  }
+  onActivation(activation) {
+    this.#binding.onActivation = activation;
+    return new BindWhenFluentSyntaxImplementation(this.#binding);
+  }
+  onDeactivation(deactivation) {
+    this.#binding.onDeactivation = deactivation;
+    if (this.#binding.scope !== bindingScopeValues.Singleton) {
+      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Binding for service "${stringifyServiceIdentifier(this.#binding.serviceIdentifier)}" has a deactivation function, but its scope is not singleton. Deactivation functions can only be used with singleton bindings.`);
+    }
+    return new BindWhenFluentSyntaxImplementation(this.#binding);
+  }
+};
+var BindWhenFluentSyntaxImplementation = class {
+  #binding;
+  constructor(binding) {
+    this.#binding = binding;
+  }
+  getIdentifier() {
+    return buildBindingIdentifier(this.#binding);
+  }
+  when(constraint) {
+    this.#binding.isSatisfiedBy = constraint;
+    return new BindOnFluentSyntaxImplementation(this.#binding);
+  }
+  whenAnyAncestor(constraint) {
+    return this.when(isAnyAncestorBindingConstraints(constraint));
+  }
+  whenAnyAncestorIs(serviceIdentifier) {
+    return this.when(isAnyAncestorBindingConstraintsWithServiceId(serviceIdentifier));
+  }
+  whenAnyAncestorNamed(name) {
+    return this.when(isAnyAncestorBindingConstraintsWithName(name));
+  }
+  whenAnyAncestorTagged(tag, tagValue) {
+    return this.when(isAnyAncestorBindingConstraintsWithTag(tag, tagValue));
+  }
+  whenDefault() {
+    return this.when(isBindingConstraintsWithNoNameNorTags);
+  }
+  whenNamed(name) {
+    return this.when(isBindingConstraintsWithName(name));
+  }
+  whenNoParent(constraint) {
+    return this.when(isNotParentBindingConstraints(constraint));
+  }
+  whenNoParentIs(serviceIdentifier) {
+    return this.when(isNotParentBindingConstraintsWithServiceId(serviceIdentifier));
+  }
+  whenNoParentNamed(name) {
+    return this.when(isNotParentBindingConstraintsWithName(name));
+  }
+  whenNoParentTagged(tag, tagValue) {
+    return this.when(isNotParentBindingConstraintsWithTag(tag, tagValue));
+  }
+  whenParent(constraint) {
+    return this.when(isParentBindingConstraints(constraint));
+  }
+  whenParentIs(serviceIdentifier) {
+    return this.when(isParentBindingConstraintsWithServiceId(serviceIdentifier));
+  }
+  whenParentNamed(name) {
+    return this.when(isParentBindingConstraintsWithName(name));
+  }
+  whenParentTagged(tag, tagValue) {
+    return this.when(isParentBindingConstraintsWithTag(tag, tagValue));
+  }
+  whenTagged(tag, tagValue) {
+    return this.when(isBindingConstraintsWithTag(tag, tagValue));
+  }
+  whenNoAncestor(constraint) {
+    return this.when(isNoAncestorBindingConstraints(constraint));
+  }
+  whenNoAncestorIs(serviceIdentifier) {
+    return this.when(isNoAncestorBindingConstraintsWithServiceId(serviceIdentifier));
+  }
+  whenNoAncestorNamed(name) {
+    return this.when(isNoAncestorBindingConstraintsWithName(name));
+  }
+  whenNoAncestorTagged(tag, tagValue) {
+    return this.when(isNoAncestorBindingConstraintsWithTag(tag, tagValue));
+  }
+};
+var BindWhenOnFluentSyntaxImplementation = class extends BindWhenFluentSyntaxImplementation {
+  #bindOnFluentSyntax;
+  constructor(binding) {
+    super(binding);
+    this.#bindOnFluentSyntax = new BindOnFluentSyntaxImplementation(binding);
+  }
+  onActivation(activation) {
+    return this.#bindOnFluentSyntax.onActivation(activation);
+  }
+  onDeactivation(deactivation) {
+    return this.#bindOnFluentSyntax.onDeactivation(deactivation);
+  }
+};
+var BindInWhenOnFluentSyntaxImplementation = class extends BindWhenOnFluentSyntaxImplementation {
+  #bindInFluentSyntax;
+  constructor(binding) {
+    super(binding);
+    this.#bindInFluentSyntax = new BindInFluentSyntaxImplementation(binding);
+  }
+  inRequestScope() {
+    return this.#bindInFluentSyntax.inRequestScope();
+  }
+  inSingletonScope() {
+    return this.#bindInFluentSyntax.inSingletonScope();
+  }
+  inTransientScope() {
+    return this.#bindInFluentSyntax.inTransientScope();
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/common/actions/getFirstIteratorResult.js
+function getFirstIteratorResult(iterator2) {
+  if (iterator2 === void 0) {
+    return void 0;
+  }
+  const firstIteratorResult = iterator2.next();
+  if (firstIteratorResult.done === true) {
+    return void 0;
+  }
+  return firstIteratorResult.value;
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/common/calculations/getFirstIterableResult.js
+function getFirstIterableResult(iterable) {
+  return getFirstIteratorResult(iterable?.[Symbol.iterator]());
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/BindingManager.js
+var BindingManager = class {
+  #deactivationParams;
+  #defaultScope;
+  #planResultCacheManager;
+  #serviceReferenceManager;
+  constructor(deactivationParams, defaultScope, planResultCacheManager, serviceReferenceManager) {
+    this.#deactivationParams = deactivationParams;
+    this.#defaultScope = defaultScope;
+    this.#planResultCacheManager = planResultCacheManager;
+    this.#serviceReferenceManager = serviceReferenceManager;
+  }
+  bind(serviceIdentifier) {
+    return new BindToFluentSyntaxImplementation((binding) => {
+      this.#setBinding(binding);
+    }, void 0, this.#defaultScope, serviceIdentifier);
+  }
+  isBound(serviceIdentifier, options) {
+    const bindings = this.#serviceReferenceManager.bindingService.get(serviceIdentifier);
+    return this.#isAnyValidBinding(serviceIdentifier, bindings, options);
+  }
+  isCurrentBound(serviceIdentifier, options) {
+    const bindings = this.#serviceReferenceManager.bindingService.getNonParentBindings(serviceIdentifier);
+    return this.#isAnyValidBinding(serviceIdentifier, bindings, options);
+  }
+  async rebindAsync(serviceIdentifier) {
+    await this.unbindAsync(serviceIdentifier);
+    return this.bind(serviceIdentifier);
+  }
+  rebind(serviceIdentifier) {
+    this.unbind(serviceIdentifier);
+    return this.bind(serviceIdentifier);
+  }
+  async unbindAsync(identifier) {
+    await this.#unbindAsync(identifier);
+  }
+  async unbindAllAsync() {
+    await this.#unbindAll();
+  }
+  unbindAll() {
+    const result = this.#unbindAll();
+    if (result !== void 0) {
+      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous deactivation when unbinding all services. Consider using Container.unbindAllAsync() instead.");
+    }
+  }
+  unbind(identifier) {
+    const result = this.#unbindAsync(identifier);
+    if (result !== void 0) {
+      this.#throwUnexpectedAsyncUnbindOperation(identifier);
+    }
+  }
+  #setBinding(binding) {
+    this.#serviceReferenceManager.bindingService.set(binding);
+    this.#planResultCacheManager.invalidateService({
+      binding,
+      kind: CacheBindingInvalidationKind.bindingAdded
+    });
+  }
+  #throwUnexpectedAsyncUnbindOperation(identifier) {
+    let errorMessage;
+    if (isBindingIdentifier(identifier)) {
+      const bindingsById = this.#serviceReferenceManager.bindingService.getById(identifier.id);
+      const bindingServiceIdentifier = getFirstIterableResult(bindingsById)?.serviceIdentifier;
+      if (bindingServiceIdentifier === void 0) {
+        errorMessage = "Unexpected asynchronous deactivation when unbinding binding identifier. Consider using Container.unbindAsync() instead.";
+      } else {
+        errorMessage = `Unexpected asynchronous deactivation when unbinding "${stringifyServiceIdentifier(bindingServiceIdentifier)}" binding. Consider using Container.unbindAsync() instead.`;
+      }
+    } else {
+      errorMessage = `Unexpected asynchronous deactivation when unbinding "${stringifyServiceIdentifier(identifier)}" service. Consider using Container.unbindAsync() instead.`;
+    }
+    throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, errorMessage);
+  }
+  #unbindAsync(identifier) {
+    if (isBindingIdentifier(identifier)) {
+      return this.#unbindBindingIdentifier(identifier);
+    }
+    return this.#unbindServiceIdentifier(identifier);
+  }
+  #unbindBindingIdentifier(identifier) {
+    const bindingsIterable = this.#serviceReferenceManager.bindingService.getById(identifier.id);
+    const bindings = bindingsIterable === void 0 ? void 0 : [...bindingsIterable];
+    const result = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
+    if (result === void 0) {
+      this.#clearAfterUnbindBindingIdentifier(bindings, identifier);
+    } else {
+      return result.then(() => {
+        this.#clearAfterUnbindBindingIdentifier(bindings, identifier);
+      });
+    }
+  }
+  #clearAfterUnbindBindingIdentifier(bindings, identifier) {
+    this.#serviceReferenceManager.bindingService.removeById(identifier.id);
+    if (bindings !== void 0) {
+      for (const binding of bindings) {
+        this.#planResultCacheManager.invalidateService({
+          binding,
+          kind: CacheBindingInvalidationKind.bindingRemoved
+        });
+      }
+    }
+  }
+  #unbindAll() {
+    const nonParentBoundServiceIds = [
+      ...this.#serviceReferenceManager.bindingService.getNonParentBoundServices()
+    ];
+    const deactivationResults = nonParentBoundServiceIds.map((serviceId) => resolveServiceDeactivations(this.#deactivationParams, serviceId));
+    const hasAsyncDeactivations = deactivationResults.some((result) => isPromise(result));
+    if (hasAsyncDeactivations) {
+      return Promise.all(deactivationResults).then(() => {
+        this.#clearAfterUnbindAll(nonParentBoundServiceIds);
+      });
+    }
+    this.#clearAfterUnbindAll(nonParentBoundServiceIds);
+  }
+  #clearAfterUnbindAll(serviceIds) {
+    for (const serviceId of serviceIds) {
+      this.#serviceReferenceManager.activationService.removeAllByServiceId(serviceId);
+      this.#serviceReferenceManager.bindingService.removeAllByServiceId(serviceId);
+      this.#serviceReferenceManager.deactivationService.removeAllByServiceId(serviceId);
+    }
+    this.#serviceReferenceManager.planResultCacheService.clearCache();
+  }
+  #unbindServiceIdentifier(identifier) {
+    const bindingsIterable = this.#serviceReferenceManager.bindingService.get(identifier);
+    const bindings = bindingsIterable === void 0 ? void 0 : [...bindingsIterable];
+    const result = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
+    if (result === void 0) {
+      this.#clearAfterUnbindServiceIdentifier(identifier, bindings);
+    } else {
+      return result.then(() => {
+        this.#clearAfterUnbindServiceIdentifier(identifier, bindings);
+      });
+    }
+  }
+  #clearAfterUnbindServiceIdentifier(identifier, bindings) {
+    this.#serviceReferenceManager.activationService.removeAllByServiceId(identifier);
+    this.#serviceReferenceManager.bindingService.removeAllByServiceId(identifier);
+    this.#serviceReferenceManager.deactivationService.removeAllByServiceId(identifier);
+    if (bindings !== void 0) {
+      for (const binding of bindings) {
+        this.#planResultCacheManager.invalidateService({
+          binding,
+          kind: CacheBindingInvalidationKind.bindingRemoved
+        });
+      }
+    }
+  }
+  #isAnyValidBinding(serviceIdentifier, bindings, options) {
+    if (bindings === void 0) {
+      return false;
+    }
+    const bindingConstraints = {
+      getAncestor: () => void 0,
+      name: options?.name,
+      serviceIdentifier,
+      tags: /* @__PURE__ */ new Map()
+    };
+    if (options?.tag !== void 0) {
+      bindingConstraints.tags.set(options.tag.key, options.tag.value);
+    }
+    for (const binding of bindings) {
+      if (binding.isSatisfiedBy(bindingConstraints)) {
+        return true;
+      }
+    }
+    return false;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/ContainerModuleManager.js
+var ContainerModuleManager = class {
+  #bindingManager;
+  #deactivationParams;
+  #defaultScope;
+  #planResultCacheManager;
+  #serviceReferenceManager;
+  constructor(bindingManager, deactivationParams, defaultScope, planResultCacheManager, serviceReferenceManager) {
+    this.#bindingManager = bindingManager;
+    this.#deactivationParams = deactivationParams;
+    this.#defaultScope = defaultScope;
+    this.#planResultCacheManager = planResultCacheManager;
+    this.#serviceReferenceManager = serviceReferenceManager;
+  }
+  async loadAsync(...modules) {
+    await Promise.all(this.#load(...modules));
+  }
+  load(...modules) {
+    const results = this.#load(...modules);
+    for (const result of results) {
+      if (result !== void 0) {
+        throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous module load. Consider using container.loadAsync() instead.");
+      }
+    }
+  }
+  async unloadAsync(...modules) {
+    await Promise.all(this.#unload(...modules));
+    this.#clearAfterUnloadModules(modules);
+  }
+  unload(...modules) {
+    const results = this.#unload(...modules);
+    for (const result of results) {
+      if (result !== void 0) {
+        throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous module unload. Consider using container.unloadAsync() instead.");
+      }
+    }
+    this.#clearAfterUnloadModules(modules);
+  }
+  #buildContainerModuleLoadOptions(moduleId) {
+    return {
+      bind: (serviceIdentifier) => {
+        return new BindToFluentSyntaxImplementation((binding) => {
+          this.#setBinding(binding);
+        }, moduleId, this.#defaultScope, serviceIdentifier);
+      },
+      isBound: this.#bindingManager.isBound.bind(this.#bindingManager),
+      onActivation: (serviceIdentifier, activation) => {
+        this.#serviceReferenceManager.activationService.add(activation, {
+          moduleId,
+          serviceId: serviceIdentifier
+        });
+      },
+      onDeactivation: (serviceIdentifier, deactivation) => {
+        this.#serviceReferenceManager.deactivationService.add(deactivation, {
+          moduleId,
+          serviceId: serviceIdentifier
+        });
+      },
+      rebind: this.#bindingManager.rebind.bind(this.#bindingManager),
+      rebindAsync: this.#bindingManager.rebindAsync.bind(this.#bindingManager),
+      unbind: this.#bindingManager.unbind.bind(this.#bindingManager),
+      unbindAsync: this.#bindingManager.unbindAsync.bind(this.#bindingManager)
+    };
+  }
+  #clearAfterUnloadModules(modules) {
+    for (const module of modules) {
+      this.#serviceReferenceManager.activationService.removeAllByModuleId(module.id);
+      this.#serviceReferenceManager.bindingService.removeAllByModuleId(module.id);
+      this.#serviceReferenceManager.deactivationService.removeAllByModuleId(module.id);
+    }
+    this.#serviceReferenceManager.planResultCacheService.clearCache();
+  }
+  #load(...modules) {
+    return modules.map((module) => module.load(this.#buildContainerModuleLoadOptions(module.id)));
+  }
+  #setBinding(binding) {
+    this.#serviceReferenceManager.bindingService.set(binding);
+    this.#planResultCacheManager.invalidateService({
+      binding,
+      kind: CacheBindingInvalidationKind.bindingAdded
+    });
+  }
+  #unload(...modules) {
+    return modules.map((module) => resolveModuleDeactivations(this.#deactivationParams, module.id));
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/actions/resetDeactivationParams.js
+function resetDeactivationParams(serviceReferenceManager, deactivationParams) {
+  deactivationParams.getBindings = serviceReferenceManager.bindingService.get.bind(serviceReferenceManager.bindingService);
+  deactivationParams.getBindingsFromModule = serviceReferenceManager.bindingService.getByModuleId.bind(serviceReferenceManager.bindingService);
+  deactivationParams.getDeactivations = serviceReferenceManager.deactivationService.get.bind(serviceReferenceManager.deactivationService);
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/calculations/buildDeactivationParams.js
+function buildDeactivationParams(serviceReferenceManager) {
+  return {
+    getBindings: serviceReferenceManager.bindingService.get.bind(serviceReferenceManager.bindingService),
+    getBindingsFromModule: serviceReferenceManager.bindingService.getByModuleId.bind(serviceReferenceManager.bindingService),
+    getClassMetadata,
+    getDeactivations: serviceReferenceManager.deactivationService.get.bind(serviceReferenceManager.deactivationService)
+  };
+}
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/DeactivationParamsManager.js
+var DeactivationParamsManager = class {
+  deactivationParams;
+  constructor(serviceReferenceManager) {
+    this.deactivationParams = buildDeactivationParams(serviceReferenceManager);
+    serviceReferenceManager.onReset(() => {
+      resetDeactivationParams(serviceReferenceManager, this.deactivationParams);
+    });
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/PlanParamsOperationsManager.js
+var PlanParamsOperationsManager = class {
+  planParamsOperations;
+  #serviceReferenceManager;
+  constructor(serviceReferenceManager) {
+    this.#serviceReferenceManager = serviceReferenceManager;
+    this.planParamsOperations = {
+      getActivations: this.#getActivations.bind(this),
+      getBindings: this.#serviceReferenceManager.bindingService.get.bind(this.#serviceReferenceManager.bindingService),
+      getBindingsChained: this.#serviceReferenceManager.bindingService.getChained.bind(this.#serviceReferenceManager.bindingService),
+      getClassMetadata,
+      getPlan: this.#serviceReferenceManager.planResultCacheService.get.bind(this.#serviceReferenceManager.planResultCacheService),
+      setBinding: this.#setBinding.bind(this),
+      setNonCachedServiceNode: this.#serviceReferenceManager.planResultCacheService.setNonCachedServiceNode.bind(this.#serviceReferenceManager.planResultCacheService),
+      setPlan: this.#serviceReferenceManager.planResultCacheService.set.bind(this.#serviceReferenceManager.planResultCacheService),
+      subscribeActivationAddedOnce: this.#subscribeActivationAddedOnce.bind(this)
+    };
+    this.#serviceReferenceManager.onReset(() => {
+      this.#resetComputedProperties();
+    });
+  }
+  #getActivations(serviceIdentifier) {
+    return this.#serviceReferenceManager.activationService.get(serviceIdentifier);
+  }
+  #subscribeActivationAddedOnce(serviceIdentifier, subscriber) {
+    this.#serviceReferenceManager.activationService.subscribeOnce(serviceIdentifier, subscriber);
+  }
+  #resetComputedProperties() {
+    this.planParamsOperations.getBindings = this.#serviceReferenceManager.bindingService.get.bind(this.#serviceReferenceManager.bindingService);
+    this.planParamsOperations.getBindingsChained = this.#serviceReferenceManager.bindingService.getChained.bind(this.#serviceReferenceManager.bindingService);
+    this.planParamsOperations.setBinding = this.#setBinding.bind(this);
+  }
+  #setBinding(binding) {
+    this.#serviceReferenceManager.bindingService.set(binding);
+    this.#serviceReferenceManager.planResultCacheService.invalidateServiceBinding({
+      binding,
+      kind: CacheBindingInvalidationKind.bindingAdded,
+      operations: this.planParamsOperations
+    });
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/PlanResultCacheManager.js
+var PlanResultCacheManager = class {
+  #planParamsOperationsManager;
+  #serviceReferenceManager;
+  constructor(planParamsOperationsManager, serviceReferenceManager) {
+    this.#planParamsOperationsManager = planParamsOperationsManager;
+    this.#serviceReferenceManager = serviceReferenceManager;
+  }
+  invalidateService(invalidation) {
+    this.#serviceReferenceManager.planResultCacheService.invalidateServiceBinding({
+      ...invalidation,
+      operations: this.#planParamsOperationsManager.planParamsOperations
+    });
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+plugin@0.3.1/node_modules/@inversifyjs/plugin/lib/plugin/models/Plugin.js
+var isPlugin = /* @__PURE__ */ Symbol.for("@inversifyjs/plugin/isPlugin");
+var Plugin = class {
+  [isPlugin] = true;
+  _container;
+  _context;
+  constructor(container, context3) {
+    this._container = container;
+    this._context = context3;
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/PluginManager.js
+var PluginManager = class {
+  #pluginApi;
+  #pluginContext;
+  #serviceResolutionManager;
+  #serviceReferenceManager;
+  constructor(container, serviceReferenceManager, serviceResolutionManager) {
+    this.#serviceReferenceManager = serviceReferenceManager;
+    this.#serviceResolutionManager = serviceResolutionManager;
+    this.#pluginApi = this.#buildPluginApi(container);
+    this.#pluginContext = this.#buildPluginContext();
+  }
+  register(container, pluginConstructor) {
+    const pluginInstance = new pluginConstructor(container, this.#pluginContext);
+    this.#assertIsPlugin(pluginInstance);
+    pluginInstance.load(this.#pluginApi);
+  }
+  #assertIsPlugin(value) {
+    if (value[isPlugin] !== true) {
+      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Invalid plugin. The plugin must extend the Plugin class");
+    }
+  }
+  #buildPluginApi(container) {
+    return {
+      define: (name, method) => {
+        if (Object.prototype.hasOwnProperty.call(container, name)) {
+          throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Container already has a method named "${String(name)}"`);
+        }
+        container[name] = method;
+      },
+      onPlan: this.#serviceResolutionManager.onPlan.bind(this.#serviceResolutionManager)
+    };
+  }
+  #buildPluginContext() {
+    const serviceReferenceManager = this.#serviceReferenceManager;
+    return {
+      get activationService() {
+        return serviceReferenceManager.activationService;
+      },
+      get bindingService() {
+        return serviceReferenceManager.bindingService;
+      },
+      get deactivationService() {
+        return serviceReferenceManager.deactivationService;
+      },
+      get planResultCacheService() {
+        return serviceReferenceManager.planResultCacheService;
+      }
+    };
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/ServiceReferenceManager.js
+var ServiceReferenceManager = class {
+  activationService;
+  bindingService;
+  deactivationService;
+  planResultCacheService;
+  #onResetComputedPropertiesListeners;
+  constructor(activationService, bindingService, deactivationService, planResultCacheService) {
+    this.activationService = activationService;
+    this.bindingService = bindingService;
+    this.deactivationService = deactivationService;
+    this.planResultCacheService = planResultCacheService;
+    this.#onResetComputedPropertiesListeners = [];
+  }
+  reset(activationService, bindingService, deactivationService) {
+    this.activationService = activationService;
+    this.bindingService = bindingService;
+    this.deactivationService = deactivationService;
+    this.planResultCacheService.clearCache();
+    for (const listener of this.#onResetComputedPropertiesListeners) {
+      listener();
+    }
+  }
+  onReset(listener) {
+    this.#onResetComputedPropertiesListeners.push(listener);
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/ServiceResolutionManager.js
+var ServiceResolutionManager = class {
+  #autobind;
+  #defaultScope;
+  #getActivationsResolutionParam;
+  #jitEnabled;
+  #resolutionContext;
+  #onPlanHandlers;
+  #planParamsOperationsManager;
+  #serviceReferenceManager;
+  constructor(planParamsOperationsManager, serviceReferenceManager, autobind, defaultScope, jitEnabled) {
+    this.#planParamsOperationsManager = planParamsOperationsManager;
+    this.#serviceReferenceManager = serviceReferenceManager;
+    this.#getActivationsResolutionParam = (serviceIdentifier) => this.#serviceReferenceManager.activationService.get(serviceIdentifier);
+    this.#resolutionContext = this.#buildResolutionContext();
+    this.#autobind = autobind;
+    this.#defaultScope = defaultScope;
+    this.#jitEnabled = jitEnabled;
+    this.#onPlanHandlers = [];
+    this.#serviceReferenceManager.onReset(() => {
+      this.#resetComputedProperties();
+    });
+  }
+  get(serviceIdentifier, options) {
+    const planResult = this.#buildPlanResult(false, serviceIdentifier, options);
+    const resolvedValue = this.#getFromPlanResult(planResult);
+    if (isPromise(resolvedValue)) {
+      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Unexpected asynchronous service when resolving service "${stringifyServiceIdentifier(serviceIdentifier)}"`);
+    }
+    return resolvedValue;
+  }
+  getAll(serviceIdentifier, options) {
+    const planResult = this.#buildPlanResult(true, serviceIdentifier, options);
+    const resolvedValue = this.#getFromPlanResult(planResult);
+    if (isPromise(resolvedValue)) {
+      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Unexpected asynchronous service when resolving service "${stringifyServiceIdentifier(serviceIdentifier)}"`);
+    }
+    return resolvedValue;
+  }
+  async getAllAsync(serviceIdentifier, options) {
+    const planResult = this.#buildPlanResult(true, serviceIdentifier, options);
+    return this.#getFromPlanResult(planResult);
+  }
+  async getAsync(serviceIdentifier, options) {
+    const planResult = this.#buildPlanResult(false, serviceIdentifier, options);
+    return this.#getFromPlanResult(planResult);
+  }
+  onPlan(handler2) {
+    this.#onPlanHandlers.push(handler2);
+  }
+  #resetComputedProperties() {
+    this.#resolutionContext = this.#buildResolutionContext();
+  }
+  #buildGetPlanOptions(isMultiple, serviceIdentifier, options) {
+    const name = options?.name;
+    const optional2 = options?.optional ?? false;
+    const tag = options?.tag;
+    if (isMultiple) {
+      return {
+        chained: options?.chained ?? false,
+        isMultiple,
+        name,
+        optional: optional2,
+        serviceIdentifier,
+        tag
+      };
+    } else {
+      return {
+        isMultiple,
+        name,
+        optional: optional2,
+        serviceIdentifier,
+        tag
+      };
+    }
+  }
+  #buildPlanParams(serviceIdentifier, isMultiple, options) {
+    const planParams = {
+      autobindOptions: options?.autobind ?? this.#autobind ? {
+        scope: this.#defaultScope
+      } : void 0,
+      jitEnabled: this.#jitEnabled,
+      operations: this.#planParamsOperationsManager.planParamsOperations,
+      rootConstraints: this.#buildPlanParamsConstraints(serviceIdentifier, isMultiple, options),
+      servicesBranch: []
+    };
+    this.#handlePlanParamsRootConstraints(planParams, options);
+    return planParams;
+  }
+  #buildPlanParamsConstraints(serviceIdentifier, isMultiple, options) {
+    if (isMultiple) {
+      return {
+        chained: options?.chained ?? false,
+        isMultiple,
+        serviceIdentifier
+      };
+    } else {
+      return {
+        isMultiple,
+        serviceIdentifier
+      };
+    }
+  }
+  #buildPlanResult(isMultiple, serviceIdentifier, options) {
+    if (!isMultiple && options === void 0) {
+      const cachedPlanResultFromServiceIdentifier = this.#serviceReferenceManager.planResultCacheService.getByServiceIdentifier(serviceIdentifier);
+      if (cachedPlanResultFromServiceIdentifier !== void 0) {
+        return cachedPlanResultFromServiceIdentifier;
+      }
+    }
+    const getPlanOptions = this.#buildGetPlanOptions(isMultiple, serviceIdentifier, options);
+    const planResultFromCache = this.#serviceReferenceManager.planResultCacheService.get(getPlanOptions);
+    if (planResultFromCache !== void 0) {
+      return planResultFromCache;
+    }
+    const planResult = plan(this.#buildPlanParams(serviceIdentifier, isMultiple, options));
+    for (const handler2 of this.#onPlanHandlers) {
+      handler2(getPlanOptions, planResult);
+    }
+    return planResult;
+  }
+  #buildResolutionContext() {
+    return {
+      get: this.get.bind(this),
+      getActivations: this.#getActivationsResolutionParam,
+      getAll: this.getAll.bind(this),
+      getAllAsync: this.getAllAsync.bind(this),
+      getAsync: this.getAsync.bind(this)
+    };
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  #getFromPlanResult(planResult) {
+    return resolve({
+      context: this.#resolutionContext,
+      planResult,
+      requestScopeCache: void 0
+    });
+  }
+  #handlePlanParamsRootConstraints(planParams, options) {
+    if (options === void 0) {
+      return;
+    }
+    if (options.name !== void 0) {
+      planParams.rootConstraints.name = options.name;
+    }
+    if (options.optional === true) {
+      planParams.rootConstraints.isOptional = true;
+    }
+    if (options.tag !== void 0) {
+      planParams.rootConstraints.tag = {
+        key: options.tag.key,
+        value: options.tag.value
+      };
+    }
+    if (planParams.rootConstraints.isMultiple) {
+      planParams.rootConstraints.chained = options?.chained ?? false;
+    }
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/SnapshotManager.js
+var SnapshotManager = class {
+  #serviceReferenceManager;
+  #snapshots;
+  constructor(serviceReferenceManager) {
+    this.#serviceReferenceManager = serviceReferenceManager;
+    this.#snapshots = [];
+  }
+  restore() {
+    const snapshot = this.#snapshots.pop();
+    if (snapshot === void 0) {
+      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "No snapshot available to restore");
+    }
+    this.#serviceReferenceManager.reset(snapshot.activationService, snapshot.bindingService, snapshot.deactivationService);
+  }
+  snapshot() {
+    this.#snapshots.push({
+      activationService: this.#serviceReferenceManager.activationService.clone(),
+      bindingService: this.#serviceReferenceManager.bindingService.clone(),
+      deactivationService: this.#serviceReferenceManager.deactivationService.clone()
+    });
+  }
+};
+
+// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/Container.js
+var DEFAULT_DEFAULT_SCOPE = bindingScopeValues.Transient;
+var DEFAULT_JITLESS = true;
+var Container = class {
+  #bindingManager;
+  #containerModuleManager;
+  #pluginManager;
+  #serviceReferenceManager;
+  #serviceResolutionManager;
+  #snapshotManager;
+  constructor(options) {
+    const autobind = options?.autobind ?? false;
+    const defaultScope = options?.defaultScope ?? DEFAULT_DEFAULT_SCOPE;
+    const jitless = options?.jitless ?? DEFAULT_JITLESS;
+    this.#serviceReferenceManager = this.#buildServiceReferenceManager(options, autobind, defaultScope, jitless);
+    const planParamsOperationsManager = new PlanParamsOperationsManager(this.#serviceReferenceManager);
+    const planResultCacheManager = new PlanResultCacheManager(planParamsOperationsManager, this.#serviceReferenceManager);
+    const deactivationParamsManager = new DeactivationParamsManager(this.#serviceReferenceManager);
+    this.#bindingManager = new BindingManager(deactivationParamsManager.deactivationParams, defaultScope, planResultCacheManager, this.#serviceReferenceManager);
+    this.#containerModuleManager = new ContainerModuleManager(this.#bindingManager, deactivationParamsManager.deactivationParams, defaultScope, planResultCacheManager, this.#serviceReferenceManager);
+    this.#serviceResolutionManager = new ServiceResolutionManager(planParamsOperationsManager, this.#serviceReferenceManager, autobind, defaultScope, !jitless);
+    this.#pluginManager = new PluginManager(this, this.#serviceReferenceManager, this.#serviceResolutionManager);
+    this.#snapshotManager = new SnapshotManager(this.#serviceReferenceManager);
+  }
+  bind(serviceIdentifier) {
+    return this.#bindingManager.bind(serviceIdentifier);
+  }
+  get(serviceIdentifier, options) {
+    return this.#serviceResolutionManager.get(serviceIdentifier, options);
+  }
+  getAll(serviceIdentifier, options) {
+    return this.#serviceResolutionManager.getAll(serviceIdentifier, options);
+  }
+  async getAllAsync(serviceIdentifier, options) {
+    return this.#serviceResolutionManager.getAllAsync(serviceIdentifier, options);
+  }
+  async getAsync(serviceIdentifier, options) {
+    return this.#serviceResolutionManager.getAsync(serviceIdentifier, options);
+  }
+  isBound(serviceIdentifier, options) {
+    return this.#bindingManager.isBound(serviceIdentifier, options);
+  }
+  isCurrentBound(serviceIdentifier, options) {
+    return this.#bindingManager.isCurrentBound(serviceIdentifier, options);
+  }
+  async loadAsync(...modules) {
+    return this.#containerModuleManager.loadAsync(...modules);
+  }
+  load(...modules) {
+    this.#containerModuleManager.load(...modules);
+  }
+  onActivation(serviceIdentifier, activation) {
+    this.#serviceReferenceManager.activationService.add(activation, {
+      serviceId: serviceIdentifier
+    });
+  }
+  onDeactivation(serviceIdentifier, deactivation) {
+    this.#serviceReferenceManager.deactivationService.add(deactivation, {
+      serviceId: serviceIdentifier
+    });
+  }
+  register(pluginConstructor) {
+    this.#pluginManager.register(this, pluginConstructor);
+  }
+  restore() {
+    this.#snapshotManager.restore();
+  }
+  async rebindAsync(serviceIdentifier) {
+    return this.#bindingManager.rebindAsync(serviceIdentifier);
+  }
+  rebind(serviceIdentifier) {
+    return this.#bindingManager.rebind(serviceIdentifier);
+  }
+  snapshot() {
+    this.#snapshotManager.snapshot();
+  }
+  async unbindAsync(identifier) {
+    await this.#bindingManager.unbindAsync(identifier);
+  }
+  async unbindAllAsync() {
+    await this.#bindingManager.unbindAllAsync();
+  }
+  unbindAll() {
+    this.#bindingManager.unbindAll();
+  }
+  unbind(identifier) {
+    this.#bindingManager.unbind(identifier);
+  }
+  async unloadAsync(...modules) {
+    return this.#containerModuleManager.unloadAsync(...modules);
+  }
+  unload(...modules) {
+    this.#containerModuleManager.unload(...modules);
+  }
+  #buildAutobindOptions(autobind, defaultScope) {
+    if (autobind) {
+      return { scope: defaultScope };
+    }
+    return void 0;
+  }
+  #buildServiceReferenceManager(options, autobind, defaultScope, jitless) {
+    const autobindOptions = this.#buildAutobindOptions(autobind, defaultScope);
+    if (options?.parent === void 0) {
+      return new ServiceReferenceManager(ActivationsService.build(() => void 0), BindingService.build(() => void 0, autobindOptions), DeactivationsService.build(() => void 0), new PlanResultCacheService(!jitless));
+    }
+    const planResultCacheService = new PlanResultCacheService(!jitless);
+    const parent = options.parent;
+    parent.#serviceReferenceManager.planResultCacheService.subscribe(planResultCacheService);
+    return new ServiceReferenceManager(ActivationsService.build(() => parent.#serviceReferenceManager.activationService), BindingService.build(() => parent.#serviceReferenceManager.bindingService, autobindOptions), DeactivationsService.build(() => parent.#serviceReferenceManager.deactivationService), planResultCacheService);
+  }
+};
+
+// packages/runtime/github-actions/src/action-failure-presenter.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var ActionFailurePresenter = class {
+  /** Never expose provider responses, input values, or contact data in failures. */
+  publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Unexpected technical failure.";
+  }
+};
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
+import * as os from "os";
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
+function toCommandValue(input) {
+  if (input === null || input === void 0) {
+    return "";
+  } else if (typeof input === "string" || input instanceof String) {
+    return input;
+  }
+  return JSON.stringify(input);
+}
+function toCommandProperties(annotationProperties) {
+  if (!Object.keys(annotationProperties).length) {
+    return {};
+  }
+  return {
+    title: annotationProperties.title,
+    file: annotationProperties.file,
+    line: annotationProperties.startLine,
+    endLine: annotationProperties.endLine,
+    col: annotationProperties.startColumn,
+    endColumn: annotationProperties.endColumn
+  };
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
+function issueCommand(command, properties, message) {
+  const cmd = new Command(command, properties, message);
+  process.stdout.write(cmd.toString() + os.EOL);
+}
+var CMD_STRING = "::";
+var Command = class {
+  constructor(command, properties, message) {
+    if (!command) {
+      command = "missing.command";
+    }
+    this.command = command;
+    this.properties = properties;
+    this.message = message;
+  }
+  toString() {
+    let cmdStr = CMD_STRING + this.command;
+    if (this.properties && Object.keys(this.properties).length > 0) {
+      cmdStr += " ";
+      let first = true;
+      for (const key in this.properties) {
+        if (this.properties.hasOwnProperty(key)) {
+          const val = this.properties[key];
+          if (val) {
+            if (first) {
+              first = false;
+            } else {
+              cmdStr += ",";
+            }
+            cmdStr += `${key}=${escapeProperty(val)}`;
+          }
+        }
+      }
+    }
+    cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
+    return cmdStr;
+  }
+};
+function escapeData(s) {
+  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+function escapeProperty(s) {
+  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/file-command.js
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as os2 from "os";
+function issueFileCommand(command, message) {
+  const filePath = process.env[`GITHUB_${command}`];
+  if (!filePath) {
+    throw new Error(`Unable to find environment variable for file command ${command}`);
+  }
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Missing file at path: ${filePath}`);
+  }
+  fs.appendFileSync(filePath, `${toCommandValue(message)}${os2.EOL}`, {
+    encoding: "utf8"
+  });
+}
+function prepareKeyValueMessage(key, value) {
+  const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
+  const convertedValue = toCommandValue(value);
+  if (key.includes(delimiter)) {
+    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+  }
+  if (convertedValue.includes(delimiter)) {
+    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+  }
+  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
+import * as os4 from "os";
+
+// node_modules/.pnpm/@actions+http-client@4.0.1/node_modules/@actions/http-client/lib/index.js
+var tunnel = __toESM(require_tunnel2(), 1);
+var import_undici = __toESM(require_undici(), 1);
+var HttpCodes;
+(function(HttpCodes2) {
+  HttpCodes2[HttpCodes2["OK"] = 200] = "OK";
+  HttpCodes2[HttpCodes2["MultipleChoices"] = 300] = "MultipleChoices";
+  HttpCodes2[HttpCodes2["MovedPermanently"] = 301] = "MovedPermanently";
+  HttpCodes2[HttpCodes2["ResourceMoved"] = 302] = "ResourceMoved";
+  HttpCodes2[HttpCodes2["SeeOther"] = 303] = "SeeOther";
+  HttpCodes2[HttpCodes2["NotModified"] = 304] = "NotModified";
+  HttpCodes2[HttpCodes2["UseProxy"] = 305] = "UseProxy";
+  HttpCodes2[HttpCodes2["SwitchProxy"] = 306] = "SwitchProxy";
+  HttpCodes2[HttpCodes2["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+  HttpCodes2[HttpCodes2["PermanentRedirect"] = 308] = "PermanentRedirect";
+  HttpCodes2[HttpCodes2["BadRequest"] = 400] = "BadRequest";
+  HttpCodes2[HttpCodes2["Unauthorized"] = 401] = "Unauthorized";
+  HttpCodes2[HttpCodes2["PaymentRequired"] = 402] = "PaymentRequired";
+  HttpCodes2[HttpCodes2["Forbidden"] = 403] = "Forbidden";
+  HttpCodes2[HttpCodes2["NotFound"] = 404] = "NotFound";
+  HttpCodes2[HttpCodes2["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+  HttpCodes2[HttpCodes2["NotAcceptable"] = 406] = "NotAcceptable";
+  HttpCodes2[HttpCodes2["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
+  HttpCodes2[HttpCodes2["RequestTimeout"] = 408] = "RequestTimeout";
+  HttpCodes2[HttpCodes2["Conflict"] = 409] = "Conflict";
+  HttpCodes2[HttpCodes2["Gone"] = 410] = "Gone";
+  HttpCodes2[HttpCodes2["TooManyRequests"] = 429] = "TooManyRequests";
+  HttpCodes2[HttpCodes2["InternalServerError"] = 500] = "InternalServerError";
+  HttpCodes2[HttpCodes2["NotImplemented"] = 501] = "NotImplemented";
+  HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
+  HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+  HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
+})(HttpCodes || (HttpCodes = {}));
+var Headers;
+(function(Headers2) {
+  Headers2["Accept"] = "accept";
+  Headers2["ContentType"] = "content-type";
+})(Headers || (Headers = {}));
+var MediaTypes;
+(function(MediaTypes2) {
+  MediaTypes2["ApplicationJson"] = "application/json";
+})(MediaTypes || (MediaTypes = {}));
+var HttpRedirectCodes = [
+  HttpCodes.MovedPermanently,
+  HttpCodes.ResourceMoved,
+  HttpCodes.SeeOther,
+  HttpCodes.TemporaryRedirect,
+  HttpCodes.PermanentRedirect
+];
+var HttpResponseRetryCodes = [
+  HttpCodes.BadGateway,
+  HttpCodes.ServiceUnavailable,
+  HttpCodes.GatewayTimeout
+];
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/summary.js
+import { EOL as EOL3 } from "os";
+import { constants, promises } from "fs";
+var __awaiter = function(thisArg, _arguments, P2, generator) {
+  function adopt(value) {
+    return value instanceof P2 ? value : new P2(function(resolve4) {
+      resolve4(value);
+    });
+  }
+  return new (P2 || (P2 = Promise))(function(resolve4, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var { access, appendFile, writeFile } = promises;
+var SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
+var Summary = class {
+  constructor() {
+    this._buffer = "";
+  }
+  /**
+   * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
+   * Also checks r/w permissions.
+   *
+   * @returns step summary file path
+   */
+  filePath() {
+    return __awaiter(this, void 0, void 0, function* () {
+      if (this._filePath) {
+        return this._filePath;
+      }
+      const pathFromEnv = process.env[SUMMARY_ENV_VAR];
+      if (!pathFromEnv) {
+        throw new Error(`Unable to find environment variable for $${SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
+      }
+      try {
+        yield access(pathFromEnv, constants.R_OK | constants.W_OK);
+      } catch (_a2) {
+        throw new Error(`Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`);
+      }
+      this._filePath = pathFromEnv;
+      return this._filePath;
+    });
+  }
+  /**
+   * Wraps content in an HTML tag, adding any HTML attributes
+   *
+   * @param {string} tag HTML tag to wrap
+   * @param {string | null} content content within the tag
+   * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
+   *
+   * @returns {string} content wrapped in HTML element
+   */
+  wrap(tag, content, attrs = {}) {
+    const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
+    if (!content) {
+      return `<${tag}${htmlAttrs}>`;
+    }
+    return `<${tag}${htmlAttrs}>${content}</${tag}>`;
+  }
+  /**
+   * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
+   *
+   * @param {SummaryWriteOptions} [options] (optional) options for write operation
+   *
+   * @returns {Promise<Summary>} summary instance
+   */
+  write(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+      const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
+      const filePath = yield this.filePath();
+      const writeFunc = overwrite ? writeFile : appendFile;
+      yield writeFunc(filePath, this._buffer, { encoding: "utf8" });
+      return this.emptyBuffer();
+    });
+  }
+  /**
+   * Clears the summary buffer and wipes the summary file
+   *
+   * @returns {Summary} summary instance
+   */
+  clear() {
+    return __awaiter(this, void 0, void 0, function* () {
+      return this.emptyBuffer().write({ overwrite: true });
+    });
+  }
+  /**
+   * Returns the current summary buffer as a string
+   *
+   * @returns {string} string of summary buffer
+   */
+  stringify() {
+    return this._buffer;
+  }
+  /**
+   * If the summary buffer is empty
+   *
+   * @returns {boolen} true if the buffer is empty
+   */
+  isEmptyBuffer() {
+    return this._buffer.length === 0;
+  }
+  /**
+   * Resets the summary buffer without writing to summary file
+   *
+   * @returns {Summary} summary instance
+   */
+  emptyBuffer() {
+    this._buffer = "";
+    return this;
+  }
+  /**
+   * Adds raw text to the summary buffer
+   *
+   * @param {string} text content to add
+   * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
+   *
+   * @returns {Summary} summary instance
+   */
+  addRaw(text, addEOL = false) {
+    this._buffer += text;
+    return addEOL ? this.addEOL() : this;
+  }
+  /**
+   * Adds the operating system-specific end-of-line marker to the buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addEOL() {
+    return this.addRaw(EOL3);
+  }
+  /**
+   * Adds an HTML codeblock to the summary buffer
+   *
+   * @param {string} code content to render within fenced code block
+   * @param {string} lang (optional) language to syntax highlight code
+   *
+   * @returns {Summary} summary instance
+   */
+  addCodeBlock(code, lang) {
+    const attrs = Object.assign({}, lang && { lang });
+    const element = this.wrap("pre", this.wrap("code", code), attrs);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML list to the summary buffer
+   *
+   * @param {string[]} items list of items to render
+   * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
+   *
+   * @returns {Summary} summary instance
+   */
+  addList(items, ordered = false) {
+    const tag = ordered ? "ol" : "ul";
+    const listItems = items.map((item) => this.wrap("li", item)).join("");
+    const element = this.wrap(tag, listItems);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML table to the summary buffer
+   *
+   * @param {SummaryTableCell[]} rows table rows
+   *
+   * @returns {Summary} summary instance
+   */
+  addTable(rows) {
+    const tableBody = rows.map((row) => {
+      const cells = row.map((cell) => {
+        if (typeof cell === "string") {
+          return this.wrap("td", cell);
+        }
+        const { header, data, colspan, rowspan } = cell;
+        const tag = header ? "th" : "td";
+        const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
+        return this.wrap(tag, data, attrs);
+      }).join("");
+      return this.wrap("tr", cells);
+    }).join("");
+    const element = this.wrap("table", tableBody);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds a collapsable HTML details element to the summary buffer
+   *
+   * @param {string} label text for the closed state
+   * @param {string} content collapsable content
+   *
+   * @returns {Summary} summary instance
+   */
+  addDetails(label, content) {
+    const element = this.wrap("details", this.wrap("summary", label) + content);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML image tag to the summary buffer
+   *
+   * @param {string} src path to the image you to embed
+   * @param {string} alt text description of the image
+   * @param {SummaryImageOptions} options (optional) addition image attributes
+   *
+   * @returns {Summary} summary instance
+   */
+  addImage(src, alt, options) {
+    const { width, height } = options || {};
+    const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
+    const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML section heading element
+   *
+   * @param {string} text heading text
+   * @param {number | string} [level=1] (optional) the heading level, default: 1
+   *
+   * @returns {Summary} summary instance
+   */
+  addHeading(text, level) {
+    const tag = `h${level}`;
+    const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
+    const element = this.wrap(allowedTag, text);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML thematic break (<hr>) to the summary buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addSeparator() {
+    const element = this.wrap("hr", null);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML line break (<br>) to the summary buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addBreak() {
+    const element = this.wrap("br", null);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML blockquote to the summary buffer
+   *
+   * @param {string} text quote text
+   * @param {string} cite (optional) citation url
+   *
+   * @returns {Summary} summary instance
+   */
+  addQuote(text, cite) {
+    const attrs = Object.assign({}, cite && { cite });
+    const element = this.wrap("blockquote", text, attrs);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML anchor tag to the summary buffer
+   *
+   * @param {string} text link text/content
+   * @param {string} href hyperlink
+   *
+   * @returns {Summary} summary instance
+   */
+  addLink(text, href) {
+    const element = this.wrap("a", text, { href });
+    return this.addRaw(element).addEOL();
+  }
+};
+var _summary = new Summary();
+var summary = _summary;
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
+import os3 from "os";
+
+// node_modules/.pnpm/@actions+io@3.0.2/node_modules/@actions/io/lib/io-util.js
+import * as fs2 from "fs";
+var { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs2.promises;
+var IS_WINDOWS = process.platform === "win32";
+var READONLY = fs2.constants.O_RDONLY;
+
+// node_modules/.pnpm/@actions+exec@3.0.0/node_modules/@actions/exec/lib/toolrunner.js
+var IS_WINDOWS2 = process.platform === "win32";
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
+var platform = os3.platform();
+var arch = os3.arch();
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
+var ExitCode;
+(function(ExitCode2) {
+  ExitCode2[ExitCode2["Success"] = 0] = "Success";
+  ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
+})(ExitCode || (ExitCode = {}));
+function setSecret(secret) {
+  issueCommand("add-mask", {}, secret);
+}
+function getInput(name, options) {
+  const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+  if (options && options.required && !val) {
+    throw new Error(`Input required and not supplied: ${name}`);
+  }
+  if (options && options.trimWhitespace === false) {
+    return val;
+  }
+  return val.trim();
+}
+function setOutput(name, value) {
+  const filePath = process.env["GITHUB_OUTPUT"] || "";
+  if (filePath) {
+    return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
+  }
+  process.stdout.write(os4.EOL);
+  issueCommand("set-output", { name }, toCommandValue(value));
+}
+function setFailed(message) {
+  process.exitCode = ExitCode.Failure;
+  error(message);
+}
+function error(message, properties = {}) {
+  issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function warning(message, properties = {}) {
+  issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function info(message) {
+  process.stdout.write(message + os4.EOL);
+}
+
+// packages/runtime/github-actions/src/action-output.ts
+var ActionOutput = class {
+  setJsonOutput(name, value) {
+    setOutput(name, JSON.stringify(value));
+  }
+  setDiagnosticsOutput(diagnostics) {
+    this.setJsonOutput("diagnostics", diagnostics);
+  }
+};
+
+// packages/runtime/github-actions/src/action-report.ts
+var ActionReport = class {
+  async write(title, report, messages5) {
+    const lines = new Set(report.details);
+    for (const item of report.diagnostics) {
+      lines.add(this.diagnosticMessage(item));
+    }
+    if (report.failure)
+      lines.add(messages5.t("report.failed", { reason: report.failure }));
+    for (const line of lines) {
+      info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
+    }
+    const content = [...lines].join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    try {
+      await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
+`).write();
+    } catch {
+      summary.clear();
+      warning(messages5.t("report.summary-unavailable"));
+    }
+  }
+  diagnosticMessage(item) {
+    const field = item.field ? ` field=${item.field}` : "";
+    const fixed = item.fixApplied === void 0 ? "" : ` fix_applied=${item.fixApplied}`;
+    return `${item.severity} ${item.code}${field}${fixed}`;
+  }
+};
+
+// packages/domain/event/src/application/ports/event-repository.ts
+var EventRepositoryPatches = class {
+  eventRepositoryPatchIsEmpty(patch) {
+    return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-concurrent-modification-error.ts
+var EventConcurrentModificationError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
+    );
+    this.name = "EventConcurrentModificationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-not-found-error.ts
+var EventNotFoundError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
+    );
+    this.name = "EventNotFoundError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-document-concurrency.ts
+var EventDocumentConcurrency = class {
+  async ensureEventDocumentIsCurrent(repository, identity, expected) {
+    const current = await repository.find(identity);
+    if (!current) {
+      throw new EventNotFoundError(identity);
+    }
+    if (!this.eventDocumentsEqual(current, expected)) {
+      throw new EventConcurrentModificationError(identity);
+    }
+  }
+  eventDocumentsEqual(left, right) {
+    const leftLabels = [...left.labels].sort(this.compareText.bind(this));
+    const rightLabels = [...right.labels].sort(this.compareText.bind(this));
+    return this.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
+  }
+  compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  sameIdentity(left, right) {
+    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-pagination-error.ts
+var EventPaginationError = class extends Error {
+  constructor(cursor) {
+    super(`Event repository repeated pagination cursor "${cursor}"`);
+    this.name = "EventPaginationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/list-active-events.ts
+var ListActiveEvents = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const activeEvents = [];
+    const allDiagnostics = [];
+    const seenCursors = /* @__PURE__ */ new Set();
+    const seenEvents = /* @__PURE__ */ new Set();
+    const now2 = this.dependencies.clock.now();
+    let pages = 0;
+    let cursor;
+    do {
+      if (++pages > 20) throw new EventPaginationError("audit-page-limit");
+      const page = await this.dependencies.repository.listPage({
+        ...input,
+        includeClosed: false,
+        cursor
+      });
+      for (const document of page.items) {
+        const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
+        if (document.issueState === "closed" || seenEvents.has(identityKey)) {
+          continue;
+        }
+        seenEvents.add(identityKey);
+        this.checkLimit(seenEvents.size);
+        const decoded = this.dependencies.documentCodec.decode(document);
+        const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
+        const eventDiagnostics = [
+          ...decoded.diagnostics,
+          ...evaluated.diagnostics
+        ];
+        const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+          evaluated.event,
+          eventDiagnostics
+        );
+        const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+          event: evaluated.event,
+          readiness,
+          now: now2
+        });
+        allDiagnostics.push(...readiness.diagnostics);
+        activeEvents.push({
+          identity: { ...document.identity },
+          event: evaluated.event,
+          readiness,
+          lifecycle
+        });
+      }
+      cursor = page.nextCursor;
+      if (cursor) {
+        if (seenCursors.has(cursor)) {
+          throw new EventPaginationError(cursor);
+        }
+        seenCursors.add(cursor);
+      }
+    } while (cursor);
+    return {
+      events: Object.freeze(activeEvents),
+      diagnostics: Object.freeze(allDiagnostics)
+    };
+  }
+  checkLimit(count) {
+    if (count > 200) throw new EventPaginationError("audit-issue-limit");
+  }
+};
+
+// packages/domain/event/src/application/use-cases/reconcile-event.ts
+var ReconcileEvent = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const document = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
+    if (!document) {
+      throw new EventNotFoundError(input.identity);
+    }
+    if (!this.collaborators.eventDocumentConcurrency.sameIdentity(
+      document.identity,
+      input.identity
+    )) {
+      throw new EventNotFoundError(input.identity);
+    }
+    const decoded = this.dependencies.documentCodec.decode(document);
+    const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
+    const diagnostics = [
+      ...decoded.diagnostics,
+      ...evaluated.diagnostics
+    ];
+    const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+      evaluated.event,
+      diagnostics
+    );
+    const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+      event: evaluated.event,
+      readiness,
+      now: this.dependencies.clock.now()
+    });
+    const repositoryPatch = this.dependencies.documentCodec.createPatch(
+      document,
+      evaluated.event
+    );
+    const shouldPersist = input.mode === "fix" && !this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      repositoryPatch
+    );
+    if (shouldPersist) {
+      await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+        this.dependencies.repository,
+        input.identity,
+        document
+      );
+      await this.dependencies.repository.applyPatch(
+        input.identity,
+        repositoryPatch
+      );
+    }
+    return {
+      event: evaluated.event,
+      diagnostics: readiness.diagnostics,
+      normalizationPatch: evaluated.patch,
+      repositoryPatch,
+      readiness,
+      lifecycle,
+      persisted: shouldPersist
+    };
+  }
+};
+
+// packages/domain/event/src/domain/diagnostic.ts
+var EventDiagnostics = class {
+  diagnostic(value) {
+    return Object.freeze({ ...value });
+  }
+};
+
+// packages/domain/event/src/domain/event-agenda-equality.ts
+var EventAgendaEquality = class {
+  equals(left, right) {
+    return left.length === right.length && left.every((entry, index) => this.entry(entry, right[index]));
+  }
+  entry(left, right) {
+    return left.description === right.description && left.speakers.length === right.speakers.length && left.speakers.every(
+      (speaker, index) => this.speaker(speaker, right.speakers[index])
+    ) && this.proposal(left.proposal, right.proposal);
+  }
+  speaker(left, right) {
+    return left.id === right.id && left.displayName === right.displayName && left.pictureUrl === right.pictureUrl && left.source?.path === right.source?.path && left.source?.line === right.source?.line;
+  }
+  proposal(left, right) {
+    if (!left || !right) return left === right;
+    return left.provider === right.provider && left.event === right.event && left.id === right.id && left.title === right.title && left.abstract === right.abstract && this.sequence(left.languages, right.languages) && this.sequence(left.formats, right.formats);
+  }
+  sequence(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/domain/event/src/domain/event-agenda-rule.ts
+var EventAgendaRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-agenda";
+  dependencies = [];
+  evaluate(event) {
+    if (event.agenda.length === 0) {
+      return this.collaborators.eventRuleResults.missing(
+        "event.agenda.missing",
+        "agenda",
+        "At least one agenda entry is required"
+      );
+    }
+    const diagnostics = [];
+    const normalizedEntries = event.agenda.map((entry, entryIndex) => {
+      return this.normalizeEntry(entry, entryIndex, diagnostics);
+    });
+    const operations = [];
+    if (!this.collaborators.eventAgendaEquality.equals(
+      event.agenda,
+      normalizedEntries
+    )) {
+      operations.push(
+        this.collaborators.eventPatches.replaceEventField(
+          "agenda",
+          normalizedEntries,
+          "Normalize agenda"
+        )
+      );
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.normalized",
+          severity: "info",
+          category: "normalization",
+          field: "agenda",
+          message: "The agenda can be normalized safely",
+          fixAvailable: true
+        })
+      );
+    }
+    return {
+      diagnostics,
+      patch: this.collaborators.eventPatches.createEventPatch(operations)
+    };
+  }
+  normalizeEntry(entry, entryIndex, diagnostics) {
+    const normalized = this.collaborators.eventParticipantNormalization.normalizeAgendaEntry(
+      entry
+    );
+    if (normalized.speakers.length === 0) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.speaker.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.speakers`,
+          message: "Each agenda entry must have at least one speaker"
+        })
+      );
+    }
+    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
+      if (speaker.displayName === "") {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: "event.agenda.speaker.invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
+            message: "Speaker display name must not be empty"
+          })
+        );
+      }
+    }
+    if (normalized.description === "") {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.description.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.description`,
+          message: "Agenda entry description must not be empty"
+        })
+      );
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/event/src/domain/event-checklists.ts
+var EventChecklists = class {
+  equal(left, right) {
+    return this.itemsEqual(left.slidesAndContent, right.slidesAndContent) && this.itemsEqual(left.communication, right.communication) && this.itemsEqual(left.postEvent, right.postEvent);
+  }
+  itemsEqual(left, right) {
+    return left.length === right.length && left.every(
+      (item, index) => item.name === right[index].name && item.completed === right[index].completed
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-date-rule.ts
+var EventDateRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-date";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.date.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.date.missing",
+        "date",
+        "An event date is required"
+      );
+    }
+    if (!this.collaborators.eventDateValidation.isValidIsoDate(value)) {
+      return this.collaborators.eventRuleResults.invalid(
+        "event.date.invalid",
+        "date",
+        "Event date must be a real calendar date formatted as YYYY-MM-DD"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.date,
+      value,
+      "date",
+      "Normalize event date"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-date-validation.ts
+var EventDateValidation = class {
+  isValidIsoDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      return false;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (month < 1 || month > 12 || day < 1) {
+      return false;
+    }
+    const monthLengths = [
+      31,
+      this.isLeapYear(year) ? 29 : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31
+    ];
+    return day <= monthLengths[month - 1];
+  }
+  isLeapYear(year) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  }
+};
+
+// packages/domain/event/src/domain/event-description-rule.ts
+var EventDescriptionRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-description";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.description.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.description.missing",
+        "description",
+        "An event description is required"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.description,
+      value,
+      "description",
+      "Trim event description"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-host-rule.ts
+var EventHostRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-host";
+  dependencies = [];
+  evaluate(event) {
+    if (!event.host) {
+      return this.collaborators.eventRuleResults.missing(
+        "event.hoster.missing",
+        "host",
+        "A host must be selected"
+      );
+    }
+    const normalized = this.collaborators.eventParticipantNormalization.normalizeParticipant(
+      event.host
+    );
+    if (normalized.displayName === "") {
+      return this.collaborators.eventRuleResults.invalid(
+        "event.hoster.invalid",
+        "host",
+        "Host display name must not be empty"
+      );
+    }
+    if (this.collaborators.eventParticipantNormalization.participantsEqual(
+      event.host,
+      normalized
+    )) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "host",
+        normalized,
+        "Normalize host reference"
+      ),
+      "event.hoster.normalized",
+      "host",
+      "The host reference can be normalized safely"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/patch.ts
+var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
+var EventPatches = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  replaceEventField(path, value, reason) {
+    return Object.freeze({
+      op: "replace",
+      path,
+      value,
+      reason
+    });
+  }
+  createEventPatch(operations) {
+    return Object.freeze({ operations: Object.freeze([...operations]) });
+  }
+  mergeEventPatches(...patches) {
+    return this.createEventPatch(patches.flatMap((patch) => patch.operations));
+  }
+  applyEventPatch(event, patch) {
+    return patch.operations.reduce(
+      (current, operation) => this.applyOperation(current, operation),
+      event
+    );
+  }
+  applyOperation(event, operation) {
+    switch (operation.path) {
+      case "issueTitle":
+        return { ...event, issueTitle: operation.value };
+      case "labels":
+        return { ...event, labels: [...operation.value] };
+      case "eventTitle":
+        return { ...event, eventTitle: operation.value };
+      case "date":
+        return { ...event, date: operation.value };
+      case "description":
+        return { ...event, description: operation.value };
+      case "host":
+        return {
+          ...event,
+          host: operation.value ? { ...operation.value } : void 0
+        };
+      case "agenda":
+        return {
+          ...event,
+          agenda: operation.value.map((entry) => ({
+            ...entry,
+            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+          }))
+        };
+      case "publicationLinks":
+        return { ...event, publicationLinks: { ...operation.value } };
+      case "occurrenceStatus":
+        return { ...event, occurrenceStatus: operation.value };
+      case "timeZone":
+        return { ...event, timeZone: operation.value };
+      case "confirmations":
+        return { ...event, confirmations: { ...operation.value } };
+      case "logistics":
+        return { ...event, logistics: { ...operation.value } };
+      case "operationalChecklists": {
+        const operationalChecklists = {
+          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
+            ...item
+          })),
+          communication: operation.value.communication.map((item) => ({
+            ...item
+          })),
+          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
+        };
+        return {
+          ...event,
+          operationalChecklists,
+          followUpComplete: event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+            operationalChecklists.postEvent
+          )
+        };
+      }
+      case "followUpComplete":
+        return {
+          ...event,
+          followUpComplete: operation.value && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+            event.operationalChecklists.postEvent
+          )
+        };
+    }
+  }
+};
+
+// packages/domain/event/src/domain/event-links-rule.ts
+var EventLinksRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-links";
+  dependencies = [];
+  evaluate(event) {
+    const diagnostics = [];
+    const normalized = { ...event.publicationLinks };
+    let changed = false;
+    for (const key of ["meetup", "community", "assets", "feedback"]) {
+      const link = event.publicationLinks[key];
+      if (link === void 0 || link.trim() === "") {
+        continue;
+      }
+      const value = link.trim().replace(/\/$/, "");
+      if (!this.isHttpsUrl(value)) {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: `event.link.${key}.invalid`,
+            severity: "error",
+            category: "invalid",
+            field: `publicationLinks.${key}`,
+            message: `${key} link must be a valid HTTPS URL`
+          })
+        );
+        continue;
+      }
+      if (value !== link) {
+        normalized[key] = value;
+        changed = true;
+      }
+    }
+    if (!changed) {
+      return { diagnostics, patch: EMPTY_EVENT_PATCH };
+    }
+    diagnostics.push(
+      this.collaborators.eventDiagnostics.diagnostic({
+        code: "event.links.normalized",
+        severity: "info",
+        category: "normalization",
+        field: "publicationLinks",
+        message: "Publication links can be normalized safely",
+        fixAvailable: true
+      })
+    );
+    return {
+      diagnostics,
+      patch: this.collaborators.eventPatches.createEventPatch([
+        this.collaborators.eventPatches.replaceEventField(
+          "publicationLinks",
+          normalized,
+          "Trim publication links and remove trailing slashes"
+        )
+      ])
+    };
+  }
+  isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/event/src/domain/occurrence-status.ts
+var OCCURRENCE_STATUSES = [
+  "scheduled",
+  "postponed",
+  "held",
+  "cancelled"
+];
+var OCCURRENCE_STATUS_LABELS = Object.freeze({
+  scheduled: null,
+  postponed: "event:postponed",
+  held: "event:held",
+  cancelled: "event:cancelled"
 });
+
+// packages/domain/event/src/domain/event-occurrence-parser.ts
+var EventOccurrenceParser = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  readOccurrenceStatus(labels, issueState, fieldStatus, diagnostics) {
+    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
+      const label = OCCURRENCE_STATUS_LABELS[status];
+      return label !== null && labels.includes(label);
+    });
+    if (explicitStatuses.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.occurrence-status.label-conflict",
+          severity: "error",
+          category: "invalid",
+          field: "labels",
+          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
+        })
+      );
+      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
+    }
+    if (explicitStatuses.length === 1) {
+      return explicitStatuses[0];
+    }
+    return fieldStatus ?? (issueState === "closed" ? "held" : "scheduled");
+  }
+};
+
+// packages/domain/event/src/domain/event-participant-normalization.ts
+var EventParticipantNormalization = class {
+  normalizeParticipant(participant) {
+    const displayName = participant.displayName.trim();
+    const id = participant.id?.trim();
+    return id ? {
+      ...participant,
+      displayName,
+      id,
+      ...participant.source ? { source: participant.source } : {}
+    } : { displayName };
+  }
+  participantsEqual(left, right) {
+    return left.displayName === right.displayName && left.id === right.id;
+  }
+  normalizeAgendaEntry(entry) {
+    return {
+      ...entry,
+      speakers: entry.speakers.map(this.normalizeParticipant.bind(this)),
+      description: entry.description.trim()
+    };
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-engine.ts
+var EventRuleEngine = class {
+  constructor(collaborators, rules) {
+    this.collaborators = collaborators;
+    this.orderedRules = this.collaborators.eventRuleOrdering.sortRules(rules);
+  }
+  collaborators;
+  orderedRules;
+  evaluate(event) {
+    let normalizedEvent = event;
+    const diagnostics = [];
+    const operations = [];
+    for (const rule of this.orderedRules) {
+      const result = rule.evaluate(normalizedEvent);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalizedEvent = this.collaborators.eventPatches.applyEventPatch(
+        normalizedEvent,
+        result.patch
+      );
+    }
+    return {
+      event: normalizedEvent,
+      diagnostics: Object.freeze(diagnostics),
+      patch: this.collaborators.eventPatches.createEventPatch(operations)
+    };
+  }
+  get ruleIds() {
+    return this.orderedRules.map((rule) => rule.id);
+  }
+};
+
+// packages/domain/event/src/domain/rule-contracts.ts
+var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
+  meetup: "meetup",
+  hostNeeded: "hoster:needed",
+  hostConfirmed: "hoster:confirmed",
+  speakersNeeded: "speakers:needed",
+  speakersConfirmed: "speakers:confirmed",
+  occurrencePostponed: "event:postponed",
+  occurrenceHeld: "event:held",
+  occurrenceCancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-rule-factory.ts
+var EventRuleFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
+    return [
+      ...this.collaborators.rules,
+      this.collaborators.createManagedLabelsRule(labelConfiguration)
+    ];
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-configuration-error.ts
+var EventRuleConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EventRuleConfigurationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-ordering.ts
+var EventRuleOrdering = class {
+  sortRules(rules) {
+    const byId = /* @__PURE__ */ new Map();
+    for (const rule of rules) {
+      if (byId.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Duplicate event rule "${rule.id}"`
+        );
+      }
+      byId.set(rule.id, rule);
+    }
+    for (const rule of rules) {
+      for (const dependency of rule.dependencies) {
+        if (!byId.has(dependency)) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependency}"`
+          );
+        }
+      }
+    }
+    const permanent = /* @__PURE__ */ new Set();
+    const temporary = /* @__PURE__ */ new Set();
+    const ordered = [];
+    const visit = (rule, path) => {
+      if (temporary.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
+        );
+      }
+      if (permanent.has(rule.id)) {
+        return;
+      }
+      temporary.add(rule.id);
+      for (const dependencyId of rule.dependencies) {
+        const dependency = byId.get(dependencyId);
+        if (!dependency) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
+          );
+        }
+        visit(dependency, [...path, rule.id]);
+      }
+      temporary.delete(rule.id);
+      permanent.add(rule.id);
+      ordered.push(rule);
+    };
+    for (const rule of rules) {
+      visit(rule, []);
+    }
+    return Object.freeze(ordered);
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-results.ts
+var EventRuleResults = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  emptyResult() {
+    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+  }
+  normalizedResult(operation, code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "info",
+          category: "normalization",
+          field,
+          message,
+          fixAvailable: true
+        })
+      ],
+      patch: this.collaborators.eventPatches.createEventPatch([operation])
+    };
+  }
+  missing(code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "warning",
+          category: "incomplete",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  invalid(code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "error",
+          category: "invalid",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  normalizeString(current, normalized, path, reason) {
+    if (current === normalized) {
+      return this.emptyResult();
+    }
+    return this.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        path,
+        normalized,
+        reason
+      ),
+      `event.${path}.normalized`,
+      path,
+      `${path} can be normalized safely`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-title-rule.ts
+var EventTitleRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-title";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.eventTitle.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.title.missing",
+        "eventTitle",
+        "An event title is required"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.eventTitle,
+      value,
+      "eventTitle",
+      "Trim event title"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/issue-title-rule.ts
+var IssueTitleRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "issue-title";
+  dependencies = ["event-date", "event-title"];
+  evaluate(event) {
+    if (!this.collaborators.eventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
+    if (event.issueTitle === expected) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "issueTitle",
+        expected,
+        "Project canonical issue title"
+      ),
+      "event.issue-title.normalized",
+      "issueTitle",
+      `Issue title should be "${expected}"`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/lifecycle.ts
+var EventLifecycle = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  /**
+   * Derives lifecycle exclusively from event facts and an explicitly supplied
+   * instant. In particular, a past date never implies that an event was held.
+   */
+  evaluateEventLifecycle({
+    event,
+    readiness,
+    now: now2
+  }) {
+    let state;
+    switch (event.occurrenceStatus) {
+      case "cancelled":
+        state = "cancelled";
+        break;
+      case "postponed":
+        state = "postponed";
+        break;
+      case "held":
+        state = event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+          event.operationalChecklists.postEvent
+        ) ? "follow-up-complete" : "held";
+        break;
+      case "scheduled":
+      case void 0:
+        if (!this.hasMinimumPlanningFacts(event)) {
+          state = "draft";
+        } else {
+          state = readiness.isReady ? "ready" : "planned";
+        }
+        break;
+    }
+    return {
+      state,
+      evaluatedAt: now2,
+      timeZone: event.timeZone,
+      diagnostics: readiness.diagnostics
+    };
+  }
+  hasMinimumPlanningFacts(event) {
+    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+  }
+};
+
+// packages/domain/event/src/domain/managed-labels-rule.ts
+var ManagedLabelsRule = class {
+  constructor(collaborators, configuration) {
+    this.collaborators = collaborators;
+    this.configuration = configuration;
+  }
+  collaborators;
+  configuration;
+  id = "managed-labels";
+  dependencies = ["event-host", "event-agenda"];
+  evaluate(event) {
+    const managed = Object.values(this.configuration);
+    const unmanaged2 = event.labels.filter((label) => !managed.includes(label));
+    const occurrenceLabels = event.occurrenceStatus === "postponed" ? [this.configuration.occurrencePostponed] : event.occurrenceStatus === "held" ? [this.configuration.occurrenceHeld] : event.occurrenceStatus === "cancelled" ? [this.configuration.occurrenceCancelled] : [];
+    const expected = [
+      ...unmanaged2,
+      this.configuration.meetup,
+      ...event.confirmations.host ? [this.configuration.hostConfirmed] : event.host?.displayName.trim() ? [] : [this.configuration.hostNeeded],
+      event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
+      ...occurrenceLabels
+    ];
+    if (this.labelsMatch(event.labels, expected)) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "labels",
+        expected,
+        "Project managed lifecycle labels"
+      ),
+      "event.labels.normalized",
+      "labels",
+      "Managed meetup labels can be reconciled safely"
+    );
+  }
+  labelsMatch(actual, expected) {
+    const sorted = [...expected].sort();
+    return actual.length === expected.length && [...actual].sort().every((label, index) => label === sorted[index]);
+  }
+};
+
+// packages/domain/event/src/domain/meetup-publication-checklist.ts
+var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
+  static taskName = "Meetup event published";
+  isPublished(event) {
+    const matches = event.operationalChecklists.communication.filter(
+      (item) => item.name === _MeetupPublicationChecklist.taskName
+    );
+    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+  }
+  withStatus(event, published) {
+    const communication = [];
+    let found = false;
+    for (const item of event.operationalChecklists.communication) {
+      if (item.name !== _MeetupPublicationChecklist.taskName) {
+        communication.push(item);
+        continue;
+      }
+      if (!found) communication.push({ name: item.name, completed: published });
+      found = true;
+    }
+    if (!found)
+      communication.push({
+        name: _MeetupPublicationChecklist.taskName,
+        completed: published
+      });
+    return {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
+    };
+  }
+};
+
+// packages/domain/event/src/domain/model.ts
+var EVENT_SCHEMA_VERSION = 1;
+var POST_EVENT_TASK_NAMES = Object.freeze({
+  thankHost: "Mail thanks hoster",
+  thankSpeakers: "Mail thanks speakers",
+  shareSlides: "Share slides to meetup",
+  importAttendance: "Sync attendees from tally sheet to CNCF",
+  shareOnSocialNetworks: "Social networks"
+});
+var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
+  POST_EVENT_TASK_NAMES.thankHost,
+  POST_EVENT_TASK_NAMES.thankSpeakers,
+  POST_EVENT_TASK_NAMES.shareSlides,
+  POST_EVENT_TASK_NAMES.importAttendance,
+  POST_EVENT_TASK_NAMES.shareOnSocialNetworks
+]);
+var MeetupEventOperations = class {
+  /**
+   * A post-event checklist is complete only when it contains each expected task
+   * exactly once, contains no additional task, and every task is completed.
+   */
+  postEventChecklistIsComplete(items) {
+    if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
+      return false;
+    }
+    const itemByName = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      if (itemByName.has(item.name)) {
+        return false;
+      }
+      itemByName.set(item.name, item);
+    }
+    return EXPECTED_POST_EVENT_TASK_NAMES.every(
+      (name) => itemByName.get(name)?.completed === true
+    );
+  }
+  cloneMeetupEvent(event) {
+    const operationalChecklists = {
+      slidesAndContent: event.operationalChecklists.slidesAndContent.map(
+        (item) => ({ ...item })
+      ),
+      communication: event.operationalChecklists.communication.map((item) => ({
+        ...item
+      })),
+      postEvent: event.operationalChecklists.postEvent.map((item) => ({
+        ...item
+      }))
+    };
+    return {
+      ...event,
+      identity: { ...event.identity },
+      labels: [...event.labels],
+      host: event.host ? { ...event.host } : void 0,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+      })),
+      publicationLinks: { ...event.publicationLinks },
+      confirmations: { ...event.confirmations },
+      logistics: { ...event.logistics },
+      operationalChecklists,
+      followUpComplete: event.followUpComplete && this.postEventChecklistIsComplete(operationalChecklists.postEvent)
+    };
+  }
+};
+
+// packages/domain/event/src/domain/readiness.ts
+var EventReadinessPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  evaluateEventReadiness(event, diagnostics) {
+    const readinessDiagnostics = [...diagnostics];
+    if (event.occurrenceStatus === "cancelled") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (event.occurrenceStatus === "postponed") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (readinessDiagnostics.some((item) => item.severity === "error")) {
+      return {
+        status: "invalid",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (!event.confirmations.host) {
+      readinessDiagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.confirmation.host.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.host",
+          message: "Host confirmation is required before the event is ready"
+        })
+      );
+    }
+    if (!event.confirmations.speakers) {
+      readinessDiagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.confirmation.speakers.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.speakers",
+          message: "Speaker confirmation is required before the event is ready"
+        })
+      );
+    }
+    const incomplete = readinessDiagnostics.some(
+      (item) => item.category === "incomplete"
+    );
+    return {
+      status: incomplete ? "incomplete" : "ready",
+      isReady: !incomplete,
+      diagnostics: Object.freeze(readinessDiagnostics)
+    };
+  }
+};
+
+// packages/domain/event/src/dependency-composition.ts
+var EventDomainComposition = class {
+  eventAgendaEquality() {
+    return new EventAgendaEquality();
+  }
+  eventAgendaRule() {
+    return new EventAgendaRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventAgendaEquality: this.eventAgendaEquality(),
+      eventPatches: this.eventPatches(),
+      eventDiagnostics: this.eventDiagnostics(),
+      eventParticipantNormalization: this.eventParticipantNormalization()
+    });
+  }
+  eventChecklists() {
+    return new EventChecklists();
+  }
+  eventDateRule() {
+    return new EventDateRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventDateValidation: this.eventDateValidation()
+    });
+  }
+  eventDateValidation() {
+    return new EventDateValidation();
+  }
+  eventDescriptionRule() {
+    return new EventDescriptionRule({
+      eventRuleResults: this.eventRuleResults()
+    });
+  }
+  eventDiagnostics() {
+    return new EventDiagnostics();
+  }
+  eventDocumentConcurrency() {
+    return new EventDocumentConcurrency();
+  }
+  eventHostRule() {
+    return new EventHostRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventParticipantNormalization: this.eventParticipantNormalization(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventLifecycle() {
+    return new EventLifecycle({
+      meetupEventOperations: this.meetupEventOperations()
+    });
+  }
+  eventLinksRule() {
+    return new EventLinksRule({
+      eventDiagnostics: this.eventDiagnostics(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventOccurrenceParser() {
+    return new EventOccurrenceParser({
+      eventDiagnostics: this.eventDiagnostics()
+    });
+  }
+  eventParticipantNormalization() {
+    return new EventParticipantNormalization();
+  }
+  eventPatches() {
+    return new EventPatches({
+      meetupEventOperations: this.meetupEventOperations()
+    });
+  }
+  eventReadinessPolicy() {
+    return new EventReadinessPolicy({
+      eventDiagnostics: this.eventDiagnostics()
+    });
+  }
+  eventRepositoryPatches() {
+    return new EventRepositoryPatches();
+  }
+  eventRuleEngine(...args) {
+    return new EventRuleEngine(
+      {
+        eventRuleOrdering: this.eventRuleOrdering(),
+        eventPatches: this.eventPatches()
+      },
+      ...args
+    );
+  }
+  eventRuleFactory() {
+    return new EventRuleFactory({
+      rules: [
+        this.eventDateRule(),
+        this.eventTitleRule(),
+        this.eventDescriptionRule(),
+        this.eventHostRule(),
+        this.eventAgendaRule(),
+        this.eventLinksRule(),
+        this.issueTitleRule()
+      ],
+      createManagedLabelsRule: (...args) => this.managedLabelsRule(...args)
+    });
+  }
+  eventRuleOrdering() {
+    return new EventRuleOrdering();
+  }
+  eventRuleResults() {
+    return new EventRuleResults({
+      eventDiagnostics: this.eventDiagnostics(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventTitleRule() {
+    return new EventTitleRule({ eventRuleResults: this.eventRuleResults() });
+  }
+  issueTitleRule() {
+    return new IssueTitleRule({
+      eventDateValidation: this.eventDateValidation(),
+      eventRuleResults: this.eventRuleResults(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  listActiveEvents(...args) {
+    return new ListActiveEvents(
+      {
+        ruleEngine: this.eventRuleEngine(
+          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
+        ),
+        eventReadinessPolicy: this.eventReadinessPolicy(),
+        eventLifecycle: this.eventLifecycle()
+      },
+      ...args
+    );
+  }
+  managedLabelsRule(...args) {
+    return new ManagedLabelsRule(
+      {
+        eventRuleResults: this.eventRuleResults(),
+        eventPatches: this.eventPatches()
+      },
+      ...args
+    );
+  }
+  meetupEventOperations() {
+    return new MeetupEventOperations();
+  }
+  meetupPublicationChecklist() {
+    return new MeetupPublicationChecklist();
+  }
+  reconcileEvent(...args) {
+    return new ReconcileEvent(
+      {
+        ruleEngine: this.eventRuleEngine(
+          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
+        ),
+        eventDocumentConcurrency: this.eventDocumentConcurrency(),
+        eventReadinessPolicy: this.eventReadinessPolicy(),
+        eventLifecycle: this.eventLifecycle(),
+        eventRepositoryPatches: this.eventRepositoryPatches()
+      },
+      ...args
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/action-runner.ts
+var ActionRunner = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async run(title, operation, diagnosticsOutput) {
+    let messages5 = this.collaborators.createActionMessages("en");
+    let report;
+    try {
+      messages5 = this.collaborators.createActionMessages(
+        getInput("locale", { required: true })
+      );
+      report = await operation(messages5);
+      const failures = report.diagnostics.filter(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
+      ).map((item) => item.code);
+      if (!report.failure && failures.length > 0) {
+        report = {
+          ...report,
+          failure: messages5.t("report.technical-failure", {
+            codes: [...new Set(failures)].join(", ")
+          })
+        };
+      }
+    } catch (error2) {
+      if (error2 instanceof EventConcurrentModificationError) {
+        report = {
+          details: [],
+          diagnostics: [
+            {
+              code: "event.concurrently-modified",
+              severity: "info",
+              message: "event.concurrently-modified"
+            }
+          ]
+        };
+      } else {
+        const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
+        report = {
+          details: [],
+          diagnostics: [
+            { code: "action.execution.failed", severity: "error", message }
+          ],
+          failure: messages5.error(
+            error2 instanceof Error ? error2.name : "",
+            message
+          )
+        };
+      }
+    }
+    await this.collaborators.actionReport.write(
+      messages5.t(title),
+      report,
+      messages5
+    );
+    if (report.failure) setFailed(report.failure);
+    if (diagnosticsOutput)
+      this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
+  }
+};
+
+// packages/runtime/github-actions/src/ai-input.ts
+var AiInput = class {
+  constructor(runtimeInput) {
+    this.runtimeInput = runtimeInput;
+  }
+  runtimeInput;
+  read() {
+    const apiKey = getInput("ai-api-key", {
+      required: true,
+      trimWhitespace: false
+    });
+    setSecret(apiKey);
+    const normalizedApiKey = apiKey.trim();
+    if (normalizedApiKey && normalizedApiKey !== apiKey)
+      setSecret(normalizedApiKey);
+    return this.validate({
+      provider: getInput("ai-provider", {
+        required: true,
+        trimWhitespace: false
+      }),
+      model: getInput("ai-model", {
+        required: true,
+        trimWhitespace: false
+      }),
+      apiKey
+    });
+  }
+  validate(input) {
+    if (!this.runtimeInput.isObject(input))
+      throw new Error("Invalid AI configuration");
+    const provider = this.requiredString(input.provider, "ai-provider");
+    if (provider !== "gemini")
+      throw new Error("Invalid input: ai-provider. Supported provider: gemini");
+    return {
+      provider,
+      model: this.requiredString(input.model, "ai-model"),
+      apiKey: this.requiredString(input.apiKey, "ai-api-key")
+    };
+  }
+  requiredString(value, name) {
+    if (typeof value !== "string") throw new Error(`Invalid input: ${name}`);
+    const normalized = value.trim();
+    if (!normalized)
+      throw new Error(`Input required and not supplied: ${name}`);
+    return normalized;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+var AssetContentConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  usesNextEvent(contracts) {
+    return Object.values(contracts).some((contract) => {
+      const fields = this.collaborators.runtimeInput.isObject(contract) ? contract.fields : void 0;
+      return Array.isArray(fields) && fields.some(
+        (field) => this.collaborators.runtimeInput.isObject(field) && typeof field.token === "string" && field.token.startsWith("next_event.")
+      );
+    });
+  }
+  async load(root, eventId) {
+    let text;
+    try {
+      text = await readFile(
+        join(root, ".github/meetup-asset-content.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (this.collaborators.runtimeInput.isObject(error2) && error2.code === "ENOENT")
+        return {
+          contracts: {},
+          speakers: {},
+          talks: {},
+          venues: {},
+          hostLogos: {},
+          recovery: {}
+        };
+      throw error2;
+    }
+    if (Buffer.byteLength(text) > 1e6)
+      throw new Error("Asset content configuration is too large");
+    return this.parse(JSON.parse(text), eventId);
+  }
+  parse(root, eventId) {
+    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.contracts) || !this.collaborators.contentContractPolicy.keys(root, [
+      "version",
+      "contracts",
+      "events",
+      "venues",
+      "hostLogos"
+    ]) || root.events !== void 0 && !this.collaborators.runtimeInput.isObject(root.events))
+      throw new Error("Invalid asset content configuration");
+    const selected = this.collaborators.runtimeInput.isObject(root.events) ? root.events[eventId] : void 0;
+    const event = selected === void 0 ? {} : selected;
+    if (!this.collaborators.runtimeInput.isObject(event) || !this.collaborators.contentContractPolicy.keys(event, [
+      "speakers",
+      "talks",
+      "recovery"
+    ]))
+      throw new Error("Invalid asset event configuration");
+    const assignments = this.collaborators.assetRenderConfiguration.parse(
+      event,
+      root.venues,
+      root.hostLogos
+    );
+    const recovery = this.recovery(event.recovery);
+    return { contracts: root.contracts, ...assignments, recovery };
+  }
+  recovery(input) {
+    const value = input === void 0 ? {} : input;
+    if (!this.collaborators.runtimeInput.isObject(value))
+      throw new Error("Invalid asset recovery operations");
+    const result = {};
+    for (const [id, operation] of Object.entries(value)) {
+      if (!this.collaborators.contentContractPolicy.name(id) || !this.collaborators.runtimeInput.isObject(operation) || operation.operation !== "enroll" && operation.operation !== "restore" && operation.operation !== "remove" || !this.collaborators.contentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || operation.bindingId !== void 0 && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || !this.collaborators.contentContractPolicy.keys(operation, [
+        "operation",
+        "revision",
+        "bindingId"
+      ]))
+        throw new Error("Invalid asset recovery operation");
+      result[id] = {
+        operation: operation.operation,
+        revision: operation.revision,
+        ...typeof operation.bindingId === "string" ? { bindingId: operation.bindingId } : {}
+      };
+    }
+    return result;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-configuration.ts
+var AssetRenderConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(event, venues, hostLogos) {
+    return {
+      speakers: this.speakers(event.speakers),
+      talks: this.talks(event.talks),
+      venues: this.venues(venues),
+      hostLogos: this.logos(hostLogos)
+    };
+  }
+  speakers(input) {
+    const result = {};
+    for (const [slot, id] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      if (!this.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
+        throw new Error("Invalid asset speaker assignment");
+      result[slot] = id;
+    }
+    return result;
+  }
+  talks(input) {
+    const result = {};
+    for (const [slot, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const identity = this.record(value);
+      if (!this.slot(slot) || !this.collaborators.contentContractPolicy.keys(identity, [
+        "provider",
+        "event",
+        "id"
+      ]) || !this.identity(identity.provider) || !this.identity(identity.event) || !this.identity(identity.id))
+        throw new Error("Invalid asset talk assignment");
+      result[slot] = {
+        provider: identity.provider,
+        event: identity.event,
+        id: identity.id
+      };
+    }
+    return result;
+  }
+  venues(input) {
+    const result = {};
+    for (const [id, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const venue = this.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.contentContractPolicy.keys(venue, [
+        "address",
+        "postalCode",
+        "city"
+      ]) || !this.collaborators.contentContractPolicy.text(venue.address) || !this.collaborators.contentContractPolicy.text(venue.postalCode) || !this.collaborators.contentContractPolicy.text(venue.city))
+        throw new Error("Invalid public asset venue");
+      result[id] = {
+        address: venue.address,
+        postalCode: venue.postalCode,
+        city: venue.city
+      };
+    }
+    return result;
+  }
+  logos(input) {
+    const result = {};
+    for (const [hostId, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const logo = this.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(hostId) || !this.collaborators.contentContractPolicy.keys(logo, [
+        "url",
+        "description"
+      ]) || !this.collaborators.contentContractPolicy.text(logo.url) || !this.collaborators.contentContractPolicy.text(logo.description))
+        throw new Error("Invalid public host logo");
+      result[hostId] = { url: logo.url, description: logo.description };
+    }
+    return result;
+  }
+  slot(value) {
+    return this.collaborators.contentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
+  }
+  identity(value) {
+    return typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
+  }
+  record(value) {
+    if (!this.collaborators.runtimeInput.isObject(value) || Object.keys(value).length > 200)
+      throw new Error("Invalid asset render configuration");
+    return value;
+  }
+};
 
 // packages/application/journey/src/approval/approval-notification-policy.ts
 var ApprovalNotificationPolicy = class {
@@ -29273,1352 +36964,6 @@ var CommunicationDomainComposition = class {
         communicationResults: this.communicationResults(),
         communicationCalendar: this.communicationCalendar(),
         createCommunicationDispatcher: (...args2) => this.communicationDispatcher(...args2)
-      },
-      ...args
-    );
-  }
-};
-
-// packages/domain/event/src/application/ports/event-repository.ts
-var EventRepositoryPatches = class {
-  eventRepositoryPatchIsEmpty(patch) {
-    return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
-  }
-};
-
-// packages/domain/event/src/application/use-cases/event-concurrent-modification-error.ts
-var EventConcurrentModificationError = class extends Error {
-  constructor(identity) {
-    super(
-      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
-    );
-    this.name = "EventConcurrentModificationError";
-  }
-};
-
-// packages/domain/event/src/application/use-cases/event-not-found-error.ts
-var EventNotFoundError = class extends Error {
-  constructor(identity) {
-    super(
-      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
-    );
-    this.name = "EventNotFoundError";
-  }
-};
-
-// packages/domain/event/src/application/use-cases/event-document-concurrency.ts
-var EventDocumentConcurrency = class {
-  async ensureEventDocumentIsCurrent(repository, identity, expected) {
-    const current = await repository.find(identity);
-    if (!current) {
-      throw new EventNotFoundError(identity);
-    }
-    if (!this.eventDocumentsEqual(current, expected)) {
-      throw new EventConcurrentModificationError(identity);
-    }
-  }
-  eventDocumentsEqual(left, right) {
-    const leftLabels = [...left.labels].sort(this.compareText.bind(this));
-    const rightLabels = [...right.labels].sort(this.compareText.bind(this));
-    return this.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
-  }
-  compareText(left, right) {
-    return left < right ? -1 : left > right ? 1 : 0;
-  }
-  sameIdentity(left, right) {
-    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
-  }
-};
-
-// packages/domain/event/src/application/use-cases/event-pagination-error.ts
-var EventPaginationError = class extends Error {
-  constructor(cursor) {
-    super(`Event repository repeated pagination cursor "${cursor}"`);
-    this.name = "EventPaginationError";
-  }
-};
-
-// packages/domain/event/src/application/use-cases/list-active-events.ts
-var ListActiveEvents = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(input) {
-    const activeEvents = [];
-    const allDiagnostics = [];
-    const seenCursors = /* @__PURE__ */ new Set();
-    const seenEvents = /* @__PURE__ */ new Set();
-    const now2 = this.dependencies.clock.now();
-    let pages = 0;
-    let cursor;
-    do {
-      if (++pages > 20) throw new EventPaginationError("audit-page-limit");
-      const page = await this.dependencies.repository.listPage({
-        ...input,
-        includeClosed: false,
-        cursor
-      });
-      for (const document of page.items) {
-        const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
-        if (document.issueState === "closed" || seenEvents.has(identityKey)) {
-          continue;
-        }
-        seenEvents.add(identityKey);
-        this.checkLimit(seenEvents.size);
-        const decoded = this.dependencies.documentCodec.decode(document);
-        const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
-        const eventDiagnostics = [
-          ...decoded.diagnostics,
-          ...evaluated.diagnostics
-        ];
-        const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
-          evaluated.event,
-          eventDiagnostics
-        );
-        const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
-          event: evaluated.event,
-          readiness,
-          now: now2
-        });
-        allDiagnostics.push(...readiness.diagnostics);
-        activeEvents.push({
-          identity: { ...document.identity },
-          event: evaluated.event,
-          readiness,
-          lifecycle
-        });
-      }
-      cursor = page.nextCursor;
-      if (cursor) {
-        if (seenCursors.has(cursor)) {
-          throw new EventPaginationError(cursor);
-        }
-        seenCursors.add(cursor);
-      }
-    } while (cursor);
-    return {
-      events: Object.freeze(activeEvents),
-      diagnostics: Object.freeze(allDiagnostics)
-    };
-  }
-  checkLimit(count) {
-    if (count > 200) throw new EventPaginationError("audit-issue-limit");
-  }
-};
-
-// packages/domain/event/src/application/use-cases/reconcile-event.ts
-var ReconcileEvent = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(input) {
-    const document = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
-    if (!document) {
-      throw new EventNotFoundError(input.identity);
-    }
-    if (!this.collaborators.eventDocumentConcurrency.sameIdentity(
-      document.identity,
-      input.identity
-    )) {
-      throw new EventNotFoundError(input.identity);
-    }
-    const decoded = this.dependencies.documentCodec.decode(document);
-    const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
-    const diagnostics = [
-      ...decoded.diagnostics,
-      ...evaluated.diagnostics
-    ];
-    const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
-      evaluated.event,
-      diagnostics
-    );
-    const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
-      event: evaluated.event,
-      readiness,
-      now: this.dependencies.clock.now()
-    });
-    const repositoryPatch = this.dependencies.documentCodec.createPatch(
-      document,
-      evaluated.event
-    );
-    const shouldPersist = input.mode === "fix" && !this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
-      repositoryPatch
-    );
-    if (shouldPersist) {
-      await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-        this.dependencies.repository,
-        input.identity,
-        document
-      );
-      await this.dependencies.repository.applyPatch(
-        input.identity,
-        repositoryPatch
-      );
-    }
-    return {
-      event: evaluated.event,
-      diagnostics: readiness.diagnostics,
-      normalizationPatch: evaluated.patch,
-      repositoryPatch,
-      readiness,
-      lifecycle,
-      persisted: shouldPersist
-    };
-  }
-};
-
-// packages/domain/event/src/domain/diagnostic.ts
-var EventDiagnostics = class {
-  diagnostic(value) {
-    return Object.freeze({ ...value });
-  }
-};
-
-// packages/domain/event/src/domain/event-agenda-equality.ts
-var EventAgendaEquality = class {
-  equals(left, right) {
-    return left.length === right.length && left.every((entry, index) => this.entry(entry, right[index]));
-  }
-  entry(left, right) {
-    return left.description === right.description && left.speakers.length === right.speakers.length && left.speakers.every(
-      (speaker, index) => this.speaker(speaker, right.speakers[index])
-    ) && this.proposal(left.proposal, right.proposal);
-  }
-  speaker(left, right) {
-    return left.id === right.id && left.displayName === right.displayName && left.pictureUrl === right.pictureUrl && left.source?.path === right.source?.path && left.source?.line === right.source?.line;
-  }
-  proposal(left, right) {
-    if (!left || !right) return left === right;
-    return left.provider === right.provider && left.event === right.event && left.id === right.id && left.title === right.title && left.abstract === right.abstract && this.sequence(left.languages, right.languages) && this.sequence(left.formats, right.formats);
-  }
-  sequence(left, right) {
-    return left.length === right.length && left.every((value, index) => value === right[index]);
-  }
-};
-
-// packages/domain/event/src/domain/event-agenda-rule.ts
-var EventAgendaRule = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  id = "event-agenda";
-  dependencies = [];
-  evaluate(event) {
-    if (event.agenda.length === 0) {
-      return this.collaborators.eventRuleResults.missing(
-        "event.agenda.missing",
-        "agenda",
-        "At least one agenda entry is required"
-      );
-    }
-    const diagnostics = [];
-    const normalizedEntries = event.agenda.map((entry, entryIndex) => {
-      return this.normalizeEntry(entry, entryIndex, diagnostics);
-    });
-    const operations = [];
-    if (!this.collaborators.eventAgendaEquality.equals(
-      event.agenda,
-      normalizedEntries
-    )) {
-      operations.push(
-        this.collaborators.eventPatches.replaceEventField(
-          "agenda",
-          normalizedEntries,
-          "Normalize agenda"
-        )
-      );
-      diagnostics.push(
-        this.collaborators.eventDiagnostics.diagnostic({
-          code: "event.agenda.normalized",
-          severity: "info",
-          category: "normalization",
-          field: "agenda",
-          message: "The agenda can be normalized safely",
-          fixAvailable: true
-        })
-      );
-    }
-    return {
-      diagnostics,
-      patch: this.collaborators.eventPatches.createEventPatch(operations)
-    };
-  }
-  normalizeEntry(entry, entryIndex, diagnostics) {
-    const normalized = this.collaborators.eventParticipantNormalization.normalizeAgendaEntry(
-      entry
-    );
-    if (normalized.speakers.length === 0) {
-      diagnostics.push(
-        this.collaborators.eventDiagnostics.diagnostic({
-          code: "event.agenda.speaker.missing",
-          severity: "error",
-          category: "invalid",
-          field: `agenda.${entryIndex}.speakers`,
-          message: "Each agenda entry must have at least one speaker"
-        })
-      );
-    }
-    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
-      if (speaker.displayName === "") {
-        diagnostics.push(
-          this.collaborators.eventDiagnostics.diagnostic({
-            code: "event.agenda.speaker.invalid",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
-            message: "Speaker display name must not be empty"
-          })
-        );
-      }
-    }
-    if (normalized.description === "") {
-      diagnostics.push(
-        this.collaborators.eventDiagnostics.diagnostic({
-          code: "event.agenda.description.missing",
-          severity: "error",
-          category: "invalid",
-          field: `agenda.${entryIndex}.description`,
-          message: "Agenda entry description must not be empty"
-        })
-      );
-    }
-    return normalized;
-  }
-};
-
-// packages/domain/event/src/domain/event-checklists.ts
-var EventChecklists = class {
-  equal(left, right) {
-    return this.itemsEqual(left.slidesAndContent, right.slidesAndContent) && this.itemsEqual(left.communication, right.communication) && this.itemsEqual(left.postEvent, right.postEvent);
-  }
-  itemsEqual(left, right) {
-    return left.length === right.length && left.every(
-      (item, index) => item.name === right[index].name && item.completed === right[index].completed
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-date-rule.ts
-var EventDateRule = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  id = "event-date";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.date.trim();
-    if (value === "") {
-      return this.collaborators.eventRuleResults.missing(
-        "event.date.missing",
-        "date",
-        "An event date is required"
-      );
-    }
-    if (!this.collaborators.eventDateValidation.isValidIsoDate(value)) {
-      return this.collaborators.eventRuleResults.invalid(
-        "event.date.invalid",
-        "date",
-        "Event date must be a real calendar date formatted as YYYY-MM-DD"
-      );
-    }
-    return this.collaborators.eventRuleResults.normalizeString(
-      event.date,
-      value,
-      "date",
-      "Normalize event date"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-date-validation.ts
-var EventDateValidation = class {
-  isValidIsoDate(value) {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) {
-      return false;
-    }
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    if (month < 1 || month > 12 || day < 1) {
-      return false;
-    }
-    const monthLengths = [
-      31,
-      this.isLeapYear(year) ? 29 : 28,
-      31,
-      30,
-      31,
-      30,
-      31,
-      31,
-      30,
-      31,
-      30,
-      31
-    ];
-    return day <= monthLengths[month - 1];
-  }
-  isLeapYear(year) {
-    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-  }
-};
-
-// packages/domain/event/src/domain/event-description-rule.ts
-var EventDescriptionRule = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  id = "event-description";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.description.trim();
-    if (value === "") {
-      return this.collaborators.eventRuleResults.missing(
-        "event.description.missing",
-        "description",
-        "An event description is required"
-      );
-    }
-    return this.collaborators.eventRuleResults.normalizeString(
-      event.description,
-      value,
-      "description",
-      "Trim event description"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-host-rule.ts
-var EventHostRule = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  id = "event-host";
-  dependencies = [];
-  evaluate(event) {
-    if (!event.host) {
-      return this.collaborators.eventRuleResults.missing(
-        "event.hoster.missing",
-        "host",
-        "A host must be selected"
-      );
-    }
-    const normalized = this.collaborators.eventParticipantNormalization.normalizeParticipant(
-      event.host
-    );
-    if (normalized.displayName === "") {
-      return this.collaborators.eventRuleResults.invalid(
-        "event.hoster.invalid",
-        "host",
-        "Host display name must not be empty"
-      );
-    }
-    if (this.collaborators.eventParticipantNormalization.participantsEqual(
-      event.host,
-      normalized
-    )) {
-      return this.collaborators.eventRuleResults.emptyResult();
-    }
-    return this.collaborators.eventRuleResults.normalizedResult(
-      this.collaborators.eventPatches.replaceEventField(
-        "host",
-        normalized,
-        "Normalize host reference"
-      ),
-      "event.hoster.normalized",
-      "host",
-      "The host reference can be normalized safely"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/patch.ts
-var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
-var EventPatches = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  replaceEventField(path, value, reason) {
-    return Object.freeze({
-      op: "replace",
-      path,
-      value,
-      reason
-    });
-  }
-  createEventPatch(operations) {
-    return Object.freeze({ operations: Object.freeze([...operations]) });
-  }
-  mergeEventPatches(...patches) {
-    return this.createEventPatch(patches.flatMap((patch) => patch.operations));
-  }
-  applyEventPatch(event, patch) {
-    return patch.operations.reduce(
-      (current, operation) => this.applyOperation(current, operation),
-      event
-    );
-  }
-  applyOperation(event, operation) {
-    switch (operation.path) {
-      case "issueTitle":
-        return { ...event, issueTitle: operation.value };
-      case "labels":
-        return { ...event, labels: [...operation.value] };
-      case "eventTitle":
-        return { ...event, eventTitle: operation.value };
-      case "date":
-        return { ...event, date: operation.value };
-      case "description":
-        return { ...event, description: operation.value };
-      case "host":
-        return {
-          ...event,
-          host: operation.value ? { ...operation.value } : void 0
-        };
-      case "agenda":
-        return {
-          ...event,
-          agenda: operation.value.map((entry) => ({
-            ...entry,
-            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
-          }))
-        };
-      case "publicationLinks":
-        return { ...event, publicationLinks: { ...operation.value } };
-      case "occurrenceStatus":
-        return { ...event, occurrenceStatus: operation.value };
-      case "timeZone":
-        return { ...event, timeZone: operation.value };
-      case "confirmations":
-        return { ...event, confirmations: { ...operation.value } };
-      case "logistics":
-        return { ...event, logistics: { ...operation.value } };
-      case "operationalChecklists": {
-        const operationalChecklists = {
-          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
-            ...item
-          })),
-          communication: operation.value.communication.map((item) => ({
-            ...item
-          })),
-          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
-        };
-        return {
-          ...event,
-          operationalChecklists,
-          followUpComplete: event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
-            operationalChecklists.postEvent
-          )
-        };
-      }
-      case "followUpComplete":
-        return {
-          ...event,
-          followUpComplete: operation.value && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
-            event.operationalChecklists.postEvent
-          )
-        };
-    }
-  }
-};
-
-// packages/domain/event/src/domain/event-links-rule.ts
-var EventLinksRule = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  id = "event-links";
-  dependencies = [];
-  evaluate(event) {
-    const diagnostics = [];
-    const normalized = { ...event.publicationLinks };
-    let changed = false;
-    for (const key of ["meetup", "community", "assets", "feedback"]) {
-      const link = event.publicationLinks[key];
-      if (link === void 0 || link.trim() === "") {
-        continue;
-      }
-      const value = link.trim().replace(/\/$/, "");
-      if (!this.isHttpsUrl(value)) {
-        diagnostics.push(
-          this.collaborators.eventDiagnostics.diagnostic({
-            code: `event.link.${key}.invalid`,
-            severity: "error",
-            category: "invalid",
-            field: `publicationLinks.${key}`,
-            message: `${key} link must be a valid HTTPS URL`
-          })
-        );
-        continue;
-      }
-      if (value !== link) {
-        normalized[key] = value;
-        changed = true;
-      }
-    }
-    if (!changed) {
-      return { diagnostics, patch: EMPTY_EVENT_PATCH };
-    }
-    diagnostics.push(
-      this.collaborators.eventDiagnostics.diagnostic({
-        code: "event.links.normalized",
-        severity: "info",
-        category: "normalization",
-        field: "publicationLinks",
-        message: "Publication links can be normalized safely",
-        fixAvailable: true
-      })
-    );
-    return {
-      diagnostics,
-      patch: this.collaborators.eventPatches.createEventPatch([
-        this.collaborators.eventPatches.replaceEventField(
-          "publicationLinks",
-          normalized,
-          "Trim publication links and remove trailing slashes"
-        )
-      ])
-    };
-  }
-  isHttpsUrl(value) {
-    try {
-      return new URL(value).protocol === "https:";
-    } catch {
-      return false;
-    }
-  }
-};
-
-// packages/domain/event/src/domain/occurrence-status.ts
-var OCCURRENCE_STATUSES = [
-  "scheduled",
-  "postponed",
-  "held",
-  "cancelled"
-];
-var OCCURRENCE_STATUS_LABELS = Object.freeze({
-  scheduled: null,
-  postponed: "event:postponed",
-  held: "event:held",
-  cancelled: "event:cancelled"
-});
-
-// packages/domain/event/src/domain/event-occurrence-parser.ts
-var EventOccurrenceParser = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  readOccurrenceStatus(labels, issueState, fieldStatus, diagnostics) {
-    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
-      const label = OCCURRENCE_STATUS_LABELS[status];
-      return label !== null && labels.includes(label);
-    });
-    if (explicitStatuses.length > 1) {
-      diagnostics.push(
-        this.collaborators.eventDiagnostics.diagnostic({
-          code: "event.occurrence-status.label-conflict",
-          severity: "error",
-          category: "invalid",
-          field: "labels",
-          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
-        })
-      );
-      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
-    }
-    if (explicitStatuses.length === 1) {
-      return explicitStatuses[0];
-    }
-    return fieldStatus ?? (issueState === "closed" ? "held" : "scheduled");
-  }
-};
-
-// packages/domain/event/src/domain/event-participant-normalization.ts
-var EventParticipantNormalization = class {
-  normalizeParticipant(participant) {
-    const displayName = participant.displayName.trim();
-    const id = participant.id?.trim();
-    return id ? {
-      ...participant,
-      displayName,
-      id,
-      ...participant.source ? { source: participant.source } : {}
-    } : { displayName };
-  }
-  participantsEqual(left, right) {
-    return left.displayName === right.displayName && left.id === right.id;
-  }
-  normalizeAgendaEntry(entry) {
-    return {
-      ...entry,
-      speakers: entry.speakers.map(this.normalizeParticipant.bind(this)),
-      description: entry.description.trim()
-    };
-  }
-};
-
-// packages/domain/event/src/domain/event-rule-engine.ts
-var EventRuleEngine = class {
-  constructor(collaborators, rules) {
-    this.collaborators = collaborators;
-    this.orderedRules = this.collaborators.eventRuleOrdering.sortRules(rules);
-  }
-  collaborators;
-  orderedRules;
-  evaluate(event) {
-    let normalizedEvent = event;
-    const diagnostics = [];
-    const operations = [];
-    for (const rule of this.orderedRules) {
-      const result = rule.evaluate(normalizedEvent);
-      diagnostics.push(...result.diagnostics);
-      operations.push(...result.patch.operations);
-      normalizedEvent = this.collaborators.eventPatches.applyEventPatch(
-        normalizedEvent,
-        result.patch
-      );
-    }
-    return {
-      event: normalizedEvent,
-      diagnostics: Object.freeze(diagnostics),
-      patch: this.collaborators.eventPatches.createEventPatch(operations)
-    };
-  }
-  get ruleIds() {
-    return this.orderedRules.map((rule) => rule.id);
-  }
-};
-
-// packages/domain/event/src/domain/rule-contracts.ts
-var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
-  meetup: "meetup",
-  hostNeeded: "hoster:needed",
-  hostConfirmed: "hoster:confirmed",
-  speakersNeeded: "speakers:needed",
-  speakersConfirmed: "speakers:confirmed",
-  occurrencePostponed: "event:postponed",
-  occurrenceHeld: "event:held",
-  occurrenceCancelled: "event:cancelled"
-});
-
-// packages/domain/event/src/domain/event-rule-factory.ts
-var EventRuleFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
-    return [
-      ...this.collaborators.rules,
-      this.collaborators.createManagedLabelsRule(labelConfiguration)
-    ];
-  }
-};
-
-// packages/domain/event/src/domain/event-rule-configuration-error.ts
-var EventRuleConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "EventRuleConfigurationError";
-  }
-};
-
-// packages/domain/event/src/domain/event-rule-ordering.ts
-var EventRuleOrdering = class {
-  sortRules(rules) {
-    const byId = /* @__PURE__ */ new Map();
-    for (const rule of rules) {
-      if (byId.has(rule.id)) {
-        throw new EventRuleConfigurationError(
-          `Duplicate event rule "${rule.id}"`
-        );
-      }
-      byId.set(rule.id, rule);
-    }
-    for (const rule of rules) {
-      for (const dependency of rule.dependencies) {
-        if (!byId.has(dependency)) {
-          throw new EventRuleConfigurationError(
-            `Event rule "${rule.id}" has missing dependency "${dependency}"`
-          );
-        }
-      }
-    }
-    const permanent = /* @__PURE__ */ new Set();
-    const temporary = /* @__PURE__ */ new Set();
-    const ordered = [];
-    const visit = (rule, path) => {
-      if (temporary.has(rule.id)) {
-        throw new EventRuleConfigurationError(
-          `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
-        );
-      }
-      if (permanent.has(rule.id)) {
-        return;
-      }
-      temporary.add(rule.id);
-      for (const dependencyId of rule.dependencies) {
-        const dependency = byId.get(dependencyId);
-        if (!dependency) {
-          throw new EventRuleConfigurationError(
-            `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
-          );
-        }
-        visit(dependency, [...path, rule.id]);
-      }
-      temporary.delete(rule.id);
-      permanent.add(rule.id);
-      ordered.push(rule);
-    };
-    for (const rule of rules) {
-      visit(rule, []);
-    }
-    return Object.freeze(ordered);
-  }
-};
-
-// packages/domain/event/src/domain/event-rule-results.ts
-var EventRuleResults = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  emptyResult() {
-    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
-  }
-  normalizedResult(operation, code, field, message) {
-    return {
-      diagnostics: [
-        this.collaborators.eventDiagnostics.diagnostic({
-          code,
-          severity: "info",
-          category: "normalization",
-          field,
-          message,
-          fixAvailable: true
-        })
-      ],
-      patch: this.collaborators.eventPatches.createEventPatch([operation])
-    };
-  }
-  missing(code, field, message) {
-    return {
-      diagnostics: [
-        this.collaborators.eventDiagnostics.diagnostic({
-          code,
-          severity: "warning",
-          category: "incomplete",
-          field,
-          message
-        })
-      ],
-      patch: EMPTY_EVENT_PATCH
-    };
-  }
-  invalid(code, field, message) {
-    return {
-      diagnostics: [
-        this.collaborators.eventDiagnostics.diagnostic({
-          code,
-          severity: "error",
-          category: "invalid",
-          field,
-          message
-        })
-      ],
-      patch: EMPTY_EVENT_PATCH
-    };
-  }
-  normalizeString(current, normalized, path, reason) {
-    if (current === normalized) {
-      return this.emptyResult();
-    }
-    return this.normalizedResult(
-      this.collaborators.eventPatches.replaceEventField(
-        path,
-        normalized,
-        reason
-      ),
-      `event.${path}.normalized`,
-      path,
-      `${path} can be normalized safely`
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-title-rule.ts
-var EventTitleRule = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  id = "event-title";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.eventTitle.trim();
-    if (value === "") {
-      return this.collaborators.eventRuleResults.missing(
-        "event.title.missing",
-        "eventTitle",
-        "An event title is required"
-      );
-    }
-    return this.collaborators.eventRuleResults.normalizeString(
-      event.eventTitle,
-      value,
-      "eventTitle",
-      "Trim event title"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/issue-title-rule.ts
-var IssueTitleRule = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  id = "issue-title";
-  dependencies = ["event-date", "event-title"];
-  evaluate(event) {
-    if (!this.collaborators.eventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
-      return this.collaborators.eventRuleResults.emptyResult();
-    }
-    const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
-    if (event.issueTitle === expected) {
-      return this.collaborators.eventRuleResults.emptyResult();
-    }
-    return this.collaborators.eventRuleResults.normalizedResult(
-      this.collaborators.eventPatches.replaceEventField(
-        "issueTitle",
-        expected,
-        "Project canonical issue title"
-      ),
-      "event.issue-title.normalized",
-      "issueTitle",
-      `Issue title should be "${expected}"`
-    );
-  }
-};
-
-// packages/domain/event/src/domain/lifecycle.ts
-var EventLifecycle = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  /**
-   * Derives lifecycle exclusively from event facts and an explicitly supplied
-   * instant. In particular, a past date never implies that an event was held.
-   */
-  evaluateEventLifecycle({
-    event,
-    readiness,
-    now: now2
-  }) {
-    let state;
-    switch (event.occurrenceStatus) {
-      case "cancelled":
-        state = "cancelled";
-        break;
-      case "postponed":
-        state = "postponed";
-        break;
-      case "held":
-        state = event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
-          event.operationalChecklists.postEvent
-        ) ? "follow-up-complete" : "held";
-        break;
-      case "scheduled":
-      case void 0:
-        if (!this.hasMinimumPlanningFacts(event)) {
-          state = "draft";
-        } else {
-          state = readiness.isReady ? "ready" : "planned";
-        }
-        break;
-    }
-    return {
-      state,
-      evaluatedAt: now2,
-      timeZone: event.timeZone,
-      diagnostics: readiness.diagnostics
-    };
-  }
-  hasMinimumPlanningFacts(event) {
-    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
-  }
-};
-
-// packages/domain/event/src/domain/managed-labels-rule.ts
-var ManagedLabelsRule = class {
-  constructor(collaborators, configuration) {
-    this.collaborators = collaborators;
-    this.configuration = configuration;
-  }
-  collaborators;
-  configuration;
-  id = "managed-labels";
-  dependencies = ["event-host", "event-agenda"];
-  evaluate(event) {
-    const managed = Object.values(this.configuration);
-    const unmanaged2 = event.labels.filter((label) => !managed.includes(label));
-    const occurrenceLabels = event.occurrenceStatus === "postponed" ? [this.configuration.occurrencePostponed] : event.occurrenceStatus === "held" ? [this.configuration.occurrenceHeld] : event.occurrenceStatus === "cancelled" ? [this.configuration.occurrenceCancelled] : [];
-    const expected = [
-      ...unmanaged2,
-      this.configuration.meetup,
-      ...event.confirmations.host ? [this.configuration.hostConfirmed] : event.host?.displayName.trim() ? [] : [this.configuration.hostNeeded],
-      event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
-      ...occurrenceLabels
-    ];
-    if (this.labelsMatch(event.labels, expected)) {
-      return this.collaborators.eventRuleResults.emptyResult();
-    }
-    return this.collaborators.eventRuleResults.normalizedResult(
-      this.collaborators.eventPatches.replaceEventField(
-        "labels",
-        expected,
-        "Project managed lifecycle labels"
-      ),
-      "event.labels.normalized",
-      "labels",
-      "Managed meetup labels can be reconciled safely"
-    );
-  }
-  labelsMatch(actual, expected) {
-    const sorted = [...expected].sort();
-    return actual.length === expected.length && [...actual].sort().every((label, index) => label === sorted[index]);
-  }
-};
-
-// packages/domain/event/src/domain/meetup-publication-checklist.ts
-var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
-  static taskName = "Meetup event published";
-  isPublished(event) {
-    const matches = event.operationalChecklists.communication.filter(
-      (item) => item.name === _MeetupPublicationChecklist.taskName
-    );
-    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
-  }
-  withStatus(event, published) {
-    const communication = [];
-    let found = false;
-    for (const item of event.operationalChecklists.communication) {
-      if (item.name !== _MeetupPublicationChecklist.taskName) {
-        communication.push(item);
-        continue;
-      }
-      if (!found) communication.push({ name: item.name, completed: published });
-      found = true;
-    }
-    if (!found)
-      communication.push({
-        name: _MeetupPublicationChecklist.taskName,
-        completed: published
-      });
-    return {
-      ...event,
-      operationalChecklists: { ...event.operationalChecklists, communication }
-    };
-  }
-};
-
-// packages/domain/event/src/domain/model.ts
-var EVENT_SCHEMA_VERSION = 1;
-var POST_EVENT_TASK_NAMES = Object.freeze({
-  thankHost: "Mail thanks hoster",
-  thankSpeakers: "Mail thanks speakers",
-  shareSlides: "Share slides to meetup",
-  importAttendance: "Sync attendees from tally sheet to CNCF",
-  shareOnSocialNetworks: "Social networks"
-});
-var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
-  POST_EVENT_TASK_NAMES.thankHost,
-  POST_EVENT_TASK_NAMES.thankSpeakers,
-  POST_EVENT_TASK_NAMES.shareSlides,
-  POST_EVENT_TASK_NAMES.importAttendance,
-  POST_EVENT_TASK_NAMES.shareOnSocialNetworks
-]);
-var MeetupEventOperations = class {
-  /**
-   * A post-event checklist is complete only when it contains each expected task
-   * exactly once, contains no additional task, and every task is completed.
-   */
-  postEventChecklistIsComplete(items) {
-    if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
-      return false;
-    }
-    const itemByName = /* @__PURE__ */ new Map();
-    for (const item of items) {
-      if (itemByName.has(item.name)) {
-        return false;
-      }
-      itemByName.set(item.name, item);
-    }
-    return EXPECTED_POST_EVENT_TASK_NAMES.every(
-      (name) => itemByName.get(name)?.completed === true
-    );
-  }
-  cloneMeetupEvent(event) {
-    const operationalChecklists = {
-      slidesAndContent: event.operationalChecklists.slidesAndContent.map(
-        (item) => ({ ...item })
-      ),
-      communication: event.operationalChecklists.communication.map((item) => ({
-        ...item
-      })),
-      postEvent: event.operationalChecklists.postEvent.map((item) => ({
-        ...item
-      }))
-    };
-    return {
-      ...event,
-      identity: { ...event.identity },
-      labels: [...event.labels],
-      host: event.host ? { ...event.host } : void 0,
-      agenda: event.agenda.map((entry) => ({
-        ...entry,
-        speakers: entry.speakers.map((speaker) => ({ ...speaker }))
-      })),
-      publicationLinks: { ...event.publicationLinks },
-      confirmations: { ...event.confirmations },
-      logistics: { ...event.logistics },
-      operationalChecklists,
-      followUpComplete: event.followUpComplete && this.postEventChecklistIsComplete(operationalChecklists.postEvent)
-    };
-  }
-};
-
-// packages/domain/event/src/domain/readiness.ts
-var EventReadinessPolicy = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  evaluateEventReadiness(event, diagnostics) {
-    const readinessDiagnostics = [...diagnostics];
-    if (event.occurrenceStatus === "cancelled") {
-      return {
-        status: "incomplete",
-        isReady: false,
-        diagnostics: readinessDiagnostics
-      };
-    }
-    if (event.occurrenceStatus === "postponed") {
-      return {
-        status: "incomplete",
-        isReady: false,
-        diagnostics: readinessDiagnostics
-      };
-    }
-    if (readinessDiagnostics.some((item) => item.severity === "error")) {
-      return {
-        status: "invalid",
-        isReady: false,
-        diagnostics: readinessDiagnostics
-      };
-    }
-    if (!event.confirmations.host) {
-      readinessDiagnostics.push(
-        this.collaborators.eventDiagnostics.diagnostic({
-          code: "event.confirmation.host.missing",
-          severity: "warning",
-          category: "incomplete",
-          field: "confirmations.host",
-          message: "Host confirmation is required before the event is ready"
-        })
-      );
-    }
-    if (!event.confirmations.speakers) {
-      readinessDiagnostics.push(
-        this.collaborators.eventDiagnostics.diagnostic({
-          code: "event.confirmation.speakers.missing",
-          severity: "warning",
-          category: "incomplete",
-          field: "confirmations.speakers",
-          message: "Speaker confirmation is required before the event is ready"
-        })
-      );
-    }
-    const incomplete = readinessDiagnostics.some(
-      (item) => item.category === "incomplete"
-    );
-    return {
-      status: incomplete ? "incomplete" : "ready",
-      isReady: !incomplete,
-      diagnostics: Object.freeze(readinessDiagnostics)
-    };
-  }
-};
-
-// packages/domain/event/src/dependency-composition.ts
-var EventDomainComposition = class {
-  eventAgendaEquality() {
-    return new EventAgendaEquality();
-  }
-  eventAgendaRule() {
-    return new EventAgendaRule({
-      eventRuleResults: this.eventRuleResults(),
-      eventAgendaEquality: this.eventAgendaEquality(),
-      eventPatches: this.eventPatches(),
-      eventDiagnostics: this.eventDiagnostics(),
-      eventParticipantNormalization: this.eventParticipantNormalization()
-    });
-  }
-  eventChecklists() {
-    return new EventChecklists();
-  }
-  eventDateRule() {
-    return new EventDateRule({
-      eventRuleResults: this.eventRuleResults(),
-      eventDateValidation: this.eventDateValidation()
-    });
-  }
-  eventDateValidation() {
-    return new EventDateValidation();
-  }
-  eventDescriptionRule() {
-    return new EventDescriptionRule({
-      eventRuleResults: this.eventRuleResults()
-    });
-  }
-  eventDiagnostics() {
-    return new EventDiagnostics();
-  }
-  eventDocumentConcurrency() {
-    return new EventDocumentConcurrency();
-  }
-  eventHostRule() {
-    return new EventHostRule({
-      eventRuleResults: this.eventRuleResults(),
-      eventParticipantNormalization: this.eventParticipantNormalization(),
-      eventPatches: this.eventPatches()
-    });
-  }
-  eventLifecycle() {
-    return new EventLifecycle({
-      meetupEventOperations: this.meetupEventOperations()
-    });
-  }
-  eventLinksRule() {
-    return new EventLinksRule({
-      eventDiagnostics: this.eventDiagnostics(),
-      eventPatches: this.eventPatches()
-    });
-  }
-  eventOccurrenceParser() {
-    return new EventOccurrenceParser({
-      eventDiagnostics: this.eventDiagnostics()
-    });
-  }
-  eventParticipantNormalization() {
-    return new EventParticipantNormalization();
-  }
-  eventPatches() {
-    return new EventPatches({
-      meetupEventOperations: this.meetupEventOperations()
-    });
-  }
-  eventReadinessPolicy() {
-    return new EventReadinessPolicy({
-      eventDiagnostics: this.eventDiagnostics()
-    });
-  }
-  eventRepositoryPatches() {
-    return new EventRepositoryPatches();
-  }
-  eventRuleEngine(...args) {
-    return new EventRuleEngine(
-      {
-        eventRuleOrdering: this.eventRuleOrdering(),
-        eventPatches: this.eventPatches()
-      },
-      ...args
-    );
-  }
-  eventRuleFactory() {
-    return new EventRuleFactory({
-      rules: [
-        this.eventDateRule(),
-        this.eventTitleRule(),
-        this.eventDescriptionRule(),
-        this.eventHostRule(),
-        this.eventAgendaRule(),
-        this.eventLinksRule(),
-        this.issueTitleRule()
-      ],
-      createManagedLabelsRule: (...args) => this.managedLabelsRule(...args)
-    });
-  }
-  eventRuleOrdering() {
-    return new EventRuleOrdering();
-  }
-  eventRuleResults() {
-    return new EventRuleResults({
-      eventDiagnostics: this.eventDiagnostics(),
-      eventPatches: this.eventPatches()
-    });
-  }
-  eventTitleRule() {
-    return new EventTitleRule({ eventRuleResults: this.eventRuleResults() });
-  }
-  issueTitleRule() {
-    return new IssueTitleRule({
-      eventDateValidation: this.eventDateValidation(),
-      eventRuleResults: this.eventRuleResults(),
-      eventPatches: this.eventPatches()
-    });
-  }
-  listActiveEvents(...args) {
-    return new ListActiveEvents(
-      {
-        ruleEngine: this.eventRuleEngine(
-          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
-        ),
-        eventReadinessPolicy: this.eventReadinessPolicy(),
-        eventLifecycle: this.eventLifecycle()
-      },
-      ...args
-    );
-  }
-  managedLabelsRule(...args) {
-    return new ManagedLabelsRule(
-      {
-        eventRuleResults: this.eventRuleResults(),
-        eventPatches: this.eventPatches()
-      },
-      ...args
-    );
-  }
-  meetupEventOperations() {
-    return new MeetupEventOperations();
-  }
-  meetupPublicationChecklist() {
-    return new MeetupPublicationChecklist();
-  }
-  reconcileEvent(...args) {
-    return new ReconcileEvent(
-      {
-        ruleEngine: this.eventRuleEngine(
-          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
-        ),
-        eventDocumentConcurrency: this.eventDocumentConcurrency(),
-        eventReadinessPolicy: this.eventReadinessPolicy(),
-        eventLifecycle: this.eventLifecycle(),
-        eventRepositoryPatches: this.eventRepositoryPatches()
       },
       ...args
     );
@@ -35748,6 +42093,389 @@ var JourneyComposition = class {
   }
 };
 
+// packages/runtime/github-actions/src/attention-stage-input.ts
+var AttentionStageInput = class {
+  parse(value) {
+    const input = JSON.parse(value);
+    if (!this.isRecord(input))
+      throw new Error("Invalid attention stage results");
+    const reports = ATTENTION_STAGE_OWNERS.map(
+      (owner) => [owner, this.stage(input[owner])]
+    );
+    return {
+      event: reports[0][1],
+      assets: reports[1][1],
+      feedback: reports[2][1],
+      communications: reports[3][1]
+    };
+  }
+  stage(value) {
+    if (value !== void 0 && !this.isRecord(value))
+      throw new Error("Invalid attention stage");
+    const stage = value ?? {};
+    return {
+      outcome: stage.outcome === "success" || stage.outcome === "failure" ? stage.outcome : "unknown",
+      diagnostics: this.readDiagnostics(stage.diagnostics),
+      reported: stage.diagnostics !== void 0 && stage.diagnostics !== ""
+    };
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  readDiagnostics(input) {
+    let diagnostics = input;
+    if (typeof diagnostics === "string") {
+      if (!diagnostics) return [];
+      try {
+        diagnostics = JSON.parse(diagnostics);
+      } catch {
+        throw new Error("Invalid attention stage diagnostics");
+      }
+    }
+    if (diagnostics === void 0) return [];
+    if (!Array.isArray(diagnostics))
+      throw new Error("Invalid attention stage diagnostics");
+    return diagnostics.map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item))
+        throw new Error("Invalid attention stage diagnostic");
+      const { code, severity, field, fixApplied } = item;
+      if (typeof code !== "string" || !/^(event|publication|communication|referential|action)\.[a-z.-]{1,120}$/.test(
+        code
+      ) || severity !== "error" && severity !== "warning" && severity !== "info")
+        throw new Error("Invalid attention stage diagnostic");
+      return {
+        code,
+        severity,
+        message: code,
+        ...this.safeField(field) ? { field } : {},
+        ...typeof fixApplied === "boolean" ? { fixApplied } : {}
+      };
+    });
+  }
+  safeField(field) {
+    if (typeof field !== "string" || field.length > 160) return false;
+    return ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
+      field
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/attention-stages.ts
+var AttentionStages = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value) {
+    return this.collaborators.attentionStageEvaluation.evaluate(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+  diagnostics(value) {
+    return this.collaborators.attentionStageEvaluation.diagnostics(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+  hasCompleteReports(value) {
+    return this.collaborators.attentionStageEvaluation.complete(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/communication-input.ts
+var CommunicationInput = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(input) {
+    this.collaborators.publicationUrlInput.validateMeetupEventUrlPrefix(
+      input.meetupEventUrlPrefix
+    );
+    this.collaborators.publicationUrlInput.validateCommunityEventUrlPrefixes(
+      input.communityEventUrlPrefixes
+    );
+    this.collaborators.publicationUrlInput.validateAssetFolderUrlPrefix(
+      input.assetFolderUrlPrefix
+    );
+    this.collaborators.conferenceHallInput.validate(input);
+    for (const field of [
+      "locale",
+      "githubToken",
+      "mailingsToken",
+      "slackToken",
+      "openFeedbackApiKey"
+    ])
+      if (!input[field]?.trim())
+        throw new Error(`Input required and not supplied: ${field}`);
+    if (typeof input.slidesReady !== "boolean")
+      throw new Error("slidesReady must be an explicit boolean");
+    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
+      throw new Error("issueNumber must be a positive integer");
+    }
+    if (!this.isRepositoryPart(input.owner) || !this.isRepositoryPart(input.repo)) {
+      throw new Error(
+        "owner and repo must be valid GitHub repository segments"
+      );
+    }
+    if (!input.slackOrganizerChannelId.trim()) {
+      throw new Error("slackOrganizerChannelId must not be empty");
+    }
+    if (!input.managedCommentAuthor.trim()) {
+      throw new Error("managedCommentAuthor must not be empty");
+    }
+  }
+  isRepositoryPart(value) {
+    return /^[A-Za-z0-9_.-]+$/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/conference-hall-input.ts
+var ConferenceHallInput = class {
+  read() {
+    const conferenceHallApiKey = getInput("conference-hall-api-key", {
+      required: true
+    });
+    setSecret(conferenceHallApiKey);
+    return this.validate({
+      conferenceHallEvent: getInput("conference-hall-event", {
+        required: true
+      }),
+      conferenceHallApiKey
+    });
+  }
+  validate(input) {
+    const conferenceHallEvent = input.conferenceHallEvent?.trim();
+    const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
+    if (!conferenceHallEvent)
+      throw new Error("Input required and not supplied: conference-hall-event");
+    if (!conferenceHallApiKey)
+      throw new Error(
+        "Input required and not supplied: conference-hall-api-key"
+      );
+    return { conferenceHallEvent, conferenceHallApiKey };
+  }
+};
+
+// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+import { readFile as readFile2 } from "node:fs/promises";
+import { join as join2 } from "node:path";
+var MeetupPublicationConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async load(root) {
+    const text = await readFile2(
+      join2(root, ".github/meetup-publication.json"),
+      "utf8"
+    );
+    if (Buffer.byteLength(text) > 1e5)
+      throw new Error("Meetup publication configuration is too large");
+    return this.parse(JSON.parse(text));
+  }
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid Meetup publication configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public Meetup venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/publication-url-input.ts
+var PublicationUrlInput = class {
+  readMeetupEventUrlPrefix() {
+    return this.validateMeetupEventUrlPrefix(
+      getInput("meetup-event-url-prefix", {
+        required: true,
+        trimWhitespace: false
+      })
+    );
+  }
+  readCommunityEventUrlPrefixes() {
+    const community = getInput("community-event-url-prefixes", {
+      required: true,
+      trimWhitespace: false
+    });
+    let communityEventUrlPrefixes;
+    try {
+      communityEventUrlPrefixes = JSON.parse(community);
+    } catch {
+      throw new Error("Invalid input: community-event-url-prefixes");
+    }
+    return this.validateCommunityEventUrlPrefixes(communityEventUrlPrefixes);
+  }
+  readAssetFolderUrlPrefix() {
+    return this.validateAssetFolderUrlPrefix(
+      getInput("asset-folder-url-prefix", {
+        required: true,
+        trimWhitespace: false
+      })
+    );
+  }
+  validateMeetupEventUrlPrefix(value) {
+    const meetupEventUrlPrefix = this.prefix(value, "meetup-event-url-prefix");
+    if (!MeetupGroupUrl.fromEventUrlPrefix(meetupEventUrlPrefix))
+      throw new Error("Invalid input: meetup-event-url-prefix");
+    return meetupEventUrlPrefix;
+  }
+  validateCommunityEventUrlPrefixes(community) {
+    if (!Array.isArray(community) || community.length === 0)
+      throw new Error("Invalid input: community-event-url-prefixes");
+    return community.map(
+      (prefix) => this.prefix(prefix, "community-event-url-prefixes")
+    );
+  }
+  validateAssetFolderUrlPrefix(value) {
+    return this.prefix(value, "asset-folder-url-prefix");
+  }
+  prefix(value, name) {
+    if (typeof value !== "string" || !/^https:\/\/[^/?#@]+\/[^?#]*$/.test(value) || /[\s\\\p{Cc}]/u.test(value))
+      throw new Error(`Invalid input: ${name}`);
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      throw new Error(`Invalid input: ${name}`);
+    }
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.search || url.hash)
+      throw new Error(`Invalid input: ${name}`);
+    return value;
+  }
+};
+
+// packages/runtime/github-actions/src/referential-action-report.ts
+var ReferentialActionReport = class {
+  validation(result, diagnostics, messages5) {
+    const details = [
+      messages5.t(
+        result.isValid ? "report.referential.valid" : "report.referential.invalid"
+      ),
+      messages5.t("report.referential.counts", {
+        hosts: result.hostCount,
+        speakers: result.speakerCount
+      })
+    ];
+    return {
+      details,
+      diagnostics
+    };
+  }
+  issueForm(mode, result, messages5) {
+    const details = [];
+    if (result.diagnostics.some((item) => item.severity === "error")) {
+      details.push(messages5.t("report.issue-form.blocked"));
+    } else if (result.changed) {
+      details.push(
+        mode === "check" ? messages5.t("report.issue-form.stale") : messages5.t("report.issue-form.updated"),
+        messages5.t("report.issue-form.files", {
+          files: result.changedFiles.join(", ")
+        })
+      );
+    } else {
+      details.push(messages5.t("report.issue-form.current"));
+    }
+    return { details, diagnostics: result.diagnostics };
+  }
+};
+
+// packages/runtime/github-actions/src/runtime-input.ts
+var RuntimeInput = class {
+  positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  enumInput(name, value, allowed) {
+    const parsed = allowed.find((candidate) => candidate === value);
+    if (parsed === void 0) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return parsed;
+  }
+  isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+  booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+};
+
+// packages/runtime/github-actions/src/runtime-input-composition.ts
+var RuntimeInputComposition = class _RuntimeInputComposition {
+  static bind(container) {
+    container.bind(RuntimeInput).toResolvedValue(() => new RuntimeInput());
+    container.bind(PublicationUrlInput).toResolvedValue(() => new PublicationUrlInput());
+    container.bind(ConferenceHallInput).toResolvedValue(() => new ConferenceHallInput());
+    container.bind(AiInput).toResolvedValue(
+      (runtimeInput) => new AiInput(runtimeInput),
+      [RuntimeInput]
+    );
+    container.bind(CommunicationInput).toResolvedValue(
+      (publicationUrlInput, conferenceHallInput) => new CommunicationInput({ publicationUrlInput, conferenceHallInput }),
+      [PublicationUrlInput, ConferenceHallInput]
+    );
+    _RuntimeInputComposition.bindAttention(container);
+    _RuntimeInputComposition.bindConfiguration(container);
+  }
+  static bindAttention(container) {
+    container.bind(AttentionStageInput).toResolvedValue(() => new AttentionStageInput());
+    container.bind(AttentionStageEvaluation).toResolvedValue(
+      () => new JourneyPolicyComposition().attentionStageEvaluation()
+    );
+    container.bind(AttentionStages).toResolvedValue(
+      (attentionStageInput, attentionStageEvaluation) => new AttentionStages({
+        attentionStageInput,
+        attentionStageEvaluation
+      }),
+      [AttentionStageInput, AttentionStageEvaluation]
+    );
+  }
+  static bindConfiguration(container) {
+    container.bind(ContentContractPolicy).toResolvedValue(
+      () => new PublicationDomainComposition().contentContractPolicy()
+    );
+    container.bind(ScheduledEventPolicy).toResolvedValue(
+      () => new PublicationDomainComposition().scheduledEventPolicy()
+    );
+    container.bind(AssetRenderConfiguration).toResolvedValue(
+      (runtimeInput, contentContractPolicy) => new AssetRenderConfiguration({ runtimeInput, contentContractPolicy }),
+      [RuntimeInput, ContentContractPolicy]
+    );
+    container.bind(AssetContentConfiguration).toResolvedValue(
+      (runtimeInput, contentContractPolicy, assetRenderConfiguration) => new AssetContentConfiguration({
+        runtimeInput,
+        contentContractPolicy,
+        assetRenderConfiguration
+      }),
+      [RuntimeInput, ContentContractPolicy, AssetRenderConfiguration]
+    );
+    container.bind(MeetupPublicationConfiguration).toResolvedValue(
+      (runtimeInput, scheduledEventPolicy) => new MeetupPublicationConfiguration({
+        runtimeInput,
+        scheduledEventPolicy
+      }),
+      [RuntimeInput, ScheduledEventPolicy]
+    );
+  }
+};
+
 // packages/presentation/localization/src/locale-resolver.ts
 var LocaleResolver = class {
   resolveLocale(requested) {
@@ -39121,765 +45849,6 @@ var MessageLocalizer = class {
   }
 };
 
-// packages/runtime/github-actions/src/action-failure-presenter.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-var ActionFailurePresenter = class {
-  /** Never expose provider responses, input values, or contact data in failures. */
-  publicErrorMessage(error2) {
-    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-      return `${error2.name}: ${error2.message}`;
-    }
-    return "Unexpected technical failure.";
-  }
-};
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
-import * as os from "os";
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
-function toCommandValue(input) {
-  if (input === null || input === void 0) {
-    return "";
-  } else if (typeof input === "string" || input instanceof String) {
-    return input;
-  }
-  return JSON.stringify(input);
-}
-function toCommandProperties(annotationProperties) {
-  if (!Object.keys(annotationProperties).length) {
-    return {};
-  }
-  return {
-    title: annotationProperties.title,
-    file: annotationProperties.file,
-    line: annotationProperties.startLine,
-    endLine: annotationProperties.endLine,
-    col: annotationProperties.startColumn,
-    endColumn: annotationProperties.endColumn
-  };
-}
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
-function issueCommand(command, properties, message) {
-  const cmd = new Command(command, properties, message);
-  process.stdout.write(cmd.toString() + os.EOL);
-}
-var CMD_STRING = "::";
-var Command = class {
-  constructor(command, properties, message) {
-    if (!command) {
-      command = "missing.command";
-    }
-    this.command = command;
-    this.properties = properties;
-    this.message = message;
-  }
-  toString() {
-    let cmdStr = CMD_STRING + this.command;
-    if (this.properties && Object.keys(this.properties).length > 0) {
-      cmdStr += " ";
-      let first = true;
-      for (const key in this.properties) {
-        if (this.properties.hasOwnProperty(key)) {
-          const val = this.properties[key];
-          if (val) {
-            if (first) {
-              first = false;
-            } else {
-              cmdStr += ",";
-            }
-            cmdStr += `${key}=${escapeProperty(val)}`;
-          }
-        }
-      }
-    }
-    cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
-    return cmdStr;
-  }
-};
-function escapeData(s) {
-  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-}
-function escapeProperty(s) {
-  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
-}
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/file-command.js
-import * as crypto from "crypto";
-import * as fs from "fs";
-import * as os2 from "os";
-function issueFileCommand(command, message) {
-  const filePath = process.env[`GITHUB_${command}`];
-  if (!filePath) {
-    throw new Error(`Unable to find environment variable for file command ${command}`);
-  }
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Missing file at path: ${filePath}`);
-  }
-  fs.appendFileSync(filePath, `${toCommandValue(message)}${os2.EOL}`, {
-    encoding: "utf8"
-  });
-}
-function prepareKeyValueMessage(key, value) {
-  const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
-  const convertedValue = toCommandValue(value);
-  if (key.includes(delimiter)) {
-    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-  }
-  if (convertedValue.includes(delimiter)) {
-    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-  }
-  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
-}
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
-import * as os4 from "os";
-
-// node_modules/.pnpm/@actions+http-client@4.0.1/node_modules/@actions/http-client/lib/index.js
-var tunnel = __toESM(require_tunnel2(), 1);
-var import_undici = __toESM(require_undici(), 1);
-var HttpCodes;
-(function(HttpCodes2) {
-  HttpCodes2[HttpCodes2["OK"] = 200] = "OK";
-  HttpCodes2[HttpCodes2["MultipleChoices"] = 300] = "MultipleChoices";
-  HttpCodes2[HttpCodes2["MovedPermanently"] = 301] = "MovedPermanently";
-  HttpCodes2[HttpCodes2["ResourceMoved"] = 302] = "ResourceMoved";
-  HttpCodes2[HttpCodes2["SeeOther"] = 303] = "SeeOther";
-  HttpCodes2[HttpCodes2["NotModified"] = 304] = "NotModified";
-  HttpCodes2[HttpCodes2["UseProxy"] = 305] = "UseProxy";
-  HttpCodes2[HttpCodes2["SwitchProxy"] = 306] = "SwitchProxy";
-  HttpCodes2[HttpCodes2["TemporaryRedirect"] = 307] = "TemporaryRedirect";
-  HttpCodes2[HttpCodes2["PermanentRedirect"] = 308] = "PermanentRedirect";
-  HttpCodes2[HttpCodes2["BadRequest"] = 400] = "BadRequest";
-  HttpCodes2[HttpCodes2["Unauthorized"] = 401] = "Unauthorized";
-  HttpCodes2[HttpCodes2["PaymentRequired"] = 402] = "PaymentRequired";
-  HttpCodes2[HttpCodes2["Forbidden"] = 403] = "Forbidden";
-  HttpCodes2[HttpCodes2["NotFound"] = 404] = "NotFound";
-  HttpCodes2[HttpCodes2["MethodNotAllowed"] = 405] = "MethodNotAllowed";
-  HttpCodes2[HttpCodes2["NotAcceptable"] = 406] = "NotAcceptable";
-  HttpCodes2[HttpCodes2["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
-  HttpCodes2[HttpCodes2["RequestTimeout"] = 408] = "RequestTimeout";
-  HttpCodes2[HttpCodes2["Conflict"] = 409] = "Conflict";
-  HttpCodes2[HttpCodes2["Gone"] = 410] = "Gone";
-  HttpCodes2[HttpCodes2["TooManyRequests"] = 429] = "TooManyRequests";
-  HttpCodes2[HttpCodes2["InternalServerError"] = 500] = "InternalServerError";
-  HttpCodes2[HttpCodes2["NotImplemented"] = 501] = "NotImplemented";
-  HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
-  HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
-  HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
-})(HttpCodes || (HttpCodes = {}));
-var Headers;
-(function(Headers2) {
-  Headers2["Accept"] = "accept";
-  Headers2["ContentType"] = "content-type";
-})(Headers || (Headers = {}));
-var MediaTypes;
-(function(MediaTypes2) {
-  MediaTypes2["ApplicationJson"] = "application/json";
-})(MediaTypes || (MediaTypes = {}));
-var HttpRedirectCodes = [
-  HttpCodes.MovedPermanently,
-  HttpCodes.ResourceMoved,
-  HttpCodes.SeeOther,
-  HttpCodes.TemporaryRedirect,
-  HttpCodes.PermanentRedirect
-];
-var HttpResponseRetryCodes = [
-  HttpCodes.BadGateway,
-  HttpCodes.ServiceUnavailable,
-  HttpCodes.GatewayTimeout
-];
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/summary.js
-import { EOL as EOL3 } from "os";
-import { constants, promises } from "fs";
-var __awaiter = function(thisArg, _arguments, P2, generator) {
-  function adopt(value) {
-    return value instanceof P2 ? value : new P2(function(resolve4) {
-      resolve4(value);
-    });
-  }
-  return new (P2 || (P2 = Promise))(function(resolve4, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var { access, appendFile, writeFile } = promises;
-var SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
-var Summary = class {
-  constructor() {
-    this._buffer = "";
-  }
-  /**
-   * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
-   * Also checks r/w permissions.
-   *
-   * @returns step summary file path
-   */
-  filePath() {
-    return __awaiter(this, void 0, void 0, function* () {
-      if (this._filePath) {
-        return this._filePath;
-      }
-      const pathFromEnv = process.env[SUMMARY_ENV_VAR];
-      if (!pathFromEnv) {
-        throw new Error(`Unable to find environment variable for $${SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
-      }
-      try {
-        yield access(pathFromEnv, constants.R_OK | constants.W_OK);
-      } catch (_a2) {
-        throw new Error(`Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`);
-      }
-      this._filePath = pathFromEnv;
-      return this._filePath;
-    });
-  }
-  /**
-   * Wraps content in an HTML tag, adding any HTML attributes
-   *
-   * @param {string} tag HTML tag to wrap
-   * @param {string | null} content content within the tag
-   * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
-   *
-   * @returns {string} content wrapped in HTML element
-   */
-  wrap(tag, content, attrs = {}) {
-    const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
-    if (!content) {
-      return `<${tag}${htmlAttrs}>`;
-    }
-    return `<${tag}${htmlAttrs}>${content}</${tag}>`;
-  }
-  /**
-   * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
-   *
-   * @param {SummaryWriteOptions} [options] (optional) options for write operation
-   *
-   * @returns {Promise<Summary>} summary instance
-   */
-  write(options) {
-    return __awaiter(this, void 0, void 0, function* () {
-      const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
-      const filePath = yield this.filePath();
-      const writeFunc = overwrite ? writeFile : appendFile;
-      yield writeFunc(filePath, this._buffer, { encoding: "utf8" });
-      return this.emptyBuffer();
-    });
-  }
-  /**
-   * Clears the summary buffer and wipes the summary file
-   *
-   * @returns {Summary} summary instance
-   */
-  clear() {
-    return __awaiter(this, void 0, void 0, function* () {
-      return this.emptyBuffer().write({ overwrite: true });
-    });
-  }
-  /**
-   * Returns the current summary buffer as a string
-   *
-   * @returns {string} string of summary buffer
-   */
-  stringify() {
-    return this._buffer;
-  }
-  /**
-   * If the summary buffer is empty
-   *
-   * @returns {boolen} true if the buffer is empty
-   */
-  isEmptyBuffer() {
-    return this._buffer.length === 0;
-  }
-  /**
-   * Resets the summary buffer without writing to summary file
-   *
-   * @returns {Summary} summary instance
-   */
-  emptyBuffer() {
-    this._buffer = "";
-    return this;
-  }
-  /**
-   * Adds raw text to the summary buffer
-   *
-   * @param {string} text content to add
-   * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
-   *
-   * @returns {Summary} summary instance
-   */
-  addRaw(text, addEOL = false) {
-    this._buffer += text;
-    return addEOL ? this.addEOL() : this;
-  }
-  /**
-   * Adds the operating system-specific end-of-line marker to the buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addEOL() {
-    return this.addRaw(EOL3);
-  }
-  /**
-   * Adds an HTML codeblock to the summary buffer
-   *
-   * @param {string} code content to render within fenced code block
-   * @param {string} lang (optional) language to syntax highlight code
-   *
-   * @returns {Summary} summary instance
-   */
-  addCodeBlock(code, lang) {
-    const attrs = Object.assign({}, lang && { lang });
-    const element = this.wrap("pre", this.wrap("code", code), attrs);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML list to the summary buffer
-   *
-   * @param {string[]} items list of items to render
-   * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
-   *
-   * @returns {Summary} summary instance
-   */
-  addList(items, ordered = false) {
-    const tag = ordered ? "ol" : "ul";
-    const listItems = items.map((item) => this.wrap("li", item)).join("");
-    const element = this.wrap(tag, listItems);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML table to the summary buffer
-   *
-   * @param {SummaryTableCell[]} rows table rows
-   *
-   * @returns {Summary} summary instance
-   */
-  addTable(rows) {
-    const tableBody = rows.map((row) => {
-      const cells = row.map((cell) => {
-        if (typeof cell === "string") {
-          return this.wrap("td", cell);
-        }
-        const { header, data, colspan, rowspan } = cell;
-        const tag = header ? "th" : "td";
-        const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
-        return this.wrap(tag, data, attrs);
-      }).join("");
-      return this.wrap("tr", cells);
-    }).join("");
-    const element = this.wrap("table", tableBody);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds a collapsable HTML details element to the summary buffer
-   *
-   * @param {string} label text for the closed state
-   * @param {string} content collapsable content
-   *
-   * @returns {Summary} summary instance
-   */
-  addDetails(label, content) {
-    const element = this.wrap("details", this.wrap("summary", label) + content);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML image tag to the summary buffer
-   *
-   * @param {string} src path to the image you to embed
-   * @param {string} alt text description of the image
-   * @param {SummaryImageOptions} options (optional) addition image attributes
-   *
-   * @returns {Summary} summary instance
-   */
-  addImage(src, alt, options) {
-    const { width, height } = options || {};
-    const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
-    const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML section heading element
-   *
-   * @param {string} text heading text
-   * @param {number | string} [level=1] (optional) the heading level, default: 1
-   *
-   * @returns {Summary} summary instance
-   */
-  addHeading(text, level) {
-    const tag = `h${level}`;
-    const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
-    const element = this.wrap(allowedTag, text);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML thematic break (<hr>) to the summary buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addSeparator() {
-    const element = this.wrap("hr", null);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML line break (<br>) to the summary buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addBreak() {
-    const element = this.wrap("br", null);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML blockquote to the summary buffer
-   *
-   * @param {string} text quote text
-   * @param {string} cite (optional) citation url
-   *
-   * @returns {Summary} summary instance
-   */
-  addQuote(text, cite) {
-    const attrs = Object.assign({}, cite && { cite });
-    const element = this.wrap("blockquote", text, attrs);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML anchor tag to the summary buffer
-   *
-   * @param {string} text link text/content
-   * @param {string} href hyperlink
-   *
-   * @returns {Summary} summary instance
-   */
-  addLink(text, href) {
-    const element = this.wrap("a", text, { href });
-    return this.addRaw(element).addEOL();
-  }
-};
-var _summary = new Summary();
-var summary = _summary;
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
-import os3 from "os";
-
-// node_modules/.pnpm/@actions+io@3.0.2/node_modules/@actions/io/lib/io-util.js
-import * as fs2 from "fs";
-var { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs2.promises;
-var IS_WINDOWS = process.platform === "win32";
-var READONLY = fs2.constants.O_RDONLY;
-
-// node_modules/.pnpm/@actions+exec@3.0.0/node_modules/@actions/exec/lib/toolrunner.js
-var IS_WINDOWS2 = process.platform === "win32";
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
-var platform = os3.platform();
-var arch = os3.arch();
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
-var ExitCode;
-(function(ExitCode2) {
-  ExitCode2[ExitCode2["Success"] = 0] = "Success";
-  ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
-})(ExitCode || (ExitCode = {}));
-function setSecret(secret) {
-  issueCommand("add-mask", {}, secret);
-}
-function getInput(name, options) {
-  const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
-  if (options && options.required && !val) {
-    throw new Error(`Input required and not supplied: ${name}`);
-  }
-  if (options && options.trimWhitespace === false) {
-    return val;
-  }
-  return val.trim();
-}
-function setOutput(name, value) {
-  const filePath = process.env["GITHUB_OUTPUT"] || "";
-  if (filePath) {
-    return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
-  }
-  process.stdout.write(os4.EOL);
-  issueCommand("set-output", { name }, toCommandValue(value));
-}
-function setFailed(message) {
-  process.exitCode = ExitCode.Failure;
-  error(message);
-}
-function error(message, properties = {}) {
-  issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
-}
-function warning(message, properties = {}) {
-  issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
-}
-function info(message) {
-  process.stdout.write(message + os4.EOL);
-}
-
-// packages/runtime/github-actions/src/action-output.ts
-var ActionOutput = class {
-  setJsonOutput(name, value) {
-    setOutput(name, JSON.stringify(value));
-  }
-  setDiagnosticsOutput(diagnostics) {
-    this.setJsonOutput("diagnostics", diagnostics);
-  }
-};
-
-// packages/runtime/github-actions/src/action-report.ts
-var ActionReport = class {
-  async write(title, report, messages5) {
-    const lines = new Set(report.details);
-    for (const item of report.diagnostics) {
-      lines.add(this.diagnosticMessage(item));
-    }
-    if (report.failure)
-      lines.add(messages5.t("report.failed", { reason: report.failure }));
-    for (const line of lines) {
-      info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
-    }
-    const content = [...lines].join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-    try {
-      await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
-`).write();
-    } catch {
-      summary.clear();
-      warning(messages5.t("report.summary-unavailable"));
-    }
-  }
-  diagnosticMessage(item) {
-    const field = item.field ? ` field=${item.field}` : "";
-    const fixed = item.fixApplied === void 0 ? "" : ` fix_applied=${item.fixApplied}`;
-    return `${item.severity} ${item.code}${field}${fixed}`;
-  }
-};
-
-// packages/runtime/github-actions/src/action-runner.ts
-var ActionRunner = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  async run(title, operation, diagnosticsOutput) {
-    let messages5 = this.collaborators.createActionMessages("en");
-    let report;
-    try {
-      messages5 = this.collaborators.createActionMessages(
-        getInput("locale", { required: true })
-      );
-      report = await operation(messages5);
-      const failures = report.diagnostics.filter(
-        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
-      ).map((item) => item.code);
-      if (!report.failure && failures.length > 0) {
-        report = {
-          ...report,
-          failure: messages5.t("report.technical-failure", {
-            codes: [...new Set(failures)].join(", ")
-          })
-        };
-      }
-    } catch (error2) {
-      if (error2 instanceof EventConcurrentModificationError) {
-        report = {
-          details: [],
-          diagnostics: [
-            {
-              code: "event.concurrently-modified",
-              severity: "info",
-              message: "event.concurrently-modified"
-            }
-          ]
-        };
-      } else {
-        const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
-        report = {
-          details: [],
-          diagnostics: [
-            { code: "action.execution.failed", severity: "error", message }
-          ],
-          failure: messages5.error(
-            error2 instanceof Error ? error2.name : "",
-            message
-          )
-        };
-      }
-    }
-    await this.collaborators.actionReport.write(
-      messages5.t(title),
-      report,
-      messages5
-    );
-    if (report.failure) setFailed(report.failure);
-    if (diagnosticsOutput)
-      this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
-  }
-};
-
-// packages/runtime/github-actions/src/ai-input.ts
-var AiInput = class {
-  constructor(runtimeInput) {
-    this.runtimeInput = runtimeInput;
-  }
-  runtimeInput;
-  read() {
-    const apiKey = getInput("ai-api-key", {
-      required: true,
-      trimWhitespace: false
-    });
-    setSecret(apiKey);
-    const normalizedApiKey = apiKey.trim();
-    if (normalizedApiKey && normalizedApiKey !== apiKey)
-      setSecret(normalizedApiKey);
-    return this.validate({
-      provider: getInput("ai-provider", {
-        required: true,
-        trimWhitespace: false
-      }),
-      model: getInput("ai-model", {
-        required: true,
-        trimWhitespace: false
-      }),
-      apiKey
-    });
-  }
-  validate(input) {
-    if (!this.runtimeInput.isObject(input))
-      throw new Error("Invalid AI configuration");
-    const provider = this.requiredString(input.provider, "ai-provider");
-    if (provider !== "gemini")
-      throw new Error("Invalid input: ai-provider. Supported provider: gemini");
-    return {
-      provider,
-      model: this.requiredString(input.model, "ai-model"),
-      apiKey: this.requiredString(input.apiKey, "ai-api-key")
-    };
-  }
-  requiredString(value, name) {
-    if (typeof value !== "string") throw new Error(`Invalid input: ${name}`);
-    const normalized = value.trim();
-    if (!normalized)
-      throw new Error(`Input required and not supplied: ${name}`);
-    return normalized;
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-var AssetContentConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  usesNextEvent(contracts) {
-    return Object.values(contracts).some((contract) => {
-      const fields = this.collaborators.runtimeInput.isObject(contract) ? contract.fields : void 0;
-      return Array.isArray(fields) && fields.some(
-        (field) => this.collaborators.runtimeInput.isObject(field) && typeof field.token === "string" && field.token.startsWith("next_event.")
-      );
-    });
-  }
-  async load(root, eventId) {
-    let text;
-    try {
-      text = await readFile(
-        join(root, ".github/meetup-asset-content.json"),
-        "utf8"
-      );
-    } catch (error2) {
-      if (this.collaborators.runtimeInput.isObject(error2) && error2.code === "ENOENT")
-        return {
-          contracts: {},
-          speakers: {},
-          talks: {},
-          venues: {},
-          hostLogos: {},
-          recovery: {}
-        };
-      throw error2;
-    }
-    if (Buffer.byteLength(text) > 1e6)
-      throw new Error("Asset content configuration is too large");
-    return this.parse(JSON.parse(text), eventId);
-  }
-  parse(root, eventId) {
-    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.contracts) || !this.collaborators.contentContractPolicy.keys(root, [
-      "version",
-      "contracts",
-      "events",
-      "venues",
-      "hostLogos"
-    ]) || root.events !== void 0 && !this.collaborators.runtimeInput.isObject(root.events))
-      throw new Error("Invalid asset content configuration");
-    const selected = this.collaborators.runtimeInput.isObject(root.events) ? root.events[eventId] : void 0;
-    const event = selected === void 0 ? {} : selected;
-    if (!this.collaborators.runtimeInput.isObject(event) || !this.collaborators.contentContractPolicy.keys(event, [
-      "speakers",
-      "talks",
-      "recovery"
-    ]))
-      throw new Error("Invalid asset event configuration");
-    const assignments = this.collaborators.assetRenderConfiguration.parse(
-      event,
-      root.venues,
-      root.hostLogos
-    );
-    const recovery = this.recovery(event.recovery);
-    return { contracts: root.contracts, ...assignments, recovery };
-  }
-  recovery(input) {
-    const value = input === void 0 ? {} : input;
-    if (!this.collaborators.runtimeInput.isObject(value))
-      throw new Error("Invalid asset recovery operations");
-    const result = {};
-    for (const [id, operation] of Object.entries(value)) {
-      if (!this.collaborators.contentContractPolicy.name(id) || !this.collaborators.runtimeInput.isObject(operation) || operation.operation !== "enroll" && operation.operation !== "restore" && operation.operation !== "remove" || !this.collaborators.contentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !this.collaborators.contentContractPolicy.name(
-        operation.bindingId
-      ) || operation.bindingId !== void 0 && !this.collaborators.contentContractPolicy.name(
-        operation.bindingId
-      ) || !this.collaborators.contentContractPolicy.keys(operation, [
-        "operation",
-        "revision",
-        "bindingId"
-      ]))
-        throw new Error("Invalid asset recovery operation");
-      result[id] = {
-        operation: operation.operation,
-        revision: operation.revision,
-        ...typeof operation.bindingId === "string" ? { bindingId: operation.bindingId } : {}
-      };
-    }
-    return result;
-  }
-};
-
 // packages/runtime/github-actions/src/assets/asset-date-formatter.ts
 var AssetDateFormatter = class {
   constructor(locale) {
@@ -39922,99 +45891,6 @@ var CATALOGS = { en: EN_MESSAGES, fr: FR_MESSAGES };
 var AssetMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS, locale);
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-render-configuration.ts
-var AssetRenderConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  parse(event, venues, hostLogos) {
-    return {
-      speakers: this.speakers(event.speakers),
-      talks: this.talks(event.talks),
-      venues: this.venues(venues),
-      hostLogos: this.logos(hostLogos)
-    };
-  }
-  speakers(input) {
-    const result = {};
-    for (const [slot, id] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      if (!this.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
-        throw new Error("Invalid asset speaker assignment");
-      result[slot] = id;
-    }
-    return result;
-  }
-  talks(input) {
-    const result = {};
-    for (const [slot, value] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      const identity = this.record(value);
-      if (!this.slot(slot) || !this.collaborators.contentContractPolicy.keys(identity, [
-        "provider",
-        "event",
-        "id"
-      ]) || !this.identity(identity.provider) || !this.identity(identity.event) || !this.identity(identity.id))
-        throw new Error("Invalid asset talk assignment");
-      result[slot] = {
-        provider: identity.provider,
-        event: identity.event,
-        id: identity.id
-      };
-    }
-    return result;
-  }
-  venues(input) {
-    const result = {};
-    for (const [id, value] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      const venue = this.record(value);
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.contentContractPolicy.keys(venue, [
-        "address",
-        "postalCode",
-        "city"
-      ]) || !this.collaborators.contentContractPolicy.text(venue.address) || !this.collaborators.contentContractPolicy.text(venue.postalCode) || !this.collaborators.contentContractPolicy.text(venue.city))
-        throw new Error("Invalid public asset venue");
-      result[id] = {
-        address: venue.address,
-        postalCode: venue.postalCode,
-        city: venue.city
-      };
-    }
-    return result;
-  }
-  logos(input) {
-    const result = {};
-    for (const [hostId, value] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      const logo = this.record(value);
-      if (!/^host-[a-z0-9-]+$/.test(hostId) || !this.collaborators.contentContractPolicy.keys(logo, [
-        "url",
-        "description"
-      ]) || !this.collaborators.contentContractPolicy.text(logo.url) || !this.collaborators.contentContractPolicy.text(logo.description))
-        throw new Error("Invalid public host logo");
-      result[hostId] = { url: logo.url, description: logo.description };
-    }
-    return result;
-  }
-  slot(value) {
-    return this.collaborators.contentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
-  }
-  identity(value) {
-    return typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
-  }
-  record(value) {
-    if (!this.collaborators.runtimeInput.isObject(value) || Object.keys(value).length > 200)
-      throw new Error("Invalid asset render configuration");
-    return value;
   }
 };
 
@@ -40084,171 +45960,6 @@ var AssetRenderPresenterImpl = class {
       style: "long",
       type: "conjunction"
     }).format(speakers);
-  }
-};
-
-// packages/runtime/github-actions/src/attention-stage-input.ts
-var AttentionStageInput = class {
-  parse(value) {
-    const input = JSON.parse(value);
-    if (!this.isRecord(input))
-      throw new Error("Invalid attention stage results");
-    const reports = ATTENTION_STAGE_OWNERS.map(
-      (owner) => [owner, this.stage(input[owner])]
-    );
-    return {
-      event: reports[0][1],
-      assets: reports[1][1],
-      feedback: reports[2][1],
-      communications: reports[3][1]
-    };
-  }
-  stage(value) {
-    if (value !== void 0 && !this.isRecord(value))
-      throw new Error("Invalid attention stage");
-    const stage = value ?? {};
-    return {
-      outcome: stage.outcome === "success" || stage.outcome === "failure" ? stage.outcome : "unknown",
-      diagnostics: this.readDiagnostics(stage.diagnostics),
-      reported: stage.diagnostics !== void 0 && stage.diagnostics !== ""
-    };
-  }
-  isRecord(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  readDiagnostics(input) {
-    let diagnostics = input;
-    if (typeof diagnostics === "string") {
-      if (!diagnostics) return [];
-      try {
-        diagnostics = JSON.parse(diagnostics);
-      } catch {
-        throw new Error("Invalid attention stage diagnostics");
-      }
-    }
-    if (diagnostics === void 0) return [];
-    if (!Array.isArray(diagnostics))
-      throw new Error("Invalid attention stage diagnostics");
-    return diagnostics.map((item) => {
-      if (!item || typeof item !== "object" || Array.isArray(item))
-        throw new Error("Invalid attention stage diagnostic");
-      const { code, severity, field, fixApplied } = item;
-      if (typeof code !== "string" || !/^(event|publication|communication|referential|action)\.[a-z.-]{1,120}$/.test(
-        code
-      ) || severity !== "error" && severity !== "warning" && severity !== "info")
-        throw new Error("Invalid attention stage diagnostic");
-      return {
-        code,
-        severity,
-        message: code,
-        ...this.safeField(field) ? { field } : {},
-        ...typeof fixApplied === "boolean" ? { fixApplied } : {}
-      };
-    });
-  }
-  safeField(field) {
-    if (typeof field !== "string" || field.length > 160) return false;
-    return ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
-      field
-    );
-  }
-};
-
-// packages/runtime/github-actions/src/attention-stages.ts
-var AttentionStages = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  parse(value) {
-    return this.collaborators.attentionStageEvaluation.evaluate(
-      this.collaborators.attentionStageInput.parse(value)
-    );
-  }
-  diagnostics(value) {
-    return this.collaborators.attentionStageEvaluation.diagnostics(
-      this.collaborators.attentionStageInput.parse(value)
-    );
-  }
-  hasCompleteReports(value) {
-    return this.collaborators.attentionStageEvaluation.complete(
-      this.collaborators.attentionStageInput.parse(value)
-    );
-  }
-};
-
-// packages/runtime/github-actions/src/communication-input.ts
-var CommunicationInput = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(input) {
-    this.collaborators.publicationUrlInput.validateMeetupEventUrlPrefix(
-      input.meetupEventUrlPrefix
-    );
-    this.collaborators.publicationUrlInput.validateCommunityEventUrlPrefixes(
-      input.communityEventUrlPrefixes
-    );
-    this.collaborators.publicationUrlInput.validateAssetFolderUrlPrefix(
-      input.assetFolderUrlPrefix
-    );
-    this.collaborators.conferenceHallInput.validate(input);
-    for (const field of [
-      "locale",
-      "githubToken",
-      "mailingsToken",
-      "slackToken",
-      "openFeedbackApiKey"
-    ])
-      if (!input[field]?.trim())
-        throw new Error(`Input required and not supplied: ${field}`);
-    if (typeof input.slidesReady !== "boolean")
-      throw new Error("slidesReady must be an explicit boolean");
-    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
-      throw new Error("issueNumber must be a positive integer");
-    }
-    if (!this.isRepositoryPart(input.owner) || !this.isRepositoryPart(input.repo)) {
-      throw new Error(
-        "owner and repo must be valid GitHub repository segments"
-      );
-    }
-    if (!input.slackOrganizerChannelId.trim()) {
-      throw new Error("slackOrganizerChannelId must not be empty");
-    }
-    if (!input.managedCommentAuthor.trim()) {
-      throw new Error("managedCommentAuthor must not be empty");
-    }
-  }
-  isRepositoryPart(value) {
-    return /^[A-Za-z0-9_.-]+$/.test(value);
-  }
-};
-
-// packages/runtime/github-actions/src/conference-hall-input.ts
-var ConferenceHallInput = class {
-  read() {
-    const conferenceHallApiKey = getInput("conference-hall-api-key", {
-      required: true
-    });
-    setSecret(conferenceHallApiKey);
-    return this.validate({
-      conferenceHallEvent: getInput("conference-hall-event", {
-        required: true
-      }),
-      conferenceHallApiKey
-    });
-  }
-  validate(input) {
-    const conferenceHallEvent = input.conferenceHallEvent?.trim();
-    const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
-    if (!conferenceHallEvent)
-      throw new Error("Input required and not supplied: conference-hall-event");
-    if (!conferenceHallApiKey)
-      throw new Error(
-        "Input required and not supplied: conference-hall-api-key"
-      );
-    return { conferenceHallEvent, conferenceHallApiKey };
   }
 };
 
@@ -40567,39 +46278,6 @@ var ActionMessages = class extends MessageLocalizer {
   }
 };
 
-// packages/runtime/github-actions/src/meetup-publication-configuration.ts
-import { readFile as readFile2 } from "node:fs/promises";
-import { join as join2 } from "node:path";
-var MeetupPublicationConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  async load(root) {
-    const text = await readFile2(
-      join2(root, ".github/meetup-publication.json"),
-      "utf8"
-    );
-    if (Buffer.byteLength(text) > 1e5)
-      throw new Error("Meetup publication configuration is too large");
-    return this.parse(JSON.parse(text));
-  }
-  parse(input) {
-    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
-      throw new Error("Invalid Meetup publication configuration");
-    const venues = {};
-    for (const [id, venue] of Object.entries(input.venues)) {
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
-        throw new Error("Invalid public Meetup venue mapping");
-      venues[id] = { name: venue.name, city: venue.city };
-    }
-    return { startTime: input.startTime, endTime: input.endTime, venues };
-  }
-  text(value) {
-    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
-  }
-};
-
 // packages/runtime/github-actions/src/organizer-feedback.ts
 var OrganizerFeedback = class {
   constructor(collaborators, events, comments, meetupLabel) {
@@ -40617,132 +46295,6 @@ var OrganizerFeedback = class {
       identity,
       this.collaborators.attentionStageInput.parse(stageResults)
     );
-  }
-};
-
-// packages/runtime/github-actions/src/publication-url-input.ts
-var PublicationUrlInput = class {
-  readMeetupEventUrlPrefix() {
-    return this.validateMeetupEventUrlPrefix(
-      getInput("meetup-event-url-prefix", {
-        required: true,
-        trimWhitespace: false
-      })
-    );
-  }
-  readCommunityEventUrlPrefixes() {
-    const community = getInput("community-event-url-prefixes", {
-      required: true,
-      trimWhitespace: false
-    });
-    let communityEventUrlPrefixes;
-    try {
-      communityEventUrlPrefixes = JSON.parse(community);
-    } catch {
-      throw new Error("Invalid input: community-event-url-prefixes");
-    }
-    return this.validateCommunityEventUrlPrefixes(communityEventUrlPrefixes);
-  }
-  readAssetFolderUrlPrefix() {
-    return this.validateAssetFolderUrlPrefix(
-      getInput("asset-folder-url-prefix", {
-        required: true,
-        trimWhitespace: false
-      })
-    );
-  }
-  validateMeetupEventUrlPrefix(value) {
-    const meetupEventUrlPrefix = this.prefix(value, "meetup-event-url-prefix");
-    if (!MeetupGroupUrl.fromEventUrlPrefix(meetupEventUrlPrefix))
-      throw new Error("Invalid input: meetup-event-url-prefix");
-    return meetupEventUrlPrefix;
-  }
-  validateCommunityEventUrlPrefixes(community) {
-    if (!Array.isArray(community) || community.length === 0)
-      throw new Error("Invalid input: community-event-url-prefixes");
-    return community.map(
-      (prefix) => this.prefix(prefix, "community-event-url-prefixes")
-    );
-  }
-  validateAssetFolderUrlPrefix(value) {
-    return this.prefix(value, "asset-folder-url-prefix");
-  }
-  prefix(value, name) {
-    if (typeof value !== "string" || !/^https:\/\/[^/?#@]+\/[^?#]*$/.test(value) || /[\s\\\p{Cc}]/u.test(value))
-      throw new Error(`Invalid input: ${name}`);
-    let url;
-    try {
-      url = new URL(value);
-    } catch {
-      throw new Error(`Invalid input: ${name}`);
-    }
-    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.search || url.hash)
-      throw new Error(`Invalid input: ${name}`);
-    return value;
-  }
-};
-
-// packages/runtime/github-actions/src/referential-action-report.ts
-var ReferentialActionReport = class {
-  validation(result, diagnostics, messages5) {
-    const details = [
-      messages5.t(
-        result.isValid ? "report.referential.valid" : "report.referential.invalid"
-      ),
-      messages5.t("report.referential.counts", {
-        hosts: result.hostCount,
-        speakers: result.speakerCount
-      })
-    ];
-    return {
-      details,
-      diagnostics
-    };
-  }
-  issueForm(mode, result, messages5) {
-    const details = [];
-    if (result.diagnostics.some((item) => item.severity === "error")) {
-      details.push(messages5.t("report.issue-form.blocked"));
-    } else if (result.changed) {
-      details.push(
-        mode === "check" ? messages5.t("report.issue-form.stale") : messages5.t("report.issue-form.updated"),
-        messages5.t("report.issue-form.files", {
-          files: result.changedFiles.join(", ")
-        })
-      );
-    } else {
-      details.push(messages5.t("report.issue-form.current"));
-    }
-    return { details, diagnostics: result.diagnostics };
-  }
-};
-
-// packages/runtime/github-actions/src/runtime-input.ts
-var RuntimeInput = class {
-  positiveIntegerInput(name, value) {
-    if (!/^\d+$/.test(value)) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    return parsed;
-  }
-  enumInput(name, value, allowed) {
-    const parsed = allowed.find((candidate) => candidate === value);
-    if (parsed === void 0) {
-      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
-    }
-    return parsed;
-  }
-  isObject(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-  booleanInput(name, value) {
-    if (value === "true") return true;
-    if (value === "false") return false;
-    throw new Error(`${name} must be true or false`);
   }
 };
 
@@ -40796,111 +46348,168 @@ var SpeakerSyncFailureReport = class {
   }
 };
 
+// packages/runtime/github-actions/src/runtime-presentation-composition.ts
+var RUNTIME_FACTORIES = {
+  actionMessages: /* @__PURE__ */ Symbol("ActionMessagesFactory"),
+  assetMessages: /* @__PURE__ */ Symbol("AssetMessagesFactory"),
+  assetDateFormatter: /* @__PURE__ */ Symbol("AssetDateFormatterFactory"),
+  assetRenderPresenter: /* @__PURE__ */ Symbol("AssetRenderPresenterFactory"),
+  organizerFeedback: /* @__PURE__ */ Symbol("OrganizerFeedbackFactory")
+};
+var RuntimePresentationComposition = class _RuntimePresentationComposition {
+  static bind(container) {
+    container.bind(LocaleResolver).toResolvedValue(() => new LocalizationComposition().localeResolver());
+    container.bind(
+      RUNTIME_FACTORIES.actionMessages
+    ).toResolvedValue(
+      (localeResolver) => (...args) => new ActionMessages({ localeResolver }, ...args),
+      [LocaleResolver]
+    );
+    _RuntimePresentationComposition.bindReporting(container);
+    _RuntimePresentationComposition.bindAssets(container);
+    container.bind(
+      RUNTIME_FACTORIES.organizerFeedback
+    ).toResolvedValue(
+      (attentionStageInput) => (...args) => new OrganizerFeedback(
+        {
+          attentionStageInput,
+          createReconcileOrganizerFeedback: (...input) => new JourneyComposition().reconcileOrganizerFeedback(...input)
+        },
+        ...args
+      ),
+      [AttentionStageInput]
+    );
+  }
+  static bindReporting(container) {
+    container.bind(DiagnosticPolicy).toResolvedValue(() => new JourneyPolicyComposition().diagnosticPolicy());
+    container.bind(ActionFailurePresenter).toResolvedValue(() => new ActionFailurePresenter());
+    container.bind(ActionOutput).toResolvedValue(() => new ActionOutput());
+    container.bind(ActionReport).toResolvedValue(() => new ActionReport());
+    container.bind(ReferentialActionReport).toResolvedValue(() => new ReferentialActionReport());
+    container.bind(ActionRunner).toResolvedValue(
+      (diagnosticPolicy, actionFailurePresenter, actionReport, actionOutput, createActionMessages) => new ActionRunner({
+        diagnosticPolicy,
+        actionFailurePresenter,
+        actionReport,
+        actionOutput,
+        createActionMessages
+      }),
+      [
+        DiagnosticPolicy,
+        ActionFailurePresenter,
+        ActionReport,
+        ActionOutput,
+        RUNTIME_FACTORIES.actionMessages
+      ]
+    );
+    container.bind(SpeakerSyncFailureReport).toResolvedValue(
+      (createActionMessages) => new SpeakerSyncFailureReport({ createActionMessages }),
+      [RUNTIME_FACTORIES.actionMessages]
+    );
+  }
+  static bindAssets(container) {
+    container.bind(RUNTIME_FACTORIES.assetMessages).toResolvedValue(
+      (localeResolver) => (...args) => new AssetMessages({ localeResolver }, ...args),
+      [LocaleResolver]
+    );
+    container.bind(
+      RUNTIME_FACTORIES.assetDateFormatter
+    ).toResolvedValue(
+      () => (...args) => new AssetDateFormatter(...args)
+    );
+    container.bind(
+      RUNTIME_FACTORIES.assetRenderPresenter
+    ).toResolvedValue(
+      (createDate) => (...args) => new AssetRenderPresenterImpl(
+        { date: createDate(args[0].locale) },
+        ...args
+      ),
+      [RUNTIME_FACTORIES.assetDateFormatter]
+    );
+  }
+};
+
 // packages/runtime/github-actions/src/dependency-composition.ts
-var GithubActionsComposition = class {
+var GithubActionsComposition = class _GithubActionsComposition {
+  container = _GithubActionsComposition.createContainer();
+  static createContainer() {
+    const container = new Container({ defaultScope: "Singleton" });
+    RuntimeInputComposition.bind(container);
+    RuntimePresentationComposition.bind(container);
+    return container;
+  }
   aiInput() {
-    return new AiInput(this.runtimeInput());
+    return this.container.get(AiInput);
   }
   publicationUrlInput() {
-    return new PublicationUrlInput();
+    return this.container.get(PublicationUrlInput);
   }
   actionFailurePresenter() {
-    return new ActionFailurePresenter();
-  }
-  actionMessages(...args) {
-    return new ActionMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
+    return this.container.get(ActionFailurePresenter);
   }
   actionOutput() {
-    return new ActionOutput();
+    return this.container.get(ActionOutput);
   }
   actionReport() {
-    return new ActionReport();
+    return this.container.get(ActionReport);
   }
   actionRunner() {
-    return new ActionRunner({
-      diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-      actionFailurePresenter: this.actionFailurePresenter(),
-      actionReport: this.actionReport(),
-      actionOutput: this.actionOutput(),
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return this.container.get(ActionRunner);
   }
   assetContentConfiguration() {
-    return new AssetContentConfiguration({
-      runtimeInput: this.runtimeInput(),
-      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
-      assetRenderConfiguration: this.assetRenderConfiguration()
-    });
-  }
-  assetDateFormatter(...args) {
-    return new AssetDateFormatter(...args);
-  }
-  assetMessages(...args) {
-    return new AssetMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
+    return this.container.get(AssetContentConfiguration);
   }
   assetRenderConfiguration() {
-    return new AssetRenderConfiguration({
-      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
-      runtimeInput: this.runtimeInput()
-    });
-  }
-  assetRenderPresenterImpl(...args) {
-    return new AssetRenderPresenterImpl(
-      {
-        date: this.assetDateFormatter(args[0].locale)
-      },
-      ...args
-    );
+    return this.container.get(AssetRenderConfiguration);
   }
   attentionStageInput() {
-    return new AttentionStageInput();
+    return this.container.get(AttentionStageInput);
   }
   attentionStages() {
-    return new AttentionStages({
-      attentionStageEvaluation: new JourneyPolicyComposition().attentionStageEvaluation(),
-      attentionStageInput: this.attentionStageInput()
-    });
+    return this.container.get(AttentionStages);
   }
   communicationInput() {
-    return new CommunicationInput({
-      publicationUrlInput: this.publicationUrlInput(),
-      conferenceHallInput: this.conferenceHallInput()
-    });
+    return this.container.get(CommunicationInput);
   }
   conferenceHallInput() {
-    return new ConferenceHallInput();
+    return this.container.get(ConferenceHallInput);
   }
   meetupPublicationConfiguration() {
-    return new MeetupPublicationConfiguration({
-      runtimeInput: this.runtimeInput(),
-      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
-    });
-  }
-  organizerFeedback(...args) {
-    return new OrganizerFeedback(
-      {
-        attentionStageInput: this.attentionStageInput(),
-        createReconcileOrganizerFeedback: (...args2) => new JourneyComposition().reconcileOrganizerFeedback(...args2)
-      },
-      ...args
-    );
+    return this.container.get(MeetupPublicationConfiguration);
   }
   referentialActionReport() {
-    return new ReferentialActionReport();
+    return this.container.get(ReferentialActionReport);
   }
   runtimeInput() {
-    return new RuntimeInput();
+    return this.container.get(RuntimeInput);
   }
   speakerSyncFailureReport() {
-    return new SpeakerSyncFailureReport({
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return this.container.get(SpeakerSyncFailureReport);
+  }
+  actionMessages(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.actionMessages
+    )(...args);
+  }
+  assetDateFormatter(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.assetDateFormatter
+    )(...args);
+  }
+  assetMessages(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.assetMessages
+    )(...args);
+  }
+  assetRenderPresenterImpl(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.assetRenderPresenter
+    )(...args);
+  }
+  organizerFeedback(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.organizerFeedback
+    )(...args);
   }
 };
 
@@ -44843,7 +50452,7 @@ var handler = {
     }
     const { endpointDefaults, decorations } = method;
     if (decorations) {
-      cache[methodName] = decorate(
+      cache[methodName] = decorate2(
         octokit,
         scope,
         methodName,
@@ -44863,7 +50472,7 @@ function endpointsToMethods(octokit) {
   }
   return newMethods;
 }
-function decorate(octokit, scope, methodName, defaults2, decorations) {
+function decorate2(octokit, scope, methodName, defaults2, decorations) {
   const requestWithDefaults = octokit.request.defaults(defaults2);
   function withDecorations(...args) {
     let options = requestWithDefaults.endpoint.merge(...args);
@@ -48036,7 +53645,7 @@ var ConferenceHallProposalSourceComposition = class {
 
 // packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile as readFile4, realpath } from "node:fs/promises";
-import { isAbsolute, relative, resolve, sep as sep2 } from "node:path";
+import { isAbsolute, relative, resolve as resolve2, sep as sep2 } from "node:path";
 var CsvReferentialRepository = class {
   constructor(collaborators, options) {
     this.collaborators = collaborators;
@@ -48069,8 +53678,8 @@ var CsvReferentialRepository = class {
     );
   }
   async localPath(rootInput, relativeInput) {
-    const root = await realpath(resolve(rootInput));
-    const absolute = resolve(root, relativeInput);
+    const root = await realpath(resolve2(rootInput));
+    const absolute = resolve2(root, relativeInput);
     this.assertInside(root, absolute);
     const resolved = await realpath(absolute);
     this.assertInside(root, resolved);
@@ -54146,7 +59755,7 @@ var YamlIssueFormDocument = class {
 
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 import { readFile as readFile6, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
-import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep3 } from "node:path";
+import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve3, sep as sep3 } from "node:path";
 
 // node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/plugins/yaml.mjs
 var yaml_exports = {};
@@ -61445,8 +67054,8 @@ var YamlIssueFormProjection = class {
     }
   }
   async resolveIssueFormPath(inputPath) {
-    const root = await realpath2(resolve2(this.options.workspaceRoot));
-    const candidate = resolve2(root, inputPath);
+    const root = await realpath2(resolve3(this.options.workspaceRoot));
+    const candidate = resolve3(root, inputPath);
     this.assertInsideWorkspace(root, candidate);
     const absolutePath = await realpath2(candidate);
     this.assertInsideWorkspace(root, absolutePath);
@@ -61508,5499 +67117,6 @@ var YamlIssueFormProjectionComposition = class {
       },
       ...args
     );
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/common/calculations/isPromise.js
-function isPromise(object) {
-  const isObjectOrFunction = typeof object === "object" && object !== null || typeof object === "function";
-  return isObjectOrFunction && typeof object.then === "function";
-}
-
-// node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/services/calculations/stringifyServiceIdentifier.js
-function stringifyServiceIdentifier(serviceIdentifier) {
-  switch (typeof serviceIdentifier) {
-    case "string":
-    case "symbol":
-      return serviceIdentifier.toString();
-    case "function":
-      return serviceIdentifier.name;
-    default:
-      throw new Error(`Unexpected ${typeof serviceIdentifier} service id type`);
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/services/models/LazyServiceIdentifier.js
-var islazyServiceIdentifierSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/common/islazyServiceIdentifier");
-var LazyServiceIdentifier = class {
-  [islazyServiceIdentifierSymbol];
-  #buildServiceId;
-  constructor(buildServiceId) {
-    this.#buildServiceId = buildServiceId;
-    this[islazyServiceIdentifierSymbol] = true;
-  }
-  static is(value) {
-    return typeof value === "object" && value !== null && value[islazyServiceIdentifierSymbol] === true;
-  }
-  unwrap() {
-    return this.#buildServiceId();
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/index.js
-var import_lite = __toESM(require_ReflectLite(), 1);
-
-// node_modules/.pnpm/@inversifyjs+reflect-metadata-utils@1.5.0_reflect-metadata@0.2.2/node_modules/@inversifyjs/reflect-metadata-utils/lib/reflectMetadata/utils/getOwnReflectMetadata.js
-function getOwnReflectMetadata(target, metadataKey, propertyKey) {
-  return Reflect.getOwnMetadata(metadataKey, target, propertyKey);
-}
-
-// node_modules/.pnpm/@inversifyjs+reflect-metadata-utils@1.5.0_reflect-metadata@0.2.2/node_modules/@inversifyjs/reflect-metadata-utils/lib/reflectMetadata/utils/setReflectMetadata.js
-function setReflectMetadata(target, metadataKey, metadata, propertyKey) {
-  Reflect.defineMetadata(metadataKey, metadata, target, propertyKey);
-}
-
-// node_modules/.pnpm/@inversifyjs+reflect-metadata-utils@1.5.0_reflect-metadata@0.2.2/node_modules/@inversifyjs/reflect-metadata-utils/lib/reflectMetadata/utils/updateOwnReflectMetadata.js
-function updateOwnReflectMetadata(target, metadataKey, buildDefaultValue, callback, propertyKey) {
-  const metadata = getOwnReflectMetadata(target, metadataKey, propertyKey) ?? buildDefaultValue();
-  const updatedMetadata = callback(metadata);
-  Reflect.defineMetadata(metadataKey, updatedMetadata, target, propertyKey);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/actions/getBindingId.js
-var ID_METADATA = "@inversifyjs/container/bindingId";
-function getBindingId() {
-  const bindingId = getOwnReflectMetadata(Object, ID_METADATA) ?? 0;
-  if (bindingId === Number.MAX_SAFE_INTEGER) {
-    setReflectMetadata(Object, ID_METADATA, Number.MIN_SAFE_INTEGER);
-  } else {
-    updateOwnReflectMetadata(Object, ID_METADATA, () => bindingId, (id) => id + 1);
-  }
-  return bindingId;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/models/BindingScope.js
-var bindingScopeValues = {
-  Request: "Request",
-  Singleton: "Singleton",
-  Transient: "Transient"
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/models/BindingType.js
-var bindingTypeValues = {
-  ConstantValue: "ConstantValue",
-  DynamicValue: "DynamicValue",
-  Factory: "Factory",
-  Instance: "Instance",
-  ResolvedValue: "ResolvedValue",
-  ServiceRedirection: "ServiceRedirection"
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/chain.js
-function* chain(...iterables) {
-  for (const iterable of iterables) {
-    yield* iterable;
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/models/OneToManyMapStar.js
-var NOT_FOUND_INDEX = -1;
-var OneToManyMapStar = class _OneToManyMapStar {
-  #modelToRelationMap;
-  #relationToModelsMaps;
-  #spec;
-  constructor(spec) {
-    this.#modelToRelationMap = /* @__PURE__ */ new Map();
-    this.#relationToModelsMaps = {};
-    for (const specProperty of Reflect.ownKeys(spec)) {
-      this.#relationToModelsMaps[specProperty] = /* @__PURE__ */ new Map();
-    }
-    this.#spec = spec;
-  }
-  add(model, relation) {
-    this.#buildOrGetModelArray(model).push(relation);
-    for (const relationKey of Reflect.ownKeys(relation)) {
-      this.#buildOrGetRelationModels(relationKey, relation[relationKey]).push(model);
-    }
-  }
-  clone() {
-    const modelToCloneModelMap = this.#buildModelToCloneModelMap();
-    const relationToCloneRelationMap = this.#buildRelationToRelationModelMap();
-    const properties = Reflect.ownKeys(this.#spec);
-    const clone = this._buildNewInstance(this.#spec);
-    this.#pushRelationEntriesIntoRelationMap(this.#modelToRelationMap, clone.#modelToRelationMap, modelToCloneModelMap, relationToCloneRelationMap);
-    for (const property of properties) {
-      this.#pushModelEntriesIntoModelMap(this.#relationToModelsMaps[property], clone.#relationToModelsMaps[property], modelToCloneModelMap);
-    }
-    return clone;
-  }
-  get(key, value) {
-    return this.#relationToModelsMaps[key].get(value);
-  }
-  getAllKeys(key) {
-    return this.#relationToModelsMaps[key].keys();
-  }
-  removeByRelation(key, value) {
-    const models = this.get(key, value);
-    if (models === void 0) {
-      return;
-    }
-    const uniqueModelsSet = new Set(models);
-    for (const model of uniqueModelsSet) {
-      const relations = this.#modelToRelationMap.get(model);
-      if (relations === void 0) {
-        throw new Error("Expecting model relation, none found");
-      }
-      for (const relation of relations) {
-        if (relation[key] === value) {
-          this.#removeModelFromRelationMaps(model, relation);
-        }
-      }
-      this.#modelToRelationMap.delete(model);
-    }
-  }
-  _buildNewInstance(spec) {
-    return new _OneToManyMapStar(spec);
-  }
-  _cloneModel(model) {
-    return model;
-  }
-  _cloneRelation(relation) {
-    return relation;
-  }
-  #buildModelToCloneModelMap() {
-    const modelToCloneModelMap = /* @__PURE__ */ new Map();
-    for (const model of this.#modelToRelationMap.keys()) {
-      const clonedModel = this._cloneModel(model);
-      modelToCloneModelMap.set(model, clonedModel);
-    }
-    return modelToCloneModelMap;
-  }
-  #buildRelationToRelationModelMap() {
-    const relationToCloneRelationMap = /* @__PURE__ */ new Map();
-    for (const relations of this.#modelToRelationMap.values()) {
-      for (const relation of relations) {
-        const clonedRelation = this._cloneRelation(relation);
-        relationToCloneRelationMap.set(relation, clonedRelation);
-      }
-    }
-    return relationToCloneRelationMap;
-  }
-  #buildOrGetModelArray(model) {
-    let relations = this.#modelToRelationMap.get(model);
-    if (relations === void 0) {
-      relations = [];
-      this.#modelToRelationMap.set(model, relations);
-    }
-    return relations;
-  }
-  #buildOrGetRelationModels(relationKey, relationValue) {
-    let models = this.#relationToModelsMaps[relationKey].get(relationValue);
-    if (models === void 0) {
-      models = [];
-      this.#relationToModelsMaps[relationKey].set(relationValue, models);
-    }
-    return models;
-  }
-  #getCloneModel(model, modelToCloneModelMap) {
-    const clonedModel = modelToCloneModelMap.get(model);
-    if (clonedModel === void 0) {
-      throw new Error("Expecting model to be cloned, none found");
-    }
-    return clonedModel;
-  }
-  #getCloneRelation(relation, relationToCloneRelationMap) {
-    const clonedRelation = relationToCloneRelationMap.get(relation);
-    if (clonedRelation === void 0) {
-      throw new Error("Expecting relation to be cloned, none found");
-    }
-    return clonedRelation;
-  }
-  #pushModelEntriesIntoModelMap(source, target, modelToCloneModelMap) {
-    for (const [relationValue, models] of source) {
-      const modelsClone = new Array();
-      for (const model of models) {
-        modelsClone.push(this.#getCloneModel(model, modelToCloneModelMap));
-      }
-      target.set(relationValue, modelsClone);
-    }
-  }
-  #pushRelationEntriesIntoRelationMap(source, target, modelToCloneModelMap, relationToCloneRelationMap) {
-    for (const [model, relations] of source) {
-      const relationsClone = new Array();
-      for (const relation of relations) {
-        relationsClone.push(this.#getCloneRelation(relation, relationToCloneRelationMap));
-      }
-      target.set(this.#getCloneModel(model, modelToCloneModelMap), relationsClone);
-    }
-  }
-  #removeModelFromRelationMaps(model, relation) {
-    for (const relationKey of Reflect.ownKeys(relation)) {
-      this.#removeModelFromRelationMap(model, relationKey, relation[relationKey]);
-    }
-  }
-  #removeModelFromRelationMap(model, relationKey, relationValue) {
-    const relationModels = this.#relationToModelsMaps[relationKey].get(relationValue);
-    if (relationModels !== void 0) {
-      const index = relationModels.indexOf(model);
-      if (index !== NOT_FOUND_INDEX) {
-        relationModels.splice(index, 1);
-      }
-      if (relationModels.length === 0) {
-        this.#relationToModelsMaps[relationKey].delete(relationValue);
-      }
-    }
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/models/WeakList.js
-var DEFAULT_MINIMUM_LENGTH_TO_REALLOCATE = 8;
-var DEFAULT_MODULUS_TO_REALLOCATE_ON_PUSH = 1024;
-var MIN_DEAD_REFS_FOR_REALLOCATION_PERCENTAGE = 0.5;
-var WeakList = class {
-  #list;
-  #minimumLengthToReallocate;
-  #modulusToReallocateOnPush;
-  constructor() {
-    this.#list = [];
-    this.#minimumLengthToReallocate = DEFAULT_MINIMUM_LENGTH_TO_REALLOCATE;
-    this.#modulusToReallocateOnPush = DEFAULT_MODULUS_TO_REALLOCATE_ON_PUSH;
-  }
-  *[Symbol.iterator]() {
-    let deadRefCount = 0;
-    for (const weakRef of this.#list) {
-      const value = weakRef.deref();
-      if (value === void 0) {
-        ++deadRefCount;
-      } else {
-        yield value;
-      }
-    }
-    if (this.#list.length >= this.#minimumLengthToReallocate && this.#shouldReallocate(deadRefCount)) {
-      this.#reallocate(deadRefCount);
-    }
-  }
-  push(value) {
-    const weakRef = new WeakRef(value);
-    this.#list.push(weakRef);
-    if (this.#list.length >= this.#minimumLengthToReallocate && this.#list.length % this.#modulusToReallocateOnPush === 0) {
-      let deadRefCount = 0;
-      for (const ref of this.#list) {
-        if (ref.deref() === void 0) {
-          ++deadRefCount;
-        }
-      }
-      if (this.#shouldReallocate(deadRefCount)) {
-        this.#reallocate(deadRefCount);
-      }
-    }
-  }
-  #reallocate(deadRefCount) {
-    const newList = new Array(this.#list.length - deadRefCount);
-    let i = 0;
-    for (const ref of this.#list) {
-      if (ref.deref()) {
-        newList[i++] = ref;
-      }
-    }
-    this.#list = newList;
-  }
-  #shouldReallocate(deadRefCount) {
-    return deadRefCount >= this.#list.length * MIN_DEAD_REFS_FOR_REALLOCATION_PERCENTAGE;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/services/ActivationsService.js
-var ActivationRelationKind;
-(function(ActivationRelationKind2) {
-  ActivationRelationKind2["moduleId"] = "moduleId";
-  ActivationRelationKind2["serviceId"] = "serviceId";
-})(ActivationRelationKind || (ActivationRelationKind = {}));
-var ActivationsService = class _ActivationsService {
-  #activationMaps;
-  #getParent;
-  #serviceToActivationSubscribersOnceMap;
-  constructor(getParent, activationMaps) {
-    this.#activationMaps = activationMaps ?? new OneToManyMapStar({
-      moduleId: {
-        isOptional: true
-      },
-      serviceId: {
-        isOptional: false
-      }
-    });
-    this.#getParent = getParent;
-    this.#serviceToActivationSubscribersOnceMap = /* @__PURE__ */ new Map();
-  }
-  static build(getParent) {
-    return new _ActivationsService(getParent);
-  }
-  add(activation, relation) {
-    this.#activationMaps.add(activation, relation);
-    this.#triggerActivationAdded(relation[ActivationRelationKind.serviceId], activation);
-  }
-  subscribeOnce(serviceIdentifier, subscriber) {
-    let subscribersOnce = this.#serviceToActivationSubscribersOnceMap.get(serviceIdentifier);
-    if (subscribersOnce === void 0) {
-      subscribersOnce = new WeakList();
-      this.#serviceToActivationSubscribersOnceMap.set(serviceIdentifier, subscribersOnce);
-    }
-    subscribersOnce.push(subscriber);
-  }
-  clone() {
-    const clone = new _ActivationsService(this.#getParent, this.#activationMaps.clone());
-    return clone;
-  }
-  get(serviceIdentifier) {
-    const activations = this.#activationMaps.get(ActivationRelationKind.serviceId, serviceIdentifier);
-    const parentActivations = this.#getParent()?.get(serviceIdentifier);
-    if (activations === void 0) {
-      return parentActivations;
-    }
-    if (parentActivations === void 0) {
-      return activations;
-    }
-    return chain(activations, parentActivations);
-  }
-  removeAllByModuleId(moduleId) {
-    this.#activationMaps.removeByRelation(ActivationRelationKind.moduleId, moduleId);
-  }
-  removeAllByServiceId(serviceId) {
-    this.#activationMaps.removeByRelation(ActivationRelationKind.serviceId, serviceId);
-  }
-  #triggerActivationAdded(serviceId, activation) {
-    const subscribersOnce = this.#serviceToActivationSubscribersOnceMap.get(serviceId);
-    if (subscribersOnce !== void 0) {
-      for (const subscriber of subscribersOnce) {
-        subscriber.onActivationAdded(serviceId, activation);
-      }
-      this.#serviceToActivationSubscribersOnceMap.delete(serviceId);
-    }
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/reflectMetadata/data/classMetadataReflectKey.js
-var classMetadataReflectKey = "@inversifyjs/core/classMetadataReflectKey";
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/getDefaultClassMetadata.js
-function getDefaultClassMetadata() {
-  return {
-    constructorArguments: [],
-    lifecycle: {
-      postConstructMethodNames: /* @__PURE__ */ new Set(),
-      preDestroyMethodNames: /* @__PURE__ */ new Set()
-    },
-    properties: /* @__PURE__ */ new Map(),
-    scope: void 0
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/reflectMetadata/data/pendingClassMetadataCountReflectKey.js
-var pendingClassMetadataCountReflectKey = "@inversifyjs/core/pendingClassMetadataCountReflectKey";
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/isPendingClassMetadata.js
-function isPendingClassMetadata(type) {
-  const pendingClassMetadataCount = getOwnReflectMetadata(type, pendingClassMetadataCountReflectKey);
-  return pendingClassMetadataCount !== void 0 && pendingClassMetadataCount !== 0;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/error/models/InversifyCoreError.js
-var isAppErrorSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/core/InversifyCoreError");
-var InversifyCoreError = class _InversifyCoreError extends Error {
-  [isAppErrorSymbol];
-  kind;
-  constructor(kind, message, options) {
-    super(message, options);
-    this[isAppErrorSymbol] = true;
-    this.kind = kind;
-  }
-  static is(value) {
-    return typeof value === "object" && value !== null && value[isAppErrorSymbol] === true;
-  }
-  static isErrorOfKind(value, kind) {
-    return _InversifyCoreError.is(value) && value.kind === kind;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/error/models/InversifyCoreErrorKind.js
-var InversifyCoreErrorKind;
-(function(InversifyCoreErrorKind2) {
-  InversifyCoreErrorKind2[InversifyCoreErrorKind2["injectionDecoratorConflict"] = 0] = "injectionDecoratorConflict";
-  InversifyCoreErrorKind2[InversifyCoreErrorKind2["missingInjectionDecorator"] = 1] = "missingInjectionDecorator";
-  InversifyCoreErrorKind2[InversifyCoreErrorKind2["planning"] = 2] = "planning";
-  InversifyCoreErrorKind2[InversifyCoreErrorKind2["planningMaxDepthExceeded"] = 3] = "planningMaxDepthExceeded";
-  InversifyCoreErrorKind2[InversifyCoreErrorKind2["resolution"] = 4] = "resolution";
-  InversifyCoreErrorKind2[InversifyCoreErrorKind2["unknown"] = 5] = "unknown";
-})(InversifyCoreErrorKind || (InversifyCoreErrorKind = {}));
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/models/MaybeClassElementMetadataKind.js
-var MaybeClassElementMetadataKind;
-(function(MaybeClassElementMetadataKind2) {
-  MaybeClassElementMetadataKind2[MaybeClassElementMetadataKind2["unknown"] = 32] = "unknown";
-})(MaybeClassElementMetadataKind || (MaybeClassElementMetadataKind = {}));
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/throwAtInvalidClassMetadata.js
-function throwAtInvalidClassMetadata(type, classMetadata) {
-  const errors = [];
-  for (let i = 0; i < classMetadata.constructorArguments.length; ++i) {
-    const constructorArgument = classMetadata.constructorArguments[i];
-    if (constructorArgument === void 0 || constructorArgument.kind === MaybeClassElementMetadataKind.unknown) {
-      errors.push(`  - Missing or incomplete metadata for type "${type.name}" at constructor argument with index ${i.toString()}.
-Every constructor parameter must be decorated either with @inject, @multiInject or @unmanaged decorator.`);
-    }
-  }
-  for (const [propertyKey, property] of classMetadata.properties) {
-    if (property.kind === MaybeClassElementMetadataKind.unknown) {
-      errors.push(`  - Missing or incomplete metadata for type "${type.name}" at property "${propertyKey.toString()}".
-This property must be decorated either with @inject or @multiInject decorator.`);
-    }
-  }
-  if (errors.length === 0) {
-    throw new InversifyCoreError(InversifyCoreErrorKind.unknown, `Unexpected class metadata for type "${type.name}" with uncompletion traces.
-This might be caused by one of the following reasons:
-
-1. A third party library is targeting inversify reflection metadata.
-2. A bug is causing the issue. Consider submiting an issue to fix it.`);
-  }
-  throw new InversifyCoreError(InversifyCoreErrorKind.missingInjectionDecorator, `Invalid class metadata at type ${type.name}:
-
-${errors.join("\n\n")}`);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/validateConstructorMetadataArray.js
-function validateConstructorMetadataArray(type, value) {
-  const undefinedIndexes = [];
-  if (value.length < type.length) {
-    throw new InversifyCoreError(InversifyCoreErrorKind.missingInjectionDecorator, `Found unexpected missing metadata on type "${type.name}". "${type.name}" constructor requires at least ${type.length.toString()} arguments, found ${value.length.toString()} instead.
-Are you using @inject, @multiInject or @unmanaged decorators in every non optional constructor argument?
-
-If you're using typescript and want to rely on auto injection, set "emitDecoratorMetadata" compiler option to true`);
-  }
-  for (let i = 0; i < value.length; ++i) {
-    const element = value[i];
-    if (element === void 0) {
-      undefinedIndexes.push(i);
-    }
-  }
-  if (undefinedIndexes.length > 0) {
-    throw new InversifyCoreError(InversifyCoreErrorKind.missingInjectionDecorator, `Found unexpected missing metadata on type "${type.name}" at constructor indexes "${undefinedIndexes.join('", "')}".
-
-Are you using @inject, @multiInject or @unmanaged decorators at those indexes?
-
-If you're using typescript and want to rely on auto injection, set "emitDecoratorMetadata" compiler option to true`);
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/getClassMetadata.js
-function getClassMetadata(type) {
-  const classMetadata = getOwnReflectMetadata(type, classMetadataReflectKey) ?? getDefaultClassMetadata();
-  if (isPendingClassMetadata(type)) {
-    throwAtInvalidClassMetadata(type, classMetadata);
-  } else {
-    validateConstructorMetadataArray(type, classMetadata.constructorArguments);
-    return classMetadata;
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/buildInstanceBinding.js
-function buildInstanceBinding(autobindOptions, serviceIdentifier) {
-  const classMetadata = getClassMetadata(serviceIdentifier);
-  const scope = classMetadata.scope ?? autobindOptions.scope;
-  return {
-    cache: {
-      isRight: false,
-      value: void 0
-    },
-    id: getBindingId(),
-    implementationType: serviceIdentifier,
-    isSatisfiedBy: () => true,
-    moduleId: void 0,
-    onActivation: void 0,
-    onDeactivation: void 0,
-    scope,
-    serviceIdentifier,
-    type: bindingTypeValues.Instance
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneBindingCache.js
-function cloneBindingCache(cache) {
-  if (cache.isRight) {
-    return {
-      isRight: true,
-      value: cache.value
-    };
-  }
-  return cache;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneConstantValueBinding.js
-function cloneConstantValueBinding(binding) {
-  return {
-    cache: cloneBindingCache(binding.cache),
-    id: binding.id,
-    isSatisfiedBy: binding.isSatisfiedBy,
-    moduleId: binding.moduleId,
-    onActivation: binding.onActivation,
-    onDeactivation: binding.onDeactivation,
-    scope: binding.scope,
-    serviceIdentifier: binding.serviceIdentifier,
-    type: binding.type,
-    // The value is not cloned as it's a resolved value
-    value: binding.value
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneDynamicValueBinding.js
-function cloneDynamicValueBinding(binding) {
-  return {
-    cache: cloneBindingCache(binding.cache),
-    id: binding.id,
-    isSatisfiedBy: binding.isSatisfiedBy,
-    moduleId: binding.moduleId,
-    onActivation: binding.onActivation,
-    onDeactivation: binding.onDeactivation,
-    scope: binding.scope,
-    serviceIdentifier: binding.serviceIdentifier,
-    type: binding.type,
-    // The value is not cloned
-    value: binding.value
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneFactoryBinding.js
-function cloneFactoryBinding(binding) {
-  return {
-    cache: cloneBindingCache(binding.cache),
-    factory: binding.factory,
-    id: binding.id,
-    isSatisfiedBy: binding.isSatisfiedBy,
-    moduleId: binding.moduleId,
-    onActivation: binding.onActivation,
-    onDeactivation: binding.onDeactivation,
-    scope: binding.scope,
-    serviceIdentifier: binding.serviceIdentifier,
-    type: binding.type
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneInstanceBinding.js
-function cloneInstanceBinding(binding) {
-  return {
-    cache: cloneBindingCache(binding.cache),
-    id: binding.id,
-    implementationType: binding.implementationType,
-    isSatisfiedBy: binding.isSatisfiedBy,
-    moduleId: binding.moduleId,
-    onActivation: binding.onActivation,
-    onDeactivation: binding.onDeactivation,
-    scope: binding.scope,
-    serviceIdentifier: binding.serviceIdentifier,
-    type: binding.type
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneResolvedValueBinding.js
-function cloneResolvedValueBinding(binding) {
-  return {
-    cache: cloneBindingCache(binding.cache),
-    factory: binding.factory,
-    id: binding.id,
-    isSatisfiedBy: binding.isSatisfiedBy,
-    metadata: binding.metadata,
-    moduleId: binding.moduleId,
-    onActivation: binding.onActivation,
-    onDeactivation: binding.onDeactivation,
-    scope: binding.scope,
-    serviceIdentifier: binding.serviceIdentifier,
-    type: binding.type
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneServiceRedirectionBinding.js
-function cloneServiceRedirectionBinding(binding) {
-  return {
-    id: binding.id,
-    isSatisfiedBy: binding.isSatisfiedBy,
-    moduleId: binding.moduleId,
-    serviceIdentifier: binding.serviceIdentifier,
-    targetServiceIdentifier: binding.targetServiceIdentifier,
-    type: binding.type
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/cloneBinding.js
-function cloneBinding(binding) {
-  switch (binding.type) {
-    case bindingTypeValues.ConstantValue:
-      return cloneConstantValueBinding(binding);
-    case bindingTypeValues.DynamicValue:
-      return cloneDynamicValueBinding(binding);
-    case bindingTypeValues.Factory:
-      return cloneFactoryBinding(binding);
-    case bindingTypeValues.Instance:
-      return cloneInstanceBinding(binding);
-    case bindingTypeValues.ResolvedValue:
-      return cloneResolvedValueBinding(binding);
-    case bindingTypeValues.ServiceRedirection:
-      return cloneServiceRedirectionBinding(binding);
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/services/BindingService.js
-var BindingRelationKind;
-(function(BindingRelationKind2) {
-  BindingRelationKind2["id"] = "id";
-  BindingRelationKind2["moduleId"] = "moduleId";
-  BindingRelationKind2["serviceId"] = "serviceId";
-})(BindingRelationKind || (BindingRelationKind = {}));
-var OneToManyBindingMapStar = class _OneToManyBindingMapStar extends OneToManyMapStar {
-  _buildNewInstance(spec) {
-    return new _OneToManyBindingMapStar(spec);
-  }
-  _cloneModel(model) {
-    return cloneBinding(model);
-  }
-};
-var BindingService = class _BindingService {
-  #autobindOptions;
-  #bindingMaps;
-  #getParent;
-  constructor(getParent, autobindOptions, bindingMaps) {
-    this.#bindingMaps = bindingMaps ?? new OneToManyBindingMapStar({
-      id: {
-        isOptional: false
-      },
-      moduleId: {
-        isOptional: true
-      },
-      serviceId: {
-        isOptional: false
-      }
-    });
-    this.#getParent = getParent;
-    this.#autobindOptions = autobindOptions;
-  }
-  static build(getParent, autobindOptions) {
-    return new _BindingService(getParent, autobindOptions);
-  }
-  clone() {
-    const clone = new _BindingService(this.#getParent, this.#autobindOptions, this.#bindingMaps.clone());
-    return clone;
-  }
-  get(serviceIdentifier) {
-    const bindings = this.getNonParentBindings(serviceIdentifier) ?? this.#getParent()?.get(serviceIdentifier);
-    if (bindings !== void 0) {
-      return bindings;
-    }
-    const autoBoundBinding = this.#tryAutobind(serviceIdentifier);
-    return autoBoundBinding === void 0 ? autoBoundBinding : [autoBoundBinding];
-  }
-  *getChained(serviceIdentifier) {
-    const currentBindings = this.getNonParentBindings(serviceIdentifier);
-    if (currentBindings !== void 0) {
-      yield* currentBindings;
-    }
-    const parent = this.#getParent();
-    if (parent === void 0) {
-      if (currentBindings === void 0) {
-        const autobindBindings = this.#tryAutobind(serviceIdentifier);
-        if (autobindBindings !== void 0) {
-          yield autobindBindings;
-        }
-      }
-    } else {
-      yield* parent.getChained(serviceIdentifier);
-    }
-  }
-  getBoundServices() {
-    const serviceIdentifierSet = new Set(this.#bindingMaps.getAllKeys(BindingRelationKind.serviceId));
-    const parent = this.#getParent();
-    if (parent !== void 0) {
-      for (const serviceIdentifier of parent.getBoundServices()) {
-        serviceIdentifierSet.add(serviceIdentifier);
-      }
-    }
-    return serviceIdentifierSet;
-  }
-  getById(id) {
-    return this.#bindingMaps.get(BindingRelationKind.id, id) ?? this.#getParent()?.getById(id);
-  }
-  getByModuleId(moduleId) {
-    return this.#bindingMaps.get(BindingRelationKind.moduleId, moduleId) ?? this.#getParent()?.getByModuleId(moduleId);
-  }
-  getNonParentBindings(serviceId) {
-    return this.#bindingMaps.get(BindingRelationKind.serviceId, serviceId);
-  }
-  getNonParentBoundServices() {
-    return this.#bindingMaps.getAllKeys(BindingRelationKind.serviceId);
-  }
-  removeById(id) {
-    this.#bindingMaps.removeByRelation(BindingRelationKind.id, id);
-  }
-  removeAllByModuleId(moduleId) {
-    this.#bindingMaps.removeByRelation(BindingRelationKind.moduleId, moduleId);
-  }
-  removeAllByServiceId(serviceId) {
-    this.#bindingMaps.removeByRelation(BindingRelationKind.serviceId, serviceId);
-  }
-  set(binding) {
-    const relation = {
-      [BindingRelationKind.id]: binding.id,
-      [BindingRelationKind.serviceId]: binding.serviceIdentifier
-    };
-    if (binding.moduleId !== void 0) {
-      relation[BindingRelationKind.moduleId] = binding.moduleId;
-    }
-    this.#bindingMaps.add(binding, relation);
-  }
-  #tryAutobind(serviceIdentifier) {
-    if (this.#autobindOptions === void 0 || typeof serviceIdentifier !== "function") {
-      return void 0;
-    }
-    const binding = buildInstanceBinding(this.#autobindOptions, serviceIdentifier);
-    this.set(binding);
-    return binding;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/services/DeactivationsService.js
-var DeactivationRelationKind;
-(function(DeactivationRelationKind2) {
-  DeactivationRelationKind2["moduleId"] = "moduleId";
-  DeactivationRelationKind2["serviceId"] = "serviceId";
-})(DeactivationRelationKind || (DeactivationRelationKind = {}));
-var DeactivationsService = class _DeactivationsService {
-  #deactivationMaps;
-  #getParent;
-  constructor(getParent, deactivationMaps) {
-    this.#deactivationMaps = deactivationMaps ?? new OneToManyMapStar({
-      moduleId: {
-        isOptional: true
-      },
-      serviceId: {
-        isOptional: false
-      }
-    });
-    this.#getParent = getParent;
-  }
-  static build(getParent) {
-    return new _DeactivationsService(getParent);
-  }
-  add(deactivation, relation) {
-    this.#deactivationMaps.add(deactivation, relation);
-  }
-  clone() {
-    const clone = new _DeactivationsService(this.#getParent, this.#deactivationMaps.clone());
-    return clone;
-  }
-  get(serviceIdentifier) {
-    const deactivationIterables = [];
-    const deactivations = this.#deactivationMaps.get(DeactivationRelationKind.serviceId, serviceIdentifier);
-    if (deactivations !== void 0) {
-      deactivationIterables.push(deactivations);
-    }
-    const parentDeactivations = this.#getParent()?.get(serviceIdentifier);
-    if (parentDeactivations !== void 0) {
-      deactivationIterables.push(parentDeactivations);
-    }
-    if (deactivationIterables.length === 0) {
-      return void 0;
-    }
-    return chain(...deactivationIterables);
-  }
-  removeAllByModuleId(moduleId) {
-    this.#deactivationMaps.removeByRelation(DeactivationRelationKind.moduleId, moduleId);
-  }
-  removeAllByServiceId(serviceId) {
-    this.#deactivationMaps.removeByRelation(DeactivationRelationKind.serviceId, serviceId);
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/models/ClassElementMetadataKind.js
-var ClassElementMetadataKind;
-(function(ClassElementMetadataKind2) {
-  ClassElementMetadataKind2[ClassElementMetadataKind2["multipleInjection"] = 0] = "multipleInjection";
-  ClassElementMetadataKind2[ClassElementMetadataKind2["singleInjection"] = 1] = "singleInjection";
-  ClassElementMetadataKind2[ClassElementMetadataKind2["unmanaged"] = 2] = "unmanaged";
-})(ClassElementMetadataKind || (ClassElementMetadataKind = {}));
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildClassElementMetadataFromMaybeClassElementMetadata.js
-function buildClassElementMetadataFromMaybeClassElementMetadata(buildDefaultMetadata, buildMetadataFromMaybeManagedMetadata) {
-  return (...params) => (metadata) => {
-    if (metadata === void 0) {
-      return buildDefaultMetadata(...params);
-    }
-    if (metadata.kind === ClassElementMetadataKind.unmanaged) {
-      throw new InversifyCoreError(InversifyCoreErrorKind.injectionDecoratorConflict, "Unexpected injection found. Multiple @inject, @multiInject or @unmanaged decorators found");
-    }
-    return buildMetadataFromMaybeManagedMetadata(metadata, ...params);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildDefaultManagedMetadata.js
-function buildDefaultManagedMetadata(kind, serviceIdentifier, options) {
-  if (kind === ClassElementMetadataKind.multipleInjection) {
-    return {
-      chained: options?.chained ?? false,
-      kind,
-      name: void 0,
-      optional: false,
-      tags: /* @__PURE__ */ new Map(),
-      value: serviceIdentifier
-    };
-  } else {
-    return {
-      kind,
-      name: void 0,
-      optional: false,
-      tags: /* @__PURE__ */ new Map(),
-      value: serviceIdentifier
-    };
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/assertMetadataFromTypescriptIfManaged.js
-function assertMetadataFromTypescriptIfManaged(metadata) {
-  if (metadata.kind !== MaybeClassElementMetadataKind.unknown && metadata.isFromTypescriptParamType !== true) {
-    throw new InversifyCoreError(InversifyCoreErrorKind.injectionDecoratorConflict, "Unexpected injection found. Multiple @inject, @multiInject or @unmanaged decorators found");
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildManagedMetadataFromMaybeManagedMetadata.js
-function buildManagedMetadataFromMaybeManagedMetadata(metadata, kind, serviceIdentifier, options) {
-  assertMetadataFromTypescriptIfManaged(metadata);
-  if (kind === ClassElementMetadataKind.multipleInjection) {
-    return {
-      ...metadata,
-      chained: options?.chained ?? false,
-      kind,
-      value: serviceIdentifier
-    };
-  } else {
-    return {
-      ...metadata,
-      kind,
-      value: serviceIdentifier
-    };
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildManagedMetadataFromMaybeClassElementMetadata.js
-var buildManagedMetadataFromMaybeClassElementMetadata = buildClassElementMetadataFromMaybeClassElementMetadata(buildDefaultManagedMetadata, buildManagedMetadataFromMaybeManagedMetadata);
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/decorator/models/DecoratorInfoKind.js
-var DecoratorInfoKind;
-(function(DecoratorInfoKind2) {
-  DecoratorInfoKind2[DecoratorInfoKind2["method"] = 0] = "method";
-  DecoratorInfoKind2[DecoratorInfoKind2["parameter"] = 1] = "parameter";
-  DecoratorInfoKind2[DecoratorInfoKind2["property"] = 2] = "property";
-})(DecoratorInfoKind || (DecoratorInfoKind = {}));
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildDefaultUnmanagedMetadata.js
-function buildDefaultUnmanagedMetadata() {
-  return {
-    kind: ClassElementMetadataKind.unmanaged
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildUnmanagedMetadataFromMaybeManagedMetadata.js
-function buildUnmanagedMetadataFromMaybeManagedMetadata(metadata) {
-  assertMetadataFromTypescriptIfManaged(metadata);
-  if (hasManagedMetadata(metadata)) {
-    throw new InversifyCoreError(InversifyCoreErrorKind.injectionDecoratorConflict, "Unexpected injection found. Found @unmanaged injection with additional @named, @optional, @tagged or @targetName injections");
-  }
-  return buildDefaultUnmanagedMetadata();
-}
-function hasManagedMetadata(metadata) {
-  return metadata.name !== void 0 || metadata.optional || metadata.tags.size > 0;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/calculations/buildUnmanagedMetadataFromMaybeClassElementMetadata.js
-var buildUnmanagedMetadataFromMaybeClassElementMetadata = buildClassElementMetadataFromMaybeClassElementMetadata(buildDefaultUnmanagedMetadata, buildUnmanagedMetadataFromMaybeManagedMetadata);
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/metadata/models/ResolvedValueElementMetadataKind.js
-var ResolvedValueElementMetadataKind;
-(function(ResolvedValueElementMetadataKind2) {
-  ResolvedValueElementMetadataKind2[ResolvedValueElementMetadataKind2["multipleInjection"] = 0] = "multipleInjection";
-  ResolvedValueElementMetadataKind2[ResolvedValueElementMetadataKind2["singleInjection"] = 1] = "singleInjection";
-})(ResolvedValueElementMetadataKind || (ResolvedValueElementMetadataKind = {}));
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildGetPlanOptionsFromPlanParams.js
-function buildGetPlanOptionsFromPlanParams(params) {
-  if (params.rootConstraints.isMultiple) {
-    return {
-      chained: params.rootConstraints.chained,
-      isMultiple: true,
-      name: params.rootConstraints.name,
-      optional: params.rootConstraints.isOptional ?? false,
-      serviceIdentifier: params.rootConstraints.serviceIdentifier,
-      tag: params.rootConstraints.tag
-    };
-  } else {
-    return {
-      isMultiple: false,
-      name: params.rootConstraints.name,
-      optional: params.rootConstraints.isOptional ?? false,
-      serviceIdentifier: params.rootConstraints.serviceIdentifier,
-      tag: params.rootConstraints.tag
-    };
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/models/BindingConstraintsImplementation.js
-var BindingConstraintsImplementation = class _BindingConstraintsImplementation {
-  #node;
-  constructor(node) {
-    this.#node = node;
-  }
-  get name() {
-    return this.#node.elem.name;
-  }
-  get serviceIdentifier() {
-    return this.#node.elem.serviceIdentifier;
-  }
-  get tags() {
-    return this.#node.elem.tags;
-  }
-  getAncestor() {
-    this.#node.elem.getAncestorsCalled = true;
-    if (this.#node.previous === void 0) {
-      return void 0;
-    }
-    return new _BindingConstraintsImplementation(this.#node.previous);
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isPlanServiceRedirectionBindingNode.js
-var REDIRECTION_KEY = "redirection";
-function isPlanServiceRedirectionBindingNode(node) {
-  return REDIRECTION_KEY in node;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveServiceRedirectionBindingNode.js
-function resolveBindingNode(params, planBindingNode) {
-  if (isPlanServiceRedirectionBindingNode(planBindingNode)) {
-    return resolveServiceRedirectionBindingNode(params, planBindingNode);
-  }
-  return [planBindingNode.resolve(params)];
-}
-function resolveServiceRedirectionBindingNode(params, node) {
-  if (node.redirection.bindings === void 0) {
-    return [];
-  }
-  if (Array.isArray(node.redirection.bindings)) {
-    return node.redirection.bindings.flatMap((binding) => resolveBindingNode(params, binding));
-  }
-  return resolveBindingNode(params, node.redirection.bindings);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveMultipleBindingServiceNode.js
-function resolveMultipleBindingServiceNode(params, bindings) {
-  const resolvedValues = [];
-  for (const binding of bindings) {
-    if (isPlanServiceRedirectionBindingNode(binding)) {
-      resolvedValues.push(...resolveServiceRedirectionBindingNode(params, binding));
-    } else {
-      resolvedValues.push(binding.resolve(params));
-    }
-  }
-  if (resolvedValues.some(isPromise)) {
-    return Promise.all(resolvedValues);
-  }
-  return resolvedValues;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/PlanMultipleBindingServiceNodeImplementation.js
-var PlanMultipleBindingServiceNodeImplementation = class {
-  bindings;
-  serviceIdentifier;
-  isContextFree;
-  constructor(bindings, serviceIdentifier) {
-    this.bindings = bindings;
-    this.serviceIdentifier = serviceIdentifier;
-    this.isContextFree = true;
-  }
-  resolve(params) {
-    return resolveMultipleBindingServiceNode(params, this.bindings);
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/DynamicallyResolvableBindingNode.js
-var isDynamicallyResolvableBindingNodeSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/core/DynamicallyResolvableBindingNode");
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isDynamicallyResolvableBindingNode.js
-function isDynamicallyResolvableBindingNode(node) {
-  return node[isDynamicallyResolvableBindingNodeSymbol] === true;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/PlanSingleBindingServiceNode.js
-var UNDEFINED_RESOLVE = () => void 0;
-var RESOLVE_KEY = "resolve";
-var PlanSingleBindingServiceNodeImplementation = class {
-  serviceIdentifier;
-  isContextFree;
-  resolve;
-  #binding;
-  constructor(serviceIdentifier) {
-    this.serviceIdentifier = serviceIdentifier;
-    this.isContextFree = true;
-    this.resolve = UNDEFINED_RESOLVE;
-  }
-  get bindings() {
-    return this.#binding;
-  }
-  set bindings(value) {
-    this.#binding = value;
-    if (value === void 0) {
-      this.resolve = UNDEFINED_RESOLVE;
-    } else {
-      this.resolve = Object.hasOwn(value, RESOLVE_KEY) ? value.resolve : value.resolve.bind(value);
-      if (isDynamicallyResolvableBindingNode(value)) {
-        const serviceNodeWeakReference = new WeakRef(this);
-        value.addOnResolverChangedHandler((newResolver) => {
-          const serviceNode = serviceNodeWeakReference.deref();
-          if (serviceNode !== void 0) {
-            serviceNode.resolve = newResolver;
-          }
-        });
-      }
-    }
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildFilteredServiceBindings.js
-function buildFilteredServiceBindings(params, bindingConstraints, options) {
-  const serviceIdentifier = options?.customServiceIdentifier ?? bindingConstraints.serviceIdentifier;
-  const serviceBindings = options?.chained === true ? [...params.operations.getBindingsChained(serviceIdentifier)] : [...params.operations.getBindings(serviceIdentifier) ?? []];
-  const filteredBindings = serviceBindings.filter((binding) => binding.isSatisfiedBy(bindingConstraints));
-  if (filteredBindings.length === 0 && params.autobindOptions !== void 0 && typeof serviceIdentifier === "function") {
-    const binding = buildInstanceBinding(params.autobindOptions, serviceIdentifier);
-    params.operations.setBinding(binding);
-    if (binding.isSatisfiedBy(bindingConstraints)) {
-      filteredBindings.push(binding);
-    }
-  }
-  return filteredBindings;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/stringifyBinding.js
-function stringifyBinding(binding) {
-  switch (binding.type) {
-    case bindingTypeValues.Instance:
-      return `[ type: "${binding.type}", serviceIdentifier: "${stringifyServiceIdentifier(binding.serviceIdentifier)}", scope: "${binding.scope}", implementationType: "${binding.implementationType.name}" ]`;
-    case bindingTypeValues.ServiceRedirection:
-      return `[ type: "${binding.type}", serviceIdentifier: "${stringifyServiceIdentifier(binding.serviceIdentifier)}", redirection: "${stringifyServiceIdentifier(binding.targetServiceIdentifier)}" ]`;
-    default:
-      return `[ type: "${binding.type}", serviceIdentifier: "${stringifyServiceIdentifier(binding.serviceIdentifier)}", scope: "${binding.scope}" ]`;
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/throwErrorWhenUnexpectedBindingsAmountFound.js
-var SINGLE_SERVICE_NODE_BINDINGS = 1;
-function throwErrorWhenUnexpectedBindingsAmountFound(bindingNodes, isOptional, bindingConstraintNode) {
-  const serviceIdentifier = bindingConstraintNode.elem.serviceIdentifier;
-  const parentServiceIdentifier = bindingConstraintNode.previous?.elem.serviceIdentifier;
-  if (Array.isArray(bindingNodes)) {
-    throwErrorWhenMultipleUnexpectedBindingsAmountFound(bindingNodes, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraintNode.elem);
-  } else {
-    throwErrorWhenSingleUnexpectedBindingFound(bindingNodes, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraintNode.elem);
-  }
-}
-function throwBindingNotFoundError(serviceIdentifier, parentServiceIdentifier, bindingConstraints) {
-  const errorMessage = `No bindings found for service: "${stringifyServiceIdentifier(serviceIdentifier)}".
-
-Trying to resolve bindings for "${stringifyParentServiceIdentifier(serviceIdentifier, parentServiceIdentifier)}".${stringifyBindingConstraints(bindingConstraints)}`;
-  throw new InversifyCoreError(InversifyCoreErrorKind.planning, errorMessage);
-}
-function throwErrorWhenMultipleUnexpectedBindingsAmountFound(bindingNodes, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraints) {
-  if (bindingNodes.length === SINGLE_SERVICE_NODE_BINDINGS) {
-    return;
-  }
-  if (bindingNodes.length === 0) {
-    if (!isOptional) {
-      throwBindingNotFoundError(serviceIdentifier, parentServiceIdentifier, bindingConstraints);
-    }
-  } else {
-    const errorMessage = `Ambiguous bindings found for service: "${stringifyServiceIdentifier(serviceIdentifier)}".
-
-Registered bindings:
-
-${bindingNodes.map((bindingNode) => stringifyBinding(bindingNode.binding)).join("\n")}
-
-Trying to resolve bindings for "${stringifyParentServiceIdentifier(serviceIdentifier, parentServiceIdentifier)}".${stringifyBindingConstraints(bindingConstraints)}`;
-    throw new InversifyCoreError(InversifyCoreErrorKind.planning, errorMessage);
-  }
-}
-function throwErrorWhenSingleUnexpectedBindingFound(bindingNode, isOptional, serviceIdentifier, parentServiceIdentifier, bindingConstraints) {
-  if (bindingNode === void 0 && !isOptional) {
-    throwBindingNotFoundError(serviceIdentifier, parentServiceIdentifier, bindingConstraints);
-  }
-}
-function stringifyParentServiceIdentifier(serviceIdentifier, parentServiceIdentifier) {
-  return parentServiceIdentifier === void 0 ? `${stringifyServiceIdentifier(serviceIdentifier)} (Root service)` : stringifyServiceIdentifier(parentServiceIdentifier);
-}
-function stringifyBindingConstraints(bindingConstraints) {
-  const stringifiedTags = bindingConstraints.tags.size === 0 ? "" : `
-- tags:
-  - ${[...bindingConstraints.tags.keys()].map((key) => key.toString()).join("\n  - ")}`;
-  return `
-
-Binding constraints:
-- service identifier: ${stringifyServiceIdentifier(bindingConstraints.serviceIdentifier)}
-- name: ${bindingConstraints.name?.toString() ?? "-"}${stringifiedTags}`;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/curryBuildPlanServiceNodeFromOptions.js
-function curryBuildPlanServiceNodeFromOptions(buildServiceNodeBindings3) {
-  return (params, bindingConstraintsList, options) => {
-    const serviceIdentifier = options.serviceIdentifier;
-    const updatedBindingConstraintsList = bindingConstraintsList.concat({
-      getAncestorsCalled: false,
-      name: options.name,
-      serviceIdentifier,
-      tags: options.tags
-    });
-    const bindingConstraints = new BindingConstraintsImplementation(updatedBindingConstraintsList.last);
-    const chained = options.isMultiple && options.chained;
-    const filteredServiceBindings = buildFilteredServiceBindings(params, bindingConstraints, {
-      chained
-    });
-    const serviceNodeBindings = [];
-    if (options.isMultiple) {
-      const serviceNode2 = new PlanMultipleBindingServiceNodeImplementation(serviceNodeBindings, serviceIdentifier);
-      serviceNodeBindings.push(...buildServiceNodeBindings3(params, updatedBindingConstraintsList, filteredServiceBindings, serviceNode2, options));
-      serviceNode2.isContextFree = !updatedBindingConstraintsList.last.elem.getAncestorsCalled;
-      return serviceNode2;
-    }
-    const serviceNode = new PlanSingleBindingServiceNodeImplementation(serviceIdentifier);
-    serviceNodeBindings.push(...buildServiceNodeBindings3(params, updatedBindingConstraintsList, filteredServiceBindings, serviceNode, options));
-    serviceNode.isContextFree = !updatedBindingConstraintsList.last.elem.getAncestorsCalled;
-    throwErrorWhenUnexpectedBindingsAmountFound(serviceNodeBindings, options.optional, updatedBindingConstraintsList.last);
-    const [planBindingNode] = serviceNodeBindings;
-    serviceNode.bindings = planBindingNode;
-    return serviceNode;
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/error/calculations/isStackOverflowError.js
-var STACK_OVERFLOW_PATTERNS = /stack space|call stack|too much recursion/i;
-var SPIDER_MONKEY_REGEXP = /too much recursion/;
-function isStackOverflowError(error2) {
-  try {
-    if (!(error2 instanceof Error)) {
-      return false;
-    }
-    return (
-      // V8 and JavaScriptCore typically throw RangeError
-      error2 instanceof RangeError && STACK_OVERFLOW_PATTERNS.test(error2.message) || error2.name === "InternalError" && SPIDER_MONKEY_REGEXP.test(error2.message)
-    );
-  } catch (innerError) {
-    return innerError instanceof SyntaxError && innerError.message.includes("Stack overflow");
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/handlePlanError.js
-function extractLikelyCircularDependency(params) {
-  const serviceIdentifiers = /* @__PURE__ */ new Set();
-  for (const serviceIdentifier of params.servicesBranch) {
-    if (serviceIdentifiers.has(serviceIdentifier)) {
-      return [...serviceIdentifiers, serviceIdentifier];
-    }
-    serviceIdentifiers.add(serviceIdentifier);
-  }
-  return [...serviceIdentifiers];
-}
-function handlePlanError(params, error2) {
-  if (isStackOverflowError(error2) || InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planningMaxDepthExceeded)) {
-    const stringifiedCircularDependencies = stringifyServiceIdentifierTrace(extractLikelyCircularDependency(params));
-    throw new InversifyCoreError(InversifyCoreErrorKind.planning, `Circular dependency found: ${stringifiedCircularDependencies}`, { cause: error2 });
-  }
-  throw error2;
-}
-function stringifyServiceIdentifierTrace(serviceIdentifiers) {
-  const serviceIdentifiersArray = [...serviceIdentifiers];
-  if (serviceIdentifiersArray.length === 0) {
-    return "(No dependency trace)";
-  }
-  return serviceIdentifiersArray.map(stringifyServiceIdentifier).join(" -> ");
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/LazyPlanServiceNode.js
-var isLazyPlanServiceNodeSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/core/LazyPlanServiceNode");
-var LazyPlanServiceNode = class {
-  [isLazyPlanServiceNodeSymbol];
-  _serviceIdentifier;
-  _serviceNode;
-  constructor(serviceNode, serviceIdentifier) {
-    this[isLazyPlanServiceNodeSymbol] = true;
-    this._serviceNode = serviceNode;
-    this._serviceIdentifier = serviceIdentifier;
-  }
-  get bindings() {
-    return this._getNode().bindings;
-  }
-  get isContextFree() {
-    return this._getNode().isContextFree;
-  }
-  get serviceIdentifier() {
-    return this._serviceIdentifier;
-  }
-  set bindings(bindings) {
-    this._getNode().bindings = bindings;
-  }
-  set isContextFree(isContextFree) {
-    this._getNode().isContextFree = isContextFree;
-  }
-  static is(value) {
-    return typeof value === "object" && value !== null && value[isLazyPlanServiceNodeSymbol] === true;
-  }
-  invalidate() {
-    this._serviceNode = void 0;
-  }
-  isExpanded() {
-    return this._serviceNode !== void 0;
-  }
-  resolve(params) {
-    return this._getNode().resolve(params);
-  }
-  _getNode() {
-    if (this._serviceNode === void 0) {
-      this._serviceNode = this._buildPlanServiceNode();
-    }
-    return this._serviceNode;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/buildBuildServiceNodeOptionsFromPlanParamsConstraints.js
-function buildBuildServiceNodeOptionsFromPlanParamsConstraints(constraints) {
-  const tags = /* @__PURE__ */ new Map();
-  if (constraints.tag !== void 0) {
-    tags.set(constraints.tag.key, constraints.tag.value);
-  }
-  if (constraints.isMultiple) {
-    return {
-      chained: constraints.chained,
-      isMultiple: constraints.isMultiple,
-      name: constraints.name,
-      optional: constraints.isOptional ?? false,
-      serviceIdentifier: constraints.serviceIdentifier,
-      tags
-    };
-  }
-  return {
-    isMultiple: constraints.isMultiple,
-    name: constraints.name,
-    optional: constraints.isOptional ?? false,
-    serviceIdentifier: constraints.serviceIdentifier,
-    tags
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/models/SingleImmutableLinkedList.js
-var SingleImmutableLinkedList = class _SingleImmutableLinkedList {
-  last;
-  length;
-  constructor(last, length) {
-    this.last = last;
-    this.length = length;
-  }
-  concat(elem) {
-    return new _SingleImmutableLinkedList({
-      elem,
-      previous: this.last
-    }, this.length + 1);
-  }
-  [Symbol.iterator]() {
-    let node = this.last;
-    return {
-      next: () => {
-        if (node === void 0) {
-          return {
-            done: true,
-            value: void 0
-          };
-        }
-        const elem = node.elem;
-        node = node.previous;
-        return {
-          done: false,
-          value: elem
-        };
-      }
-    };
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildPlanBindingConstraintsList.js
-function buildPlanBindingConstraintsList(params) {
-  const tags = /* @__PURE__ */ new Map();
-  if (params.rootConstraints.tag !== void 0) {
-    tags.set(params.rootConstraints.tag.key, params.rootConstraints.tag.value);
-  }
-  return new SingleImmutableLinkedList({
-    elem: {
-      getAncestorsCalled: false,
-      name: params.rootConstraints.name,
-      serviceIdentifier: params.rootConstraints.serviceIdentifier,
-      tags
-    },
-    previous: void 0
-  }, 1);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/curryBuildPlanServiceNode.js
-function curryBuildPlanServiceNode(buildServiceNodeBindings3) {
-  return (params) => {
-    const bindingConstraintsList = buildPlanBindingConstraintsList(params);
-    const bindingConstraints = new BindingConstraintsImplementation(bindingConstraintsList.last);
-    const chained = params.rootConstraints.isMultiple && params.rootConstraints.chained;
-    const filteredServiceBindings = buildFilteredServiceBindings(params, bindingConstraints, {
-      chained
-    });
-    const serviceNodeBindings = [];
-    if (params.rootConstraints.isMultiple) {
-      const serviceNode2 = new PlanMultipleBindingServiceNodeImplementation(serviceNodeBindings, params.rootConstraints.serviceIdentifier);
-      serviceNodeBindings.push(...buildServiceNodeBindings3(params, bindingConstraintsList, filteredServiceBindings, serviceNode2, buildBuildServiceNodeOptionsFromPlanParamsConstraints(params.rootConstraints)));
-      serviceNode2.isContextFree = !bindingConstraintsList.last.elem.getAncestorsCalled;
-      return serviceNode2;
-    }
-    const serviceNode = new PlanSingleBindingServiceNodeImplementation(params.rootConstraints.serviceIdentifier);
-    serviceNodeBindings.push(...buildServiceNodeBindings3(params, bindingConstraintsList, filteredServiceBindings, serviceNode, buildBuildServiceNodeOptionsFromPlanParamsConstraints(params.rootConstraints)));
-    serviceNode.isContextFree = !bindingConstraintsList.last.elem.getAncestorsCalled;
-    throwErrorWhenUnexpectedBindingsAmountFound(serviceNodeBindings, params.rootConstraints.isOptional ?? false, bindingConstraintsList.last);
-    const [planBindingNode] = serviceNodeBindings;
-    serviceNode.bindings = planBindingNode;
-    return serviceNode;
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/cacheResolvedValue.js
-function cacheResolvedValue(binding, resolvedValue) {
-  if (isPromise(resolvedValue)) {
-    binding.cache = {
-      isRight: true,
-      value: resolvedValue
-    };
-    return resolvedValue.then((syncResolvedValue) => cacheSyncResolvedValue(binding, syncResolvedValue));
-  }
-  return cacheSyncResolvedValue(binding, resolvedValue);
-}
-function cacheSyncResolvedValue(binding, resolvedValue) {
-  binding.cache = {
-    isRight: true,
-    value: resolvedValue
-  };
-  return resolvedValue;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingActivationsFromIteratorAsync.js
-async function resolveBindingActivationsFromIteratorAsync(params, value, activationsIterator) {
-  let activatedValue = await value;
-  let activationIteratorResult = activationsIterator.next();
-  while (activationIteratorResult.done !== true) {
-    activatedValue = await activationIteratorResult.value(params.context, activatedValue);
-    activationIteratorResult = activationsIterator.next();
-  }
-  return activatedValue;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingActivationsFromIterator.js
-function resolveBindingActivationsFromIterator(params, value, activationsIterator) {
-  let activatedValue = value;
-  let activationIteratorResult = activationsIterator.next();
-  while (activationIteratorResult.done !== true) {
-    const nextActivatedValue = activationIteratorResult.value(params.context, activatedValue);
-    if (isPromise(nextActivatedValue)) {
-      return resolveBindingActivationsFromIteratorAsync(params, nextActivatedValue, activationsIterator);
-    } else {
-      activatedValue = nextActivatedValue;
-    }
-    activationIteratorResult = activationsIterator.next();
-  }
-  return activatedValue;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingServiceActivations.js
-function resolveBindingServiceActivations(params, serviceIdentifier, value) {
-  const activations = params.context.getActivations(serviceIdentifier);
-  if (activations === void 0) {
-    return value;
-  }
-  if (isPromise(value)) {
-    return resolveBindingActivationsFromIteratorAsync(params, value, activations[Symbol.iterator]());
-  }
-  return resolveBindingActivationsFromIterator(params, value, activations[Symbol.iterator]());
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingActivations.js
-function resolveBindingActivations(params, binding, value) {
-  let activationResult = value;
-  if (binding.onActivation !== void 0) {
-    const onActivation = binding.onActivation;
-    if (isPromise(activationResult)) {
-      activationResult = activationResult.then((resolved) => onActivation(params.context, resolved));
-    } else {
-      activationResult = onActivation(params.context, activationResult);
-    }
-  }
-  return resolveBindingServiceActivations(params, binding.serviceIdentifier, activationResult);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveScoped.js
-function resolveScoped(node, resolve4) {
-  const binding = node.binding;
-  switch (binding.scope) {
-    case bindingScopeValues.Singleton: {
-      return (params) => {
-        if (binding.cache.isRight) {
-          return binding.cache.value;
-        }
-        const resolvedValue = resolveBindingActivations(params, binding, resolve4(params, node));
-        return cacheResolvedValue(binding, resolvedValue);
-      };
-    }
-    case bindingScopeValues.Request: {
-      return (params) => {
-        if (params.requestScopeCache?.has(binding.id) === true) {
-          return params.requestScopeCache.get(binding.id);
-        }
-        const resolvedValue = resolveBindingActivations(params, binding, resolve4(params, node));
-        (params.requestScopeCache ??= /* @__PURE__ */ new Map()).set(binding.id, resolvedValue);
-        return resolvedValue;
-      };
-    }
-    case bindingScopeValues.Transient:
-      return (params) => resolveBindingActivations(params, binding, resolve4(params, node));
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/ConstantValueBindingNode.js
-var ConstantValueBindingNode = class {
-  binding;
-  resolve;
-  constructor(binding) {
-    this.binding = binding;
-    this.resolve = resolveScoped(this, (_params, node) => node.binding.value);
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveScopedWithNoActivations.js
-function resolveScopedWithNoActivations(binding, resolve4) {
-  switch (binding.scope) {
-    case bindingScopeValues.Singleton: {
-      return (params) => {
-        if (binding.cache.isRight) {
-          return binding.cache.value;
-        }
-        const resolvedValue = resolve4(params);
-        return cacheResolvedValue(binding, resolvedValue);
-      };
-    }
-    case bindingScopeValues.Request: {
-      return (params) => {
-        if (params.requestScopeCache?.has(binding.id) === true) {
-          return params.requestScopeCache.get(binding.id);
-        }
-        const resolvedValue = resolve4(params);
-        (params.requestScopeCache ??= /* @__PURE__ */ new Map()).set(binding.id, resolvedValue);
-        return resolvedValue;
-      };
-    }
-    case bindingScopeValues.Transient:
-      return resolve4;
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveServiceActivations.js
-function resolveServiceActivations(serviceIdentifier) {
-  return (params, value) => {
-    const activations = params.context.getActivations(serviceIdentifier);
-    if (activations === void 0) {
-      return value;
-    }
-    if (isPromise(value)) {
-      return resolveBindingActivationsFromIteratorAsync(params, value, activations[Symbol.iterator]());
-    }
-    return resolveBindingActivationsFromIterator(params, value, activations[Symbol.iterator]());
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsDynamicValueBindingNodeResolver.js
-function buildNoActivationsDynamicValueBindingNodeResolver(node, areServiceActivations) {
-  const serviceIdentifier = node.binding.serviceIdentifier;
-  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
-  const resolveNode = resolveActivations === void 0 ? (params) => node.binding.value(params.context) : (params) => resolveActivations(params, node.binding.value(params.context));
-  return resolveScopedWithNoActivations(node.binding, resolveNode);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/DynamicValueBindingNode.js
-var resolveScopedDynamicValueBindingNode = (node) => resolveScoped(node, (params, node2) => node2.binding.value(params.context));
-var DynamicValueBindingNode = class {
-  binding;
-  [isDynamicallyResolvableBindingNodeSymbol];
-  resolve;
-  #onResolverChangedHandlers;
-  constructor(binding, params) {
-    this.binding = binding;
-    this[isDynamicallyResolvableBindingNodeSymbol] = true;
-    const areServiceActivations = params.operations.getActivations(binding.serviceIdentifier) !== void 0;
-    this.#onResolverChangedHandlers = void 0;
-    this.resolve = this.#buildDynamicValueBindingNodeResolver(areServiceActivations);
-    if (!areServiceActivations && this.#areNoBindingActivationsDefined()) {
-      params.operations.subscribeActivationAddedOnce(binding.serviceIdentifier, this);
-    }
-  }
-  onActivationAdded() {
-    this.resolve = this.#buildDynamicValueBindingNodeResolver(true);
-    if (this.#onResolverChangedHandlers !== void 0) {
-      for (const handler2 of this.#onResolverChangedHandlers) {
-        handler2(this.resolve);
-      }
-    }
-  }
-  addOnResolverChangedHandler(callback) {
-    if (this.#onResolverChangedHandlers === void 0) {
-      this.#onResolverChangedHandlers = [];
-    }
-    this.#onResolverChangedHandlers.push(callback);
-  }
-  #buildDynamicValueBindingNodeResolver(areServiceActivations) {
-    if (this.#areNoBindingActivationsDefined()) {
-      return buildNoActivationsDynamicValueBindingNodeResolver(this, areServiceActivations);
-    }
-    return resolveScopedDynamicValueBindingNode(this);
-  }
-  #areNoBindingActivationsDefined() {
-    return this.binding.onActivation === void 0;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/FactoryBindingNodeImplementation.js
-var FactoryBindingNodeImplementation = class {
-  binding;
-  resolve;
-  constructor(binding) {
-    this.binding = binding;
-    this.resolve = resolveScoped(this, (params, node) => node.binding.factory(params.context));
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingConstructorParams.js
-function resolveInstanceBindingConstructorParams(params, node) {
-  const constructorResolvedValues = [];
-  let promiseValueFound = false;
-  for (const constructorParam of node.constructorParams) {
-    const resolvedValue = constructorParam.resolve(params);
-    if (!promiseValueFound && isPromise(resolvedValue)) {
-      promiseValueFound = true;
-    }
-    constructorResolvedValues.push(resolvedValue);
-  }
-  return promiseValueFound ? Promise.all(constructorResolvedValues) : constructorResolvedValues;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingNode.js
-function resolveInstanceBindingNode(resolveInstanceBindingConstructorParams2, resolveInstanceBindingNodeAsyncFromConstructorParams2, resolveInstanceBindingNodeFromConstructorParams2) {
-  return (params, node) => {
-    const constructorValues = resolveInstanceBindingConstructorParams2(params, node);
-    if (isPromise(constructorValues)) {
-      return resolveInstanceBindingNodeAsyncFromConstructorParams2(constructorValues, params, node);
-    }
-    return resolveInstanceBindingNodeFromConstructorParams2(constructorValues, params, node);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolvePostConstruct.js
-function resolvePostConstruct(instance, binding, postConstructMethodName) {
-  const postConstructResult = invokePostConstruct(instance, binding, postConstructMethodName);
-  if (isPromise(postConstructResult)) {
-    return postConstructResult.then(() => instance);
-  }
-  return instance;
-}
-function invokePostConstruct(instance, binding, postConstructMethodName) {
-  if (postConstructMethodName in instance) {
-    if (typeof instance[postConstructMethodName] === "function") {
-      let postConstructResult;
-      try {
-        postConstructResult = instance[postConstructMethodName]();
-      } catch (error2) {
-        throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Unexpected error found when calling "${postConstructMethodName.toString()}" @postConstruct decorated method on class "${binding.implementationType.name}"`, {
-          cause: error2
-        });
-      }
-      if (isPromise(postConstructResult)) {
-        return invokePostConstructAsync(binding, postConstructMethodName, postConstructResult);
-      }
-    } else {
-      throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Expecting a "${postConstructMethodName.toString()}" method when resolving "${binding.implementationType.name}" class @postConstruct decorated method, a non function property was found instead.`);
-    }
-  } else {
-    throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Expecting a "${postConstructMethodName.toString()}" property when resolving "${binding.implementationType.name}" class @postConstruct decorated method, none found.`);
-  }
-}
-async function invokePostConstructAsync(binding, postConstructMethodName, postConstructResult) {
-  try {
-    await postConstructResult;
-  } catch (error2) {
-    throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Unexpected error found when calling "${postConstructMethodName.toString()}" @postConstruct decorated method on class "${binding.implementationType.name}"`, {
-      cause: error2
-    });
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/setInstanceProperties.js
-function setInstanceProperties(params, instance, node) {
-  const propertyAssignmentPromises = [];
-  for (const [propertyKey, propertyNode] of node.propertyParams) {
-    const metadata = node.classMetadata.properties.get(propertyKey);
-    if (metadata === void 0) {
-      throw new InversifyCoreError(InversifyCoreErrorKind.resolution, `Expecting metadata at property "${propertyKey.toString()}", none found`);
-    }
-    if (metadata.kind !== ClassElementMetadataKind.unmanaged && propertyNode.bindings !== void 0) {
-      instance[propertyKey] = propertyNode.resolve(params);
-      if (isPromise(instance[propertyKey])) {
-        propertyAssignmentPromises.push((async () => {
-          instance[propertyKey] = await instance[propertyKey];
-        })());
-      }
-    }
-  }
-  if (propertyAssignmentPromises.length > 0) {
-    return Promise.all(propertyAssignmentPromises).then(() => void 0);
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingNodeFromConstructorParams.js
-function resolveAllPostConstructMethods(instance, binding, postConstructMethodNames) {
-  if (postConstructMethodNames.size === 0) {
-    return instance;
-  }
-  let result = instance;
-  for (const methodName of postConstructMethodNames) {
-    if (isPromise(result)) {
-      result = result.then((resolvedInstance) => resolvePostConstruct(resolvedInstance, binding, methodName));
-    } else {
-      result = resolvePostConstruct(result, binding, methodName);
-    }
-  }
-  return result;
-}
-function resolveInstanceBindingNodeFromConstructorParams(constructorValues, params, node) {
-  const instance = new node.binding.implementationType(...constructorValues);
-  const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-  if (isPromise(propertiesAssignmentResult)) {
-    return propertiesAssignmentResult.then(() => resolveAllPostConstructMethods(instance, node.binding, node.classMetadata.lifecycle.postConstructMethodNames));
-  }
-  return resolveAllPostConstructMethods(instance, node.binding, node.classMetadata.lifecycle.postConstructMethodNames);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveInstanceBindingNodeAsyncFromConstructorParams.js
-async function resolveInstanceBindingNodeAsyncFromConstructorParams(constructorValues, params, node) {
-  const constructorResolvedValues = await constructorValues;
-  return resolveInstanceBindingNodeFromConstructorParams(constructorResolvedValues, params, node);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildConstructorArgumentsResolver.js
-function buildConstructorArgumentsResolver(node, resolveAsyncValues, resolveActivations) {
-  const constructorArgumentsCount = node.classMetadata.constructorArguments.length;
-  function resolveConstructorValues(params) {
-    const values = new Array(constructorArgumentsCount);
-    for (let index = 0; index < constructorArgumentsCount; index++) {
-      values[index] = node.constructorParams[index].resolve(params);
-    }
-    return values;
-  }
-  if (node.classMetadata.properties.size === 0) {
-    if (resolveActivations === void 0) {
-      return function resolveNode(params) {
-        const values = resolveConstructorValues(params);
-        function build(...resolvedValues) {
-          return new node.binding.implementationType(...resolvedValues);
-        }
-        return resolveAsyncValues(...values, build);
-      };
-    }
-    return function resolveNode(params) {
-      const values = resolveConstructorValues(params);
-      const build = (...resolvedValues) => resolveActivations(params, new node.binding.implementationType(...resolvedValues));
-      return resolveAsyncValues(...values, build);
-    };
-  }
-  if (resolveActivations === void 0) {
-    return function resolveNode(params) {
-      const values = resolveConstructorValues(params);
-      function build(...resolvedValues) {
-        const instance = new node.binding.implementationType(...resolvedValues);
-        const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-        if (isPromise(propertiesAssignmentResult)) {
-          return propertiesAssignmentResult.then(() => instance);
-        }
-        return instance;
-      }
-      return resolveAsyncValues(...values, build);
-    };
-  }
-  return function resolveNode(params) {
-    const values = resolveConstructorValues(params);
-    const build = (...resolvedValues) => {
-      const instance = new node.binding.implementationType(...resolvedValues);
-      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-      if (isPromise(propertiesAssignmentResult)) {
-        return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
-      }
-      return resolveActivations(params, instance);
-    };
-    return resolveAsyncValues(...values, build);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveFour.js
-var TWO_PARAMS = 2;
-var THREE_PARAMS = 3;
-var FOUR_PARAMS = 4;
-function resolveFour(value1, value2, value3, value4, build) {
-  if (isPromise(value1)) {
-    if (isPromise(value2)) {
-      if (isPromise(value3)) {
-        if (isPromise(value4)) {
-          return new Promise((resolve4, reject) => {
-            let resolvedValues = 0;
-            let resolvedValue1;
-            let resolvedValue2;
-            let resolvedValue3;
-            let resolvedValue4;
-            void value1.then((resolvedValue) => {
-              if (++resolvedValues === FOUR_PARAMS) {
-                resolve4(build(resolvedValue, resolvedValue2, resolvedValue3, resolvedValue4));
-              } else {
-                resolvedValue1 = resolvedValue;
-              }
-            }).catch(reject);
-            void value2.then((resolvedValue) => {
-              if (++resolvedValues === FOUR_PARAMS) {
-                resolve4(build(resolvedValue1, resolvedValue, resolvedValue3, resolvedValue4));
-              } else {
-                resolvedValue2 = resolvedValue;
-              }
-            }).catch(reject);
-            void value3.then((resolvedValue) => {
-              if (++resolvedValues === FOUR_PARAMS) {
-                resolve4(build(resolvedValue1, resolvedValue2, resolvedValue, resolvedValue4));
-              } else {
-                resolvedValue3 = resolvedValue;
-              }
-            }).catch(reject);
-            void value4.then((resolvedValue) => {
-              if (++resolvedValues === FOUR_PARAMS) {
-                resolve4(build(resolvedValue1, resolvedValue2, resolvedValue3, resolvedValue));
-              } else {
-                resolvedValue4 = resolvedValue;
-              }
-            }).catch(reject);
-          });
-        }
-        return new Promise((resolve4, reject) => {
-          let resolvedValues = 0;
-          let resolvedValue1;
-          let resolvedValue2;
-          let resolvedValue3;
-          void value1.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue, resolvedValue2, resolvedValue3, value4));
-            } else {
-              resolvedValue1 = resolvedValue;
-            }
-          }).catch(reject);
-          void value2.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue1, resolvedValue, resolvedValue3, value4));
-            } else {
-              resolvedValue2 = resolvedValue;
-            }
-          }).catch(reject);
-          void value3.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue1, resolvedValue2, resolvedValue, value4));
-            } else {
-              resolvedValue3 = resolvedValue;
-            }
-          }).catch(reject);
-        });
-      }
-      if (isPromise(value4)) {
-        return new Promise((resolve4, reject) => {
-          let resolvedValues = 0;
-          let resolvedValue1;
-          let resolvedValue2;
-          let resolvedValue4;
-          void value1.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue, resolvedValue2, value3, resolvedValue4));
-            } else {
-              resolvedValue1 = resolvedValue;
-            }
-          }).catch(reject);
-          void value2.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue1, resolvedValue, value3, resolvedValue4));
-            } else {
-              resolvedValue2 = resolvedValue;
-            }
-          }).catch(reject);
-          void value4.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue1, resolvedValue2, value3, resolvedValue));
-            } else {
-              resolvedValue4 = resolvedValue;
-            }
-          }).catch(reject);
-        });
-      }
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue1;
-        let resolvedValue2;
-        void value1.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(resolvedValue, resolvedValue2, value3, value4));
-          } else {
-            resolvedValue1 = resolvedValue;
-          }
-        }).catch(reject);
-        void value2.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(resolvedValue1, resolvedValue, value3, value4));
-          } else {
-            resolvedValue2 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    if (isPromise(value3)) {
-      if (isPromise(value4)) {
-        return new Promise((resolve4, reject) => {
-          let resolvedValues = 0;
-          let resolvedValue1;
-          let resolvedValue3;
-          let resolvedValue4;
-          void value1.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue, value2, resolvedValue3, resolvedValue4));
-            } else {
-              resolvedValue1 = resolvedValue;
-            }
-          }).catch(reject);
-          void value3.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue1, value2, resolvedValue, resolvedValue4));
-            } else {
-              resolvedValue3 = resolvedValue;
-            }
-          }).catch(reject);
-          void value4.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(resolvedValue1, value2, resolvedValue3, resolvedValue));
-            } else {
-              resolvedValue4 = resolvedValue;
-            }
-          }).catch(reject);
-        });
-      }
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue1;
-        let resolvedValue3;
-        void value1.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(resolvedValue, value2, resolvedValue3, value4));
-          } else {
-            resolvedValue1 = resolvedValue;
-          }
-        }).catch(reject);
-        void value3.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(resolvedValue1, value2, resolvedValue, value4));
-          } else {
-            resolvedValue3 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    if (isPromise(value4)) {
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue1;
-        let resolvedValue4;
-        void value1.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(resolvedValue, value2, value3, resolvedValue4));
-          } else {
-            resolvedValue1 = resolvedValue;
-          }
-        }).catch(reject);
-        void value4.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(resolvedValue1, value2, value3, resolvedValue));
-          } else {
-            resolvedValue4 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    return value1.then(async (resolvedValue1) => build(resolvedValue1, value2, value3, value4));
-  }
-  if (isPromise(value2)) {
-    if (isPromise(value3)) {
-      if (isPromise(value4)) {
-        return new Promise((resolve4, reject) => {
-          let resolvedValues = 0;
-          let resolvedValue2;
-          let resolvedValue3;
-          let resolvedValue4;
-          void value2.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(value1, resolvedValue, resolvedValue3, resolvedValue4));
-            } else {
-              resolvedValue2 = resolvedValue;
-            }
-          }).catch(reject);
-          void value3.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(value1, resolvedValue2, resolvedValue, resolvedValue4));
-            } else {
-              resolvedValue3 = resolvedValue;
-            }
-          }).catch(reject);
-          void value4.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS) {
-              resolve4(build(value1, resolvedValue2, resolvedValue3, resolvedValue));
-            } else {
-              resolvedValue4 = resolvedValue;
-            }
-          }).catch(reject);
-        });
-      }
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue2;
-        let resolvedValue3;
-        void value2.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(value1, resolvedValue, resolvedValue3, value4));
-          } else {
-            resolvedValue2 = resolvedValue;
-          }
-        }).catch(reject);
-        void value3.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(value1, resolvedValue2, resolvedValue, value4));
-          } else {
-            resolvedValue3 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    if (isPromise(value4)) {
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue2;
-        let resolvedValue4;
-        void value2.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(value1, resolvedValue, value3, resolvedValue4));
-          } else {
-            resolvedValue2 = resolvedValue;
-          }
-        }).catch(reject);
-        void value4.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(value1, resolvedValue2, value3, resolvedValue));
-          } else {
-            resolvedValue4 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    return value2.then(async (resolvedValue2) => build(value1, resolvedValue2, value3, value4));
-  }
-  if (isPromise(value3)) {
-    if (isPromise(value4)) {
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue3;
-        let resolvedValue4;
-        void value3.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(value1, value2, resolvedValue, resolvedValue4));
-          } else {
-            resolvedValue3 = resolvedValue;
-          }
-        }).catch(reject);
-        void value4.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS) {
-            resolve4(build(value1, value2, resolvedValue3, resolvedValue));
-          } else {
-            resolvedValue4 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    return value3.then(async (resolvedValue3) => build(value1, value2, resolvedValue3, value4));
-  }
-  if (isPromise(value4)) {
-    return value4.then(async (resolvedValue4) => build(value1, value2, value3, resolvedValue4));
-  }
-  return build(value1, value2, value3, value4);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildFourConstructorArgumentResolver.js
-function buildFourConstructorArgumentResolver(node, resolveActivations) {
-  if (node.classMetadata.properties.size === 0) {
-    if (resolveActivations === void 0) {
-      return function resolveNode(params) {
-        const resolvedValue0 = node.constructorParams[0].resolve(params);
-        const resolvedValue1 = node.constructorParams[1].resolve(params);
-        const resolvedValue2 = node.constructorParams[2].resolve(params);
-        const resolvedValue3 = node.constructorParams[3].resolve(params);
-        return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32));
-      };
-    }
-    return function resolveNode(params) {
-      const resolvedValue0 = node.constructorParams[0].resolve(params);
-      const resolvedValue1 = node.constructorParams[1].resolve(params);
-      const resolvedValue2 = node.constructorParams[2].resolve(params);
-      const resolvedValue3 = node.constructorParams[3].resolve(params);
-      return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => resolveActivations(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
-    };
-  }
-  if (resolveActivations === void 0) {
-    const finalizeInstance2 = (params, instance) => {
-      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-      if (isPromise(propertiesAssignmentResult)) {
-        return propertiesAssignmentResult.then(() => instance);
-      }
-      return instance;
-    };
-    return function resolveNode(params) {
-      const resolvedValue0 = node.constructorParams[0].resolve(params);
-      const resolvedValue1 = node.constructorParams[1].resolve(params);
-      const resolvedValue2 = node.constructorParams[2].resolve(params);
-      const resolvedValue3 = node.constructorParams[3].resolve(params);
-      return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
-    };
-  }
-  const finalizeInstance = (params, instance) => {
-    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-    if (isPromise(propertiesAssignmentResult)) {
-      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
-    }
-    return resolveActivations(params, instance);
-  };
-  return function resolveNode(params) {
-    const resolvedValue0 = node.constructorParams[0].resolve(params);
-    const resolvedValue1 = node.constructorParams[1].resolve(params);
-    const resolvedValue2 = node.constructorParams[2].resolve(params);
-    const resolvedValue3 = node.constructorParams[3].resolve(params);
-    return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => finalizeInstance(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneConstructorArgumentResolver.js
-function buildOneConstructorArgumentResolver(node, resolveActivations) {
-  if (node.classMetadata.properties.size === 0) {
-    if (resolveActivations === void 0) {
-      return function resolveNode(params) {
-        const resolvedValue = node.constructorParams[0].resolve(params);
-        if (isPromise(resolvedValue)) {
-          return resolvedValue.then((resolvedValue2) => new node.binding.implementationType(resolvedValue2));
-        }
-        return new node.binding.implementationType(resolvedValue);
-      };
-    }
-    return function resolveNode(params) {
-      const resolvedValue = node.constructorParams[0].resolve(params);
-      if (isPromise(resolvedValue)) {
-        return resolvedValue.then((resolvedValue2) => resolveActivations(params, new node.binding.implementationType(resolvedValue2)));
-      }
-      return resolveActivations(params, new node.binding.implementationType(resolvedValue));
-    };
-  }
-  if (resolveActivations === void 0) {
-    const finalizeInstance2 = (params, instance) => {
-      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-      if (isPromise(propertiesAssignmentResult)) {
-        return propertiesAssignmentResult.then(() => instance);
-      }
-      return instance;
-    };
-    return function resolveNode(params) {
-      const resolvedValue = node.constructorParams[0].resolve(params);
-      if (isPromise(resolvedValue)) {
-        return resolvedValue.then((resolvedValue2) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue2)));
-      }
-      return finalizeInstance2(params, new node.binding.implementationType(resolvedValue));
-    };
-  }
-  const finalizeInstance = (params, instance) => {
-    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-    if (isPromise(propertiesAssignmentResult)) {
-      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
-    }
-    return resolveActivations(params, instance);
-  };
-  return function resolveNode(params) {
-    const resolvedValue = node.constructorParams[0].resolve(params);
-    if (isPromise(resolvedValue)) {
-      return resolvedValue.then((resolvedValue2) => finalizeInstance(params, new node.binding.implementationType(resolvedValue2)));
-    }
-    return finalizeInstance(params, new node.binding.implementationType(resolvedValue));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveThree.js
-var TWO_PARAMS2 = 2;
-var THREE_PARAMS2 = 3;
-function resolveThree(value1, value2, value3, build) {
-  if (isPromise(value1)) {
-    if (isPromise(value2)) {
-      if (isPromise(value3)) {
-        return new Promise((resolve4, reject) => {
-          let resolvedValues = 0;
-          let resolvedValue1;
-          let resolvedValue2;
-          let resolvedValue3;
-          void value1.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS2) {
-              resolve4(build(resolvedValue, resolvedValue2, resolvedValue3));
-            } else {
-              resolvedValue1 = resolvedValue;
-            }
-          }).catch(reject);
-          void value2.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS2) {
-              resolve4(build(resolvedValue1, resolvedValue, resolvedValue3));
-            } else {
-              resolvedValue2 = resolvedValue;
-            }
-          }).catch(reject);
-          void value3.then((resolvedValue) => {
-            if (++resolvedValues === THREE_PARAMS2) {
-              resolve4(build(resolvedValue1, resolvedValue2, resolvedValue));
-            } else {
-              resolvedValue3 = resolvedValue;
-            }
-          }).catch(reject);
-        });
-      }
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue1;
-        let resolvedValue2;
-        void value1.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS2) {
-            resolve4(build(resolvedValue, resolvedValue2, value3));
-          } else {
-            resolvedValue1 = resolvedValue;
-          }
-        }).catch(reject);
-        void value2.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS2) {
-            resolve4(build(resolvedValue1, resolvedValue, value3));
-          } else {
-            resolvedValue2 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    if (isPromise(value3)) {
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue1;
-        let resolvedValue3;
-        void value1.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS2) {
-            resolve4(build(resolvedValue, value2, resolvedValue3));
-          } else {
-            resolvedValue1 = resolvedValue;
-          }
-        }).catch(reject);
-        void value3.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS2) {
-            resolve4(build(resolvedValue1, value2, resolvedValue));
-          } else {
-            resolvedValue3 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    return value1.then(async (resolvedValue1) => build(resolvedValue1, value2, value3));
-  }
-  if (isPromise(value2)) {
-    if (isPromise(value3)) {
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue2;
-        let resolvedValue3;
-        void value2.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS2) {
-            resolve4(build(value1, resolvedValue, resolvedValue3));
-          } else {
-            resolvedValue2 = resolvedValue;
-          }
-        }).catch(reject);
-        void value3.then((resolvedValue) => {
-          if (++resolvedValues === TWO_PARAMS2) {
-            resolve4(build(value1, resolvedValue2, resolvedValue));
-          } else {
-            resolvedValue3 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    return value2.then(async (resolvedValue2) => build(value1, resolvedValue2, value3));
-  }
-  if (isPromise(value3)) {
-    return value3.then(async (resolvedValue3) => build(value1, value2, resolvedValue3));
-  }
-  return build(value1, value2, value3);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildThreeConstructorArgumentResolver.js
-function buildThreeConstructorArgumentResolver(node, resolveActivations) {
-  if (node.classMetadata.properties.size === 0) {
-    if (resolveActivations === void 0) {
-      return function resolveNode(params) {
-        const resolvedValue0 = node.constructorParams[0].resolve(params);
-        const resolvedValue1 = node.constructorParams[1].resolve(params);
-        const resolvedValue2 = node.constructorParams[2].resolve(params);
-        return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22));
-      };
-    }
-    return function resolveNode(params) {
-      const resolvedValue0 = node.constructorParams[0].resolve(params);
-      const resolvedValue1 = node.constructorParams[1].resolve(params);
-      const resolvedValue2 = node.constructorParams[2].resolve(params);
-      return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => resolveActivations(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22)));
-    };
-  }
-  if (resolveActivations === void 0) {
-    const finalizeInstance2 = (params, instance) => {
-      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-      if (isPromise(propertiesAssignmentResult)) {
-        return propertiesAssignmentResult.then(() => instance);
-      }
-      return instance;
-    };
-    return function resolveNode(params) {
-      const resolvedValue0 = node.constructorParams[0].resolve(params);
-      const resolvedValue1 = node.constructorParams[1].resolve(params);
-      const resolvedValue2 = node.constructorParams[2].resolve(params);
-      return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22)));
-    };
-  }
-  const finalizeInstance = (params, instance) => {
-    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-    if (isPromise(propertiesAssignmentResult)) {
-      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
-    }
-    return resolveActivations(params, instance);
-  };
-  return function resolveNode(params) {
-    const resolvedValue0 = node.constructorParams[0].resolve(params);
-    const resolvedValue1 = node.constructorParams[1].resolve(params);
-    const resolvedValue2 = node.constructorParams[2].resolve(params);
-    return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => finalizeInstance(params, new node.binding.implementationType(resolvedValue02, resolvedValue12, resolvedValue22)));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveTwo.js
-var PARAMS = 2;
-function resolveTwo(value1, value2, build) {
-  if (isPromise(value1)) {
-    if (isPromise(value2)) {
-      return new Promise((resolve4, reject) => {
-        let resolvedValues = 0;
-        let resolvedValue1;
-        let resolvedValue2;
-        void value1.then((resolvedValue) => {
-          if (++resolvedValues === PARAMS) {
-            resolve4(build(resolvedValue, resolvedValue2));
-          } else {
-            resolvedValue1 = resolvedValue;
-          }
-        }).catch(reject);
-        void value2.then((resolvedValue) => {
-          if (++resolvedValues === PARAMS) {
-            resolve4(build(resolvedValue1, resolvedValue));
-          } else {
-            resolvedValue2 = resolvedValue;
-          }
-        }).catch(reject);
-      });
-    }
-    return value1.then(async (resolvedValue1) => build(resolvedValue1, value2));
-  }
-  if (isPromise(value2)) {
-    return value2.then(async (resolvedValue2) => build(value1, resolvedValue2));
-  }
-  return build(value1, value2);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildTwoConstructorArgumentResolver.js
-function buildTwoConstructorArgumentResolver(node, resolveActivations) {
-  if (node.classMetadata.properties.size === 0) {
-    if (resolveActivations === void 0) {
-      return function resolveNode(params) {
-        const resolvedValue0 = node.constructorParams[0].resolve(params);
-        const resolvedValue1 = node.constructorParams[1].resolve(params);
-        return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => new node.binding.implementationType(resolvedValue02, resolvedValue12));
-      };
-    }
-    return function resolveNode(params) {
-      const resolvedValue0 = node.constructorParams[0].resolve(params);
-      const resolvedValue1 = node.constructorParams[1].resolve(params);
-      return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => resolveActivations(params, new node.binding.implementationType(resolvedValue02, resolvedValue12)));
-    };
-  }
-  if (resolveActivations === void 0) {
-    const finalizeInstance2 = (params, instance) => {
-      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-      if (isPromise(propertiesAssignmentResult)) {
-        return propertiesAssignmentResult.then(() => instance);
-      }
-      return instance;
-    };
-    return function resolveNode(params) {
-      const resolvedValue0 = node.constructorParams[0].resolve(params);
-      const resolvedValue1 = node.constructorParams[1].resolve(params);
-      return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => finalizeInstance2(params, new node.binding.implementationType(resolvedValue02, resolvedValue12)));
-    };
-  }
-  const finalizeInstance = (params, instance) => {
-    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-    if (isPromise(propertiesAssignmentResult)) {
-      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
-    }
-    return resolveActivations(params, instance);
-  };
-  return function resolveNode(params) {
-    const resolvedValue0 = node.constructorParams[0].resolve(params);
-    const resolvedValue1 = node.constructorParams[1].resolve(params);
-    return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => finalizeInstance(params, new node.binding.implementationType(resolvedValue02, resolvedValue12)));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroConstructorArgumentsResolver.js
-function buildZeroConstructorArgumentsResolver(node, resolveActivations) {
-  if (node.classMetadata.properties.size === 0) {
-    if (resolveActivations === void 0) {
-      return function resolveNode(_params) {
-        return new node.binding.implementationType();
-      };
-    }
-    return function resolveNode(params) {
-      return resolveActivations(params, new node.binding.implementationType());
-    };
-  }
-  if (resolveActivations === void 0) {
-    return function resolveNode(params) {
-      const instance = new node.binding.implementationType();
-      const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-      if (isPromise(propertiesAssignmentResult)) {
-        return propertiesAssignmentResult.then(() => instance);
-      }
-      return instance;
-    };
-  }
-  return function resolveNode(params) {
-    const instance = new node.binding.implementationType();
-    const propertiesAssignmentResult = setInstanceProperties(params, instance, node);
-    if (isPromise(propertiesAssignmentResult)) {
-      return propertiesAssignmentResult.then(() => resolveActivations(params, instance));
-    }
-    return resolveActivations(params, instance);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/resolveMany.js
-function resolveMany(...args) {
-  const build = args[args.length - 1];
-  const values = args.slice(0, -1);
-  for (const value of values) {
-    if (isPromise(value)) {
-      return Promise.all(values).then(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
-        (resolvedValues) => build(...resolvedValues)
-      );
-    }
-  }
-  return build(...values);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsInstanceBindingNodeResolver.js
-var ZERO_CONSTRUCTOR_ARGUMENTS = 0;
-var ONE_CONSTRUCTOR_ARGUMENT = 1;
-var TWO_CONSTRUCTOR_ARGUMENTS = 2;
-var THREE_CONSTRUCTOR_ARGUMENTS = 3;
-var FOUR_CONSTRUCTOR_ARGUMENTS = 4;
-function buildNoActivationsInstanceBindingNodeResolver(node, areServiceActivations) {
-  const serviceIdentifier = node.binding.serviceIdentifier;
-  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
-  let resolveNode;
-  switch (node.classMetadata.constructorArguments.length) {
-    case ZERO_CONSTRUCTOR_ARGUMENTS:
-      resolveNode = buildZeroConstructorArgumentsResolver(node, resolveActivations);
-      break;
-    case ONE_CONSTRUCTOR_ARGUMENT:
-      resolveNode = buildOneConstructorArgumentResolver(node, resolveActivations);
-      break;
-    case TWO_CONSTRUCTOR_ARGUMENTS:
-      resolveNode = buildTwoConstructorArgumentResolver(node, resolveActivations);
-      break;
-    case THREE_CONSTRUCTOR_ARGUMENTS:
-      resolveNode = buildThreeConstructorArgumentResolver(node, resolveActivations);
-      break;
-    case FOUR_CONSTRUCTOR_ARGUMENTS:
-      resolveNode = buildFourConstructorArgumentResolver(node, resolveActivations);
-      break;
-    default:
-      resolveNode = buildConstructorArgumentsResolver(node, resolveMany, resolveActivations);
-  }
-  return resolveScopedWithNoActivations(node.binding, resolveNode);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/getGeneratedResolverId.js
-var nextGeneratedResolverId = 0;
-function getGeneratedResolverId() {
-  return nextGeneratedResolverId++;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildConstructorArgumentsResolverJit.js
-function buildConstructorArgumentsResolverJit(node, implementationType, resolveAsyncValues, resolveActivations) {
-  const id = getGeneratedResolverId().toString();
-  const constructorArgumentsCount = node.classMetadata.constructorArguments.length;
-  const constructorArgumentIndexes = Array.from({ length: constructorArgumentsCount }, (_2, index) => index);
-  const constructorValuesConcatenation = constructorArgumentIndexes.map((index) => `value$${index.toString()}`).join(", ");
-  let constructorValuesDeclarations = "";
-  for (const index of constructorArgumentIndexes) {
-    constructorValuesDeclarations += `const value$${index.toString()} = node$${id}.constructorParams[${index.toString()}].resolve(params$${id});
-`;
-  }
-  const propertiesArgumentsCount = node.classMetadata.properties.size;
-  const propertiesArgumentIndexes = Array.from({ length: propertiesArgumentsCount }, (_2, index) => index);
-  const propertiesValuesConcatenation = propertiesArgumentIndexes.map((index) => `property$${index.toString()}`).join(", ");
-  let propertyValuesDeclarations = `let propertyIterator = node$${id}.propertyParams.entries();
-`;
-  for (const index of propertiesArgumentIndexes) {
-    propertyValuesDeclarations += `const propertyNode$${index.toString()} = propertyIterator.next().value;
-  const propertyKey$${index.toString()} = propertyNode$${index.toString()}[0];
-  const propertyBound$${index.toString()} = propertyNode$${index.toString()}[1].bindings !== undefined;
-  const property$${index.toString()} = propertyBound$${index.toString()} ? propertyNode$${index.toString()}[1].resolve(params$${id}) : undefined;
-`;
-  }
-  const propertyAssignments = propertiesArgumentIndexes.map((index) => `if (propertyBound$${index.toString()}) { instance[propertyKey$${index.toString()}] = property$${index.toString()}; }`).join("      \n");
-  const resolveAsyncValuesArguments = [
-    constructorValuesConcatenation,
-    propertiesValuesConcatenation
-  ].filter((value) => value.length > 0).join(", ");
-  const resolveAsyncValuesBuildArguments = resolveAsyncValuesArguments;
-  if (resolveActivations === void 0) {
-    const buildResolveNodeBody2 = propertiesArgumentsCount === 0 ? `return function resolveNode$${id}(params$${id}) {
-  ${constructorValuesDeclarations}
-
-  return resolveAsyncValues$${id}(
-    ${constructorValuesConcatenation},
-    function (${constructorValuesConcatenation}) {
-      return new ctor$${id}(${constructorValuesConcatenation});
-    },
-  );
-}` : `return function resolveNode$${id}(params$${id}) {
-  ${constructorValuesDeclarations}
-
-  ${propertyValuesDeclarations}
-
-  return resolveAsyncValues$${id}(
-    ${resolveAsyncValuesArguments},
-    function (${resolveAsyncValuesBuildArguments}) {
-      const instance = new ctor$${id}(${constructorValuesConcatenation});
-
-      ${propertyAssignments}
-
-      return instance;
-    },
-  );
-}`;
-    const buildResolveNode2 = new Function(`node$${id}`, `ctor$${id}`, `resolveAsyncValues$${id}`, buildResolveNodeBody2);
-    return buildResolveNode2(node, implementationType, resolveAsyncValues);
-  }
-  const buildResolveNodeBody = propertiesArgumentsCount === 0 ? `return function resolveNode$${id}(params$${id}) {
-  ${constructorValuesDeclarations}
-
-  return resolveAsyncValues$${id}(
-    ${constructorValuesConcatenation},
-    function (${constructorValuesConcatenation}) {
-      return activate$${id}(
-        params$${id},
-        new ctor$${id}(${constructorValuesConcatenation}),
-      );
-    },
-  );
-}` : `return function resolveNode$${id}(params$${id}) {
-  ${constructorValuesDeclarations}
-
-  ${propertyValuesDeclarations}
-
-  return resolveAsyncValues$${id}(
-    ${resolveAsyncValuesArguments},
-    function (${resolveAsyncValuesBuildArguments}) {
-      const instance = new ctor$${id}(${constructorValuesConcatenation});
-
-      ${propertyAssignments}
-
-      return activate$${id}(
-        params$${id},
-        instance,
-      );
-    },
-  );
-}`;
-  const buildResolveNode = new Function(`node$${id}`, `ctor$${id}`, `activate$${id}`, `resolveAsyncValues$${id}`, buildResolveNodeBody);
-  return buildResolveNode(node, implementationType, resolveActivations, resolveAsyncValues);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneConstructorArgumentResolverJit.js
-function buildOneConstructorArgumentResolverJit(node, implementationType, resolveActivations) {
-  const id = getGeneratedResolverId().toString();
-  if (resolveActivations === void 0) {
-    const buildResolveNode2 = new Function(`node$${id}`, `ctor$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
-        const resolvedValue$${id} = node$${id}.constructorParams[0].resolve(params$${id});
-
-        if (isPromise$${id}(resolvedValue$${id})) {
-          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
-            return new ctor$${id}(resolvedValue$${id});
-          });
-        }
-
-        return new ctor$${id}(resolvedValue$${id});
-      };`);
-    return buildResolveNode2(node, implementationType, isPromise);
-  }
-  const buildResolveNode = new Function(`node$${id}`, `ctor$${id}`, `activate$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
-        const resolvedValue$${id} = node$${id}.constructorParams[0].resolve(params$${id});
-
-        if (isPromise$${id}(resolvedValue$${id})) {
-          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
-            return activate$${id}(params$${id}, new ctor$${id}(resolvedValue$${id}));
-          });
-        }
-
-        return activate$${id}(params$${id}, new ctor$${id}(resolvedValue$${id}));
-      };`);
-  return buildResolveNode(node, implementationType, resolveActivations, isPromise);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOnePropertyArgumentResolverJit.js
-function buildOnePropertyArgumentResolverJit(node, implementationType, resolveActivations) {
-  const id = getGeneratedResolverId().toString();
-  if (resolveActivations === void 0) {
-    const buildResolveNode2 = new Function(`node$${id}`, `ctor$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
-        const propertyEntry$${id} = node$${id}.propertyParams.entries().next().value;
-        const propertyKey$${id} = propertyEntry$${id}[0];
-        const instance$${id} = new ctor$${id}();
-
-        if (propertyEntry$${id}[1].bindings === undefined) {
-          return instance$${id};
-        }
-
-        const resolvedValue$${id} = propertyEntry$${id}[1].resolve(params$${id});
-
-        if (isPromise$${id}(resolvedValue$${id})) {
-          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
-            instance$${id}[propertyKey$${id}] = resolvedValue$${id};
-            return instance$${id};
-          });
-        }
-
-        instance$${id}[propertyKey$${id}] = resolvedValue$${id};
-        return instance$${id};
-      };`);
-    return buildResolveNode2(node, implementationType, isPromise);
-  }
-  const buildResolveNode = new Function(`node$${id}`, `ctor$${id}`, `activate$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
-        const propertyEntry$${id} = node$${id}.propertyParams.entries().next().value;
-        const propertyKey$${id} = propertyEntry$${id}[0];
-        const instance$${id} = new ctor$${id}();
-
-        if (propertyEntry$${id}[1].bindings === undefined) {
-          return activate$${id}(params$${id}, instance$${id});
-        }
-
-        const resolvedValue$${id} = propertyEntry$${id}[1].resolve(params$${id});
-
-        if (isPromise$${id}(resolvedValue$${id})) {
-          return resolvedValue$${id}.then(function (resolvedValue$${id}) {
-            instance$${id}[propertyKey$${id}] = resolvedValue$${id};
-            return activate$${id}(params$${id}, instance$${id});
-          });
-        }
-
-        instance$${id}[propertyKey$${id}] = resolvedValue$${id};
-        return activate$${id}(params$${id}, instance$${id});
-      };`);
-  return buildResolveNode(node, implementationType, resolveActivations, isPromise);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildResolveMany.js
-function buildResolveMany(node) {
-  const id = getGeneratedResolverId().toString();
-  const argumentsCount = node.classMetadata.constructorArguments.length + node.classMetadata.properties.size;
-  const argumentIndexes = Array.from({ length: argumentsCount }, (_2, index) => index);
-  const valueConcatenation = argumentIndexes.map((index) => `value$${index.toString()}`).join(", ");
-  const resolvedValueConcatenation = argumentIndexes.map((index) => `resolvedValue$${index.toString()}`).join(", ");
-  const parametersConcatenation = [valueConcatenation, `build$${id}`].filter((value) => value.length > 0).join(", ");
-  const isPromiseChecks = argumentIndexes.map((index) => `isPromise$${id}(value$${index.toString()})`).join(" || ") || "false";
-  const buildResolveManyFunction = new Function(`isPromise$${id}`, `return function resolveMany$${id}(${parametersConcatenation}) {
-  if (${isPromiseChecks}) {
-    return Promise.all([${valueConcatenation}]).then(
-      function ([${resolvedValueConcatenation}]) {
-        return build$${id}(${resolvedValueConcatenation});
-      },
-    );
-  }
-
-  return build$${id}(${valueConcatenation});
-};`);
-  return buildResolveManyFunction(isPromise);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroConstructorArgumentsResolverJit.js
-function buildZeroConstructorArgumentsResolverJit(implementationType, resolveActivations) {
-  const id = getGeneratedResolverId().toString();
-  if (resolveActivations === void 0) {
-    const buildResolveNode2 = (
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval
-      new Function(`ctor$${id}`, `return function resolveNode$${id}(params$${id}) {
-        return new ctor$${id}();
-      };`)
-    );
-    return buildResolveNode2(implementationType);
-  }
-  const buildResolveNode = (
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    new Function(`ctor$${id}`, `activate$${id}`, `return function resolveNode$${id}(params$${id}) {
-        return activate$${id}(params$${id}, new ctor$${id}());
-      };`)
-  );
-  return buildResolveNode(implementationType, resolveActivations);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsInstanceBindingNodeResolverJit.js
-var ZERO_CONSTRUCTOR_ARGUMENTS2 = 0;
-var ONE_CONSTRUCTOR_ARGUMENT2 = 1;
-var TWO_CONSTRUCTOR_ARGUMENTS2 = 2;
-var THREE_CONSTRUCTOR_ARGUMENTS2 = 3;
-var FOUR_CONSTRUCTOR_ARGUMENTS2 = 4;
-function buildNoActivationsInstanceBindingNodeResolverJit(node, areServiceActivations) {
-  const implementationType = node.binding.implementationType;
-  const serviceIdentifier = node.binding.serviceIdentifier;
-  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
-  let resolveNode;
-  switch (node.classMetadata.constructorArguments.length + node.classMetadata.properties.size) {
-    case ZERO_CONSTRUCTOR_ARGUMENTS2:
-      resolveNode = buildZeroConstructorArgumentsResolverJit(implementationType, resolveActivations);
-      break;
-    case ONE_CONSTRUCTOR_ARGUMENT2:
-      resolveNode = node.classMetadata.properties.size === 0 ? buildOneConstructorArgumentResolverJit(node, implementationType, resolveActivations) : buildOnePropertyArgumentResolverJit(node, implementationType, resolveActivations);
-      break;
-    case TWO_CONSTRUCTOR_ARGUMENTS2:
-      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, resolveTwo, resolveActivations);
-      break;
-    case THREE_CONSTRUCTOR_ARGUMENTS2:
-      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, resolveThree, resolveActivations);
-      break;
-    case FOUR_CONSTRUCTOR_ARGUMENTS2:
-      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, resolveFour, resolveActivations);
-      break;
-    default:
-      resolveNode = buildConstructorArgumentsResolverJit(node, implementationType, buildResolveMany(node), resolveActivations);
-  }
-  return resolveScopedWithNoActivations(node.binding, resolveNode);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/InstanceBindingNodeImplementation.js
-var resolveInstanceBindingNode2 = resolveInstanceBindingNode(resolveInstanceBindingConstructorParams, resolveInstanceBindingNodeAsyncFromConstructorParams, resolveInstanceBindingNodeFromConstructorParams);
-var resolveScopedInstanceBindingNode = (node) => resolveScoped(node, resolveInstanceBindingNode2);
-var InstanceBindingNodeImplementation = class {
-  binding;
-  classMetadata;
-  [isDynamicallyResolvableBindingNodeSymbol];
-  constructorParams;
-  propertyParams;
-  resolve;
-  #jitEnabled;
-  #onResolverChangedHandlers;
-  constructor(binding, classMetadata, params) {
-    this.binding = binding;
-    this.classMetadata = classMetadata;
-    this[isDynamicallyResolvableBindingNodeSymbol] = true;
-    this.constructorParams = [];
-    this.propertyParams = /* @__PURE__ */ new Map();
-    this.#jitEnabled = params.jitEnabled;
-    const areServiceActivations = params.operations.getActivations(binding.serviceIdentifier) !== void 0;
-    this.#onResolverChangedHandlers = void 0;
-    this.resolve = this.#buildInstanceBindingNodeResolver(areServiceActivations);
-    if (!areServiceActivations && this.#areNoBindingActivationsNorPostConstructsDefined()) {
-      params.operations.subscribeActivationAddedOnce(binding.serviceIdentifier, this);
-    }
-  }
-  onActivationAdded() {
-    this.resolve = this.#buildInstanceBindingNodeResolver(true);
-    if (this.#onResolverChangedHandlers !== void 0) {
-      for (const handler2 of this.#onResolverChangedHandlers) {
-        handler2(this.resolve);
-      }
-    }
-  }
-  addOnResolverChangedHandler(callback) {
-    if (this.#onResolverChangedHandlers === void 0) {
-      this.#onResolverChangedHandlers = [];
-    }
-    this.#onResolverChangedHandlers.push(callback);
-  }
-  #buildInstanceBindingNodeResolver(areServiceActivations) {
-    if (this.#areNoBindingActivationsNorPostConstructsDefined()) {
-      if (this.#jitEnabled && this.binding.scope !== bindingScopeValues.Singleton) {
-        return buildNoActivationsInstanceBindingNodeResolverJit(this, areServiceActivations);
-      } else {
-        return buildNoActivationsInstanceBindingNodeResolver(this, areServiceActivations);
-      }
-    }
-    return resolveScopedInstanceBindingNode(this);
-  }
-  #areNoBindingActivationsNorPostConstructsDefined() {
-    return this.classMetadata.lifecycle.postConstructMethodNames.size === 0 && this.binding.onActivation === void 0;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/PlanServiceRedirectionBindingNodeImplementation.js
-var PlanServiceRedirectionBindingNodeImplementation = class {
-  binding;
-  #redirection;
-  #resolve;
-  constructor(binding) {
-    this.binding = binding;
-    this.#redirection = void 0;
-    this.#resolve = void 0;
-  }
-  get redirection() {
-    return this.#redirection;
-  }
-  set redirection(value) {
-    this.#redirection = value;
-    if (value.bindings === void 0) {
-      this.#resolve = () => void 0;
-    } else {
-      if (Array.isArray(value.bindings)) {
-        this.#resolve = () => {
-          throw new InversifyCoreError(InversifyCoreErrorKind.planning, "Unexpected resolver call for multiple bindings redirection");
-        };
-      } else {
-        this.#resolve = (params) => (
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-          value.bindings.resolve(params)
-        );
-      }
-    }
-  }
-  resolve(params) {
-    return this.#resolve(params);
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveResolvedValueBindingParams.js
-function resolveResolvedValueBindingParams(params, node) {
-  const paramsResolvedValues = [];
-  let promiseValueFound = false;
-  for (const param of node.params) {
-    const resolvedValue = param.resolve(params);
-    if (!promiseValueFound && isPromise(resolvedValue)) {
-      promiseValueFound = true;
-    }
-    paramsResolvedValues.push(resolvedValue);
-  }
-  return promiseValueFound ? Promise.all(paramsResolvedValues) : paramsResolvedValues;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveResolvedValueBindingNode.js
-function resolveResolvedValueBindingNode(params, node) {
-  const paramValues = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolveResolvedValueBindingParams(params, node)
-  );
-  if (isPromise(paramValues)) {
-    return paramValues.then((resolvedParamValues) => node.binding.factory(...resolvedParamValues));
-  }
-  return node.binding.factory(...paramValues);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildFourResolvedValueArgumentResolver.js
-function buildFourResolvedValueArgumentResolver(node, resolveActivations) {
-  if (resolveActivations === void 0) {
-    return function resolveNode(params) {
-      const resolvedValue0 = node.params[0].resolve(params);
-      const resolvedValue1 = node.params[1].resolve(params);
-      const resolvedValue2 = node.params[2].resolve(params);
-      const resolvedValue3 = node.params[3].resolve(params);
-      return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32));
-    };
-  }
-  return function resolveNode(params) {
-    const resolvedValue0 = node.params[0].resolve(params);
-    const resolvedValue1 = node.params[1].resolve(params);
-    const resolvedValue2 = node.params[2].resolve(params);
-    const resolvedValue3 = node.params[3].resolve(params);
-    return resolveFour(resolvedValue0, resolvedValue1, resolvedValue2, resolvedValue3, (resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32) => resolveActivations(params, node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22, resolvedValue32)));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneResolvedValueArgumentResolver.js
-function buildOneResolvedValueArgumentResolver(node, resolveActivations) {
-  if (resolveActivations === void 0) {
-    return function resolveNode(params) {
-      const resolvedValue = node.params[0].resolve(params);
-      if (isPromise(resolvedValue)) {
-        return resolvedValue.then((resolvedValue2) => node.binding.factory(resolvedValue2));
-      }
-      return node.binding.factory(resolvedValue);
-    };
-  }
-  return function resolveNode(params) {
-    const resolvedValue = node.params[0].resolve(params);
-    if (isPromise(resolvedValue)) {
-      return resolvedValue.then((resolvedValue2) => resolveActivations(params, node.binding.factory(resolvedValue2)));
-    }
-    return resolveActivations(params, node.binding.factory(resolvedValue));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildThreeResolvedValueArgumentResolver.js
-function buildThreeResolvedValueArgumentResolver(node, resolveActivations) {
-  if (resolveActivations === void 0) {
-    return function resolveNode(params) {
-      const resolvedValue0 = node.params[0].resolve(params);
-      const resolvedValue1 = node.params[1].resolve(params);
-      const resolvedValue2 = node.params[2].resolve(params);
-      return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22));
-    };
-  }
-  return function resolveNode(params) {
-    const resolvedValue0 = node.params[0].resolve(params);
-    const resolvedValue1 = node.params[1].resolve(params);
-    const resolvedValue2 = node.params[2].resolve(params);
-    return resolveThree(resolvedValue0, resolvedValue1, resolvedValue2, (resolvedValue02, resolvedValue12, resolvedValue22) => resolveActivations(params, node.binding.factory(resolvedValue02, resolvedValue12, resolvedValue22)));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildTwoResolvedValueArgumentResolver.js
-function buildTwoResolvedValueArgumentResolver(node, resolveActivations) {
-  if (resolveActivations === void 0) {
-    return function resolveNode(params) {
-      const resolvedValue0 = node.params[0].resolve(params);
-      const resolvedValue1 = node.params[1].resolve(params);
-      return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => node.binding.factory(resolvedValue02, resolvedValue12));
-    };
-  }
-  return function resolveNode(params) {
-    const resolvedValue0 = node.params[0].resolve(params);
-    const resolvedValue1 = node.params[1].resolve(params);
-    return resolveTwo(resolvedValue0, resolvedValue1, (resolvedValue02, resolvedValue12) => resolveActivations(params, node.binding.factory(resolvedValue02, resolvedValue12)));
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroResolvedValueArgumentsResolver.js
-function buildZeroResolvedValueArgumentsResolver(node, resolveActivations) {
-  if (resolveActivations === void 0) {
-    return function resolveNode(_params) {
-      return node.binding.factory();
-    };
-  }
-  return function resolveNode(params) {
-    return resolveActivations(params, node.binding.factory());
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsResolvedValueBindingNodeResolver.js
-var ZERO_PARAMS = 0;
-var ONE_PARAM = 1;
-var TWO_PARAMS3 = 2;
-var THREE_PARAMS3 = 3;
-var FOUR_PARAMS2 = 4;
-function buildNoActivationsResolvedValueBindingNodeResolver(node, areServiceActivations) {
-  const serviceIdentifier = node.binding.serviceIdentifier;
-  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
-  let resolveNode;
-  switch (node.binding.metadata.arguments.length) {
-    case ZERO_PARAMS:
-      resolveNode = buildZeroResolvedValueArgumentsResolver(node, resolveActivations);
-      break;
-    case ONE_PARAM:
-      resolveNode = buildOneResolvedValueArgumentResolver(node, resolveActivations);
-      break;
-    case TWO_PARAMS3:
-      resolveNode = buildTwoResolvedValueArgumentResolver(node, resolveActivations);
-      break;
-    case THREE_PARAMS3:
-      resolveNode = buildThreeResolvedValueArgumentResolver(node, resolveActivations);
-      break;
-    case FOUR_PARAMS2:
-      resolveNode = buildFourResolvedValueArgumentResolver(node, resolveActivations);
-      break;
-    default:
-      resolveNode = resolveActivations === void 0 ? (params) => resolveResolvedValueBindingNode(params, node) : (params) => resolveActivations(params, resolveResolvedValueBindingNode(params, node));
-  }
-  return resolveScopedWithNoActivations(node.binding, resolveNode);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildOneResolvedValueArgumentResolverJit.js
-function buildOneResolvedValueArgumentResolverJit(node, resolveActivations) {
-  const id = getGeneratedResolverId().toString();
-  if (resolveActivations === void 0) {
-    const buildResolveNode2 = new Function(`node$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
-      const resolvedValue$${id} = node$${id}.params[0].resolve(params$${id});
-
-      if (isPromise$${id}(resolvedValue$${id})) {
-        return resolvedValue$${id}.then(function (resolvedValue$${id}) {
-          return node$${id}.binding.factory(resolvedValue$${id});
-        });
-      }
-
-      return node$${id}.binding.factory(resolvedValue$${id});
-    };`);
-    return buildResolveNode2(node, isPromise);
-  }
-  const buildResolveNode = new Function(`node$${id}`, `activate$${id}`, `isPromise$${id}`, `return function resolveNode$${id}(params$${id}) {
-      const resolvedValue$${id} = node$${id}.params[0].resolve(params$${id});
-
-      if (isPromise$${id}(resolvedValue$${id})) {
-        return resolvedValue$${id}.then(function (resolvedValue$${id}) {
-          return activate$${id}(params$${id}, node$${id}.binding.factory(resolvedValue$${id}));
-        });
-      }
-
-      return activate$${id}(params$${id}, node$${id}.binding.factory(resolvedValue$${id}));
-    };`);
-  return buildResolveNode(node, resolveActivations, isPromise);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildResolvedValueArgumentsResolverJit.js
-function buildResolvedValueArgumentsResolverJit(node, resolveAsyncValues, resolveActivations) {
-  const id = getGeneratedResolverId().toString();
-  const argumentIndexes = Array.from({ length: node.binding.metadata.arguments.length }, (_2, index) => index);
-  const resolvedValueConcatenation = argumentIndexes.map((index) => `value$${index.toString()}`).join(", ");
-  let resolvedValueDeclarations = "";
-  for (const index of argumentIndexes) {
-    resolvedValueDeclarations += `const value$${index.toString()} = node$${id}.params[${index.toString()}].resolve(params$${id});
-`;
-  }
-  if (resolveActivations === void 0) {
-    const buildResolveNode2 = new Function(`node$${id}`, `resolveAsyncValues$${id}`, `return function resolveNode$${id}(params$${id}) {
-  ${resolvedValueDeclarations}
-
-  return resolveAsyncValues$${id}(
-    ${resolvedValueConcatenation},
-    function (${resolvedValueConcatenation}) {
-      return node$${id}.binding.factory(${resolvedValueConcatenation});
-    },
-  );
-}`);
-    return buildResolveNode2(node, resolveAsyncValues);
-  }
-  const buildResolveNode = new Function(`node$${id}`, `activate$${id}`, `resolveAsyncValues$${id}`, `return function resolveNode$${id}(params$${id}) {
-  ${resolvedValueDeclarations}
-
-  return resolveAsyncValues$${id}(
-    ${resolvedValueConcatenation},
-    function (${resolvedValueConcatenation}) {
-      return activate$${id}(
-        params$${id},
-        node$${id}.binding.factory(${resolvedValueConcatenation}),
-      );
-    },
-  );
-}`);
-  return buildResolveNode(node, resolveActivations, resolveAsyncValues);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildZeroResolvedValueArgumentsResolverJit.js
-function buildZeroResolvedValueArgumentsResolverJit(node, resolveActivations) {
-  const id = getGeneratedResolverId().toString();
-  if (resolveActivations === void 0) {
-    const buildResolveNode2 = new Function(`node$${id}`, `return function resolveNode$${id}(params$${id}) {
-      return node$${id}.binding.factory();
-    };`);
-    return buildResolveNode2(node);
-  }
-  const buildResolveNode = new Function(`node$${id}`, `activate$${id}`, `return function resolveNode$${id}(params$${id}) {
-      return activate$${id}(params$${id}, node$${id}.binding.factory());
-    };`);
-  return buildResolveNode(node, resolveActivations);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildNoActivationsResolvedValueBindingNodeResolverJit.js
-var ZERO_PARAMS2 = 0;
-var ONE_PARAM2 = 1;
-var TWO_PARAMS4 = 2;
-var THREE_PARAMS4 = 3;
-var FOUR_PARAMS3 = 4;
-function buildNoActivationsResolvedValueBindingNodeResolverJit(node, areServiceActivations) {
-  const serviceIdentifier = node.binding.serviceIdentifier;
-  const resolveActivations = areServiceActivations ? resolveServiceActivations(serviceIdentifier) : void 0;
-  let resolveNode;
-  switch (node.binding.metadata.arguments.length) {
-    case ZERO_PARAMS2:
-      resolveNode = buildZeroResolvedValueArgumentsResolverJit(node, resolveActivations);
-      break;
-    case ONE_PARAM2:
-      resolveNode = buildOneResolvedValueArgumentResolverJit(node, resolveActivations);
-      break;
-    case TWO_PARAMS4:
-      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveTwo, resolveActivations);
-      break;
-    case THREE_PARAMS4:
-      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveThree, resolveActivations);
-      break;
-    case FOUR_PARAMS3:
-      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveFour, resolveActivations);
-      break;
-    default:
-      resolveNode = buildResolvedValueArgumentsResolverJit(node, resolveMany, resolveActivations);
-  }
-  return resolveScopedWithNoActivations(node.binding, resolveNode);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/ResolvedValueBindingNodeImplementation.js
-var resolveScopedResolvedValueBindingNode = (node) => resolveScoped(node, resolveResolvedValueBindingNode);
-var ResolvedValueBindingNodeImplementation = class {
-  binding;
-  [isDynamicallyResolvableBindingNodeSymbol];
-  params;
-  resolve;
-  #jitEnabled;
-  #onResolverChangedHandlers;
-  constructor(binding, params) {
-    this.binding = binding;
-    this[isDynamicallyResolvableBindingNodeSymbol] = true;
-    this.params = [];
-    this.#jitEnabled = params.jitEnabled;
-    const areServiceActivations = params.operations.getActivations(binding.serviceIdentifier) !== void 0;
-    this.#onResolverChangedHandlers = void 0;
-    this.resolve = this.#buildResolvedValueBindingNodeResolver(areServiceActivations);
-    if (!areServiceActivations && this.#areNoBindingActivationsDefined()) {
-      params.operations.subscribeActivationAddedOnce(binding.serviceIdentifier, this);
-    }
-  }
-  onActivationAdded() {
-    this.resolve = this.#buildResolvedValueBindingNodeResolver(true);
-    if (this.#onResolverChangedHandlers !== void 0) {
-      for (const handler2 of this.#onResolverChangedHandlers) {
-        handler2(this.resolve);
-      }
-    }
-  }
-  addOnResolverChangedHandler(callback) {
-    if (this.#onResolverChangedHandlers === void 0) {
-      this.#onResolverChangedHandlers = [];
-    }
-    this.#onResolverChangedHandlers.push(callback);
-  }
-  #buildResolvedValueBindingNodeResolver(areServiceActivations) {
-    if (this.#areNoBindingActivationsDefined()) {
-      if (this.#jitEnabled && this.binding.scope !== bindingScopeValues.Singleton) {
-        return buildNoActivationsResolvedValueBindingNodeResolverJit(this, areServiceActivations);
-      } else {
-        return buildNoActivationsResolvedValueBindingNodeResolver(this, areServiceActivations);
-      }
-    }
-    return resolveScopedResolvedValueBindingNode(this);
-  }
-  #areNoBindingActivationsDefined() {
-    return this.binding.onActivation === void 0;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/curryBuildServiceNodeBindings.js
-function curryBuildServiceNodeBindings(subplan3) {
-  const buildInstancePlanBindingNode = curryBuildInstancePlanBindingNode(subplan3);
-  const buildResolvedValuePlanBindingNode = curryBuildResolvedValuePlanBindingNode(subplan3);
-  const buildServiceNodeBindings3 = (params, bindingConstraintsList, serviceBindings, parentNode, buildServiceNodeOptions) => {
-    const serviceIdentifier = isPlanServiceRedirectionBindingNode(parentNode) ? parentNode.binding.targetServiceIdentifier : parentNode.serviceIdentifier;
-    params.servicesBranch.push(serviceIdentifier);
-    const planBindingNodes = [];
-    for (const binding of serviceBindings) {
-      if (binding.type === bindingTypeValues.Factory) {
-        planBindingNodes.push(new FactoryBindingNodeImplementation(binding));
-        continue;
-      }
-      switch (binding.type) {
-        case bindingTypeValues.ConstantValue: {
-          planBindingNodes.push(new ConstantValueBindingNode(binding));
-          break;
-        }
-        case bindingTypeValues.DynamicValue: {
-          planBindingNodes.push(new DynamicValueBindingNode(binding, params));
-          break;
-        }
-        case bindingTypeValues.Instance: {
-          planBindingNodes.push(buildInstancePlanBindingNode(params, binding, bindingConstraintsList));
-          break;
-        }
-        case bindingTypeValues.ResolvedValue: {
-          planBindingNodes.push(buildResolvedValuePlanBindingNode(params, binding, bindingConstraintsList));
-          break;
-        }
-        case bindingTypeValues.ServiceRedirection: {
-          const planBindingNode = buildServiceRedirectionPlanBindingNode(params, bindingConstraintsList, binding, buildServiceNodeOptions);
-          planBindingNodes.push(planBindingNode);
-          break;
-        }
-      }
-    }
-    params.servicesBranch.pop();
-    return planBindingNodes;
-  };
-  const buildServiceRedirectionPlanBindingNode = curryBuildServiceRedirectionPlanBindingNode(subplan3);
-  return buildServiceNodeBindings3;
-}
-function curryBuildInstancePlanBindingNode(subplan3) {
-  return (params, binding, bindingConstraintsList) => {
-    const classMetadata = params.operations.getClassMetadata(binding.implementationType);
-    const childNode = new InstanceBindingNodeImplementation(binding, classMetadata, params);
-    const subplanParams = {
-      autobindOptions: params.autobindOptions,
-      jitEnabled: params.jitEnabled,
-      node: childNode,
-      operations: params.operations,
-      servicesBranch: params.servicesBranch
-    };
-    return subplan3(subplanParams, bindingConstraintsList);
-  };
-}
-function curryBuildResolvedValuePlanBindingNode(subplan3) {
-  return (params, binding, bindingConstraintsList) => {
-    const childNode = new ResolvedValueBindingNodeImplementation(binding, params);
-    const subplanParams = {
-      autobindOptions: params.autobindOptions,
-      jitEnabled: params.jitEnabled,
-      node: childNode,
-      operations: params.operations,
-      servicesBranch: params.servicesBranch
-    };
-    return subplan3(subplanParams, bindingConstraintsList);
-  };
-}
-function curryBuildServiceRedirectionPlanBindingNode(subplan3) {
-  return (params, bindingConstraintsList, binding, buildServiceNodeOptions) => {
-    const childNode = new PlanServiceRedirectionBindingNodeImplementation(binding);
-    const subplanParams = {
-      autobindOptions: params.autobindOptions,
-      buildServiceNodeOptions: {
-        ...buildServiceNodeOptions,
-        serviceIdentifier: binding.targetServiceIdentifier
-      },
-      jitEnabled: params.jitEnabled,
-      node: childNode,
-      operations: params.operations,
-      servicesBranch: params.servicesBranch
-    };
-    return subplan3(subplanParams, bindingConstraintsList);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/buildBuildServiceNodeOptionsFromClassElementMetadata.js
-function buildBuildServiceNodeOptionsFromClassElementMetadata(elementMetadata) {
-  const serviceIdentifier = LazyServiceIdentifier.is(elementMetadata.value) ? elementMetadata.value.unwrap() : elementMetadata.value;
-  if (elementMetadata.kind === ClassElementMetadataKind.multipleInjection) {
-    return {
-      chained: elementMetadata.chained,
-      isMultiple: true,
-      name: elementMetadata.name,
-      optional: elementMetadata.optional,
-      serviceIdentifier,
-      tags: elementMetadata.tags
-    };
-  }
-  return {
-    isMultiple: false,
-    name: elementMetadata.name,
-    optional: elementMetadata.optional,
-    serviceIdentifier,
-    tags: elementMetadata.tags
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/common/calculations/buildBuildServiceNodeOptionsFromResolvedValueElementMetadata.js
-function buildBuildServiceNodeOptionsFromResolvedValueElementMetadata(elementMetadata) {
-  const serviceIdentifier = LazyServiceIdentifier.is(elementMetadata.value) ? elementMetadata.value.unwrap() : elementMetadata.value;
-  if (elementMetadata.kind === ResolvedValueElementMetadataKind.multipleInjection) {
-    return {
-      chained: elementMetadata.chained,
-      isMultiple: true,
-      name: elementMetadata.name,
-      optional: elementMetadata.optional,
-      serviceIdentifier,
-      tags: elementMetadata.tags
-    };
-  }
-  return {
-    isMultiple: false,
-    name: elementMetadata.name,
-    optional: elementMetadata.optional,
-    serviceIdentifier,
-    tags: elementMetadata.tags
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/buildConstructorNoParamNode.js
-var CONSTRUCTOR_NO_PARAM_NODE = {
-  isNoParam: true,
-  resolve: () => void 0
-};
-function buildConstructorNoParamNode() {
-  return CONSTRUCTOR_NO_PARAM_NODE;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isInstanceBindingNode.js
-function isInstanceBindingNode(node) {
-  return node.binding.type === bindingTypeValues.Instance;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/tryBuildGetPlanOptionsFromBuildServiceNodeOptions.js
-function tryBuildGetPlanOptionsFromBuildServiceNodeOptions(options) {
-  let tag;
-  if (options.tags.size === 0) {
-    tag = void 0;
-  } else if (options.tags.size === 1) {
-    const [key, value] = options.tags.entries().next().value;
-    tag = { key, value };
-  } else {
-    return void 0;
-  }
-  const serviceIdentifier = LazyServiceIdentifier.is(options.serviceIdentifier) ? options.serviceIdentifier.unwrap() : options.serviceIdentifier;
-  if (options.isMultiple) {
-    return {
-      chained: options.chained,
-      isMultiple: true,
-      name: options.name,
-      optional: options.optional,
-      serviceIdentifier,
-      tag
-    };
-  } else {
-    return {
-      isMultiple: false,
-      name: options.name,
-      optional: options.optional,
-      serviceIdentifier,
-      tag
-    };
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/tryBuildGetPlanOptionsFromManagedClassElementMetadata.js
-function tryBuildGetPlanOptionsFromManagedClassElementMetadata(elementMetadata) {
-  let tag;
-  if (elementMetadata.tags.size === 0) {
-    tag = void 0;
-  } else if (elementMetadata.tags.size === 1) {
-    const [key, value] = elementMetadata.tags.entries().next().value;
-    tag = { key, value };
-  } else {
-    return void 0;
-  }
-  const serviceIdentifier = LazyServiceIdentifier.is(elementMetadata.value) ? elementMetadata.value.unwrap() : elementMetadata.value;
-  if (elementMetadata.kind === ClassElementMetadataKind.multipleInjection) {
-    return {
-      chained: elementMetadata.chained,
-      isMultiple: true,
-      name: elementMetadata.name,
-      optional: elementMetadata.optional,
-      serviceIdentifier,
-      tag
-    };
-  } else {
-    return {
-      isMultiple: false,
-      name: elementMetadata.name,
-      optional: elementMetadata.optional,
-      serviceIdentifier,
-      tag
-    };
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/tryBuildGetPlanOptionsFromResolvedValueElementMetadata.js
-function tryBuildGetPlanOptionsFromResolvedValueElementMetadata(resolvedValueElementMetadata) {
-  let tag;
-  if (resolvedValueElementMetadata.tags.size === 0) {
-    tag = void 0;
-  } else if (resolvedValueElementMetadata.tags.size === 1) {
-    const [key, value] = resolvedValueElementMetadata.tags.entries().next().value;
-    tag = { key, value };
-  } else {
-    return void 0;
-  }
-  const serviceIdentifier = LazyServiceIdentifier.is(resolvedValueElementMetadata.value) ? resolvedValueElementMetadata.value.unwrap() : resolvedValueElementMetadata.value;
-  if (resolvedValueElementMetadata.kind === ResolvedValueElementMetadataKind.multipleInjection) {
-    return {
-      chained: resolvedValueElementMetadata.chained,
-      isMultiple: true,
-      name: resolvedValueElementMetadata.name,
-      optional: resolvedValueElementMetadata.optional,
-      serviceIdentifier,
-      tag
-    };
-  } else {
-    return {
-      isMultiple: false,
-      name: resolvedValueElementMetadata.name,
-      optional: resolvedValueElementMetadata.optional,
-      serviceIdentifier,
-      tag
-    };
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/cacheNonRootPlanServiceNode.js
-function cacheNonRootPlanServiceNode(getPlanOptions, operations, planServiceNode, context3) {
-  if (getPlanOptions !== void 0 && (LazyPlanServiceNode.is(planServiceNode) && !planServiceNode.isExpanded() || planServiceNode.isContextFree)) {
-    const planResult = {
-      tree: {
-        root: planServiceNode
-      }
-    };
-    operations.setPlan(getPlanOptions, planResult);
-  } else {
-    operations.setNonCachedServiceNode(planServiceNode, context3);
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/currySubplan.js
-var MAX_PLAN_DEPTH = 500;
-var LazySubPlanServiceNode = class extends LazyPlanServiceNode {
-  #params;
-  #buildLazyPlanServiceNodeFromOptions;
-  #bindingConstraintsList;
-  #options;
-  constructor(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode) {
-    super(serviceNode, options.serviceIdentifier);
-    this.#buildLazyPlanServiceNodeFromOptions = buildLazyPlanServiceNodeFromOptions;
-    this.#params = params;
-    this.#bindingConstraintsList = bindingConstraintsList;
-    this.#options = options;
-  }
-  _buildPlanServiceNode() {
-    return this.#buildLazyPlanServiceNodeFromOptions(this.#params, this.#bindingConstraintsList, this.#options);
-  }
-};
-function currySubplan(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
-  const subplanInstanceBindingNode = currySubplanInstanceBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
-  const subplanRedirectionBindingNode = currySubplanRedirectionBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
-  const subplanResolvedValueBindingNode = currySubplanResolvedValueBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
-  return (params, bindingConstraintsList) => {
-    if (isInstanceBindingNode(params.node)) {
-      return subplanInstanceBindingNode(params, params.node, bindingConstraintsList);
-    } else {
-      if (isPlanServiceRedirectionBindingNode(params.node)) {
-        return subplanRedirectionBindingNode(params, params.node, bindingConstraintsList);
-      } else {
-        return subplanResolvedValueBindingNode(params, params.node, bindingConstraintsList);
-      }
-    }
-  };
-}
-function currySubplanInstanceBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
-  const handlePlanServiceNodeBuildFromClassElementMetadata = curryHandlePlanServiceNodeBuildFromClassElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
-  return (params, node, bindingConstraintsList) => {
-    const classMetadata = node.classMetadata;
-    for (const [index, elementMetadata] of classMetadata.constructorArguments.entries()) {
-      node.constructorParams[index] = handlePlanServiceNodeBuildFromClassElementMetadata(params, bindingConstraintsList, elementMetadata) ?? buildConstructorNoParamNode();
-    }
-    for (const [propertyKey, elementMetadata] of classMetadata.properties) {
-      const planServiceNode = handlePlanServiceNodeBuildFromClassElementMetadata(params, bindingConstraintsList, elementMetadata);
-      if (planServiceNode !== void 0) {
-        node.propertyParams.set(propertyKey, planServiceNode);
-      }
-    }
-    return params.node;
-  };
-}
-function currySubplanRedirectionBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
-  const handlePlanServiceNodeBuildFromRedirectionSubplanParams = curryHandlePlanServiceNodeBuildFromRedirectionSubplanParams(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
-  return (params, node, bindingConstraintsList) => {
-    const redirectionSubplanParams = {
-      autobindOptions: params.autobindOptions,
-      buildServiceNodeOptions: params.buildServiceNodeOptions,
-      jitEnabled: params.jitEnabled,
-      node,
-      operations: params.operations,
-      servicesBranch: params.servicesBranch
-    };
-    node.redirection = handlePlanServiceNodeBuildFromRedirectionSubplanParams(redirectionSubplanParams, bindingConstraintsList);
-    return node;
-  };
-}
-function currySubplanResolvedValueBindingNode(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
-  const handlePlanServiceNodeBuildFromResolvedValueElementMetadata = curryHandlePlanServiceNodeBuildFromResolvedValueElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2);
-  return (params, node, bindingConstraintsList) => {
-    const resolvedValueMetadata = node.binding.metadata;
-    for (const [index, elementMetadata] of resolvedValueMetadata.arguments.entries()) {
-      node.params[index] = handlePlanServiceNodeBuildFromResolvedValueElementMetadata(params, bindingConstraintsList, elementMetadata);
-    }
-    return params.node;
-  };
-}
-function curryHandlePlanServiceNodeBuildFromClassElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
-  return (params, bindingConstraintsList, elementMetadata) => {
-    if (elementMetadata.kind === ClassElementMetadataKind.unmanaged) {
-      return void 0;
-    }
-    if (bindingConstraintsList.length > MAX_PLAN_DEPTH) {
-      throw new InversifyCoreError(InversifyCoreErrorKind.planningMaxDepthExceeded, "Maximum plan depth exceeded. This is likely caused by a circular dependency.");
-    }
-    const getPlanOptions = tryBuildGetPlanOptionsFromManagedClassElementMetadata(elementMetadata);
-    if (getPlanOptions !== void 0) {
-      const planResult = params.operations.getPlan(getPlanOptions);
-      if (planResult !== void 0 && planResult.tree.root.isContextFree) {
-        return planResult.tree.root;
-      }
-    }
-    const options = buildBuildServiceNodeOptionsFromClassElementMetadata(elementMetadata);
-    const serviceNode = buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
-    const lazyPlanServiceNode = new LazySubPlanServiceNode(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode);
-    cacheNonRootPlanServiceNode(getPlanOptions, params.operations, lazyPlanServiceNode, {
-      bindingConstraintsList,
-      buildServiceNodeOptions: options
-    });
-    return lazyPlanServiceNode;
-  };
-}
-function curryHandlePlanServiceNodeBuildFromRedirectionSubplanParams(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
-  return (params, bindingConstraintsList) => {
-    const getPlanOptions = tryBuildGetPlanOptionsFromBuildServiceNodeOptions(params.buildServiceNodeOptions);
-    if (getPlanOptions !== void 0) {
-      const planResult = params.operations.getPlan(getPlanOptions);
-      if (planResult !== void 0 && planResult.tree.root.isContextFree) {
-        return planResult.tree.root;
-      }
-    }
-    const options = params.buildServiceNodeOptions;
-    const serviceNode = buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
-    const lazyPlanServiceNode = new LazySubPlanServiceNode(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode);
-    cacheNonRootPlanServiceNode(getPlanOptions, params.operations, lazyPlanServiceNode, {
-      bindingConstraintsList,
-      buildServiceNodeOptions: options
-    });
-    return lazyPlanServiceNode;
-  };
-}
-function curryHandlePlanServiceNodeBuildFromResolvedValueElementMetadata(buildLazyPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions2) {
-  return (params, bindingConstraintsList, elementMetadata) => {
-    if (bindingConstraintsList.length > MAX_PLAN_DEPTH) {
-      throw new InversifyCoreError(InversifyCoreErrorKind.planningMaxDepthExceeded, "Maximum plan depth exceeded. This is likely caused by a circular dependency.");
-    }
-    const getPlanOptions = tryBuildGetPlanOptionsFromResolvedValueElementMetadata(elementMetadata);
-    if (getPlanOptions !== void 0) {
-      const planResult = params.operations.getPlan(getPlanOptions);
-      if (planResult !== void 0 && planResult.tree.root.isContextFree) {
-        return planResult.tree.root;
-      }
-    }
-    const options = buildBuildServiceNodeOptionsFromResolvedValueElementMetadata(elementMetadata);
-    const serviceNode = buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
-    const lazyPlanServiceNode = new LazySubPlanServiceNode(params, buildLazyPlanServiceNodeFromOptions, bindingConstraintsList, options, serviceNode);
-    cacheNonRootPlanServiceNode(getPlanOptions, params.operations, lazyPlanServiceNode, {
-      bindingConstraintsList,
-      buildServiceNodeOptions: options
-    });
-    return lazyPlanServiceNode;
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/plan.js
-var LazyRootPlanServiceNode = class extends LazyPlanServiceNode {
-  #params;
-  constructor(params, serviceNode) {
-    super(serviceNode, serviceNode.serviceIdentifier);
-    this.#params = params;
-  }
-  _buildPlanServiceNode() {
-    return buildPlanServiceNode(this.#params);
-  }
-};
-var buildPlanServiceNodeFromOptions = curryBuildPlanServiceNodeFromOptions(circularBuildServiceNodeBindings);
-var subplan = currySubplan(buildPlanServiceNodeFromOptions, buildPlanServiceNodeFromOptions);
-var buildServiceNodeBindings = curryBuildServiceNodeBindings(subplan);
-function circularBuildServiceNodeBindings(params, bindingConstraintsList, serviceBindings, parentNode, buildServiceNodeOptions) {
-  return buildServiceNodeBindings(params, bindingConstraintsList, serviceBindings, parentNode, buildServiceNodeOptions);
-}
-var buildPlanServiceNode = curryBuildPlanServiceNode(buildServiceNodeBindings);
-function plan(params) {
-  try {
-    const getPlanOptions = buildGetPlanOptionsFromPlanParams(params);
-    const planResultFromCache = params.operations.getPlan(getPlanOptions);
-    if (planResultFromCache !== void 0) {
-      return planResultFromCache;
-    }
-    const serviceNode = buildPlanServiceNode(params);
-    const planResult = {
-      tree: {
-        root: new LazyRootPlanServiceNode(params, serviceNode)
-      }
-    };
-    params.operations.setPlan(getPlanOptions, planResult);
-    return planResult;
-  } catch (error2) {
-    handlePlanError(params, error2);
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/isConstructorNoParamNode.js
-function isConstructorNoParamNode(value) {
-  return value.isNoParam === true;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/models/CacheBindingInvalidationKind.js
-var CacheBindingInvalidationKind;
-(function(CacheBindingInvalidationKind2) {
-  CacheBindingInvalidationKind2["bindingAdded"] = "bindingAdded";
-  CacheBindingInvalidationKind2["bindingRemoved"] = "bindingRemoved";
-})(CacheBindingInvalidationKind || (CacheBindingInvalidationKind = {}));
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/curryLazyBuildPlanServiceNodeFromOptions.js
-function curryLazyBuildPlanServiceNodeFromOptions(buildServiceNodeBindings3) {
-  const buildPlanServiceNodeFromOptions2 = curryBuildPlanServiceNodeFromOptions(buildServiceNodeBindings3);
-  return (params, bindingConstraintsList, options) => {
-    try {
-      return buildPlanServiceNodeFromOptions2(params, bindingConstraintsList, options);
-    } catch (error2) {
-      if (InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planning)) {
-        return void 0;
-      }
-      throw error2;
-    }
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/addServiceNodeBindingIfContextFree.js
-var subplan2 = currySubplan(buildPlanServiceNodeFromOptions, circularLazyBuildPlanServiceNodeFromOptions);
-var buildServiceNodeBindings2 = curryBuildServiceNodeBindings(subplan2);
-var lazyBuildPlanServiceNodeFromOptions = curryLazyBuildPlanServiceNodeFromOptions(buildServiceNodeBindings2);
-function circularLazyBuildPlanServiceNodeFromOptions(params, bindingConstraintsList, options) {
-  return lazyBuildPlanServiceNodeFromOptions(params, bindingConstraintsList, options);
-}
-function addServiceNodeBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildServiceNodeOptions) {
-  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
-    return {
-      isContextFreeBinding: true,
-      shouldInvalidateServiceNode: false
-    };
-  }
-  const bindingConstraints = new BindingConstraintsImplementation(bindingConstraintsList.last);
-  if (!binding.isSatisfiedBy(bindingConstraints) || bindingConstraintsList.last.elem.getAncestorsCalled) {
-    return {
-      isContextFreeBinding: !bindingConstraintsList.last.elem.getAncestorsCalled,
-      shouldInvalidateServiceNode: false
-    };
-  }
-  return addServiceNodeSatisfiedBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildServiceNodeOptions);
-}
-function addServiceNodeSatisfiedBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildServiceNodeOptions) {
-  let serviceNodeBinding;
-  try {
-    [serviceNodeBinding] = buildServiceNodeBindings2(params, bindingConstraintsList, [binding], serviceNode, buildServiceNodeOptions);
-  } catch (error2) {
-    if (isStackOverflowError(error2) || InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planningMaxDepthExceeded)) {
-      return {
-        isContextFreeBinding: false,
-        shouldInvalidateServiceNode: true
-      };
-    }
-    throw error2;
-  }
-  return addServiceNodeBindingNodeIfContextFree(serviceNode, serviceNodeBinding);
-}
-function addServiceNodeBindingNodeIfContextFree(serviceNode, serviceNodeBinding) {
-  if (Array.isArray(serviceNode.bindings)) {
-    serviceNode.bindings.push(serviceNodeBinding);
-  } else {
-    if (serviceNode.bindings === void 0) {
-      serviceNode.bindings = serviceNodeBinding;
-    } else {
-      if (!LazyPlanServiceNode.is(serviceNode)) {
-        throw new InversifyCoreError(InversifyCoreErrorKind.planning, "Unexpected non-lazy plan service node. This is likely a bug in the planning logic. Please, report this issue");
-      }
-      return {
-        isContextFreeBinding: true,
-        shouldInvalidateServiceNode: true
-      };
-    }
-  }
-  return {
-    isContextFreeBinding: true,
-    shouldInvalidateServiceNode: false
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/addRootServiceNodeBindingIfContextFree.js
-function addRootServiceNodeBindingIfContextFree(params, serviceNode, binding) {
-  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
-    return {
-      isContextFreeBinding: true,
-      shouldInvalidateServiceNode: false
-    };
-  }
-  const bindingConstraintsList = buildPlanBindingConstraintsList(params);
-  return addServiceNodeBindingIfContextFree(params, serviceNode, binding, bindingConstraintsList, buildBuildServiceNodeOptionsFromPlanParamsConstraints(params.rootConstraints));
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/removeServiceNodeBindingIfContextFree.js
-function removeServiceNodeBindingIfContextFree(serviceNode, binding, bindingConstraintsList, optionalBindings) {
-  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
-    return {
-      bindingNodeRemoved: void 0,
-      isContextFreeBinding: true
-    };
-  }
-  const bindingConstraints = new BindingConstraintsImplementation(bindingConstraintsList.last);
-  if (!binding.isSatisfiedBy(bindingConstraints) || bindingConstraintsList.last.elem.getAncestorsCalled) {
-    return {
-      bindingNodeRemoved: void 0,
-      isContextFreeBinding: !bindingConstraintsList.last.elem.getAncestorsCalled
-    };
-  }
-  let bindingNodeRemoved;
-  if (Array.isArray(serviceNode.bindings)) {
-    serviceNode.bindings = serviceNode.bindings.filter((bindingNode) => {
-      if (bindingNode.binding === binding) {
-        bindingNodeRemoved = bindingNode;
-        return false;
-      }
-      return true;
-    });
-  } else {
-    if (serviceNode.bindings?.binding === binding) {
-      bindingNodeRemoved = serviceNode.bindings;
-      if (optionalBindings) {
-        serviceNode.bindings = void 0;
-      } else {
-        if (!LazyPlanServiceNode.is(serviceNode)) {
-          throw new InversifyCoreError(InversifyCoreErrorKind.planning, "Unexpected non-lazy plan service node. This is likely a bug in the planning logic. Please, report this issue");
-        }
-        serviceNode.invalidate();
-      }
-    }
-  }
-  return {
-    bindingNodeRemoved,
-    isContextFreeBinding: true
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/actions/removeRootServiceNodeBindingIfContextFree.js
-function removeRootServiceNodeBindingIfContextFree(params, serviceNode, binding) {
-  if (LazyPlanServiceNode.is(serviceNode) && !serviceNode.isExpanded()) {
-    return {
-      bindingNodeRemoved: void 0,
-      isContextFreeBinding: true
-    };
-  }
-  const bindingConstraintsList = buildPlanBindingConstraintsList(params);
-  return removeServiceNodeBindingIfContextFree(serviceNode, binding, bindingConstraintsList, params.rootConstraints.isOptional ?? false);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/services/PlanResultCacheService.js
-var NO_OPTIONS_INDEX = 0;
-var CHAINED_MASK = 4;
-var IS_MULTIPLE_MASK = 2;
-var OPTIONAL_MASK = 1;
-var MAP_ARRAY_LENGTH = 8;
-var PlanResultCacheService = class {
-  #jitEnabled;
-  #serviceIdToNonCachedServiceNodeMapMap;
-  #serviceIdToValuePlanMap;
-  #namedServiceIdToValuePlanMap;
-  #namedTaggedServiceIdToValuePlanMap;
-  #taggedServiceIdToValuePlanMap;
-  #subscribers;
-  constructor(jitEnabled) {
-    this.#jitEnabled = jitEnabled;
-    this.#serviceIdToNonCachedServiceNodeMapMap = /* @__PURE__ */ new Map();
-    this.#serviceIdToValuePlanMap = this.#buildInitializedMapArray();
-    this.#namedServiceIdToValuePlanMap = this.#buildInitializedMapArray();
-    this.#namedTaggedServiceIdToValuePlanMap = this.#buildInitializedMapArray();
-    this.#taggedServiceIdToValuePlanMap = this.#buildInitializedMapArray();
-    this.#subscribers = new WeakList();
-  }
-  clearCache() {
-    for (const map of this.#getMaps()) {
-      map.clear();
-    }
-    for (const subscriber of this.#subscribers) {
-      subscriber.clearCache();
-    }
-  }
-  getByServiceIdentifier(serviceIdentifier) {
-    return this.#serviceIdToValuePlanMap[NO_OPTIONS_INDEX].get(serviceIdentifier);
-  }
-  get(options) {
-    if (options.name === void 0) {
-      if (options.tag === void 0) {
-        return this.#getMapFromMapArray(this.#serviceIdToValuePlanMap, options).get(options.serviceIdentifier);
-      } else {
-        return this.#getMapFromMapArray(this.#taggedServiceIdToValuePlanMap, options).get(options.serviceIdentifier)?.get(options.tag.key)?.get(options.tag.value);
-      }
-    } else {
-      if (options.tag === void 0) {
-        return this.#getMapFromMapArray(this.#namedServiceIdToValuePlanMap, options).get(options.serviceIdentifier)?.get(options.name);
-      } else {
-        return this.#getMapFromMapArray(this.#namedTaggedServiceIdToValuePlanMap, options).get(options.serviceIdentifier)?.get(options.name)?.get(options.tag.key)?.get(options.tag.value);
-      }
-    }
-  }
-  invalidateServiceBinding(invalidation) {
-    this.#invalidateServiceMap(invalidation);
-    this.#invalidateNamedServiceMap(invalidation);
-    this.#invalidateNamedTaggedServiceMap(invalidation);
-    this.#invalidateTaggedServiceMap(invalidation);
-    this.#invalidateNonCachedServiceNodeSetMap(invalidation);
-    for (const subscriber of this.#subscribers) {
-      subscriber.invalidateServiceBinding(invalidation);
-    }
-  }
-  set(options, planResult) {
-    if (options.name === void 0) {
-      if (options.tag === void 0) {
-        this.#getMapFromMapArray(this.#serviceIdToValuePlanMap, options).set(options.serviceIdentifier, planResult);
-      } else {
-        this.#getOrBuildMapValueFromMapMap(this.#getOrBuildMapValueFromMapMap(this.#getMapFromMapArray(this.#taggedServiceIdToValuePlanMap, options), options.serviceIdentifier), options.tag.key).set(options.tag.value, planResult);
-      }
-    } else {
-      if (options.tag === void 0) {
-        this.#getOrBuildMapValueFromMapMap(this.#getMapFromMapArray(this.#namedServiceIdToValuePlanMap, options), options.serviceIdentifier).set(options.name, planResult);
-      } else {
-        this.#getOrBuildMapValueFromMapMap(this.#getOrBuildMapValueFromMapMap(this.#getOrBuildMapValueFromMapMap(this.#getMapFromMapArray(this.#namedTaggedServiceIdToValuePlanMap, options), options.serviceIdentifier), options.name), options.tag.key).set(options.tag.value, planResult);
-      }
-    }
-  }
-  setNonCachedServiceNode(node, context3) {
-    let nonCachedMap = this.#serviceIdToNonCachedServiceNodeMapMap.get(node.serviceIdentifier);
-    if (nonCachedMap === void 0) {
-      nonCachedMap = /* @__PURE__ */ new Map();
-      this.#serviceIdToNonCachedServiceNodeMapMap.set(node.serviceIdentifier, nonCachedMap);
-    }
-    nonCachedMap.set(node, context3);
-  }
-  subscribe(subscriber) {
-    this.#subscribers.push(subscriber);
-  }
-  #buildInitializedMapArray() {
-    const mapArray = new Array(MAP_ARRAY_LENGTH);
-    for (let i = 0; i < mapArray.length; ++i) {
-      mapArray[i] = /* @__PURE__ */ new Map();
-    }
-    return mapArray;
-  }
-  #buildUpdatePlanParams(invalidation, index, name, tag) {
-    const isMultiple = (index & IS_MULTIPLE_MASK) !== 0;
-    let planParamsConstraint;
-    if (isMultiple) {
-      const isChained = (index & IS_MULTIPLE_MASK & CHAINED_MASK) !== 0;
-      planParamsConstraint = {
-        chained: isChained,
-        isMultiple,
-        serviceIdentifier: invalidation.binding.serviceIdentifier
-      };
-    } else {
-      planParamsConstraint = {
-        isMultiple,
-        serviceIdentifier: invalidation.binding.serviceIdentifier
-      };
-    }
-    const isOptional = (index & OPTIONAL_MASK) !== 0;
-    if (isOptional) {
-      planParamsConstraint.isOptional = true;
-    }
-    if (name !== void 0) {
-      planParamsConstraint.name = name;
-    }
-    if (tag !== void 0) {
-      planParamsConstraint.tag = tag;
-    }
-    return {
-      autobindOptions: void 0,
-      jitEnabled: this.#jitEnabled,
-      operations: invalidation.operations,
-      rootConstraints: planParamsConstraint,
-      servicesBranch: []
-    };
-  }
-  #getOrBuildMapValueFromMapMap(map, key) {
-    let valueMap = map.get(key);
-    if (valueMap === void 0) {
-      valueMap = /* @__PURE__ */ new Map();
-      map.set(key, valueMap);
-    }
-    return valueMap;
-  }
-  #getMapFromMapArray(mapArray, options) {
-    return mapArray[this.#getMapArrayIndex(options)];
-  }
-  #getMaps() {
-    return [
-      this.#serviceIdToNonCachedServiceNodeMapMap,
-      ...this.#serviceIdToValuePlanMap,
-      ...this.#namedServiceIdToValuePlanMap,
-      ...this.#namedTaggedServiceIdToValuePlanMap,
-      ...this.#taggedServiceIdToValuePlanMap
-    ];
-  }
-  #getMapArrayIndex(options) {
-    if (options.isMultiple) {
-      return (options.chained ? CHAINED_MASK : 0) | (options.optional ? OPTIONAL_MASK : 0) | IS_MULTIPLE_MASK;
-    } else {
-      return options.optional ? OPTIONAL_MASK : 0;
-    }
-  }
-  #invalidateNamedServiceMap(invalidation) {
-    for (const [index, map] of this.#namedServiceIdToValuePlanMap.entries()) {
-      const servicePlans = map.get(invalidation.binding.serviceIdentifier);
-      if (servicePlans !== void 0) {
-        for (const [name, servicePlan] of servicePlans.entries()) {
-          this.#updatePlan(invalidation, servicePlan, index, name, void 0);
-        }
-      }
-    }
-  }
-  #invalidateNamedTaggedServiceMap(invalidation) {
-    for (const [index, map] of this.#namedTaggedServiceIdToValuePlanMap.entries()) {
-      const servicePlanMapMapMap = map.get(invalidation.binding.serviceIdentifier);
-      if (servicePlanMapMapMap !== void 0) {
-        for (const [name, servicePlanMapMap] of servicePlanMapMapMap.entries()) {
-          for (const [tag, servicePlanMap] of servicePlanMapMap.entries()) {
-            for (const [tagValue, servicePlan] of servicePlanMap.entries()) {
-              this.#updatePlan(invalidation, servicePlan, index, name, {
-                key: tag,
-                value: tagValue
-              });
-            }
-          }
-        }
-      }
-    }
-  }
-  #invalidateNonCachePlanBindingNodeDescendents(planBindingNode) {
-    switch (planBindingNode.binding.type) {
-      case bindingTypeValues.ServiceRedirection:
-        this.#invalidateNonCachePlanServiceNode(planBindingNode.redirection);
-        break;
-      case bindingTypeValues.Instance:
-        for (const constructorParam of planBindingNode.constructorParams) {
-          if (!isConstructorNoParamNode(constructorParam)) {
-            this.#invalidateNonCachePlanServiceNode(constructorParam);
-          }
-        }
-        for (const propertyParam of planBindingNode.propertyParams.values()) {
-          this.#invalidateNonCachePlanServiceNode(propertyParam);
-        }
-        break;
-      case bindingTypeValues.ResolvedValue:
-        for (const resolvedValue of planBindingNode.params) {
-          this.#invalidateNonCachePlanServiceNode(resolvedValue);
-        }
-        break;
-      default:
-    }
-  }
-  #invalidateNonCachePlanServiceNode(planServiceNode) {
-    const serviceNonCachedMap = this.#serviceIdToNonCachedServiceNodeMapMap.get(planServiceNode.serviceIdentifier);
-    if (serviceNonCachedMap === void 0 || !serviceNonCachedMap.has(planServiceNode)) {
-      return;
-    }
-    serviceNonCachedMap.delete(planServiceNode);
-    this.#invalidateNonCachePlanServiceNodeDescendents(planServiceNode);
-  }
-  #invalidateNonCachePlanServiceNodeDescendents(planServiceNode) {
-    if (LazyPlanServiceNode.is(planServiceNode) && !planServiceNode.isExpanded()) {
-      return;
-    }
-    if (planServiceNode.bindings === void 0) {
-      return;
-    }
-    if (Array.isArray(planServiceNode.bindings)) {
-      for (const binding of planServiceNode.bindings) {
-        this.#invalidateNonCachePlanBindingNodeDescendents(binding);
-      }
-    } else {
-      this.#invalidateNonCachePlanBindingNodeDescendents(planServiceNode.bindings);
-    }
-  }
-  #invalidateNonCachedServiceNodeSetMap(invalidation) {
-    const serviceNonCachedServiceNodeMap = this.#serviceIdToNonCachedServiceNodeMapMap.get(invalidation.binding.serviceIdentifier);
-    if (serviceNonCachedServiceNodeMap !== void 0) {
-      switch (invalidation.kind) {
-        case CacheBindingInvalidationKind.bindingAdded:
-          for (const [serviceNode, context3] of serviceNonCachedServiceNodeMap) {
-            const result = addServiceNodeBindingIfContextFree({
-              autobindOptions: void 0,
-              jitEnabled: this.#jitEnabled,
-              operations: invalidation.operations,
-              servicesBranch: []
-            }, serviceNode, invalidation.binding, context3.bindingConstraintsList, context3.buildServiceNodeOptions);
-            if (result.isContextFreeBinding) {
-              if (result.shouldInvalidateServiceNode && LazyPlanServiceNode.is(serviceNode)) {
-                this.#invalidateNonCachePlanServiceNodeDescendents(serviceNode);
-                serviceNode.invalidate();
-              }
-            } else {
-              this.clearCache();
-            }
-          }
-          break;
-        case CacheBindingInvalidationKind.bindingRemoved:
-          for (const [serviceNode, context3] of serviceNonCachedServiceNodeMap) {
-            const result = removeServiceNodeBindingIfContextFree(serviceNode, invalidation.binding, context3.bindingConstraintsList, context3.buildServiceNodeOptions.optional);
-            if (result.isContextFreeBinding) {
-              if (result.bindingNodeRemoved !== void 0) {
-                this.#invalidateNonCachePlanBindingNodeDescendents(result.bindingNodeRemoved);
-              }
-            } else {
-              this.clearCache();
-            }
-          }
-          break;
-      }
-    }
-  }
-  #invalidateServiceMap(invalidation) {
-    for (const [index, map] of this.#serviceIdToValuePlanMap.entries()) {
-      const servicePlan = map.get(invalidation.binding.serviceIdentifier);
-      this.#updatePlan(invalidation, servicePlan, index, void 0, void 0);
-    }
-  }
-  #invalidateTaggedServiceMap(invalidation) {
-    for (const [index, map] of this.#taggedServiceIdToValuePlanMap.entries()) {
-      const servicePlanMapMap = map.get(invalidation.binding.serviceIdentifier);
-      if (servicePlanMapMap !== void 0) {
-        for (const [tag, servicePlanMap] of servicePlanMapMap.entries()) {
-          for (const [tagValue, servicePlan] of servicePlanMap.entries()) {
-            this.#updatePlan(invalidation, servicePlan, index, void 0, {
-              key: tag,
-              value: tagValue
-            });
-          }
-        }
-      }
-    }
-  }
-  #updatePlan(invalidation, servicePlan, index, name, tag) {
-    if (servicePlan !== void 0 && LazyPlanServiceNode.is(servicePlan.tree.root)) {
-      const planParams = this.#buildUpdatePlanParams(invalidation, index, name, tag);
-      switch (invalidation.kind) {
-        case CacheBindingInvalidationKind.bindingAdded:
-          {
-            const result = addRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
-            if (result.isContextFreeBinding) {
-              if (result.shouldInvalidateServiceNode) {
-                this.#invalidateNonCachePlanServiceNodeDescendents(servicePlan.tree.root);
-                servicePlan.tree.root.invalidate();
-              }
-            } else {
-              this.clearCache();
-            }
-          }
-          break;
-        case CacheBindingInvalidationKind.bindingRemoved:
-          {
-            const result = removeRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
-            if (result.isContextFreeBinding) {
-              if (result.bindingNodeRemoved !== void 0) {
-                this.#invalidateNonCachePlanBindingNodeDescendents(result.bindingNodeRemoved);
-              }
-            } else {
-              this.clearCache();
-            }
-          }
-          break;
-      }
-    }
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/planning/calculations/handleResolveError.js
-var INDEX_NOT_FOUND = -1;
-function handleResolveError(params, error2) {
-  if (isStackOverflowError(error2) || InversifyCoreError.isErrorOfKind(error2, InversifyCoreErrorKind.planningMaxDepthExceeded)) {
-    const stringifiedCircularDependencies = stringifyServiceIdentifierTrace2(extractLikelyCircularDependency2(params));
-    throw new InversifyCoreError(InversifyCoreErrorKind.planning, `Circular dependency found: ${stringifiedCircularDependencies}`, { cause: error2 });
-  }
-  throw error2;
-}
-function extractLikelyCircularDependency2(params) {
-  const root = params.planResult.tree.root;
-  const stack = [];
-  function depthFirstSearch(node) {
-    const existingIndex = stack.indexOf(node);
-    if (existingIndex !== INDEX_NOT_FOUND) {
-      const cycleNodes = [
-        ...stack.slice(existingIndex),
-        node
-      ];
-      return cycleNodes.map((n) => n.serviceIdentifier);
-    }
-    stack.push(node);
-    try {
-      for (const child of getChildServiceNodes(node)) {
-        const result2 = depthFirstSearch(child);
-        if (result2 !== void 0) {
-          return result2;
-        }
-      }
-    } finally {
-      stack.pop();
-    }
-    return void 0;
-  }
-  const result = depthFirstSearch(root);
-  return result ?? [];
-}
-function getChildServiceNodes(serviceNode) {
-  const children = [];
-  const bindings = serviceNode.bindings;
-  if (bindings === void 0) {
-    return children;
-  }
-  const processBindingNode = (bindingNode) => {
-    if (isPlanServiceRedirectionBindingNode(bindingNode)) {
-      children.push(...getChildServiceNodes(bindingNode.redirection));
-      return;
-    }
-    switch (bindingNode.binding.type) {
-      case bindingTypeValues.Instance: {
-        const instanceNode = bindingNode;
-        for (const ctorParam of instanceNode.constructorParams) {
-          if (!isConstructorNoParamNode(ctorParam)) {
-            children.push(ctorParam);
-          }
-        }
-        for (const propParam of instanceNode.propertyParams.values()) {
-          children.push(propParam);
-        }
-        break;
-      }
-      case bindingTypeValues.ResolvedValue: {
-        const resolvedValueNode = bindingNode;
-        for (const param of resolvedValueNode.params) {
-          children.push(param);
-        }
-        break;
-      }
-      default:
-        break;
-    }
-  };
-  if (Array.isArray(bindings)) {
-    for (const bindingNode of bindings) {
-      processBindingNode(bindingNode);
-    }
-  } else {
-    processBindingNode(bindings);
-  }
-  return children;
-}
-function stringifyServiceIdentifierTrace2(serviceIdentifiers) {
-  const serviceIdentifiersArray = [...serviceIdentifiers];
-  if (serviceIdentifiersArray.length === 0) {
-    return "(No dependency trace)";
-  }
-  return serviceIdentifiersArray.map(stringifyServiceIdentifier).join(" -> ");
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolve.js
-function resolve3(params) {
-  try {
-    const serviceNode = params.planResult.tree.root;
-    return serviceNode.resolve(params);
-  } catch (error2) {
-    handleResolveError(params, error2);
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/binding/calculations/isScopedBinding.js
-function isScopedBinding(binding) {
-  return binding.scope !== void 0;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingPreDestroy.js
-function resolveBindingPreDestroy(params, binding) {
-  if (binding.type === bindingTypeValues.Instance) {
-    const classMetadata = params.getClassMetadata(binding.implementationType);
-    const instance = binding.cache.value;
-    if (isPromise(instance)) {
-      return instance.then((instance2) => resolveInstancePreDestroyMethods(classMetadata, instance2));
-    } else {
-      return resolveInstancePreDestroyMethods(classMetadata, instance);
-    }
-  }
-}
-function resolveInstancePreDestroyMethod(instance, methodName) {
-  if (typeof instance[methodName] === "function") {
-    const result = instance[methodName]();
-    return result;
-  }
-}
-function resolveInstancePreDestroyMethods(classMetadata, instance) {
-  const preDestroyMethodNames = classMetadata.lifecycle.preDestroyMethodNames;
-  if (preDestroyMethodNames.size === 0) {
-    return;
-  }
-  let result = void 0;
-  for (const methodName of preDestroyMethodNames) {
-    if (result === void 0) {
-      result = resolveInstancePreDestroyMethod(instance, methodName);
-    } else {
-      result = result.then(() => resolveInstancePreDestroyMethod(instance, methodName));
-    }
-  }
-  return result;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingServiceDeactivations.js
-function resolveBindingServiceDeactivations(params, serviceIdentifier, value) {
-  const deactivations = params.getDeactivations(serviceIdentifier);
-  if (deactivations === void 0) {
-    return void 0;
-  }
-  if (isPromise(value)) {
-    return resolveBindingDeactivationsFromIteratorAsync(value, deactivations[Symbol.iterator]());
-  }
-  return resolveBindingDeactivationsFromIterator(value, deactivations[Symbol.iterator]());
-}
-function resolveBindingDeactivationsFromIterator(value, deactivationsIterator) {
-  let deactivationIteratorResult = deactivationsIterator.next();
-  while (deactivationIteratorResult.done !== true) {
-    const nextDeactivationValue = deactivationIteratorResult.value(value);
-    if (isPromise(nextDeactivationValue)) {
-      return resolveBindingDeactivationsFromIteratorAsync(value, deactivationsIterator);
-    }
-    deactivationIteratorResult = deactivationsIterator.next();
-  }
-}
-async function resolveBindingDeactivationsFromIteratorAsync(value, deactivationsIterator) {
-  const resolvedValue = await value;
-  let deactivationIteratorResult = deactivationsIterator.next();
-  while (deactivationIteratorResult.done !== true) {
-    await deactivationIteratorResult.value(resolvedValue);
-    deactivationIteratorResult = deactivationsIterator.next();
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingDeactivations.js
-function resolveBindingDeactivations(params, binding) {
-  const preDestroyResult = resolveBindingPreDestroy(params, binding);
-  if (preDestroyResult === void 0) {
-    return resolveBindingDeactivationsAfterPreDestroy(params, binding);
-  }
-  return preDestroyResult.then(() => resolveBindingDeactivationsAfterPreDestroy(params, binding));
-}
-function resolveBindingDeactivationsAfterPreDestroy(params, binding) {
-  const bindingCache = binding.cache;
-  if (isPromise(bindingCache.value)) {
-    return bindingCache.value.then((resolvedValue) => resolveBindingDeactivationsAfterPreDestroyFromValue(params, binding, resolvedValue));
-  }
-  return resolveBindingDeactivationsAfterPreDestroyFromValue(params, binding, bindingCache.value);
-}
-function resolveBindingDeactivationsAfterPreDestroyFromValue(params, binding, resolvedValue) {
-  let deactivationResult = void 0;
-  if (binding.onDeactivation !== void 0) {
-    const bindingDeactivation = binding.onDeactivation;
-    deactivationResult = bindingDeactivation(resolvedValue);
-  }
-  if (deactivationResult === void 0) {
-    return resolveBindingServiceDeactivations(params, binding.serviceIdentifier, resolvedValue);
-  } else {
-    return deactivationResult.then(() => resolveBindingServiceDeactivations(params, binding.serviceIdentifier, resolvedValue));
-  }
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingsDeactivations.js
-function resolveBindingsDeactivations(params, bindings) {
-  if (bindings === void 0) {
-    return;
-  }
-  const singletonScopedBindings = filterCachedSinglentonScopedBindings(bindings);
-  const deactivationPromiseResults = [];
-  for (const binding of singletonScopedBindings) {
-    const deactivationResult = resolveBindingDeactivations(params, binding);
-    if (deactivationResult !== void 0) {
-      deactivationPromiseResults.push(deactivationResult);
-    }
-  }
-  if (deactivationPromiseResults.length > 0) {
-    return Promise.all(deactivationPromiseResults).then(() => void 0);
-  }
-}
-function filterCachedSinglentonScopedBindings(bindings) {
-  const filteredBindings = [];
-  for (const binding of bindings) {
-    if (isScopedBinding(binding) && binding.scope === bindingScopeValues.Singleton && binding.cache.isRight) {
-      filteredBindings.push(binding);
-    }
-  }
-  return filteredBindings;
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveModuleDeactivations.js
-function resolveModuleDeactivations(params, moduleId) {
-  const bindings = params.getBindingsFromModule(moduleId);
-  return resolveBindingsDeactivations(params, bindings);
-}
-
-// node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveServiceDeactivations.js
-function resolveServiceDeactivations(params, serviceIdentifier) {
-  const bindings = params.getBindings(serviceIdentifier);
-  return resolveBindingsDeactivations(params, bindings);
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/models/BindingIdentifier.js
-var bindingIdentifierSymbol = /* @__PURE__ */ Symbol.for("@inversifyjs/container/bindingIdentifier");
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingIdentifier.js
-function isBindingIdentifier(value) {
-  return typeof value === "object" && value !== null && value[bindingIdentifierSymbol] === true;
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/binding/utils/BindingConstraintUtils.js
-var BindingConstraintUtils = class {
-  static always = (_bindingConstraints) => {
-    return true;
-  };
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/error/models/InversifyContainerError.js
-var isAppErrorSymbol2 = /* @__PURE__ */ Symbol.for("@inversifyjs/container/InversifyContainerError");
-var InversifyContainerError = class _InversifyContainerError extends Error {
-  [isAppErrorSymbol2];
-  kind;
-  constructor(kind, message, options) {
-    super(message, options);
-    this[isAppErrorSymbol2] = true;
-    this.kind = kind;
-  }
-  static is(value) {
-    return typeof value === "object" && value !== null && value[isAppErrorSymbol2] === true;
-  }
-  static isErrorOfKind(value, kind) {
-    return _InversifyContainerError.is(value) && value.kind === kind;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/error/models/InversifyContainerErrorKind.js
-var InversifyContainerErrorKind;
-(function(InversifyContainerErrorKind2) {
-  InversifyContainerErrorKind2[InversifyContainerErrorKind2["invalidOperation"] = 0] = "invalidOperation";
-})(InversifyContainerErrorKind || (InversifyContainerErrorKind = {}));
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/buildBindingIdentifier.js
-function buildBindingIdentifier(binding) {
-  return {
-    [bindingIdentifierSymbol]: true,
-    id: binding.id
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraints.js
-function isAnyAncestorBindingConstraints(condition) {
-  return (constraints) => {
-    for (let ancestorMetadata = constraints.getAncestor(); ancestorMetadata !== void 0; ancestorMetadata = ancestorMetadata.getAncestor()) {
-      if (condition(ancestorMetadata)) {
-        return true;
-      }
-    }
-    return false;
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithName.js
-function isBindingConstraintsWithName(name) {
-  return (constraints) => constraints.name === name;
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraintsWithName.js
-function isAnyAncestorBindingConstraintsWithName(name) {
-  return isAnyAncestorBindingConstraints(isBindingConstraintsWithName(name));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithServiceId.js
-function isBindingConstraintsWithServiceId(serviceId) {
-  return (constraints) => constraints.serviceIdentifier === serviceId;
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraintsWithServiceId.js
-function isAnyAncestorBindingConstraintsWithServiceId(serviceId) {
-  return isAnyAncestorBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithTag.js
-function isBindingConstraintsWithTag(tag, value) {
-  return (constraints) => constraints.tags.has(tag) && constraints.tags.get(tag) === value;
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isAnyAncestorBindingConstraintsWithTag.js
-function isAnyAncestorBindingConstraintsWithTag(tag, value) {
-  return isAnyAncestorBindingConstraints(isBindingConstraintsWithTag(tag, value));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isBindingConstraintsWithNoNameNorTags.js
-function isBindingConstraintsWithNoNameNorTags(constraints) {
-  return constraints.name === void 0 && constraints.tags.size === 0;
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isMultipleResolvedValueMetadataInjectOptions.js
-function isMultipleResolvedValueMetadataInjectOptions(options) {
-  return options.isMultiple === true;
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraints.js
-function isNoAncestorBindingConstraints(condition) {
-  const isAnyAncestorBindingConstraintsConstraint = isAnyAncestorBindingConstraints(condition);
-  return (constraints) => {
-    return !isAnyAncestorBindingConstraintsConstraint(constraints);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraintsWithName.js
-function isNoAncestorBindingConstraintsWithName(name) {
-  return isNoAncestorBindingConstraints(isBindingConstraintsWithName(name));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraintsWithServiceId.js
-function isNoAncestorBindingConstraintsWithServiceId(serviceId) {
-  return isNoAncestorBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNoAncestorBindingConstraintsWithTag.js
-function isNoAncestorBindingConstraintsWithTag(tag, value) {
-  return isNoAncestorBindingConstraints(isBindingConstraintsWithTag(tag, value));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraints.js
-function isNotParentBindingConstraints(condition) {
-  return (constraints) => {
-    const ancestorMetadata = constraints.getAncestor();
-    return ancestorMetadata === void 0 || !condition(ancestorMetadata);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraintsWithName.js
-function isNotParentBindingConstraintsWithName(name) {
-  return isNotParentBindingConstraints(isBindingConstraintsWithName(name));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraintsWithServiceId.js
-function isNotParentBindingConstraintsWithServiceId(serviceId) {
-  return isNotParentBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isNotParentBindingConstraintsWithTag.js
-function isNotParentBindingConstraintsWithTag(tag, value) {
-  return isNotParentBindingConstraints(isBindingConstraintsWithTag(tag, value));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraints.js
-function isParentBindingConstraints(condition) {
-  return (constraints) => {
-    const ancestorMetadata = constraints.getAncestor();
-    return ancestorMetadata !== void 0 && condition(ancestorMetadata);
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraintsWithName.js
-function isParentBindingConstraintsWithName(name) {
-  return isParentBindingConstraints(isBindingConstraintsWithName(name));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraintsWithServiceId.js
-function isParentBindingConstraintsWithServiceId(serviceId) {
-  return isParentBindingConstraints(isBindingConstraintsWithServiceId(serviceId));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isParentBindingConstraintsWithTag.js
-function isParentBindingConstraintsWithTag(tag, value) {
-  return isParentBindingConstraints(isBindingConstraintsWithTag(tag, value));
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/calculations/isResolvedValueMetadataInjectOptions.js
-function isResolvedValueMetadataInjectOptions(options) {
-  return typeof options === "object" && !LazyServiceIdentifier.is(options);
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/binding/models/BindingFluentSyntaxImplementation.js
-var BindInFluentSyntaxImplementation = class {
-  #binding;
-  constructor(binding) {
-    this.#binding = binding;
-  }
-  getIdentifier() {
-    return buildBindingIdentifier(this.#binding);
-  }
-  inRequestScope() {
-    this.#binding.scope = bindingScopeValues.Request;
-    return new BindWhenOnFluentSyntaxImplementation(this.#binding);
-  }
-  inSingletonScope() {
-    this.#binding.scope = bindingScopeValues.Singleton;
-    return new BindWhenOnFluentSyntaxImplementation(this.#binding);
-  }
-  inTransientScope() {
-    this.#binding.scope = bindingScopeValues.Transient;
-    return new BindWhenOnFluentSyntaxImplementation(this.#binding);
-  }
-};
-var BindToFluentSyntaxImplementation = class {
-  #callback;
-  #containerModuleId;
-  #defaultScope;
-  #serviceIdentifier;
-  constructor(callback, containerModuleId, defaultScope, serviceIdentifier) {
-    this.#callback = callback;
-    this.#containerModuleId = containerModuleId;
-    this.#defaultScope = defaultScope;
-    this.#serviceIdentifier = serviceIdentifier;
-  }
-  to(type) {
-    const classMetadata = getClassMetadata(type);
-    const binding = {
-      cache: {
-        isRight: false,
-        value: void 0
-      },
-      id: getBindingId(),
-      implementationType: type,
-      isSatisfiedBy: BindingConstraintUtils.always,
-      moduleId: this.#containerModuleId,
-      onActivation: void 0,
-      onDeactivation: void 0,
-      scope: classMetadata.scope ?? this.#defaultScope,
-      serviceIdentifier: this.#serviceIdentifier,
-      type: bindingTypeValues.Instance
-    };
-    this.#callback(binding);
-    return new BindInWhenOnFluentSyntaxImplementation(binding);
-  }
-  toSelf() {
-    if (typeof this.#serviceIdentifier !== "function") {
-      throw new Error('"toSelf" function can only be applied when a newable function is used as service identifier');
-    }
-    return this.to(this.#serviceIdentifier);
-  }
-  toConstantValue(value) {
-    const binding = {
-      cache: {
-        isRight: false,
-        value: void 0
-      },
-      id: getBindingId(),
-      isSatisfiedBy: BindingConstraintUtils.always,
-      moduleId: this.#containerModuleId,
-      onActivation: void 0,
-      onDeactivation: void 0,
-      scope: bindingScopeValues.Singleton,
-      serviceIdentifier: this.#serviceIdentifier,
-      type: bindingTypeValues.ConstantValue,
-      value
-    };
-    this.#callback(binding);
-    return new BindWhenOnFluentSyntaxImplementation(binding);
-  }
-  toDynamicValue(builder) {
-    const binding = {
-      cache: {
-        isRight: false,
-        value: void 0
-      },
-      id: getBindingId(),
-      isSatisfiedBy: BindingConstraintUtils.always,
-      moduleId: this.#containerModuleId,
-      onActivation: void 0,
-      onDeactivation: void 0,
-      scope: this.#defaultScope,
-      serviceIdentifier: this.#serviceIdentifier,
-      type: bindingTypeValues.DynamicValue,
-      value: builder
-    };
-    this.#callback(binding);
-    return new BindInWhenOnFluentSyntaxImplementation(binding);
-  }
-  toResolvedValue(factory, injectOptions) {
-    const binding = {
-      cache: {
-        isRight: false,
-        value: void 0
-      },
-      factory,
-      id: getBindingId(),
-      isSatisfiedBy: BindingConstraintUtils.always,
-      metadata: this.#buildResolvedValueMetadata(injectOptions),
-      moduleId: this.#containerModuleId,
-      onActivation: void 0,
-      onDeactivation: void 0,
-      scope: this.#defaultScope,
-      serviceIdentifier: this.#serviceIdentifier,
-      type: bindingTypeValues.ResolvedValue
-    };
-    this.#callback(binding);
-    return new BindInWhenOnFluentSyntaxImplementation(binding);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  toFactory(builder) {
-    const binding = {
-      cache: {
-        isRight: false,
-        value: void 0
-      },
-      factory: builder,
-      id: getBindingId(),
-      isSatisfiedBy: BindingConstraintUtils.always,
-      moduleId: this.#containerModuleId,
-      onActivation: void 0,
-      onDeactivation: void 0,
-      scope: bindingScopeValues.Singleton,
-      serviceIdentifier: this.#serviceIdentifier,
-      type: bindingTypeValues.Factory
-    };
-    this.#callback(binding);
-    return new BindWhenOnFluentSyntaxImplementation(binding);
-  }
-  toService(service) {
-    const binding = {
-      id: getBindingId(),
-      isSatisfiedBy: BindingConstraintUtils.always,
-      moduleId: this.#containerModuleId,
-      serviceIdentifier: this.#serviceIdentifier,
-      targetServiceIdentifier: service,
-      type: bindingTypeValues.ServiceRedirection
-    };
-    this.#callback(binding);
-  }
-  #buildResolvedValueMetadata(options) {
-    const resolvedValueMetadata = {
-      arguments: (options ?? []).map((injectOption) => {
-        if (isResolvedValueMetadataInjectOptions(injectOption)) {
-          if (isMultipleResolvedValueMetadataInjectOptions(injectOption)) {
-            return {
-              chained: injectOption.chained ?? false,
-              kind: ResolvedValueElementMetadataKind.multipleInjection,
-              name: injectOption.name,
-              optional: injectOption.optional ?? false,
-              tags: new Map((injectOption.tags ?? []).map((tag) => [
-                tag.key,
-                tag.value
-              ])),
-              value: injectOption.serviceIdentifier
-            };
-          } else {
-            return {
-              kind: ResolvedValueElementMetadataKind.singleInjection,
-              name: injectOption.name,
-              optional: injectOption.optional ?? false,
-              tags: new Map((injectOption.tags ?? []).map((tag) => [
-                tag.key,
-                tag.value
-              ])),
-              value: injectOption.serviceIdentifier
-            };
-          }
-        } else {
-          return {
-            kind: ResolvedValueElementMetadataKind.singleInjection,
-            name: void 0,
-            optional: false,
-            tags: /* @__PURE__ */ new Map(),
-            value: injectOption
-          };
-        }
-      })
-    };
-    return resolvedValueMetadata;
-  }
-};
-var BindOnFluentSyntaxImplementation = class {
-  #binding;
-  constructor(binding) {
-    this.#binding = binding;
-  }
-  getIdentifier() {
-    return buildBindingIdentifier(this.#binding);
-  }
-  onActivation(activation) {
-    this.#binding.onActivation = activation;
-    return new BindWhenFluentSyntaxImplementation(this.#binding);
-  }
-  onDeactivation(deactivation) {
-    this.#binding.onDeactivation = deactivation;
-    if (this.#binding.scope !== bindingScopeValues.Singleton) {
-      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Binding for service "${stringifyServiceIdentifier(this.#binding.serviceIdentifier)}" has a deactivation function, but its scope is not singleton. Deactivation functions can only be used with singleton bindings.`);
-    }
-    return new BindWhenFluentSyntaxImplementation(this.#binding);
-  }
-};
-var BindWhenFluentSyntaxImplementation = class {
-  #binding;
-  constructor(binding) {
-    this.#binding = binding;
-  }
-  getIdentifier() {
-    return buildBindingIdentifier(this.#binding);
-  }
-  when(constraint) {
-    this.#binding.isSatisfiedBy = constraint;
-    return new BindOnFluentSyntaxImplementation(this.#binding);
-  }
-  whenAnyAncestor(constraint) {
-    return this.when(isAnyAncestorBindingConstraints(constraint));
-  }
-  whenAnyAncestorIs(serviceIdentifier) {
-    return this.when(isAnyAncestorBindingConstraintsWithServiceId(serviceIdentifier));
-  }
-  whenAnyAncestorNamed(name) {
-    return this.when(isAnyAncestorBindingConstraintsWithName(name));
-  }
-  whenAnyAncestorTagged(tag, tagValue) {
-    return this.when(isAnyAncestorBindingConstraintsWithTag(tag, tagValue));
-  }
-  whenDefault() {
-    return this.when(isBindingConstraintsWithNoNameNorTags);
-  }
-  whenNamed(name) {
-    return this.when(isBindingConstraintsWithName(name));
-  }
-  whenNoParent(constraint) {
-    return this.when(isNotParentBindingConstraints(constraint));
-  }
-  whenNoParentIs(serviceIdentifier) {
-    return this.when(isNotParentBindingConstraintsWithServiceId(serviceIdentifier));
-  }
-  whenNoParentNamed(name) {
-    return this.when(isNotParentBindingConstraintsWithName(name));
-  }
-  whenNoParentTagged(tag, tagValue) {
-    return this.when(isNotParentBindingConstraintsWithTag(tag, tagValue));
-  }
-  whenParent(constraint) {
-    return this.when(isParentBindingConstraints(constraint));
-  }
-  whenParentIs(serviceIdentifier) {
-    return this.when(isParentBindingConstraintsWithServiceId(serviceIdentifier));
-  }
-  whenParentNamed(name) {
-    return this.when(isParentBindingConstraintsWithName(name));
-  }
-  whenParentTagged(tag, tagValue) {
-    return this.when(isParentBindingConstraintsWithTag(tag, tagValue));
-  }
-  whenTagged(tag, tagValue) {
-    return this.when(isBindingConstraintsWithTag(tag, tagValue));
-  }
-  whenNoAncestor(constraint) {
-    return this.when(isNoAncestorBindingConstraints(constraint));
-  }
-  whenNoAncestorIs(serviceIdentifier) {
-    return this.when(isNoAncestorBindingConstraintsWithServiceId(serviceIdentifier));
-  }
-  whenNoAncestorNamed(name) {
-    return this.when(isNoAncestorBindingConstraintsWithName(name));
-  }
-  whenNoAncestorTagged(tag, tagValue) {
-    return this.when(isNoAncestorBindingConstraintsWithTag(tag, tagValue));
-  }
-};
-var BindWhenOnFluentSyntaxImplementation = class extends BindWhenFluentSyntaxImplementation {
-  #bindOnFluentSyntax;
-  constructor(binding) {
-    super(binding);
-    this.#bindOnFluentSyntax = new BindOnFluentSyntaxImplementation(binding);
-  }
-  onActivation(activation) {
-    return this.#bindOnFluentSyntax.onActivation(activation);
-  }
-  onDeactivation(deactivation) {
-    return this.#bindOnFluentSyntax.onDeactivation(deactivation);
-  }
-};
-var BindInWhenOnFluentSyntaxImplementation = class extends BindWhenOnFluentSyntaxImplementation {
-  #bindInFluentSyntax;
-  constructor(binding) {
-    super(binding);
-    this.#bindInFluentSyntax = new BindInFluentSyntaxImplementation(binding);
-  }
-  inRequestScope() {
-    return this.#bindInFluentSyntax.inRequestScope();
-  }
-  inSingletonScope() {
-    return this.#bindInFluentSyntax.inSingletonScope();
-  }
-  inTransientScope() {
-    return this.#bindInFluentSyntax.inTransientScope();
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/common/actions/getFirstIteratorResult.js
-function getFirstIteratorResult(iterator2) {
-  if (iterator2 === void 0) {
-    return void 0;
-  }
-  const firstIteratorResult = iterator2.next();
-  if (firstIteratorResult.done === true) {
-    return void 0;
-  }
-  return firstIteratorResult.value;
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/common/calculations/getFirstIterableResult.js
-function getFirstIterableResult(iterable) {
-  return getFirstIteratorResult(iterable?.[Symbol.iterator]());
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/BindingManager.js
-var BindingManager = class {
-  #deactivationParams;
-  #defaultScope;
-  #planResultCacheManager;
-  #serviceReferenceManager;
-  constructor(deactivationParams, defaultScope, planResultCacheManager, serviceReferenceManager) {
-    this.#deactivationParams = deactivationParams;
-    this.#defaultScope = defaultScope;
-    this.#planResultCacheManager = planResultCacheManager;
-    this.#serviceReferenceManager = serviceReferenceManager;
-  }
-  bind(serviceIdentifier) {
-    return new BindToFluentSyntaxImplementation((binding) => {
-      this.#setBinding(binding);
-    }, void 0, this.#defaultScope, serviceIdentifier);
-  }
-  isBound(serviceIdentifier, options) {
-    const bindings = this.#serviceReferenceManager.bindingService.get(serviceIdentifier);
-    return this.#isAnyValidBinding(serviceIdentifier, bindings, options);
-  }
-  isCurrentBound(serviceIdentifier, options) {
-    const bindings = this.#serviceReferenceManager.bindingService.getNonParentBindings(serviceIdentifier);
-    return this.#isAnyValidBinding(serviceIdentifier, bindings, options);
-  }
-  async rebindAsync(serviceIdentifier) {
-    await this.unbindAsync(serviceIdentifier);
-    return this.bind(serviceIdentifier);
-  }
-  rebind(serviceIdentifier) {
-    this.unbind(serviceIdentifier);
-    return this.bind(serviceIdentifier);
-  }
-  async unbindAsync(identifier) {
-    await this.#unbindAsync(identifier);
-  }
-  async unbindAllAsync() {
-    await this.#unbindAll();
-  }
-  unbindAll() {
-    const result = this.#unbindAll();
-    if (result !== void 0) {
-      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous deactivation when unbinding all services. Consider using Container.unbindAllAsync() instead.");
-    }
-  }
-  unbind(identifier) {
-    const result = this.#unbindAsync(identifier);
-    if (result !== void 0) {
-      this.#throwUnexpectedAsyncUnbindOperation(identifier);
-    }
-  }
-  #setBinding(binding) {
-    this.#serviceReferenceManager.bindingService.set(binding);
-    this.#planResultCacheManager.invalidateService({
-      binding,
-      kind: CacheBindingInvalidationKind.bindingAdded
-    });
-  }
-  #throwUnexpectedAsyncUnbindOperation(identifier) {
-    let errorMessage;
-    if (isBindingIdentifier(identifier)) {
-      const bindingsById = this.#serviceReferenceManager.bindingService.getById(identifier.id);
-      const bindingServiceIdentifier = getFirstIterableResult(bindingsById)?.serviceIdentifier;
-      if (bindingServiceIdentifier === void 0) {
-        errorMessage = "Unexpected asynchronous deactivation when unbinding binding identifier. Consider using Container.unbindAsync() instead.";
-      } else {
-        errorMessage = `Unexpected asynchronous deactivation when unbinding "${stringifyServiceIdentifier(bindingServiceIdentifier)}" binding. Consider using Container.unbindAsync() instead.`;
-      }
-    } else {
-      errorMessage = `Unexpected asynchronous deactivation when unbinding "${stringifyServiceIdentifier(identifier)}" service. Consider using Container.unbindAsync() instead.`;
-    }
-    throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, errorMessage);
-  }
-  #unbindAsync(identifier) {
-    if (isBindingIdentifier(identifier)) {
-      return this.#unbindBindingIdentifier(identifier);
-    }
-    return this.#unbindServiceIdentifier(identifier);
-  }
-  #unbindBindingIdentifier(identifier) {
-    const bindingsIterable = this.#serviceReferenceManager.bindingService.getById(identifier.id);
-    const bindings = bindingsIterable === void 0 ? void 0 : [...bindingsIterable];
-    const result = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
-    if (result === void 0) {
-      this.#clearAfterUnbindBindingIdentifier(bindings, identifier);
-    } else {
-      return result.then(() => {
-        this.#clearAfterUnbindBindingIdentifier(bindings, identifier);
-      });
-    }
-  }
-  #clearAfterUnbindBindingIdentifier(bindings, identifier) {
-    this.#serviceReferenceManager.bindingService.removeById(identifier.id);
-    if (bindings !== void 0) {
-      for (const binding of bindings) {
-        this.#planResultCacheManager.invalidateService({
-          binding,
-          kind: CacheBindingInvalidationKind.bindingRemoved
-        });
-      }
-    }
-  }
-  #unbindAll() {
-    const nonParentBoundServiceIds = [
-      ...this.#serviceReferenceManager.bindingService.getNonParentBoundServices()
-    ];
-    const deactivationResults = nonParentBoundServiceIds.map((serviceId) => resolveServiceDeactivations(this.#deactivationParams, serviceId));
-    const hasAsyncDeactivations = deactivationResults.some((result) => isPromise(result));
-    if (hasAsyncDeactivations) {
-      return Promise.all(deactivationResults).then(() => {
-        this.#clearAfterUnbindAll(nonParentBoundServiceIds);
-      });
-    }
-    this.#clearAfterUnbindAll(nonParentBoundServiceIds);
-  }
-  #clearAfterUnbindAll(serviceIds) {
-    for (const serviceId of serviceIds) {
-      this.#serviceReferenceManager.activationService.removeAllByServiceId(serviceId);
-      this.#serviceReferenceManager.bindingService.removeAllByServiceId(serviceId);
-      this.#serviceReferenceManager.deactivationService.removeAllByServiceId(serviceId);
-    }
-    this.#serviceReferenceManager.planResultCacheService.clearCache();
-  }
-  #unbindServiceIdentifier(identifier) {
-    const bindingsIterable = this.#serviceReferenceManager.bindingService.get(identifier);
-    const bindings = bindingsIterable === void 0 ? void 0 : [...bindingsIterable];
-    const result = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
-    if (result === void 0) {
-      this.#clearAfterUnbindServiceIdentifier(identifier, bindings);
-    } else {
-      return result.then(() => {
-        this.#clearAfterUnbindServiceIdentifier(identifier, bindings);
-      });
-    }
-  }
-  #clearAfterUnbindServiceIdentifier(identifier, bindings) {
-    this.#serviceReferenceManager.activationService.removeAllByServiceId(identifier);
-    this.#serviceReferenceManager.bindingService.removeAllByServiceId(identifier);
-    this.#serviceReferenceManager.deactivationService.removeAllByServiceId(identifier);
-    if (bindings !== void 0) {
-      for (const binding of bindings) {
-        this.#planResultCacheManager.invalidateService({
-          binding,
-          kind: CacheBindingInvalidationKind.bindingRemoved
-        });
-      }
-    }
-  }
-  #isAnyValidBinding(serviceIdentifier, bindings, options) {
-    if (bindings === void 0) {
-      return false;
-    }
-    const bindingConstraints = {
-      getAncestor: () => void 0,
-      name: options?.name,
-      serviceIdentifier,
-      tags: /* @__PURE__ */ new Map()
-    };
-    if (options?.tag !== void 0) {
-      bindingConstraints.tags.set(options.tag.key, options.tag.value);
-    }
-    for (const binding of bindings) {
-      if (binding.isSatisfiedBy(bindingConstraints)) {
-        return true;
-      }
-    }
-    return false;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/ContainerModuleManager.js
-var ContainerModuleManager = class {
-  #bindingManager;
-  #deactivationParams;
-  #defaultScope;
-  #planResultCacheManager;
-  #serviceReferenceManager;
-  constructor(bindingManager, deactivationParams, defaultScope, planResultCacheManager, serviceReferenceManager) {
-    this.#bindingManager = bindingManager;
-    this.#deactivationParams = deactivationParams;
-    this.#defaultScope = defaultScope;
-    this.#planResultCacheManager = planResultCacheManager;
-    this.#serviceReferenceManager = serviceReferenceManager;
-  }
-  async loadAsync(...modules) {
-    await Promise.all(this.#load(...modules));
-  }
-  load(...modules) {
-    const results = this.#load(...modules);
-    for (const result of results) {
-      if (result !== void 0) {
-        throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous module load. Consider using container.loadAsync() instead.");
-      }
-    }
-  }
-  async unloadAsync(...modules) {
-    await Promise.all(this.#unload(...modules));
-    this.#clearAfterUnloadModules(modules);
-  }
-  unload(...modules) {
-    const results = this.#unload(...modules);
-    for (const result of results) {
-      if (result !== void 0) {
-        throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous module unload. Consider using container.unloadAsync() instead.");
-      }
-    }
-    this.#clearAfterUnloadModules(modules);
-  }
-  #buildContainerModuleLoadOptions(moduleId) {
-    return {
-      bind: (serviceIdentifier) => {
-        return new BindToFluentSyntaxImplementation((binding) => {
-          this.#setBinding(binding);
-        }, moduleId, this.#defaultScope, serviceIdentifier);
-      },
-      isBound: this.#bindingManager.isBound.bind(this.#bindingManager),
-      onActivation: (serviceIdentifier, activation) => {
-        this.#serviceReferenceManager.activationService.add(activation, {
-          moduleId,
-          serviceId: serviceIdentifier
-        });
-      },
-      onDeactivation: (serviceIdentifier, deactivation) => {
-        this.#serviceReferenceManager.deactivationService.add(deactivation, {
-          moduleId,
-          serviceId: serviceIdentifier
-        });
-      },
-      rebind: this.#bindingManager.rebind.bind(this.#bindingManager),
-      rebindAsync: this.#bindingManager.rebindAsync.bind(this.#bindingManager),
-      unbind: this.#bindingManager.unbind.bind(this.#bindingManager),
-      unbindAsync: this.#bindingManager.unbindAsync.bind(this.#bindingManager)
-    };
-  }
-  #clearAfterUnloadModules(modules) {
-    for (const module of modules) {
-      this.#serviceReferenceManager.activationService.removeAllByModuleId(module.id);
-      this.#serviceReferenceManager.bindingService.removeAllByModuleId(module.id);
-      this.#serviceReferenceManager.deactivationService.removeAllByModuleId(module.id);
-    }
-    this.#serviceReferenceManager.planResultCacheService.clearCache();
-  }
-  #load(...modules) {
-    return modules.map((module) => module.load(this.#buildContainerModuleLoadOptions(module.id)));
-  }
-  #setBinding(binding) {
-    this.#serviceReferenceManager.bindingService.set(binding);
-    this.#planResultCacheManager.invalidateService({
-      binding,
-      kind: CacheBindingInvalidationKind.bindingAdded
-    });
-  }
-  #unload(...modules) {
-    return modules.map((module) => resolveModuleDeactivations(this.#deactivationParams, module.id));
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/actions/resetDeactivationParams.js
-function resetDeactivationParams(serviceReferenceManager, deactivationParams) {
-  deactivationParams.getBindings = serviceReferenceManager.bindingService.get.bind(serviceReferenceManager.bindingService);
-  deactivationParams.getBindingsFromModule = serviceReferenceManager.bindingService.getByModuleId.bind(serviceReferenceManager.bindingService);
-  deactivationParams.getDeactivations = serviceReferenceManager.deactivationService.get.bind(serviceReferenceManager.deactivationService);
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/calculations/buildDeactivationParams.js
-function buildDeactivationParams(serviceReferenceManager) {
-  return {
-    getBindings: serviceReferenceManager.bindingService.get.bind(serviceReferenceManager.bindingService),
-    getBindingsFromModule: serviceReferenceManager.bindingService.getByModuleId.bind(serviceReferenceManager.bindingService),
-    getClassMetadata,
-    getDeactivations: serviceReferenceManager.deactivationService.get.bind(serviceReferenceManager.deactivationService)
-  };
-}
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/DeactivationParamsManager.js
-var DeactivationParamsManager = class {
-  deactivationParams;
-  constructor(serviceReferenceManager) {
-    this.deactivationParams = buildDeactivationParams(serviceReferenceManager);
-    serviceReferenceManager.onReset(() => {
-      resetDeactivationParams(serviceReferenceManager, this.deactivationParams);
-    });
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/PlanParamsOperationsManager.js
-var PlanParamsOperationsManager = class {
-  planParamsOperations;
-  #serviceReferenceManager;
-  constructor(serviceReferenceManager) {
-    this.#serviceReferenceManager = serviceReferenceManager;
-    this.planParamsOperations = {
-      getActivations: this.#getActivations.bind(this),
-      getBindings: this.#serviceReferenceManager.bindingService.get.bind(this.#serviceReferenceManager.bindingService),
-      getBindingsChained: this.#serviceReferenceManager.bindingService.getChained.bind(this.#serviceReferenceManager.bindingService),
-      getClassMetadata,
-      getPlan: this.#serviceReferenceManager.planResultCacheService.get.bind(this.#serviceReferenceManager.planResultCacheService),
-      setBinding: this.#setBinding.bind(this),
-      setNonCachedServiceNode: this.#serviceReferenceManager.planResultCacheService.setNonCachedServiceNode.bind(this.#serviceReferenceManager.planResultCacheService),
-      setPlan: this.#serviceReferenceManager.planResultCacheService.set.bind(this.#serviceReferenceManager.planResultCacheService),
-      subscribeActivationAddedOnce: this.#subscribeActivationAddedOnce.bind(this)
-    };
-    this.#serviceReferenceManager.onReset(() => {
-      this.#resetComputedProperties();
-    });
-  }
-  #getActivations(serviceIdentifier) {
-    return this.#serviceReferenceManager.activationService.get(serviceIdentifier);
-  }
-  #subscribeActivationAddedOnce(serviceIdentifier, subscriber) {
-    this.#serviceReferenceManager.activationService.subscribeOnce(serviceIdentifier, subscriber);
-  }
-  #resetComputedProperties() {
-    this.planParamsOperations.getBindings = this.#serviceReferenceManager.bindingService.get.bind(this.#serviceReferenceManager.bindingService);
-    this.planParamsOperations.getBindingsChained = this.#serviceReferenceManager.bindingService.getChained.bind(this.#serviceReferenceManager.bindingService);
-    this.planParamsOperations.setBinding = this.#setBinding.bind(this);
-  }
-  #setBinding(binding) {
-    this.#serviceReferenceManager.bindingService.set(binding);
-    this.#serviceReferenceManager.planResultCacheService.invalidateServiceBinding({
-      binding,
-      kind: CacheBindingInvalidationKind.bindingAdded,
-      operations: this.planParamsOperations
-    });
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/PlanResultCacheManager.js
-var PlanResultCacheManager = class {
-  #planParamsOperationsManager;
-  #serviceReferenceManager;
-  constructor(planParamsOperationsManager, serviceReferenceManager) {
-    this.#planParamsOperationsManager = planParamsOperationsManager;
-    this.#serviceReferenceManager = serviceReferenceManager;
-  }
-  invalidateService(invalidation) {
-    this.#serviceReferenceManager.planResultCacheService.invalidateServiceBinding({
-      ...invalidation,
-      operations: this.#planParamsOperationsManager.planParamsOperations
-    });
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+plugin@0.3.1/node_modules/@inversifyjs/plugin/lib/plugin/models/Plugin.js
-var isPlugin = /* @__PURE__ */ Symbol.for("@inversifyjs/plugin/isPlugin");
-var Plugin = class {
-  [isPlugin] = true;
-  _container;
-  _context;
-  constructor(container, context3) {
-    this._container = container;
-    this._context = context3;
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/PluginManager.js
-var PluginManager = class {
-  #pluginApi;
-  #pluginContext;
-  #serviceResolutionManager;
-  #serviceReferenceManager;
-  constructor(container, serviceReferenceManager, serviceResolutionManager) {
-    this.#serviceReferenceManager = serviceReferenceManager;
-    this.#serviceResolutionManager = serviceResolutionManager;
-    this.#pluginApi = this.#buildPluginApi(container);
-    this.#pluginContext = this.#buildPluginContext();
-  }
-  register(container, pluginConstructor) {
-    const pluginInstance = new pluginConstructor(container, this.#pluginContext);
-    this.#assertIsPlugin(pluginInstance);
-    pluginInstance.load(this.#pluginApi);
-  }
-  #assertIsPlugin(value) {
-    if (value[isPlugin] !== true) {
-      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Invalid plugin. The plugin must extend the Plugin class");
-    }
-  }
-  #buildPluginApi(container) {
-    return {
-      define: (name, method) => {
-        if (Object.prototype.hasOwnProperty.call(container, name)) {
-          throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Container already has a method named "${String(name)}"`);
-        }
-        container[name] = method;
-      },
-      onPlan: this.#serviceResolutionManager.onPlan.bind(this.#serviceResolutionManager)
-    };
-  }
-  #buildPluginContext() {
-    const serviceReferenceManager = this.#serviceReferenceManager;
-    return {
-      get activationService() {
-        return serviceReferenceManager.activationService;
-      },
-      get bindingService() {
-        return serviceReferenceManager.bindingService;
-      },
-      get deactivationService() {
-        return serviceReferenceManager.deactivationService;
-      },
-      get planResultCacheService() {
-        return serviceReferenceManager.planResultCacheService;
-      }
-    };
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/ServiceReferenceManager.js
-var ServiceReferenceManager = class {
-  activationService;
-  bindingService;
-  deactivationService;
-  planResultCacheService;
-  #onResetComputedPropertiesListeners;
-  constructor(activationService, bindingService, deactivationService, planResultCacheService) {
-    this.activationService = activationService;
-    this.bindingService = bindingService;
-    this.deactivationService = deactivationService;
-    this.planResultCacheService = planResultCacheService;
-    this.#onResetComputedPropertiesListeners = [];
-  }
-  reset(activationService, bindingService, deactivationService) {
-    this.activationService = activationService;
-    this.bindingService = bindingService;
-    this.deactivationService = deactivationService;
-    this.planResultCacheService.clearCache();
-    for (const listener of this.#onResetComputedPropertiesListeners) {
-      listener();
-    }
-  }
-  onReset(listener) {
-    this.#onResetComputedPropertiesListeners.push(listener);
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/ServiceResolutionManager.js
-var ServiceResolutionManager = class {
-  #autobind;
-  #defaultScope;
-  #getActivationsResolutionParam;
-  #jitEnabled;
-  #resolutionContext;
-  #onPlanHandlers;
-  #planParamsOperationsManager;
-  #serviceReferenceManager;
-  constructor(planParamsOperationsManager, serviceReferenceManager, autobind, defaultScope, jitEnabled) {
-    this.#planParamsOperationsManager = planParamsOperationsManager;
-    this.#serviceReferenceManager = serviceReferenceManager;
-    this.#getActivationsResolutionParam = (serviceIdentifier) => this.#serviceReferenceManager.activationService.get(serviceIdentifier);
-    this.#resolutionContext = this.#buildResolutionContext();
-    this.#autobind = autobind;
-    this.#defaultScope = defaultScope;
-    this.#jitEnabled = jitEnabled;
-    this.#onPlanHandlers = [];
-    this.#serviceReferenceManager.onReset(() => {
-      this.#resetComputedProperties();
-    });
-  }
-  get(serviceIdentifier, options) {
-    const planResult = this.#buildPlanResult(false, serviceIdentifier, options);
-    const resolvedValue = this.#getFromPlanResult(planResult);
-    if (isPromise(resolvedValue)) {
-      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Unexpected asynchronous service when resolving service "${stringifyServiceIdentifier(serviceIdentifier)}"`);
-    }
-    return resolvedValue;
-  }
-  getAll(serviceIdentifier, options) {
-    const planResult = this.#buildPlanResult(true, serviceIdentifier, options);
-    const resolvedValue = this.#getFromPlanResult(planResult);
-    if (isPromise(resolvedValue)) {
-      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Unexpected asynchronous service when resolving service "${stringifyServiceIdentifier(serviceIdentifier)}"`);
-    }
-    return resolvedValue;
-  }
-  async getAllAsync(serviceIdentifier, options) {
-    const planResult = this.#buildPlanResult(true, serviceIdentifier, options);
-    return this.#getFromPlanResult(planResult);
-  }
-  async getAsync(serviceIdentifier, options) {
-    const planResult = this.#buildPlanResult(false, serviceIdentifier, options);
-    return this.#getFromPlanResult(planResult);
-  }
-  onPlan(handler2) {
-    this.#onPlanHandlers.push(handler2);
-  }
-  #resetComputedProperties() {
-    this.#resolutionContext = this.#buildResolutionContext();
-  }
-  #buildGetPlanOptions(isMultiple, serviceIdentifier, options) {
-    const name = options?.name;
-    const optional2 = options?.optional ?? false;
-    const tag = options?.tag;
-    if (isMultiple) {
-      return {
-        chained: options?.chained ?? false,
-        isMultiple,
-        name,
-        optional: optional2,
-        serviceIdentifier,
-        tag
-      };
-    } else {
-      return {
-        isMultiple,
-        name,
-        optional: optional2,
-        serviceIdentifier,
-        tag
-      };
-    }
-  }
-  #buildPlanParams(serviceIdentifier, isMultiple, options) {
-    const planParams = {
-      autobindOptions: options?.autobind ?? this.#autobind ? {
-        scope: this.#defaultScope
-      } : void 0,
-      jitEnabled: this.#jitEnabled,
-      operations: this.#planParamsOperationsManager.planParamsOperations,
-      rootConstraints: this.#buildPlanParamsConstraints(serviceIdentifier, isMultiple, options),
-      servicesBranch: []
-    };
-    this.#handlePlanParamsRootConstraints(planParams, options);
-    return planParams;
-  }
-  #buildPlanParamsConstraints(serviceIdentifier, isMultiple, options) {
-    if (isMultiple) {
-      return {
-        chained: options?.chained ?? false,
-        isMultiple,
-        serviceIdentifier
-      };
-    } else {
-      return {
-        isMultiple,
-        serviceIdentifier
-      };
-    }
-  }
-  #buildPlanResult(isMultiple, serviceIdentifier, options) {
-    if (!isMultiple && options === void 0) {
-      const cachedPlanResultFromServiceIdentifier = this.#serviceReferenceManager.planResultCacheService.getByServiceIdentifier(serviceIdentifier);
-      if (cachedPlanResultFromServiceIdentifier !== void 0) {
-        return cachedPlanResultFromServiceIdentifier;
-      }
-    }
-    const getPlanOptions = this.#buildGetPlanOptions(isMultiple, serviceIdentifier, options);
-    const planResultFromCache = this.#serviceReferenceManager.planResultCacheService.get(getPlanOptions);
-    if (planResultFromCache !== void 0) {
-      return planResultFromCache;
-    }
-    const planResult = plan(this.#buildPlanParams(serviceIdentifier, isMultiple, options));
-    for (const handler2 of this.#onPlanHandlers) {
-      handler2(getPlanOptions, planResult);
-    }
-    return planResult;
-  }
-  #buildResolutionContext() {
-    return {
-      get: this.get.bind(this),
-      getActivations: this.#getActivationsResolutionParam,
-      getAll: this.getAll.bind(this),
-      getAllAsync: this.getAllAsync.bind(this),
-      getAsync: this.getAsync.bind(this)
-    };
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  #getFromPlanResult(planResult) {
-    return resolve3({
-      context: this.#resolutionContext,
-      planResult,
-      requestScopeCache: void 0
-    });
-  }
-  #handlePlanParamsRootConstraints(planParams, options) {
-    if (options === void 0) {
-      return;
-    }
-    if (options.name !== void 0) {
-      planParams.rootConstraints.name = options.name;
-    }
-    if (options.optional === true) {
-      planParams.rootConstraints.isOptional = true;
-    }
-    if (options.tag !== void 0) {
-      planParams.rootConstraints.tag = {
-        key: options.tag.key,
-        value: options.tag.value
-      };
-    }
-    if (planParams.rootConstraints.isMultiple) {
-      planParams.rootConstraints.chained = options?.chained ?? false;
-    }
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/SnapshotManager.js
-var SnapshotManager = class {
-  #serviceReferenceManager;
-  #snapshots;
-  constructor(serviceReferenceManager) {
-    this.#serviceReferenceManager = serviceReferenceManager;
-    this.#snapshots = [];
-  }
-  restore() {
-    const snapshot = this.#snapshots.pop();
-    if (snapshot === void 0) {
-      throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "No snapshot available to restore");
-    }
-    this.#serviceReferenceManager.reset(snapshot.activationService, snapshot.bindingService, snapshot.deactivationService);
-  }
-  snapshot() {
-    this.#snapshots.push({
-      activationService: this.#serviceReferenceManager.activationService.clone(),
-      bindingService: this.#serviceReferenceManager.bindingService.clone(),
-      deactivationService: this.#serviceReferenceManager.deactivationService.clone()
-    });
-  }
-};
-
-// node_modules/.pnpm/@inversifyjs+container@3.1.3_reflect-metadata@0.2.2/node_modules/@inversifyjs/container/lib/container/services/Container.js
-var DEFAULT_DEFAULT_SCOPE = bindingScopeValues.Transient;
-var DEFAULT_JITLESS = true;
-var Container = class {
-  #bindingManager;
-  #containerModuleManager;
-  #pluginManager;
-  #serviceReferenceManager;
-  #serviceResolutionManager;
-  #snapshotManager;
-  constructor(options) {
-    const autobind = options?.autobind ?? false;
-    const defaultScope = options?.defaultScope ?? DEFAULT_DEFAULT_SCOPE;
-    const jitless = options?.jitless ?? DEFAULT_JITLESS;
-    this.#serviceReferenceManager = this.#buildServiceReferenceManager(options, autobind, defaultScope, jitless);
-    const planParamsOperationsManager = new PlanParamsOperationsManager(this.#serviceReferenceManager);
-    const planResultCacheManager = new PlanResultCacheManager(planParamsOperationsManager, this.#serviceReferenceManager);
-    const deactivationParamsManager = new DeactivationParamsManager(this.#serviceReferenceManager);
-    this.#bindingManager = new BindingManager(deactivationParamsManager.deactivationParams, defaultScope, planResultCacheManager, this.#serviceReferenceManager);
-    this.#containerModuleManager = new ContainerModuleManager(this.#bindingManager, deactivationParamsManager.deactivationParams, defaultScope, planResultCacheManager, this.#serviceReferenceManager);
-    this.#serviceResolutionManager = new ServiceResolutionManager(planParamsOperationsManager, this.#serviceReferenceManager, autobind, defaultScope, !jitless);
-    this.#pluginManager = new PluginManager(this, this.#serviceReferenceManager, this.#serviceResolutionManager);
-    this.#snapshotManager = new SnapshotManager(this.#serviceReferenceManager);
-  }
-  bind(serviceIdentifier) {
-    return this.#bindingManager.bind(serviceIdentifier);
-  }
-  get(serviceIdentifier, options) {
-    return this.#serviceResolutionManager.get(serviceIdentifier, options);
-  }
-  getAll(serviceIdentifier, options) {
-    return this.#serviceResolutionManager.getAll(serviceIdentifier, options);
-  }
-  async getAllAsync(serviceIdentifier, options) {
-    return this.#serviceResolutionManager.getAllAsync(serviceIdentifier, options);
-  }
-  async getAsync(serviceIdentifier, options) {
-    return this.#serviceResolutionManager.getAsync(serviceIdentifier, options);
-  }
-  isBound(serviceIdentifier, options) {
-    return this.#bindingManager.isBound(serviceIdentifier, options);
-  }
-  isCurrentBound(serviceIdentifier, options) {
-    return this.#bindingManager.isCurrentBound(serviceIdentifier, options);
-  }
-  async loadAsync(...modules) {
-    return this.#containerModuleManager.loadAsync(...modules);
-  }
-  load(...modules) {
-    this.#containerModuleManager.load(...modules);
-  }
-  onActivation(serviceIdentifier, activation) {
-    this.#serviceReferenceManager.activationService.add(activation, {
-      serviceId: serviceIdentifier
-    });
-  }
-  onDeactivation(serviceIdentifier, deactivation) {
-    this.#serviceReferenceManager.deactivationService.add(deactivation, {
-      serviceId: serviceIdentifier
-    });
-  }
-  register(pluginConstructor) {
-    this.#pluginManager.register(this, pluginConstructor);
-  }
-  restore() {
-    this.#snapshotManager.restore();
-  }
-  async rebindAsync(serviceIdentifier) {
-    return this.#bindingManager.rebindAsync(serviceIdentifier);
-  }
-  rebind(serviceIdentifier) {
-    return this.#bindingManager.rebind(serviceIdentifier);
-  }
-  snapshot() {
-    this.#snapshotManager.snapshot();
-  }
-  async unbindAsync(identifier) {
-    await this.#bindingManager.unbindAsync(identifier);
-  }
-  async unbindAllAsync() {
-    await this.#bindingManager.unbindAllAsync();
-  }
-  unbindAll() {
-    this.#bindingManager.unbindAll();
-  }
-  unbind(identifier) {
-    this.#bindingManager.unbind(identifier);
-  }
-  async unloadAsync(...modules) {
-    return this.#containerModuleManager.unloadAsync(...modules);
-  }
-  unload(...modules) {
-    this.#containerModuleManager.unload(...modules);
-  }
-  #buildAutobindOptions(autobind, defaultScope) {
-    if (autobind) {
-      return { scope: defaultScope };
-    }
-    return void 0;
-  }
-  #buildServiceReferenceManager(options, autobind, defaultScope, jitless) {
-    const autobindOptions = this.#buildAutobindOptions(autobind, defaultScope);
-    if (options?.parent === void 0) {
-      return new ServiceReferenceManager(ActivationsService.build(() => void 0), BindingService.build(() => void 0, autobindOptions), DeactivationsService.build(() => void 0), new PlanResultCacheService(!jitless));
-    }
-    const planResultCacheService = new PlanResultCacheService(!jitless);
-    const parent = options.parent;
-    parent.#serviceReferenceManager.planResultCacheService.subscribe(planResultCacheService);
-    return new ServiceReferenceManager(ActivationsService.build(() => parent.#serviceReferenceManager.activationService), BindingService.build(() => parent.#serviceReferenceManager.bindingService, autobindOptions), DeactivationsService.build(() => parent.#serviceReferenceManager.deactivationService), planResultCacheService);
   }
 };
 
@@ -67332,14 +67448,15 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
 
 // packages/runtime/github-actions/src/meetup-action-composition.ts
 var MeetupActionComposition = class {
+  runtime = new GithubActionsComposition();
   meetupPublicationAction() {
     return new MeetupPublicationAction({
-      aiInput: new GithubActionsComposition().aiInput(),
-      publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
+      aiInput: this.runtime.aiInput(),
+      publicationUrlInput: this.runtime.publicationUrlInput(),
       createJourney: (input) => MeetupPublicationComposition.create(input).get(ManageMeetupPublication),
-      runtimeInput: new GithubActionsComposition().runtimeInput(),
-      conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-      meetupPublicationConfiguration: new GithubActionsComposition().meetupPublicationConfiguration()
+      runtimeInput: this.runtime.runtimeInput(),
+      conferenceHallInput: this.runtime.conferenceHallInput(),
+      meetupPublicationConfiguration: this.runtime.meetupPublicationConfiguration()
     });
   }
 };
@@ -67353,12 +67470,6 @@ await runner.run(
   false
 );
 /*! Bundled license information:
-
-undici/lib/web/fetch/body.js:
-  (*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> *)
-
-undici/lib/web/websocket/frame.js:
-  (*! ws. MIT License. Einar Otto Stangvik <einaros@gmail.com> *)
 
 reflect-metadata/ReflectLite.js:
   (*! *****************************************************************************
@@ -67375,6 +67486,12 @@ reflect-metadata/ReflectLite.js:
   See the Apache Version 2.0 License for specific language governing permissions
   and limitations under the License.
   ***************************************************************************** *)
+
+undici/lib/web/fetch/body.js:
+  (*! formdata-polyfill. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> *)
+
+undici/lib/web/websocket/frame.js:
+  (*! ws. MIT License. Einar Otto Stangvik <einaros@gmail.com> *)
 
 content-type/dist/index.js:
   (*!

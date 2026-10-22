@@ -3,15 +3,17 @@ import { GithubActionsComposition } from "./dependency-composition.js";
 import { FeedbackAction } from "./feedback-action.js";
 import { FeedbackComposition } from "./feedback-composition.js";
 export class FeedbackActionComposition {
+	private readonly runtime = new GithubActionsComposition();
+
 	feedbackAction(): FeedbackAction {
 		return new FeedbackAction({
-			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
+			publicationUrlInput: this.runtime.publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
 					ManageMeetupFeedback,
 				),
-			runtimeInput: new GithubActionsComposition().runtimeInput(),
-			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			runtimeInput: this.runtime.runtimeInput(),
+			conferenceHallInput: this.runtime.conferenceHallInput(),
 		});
 	}
 }
