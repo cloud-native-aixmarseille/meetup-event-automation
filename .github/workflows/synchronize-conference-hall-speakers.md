@@ -26,31 +26,6 @@
 - **`contents`**: `read`
 
 <!-- overview:end -->
-
-## Synchronization behavior
-
-Prepare one reviewed speaker synchronization PR in the private consumer
-repository. Call this reusable workflow from scheduled and manual consumer
-workflows; see [Conference Hall setup](../../docs/integrations/conference-hall.md).
-
-There are no workflow outputs. Public destinations are skipped, and the action
-independently verifies repository privacy. A repository-wide concurrency group
-serializes imports. The branch merges the current default branch and preserves
-local changes; conflicts or a human-authored branch head require reconciliation.
-An exact-head push lease prevents replacing a concurrently updated PR branch.
-Unchanged input opens no new PR. No automatic merge is enabled.
-
-The workflow publishes only when candidate preparation emits `pr-title`.
-Expected catalog or mapping corrections keep CI successful but block publication;
-technical failures fail CI. Both can update guidance on an existing private PR.
-The PR links its latest successful snapshot refresh. Blocked runs preserve the
-last merged snapshot. Existing linked profiles refresh directly from Conference
-Hall during event runs, independently of snapshot PR merges. New identities
-become available after their mappings are merged. Merging
-requires the consumer's referential/form checks and an active-event audit caller
-for catalog pushes. Credentials are explicitly forwarded and action bundles
-come from the same pinned automation revision as this workflow.
-
 <!-- usage:start -->
 
 ## Usage

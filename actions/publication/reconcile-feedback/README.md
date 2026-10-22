@@ -9,14 +9,6 @@
 ---
 
 <!-- header:end -->
-
-Create OpenFeedback events, synchronize their titles, talks and speakers, and update the existing Kutt link from the day before through the event day.
-
-Use the reusable issue-update and daily-audit workflows, which hold the required shared event lock. See [setup, timing and retry behavior](../../../docs/integrations/feedback.md).
-
-The OpenFeedback organization key is required, including when the
-issue already has a feedback URL. Use a key beginning with `oforg_`.
-
 <!-- inputs:start -->
 
 ## Inputs
@@ -37,7 +29,6 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 
 <!-- inputs:end -->
-
 <!-- outputs:start -->
 
 ## Outputs
@@ -47,7 +38,6 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | **`diagnostics`** | Redacted JSON diagnostics. |
 
 <!-- outputs:end -->
-
 <!-- generated:start -->
 
 ---
@@ -154,12 +144,3 @@ Copyright © 2026 cloud-native-aixmarseille
 For more details, see the [license](http://choosealicense.com/licenses/mit/).
 
 <!-- license:end -->
-
-## Conference Hall inputs
-
-Required `conference-hall-event` and `conference-hall-api-key` inputs provide
-live speaker-profile and selected-proposal refresh. Each invocation combines
-one Conference Hall snapshot with committed CSV identity mappings and local
-contact supplements. Linked profile changes take effect without a CSV merge.
-Missing or blank source settings fail before reconciliation. See
-[setup and failure behavior](../../../docs/integrations/conference-hall.md).

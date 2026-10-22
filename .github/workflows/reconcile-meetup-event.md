@@ -26,22 +26,6 @@
 - **`contents`**: `read`
 
 <!-- overview:end -->
-
-## Publication behavior
-
-Reusable workflow: [reconcile-meetup-event.yml](reconcile-meetup-event.yml).
-
-Creates a draft or updates an existing event from a consumer meetup issue.
-Requests organizer approval through an issue comment and Slack, then publishes
-approved drafts automatically. The issue links to both
-drafts and published events; **Meetup event published** under **Communication**
-records the verified status. The authoritative setup and recovery guide is [Meetup publication](../../docs/integrations/meetup-publication.md).
-
-All inputs and secrets are required; there are no defaults or workflow outputs.
-AI settings follow the shared [AI configuration contract](../../docs/reference/configuration.md#ai-configuration).
-Replace `<FULL_COMMIT_SHA>` in the usage template with a published revision that
-includes this workflow, and supply your repository's input values and secrets.
-
 <!-- usage:start -->
 
 ## Usage
@@ -161,22 +145,6 @@ jobs:
 <!-- secrets:end -->
 <!-- outputs:start -->
 <!-- outputs:end -->
-
-## Runtime and permissions
-
-The workflow checks out the consumer and loads automation code from its own
-pinned revision. It installs lockfile dependencies, Chromium, Python 3.14, and
-the pinned solver dependencies. It grants `contents: read` to the workflow and
-mints a consumer-scoped App token with contents read and issues write.
-
-The job holds `meetup-event-REPOSITORY_ID-ISSUE_NUMBER`, the same lock used by other
-event writers, with cancellation disabled and a 15-minute timeout. Meetup and
-AI credentials reach only the publication step. The workflow uploads no
-browser state or artifacts. Callers subscribe to event issue changes and `issue_comment: [edited]` to
-resume approved publication automatically, and pin a published full commit SHA.
-The reusable workflow filters comment events to human edits of bot publication
-approval comments; the approval adapter verifies the author and exact content.
-
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->

@@ -32,6 +32,8 @@ events for the configured group. Set Actions secrets `MEETUP_EMAIL` and
 handling. The workflow also requires the existing GitHub App and Conference Hall credentials; see
 [setup](../usage/setup.md). Forward each credential explicitly, including the
 Slack bot token and organizer channel used for approval notifications and reactions.
+Password whitespace is preserved. The selected AI model must support image input
+and structured output.
 Pass the three required [publication URL inputs](../reference/configuration.md#publication-url-inputs)
 from the same repository variables used by issue updates and audits. The Meetup
 prefix selects the organizer group used by the browser and event URL validation.
@@ -181,9 +183,16 @@ change its site independently of this repository.
 
 ## Interrupted runs and duplicate protection
 
+The reusable workflow checks out consumer configuration and installs automation
+code, Chromium, and locked solver dependencies from its pinned revision. It
+grants `contents: read` and creates a consumer-scoped App token with contents
+read and issues write. Meetup and AI credentials reach only the publication
+step. The job has a 15-minute timeout and uploads no browser artifacts. Direct
+action callers must provide the same runtime and permissions.
+
 The workflow shares the repository/issue concurrency group with the existing
-event workflows, with cancellation disabled. Direct action callers must hold
-that same lock. The journey reloads the issue immediately before submission and
+event workflows, `meetup-event-REPOSITORY_ID-ISSUE_NUMBER`, with cancellation
+disabled. Direct action callers must hold that same lock. The journey reloads the issue immediately before submission and
 before patching it. GitHub does not provide transactional issue writes; a final
 race with a human edit remains possible.
 

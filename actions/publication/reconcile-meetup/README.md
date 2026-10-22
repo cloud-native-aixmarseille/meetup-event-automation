@@ -25,25 +25,6 @@
 Create or update a Meetup draft and publish it after verified organizer approval.
 
 <!-- overview:end -->
-
-## Publication behavior
-
-Create the event described by a consumer issue as a draft, or update its existing
-Meetup event. Request organizer approval through the shared issue-comment and
-Slack process, then publish an approved draft automatically. The action verifies saved fields, fills **Meetup Link** for drafts and
-published events, and synchronizes **Meetup event published** under
-**Communication** with the verified status. See
-[Meetup publication](../../../docs/integrations/meetup-publication.md)
-for configuration, prerequisites, recovery, and privacy boundaries.
-
-Password whitespace is preserved. The selected model must support image input
-and structured output.
-
-Every input is required and has no default.
-AI settings follow the shared [AI configuration contract](../../../docs/reference/configuration.md#ai-configuration).
-Replace `<FULL_COMMIT_SHA>` in the usage template with a published revision that
-includes this action, and supply your repository's input values.
-
 <!-- usage:start -->
 
 ## Usage
@@ -145,16 +126,6 @@ includes this action, and supply your repository's input values.
 <!-- secrets:end -->
 <!-- outputs:start -->
 <!-- outputs:end -->
-
-## Execution
-
-Use the [reusable workflow](../../../.github/workflows/reconcile-meetup-event.md),
-which checks out the consumer's configuration, installs Chromium and locked
-solver dependencies, scopes credentials, and holds the event concurrency lock.
-Direct callers must provide the same runtime and lock. There are no action
-outputs. The journal retains the remote identity for recovery. The shared action report provides a draft review URL, status,
-and recovery guidance.
-
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
