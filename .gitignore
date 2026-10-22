@@ -1,6 +1,7 @@
 # Dependency directory
 node_modules
 .venv/
+.venv-lock/
 __pycache__/
 .mypy_cache/
 .ruff_cache/
