@@ -1,155 +1,150 @@
-import {
-	JourneyComposition,
-	JourneyPolicyComposition,
-} from "@meetup-automation/journey";
-import { LocalizationComposition } from "@meetup-automation/localization";
-import { PublicationDomainComposition } from "@meetup-automation/publication";
+import { Container } from "inversify";
 import { ActionFailurePresenter } from "./action-failure-presenter.js";
 import { ActionOutput } from "./action-output.js";
 import { ActionReport } from "./action-report.js";
 import { ActionRunner } from "./action-runner.js";
 import { AiInput } from "./ai-input.js";
 import { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
-import {
+import type {
 	AssetDateFormatter,
-	type AssetDateFormatterArguments,
+	AssetDateFormatterArguments,
 } from "./assets/asset-date-formatter.js";
-import {
+import type {
 	AssetMessages,
-	type AssetMessagesArguments,
+	AssetMessagesArguments,
 } from "./assets/asset-messages.js";
 import { AssetRenderConfiguration } from "./assets/asset-render-configuration.js";
-import {
+import type {
 	AssetRenderPresenterImpl,
-	type AssetRenderPresenterImplArguments,
+	AssetRenderPresenterImplArguments,
 } from "./assets/asset-render-presenter.js";
 import { AttentionStageInput } from "./attention-stage-input.js";
 import { AttentionStages } from "./attention-stages.js";
 import { CommunicationInput } from "./communication-input.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
-import {
+import type {
 	ActionMessages,
-	type ActionMessagesArguments,
+	ActionMessagesArguments,
 } from "./i18n/action-messages.js";
 import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
-import {
+import type {
 	OrganizerFeedback,
-	type OrganizerFeedbackArguments,
+	OrganizerFeedbackArguments,
 } from "./organizer-feedback.js";
 import { PublicationUrlInput } from "./publication-url-input.js";
 import { ReferentialActionReport } from "./referential-action-report.js";
 import { RuntimeInput } from "./runtime-input.js";
+import { RuntimeInputComposition } from "./runtime-input-composition.js";
+import {
+	RUNTIME_FACTORIES,
+	type RuntimeFactories,
+	RuntimePresentationComposition,
+} from "./runtime-presentation-composition.js";
 import { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
+
 export class GithubActionsComposition {
+	private readonly container = GithubActionsComposition.createContainer();
+
+	static createContainer(): Container {
+		const container = new Container({ defaultScope: "Singleton" });
+		RuntimeInputComposition.bind(container);
+		RuntimePresentationComposition.bind(container);
+		return container;
+	}
+
 	aiInput(): AiInput {
-		return new AiInput(this.runtimeInput());
+		return this.container.get(AiInput);
 	}
+
 	publicationUrlInput(): PublicationUrlInput {
-		return new PublicationUrlInput();
+		return this.container.get(PublicationUrlInput);
 	}
+
 	actionFailurePresenter(): ActionFailurePresenter {
-		return new ActionFailurePresenter();
+		return this.container.get(ActionFailurePresenter);
 	}
-	actionMessages(...args: ActionMessagesArguments): ActionMessages {
-		return new ActionMessages(
-			{ localeResolver: new LocalizationComposition().localeResolver() },
-			...args,
-		);
-	}
+
 	actionOutput(): ActionOutput {
-		return new ActionOutput();
+		return this.container.get(ActionOutput);
 	}
+
 	actionReport(): ActionReport {
-		return new ActionReport();
+		return this.container.get(ActionReport);
 	}
+
 	actionRunner(): ActionRunner {
-		return new ActionRunner({
-			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-			actionFailurePresenter: this.actionFailurePresenter(),
-			actionReport: this.actionReport(),
-			actionOutput: this.actionOutput(),
-			createActionMessages: (...args) => this.actionMessages(...args),
-		});
+		return this.container.get(ActionRunner);
 	}
+
 	assetContentConfiguration(): AssetContentConfiguration {
-		return new AssetContentConfiguration({
-			runtimeInput: this.runtimeInput(),
-			contentContractPolicy:
-				new PublicationDomainComposition().contentContractPolicy(),
-			assetRenderConfiguration: this.assetRenderConfiguration(),
-		});
+		return this.container.get(AssetContentConfiguration);
 	}
-	assetDateFormatter(...args: AssetDateFormatterArguments): AssetDateFormatter {
-		return new AssetDateFormatter(...args);
-	}
-	assetMessages(...args: AssetMessagesArguments): AssetMessages {
-		return new AssetMessages(
-			{ localeResolver: new LocalizationComposition().localeResolver() },
-			...args,
-		);
-	}
+
 	assetRenderConfiguration(): AssetRenderConfiguration {
-		return new AssetRenderConfiguration({
-			contentContractPolicy:
-				new PublicationDomainComposition().contentContractPolicy(),
-			runtimeInput: this.runtimeInput(),
-		});
+		return this.container.get(AssetRenderConfiguration);
 	}
+
+	attentionStageInput(): AttentionStageInput {
+		return this.container.get(AttentionStageInput);
+	}
+
+	attentionStages(): AttentionStages {
+		return this.container.get(AttentionStages);
+	}
+
+	communicationInput(): CommunicationInput {
+		return this.container.get(CommunicationInput);
+	}
+
+	conferenceHallInput(): ConferenceHallInput {
+		return this.container.get(ConferenceHallInput);
+	}
+
+	meetupPublicationConfiguration(): MeetupPublicationConfiguration {
+		return this.container.get(MeetupPublicationConfiguration);
+	}
+
+	referentialActionReport(): ReferentialActionReport {
+		return this.container.get(ReferentialActionReport);
+	}
+
+	runtimeInput(): RuntimeInput {
+		return this.container.get(RuntimeInput);
+	}
+
+	speakerSyncFailureReport(): SpeakerSyncFailureReport {
+		return this.container.get(SpeakerSyncFailureReport);
+	}
+
+	actionMessages(...args: ActionMessagesArguments): ActionMessages {
+		return this.container.get<RuntimeFactories["actionMessages"]>(
+			RUNTIME_FACTORIES.actionMessages,
+		)(...args);
+	}
+
+	assetDateFormatter(...args: AssetDateFormatterArguments): AssetDateFormatter {
+		return this.container.get<RuntimeFactories["assetDateFormatter"]>(
+			RUNTIME_FACTORIES.assetDateFormatter,
+		)(...args);
+	}
+
+	assetMessages(...args: AssetMessagesArguments): AssetMessages {
+		return this.container.get<RuntimeFactories["assetMessages"]>(
+			RUNTIME_FACTORIES.assetMessages,
+		)(...args);
+	}
+
 	assetRenderPresenterImpl(
 		...args: AssetRenderPresenterImplArguments
 	): AssetRenderPresenterImpl {
-		return new AssetRenderPresenterImpl(
-			{
-				date: this.assetDateFormatter(args[0].locale),
-			},
-			...args,
-		);
+		return this.container.get<RuntimeFactories["assetRenderPresenter"]>(
+			RUNTIME_FACTORIES.assetRenderPresenter,
+		)(...args);
 	}
-	attentionStageInput(): AttentionStageInput {
-		return new AttentionStageInput();
-	}
-	attentionStages(): AttentionStages {
-		return new AttentionStages({
-			attentionStageEvaluation:
-				new JourneyPolicyComposition().attentionStageEvaluation(),
-			attentionStageInput: this.attentionStageInput(),
-		});
-	}
-	communicationInput(): CommunicationInput {
-		return new CommunicationInput({
-			publicationUrlInput: this.publicationUrlInput(),
-			conferenceHallInput: this.conferenceHallInput(),
-		});
-	}
-	conferenceHallInput(): ConferenceHallInput {
-		return new ConferenceHallInput();
-	}
-	meetupPublicationConfiguration(): MeetupPublicationConfiguration {
-		return new MeetupPublicationConfiguration({
-			runtimeInput: this.runtimeInput(),
-			scheduledEventPolicy:
-				new PublicationDomainComposition().scheduledEventPolicy(),
-		});
-	}
+
 	organizerFeedback(...args: OrganizerFeedbackArguments): OrganizerFeedback {
-		return new OrganizerFeedback(
-			{
-				attentionStageInput: this.attentionStageInput(),
-				createReconcileOrganizerFeedback: (...args) =>
-					new JourneyComposition().reconcileOrganizerFeedback(...args),
-			},
-			...args,
-		);
-	}
-	referentialActionReport(): ReferentialActionReport {
-		return new ReferentialActionReport();
-	}
-	runtimeInput(): RuntimeInput {
-		return new RuntimeInput();
-	}
-	speakerSyncFailureReport(): SpeakerSyncFailureReport {
-		return new SpeakerSyncFailureReport({
-			createActionMessages: (...args) => this.actionMessages(...args),
-		});
+		return this.container.get<RuntimeFactories["organizerFeedback"]>(
+			RUNTIME_FACTORIES.organizerFeedback,
+		)(...args);
 	}
 }

@@ -65513,51 +65513,6 @@ var AssetContentConfiguration = class {
   }
 };
 
-// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
-var AssetDateFormatter = class {
-  constructor(locale) {
-    this.locale = locale;
-  }
-  locale;
-  format(date, timeZone, format = "long") {
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
-    try {
-      new Intl.DateTimeFormat(this.locale, { timeZone });
-      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-      if (instant.toISOString().slice(0, 10) !== date) return void 0;
-      if (format === "numeric")
-        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
-      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
-      return new Intl.DateTimeFormat(this.locale, {
-        ...options,
-        timeZone: "UTC"
-      }).format(instant);
-    } catch {
-      return void 0;
-    }
-  }
-};
-
-// packages/runtime/github-actions/src/assets/messages.en.ts
-var EN_MESSAGES6 = {
-  "asset.agenda.talk": "{title} - {speakers}"
-};
-
-// packages/runtime/github-actions/src/assets/messages.fr.ts
-var FR_MESSAGES6 = {
-  "asset.agenda.talk": "{title} - {speakers}"
-};
-
-// packages/runtime/github-actions/src/assets/catalog.ts
-var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
-
-// packages/runtime/github-actions/src/assets/asset-messages.ts
-var AssetMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS8, locale);
-  }
-};
-
 // packages/runtime/github-actions/src/assets/asset-render-configuration.ts
 var AssetRenderConfiguration = class {
   constructor(collaborators) {
@@ -65648,75 +65603,6 @@ var AssetRenderConfiguration = class {
     if (!this.collaborators.runtimeInput.isObject(value) || Object.keys(value).length > 200)
       throw new Error("Invalid asset render configuration");
     return value;
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-render-presenter.ts
-var AssetRenderPresenterImpl = class {
-  constructor(collaborators, messages5) {
-    this.collaborators = collaborators;
-    this.messages = messages5;
-  }
-  collaborators;
-  messages;
-  format(input) {
-    const { date } = this.collaborators;
-    return {
-      text: {
-        "event.title": input.title,
-        "event.date": date.format(input.date, input.timeZone),
-        "event.date.month": date.format(input.date, input.timeZone, "month"),
-        "event.date.numeric": date.format(
-          input.date,
-          input.timeZone,
-          "numeric"
-        ),
-        "event.date.weekday": date.format(
-          input.date,
-          input.timeZone,
-          "weekday"
-        ),
-        "host.name": input.hostName,
-        "host.address": input.venue?.address,
-        "host.postal_code": input.venue?.postalCode,
-        "host.city": input.venue?.city,
-        "event.feedback_url": input.feedbackUrl,
-        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
-        "next_event.date.numeric": date.format(
-          input.nextEvent?.date,
-          input.timeZone,
-          "numeric"
-        ),
-        "next_event.host.name": input.nextEvent?.hostName,
-        "next_event.host.city": input.nextEvent?.city,
-        agenda: input.agenda.map(
-          (talk) => this.messages.t("asset.agenda.talk", {
-            title: talk.title,
-            speakers: this.names(talk.speakers)
-          })
-        ).join("\n"),
-        ...this.slots(input)
-      },
-      pictures: input.pictures,
-      hostLogo: input.hostLogo
-    };
-  }
-  slots(input) {
-    const text = {};
-    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
-      text[`talk.title:${slot}`] = talk.title;
-      text[`talk.abstract:${slot}`] = talk.abstract;
-      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
-    }
-    for (const [slot, name] of Object.entries(input.speakers ?? {}))
-      text[`speaker.name:${slot}`] = name;
-    return text;
-  }
-  names(speakers) {
-    return new Intl.ListFormat(this.messages.locale, {
-      style: "long",
-      type: "conjunction"
-    }).format(speakers);
   }
 };
 
@@ -65882,6 +65768,338 @@ var ConferenceHallInput = class {
         "Input required and not supplied: conference-hall-api-key"
       );
     return { conferenceHallEvent, conferenceHallApiKey };
+  }
+};
+
+// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+import { readFile as readFile5 } from "node:fs/promises";
+import { join as join3 } from "node:path";
+var MeetupPublicationConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async load(root) {
+    const text = await readFile5(
+      join3(root, ".github/meetup-publication.json"),
+      "utf8"
+    );
+    if (Buffer.byteLength(text) > 1e5)
+      throw new Error("Meetup publication configuration is too large");
+    return this.parse(JSON.parse(text));
+  }
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid Meetup publication configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public Meetup venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/publication-url-input.ts
+var PublicationUrlInput = class {
+  readMeetupEventUrlPrefix() {
+    return this.validateMeetupEventUrlPrefix(
+      getInput("meetup-event-url-prefix", {
+        required: true,
+        trimWhitespace: false
+      })
+    );
+  }
+  readCommunityEventUrlPrefixes() {
+    const community = getInput("community-event-url-prefixes", {
+      required: true,
+      trimWhitespace: false
+    });
+    let communityEventUrlPrefixes;
+    try {
+      communityEventUrlPrefixes = JSON.parse(community);
+    } catch {
+      throw new Error("Invalid input: community-event-url-prefixes");
+    }
+    return this.validateCommunityEventUrlPrefixes(communityEventUrlPrefixes);
+  }
+  readAssetFolderUrlPrefix() {
+    return this.validateAssetFolderUrlPrefix(
+      getInput("asset-folder-url-prefix", {
+        required: true,
+        trimWhitespace: false
+      })
+    );
+  }
+  validateMeetupEventUrlPrefix(value) {
+    const meetupEventUrlPrefix = this.prefix(value, "meetup-event-url-prefix");
+    if (!MeetupGroupUrl.fromEventUrlPrefix(meetupEventUrlPrefix))
+      throw new Error("Invalid input: meetup-event-url-prefix");
+    return meetupEventUrlPrefix;
+  }
+  validateCommunityEventUrlPrefixes(community) {
+    if (!Array.isArray(community) || community.length === 0)
+      throw new Error("Invalid input: community-event-url-prefixes");
+    return community.map(
+      (prefix) => this.prefix(prefix, "community-event-url-prefixes")
+    );
+  }
+  validateAssetFolderUrlPrefix(value) {
+    return this.prefix(value, "asset-folder-url-prefix");
+  }
+  prefix(value, name) {
+    if (typeof value !== "string" || !/^https:\/\/[^/?#@]+\/[^?#]*$/.test(value) || /[\s\\\p{Cc}]/u.test(value))
+      throw new Error(`Invalid input: ${name}`);
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      throw new Error(`Invalid input: ${name}`);
+    }
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.search || url.hash)
+      throw new Error(`Invalid input: ${name}`);
+    return value;
+  }
+};
+
+// packages/runtime/github-actions/src/referential-action-report.ts
+var ReferentialActionReport = class {
+  validation(result, diagnostics, messages5) {
+    const details = [
+      messages5.t(
+        result.isValid ? "report.referential.valid" : "report.referential.invalid"
+      ),
+      messages5.t("report.referential.counts", {
+        hosts: result.hostCount,
+        speakers: result.speakerCount
+      })
+    ];
+    return {
+      details,
+      diagnostics
+    };
+  }
+  issueForm(mode, result, messages5) {
+    const details = [];
+    if (result.diagnostics.some((item) => item.severity === "error")) {
+      details.push(messages5.t("report.issue-form.blocked"));
+    } else if (result.changed) {
+      details.push(
+        mode === "check" ? messages5.t("report.issue-form.stale") : messages5.t("report.issue-form.updated"),
+        messages5.t("report.issue-form.files", {
+          files: result.changedFiles.join(", ")
+        })
+      );
+    } else {
+      details.push(messages5.t("report.issue-form.current"));
+    }
+    return { details, diagnostics: result.diagnostics };
+  }
+};
+
+// packages/runtime/github-actions/src/runtime-input.ts
+var RuntimeInput = class {
+  positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  enumInput(name, value, allowed) {
+    const parsed = allowed.find((candidate) => candidate === value);
+    if (parsed === void 0) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return parsed;
+  }
+  isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+  booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+};
+
+// packages/runtime/github-actions/src/runtime-input-composition.ts
+var RuntimeInputComposition = class _RuntimeInputComposition {
+  static bind(container) {
+    container.bind(RuntimeInput).toResolvedValue(() => new RuntimeInput());
+    container.bind(PublicationUrlInput).toResolvedValue(() => new PublicationUrlInput());
+    container.bind(ConferenceHallInput).toResolvedValue(() => new ConferenceHallInput());
+    container.bind(AiInput).toResolvedValue(
+      (runtimeInput) => new AiInput(runtimeInput),
+      [RuntimeInput]
+    );
+    container.bind(CommunicationInput).toResolvedValue(
+      (publicationUrlInput, conferenceHallInput) => new CommunicationInput({ publicationUrlInput, conferenceHallInput }),
+      [PublicationUrlInput, ConferenceHallInput]
+    );
+    _RuntimeInputComposition.bindAttention(container);
+    _RuntimeInputComposition.bindConfiguration(container);
+  }
+  static bindAttention(container) {
+    container.bind(AttentionStageInput).toResolvedValue(() => new AttentionStageInput());
+    container.bind(AttentionStageEvaluation).toResolvedValue(
+      () => new JourneyPolicyComposition().attentionStageEvaluation()
+    );
+    container.bind(AttentionStages).toResolvedValue(
+      (attentionStageInput, attentionStageEvaluation) => new AttentionStages({
+        attentionStageInput,
+        attentionStageEvaluation
+      }),
+      [AttentionStageInput, AttentionStageEvaluation]
+    );
+  }
+  static bindConfiguration(container) {
+    container.bind(ContentContractPolicy).toResolvedValue(
+      () => new PublicationDomainComposition().contentContractPolicy()
+    );
+    container.bind(ScheduledEventPolicy).toResolvedValue(
+      () => new PublicationDomainComposition().scheduledEventPolicy()
+    );
+    container.bind(AssetRenderConfiguration).toResolvedValue(
+      (runtimeInput, contentContractPolicy) => new AssetRenderConfiguration({ runtimeInput, contentContractPolicy }),
+      [RuntimeInput, ContentContractPolicy]
+    );
+    container.bind(AssetContentConfiguration).toResolvedValue(
+      (runtimeInput, contentContractPolicy, assetRenderConfiguration) => new AssetContentConfiguration({
+        runtimeInput,
+        contentContractPolicy,
+        assetRenderConfiguration
+      }),
+      [RuntimeInput, ContentContractPolicy, AssetRenderConfiguration]
+    );
+    container.bind(MeetupPublicationConfiguration).toResolvedValue(
+      (runtimeInput, scheduledEventPolicy) => new MeetupPublicationConfiguration({
+        runtimeInput,
+        scheduledEventPolicy
+      }),
+      [RuntimeInput, ScheduledEventPolicy]
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(locale) {
+    this.locale = locale;
+  }
+  locale;
+  format(date, timeZone, format = "long") {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    try {
+      new Intl.DateTimeFormat(this.locale, { timeZone });
+      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+      if (instant.toISOString().slice(0, 10) !== date) return void 0;
+      if (format === "numeric")
+        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
+      return new Intl.DateTimeFormat(this.locale, {
+        ...options,
+        timeZone: "UTC"
+      }).format(instant);
+    } catch {
+      return void 0;
+    }
+  }
+};
+
+// packages/runtime/github-actions/src/assets/messages.en.ts
+var EN_MESSAGES6 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/messages.fr.ts
+var FR_MESSAGES6 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/catalog.ts
+var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
+
+// packages/runtime/github-actions/src/assets/asset-messages.ts
+var AssetMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS8, locale);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-presenter.ts
+var AssetRenderPresenterImpl = class {
+  constructor(collaborators, messages5) {
+    this.collaborators = collaborators;
+    this.messages = messages5;
+  }
+  collaborators;
+  messages;
+  format(input) {
+    const { date } = this.collaborators;
+    return {
+      text: {
+        "event.title": input.title,
+        "event.date": date.format(input.date, input.timeZone),
+        "event.date.month": date.format(input.date, input.timeZone, "month"),
+        "event.date.numeric": date.format(
+          input.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "event.date.weekday": date.format(
+          input.date,
+          input.timeZone,
+          "weekday"
+        ),
+        "host.name": input.hostName,
+        "host.address": input.venue?.address,
+        "host.postal_code": input.venue?.postalCode,
+        "host.city": input.venue?.city,
+        "event.feedback_url": input.feedbackUrl,
+        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
+        "next_event.date.numeric": date.format(
+          input.nextEvent?.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "next_event.host.name": input.nextEvent?.hostName,
+        "next_event.host.city": input.nextEvent?.city,
+        agenda: input.agenda.map(
+          (talk) => this.messages.t("asset.agenda.talk", {
+            title: talk.title,
+            speakers: this.names(talk.speakers)
+          })
+        ).join("\n"),
+        ...this.slots(input)
+      },
+      pictures: input.pictures,
+      hostLogo: input.hostLogo
+    };
+  }
+  slots(input) {
+    const text = {};
+    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
+      text[`talk.title:${slot}`] = talk.title;
+      text[`talk.abstract:${slot}`] = talk.abstract;
+      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
+    }
+    for (const [slot, name] of Object.entries(input.speakers ?? {}))
+      text[`speaker.name:${slot}`] = name;
+    return text;
+  }
+  names(speakers) {
+    return new Intl.ListFormat(this.messages.locale, {
+      style: "long",
+      type: "conjunction"
+    }).format(speakers);
   }
 };
 
@@ -66200,39 +66418,6 @@ var ActionMessages = class extends MessageLocalizer {
   }
 };
 
-// packages/runtime/github-actions/src/meetup-publication-configuration.ts
-import { readFile as readFile5 } from "node:fs/promises";
-import { join as join3 } from "node:path";
-var MeetupPublicationConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  async load(root) {
-    const text = await readFile5(
-      join3(root, ".github/meetup-publication.json"),
-      "utf8"
-    );
-    if (Buffer.byteLength(text) > 1e5)
-      throw new Error("Meetup publication configuration is too large");
-    return this.parse(JSON.parse(text));
-  }
-  parse(input) {
-    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
-      throw new Error("Invalid Meetup publication configuration");
-    const venues = {};
-    for (const [id, venue] of Object.entries(input.venues)) {
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
-        throw new Error("Invalid public Meetup venue mapping");
-      venues[id] = { name: venue.name, city: venue.city };
-    }
-    return { startTime: input.startTime, endTime: input.endTime, venues };
-  }
-  text(value) {
-    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
-  }
-};
-
 // packages/runtime/github-actions/src/organizer-feedback.ts
 var OrganizerFeedback = class {
   constructor(collaborators, events, comments, meetupLabel) {
@@ -66250,132 +66435,6 @@ var OrganizerFeedback = class {
       identity,
       this.collaborators.attentionStageInput.parse(stageResults)
     );
-  }
-};
-
-// packages/runtime/github-actions/src/publication-url-input.ts
-var PublicationUrlInput = class {
-  readMeetupEventUrlPrefix() {
-    return this.validateMeetupEventUrlPrefix(
-      getInput("meetup-event-url-prefix", {
-        required: true,
-        trimWhitespace: false
-      })
-    );
-  }
-  readCommunityEventUrlPrefixes() {
-    const community = getInput("community-event-url-prefixes", {
-      required: true,
-      trimWhitespace: false
-    });
-    let communityEventUrlPrefixes;
-    try {
-      communityEventUrlPrefixes = JSON.parse(community);
-    } catch {
-      throw new Error("Invalid input: community-event-url-prefixes");
-    }
-    return this.validateCommunityEventUrlPrefixes(communityEventUrlPrefixes);
-  }
-  readAssetFolderUrlPrefix() {
-    return this.validateAssetFolderUrlPrefix(
-      getInput("asset-folder-url-prefix", {
-        required: true,
-        trimWhitespace: false
-      })
-    );
-  }
-  validateMeetupEventUrlPrefix(value) {
-    const meetupEventUrlPrefix = this.prefix(value, "meetup-event-url-prefix");
-    if (!MeetupGroupUrl.fromEventUrlPrefix(meetupEventUrlPrefix))
-      throw new Error("Invalid input: meetup-event-url-prefix");
-    return meetupEventUrlPrefix;
-  }
-  validateCommunityEventUrlPrefixes(community) {
-    if (!Array.isArray(community) || community.length === 0)
-      throw new Error("Invalid input: community-event-url-prefixes");
-    return community.map(
-      (prefix) => this.prefix(prefix, "community-event-url-prefixes")
-    );
-  }
-  validateAssetFolderUrlPrefix(value) {
-    return this.prefix(value, "asset-folder-url-prefix");
-  }
-  prefix(value, name) {
-    if (typeof value !== "string" || !/^https:\/\/[^/?#@]+\/[^?#]*$/.test(value) || /[\s\\\p{Cc}]/u.test(value))
-      throw new Error(`Invalid input: ${name}`);
-    let url;
-    try {
-      url = new URL(value);
-    } catch {
-      throw new Error(`Invalid input: ${name}`);
-    }
-    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.search || url.hash)
-      throw new Error(`Invalid input: ${name}`);
-    return value;
-  }
-};
-
-// packages/runtime/github-actions/src/referential-action-report.ts
-var ReferentialActionReport = class {
-  validation(result, diagnostics, messages5) {
-    const details = [
-      messages5.t(
-        result.isValid ? "report.referential.valid" : "report.referential.invalid"
-      ),
-      messages5.t("report.referential.counts", {
-        hosts: result.hostCount,
-        speakers: result.speakerCount
-      })
-    ];
-    return {
-      details,
-      diagnostics
-    };
-  }
-  issueForm(mode, result, messages5) {
-    const details = [];
-    if (result.diagnostics.some((item) => item.severity === "error")) {
-      details.push(messages5.t("report.issue-form.blocked"));
-    } else if (result.changed) {
-      details.push(
-        mode === "check" ? messages5.t("report.issue-form.stale") : messages5.t("report.issue-form.updated"),
-        messages5.t("report.issue-form.files", {
-          files: result.changedFiles.join(", ")
-        })
-      );
-    } else {
-      details.push(messages5.t("report.issue-form.current"));
-    }
-    return { details, diagnostics: result.diagnostics };
-  }
-};
-
-// packages/runtime/github-actions/src/runtime-input.ts
-var RuntimeInput = class {
-  positiveIntegerInput(name, value) {
-    if (!/^\d+$/.test(value)) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    return parsed;
-  }
-  enumInput(name, value, allowed) {
-    const parsed = allowed.find((candidate) => candidate === value);
-    if (parsed === void 0) {
-      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
-    }
-    return parsed;
-  }
-  isObject(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-  booleanInput(name, value) {
-    if (value === "true") return true;
-    if (value === "false") return false;
-    throw new Error(`${name} must be true or false`);
   }
 };
 
@@ -66429,111 +66488,168 @@ var SpeakerSyncFailureReport = class {
   }
 };
 
+// packages/runtime/github-actions/src/runtime-presentation-composition.ts
+var RUNTIME_FACTORIES = {
+  actionMessages: /* @__PURE__ */ Symbol("ActionMessagesFactory"),
+  assetMessages: /* @__PURE__ */ Symbol("AssetMessagesFactory"),
+  assetDateFormatter: /* @__PURE__ */ Symbol("AssetDateFormatterFactory"),
+  assetRenderPresenter: /* @__PURE__ */ Symbol("AssetRenderPresenterFactory"),
+  organizerFeedback: /* @__PURE__ */ Symbol("OrganizerFeedbackFactory")
+};
+var RuntimePresentationComposition = class _RuntimePresentationComposition {
+  static bind(container) {
+    container.bind(LocaleResolver).toResolvedValue(() => new LocalizationComposition().localeResolver());
+    container.bind(
+      RUNTIME_FACTORIES.actionMessages
+    ).toResolvedValue(
+      (localeResolver) => (...args) => new ActionMessages({ localeResolver }, ...args),
+      [LocaleResolver]
+    );
+    _RuntimePresentationComposition.bindReporting(container);
+    _RuntimePresentationComposition.bindAssets(container);
+    container.bind(
+      RUNTIME_FACTORIES.organizerFeedback
+    ).toResolvedValue(
+      (attentionStageInput) => (...args) => new OrganizerFeedback(
+        {
+          attentionStageInput,
+          createReconcileOrganizerFeedback: (...input) => new JourneyComposition().reconcileOrganizerFeedback(...input)
+        },
+        ...args
+      ),
+      [AttentionStageInput]
+    );
+  }
+  static bindReporting(container) {
+    container.bind(DiagnosticPolicy).toResolvedValue(() => new JourneyPolicyComposition().diagnosticPolicy());
+    container.bind(ActionFailurePresenter).toResolvedValue(() => new ActionFailurePresenter());
+    container.bind(ActionOutput).toResolvedValue(() => new ActionOutput());
+    container.bind(ActionReport).toResolvedValue(() => new ActionReport());
+    container.bind(ReferentialActionReport).toResolvedValue(() => new ReferentialActionReport());
+    container.bind(ActionRunner).toResolvedValue(
+      (diagnosticPolicy, actionFailurePresenter, actionReport, actionOutput, createActionMessages) => new ActionRunner({
+        diagnosticPolicy,
+        actionFailurePresenter,
+        actionReport,
+        actionOutput,
+        createActionMessages
+      }),
+      [
+        DiagnosticPolicy,
+        ActionFailurePresenter,
+        ActionReport,
+        ActionOutput,
+        RUNTIME_FACTORIES.actionMessages
+      ]
+    );
+    container.bind(SpeakerSyncFailureReport).toResolvedValue(
+      (createActionMessages) => new SpeakerSyncFailureReport({ createActionMessages }),
+      [RUNTIME_FACTORIES.actionMessages]
+    );
+  }
+  static bindAssets(container) {
+    container.bind(RUNTIME_FACTORIES.assetMessages).toResolvedValue(
+      (localeResolver) => (...args) => new AssetMessages({ localeResolver }, ...args),
+      [LocaleResolver]
+    );
+    container.bind(
+      RUNTIME_FACTORIES.assetDateFormatter
+    ).toResolvedValue(
+      () => (...args) => new AssetDateFormatter(...args)
+    );
+    container.bind(
+      RUNTIME_FACTORIES.assetRenderPresenter
+    ).toResolvedValue(
+      (createDate) => (...args) => new AssetRenderPresenterImpl(
+        { date: createDate(args[0].locale) },
+        ...args
+      ),
+      [RUNTIME_FACTORIES.assetDateFormatter]
+    );
+  }
+};
+
 // packages/runtime/github-actions/src/dependency-composition.ts
-var GithubActionsComposition = class {
+var GithubActionsComposition = class _GithubActionsComposition {
+  container = _GithubActionsComposition.createContainer();
+  static createContainer() {
+    const container = new Container({ defaultScope: "Singleton" });
+    RuntimeInputComposition.bind(container);
+    RuntimePresentationComposition.bind(container);
+    return container;
+  }
   aiInput() {
-    return new AiInput(this.runtimeInput());
+    return this.container.get(AiInput);
   }
   publicationUrlInput() {
-    return new PublicationUrlInput();
+    return this.container.get(PublicationUrlInput);
   }
   actionFailurePresenter() {
-    return new ActionFailurePresenter();
-  }
-  actionMessages(...args) {
-    return new ActionMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
+    return this.container.get(ActionFailurePresenter);
   }
   actionOutput() {
-    return new ActionOutput();
+    return this.container.get(ActionOutput);
   }
   actionReport() {
-    return new ActionReport();
+    return this.container.get(ActionReport);
   }
   actionRunner() {
-    return new ActionRunner({
-      diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-      actionFailurePresenter: this.actionFailurePresenter(),
-      actionReport: this.actionReport(),
-      actionOutput: this.actionOutput(),
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return this.container.get(ActionRunner);
   }
   assetContentConfiguration() {
-    return new AssetContentConfiguration({
-      runtimeInput: this.runtimeInput(),
-      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
-      assetRenderConfiguration: this.assetRenderConfiguration()
-    });
-  }
-  assetDateFormatter(...args) {
-    return new AssetDateFormatter(...args);
-  }
-  assetMessages(...args) {
-    return new AssetMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
+    return this.container.get(AssetContentConfiguration);
   }
   assetRenderConfiguration() {
-    return new AssetRenderConfiguration({
-      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
-      runtimeInput: this.runtimeInput()
-    });
-  }
-  assetRenderPresenterImpl(...args) {
-    return new AssetRenderPresenterImpl(
-      {
-        date: this.assetDateFormatter(args[0].locale)
-      },
-      ...args
-    );
+    return this.container.get(AssetRenderConfiguration);
   }
   attentionStageInput() {
-    return new AttentionStageInput();
+    return this.container.get(AttentionStageInput);
   }
   attentionStages() {
-    return new AttentionStages({
-      attentionStageEvaluation: new JourneyPolicyComposition().attentionStageEvaluation(),
-      attentionStageInput: this.attentionStageInput()
-    });
+    return this.container.get(AttentionStages);
   }
   communicationInput() {
-    return new CommunicationInput({
-      publicationUrlInput: this.publicationUrlInput(),
-      conferenceHallInput: this.conferenceHallInput()
-    });
+    return this.container.get(CommunicationInput);
   }
   conferenceHallInput() {
-    return new ConferenceHallInput();
+    return this.container.get(ConferenceHallInput);
   }
   meetupPublicationConfiguration() {
-    return new MeetupPublicationConfiguration({
-      runtimeInput: this.runtimeInput(),
-      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
-    });
-  }
-  organizerFeedback(...args) {
-    return new OrganizerFeedback(
-      {
-        attentionStageInput: this.attentionStageInput(),
-        createReconcileOrganizerFeedback: (...args2) => new JourneyComposition().reconcileOrganizerFeedback(...args2)
-      },
-      ...args
-    );
+    return this.container.get(MeetupPublicationConfiguration);
   }
   referentialActionReport() {
-    return new ReferentialActionReport();
+    return this.container.get(ReferentialActionReport);
   }
   runtimeInput() {
-    return new RuntimeInput();
+    return this.container.get(RuntimeInput);
   }
   speakerSyncFailureReport() {
-    return new SpeakerSyncFailureReport({
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return this.container.get(SpeakerSyncFailureReport);
+  }
+  actionMessages(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.actionMessages
+    )(...args);
+  }
+  assetDateFormatter(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.assetDateFormatter
+    )(...args);
+  }
+  assetMessages(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.assetMessages
+    )(...args);
+  }
+  assetRenderPresenterImpl(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.assetRenderPresenter
+    )(...args);
+  }
+  organizerFeedback(...args) {
+    return this.container.get(
+      RUNTIME_FACTORIES.organizerFeedback
+    )(...args);
   }
 };
 
@@ -66942,9 +67058,10 @@ var AttentionComposition = class _AttentionComposition {
 
 // packages/runtime/github-actions/src/attention-action-composition.ts
 var AttentionActionComposition = class {
+  runtime = new GithubActionsComposition();
   attentionAction() {
     return new AttentionAction({
-      publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
+      publicationUrlInput: this.runtime.publicationUrlInput(),
       createAttention: (input) => {
         const container = AttentionComposition.create(input);
         return {
@@ -66952,8 +67069,8 @@ var AttentionActionComposition = class {
           attention: container.get(ManageMeetupAttention)
         };
       },
-      runtimeInput: new GithubActionsComposition().runtimeInput(),
-      attentionStages: new GithubActionsComposition().attentionStages()
+      runtimeInput: this.runtime.runtimeInput(),
+      attentionStages: this.runtime.attentionStages()
     });
   }
 };
