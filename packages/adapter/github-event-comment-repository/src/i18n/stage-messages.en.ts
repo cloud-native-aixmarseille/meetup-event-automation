@@ -62,4 +62,16 @@ export const STAGE_MESSAGES_EN = {
 		"Use a public HTTPS PNG, JPEG or GIF image under 50 MB and 25 megapixels.",
 	"comment.guidance.assets.fallback":
 		"A generic image is in use. Check the speaker photo or host logo.",
+	"comment.guidance.pdf.source":
+		"Use a managed Google Slides presentation as the PDF source.",
+	"comment.guidance.pdf.source-pending":
+		"Resolve the presentation content before exporting its PDF.",
+	"comment.guidance.pdf.revision":
+		"The presentation changed during export. Retry after editing.",
+	"comment.guidance.pdf.recovery":
+		"Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
+	"comment.guidance.pdf.limit":
+		"Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
+	"comment.guidance.pdf.invalid":
+		"PDF verification failed. Ask a maintainer to inspect the export before retrying.",
 } as const;

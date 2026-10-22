@@ -10,6 +10,10 @@ const diagnostic: PublicDiagnostic = {
 };
 describe("organizer diagnostic root causes", () => {
 	it.each([
+		[
+			"publication.assets.pdf.source-pending",
+			"publication.assets.content.conflict",
+		],
 		["publication.assets.prerequisites", "event.date.missing"],
 		["publication.feedback.agenda", "event.proposals.not-found"],
 		["communication.feedback-unavailable", "publication.feedback.agenda"],

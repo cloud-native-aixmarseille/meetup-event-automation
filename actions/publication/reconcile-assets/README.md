@@ -22,7 +22,7 @@
 
 ## Overview
 
-Reconcile the event Drive folder, template copies, and issue asset link. Report concise technical facts and diagnostic codes in logs and the job summary.
+Reconcile the event Drive folder, template copies, post-event presentation PDF, and issue asset link. Report concise technical facts and diagnostic codes in logs and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -56,17 +56,21 @@ Reconcile the event Drive folder, template copies, and issue asset link. Report 
     # This input is required.
     github-token: ""
 
-    # Service-account JSON with access to the configured Drive parent and template folders.
+    # Service-account JSON with access to the configured Drive parent, template and public folders.
     # This input is required.
     google-credentials: ""
 
-    # Google Drive folder ID of the parent meetup folder.
+    # Google Drive folder ID of the parent asset folder.
     # This input is required.
-    google-drive-meetup-folder-id: ""
+    google-drive-folder-id: ""
+
+    # Google Drive ID of the shared public folder for generated PDFs.
+    # This input is required.
+    google-drive-public-folder-id: ""
 
     # Google Drive folder ID of the template folder.
     # This input is required.
-    google-drive-meetup-template-folder-id: ""
+    google-drive-template-folder-id: ""
 
     # Conference Hall CFP slug for live linked profiles and selected proposals.
     # This input is required.
@@ -82,19 +86,20 @@ Reconcile the event Drive folder, template copies, and issue asset link. Report 
 
 ## Inputs
 
-| **Input**                                    | **Description**                                                                                                                    | **Required** | **Default** |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`meetup-event-url-prefix`**                | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | -           |
-| **`community-event-url-prefixes`**           | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | -           |
-| **`asset-folder-url-prefix`**                | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | -           |
-| **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
-| **`issue-number`**                           | GitHub issue number containing the meetup event document.                                                                          | **true**     | -           |
-| **`github-token`**                           | Token for the caller repository. Requires issues:read and issues:write.                                                            | **true**     | -           |
-| **`google-credentials`**                     | Service-account JSON with access to the configured Drive parent and template folders.                                              | **true**     | -           |
-| **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder.                                                                                | **true**     | -           |
-| **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |
-| **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
-| **`conference-hall-api-key`**                | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
+| **Input**                             | **Description**                                                                                                                    | **Required** | **Default** |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`meetup-event-url-prefix`**         | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | -           |
+| **`community-event-url-prefixes`**    | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | -           |
+| **`asset-folder-url-prefix`**         | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | -           |
+| **`locale`**                          | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
+| **`issue-number`**                    | GitHub issue number containing the meetup event document.                                                                          | **true**     | -           |
+| **`github-token`**                    | Token for the caller repository. Requires issues:read and issues:write.                                                            | **true**     | -           |
+| **`google-credentials`**              | Service-account JSON with access to the configured Drive parent, template and public folders.                                      | **true**     | -           |
+| **`google-drive-folder-id`**          | Google Drive folder ID of the parent asset folder.                                                                                 | **true**     | -           |
+| **`google-drive-public-folder-id`**   | Google Drive ID of the shared public folder for generated PDFs.                                                                    | **true**     | -           |
+| **`google-drive-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |
+| **`conference-hall-event`**           | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
+| **`conference-hall-api-key`**         | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -155,3 +160,13 @@ one Conference Hall snapshot with committed CSV identity mappings and local
 contact supplements. Linked profile changes take effect without a CSV merge.
 Missing or blank source settings fail before reconciliation. See
 [setup and failure behavior](../../../docs/integrations/conference-hall.md).
+
+## Presentation PDF
+
+Post-event reconciliation moves the verified PDF into the configured shared
+`public` folder when the Google Slides source is ready. Set
+`google-drive-public-folder-id` to that existing folder's ID.
+`drive-files` and `slides-ready` continue to
+refer to editable template copies. PDF corrections use the merged checklist;
+technical failures still fail the action. See
+[eligibility, limits and recovery](../../../docs/integrations/assets.md#export-the-presentation-pdf).

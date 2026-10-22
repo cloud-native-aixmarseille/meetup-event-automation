@@ -29,6 +29,14 @@ export class OrganizerDiagnosticPolicy {
 		);
 	}
 	private static readonly PREREQUISITES = new Map([
+		[
+			"publication.assets.pdf.source-pending",
+			[
+				"publication.assets.content.",
+				"publication.assets.prerequisites",
+				"publication.assets.file.",
+			],
+		],
 		["event.agenda.missing", ["event.proposals."]],
 		["publication.assets.prerequisites", ["event.", "referential.reference."]],
 		[

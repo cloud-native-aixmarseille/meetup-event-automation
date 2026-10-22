@@ -62,15 +62,15 @@ export class PublicationAction {
 			owner,
 			repo,
 			credentials,
-			parentFolderId: core.getInput("google-drive-meetup-folder-id", {
+			parentFolderId: core.getInput("google-drive-folder-id", {
 				required: true,
 			}),
-			templateFolderId: core.getInput(
-				"google-drive-meetup-template-folder-id",
-				{
-					required: true,
-				},
-			),
+			publicFolderId: core.getInput("google-drive-public-folder-id", {
+				required: true,
+			}),
+			templateFolderId: core.getInput("google-drive-template-folder-id", {
+				required: true,
+			}),
 		});
 		const outcome = await journey.execute({
 			identity: { repository: `${owner}/${repo}`, issueNumber },
@@ -92,6 +92,10 @@ export class PublicationAction {
 				outcome.skipped
 					? messages.t("report.assets.skipped")
 					: messages.t("report.assets.completed"),
+				messages.t("report.assets.pdf", {
+					status: outcome.pdf.status,
+					updated: String(outcome.pdf.updated),
+				}),
 				messages.t("report.assets.counts", {
 					persisted: String(outcome.persisted),
 					count: Object.keys(outcome.files).length,

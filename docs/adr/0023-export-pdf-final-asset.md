@@ -1,7 +1,6 @@
 # ADR 0023: Export a static PDF final asset from the slides
 
-Status: Accepted; implementation pending. The current asset action does not
-export PDFs. This decision defines the extension and its validation requirements.
+Status: Accepted; implemented.
 
 Date: 2026-10-20
 
@@ -32,8 +31,13 @@ state, and readiness separate from the editable Slides copy.
 
 ### A separate rendered snapshot
 
-Create the PDF in the existing managed event folder, including when that folder
-has been moved into an archive. Retain the editable copy and its stable URL.
+Upload and verify a new PDF in the existing managed event folder, then move
+it to one shared Drive folder named `public` for all events. The required
+`google-drive-public-folder-id` input selects that existing destination
+by ID; separate event jobs must not race to discover or create a shared folder.
+Reuse it when event folders have moved into an archive. Keep the editable copy,
+its stable URL, and the export sidecar in the event folder. Refresh a published
+PDF in place, preserving its file ID.
 The PDF has its own event-dated filename and a distinct derived-asset identity;
 never identify it as another copy of the Slides template. Current copy matching
 uses `template_file_id`, so export provenance must not cause a PDF to match that
@@ -50,7 +54,8 @@ Keep the current editable `slides-link`, `slides-ready`, and email link contract
 There is no operational consumer for a PDF link in the current workflows. Add a
 `slides-pdf-link` entry to `drive-files` only with an identified consumer and the
 corresponding contract updates; it is not a standalone action output. Until
-then, organizers access the PDF through the event folder. Do not change the
+then, organizers access the PDF through the configured shared `public` folder.
+Do not change the
 thank-you email's `eventSlidesUrl` or repurpose **Drive Link**.
 
 ### Eligibility and source readiness
@@ -108,7 +113,9 @@ a separately selected and validated PDF post-processing capability.
 Keep export state under the event folder's existing access policy. Include only
 necessary identity, version, and integrity data; never expose sidecars, private
 contacts, credentials, or provider payloads through issue outputs or logs.
-The automation does not change file sharing permissions.
+The automation does not grant sharing permissions. Moving the PDF applies the
+shared folder's inherited access policy; organizers configure that audience.
+Only verified PDF bytes are moved, never source documents or export sidecars.
 
 ### Idempotency and recovery
 
@@ -117,7 +124,9 @@ PDF content, require no export or content write. For a changed source, validate
 the exported bytes and persist pending intent before creating or updating the
 managed PDF. The intent records the expected binary fingerprint, source version,
 export inputs, and prior confirmed state. Confirm success only after reading
-back the file's identity and content evidence.
+back the file's identity and content evidence and verifying its placement in the
+shared `public` folder. A failed or uncertain move is recoverable from actual
+file location and confirmed bytes without reexporting or duplicating the PDF.
 
 A stored metadata marker alone is not proof that the intended bytes were
 written. After an ambiguous upload or state-write response, observed content
@@ -195,7 +204,7 @@ freeze content for existing recipients. Conservative source-version detection
 may reexport after metadata changes. The provider size limit constrains the
 presentations this export path supports.
 
-Implementation must validate clean creation, unchanged reruns, changed-source
+Validation covers clean creation, unchanged reruns, changed-source
 refreshes, copy-only sources, pending managed content, follow-up date/timezone
 boundaries, cancelled/postponed events, moved folders, manual PDF edits,
 concurrent source edits, uncertain uploads and state writes, duplicate identity,
@@ -203,11 +212,14 @@ size limits, access failures, and redaction. Cover technical failure gating,
 merged-checklist preservation, and continued editable-link semantics with
 synthetic domain, journey, adapter, and workflow contract tests.
 
-These are delivery requirements, not completed checks. Source inspection and
-provider documentation establish this design's baseline; no live PDF export or
-feature validation is claimed. Update the [assets guide](../integrations/assets.md),
-action reference, and affected workflow contracts when the behavior ships, and
-run the [production checks](../development/README.md#choose-checks-for-the-change).
+The [export use case](../../packages/domain/publication/src/application/reconcile-slide-pdf.ts)
+owns reconciliation and recovery. The Drive adapter implements its ports with a
+separate export-state codec. Synthetic coverage includes
+[export integration](../../tests/integration/pdf-export.spec.ts), adjacent domain,
+journey and adapter tests, and the shared reporting and workflow contracts.
+No live provider export is claimed. The [assets guide](../integrations/assets.md#export-the-presentation-pdf)
+documents operation and manual recovery. Changes follow the
+[production checks](../development/README.md#choose-checks-for-the-change).
 
 [asset-port]: ../../packages/domain/publication/src/application/ports.ts
 [post-event-policy]: ../../packages/domain/communication/src/post-event-policy.ts

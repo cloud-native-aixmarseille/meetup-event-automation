@@ -1,3 +1,4 @@
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { EventDomainComposition } from "@meetup-automation/event";
 import {
 	type AssetRepository,
@@ -22,6 +23,80 @@ import { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 describe("ManageMeetupAssets", () => {
 	it.each([
+		["scheduled", "2026-09-30T21:59:59Z", false],
+		["scheduled", "2026-09-30T22:00:00Z", true],
+		["held", "2026-09-29T12:00:00Z", true],
+		["postponed", "2026-10-01T12:00:00Z", false],
+		[undefined, "2026-10-01T12:00:00Z", false],
+	] as const)(
+		"uses %s occurrence and local date at %s for PDF eligibility=%s",
+		async (occurrenceStatus, now, eligible) => {
+			// Arrange
+			const { useCase, eventDependencies, reconcilePdf, clock } =
+				assetJourney();
+			clock.now.mockReturnValue(now);
+			vi.mocked(eventDependencies.documentCodec.decode).mockReturnValue({
+				event: { ...event, occurrenceStatus },
+				diagnostics: [],
+			});
+
+			// Act
+			await useCase.execute({ identity });
+
+			// Assert
+			expect(reconcilePdf.execute).toHaveBeenCalledWith(
+				expect.objectContaining({
+					eligible,
+					sourceReady: true,
+					date: event.date,
+				}),
+			);
+		},
+	);
+
+	it("keeps editable slides ready while reporting PDF recovery", async () => {
+		// Arrange
+		const { useCase, reconcilePdf } = assetJourney();
+		const diagnostic = {
+			code: "publication.assets.pdf.conflict",
+			severity: "warning",
+			field: "assets",
+			message: "PDF conflict",
+		};
+		reconcilePdf.execute.mockResolvedValue({
+			status: "conflict",
+			updated: false,
+			diagnostics: [diagnostic],
+		});
+
+		// Act
+		const result = await useCase.execute({ identity });
+
+		// Assert
+		expect(result.slidesReady).toBe(true);
+		expect(result.files).toEqual({
+			"slides-link": "https://docs.google.com/presentation/d/copy",
+		});
+		expect(result.diagnostics).toContainEqual({
+			...diagnostic,
+			field: "publicationLinks.assets",
+		});
+	});
+
+	it("propagates an unexpected PDF failure without reporting completed assets", async () => {
+		// Arrange
+		const { useCase, reconcilePdf, eventDependencies } = assetJourney();
+		reconcilePdf.execute.mockRejectedValue(new Error("PDF transport failed"));
+
+		// Act
+		const operation = useCase.execute({ identity });
+
+		// Assert
+		await expect(operation).rejects.toThrow("PDF transport failed");
+		expect(eventDependencies.repository.applyPatch).not.toHaveBeenCalled();
+	});
+
+	it.each([
 		["copy-only", true, true],
 		["ready", true, true],
 		["pending", true, false],
@@ -39,13 +114,16 @@ describe("ManageMeetupAssets", () => {
 					diagnostics: [],
 				}),
 			};
-			const { useCase } = assetJourney(reconcileAssets);
+			const { useCase, reconcilePdf } = assetJourney(reconcileAssets);
 
 			// Act
 			const result = await useCase.execute({ identity });
 
 			// Assert
 			expect(result.slidesReady).toBe(expected);
+			expect(reconcilePdf.execute).toHaveBeenCalledWith(
+				expect.objectContaining({ sourceReady: expected }),
+			);
 		},
 	);
 	it("projects the managed asset link through the codec and exposes template links", async () => {
@@ -160,7 +238,8 @@ describe("ManageMeetupAssets", () => {
 		"skips asset writes for %s events",
 		async (scenario) => {
 			// Arrange
-			const { eventDependencies, assetRepository, useCase } = assetJourney();
+			const { eventDependencies, assetRepository, useCase, reconcilePdf } =
+				assetJourney();
 			if (scenario === "unrelated")
 				vi.mocked(eventDependencies.repository.find).mockResolvedValue({
 					...sourceDocument,
@@ -189,6 +268,7 @@ describe("ManageMeetupAssets", () => {
 
 			// Assert
 			expect(result.persisted).toBe(false);
+			expect(reconcilePdf.execute).not.toHaveBeenCalled();
 			expect(assetRepository.ensureContainer).not.toHaveBeenCalled();
 		},
 	);
@@ -273,14 +353,25 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 		}),
 		updateFile: vi.fn<AssetRepository["updateFile"]>(),
 	};
+	const reconcilePdf = {
+		execute: vi.fn().mockResolvedValue({
+			status: "not-applicable",
+			updated: false,
+			diagnostics: [],
+		}),
+	};
+	const clock = { now: vi.fn().mockReturnValue("2026-10-01T12:00:00Z") };
 	const useCase = new ManageMeetupAssets(
 		{
+			postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
 			eventDocumentConcurrency:
 				new EventDomainComposition().eventDocumentConcurrency(),
 			eventRepositoryPatches:
 				new EventDomainComposition().eventRepositoryPatches(),
 		},
 		{
+			clock,
+			reconcilePdf,
 			eventRepository: eventDependencies.repository,
 			documentCodec: eventDependencies.documentCodec,
 			manageEvent: new ManageMeetupEvent(
@@ -329,5 +420,5 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 				),
 		},
 	);
-	return { eventDependencies, assetRepository, useCase };
+	return { eventDependencies, assetRepository, useCase, reconcilePdf, clock };
 }

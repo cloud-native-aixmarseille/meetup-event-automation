@@ -629,8 +629,8 @@ convention. The prefix is not an access-control mechanism.
 The issue workflow derives the issue number from the issue event. Both event
 workflows require explicit inputs for the GitHub App client ID, Slack channel ID, and
 Drive parent and template folder IDs. Consumer callers supply
-`CI_BOT_APP_CLIENT_ID`, `SLACK_CHANNEL_ID`, `CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID`, and
-`CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` repository variables.
+`CI_BOT_APP_CLIENT_ID`, `SLACK_CHANNEL_ID`, `CI_GOOGLE_DRIVE_FOLDER_ID`, and
+`CI_GOOGLE_DRIVE_TEMPLATE_FOLDER_ID` repository variables.
 Synchronization opens a pull request only when drift is detected. Communication
 reconciliation always evaluates dispatch, while the
 configuration switch, maintainer approval, credentials, and delivery ledger
@@ -727,8 +727,8 @@ jobs:
     with:
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
-      google-drive-meetup-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
-      google-drive-meetup-template-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
+      google-drive-folder-id: ${{ vars.CI_GOOGLE_DRIVE_FOLDER_ID }}
+      google-drive-template-folder-id: ${{ vars.CI_GOOGLE_DRIVE_TEMPLATE_FOLDER_ID }}
     secrets:
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
       google-credentials: ${{ secrets.CI_GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}

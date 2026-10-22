@@ -8,22 +8,23 @@ parameter names are the public contract.
 
 ## Required settings
 
-| Consumer setting                                  | Workflow parameter                             | Used by                                                          |
-| ------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------- |
-| Variable `MEETUP_EVENT_URL_PREFIX`                | Input `meetup-event-url-prefix`                | Event, publication, communication, and attention reconciliation. |
-| Variable `COMMUNITY_EVENT_URL_PREFIXES`           | Input `community-event-url-prefixes`           | Event, publication, communication, and attention reconciliation. |
-| Variable `ASSET_FOLDER_URL_PREFIX`                | Input `asset-folder-url-prefix`                | Event, publication, communication, and attention reconciliation. |
-| Variable `CI_BOT_APP_CLIENT_ID`                   | Input `github-app-client-id`                   | Event workflows and form synchronization.                        |
-| Secret `CI_BOT_APP_PRIVATE_KEY`                   | Secret `github-app-private-key`                | Event workflows and form synchronization.                        |
-| Variable `KUTT_BASE_URL`                          | Input `kutt-base-url`                          | Both event workflows.                                            |
-| Variable `KUTT_FEEDBACK_LINK_ID`                  | Input `kutt-link-id`                           | Both event workflows.                                            |
-| Secret `OPENFEEDBACK_API_KEY`                     | Secret `openfeedback-api-key`                  | Both event workflows.                                            |
-| Secret `KUTT_API_KEY`                             | Secret `kutt-api-key`                          | Both event workflows.                                            |
-| Secret `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`       | Secret `google-credentials`                    | Both event workflows.                                            |
-| Variable `GOOGLE_DRIVE_MEETUP_FOLDER_ID`          | Input `google-drive-meetup-folder-id`          | Both event workflows.                                            |
-| Variable `GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` | Input `google-drive-meetup-template-folder-id` | Both event workflows.                                            |
-| Secret `SLACK_BOT_TOKEN`                          | Secret `slack-token`                           | Both event workflows.                                            |
-| Variable `SLACK_ORGANIZER_CHANNEL_ID`             | Input `slack-organizer-channel-id`             | Both event workflows.                                            |
+| Consumer setting                            | Workflow parameter                      | Used by                                                          |
+| ------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------- |
+| Variable `MEETUP_EVENT_URL_PREFIX`          | Input `meetup-event-url-prefix`         | Event, publication, communication, and attention reconciliation. |
+| Variable `COMMUNITY_EVENT_URL_PREFIXES`     | Input `community-event-url-prefixes`    | Event, publication, communication, and attention reconciliation. |
+| Variable `ASSET_FOLDER_URL_PREFIX`          | Input `asset-folder-url-prefix`         | Event, publication, communication, and attention reconciliation. |
+| Variable `CI_BOT_APP_CLIENT_ID`             | Input `github-app-client-id`            | Event workflows and form synchronization.                        |
+| Secret `CI_BOT_APP_PRIVATE_KEY`             | Secret `github-app-private-key`         | Event workflows and form synchronization.                        |
+| Variable `KUTT_BASE_URL`                    | Input `kutt-base-url`                   | Both event workflows.                                            |
+| Variable `KUTT_FEEDBACK_LINK_ID`            | Input `kutt-link-id`                    | Both event workflows.                                            |
+| Secret `OPENFEEDBACK_API_KEY`               | Secret `openfeedback-api-key`           | Both event workflows.                                            |
+| Secret `KUTT_API_KEY`                       | Secret `kutt-api-key`                   | Both event workflows.                                            |
+| Secret `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS` | Secret `google-credentials`             | Both event workflows.                                            |
+| Variable `GOOGLE_DRIVE_FOLDER_ID`           | Input `google-drive-folder-id`          | Both event workflows.                                            |
+| Variable `GOOGLE_DRIVE_PUBLIC_FOLDER_ID`    | Input `google-drive-public-folder-id`   | Both event workflows.                                            |
+| Variable `GOOGLE_DRIVE_TEMPLATE_FOLDER_ID`  | Input `google-drive-template-folder-id` | Both event workflows.                                            |
+| Secret `SLACK_BOT_TOKEN`                    | Secret `slack-token`                    | Both event workflows.                                            |
+| Variable `SLACK_ORGANIZER_CHANNEL_ID`       | Input `slack-organizer-channel-id`      | Both event workflows.                                            |
 
 Use the GitHub App's client ID. Install the App on the consumer repository and
 `mailings` under the same owner. Both event workflows generate a separate,

@@ -2,6 +2,34 @@ import type { MessageId } from "./i18n/catalog.js";
 
 export const STAGE_GUIDANCE = [
 	[
+		"publication.assets.pdf.source",
+		["Slides & Content", "comment.guidance.pdf.source"],
+	],
+	[
+		"publication.assets.pdf.source-pending",
+		["Slides & Content", "comment.guidance.pdf.source-pending"],
+	],
+	[
+		"publication.assets.pdf.revision",
+		["Slides & Content", "comment.guidance.pdf.revision"],
+	],
+	[
+		"publication.assets.pdf.conflict",
+		["Slides & Content", "comment.guidance.pdf.recovery"],
+	],
+	[
+		"publication.assets.pdf.recovery",
+		["Slides & Content", "comment.guidance.pdf.recovery"],
+	],
+	[
+		"publication.assets.pdf.limit",
+		["Slides & Content", "comment.guidance.pdf.limit"],
+	],
+	[
+		"publication.assets.pdf.invalid",
+		["Slides & Content", "comment.guidance.pdf.invalid"],
+	],
+	[
 		"communication.checklist-concurrently-modified",
 		["Communication", "comment.guidance.communication.concurrent-checklist"],
 	],

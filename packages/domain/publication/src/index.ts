@@ -11,6 +11,7 @@ export type {
 	FeedbackTalkResult,
 	FeedbackTalkResultsGateway,
 } from "./application/feedback-talk-results.js";
+export type * from "./application/pdf-export-ports.js";
 export type {
 	AssetContainer,
 	AssetFile,
@@ -23,6 +24,7 @@ export {
 	ReconcileEventAssets,
 	type ReconcileEventAssetsResult,
 } from "./application/reconcile-event-assets.js";
+export { ReconcileSlidePdf } from "./application/reconcile-slide-pdf.js";
 export type {
 	PublicationJournal,
 	PublicationRecord,
@@ -63,6 +65,9 @@ export {
 	type PublicationPatchOperation,
 	type PublicationReferences,
 } from "./domain/model.js";
+export type * from "./domain/pdf-export.js";
+export { PdfExportError } from "./domain/pdf-export-error.js";
+export { PdfExportPolicy } from "./domain/pdf-export-policy.js";
 export { PresentationFileUrl } from "./domain/presentation-file-url.js";
 export { PublicAssetUrl } from "./domain/public-asset-url.js";
 export {

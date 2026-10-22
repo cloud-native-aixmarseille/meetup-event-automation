@@ -420,8 +420,9 @@ jobs:
           issue-number: "1"
           github-token: ${{ github.token }}
           google-credentials: ""
-          google-drive-meetup-folder-id: synthetic-parent-folder
-          google-drive-meetup-template-folder-id: synthetic-template-folder
+          google-drive-folder-id: synthetic-parent-folder
+          google-drive-public-folder-id: synthetic-public-folder
+          google-drive-template-folder-id: synthetic-template-folder
 
       - name: Assert asset action rejects missing credentials
         shell: bash

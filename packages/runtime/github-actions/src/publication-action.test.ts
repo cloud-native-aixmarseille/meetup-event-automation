@@ -36,14 +36,16 @@ beforeEach(() => {
 		"issue-number": "42",
 		"github-token": "github-test-token",
 		"google-credentials": "secret-json",
-		"google-drive-meetup-folder-id": "parent",
-		"google-drive-meetup-template-folder-id": "templates",
+		"google-drive-folder-id": "parent",
+		"google-drive-public-folder-id": "public-folder",
+		"google-drive-template-folder-id": "templates",
 	})) {
 		vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
 	}
 	mocks.outputs = {};
 	mocks.createAssets.mockReturnValue({ execute: mocks.execute });
 	mocks.execute.mockResolvedValue({
+		pdf: { status: "ready", updated: false, diagnostics: [] },
 		skipped: false,
 		persisted: false,
 		slidesReady: true,
@@ -60,6 +62,7 @@ describe("publication action boundary", () => {
 		// Arrange
 		const url = "https://docs.google.com/presentation/d/stable-slides";
 		mocks.execute.mockResolvedValue({
+			pdf: { status: "ready", updated: false, diagnostics: [] },
 			skipped: false,
 			persisted: false,
 			files: { "slides-link": url },
@@ -90,8 +93,9 @@ describe("publication action boundary", () => {
 		"conference-hall-event",
 		"conference-hall-api-key",
 		"google-credentials",
-		"google-drive-meetup-folder-id",
-		"google-drive-meetup-template-folder-id",
+		"google-drive-folder-id",
+		"google-drive-public-folder-id",
+		"google-drive-template-folder-id",
 	])("requires %s before reconciling", async (input) => {
 		// Arrange
 		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
@@ -127,6 +131,7 @@ describe("publication action boundary", () => {
 			expect.objectContaining({
 				credentials: "secret-json",
 				parentFolderId: "parent",
+				publicFolderId: "public-folder",
 				templateFolderId: "templates",
 			}),
 		);
@@ -144,6 +149,7 @@ describe("publication action boundary", () => {
 	it("reports skipped events with supplied Google Drive configuration", async () => {
 		// Arrange
 		mocks.execute.mockResolvedValue({
+			pdf: { status: "not-applicable", updated: false, diagnostics: [] },
 			skipped: true,
 			persisted: false,
 			slidesReady: false,
@@ -161,6 +167,7 @@ describe("publication action boundary", () => {
 			expect.objectContaining({
 				credentials: "secret-json",
 				parentFolderId: "parent",
+				publicFolderId: "public-folder",
 				templateFolderId: "templates",
 			}),
 		);

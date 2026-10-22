@@ -6,6 +6,7 @@ import type {
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
 	AssetContainer,
+	AssetFile,
 	AssetRepository,
 	AssetTemplate,
 } from "./ports.js";
@@ -17,6 +18,7 @@ import type {
 
 export type ReconcileEventAssetsResult = Readonly<{
 	container?: AssetContainer;
+	presentation?: AssetFile;
 	files: Readonly<Record<string, string>>;
 	content?: Readonly<Record<string, ContentStatus>>;
 	diagnostics: readonly PublicationDiagnostic[];
@@ -111,6 +113,7 @@ export class ReconcileEventAssets {
 	): Promise<ReconcileEventAssetsResult> {
 		const currentFiles = await this.repository.listFiles(container.id);
 		const files: Record<string, string> = {};
+		let presentation: AssetFile | undefined;
 		const content: Record<string, ContentStatus> = {};
 		const reconcile = this.collaborators.createReconcileAssetFile(
 			this.repository,
@@ -125,9 +128,11 @@ export class ReconcileEventAssets {
 				diagnostics,
 			});
 			if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+			if (template.kind === "slides" && result.file)
+				presentation = { ...result.file, templateId: template.id };
 			content[template.kind] = result.status;
 		}
-		return { container, files, content, diagnostics };
+		return { container, files, content, diagnostics, presentation };
 	}
 
 	private diagnostic(

@@ -5,6 +5,7 @@ import {
 	type AssetRepository,
 	PublicationDomainComposition,
 	ReconcileAssetContent,
+	ReconcileSlidePdf,
 } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
@@ -42,12 +43,33 @@ function unrelatedEventRepository(): EventRepository {
 }
 
 describe("publication-composition", () => {
+	it.each(["parent", "templates"])(
+		"rejects %s as the shared public destination",
+		(publicFolderId) => {
+			// Arrange
+			const configuration = {
+				...input,
+				credentials: "not-json",
+				parentFolderId: "parent",
+				templateFolderId: "templates",
+				publicFolderId,
+			};
+
+			// Act
+			const create = () =>
+				PublicationComposition.createPublicationContainer(configuration);
+
+			// Assert
+			expect(create).toThrow("The shared public folder must differ");
+		},
+	);
 	it("allows replacing Drive before resolving the asset journey", async () => {
 		// Arrange
 		const container = PublicationComposition.createPublicationContainer({
 			...input,
 			credentials: "not-json",
 			parentFolderId: "parent",
+			publicFolderId: "public-folder",
 			templateFolderId: "templates",
 		});
 		container.rebind(ReconcileAssetContent).toConstantValue(
@@ -70,6 +92,18 @@ describe("publication-composition", () => {
 				{ load: vi.fn(), save: vi.fn() },
 				{},
 				{ validate: vi.fn(), observe: vi.fn() },
+			),
+		);
+		container.rebind(ReconcileSlidePdf).toConstantValue(
+			new PublicationDomainComposition().reconcileSlidePdf(
+				{ observe: vi.fn(), export: vi.fn() },
+				{
+					find: vi.fn(),
+					reserveId: vi.fn(),
+					write: vi.fn(),
+					placeInPublicFolder: vi.fn(),
+				},
+				{ load: vi.fn(), save: vi.fn() },
 			),
 		);
 		const assets: AssetRepository = {

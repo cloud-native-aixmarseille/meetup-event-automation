@@ -1,9 +1,13 @@
 import type {
+	EventClock,
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
 import { GoogleDocsContentRepositoryComposition } from "@meetup-automation/google-docs-content-repository";
-import { GoogleDriveAssetRepositoryComposition } from "@meetup-automation/google-drive-asset-repository";
+import {
+	GoogleDriveAssetRepositoryComposition,
+	GoogleDrivePdfComposition,
+} from "@meetup-automation/google-drive-asset-repository";
 import { GoogleSlidesContentRepositoryComposition } from "@meetup-automation/google-slides-content-repository";
 import { HttpsAssetImageRepositoryComposition } from "@meetup-automation/https-asset-image-repository";
 import {
@@ -17,6 +21,7 @@ import {
 	PublicationDomainComposition,
 	ReconcileAssetContent,
 	ReconcileEventAssets,
+	ReconcileSlidePdf,
 } from "@meetup-automation/publication";
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import type { AssetContentConfigurationData } from "./assets/asset-content-configuration.js";
@@ -33,12 +38,21 @@ export const ASSET_REPOSITORY = Symbol("AssetRepository");
 type PublicationInput = EventCompositionInput & {
 	readonly credentials: string;
 	readonly parentFolderId: string;
+	readonly publicFolderId: string;
 	readonly templateFolderId: string;
 	readonly contentConfiguration?: AssetContentConfigurationData;
 };
 
 export class PublicationComposition {
 	static createPublicationContainer(input: PublicationInput) {
+		if (
+			[input.parentFolderId, input.templateFolderId].includes(
+				input.publicFolderId,
+			)
+		)
+			throw new Error(
+				"The shared public folder must differ from the parent and template folders",
+			);
 		const container = EventComposition.createEventContainer(input);
 		container.bind<AssetRepository>(ASSET_REPOSITORY).toDynamicValue(() =>
 			new GoogleDriveAssetRepositoryComposition()
@@ -50,6 +64,11 @@ export class PublicationComposition {
 				}),
 		);
 		PublicationComposition.bindContent(container, input.credentials);
+		PublicationComposition.bindPdf(
+			container,
+			input.credentials,
+			input.publicFolderId,
+		);
 		container
 			.bind(ReconcileEventAssets)
 			.toDynamicValue((context) =>
@@ -68,6 +87,8 @@ export class PublicationComposition {
 	): void {
 		container.bind(ManageMeetupAssets).toDynamicValue((context) =>
 			new JourneyComposition().manageMeetupAssets({
+				clock: context.get<EventClock>(SERVICES.eventClock),
+				reconcilePdf: context.get(ReconcileSlidePdf),
 				renderProjection: new JourneyComposition().assetRenderProjection(
 					new GithubActionsComposition().assetRenderPresenterImpl(
 						new GithubActionsComposition().assetMessages(input.locale),
@@ -107,6 +128,26 @@ export class PublicationComposition {
 			}),
 		);
 	}
+	private static bindPdf(
+		container: ReturnType<typeof EventComposition.createEventContainer>,
+		credentials: string,
+		publicFolderId: string,
+	): void {
+		container.bind(ReconcileSlidePdf).toDynamicValue(() => {
+			const adapter = new GoogleDrivePdfComposition(
+				new GoogleDriveAssetRepositoryComposition()
+					.googleDriveAssetRepositoryFactory()
+					.client(credentials),
+				publicFolderId,
+			);
+			return new PublicationDomainComposition().reconcileSlidePdf(
+				adapter.source(),
+				adapter.repository(),
+				adapter.states(),
+			);
+		});
+	}
+
 	private static bindContent(
 		container: ReturnType<typeof EventComposition.createEventContainer>,
 		credentials: string,

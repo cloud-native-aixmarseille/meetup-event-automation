@@ -146,6 +146,7 @@ export const FR_MESSAGES = {
 	"report.events.issues": "issues={issues}",
 	"report.events.empty": "active_events=0",
 	"report.assets.skipped": "assets=skipped",
+	"report.assets.pdf": "pdf={status}; updated={updated}",
 	"report.assets.completed": "assets=completed",
 	"report.assets.counts":
 		"issue_persisted={persisted} asset_files={count, number}",
