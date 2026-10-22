@@ -260,10 +260,13 @@ for the actual email result.
 
 ## Organizer attention
 
-Both workflows finish with the [attention action](../../actions/communication/reconcile-attention/README.md),
-under the shared repository/issue lock. Before the event, diagnostics and
-organizer tasks share one checkbox comment. The final action merges all four
-stages after complete successful evaluations, removes fixed and duplicate
+Both workflows call the common issue pipeline, which holds the repository/issue
+lock until reporting finishes. `organizer/reconcile-checklist` persists the merged
+checklist before the [attention action](../../actions/organizer/reconcile-attention/README.md)
+updates durable attention and Slack. A checklist persistence failure blocks
+attention. Before the event, diagnostics and organizer tasks share one checkbox
+comment. Checklist reconciliation merges all four logical stages after complete
+successful evaluations, removes fixed and duplicate
 diagnostics, and keeps the concrete cause when another stage reports a dependent
 blockage. Incomplete or technically failed stages preserve the previous
 diagnostic rows. The bot reuses the original diagnostic comment and adds only
@@ -331,7 +334,7 @@ they do not send a separate thank-you approval alert or decision reaction.
 Introduction approval messages and their decision reactions remain separate. Public Slack
 announcement checkboxes remain manual and use separate destinations.
 
-The final action runs even after failed dependencies. Skipped or cancelled stages
+The reporting job runs even after failed dependencies. Skipped or cancelled stages
 are unknown and cannot resolve previous conditions. Expected organizer corrections keep CI successful; unexpected technical
 failures fail under the [shared reporting policy](../development/reporting.md). Notification failures fail the attention action without
 creating recursive notification conditions. GitHub status is persisted before
@@ -423,7 +426,7 @@ retry one message: that would remove duplicate protection for other messages. A
 failed ledger read or reservation prevents dispatch. Use the reusable workflows
 so issue updates and audits share the same per-issue concurrency lock.
 
-The [communication action](../../actions/communication/reconcile/README.md)
+The [communication action](../../actions/communication/reconcile-email/README.md)
 dispatches when event, checklist, approval, and delivery checks permit sending.
 The reported `check` mode means global dispatch is blocked. A pending or rejected
 approval disables mail within `dispatch` mode and reports a warning. Organizer

@@ -39150,17 +39150,21 @@ var FeedbackLinkSelection = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  conflict(candidate, targetDate, now2, timeZone) {
-    if (!candidate.isOpen || candidate.occurrenceStatus === "cancelled" || candidate.occurrenceStatus === "postponed")
-      return void 0;
-    if (candidate.date === targetDate) return "ambiguous-date";
-    if (candidate.date < targetDate && this.collaborators.feedbackPolicy.isLinkUpdateDue(
-      candidate.date,
-      now2,
-      timeZone
+  select(candidates, now2, timeZone) {
+    const due = candidates.map((event, index) => ({ event, index })).filter(
+      ({ event }) => event.isOpen && !["cancelled", "postponed"].includes(event.occurrenceStatus ?? "") && this.collaborators.feedbackPolicy.isLinkUpdateDue(
+        event.date,
+        now2,
+        timeZone
+      )
+    ).sort((left, right) => left.event.date.localeCompare(right.event.date));
+    const selected = due[0];
+    if (!selected) return {};
+    if (due.some(
+      (candidate) => candidate.index !== selected.index && candidate.event.date === selected.event.date
     ))
-      return "current-event";
-    return void 0;
+      return { conflict: "ambiguous-date" };
+    return { index: selected.index };
   }
 };
 
@@ -39966,8 +39970,8 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.community-url.invalid",
   "publication.community.missing",
   "publication.feedback.agenda",
-  "publication.feedback.ambiguous-date",
-  "publication.feedback.current-event",
+  "publication.feedback-link.ambiguous-date",
+  "publication.feedback-link.prerequisites",
   "publication.feedback.conflict",
   "publication.feedback.prerequisites",
   "publication.meetup-url.invalid",
@@ -40891,133 +40895,6 @@ var FindNextAssetEvent = class {
   }
 };
 
-// packages/application/journey/src/use-cases/manage-meetup-assets.ts
-var ManageMeetupAssets = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(input) {
-    const source = await this.dependencies.eventRepository.find(input.identity);
-    if (!source) throw new EventNotFoundError(input.identity);
-    const evaluation = await this.dependencies.manageEvent.execute({
-      ...input,
-      mode: "check",
-      sourceDocument: source
-    });
-    if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
-      return this.skipped([]);
-    if (!evaluation.event.host?.id || evaluation.diagnostics.some(
-      (item) => item.severity === "error" && (item.code.startsWith("referential.") || /host|date/i.test(item.field ?? ""))
-    )) {
-      return this.skipped([
-        {
-          code: "publication.assets.prerequisites",
-          severity: "warning",
-          field: "publicationLinks.assets",
-          message: "Resolve the event host and date before reconciling assets"
-        }
-      ]);
-    }
-    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-      this.dependencies.eventRepository,
-      input.identity,
-      source
-    );
-    return this.reconcile(
-      source,
-      evaluation,
-      evaluation.event.host.displayName
-    );
-  }
-  async reconcile(source, evaluation, hostName) {
-    const assets = await this.dependencies.reconcileAssets.execute({
-      eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
-      date: evaluation.event.date,
-      hostName,
-      existingUrl: evaluation.event.publicationLinks.assets,
-      mode: "fix",
-      model: await this.dependencies.renderProjection?.create(
-        evaluation.event,
-        evaluation.diagnostics
-      ),
-      recovery: this.dependencies.recovery
-    });
-    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-      this.dependencies.eventRepository,
-      source.identity,
-      source
-    );
-    const slidesReady = Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
-    const pdf = await this.dependencies.reconcilePdf.execute({
-      eligible: this.collaborators.postEventPolicy.isDue({
-        eventDate: evaluation.event.date,
-        timeZone: evaluation.event.timeZone,
-        occurrenceStatus: evaluation.event.occurrenceStatus ?? "unknown",
-        now: new Date(this.dependencies.clock.now())
-      }),
-      sourceReady: slidesReady,
-      date: evaluation.event.date,
-      container: assets.container,
-      source: assets.presentation
-    });
-    const persisted = await this.persistAsset(source, assets.container?.url);
-    return {
-      skipped: false,
-      persisted,
-      slidesReady,
-      pdf,
-      assetUrl: assets.container?.url,
-      files: assets.files,
-      content: assets.content,
-      diagnostics: [...assets.diagnostics, ...pdf.diagnostics].map((item) => ({
-        ...item,
-        field: "publicationLinks.assets"
-      }))
-    };
-  }
-  skipped(diagnostics) {
-    return {
-      pdf: { status: "not-applicable", updated: false, diagnostics: [] },
-      skipped: true,
-      persisted: false,
-      slidesReady: false,
-      files: {},
-      diagnostics
-    };
-  }
-  async persistAsset(source, assetUrl) {
-    let persisted = false;
-    if (assetUrl) {
-      const original = this.dependencies.documentCodec.decode(source).event;
-      const patch = this.dependencies.documentCodec.createPatch(source, {
-        ...original,
-        publicationLinks: {
-          ...original.publicationLinks,
-          assets: assetUrl
-        }
-      });
-      if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
-        patch
-      )) {
-        await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-          this.dependencies.eventRepository,
-          source.identity,
-          source
-        );
-        await this.dependencies.eventRepository.applyPatch(
-          source.identity,
-          patch
-        );
-        persisted = true;
-      }
-    }
-    return persisted;
-  }
-};
-
 // packages/application/journey/src/use-cases/manage-meetup-attention.ts
 var ManageMeetupAttention = class {
   constructor(collaborators, dependencies) {
@@ -41223,215 +41100,6 @@ var ManageMeetupEvent = class {
       repositoryPatch
     );
     return true;
-  }
-};
-
-// packages/application/journey/src/use-cases/manage-meetup-feedback.ts
-var ManageMeetupFeedback = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(input) {
-    const source = await this.dependencies.eventRepository.find(input.identity);
-    if (!source) throw new EventNotFoundError(input.identity);
-    const evaluation = await this.dependencies.manageEvent.execute({
-      ...input,
-      mode: "check",
-      sourceDocument: source
-    });
-    if (evaluation.skipped)
-      return this.skipped("unrelated", "This issue is not a meetup");
-    const event = evaluation.event;
-    if (event.proposalStatus === "stale" || evaluation.diagnostics.some(
-      (item) => item.code.startsWith("referential.source.")
-    ))
-      return {
-        skipped: true,
-        persisted: false,
-        linkUpdated: false,
-        diagnostics: evaluation.diagnostics
-      };
-    if (event.issueState === "closed" || event.occurrenceStatus === "cancelled" || event.occurrenceStatus === "postponed")
-      return this.skipped(
-        "inactive",
-        "Feedback automation is inactive for this event"
-      );
-    if (!this.collaborators.feedbackPolicy.validDate(event.date) || this.invalid(evaluation.diagnostics))
-      return this.skipped(
-        "prerequisites",
-        "Resolve the event date and feedback link before updating feedback"
-      );
-    const agenda = this.collaborators.feedbackAgendaProjection.create(
-      event,
-      evaluation.diagnostics
-    );
-    if (!agenda && !event.publicationLinks.feedback)
-      return this.skipped(
-        "agenda",
-        "Complete talk subjects and resolve speaker references before creating feedback"
-      );
-    return this.synchronizeFeedback(source, event, agenda).catch(
-      (error2) => {
-        if (!(error2 instanceof FeedbackResolutionError) || error2.kind !== "conflict")
-          throw error2;
-        return this.skipped(
-          "conflict",
-          "Resolve ambiguous feedback talk or speaker identities before synchronizing",
-          "warning"
-        );
-      }
-    );
-  }
-  async synchronizeFeedback(source, event, agenda) {
-    const name = event.eventTitle.trim().slice(0, 100);
-    if (!name)
-      return this.skipped(
-        "prerequisites",
-        "Set an event title before updating feedback"
-      );
-    await this.ensureCurrent(source);
-    const { repository, issueNumber } = source.identity;
-    const url = await this.dependencies.events.ensureEvent({
-      key: `${repository.toLowerCase()}#${issueNumber}`,
-      name,
-      scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
-      ...agenda ? { agenda } : {},
-      ...event.publicationLinks.feedback ? {
-        url: this.collaborators.feedbackPolicy.pollUrl(
-          event.publicationLinks.feedback
-        )
-      } : {}
-    });
-    const result = await this.reconcile(
-      source,
-      event,
-      this.collaborators.feedbackPolicy.pollUrl(url)
-    );
-    if (agenda) return result;
-    return {
-      ...result,
-      diagnostics: [
-        ...result.diagnostics,
-        {
-          code: "publication.feedback.agenda",
-          severity: "warning",
-          field: "publicationLinks.feedback",
-          message: "Complete talk subjects and resolve speaker references before synchronizing the feedback agenda"
-        }
-      ]
-    };
-  }
-  async reconcile(source, event, url) {
-    await this.ensureCurrent(source);
-    const { persisted, current } = await this.persist(source, url);
-    const diagnostics = [];
-    let linkUpdated = false;
-    const now2 = this.dependencies.clock.now();
-    if (this.collaborators.feedbackPolicy.isLinkUpdateDue(
-      event.date,
-      now2,
-      event.timeZone
-    )) {
-      const conflict = await this.linkConflict(source, event, now2);
-      if (conflict) diagnostics.push(conflict);
-      else {
-        await this.ensureCurrent(current);
-        linkUpdated = await this.dependencies.links.updateTarget(url);
-      }
-    }
-    return {
-      skipped: false,
-      persisted,
-      feedbackUrl: url,
-      linkUpdated,
-      diagnostics
-    };
-  }
-  invalid(diagnostics) {
-    const fields = /date|feedback/i;
-    return diagnostics.some(
-      (item) => item.severity === "error" && (item.code.startsWith("event.document.") || fields.test(item.field ?? ""))
-    );
-  }
-  async persist(source, feedbackUrl) {
-    const original = this.dependencies.documentCodec.decode(source).event;
-    if (original.publicationLinks.feedback === feedbackUrl)
-      return { persisted: false, current: source };
-    const patch = this.dependencies.documentCodec.createPatch(source, {
-      ...original,
-      publicationLinks: { ...original.publicationLinks, feedback: feedbackUrl }
-    });
-    if (this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
-      patch
-    ))
-      return { persisted: false, current: source };
-    await this.ensureCurrent(source);
-    await this.dependencies.eventRepository.applyPatch(source.identity, patch);
-    return { persisted: true, current: { ...source, ...patch } };
-  }
-  async linkConflict(source, target, now2) {
-    let cursor;
-    const visited = /* @__PURE__ */ new Set();
-    for (let pages = 0; pages < 20; pages++) {
-      const page = await this.dependencies.eventRepository.listPage({
-        repository: source.identity.repository,
-        label: this.dependencies.eventLabel,
-        cursor
-      });
-      for (const document of page.items) {
-        if (document.identity.issueNumber === source.identity.issueNumber)
-          continue;
-        const { event } = this.dependencies.documentCodec.decode(document);
-        const conflict = this.collaborators.feedbackLinkSelection.conflict(
-          {
-            date: event.date,
-            isOpen: event.issueState === "open",
-            occurrenceStatus: event.occurrenceStatus
-          },
-          target.date,
-          now2,
-          target.timeZone
-        );
-        if (conflict) return this.conflictDiagnostic(conflict);
-      }
-      cursor = page.nextCursor;
-      if (!cursor) return void 0;
-      if (visited.has(cursor)) throw new EventPaginationError(cursor);
-      visited.add(cursor);
-    }
-    throw new EventPaginationError("feedback-page-limit");
-  }
-  conflictDiagnostic(conflict) {
-    return {
-      code: `publication.feedback.${conflict}`,
-      severity: conflict === "ambiguous-date" ? "warning" : "info",
-      message: conflict === "ambiguous-date" ? "Several active meetups share this date; update the shared feedback link manually" : "An active meetup takes place today; keep its shared feedback link until the event day ends"
-    };
-  }
-  ensureCurrent(source) {
-    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-      this.dependencies.eventRepository,
-      source.identity,
-      source
-    );
-  }
-  skipped(code, message, severity = "info") {
-    return {
-      skipped: true,
-      persisted: false,
-      linkUpdated: false,
-      diagnostics: [
-        {
-          code: `publication.feedback.${code}`,
-          severity,
-          field: "publicationLinks.feedback",
-          message
-        }
-      ]
-    };
   }
 };
 
@@ -41647,6 +41315,317 @@ var MeetupPublicationApproval = class {
   }
 };
 
+// packages/application/journey/src/use-cases/reconcile-meetup-documents.ts
+var ReconcileMeetupDocuments = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const source = await this.dependencies.eventRepository.find(input.identity);
+    if (!source) throw new EventNotFoundError(input.identity);
+    const evaluation = await this.dependencies.manageEvent.execute({
+      ...input,
+      mode: "check",
+      sourceDocument: source
+    });
+    if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
+      return this.skipped([]);
+    if (!evaluation.event.host?.id || evaluation.diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") || /host|date/i.test(item.field ?? ""))
+    )) {
+      return this.skipped([
+        {
+          code: "publication.assets.prerequisites",
+          severity: "warning",
+          field: "publicationLinks.assets",
+          message: "Resolve the event host and date before reconciling assets"
+        }
+      ]);
+    }
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      input.identity,
+      source
+    );
+    return this.reconcile(
+      source,
+      evaluation,
+      evaluation.event.host.displayName
+    );
+  }
+  async reconcile(source, evaluation, hostName) {
+    const assets = await this.dependencies.reconcileAssets.execute({
+      eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
+      date: evaluation.event.date,
+      hostName,
+      existingUrl: evaluation.event.publicationLinks.assets,
+      mode: "fix",
+      model: await this.dependencies.renderProjection?.create(
+        evaluation.event,
+        evaluation.diagnostics
+      ),
+      recovery: this.dependencies.recovery
+    });
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      source.identity,
+      source
+    );
+    const slidesReady = Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
+    const { persisted, current } = await this.persistAsset(
+      source,
+      assets.container?.url
+    );
+    return {
+      skipped: false,
+      persisted,
+      slidesReady,
+      pdfSource: {
+        container: assets.container,
+        presentation: assets.presentation,
+        revision: this.dependencies.revision.of(current)
+      },
+      assetUrl: assets.container?.url,
+      files: assets.files,
+      content: assets.content,
+      diagnostics: assets.diagnostics.map((item) => ({
+        ...item,
+        field: "publicationLinks.assets"
+      }))
+    };
+  }
+  skipped(diagnostics) {
+    return {
+      pdfSource: {},
+      skipped: true,
+      persisted: false,
+      slidesReady: false,
+      files: {},
+      diagnostics
+    };
+  }
+  async persistAsset(source, assetUrl) {
+    let persisted = false;
+    let current = source;
+    if (assetUrl) {
+      const original = this.dependencies.documentCodec.decode(source).event;
+      const patch = this.dependencies.documentCodec.createPatch(source, {
+        ...original,
+        publicationLinks: {
+          ...original.publicationLinks,
+          assets: assetUrl
+        }
+      });
+      if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+        patch
+      )) {
+        await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+          this.dependencies.eventRepository,
+          source.identity,
+          source
+        );
+        await this.dependencies.eventRepository.applyPatch(
+          source.identity,
+          patch
+        );
+        persisted = true;
+        current = { ...source, ...patch };
+      }
+    }
+    return { persisted, current };
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-meetup-feedback.ts
+var ReconcileMeetupFeedback = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const source = await this.dependencies.eventRepository.find(input.identity);
+    if (!source) throw new EventNotFoundError(input.identity);
+    const evaluation = await this.dependencies.manageEvent.execute({
+      ...input,
+      mode: "check",
+      sourceDocument: source
+    });
+    if (evaluation.skipped)
+      return this.skipped("unrelated", "This issue is not a meetup");
+    const event = evaluation.event;
+    if (event.proposalStatus === "stale" || evaluation.diagnostics.some(
+      (item) => item.code.startsWith("referential.source.")
+    ))
+      return {
+        skipped: true,
+        persisted: false,
+        diagnostics: evaluation.diagnostics
+      };
+    if (event.issueState === "closed" || event.occurrenceStatus === "cancelled" || event.occurrenceStatus === "postponed")
+      return this.skipped(
+        "inactive",
+        "Feedback automation is inactive for this event"
+      );
+    if (!this.collaborators.feedbackPolicy.validDate(event.date) || this.invalid(evaluation.diagnostics))
+      return this.skipped(
+        "prerequisites",
+        "Resolve the event date and feedback link before updating feedback"
+      );
+    const agenda = this.collaborators.feedbackAgendaProjection.create(
+      event,
+      evaluation.diagnostics
+    );
+    if (!agenda && !event.publicationLinks.feedback)
+      return this.skipped(
+        "agenda",
+        "Complete talk subjects and resolve speaker references before creating feedback"
+      );
+    return this.synchronizeFeedback(source, event, agenda).catch(
+      (error2) => {
+        if (!(error2 instanceof FeedbackResolutionError) || error2.kind !== "conflict")
+          throw error2;
+        return this.skipped(
+          "conflict",
+          "Resolve ambiguous feedback talk or speaker identities before synchronizing",
+          "warning"
+        );
+      }
+    );
+  }
+  async synchronizeFeedback(source, event, agenda) {
+    const name = event.eventTitle.trim().slice(0, 100);
+    if (!name)
+      return this.skipped(
+        "prerequisites",
+        "Set an event title before updating feedback"
+      );
+    await this.ensureCurrent(source);
+    const { repository, issueNumber } = source.identity;
+    const url = await this.dependencies.events.ensureEvent({
+      key: `${repository.toLowerCase()}#${issueNumber}`,
+      name,
+      scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
+      ...agenda ? { agenda } : {},
+      ...event.publicationLinks.feedback ? {
+        url: this.collaborators.feedbackPolicy.pollUrl(
+          event.publicationLinks.feedback
+        )
+      } : {}
+    });
+    const result = await this.reconcile(
+      source,
+      this.collaborators.feedbackPolicy.pollUrl(url)
+    );
+    if (agenda) return result;
+    return {
+      ...result,
+      diagnostics: [
+        ...result.diagnostics,
+        {
+          code: "publication.feedback.agenda",
+          severity: "warning",
+          field: "publicationLinks.feedback",
+          message: "Complete talk subjects and resolve speaker references before synchronizing the feedback agenda"
+        }
+      ]
+    };
+  }
+  async reconcile(source, url) {
+    await this.ensureCurrent(source);
+    const { persisted } = await this.persist(source, url);
+    return {
+      skipped: false,
+      persisted,
+      feedbackUrl: url,
+      diagnostics: []
+    };
+  }
+  invalid(diagnostics) {
+    const fields = /date|feedback/i;
+    return diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("event.document.") || fields.test(item.field ?? ""))
+    );
+  }
+  async persist(source, feedbackUrl) {
+    const original = this.dependencies.documentCodec.decode(source).event;
+    if (original.publicationLinks.feedback === feedbackUrl)
+      return { persisted: false, current: source };
+    const patch = this.dependencies.documentCodec.createPatch(source, {
+      ...original,
+      publicationLinks: { ...original.publicationLinks, feedback: feedbackUrl }
+    });
+    if (this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      patch
+    ))
+      return { persisted: false, current: source };
+    await this.ensureCurrent(source);
+    await this.dependencies.eventRepository.applyPatch(source.identity, patch);
+    return { persisted: true, current: { ...source, ...patch } };
+  }
+  ensureCurrent(source) {
+    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      source.identity,
+      source
+    );
+  }
+  skipped(code, message, severity = "info") {
+    return {
+      skipped: true,
+      persisted: false,
+      diagnostics: [
+        {
+          code: `publication.feedback.${code}`,
+          severity,
+          field: "publicationLinks.feedback",
+          message
+        }
+      ]
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-meetup-issue-form.ts
+var ReconcileMeetupIssueForm = class {
+  constructor(dependencies) {
+    this.dependencies = dependencies;
+  }
+  dependencies;
+  async execute(input) {
+    const validation = await this.dependencies.validateReferentials.execute();
+    if (!validation.isValid) {
+      return {
+        changed: false,
+        completed: false,
+        changedFiles: [],
+        diagnostics: validation.diagnostics
+      };
+    }
+    const projection = await this.dependencies.issueFormProjection.synchronize({
+      issueFormPath: validation.config.event["issue-form"],
+      occurrenceStatusFieldId: validation.config.event["occurrence-status-field"],
+      catalog: validation.catalog,
+      mode: input.mode
+    });
+    return {
+      changed: projection.changed,
+      completed: !projection.diagnostics.some(
+        (item) => item.severity === "error"
+      ),
+      changedFiles: projection.changedFiles,
+      diagnostics: [
+        ...validation.diagnostics,
+        ...projection.diagnostics.map((item) => ({ ...item }))
+      ]
+    };
+  }
+};
+
 // packages/application/journey/src/use-cases/reconcile-organizer-feedback.ts
 var ReconcileOrganizerFeedback = class {
   constructor(collaborators, events, comments, meetupLabel) {
@@ -41662,10 +41641,10 @@ var ReconcileOrganizerFeedback = class {
   async execute(identity, stageResults) {
     const diagnostics = this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
     if (!this.collaborators.attentionStageEvaluation.complete(stageResults))
-      return;
+      return { updated: false };
     const source = await this.events.find(identity);
     if (!source) throw new Error("Organizer feedback issue is unavailable");
-    if (!source.labels.includes(this.meetupLabel)) return;
+    if (!source.labels.includes(this.meetupLabel)) return { updated: false };
     await this.comments.reconcileDiagnostics(
       identity,
       diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
@@ -41673,6 +41652,62 @@ var ReconcileOrganizerFeedback = class {
         category: item.severity === "error" ? "invalid" : "incomplete"
       }))
     );
+    return { updated: true };
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-source-speakers.ts
+var ReconcileSourceSpeakers = class {
+  constructor(collaborators, source, store) {
+    this.collaborators = collaborators;
+    this.source = source;
+    this.store = store;
+  }
+  collaborators;
+  source;
+  store;
+  async execute() {
+    const original = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "read-catalog",
+      () => this.store.read()
+    );
+    const snapshot = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "load-source",
+      () => this.source.load()
+    );
+    const merged = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "merge-speakers",
+      () => this.collaborators.mergeSourceSpeakers.execute(
+        original.entries,
+        snapshot,
+        original.reservedIds
+      )
+    );
+    const catalog = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "validate-catalog",
+      async () => this.validate(await this.store.candidate(merged.entries))
+    );
+    const changed = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "save-catalog",
+      () => this.store.save(original, merged.entries, merged.reservedIds)
+    );
+    return {
+      changed,
+      speakerCount: catalog.speakers.length
+    };
+  }
+  async validate(input) {
+    const validation = await this.collaborators.createValidateReferentialCatalog().execute(input);
+    if (!validation.isValid)
+      throw new SpeakerSynchronizationError(
+        "validate-catalog",
+        void 0,
+        validation.diagnostics.map(({ path, ...item }) => ({
+          ...item,
+          field: path
+        }))
+      );
+    return validation.catalog;
   }
 };
 
@@ -41770,120 +41805,6 @@ var RefreshSelectedProposals = class {
   }
 };
 
-// packages/application/journey/src/use-cases/synchronize-meetup-issue-form.ts
-var SynchronizeMeetupIssueForm = class {
-  constructor(dependencies) {
-    this.dependencies = dependencies;
-  }
-  dependencies;
-  async execute(input) {
-    const validation = await this.dependencies.validateReferentials.execute();
-    if (!validation.isValid) {
-      return {
-        changed: false,
-        changedFiles: [],
-        diagnostics: validation.diagnostics
-      };
-    }
-    const projection = await this.dependencies.issueFormProjection.synchronize({
-      issueFormPath: validation.config.event["issue-form"],
-      occurrenceStatusFieldId: validation.config.event["occurrence-status-field"],
-      catalog: validation.catalog,
-      mode: input.mode
-    });
-    return {
-      changed: projection.changed,
-      changedFiles: projection.changedFiles,
-      diagnostics: [
-        ...validation.diagnostics,
-        ...projection.diagnostics.map((item) => ({ ...item }))
-      ]
-    };
-  }
-};
-
-// packages/application/journey/src/use-cases/synchronize-source-speakers.ts
-var SynchronizeSourceSpeakers = class {
-  constructor(collaborators, source, store, form, config) {
-    this.collaborators = collaborators;
-    this.source = source;
-    this.store = store;
-    this.form = form;
-    this.config = config;
-  }
-  collaborators;
-  source;
-  store;
-  form;
-  config;
-  async execute() {
-    const original = await this.collaborators.speakerSynchronizationStageRunner.at(
-      "read-catalog",
-      () => this.store.read()
-    );
-    const snapshot = await this.collaborators.speakerSynchronizationStageRunner.at(
-      "load-source",
-      () => this.source.load()
-    );
-    const merged = await this.collaborators.speakerSynchronizationStageRunner.at(
-      "merge-speakers",
-      () => this.collaborators.mergeSourceSpeakers.execute(
-        original.entries,
-        snapshot,
-        original.reservedIds
-      )
-    );
-    const catalog = await this.collaborators.speakerSynchronizationStageRunner.at(
-      "validate-catalog",
-      async () => this.validate(await this.store.candidate(merged.entries))
-    );
-    await this.collaborators.speakerSynchronizationStageRunner.at(
-      "check-form",
-      () => this.project(catalog, "check")
-    );
-    const changed = await this.collaborators.speakerSynchronizationStageRunner.at(
-      "save-catalog",
-      () => this.store.save(original, merged.entries, merged.reservedIds)
-    );
-    const form = await this.collaborators.speakerSynchronizationStageRunner.at(
-      "update-form",
-      () => this.project(catalog, "fix")
-    );
-    return {
-      changed: changed || form.changed,
-      speakerCount: catalog.speakers.length
-    };
-  }
-  async validate(input) {
-    const validation = await this.collaborators.createValidateReferentialCatalog().execute(input);
-    if (!validation.isValid)
-      throw new SpeakerSynchronizationError(
-        "validate-catalog",
-        void 0,
-        validation.diagnostics.map(({ path, ...item }) => ({
-          ...item,
-          field: path
-        }))
-      );
-    return validation.catalog;
-  }
-  async project(catalog, mode) {
-    const result = await this.form.synchronize({
-      issueFormPath: this.config["issue-form"],
-      occurrenceStatusFieldId: this.config["occurrence-status-field"],
-      catalog,
-      mode
-    });
-    if (result.diagnostics.some((item) => item.severity === "error"))
-      throw new SpeakerSynchronizationError(
-        mode === "check" ? "check-form" : "update-form",
-        void 0,
-        result.diagnostics
-      );
-    return result;
-  }
-};
-
 // packages/application/journey/src/use-cases/validate-meetup-referentials.ts
 var ValidateMeetupReferentials = class {
   constructor(collaborators, dependencies) {
@@ -41932,10 +41853,9 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupAssets(...args) {
-    return new ManageMeetupAssets(
+  reconcileMeetupDocuments(...args) {
+    return new ReconcileMeetupDocuments(
       {
-        postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
         eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
         eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches()
       },
@@ -41977,13 +41897,12 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupFeedback(...args) {
-    return new ManageMeetupFeedback(
+  reconcileMeetupFeedback(...args) {
+    return new ReconcileMeetupFeedback(
       {
         feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
         feedbackAgendaProjection: new JourneyPolicyComposition().feedbackAgendaProjection(),
         eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
-        feedbackLinkSelection: new PublicationDomainComposition().feedbackLinkSelection(),
         eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency()
       },
       ...args
@@ -42022,11 +41941,11 @@ var JourneyComposition = class {
   refreshSelectedProposals(...args) {
     return new RefreshSelectedProposals(...args);
   }
-  synchronizeMeetupIssueForm(...args) {
-    return new SynchronizeMeetupIssueForm(...args);
+  reconcileMeetupIssueForm(...args) {
+    return new ReconcileMeetupIssueForm(...args);
   }
-  synchronizeSourceSpeakers(...args) {
-    return new SynchronizeSourceSpeakers(
+  reconcileSourceSpeakers(...args) {
+    return new ReconcileSourceSpeakers(
       {
         speakerSynchronizationStageRunner: new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
         mergeSourceSpeakers: new ReferentialDomainComposition().mergeSourceSpeakers(),
@@ -42056,13 +41975,23 @@ var AttentionStageInput = class {
     if (!this.isRecord(input))
       throw new Error("Invalid attention stage results");
     const reports = ATTENTION_STAGE_OWNERS.map(
-      (owner) => [owner, this.stage(input[owner])]
+      (owner) => [owner, this.group(input[owner])]
     );
     return {
       event: reports[0][1],
       assets: reports[1][1],
       feedback: reports[2][1],
       communications: reports[3][1]
+    };
+  }
+  group(value) {
+    if (!Array.isArray(value)) return this.stage(value);
+    if (!value.length) throw new Error("Empty attention stage group");
+    const stages = value.map((item) => this.stage(item));
+    return {
+      outcome: stages.some((stage) => stage.outcome === "failure") ? "failure" : stages.every((stage) => stage.outcome === "success") ? "success" : "unknown",
+      reported: stages.every((stage) => stage.reported),
+      diagnostics: stages.flatMap((stage) => stage.diagnostics)
     };
   }
   stage(value) {
@@ -45995,13 +45924,19 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
+  "action.feedback.reconcile-short-link": "Reconcile shared feedback link",
+  "action.organizer.reconcile-checklist": "Reconcile organizer checklist",
+  "report.checklist.updated": "checklist=persisted",
+  "report.checklist.retained": "checklist=retained",
+  "report.feedback.link": "link_updated={updated}",
   "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
   "diagnostic.publication.meetup.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
   "diagnostic.publication.meetup.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
   "diagnostic.publication.meetup.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
   "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
-  "action.publication.reconcile-meetup": "Create or update Meetup event",
+  "action.publication.reconcile-event": "Reconcile event publication",
   "report.meetup.draft": "meetup_event=draft approval=required",
   "report.meetup.review": "meetup_url={url}",
   "report.meetup.updated": "meetup_event=synchronized",
@@ -46019,16 +45954,14 @@ var EN_MESSAGES2 = {
   "diagnostic.issue-form.updated": "Issue form synchronized.",
   "report.speaker-sync.pr-title": "feat(referential): synchronize Conference Hall speakers",
   "report.speaker-sync.pr-body": "Review speaker identity mappings and preserved local CSV fields before merging.",
-  "action.referential.sync-speakers": "Synchronize Conference Hall speakers",
+  "action.referential.reconcile-speakers": "Reconcile speakers",
   "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
   "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
   "report.speaker-sync.stage.read-catalog": "read-catalog",
   "report.speaker-sync.stage.load-source": "load-source",
   "report.speaker-sync.stage.merge-speakers": "merge-speakers",
   "report.speaker-sync.stage.validate-catalog": "validate-catalog",
-  "report.speaker-sync.stage.check-form": "check-form",
   "report.speaker-sync.stage.save-catalog": "save-catalog",
-  "report.speaker-sync.stage.update-form": "update-form",
   "report.speaker-sync.stage.unknown": "unknown",
   "diagnostic.speaker-sync.configuration": "Set the CFP slug and Web API key.",
   "diagnostic.speaker-sync.http": "Conference Hall returned an HTTP error; retry when the service is available.",
@@ -46047,14 +45980,14 @@ var EN_MESSAGES2 = {
   "diagnostic.speaker-sync.rate-limited": "Conference Hall rate limit reached; retry after the API cooldown.",
   "diagnostic.speaker-sync.unexpected": "Unexpected technical failure during speaker synchronization.",
   "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.communication.reconcile-attention": "Reconcile organizer attention",
+  "action.organizer.reconcile-attention": "Reconcile organizer attention",
   "report.attention.updated": "attention=persisted",
   "report.attention.skipped": "attention=skipped reason=unrelated-issue",
   "report.attention.failed": "attention=synchronization-failed",
-  "action.publication.reconcile-feedback": "Reconcile meetup feedback",
+  "action.feedback.reconcile-event": "Reconcile feedback event",
   "report.feedback.skipped": "feedback=skipped",
   "report.feedback.completed": "feedback=completed",
-  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+  "report.feedback.changes": "issue_persisted={persisted}",
   "error.EventNotFoundError": "The event could not be found.",
   "error.EventConcurrentModificationError": "The event changed during reconciliation.",
   "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed.",
@@ -46065,11 +45998,11 @@ var EN_MESSAGES2 = {
   "error.GitHubEventCommentRepositoryScopeError": "The comment is outside the configured repository scope.",
   "error.GitHubEventCommentRepositoryResponseError": "GitHub returned an invalid comment response.",
   "action.referential.validate": "Validate meetup referentials",
-  "action.referential.sync-issue-form": "Synchronize meetup issue form",
+  "action.issue-form.reconcile": "Reconcile meetup issue form",
   "action.event.reconcile": "Reconcile meetup event",
   "action.event.list-active": "List active meetup events",
-  "action.communication.reconcile": "Reconcile meetup communications",
-  "action.publication.reconcile-assets": "Reconcile meetup assets",
+  "action.communication.reconcile-email": "Reconcile meetup email",
+  "action.assets.reconcile-documents": "Reconcile meetup documents",
   "report.failed": "failure={reason}",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
@@ -46101,13 +46034,19 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.assets.reconcile-slides-pdf": "Mettre \xE0 jour le PDF des slides",
+  "action.feedback.reconcile-short-link": "Mettre \xE0 jour le lien de feedback partag\xE9",
+  "action.organizer.reconcile-checklist": "Mettre \xE0 jour la checklist organisateur",
+  "report.checklist.updated": "checklist=persisted",
+  "report.checklist.retained": "checklist=retained",
+  "report.feedback.link": "link_updated={updated}",
   "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
   "diagnostic.publication.meetup.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
   "diagnostic.publication.meetup.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
   "diagnostic.publication.meetup.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
   "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
-  "action.publication.reconcile-meetup": "Cr\xE9er ou mettre \xE0 jour un \xE9v\xE9nement Meetup",
+  "action.publication.reconcile-event": "R\xE9concilier la publication de l'\xE9v\xE9nement",
   "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
   "report.meetup.review": "meetup_url={url}",
   "report.meetup.updated": "evenement_meetup=synchronise",
@@ -46125,16 +46064,14 @@ var FR_MESSAGES2 = {
   "diagnostic.issue-form.updated": "Formulaire d'issue synchronis\xE9.",
   "report.speaker-sync.pr-title": "feat(referential): synchroniser les intervenants Conference Hall",
   "report.speaker-sync.pr-body": "V\xE9rifiez les identit\xE9s des intervenants et les champs locaux du CSV avant fusion.",
-  "action.referential.sync-speakers": "Synchroniser les intervenants Conference Hall",
+  "action.referential.reconcile-speakers": "Mettre \xE0 jour le r\xE9f\xE9rentiel des intervenants",
   "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
   "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
   "report.speaker-sync.stage.read-catalog": "read-catalog",
   "report.speaker-sync.stage.load-source": "load-source",
   "report.speaker-sync.stage.merge-speakers": "merge-speakers",
   "report.speaker-sync.stage.validate-catalog": "validate-catalog",
-  "report.speaker-sync.stage.check-form": "check-form",
   "report.speaker-sync.stage.save-catalog": "save-catalog",
-  "report.speaker-sync.stage.update-form": "update-form",
   "report.speaker-sync.stage.unknown": "unknown",
   "diagnostic.speaker-sync.configuration": "Configurez le slug du CFP et sa cl\xE9 Web API.",
   "diagnostic.speaker-sync.http": "Conference Hall renvoie une erreur HTTP ; r\xE9essayez quand le service est disponible.",
@@ -46153,14 +46090,14 @@ var FR_MESSAGES2 = {
   "diagnostic.speaker-sync.rate-limited": "Limite API Conference Hall atteinte ; r\xE9essayez apr\xE8s le d\xE9lai impos\xE9.",
   "diagnostic.speaker-sync.unexpected": "Erreur technique inattendue pendant la synchronisation des intervenants.",
   "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.communication.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
+  "action.organizer.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
   "report.attention.updated": "attention=persisted",
   "report.attention.skipped": "attention=skipped reason=unrelated-issue",
   "report.attention.failed": "attention=synchronization-failed",
-  "action.publication.reconcile-feedback": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
+  "action.feedback.reconcile-event": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
   "report.feedback.skipped": "feedback=skipped",
   "report.feedback.completed": "feedback=completed",
-  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+  "report.feedback.changes": "issue_persisted={persisted}",
   "error.EventNotFoundError": "L'\xE9v\xE9nement est introuvable.",
   "error.EventConcurrentModificationError": "L'\xE9v\xE9nement a chang\xE9 pendant la synchronisation.",
   "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9.",
@@ -46171,11 +46108,11 @@ var FR_MESSAGES2 = {
   "error.GitHubEventCommentRepositoryScopeError": "Le commentaire est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
   "error.GitHubEventCommentRepositoryResponseError": "La r\xE9ponse GitHub pour les commentaires est invalide.",
   "action.referential.validate": "Valider les r\xE9f\xE9rentiels du meetup",
-  "action.referential.sync-issue-form": "Synchroniser le formulaire du meetup",
+  "action.issue-form.reconcile": "Synchroniser le formulaire du meetup",
   "action.event.reconcile": "V\xE9rifier et mettre \xE0 jour le meetup",
   "action.event.list-active": "Lister les meetups actifs",
-  "action.communication.reconcile": "V\xE9rifier et envoyer les communications du meetup",
-  "action.publication.reconcile-assets": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
+  "action.communication.reconcile-email": "V\xE9rifier et envoyer les communications du meetup",
+  "action.assets.reconcile-documents": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
   "report.failed": "failure={reason}",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
@@ -46247,7 +46184,7 @@ var OrganizerFeedback = class {
   collaborators;
   reconciliation;
   async execute(identity, stageResults) {
-    await this.reconciliation.execute(
+    return this.reconciliation.execute(
       identity,
       this.collaborators.attentionStageInput.parse(stageResults)
     );
@@ -49023,12 +48960,12 @@ var STAGE_GUIDANCE = [
     ["OpenFeedback Link", "comment.guidance.feedback.prerequisites"]
   ],
   [
-    "publication.feedback.current-event",
-    ["OpenFeedback Link", "comment.guidance.feedback.current-event"]
+    "publication.feedback-link.prerequisites",
+    ["Meetup issue", "comment.guidance.feedback-link.prerequisites"]
   ],
   [
-    "publication.feedback.ambiguous-date",
-    ["OpenFeedback Link", "comment.guidance.feedback.ambiguous-date"]
+    "publication.feedback-link.ambiguous-date",
+    ["Meetup issue", "comment.guidance.feedback-link.ambiguous-date"]
   ],
   [
     "publication.assets.prerequisites",
@@ -49826,8 +49763,8 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
   "comment.guidance.feedback.agenda": "Complete talk subjects and speakers before synchronizing OpenFeedback.",
   "comment.guidance.feedback.prerequisites": "Complete the title, date and OpenFeedback link.",
-  "comment.guidance.feedback.current-event": "Keep today's shared feedback link until the event day ends.",
-  "comment.guidance.feedback.ambiguous-date": "Several meetups share this date. Select the shared feedback link manually.",
+  "comment.guidance.feedback-link.prerequisites": "Check the active meetup selected for the shared link and complete its OpenFeedback URL.",
+  "comment.guidance.feedback-link.ambiguous-date": "Several active meetups share the selected date. Select the shared feedback target manually.",
   "comment.guidance.assets.prerequisites": "Select the host and date before preparing Drive files.",
   "comment.guidance.assets.drift": "Restore the missing Drive file or its expected template metadata.",
   "comment.guidance.assets.template": "Fix the template tokens, image slots or supported document structure.",
@@ -49868,8 +49805,8 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
   "comment.guidance.feedback.agenda": "Compl\xE9tez les sujets et intervenants avant de synchroniser OpenFeedback.",
   "comment.guidance.feedback.prerequisites": "Compl\xE9tez le titre, la date et le lien OpenFeedback.",
-  "comment.guidance.feedback.current-event": "Conservez le lien partag\xE9 du meetup du jour jusqu'\xE0 la fin de la journ\xE9e.",
-  "comment.guidance.feedback.ambiguous-date": "Plusieurs meetups ont cette date. S\xE9lectionnez manuellement le lien partag\xE9.",
+  "comment.guidance.feedback-link.prerequisites": "V\xE9rifiez le meetup actif s\xE9lectionn\xE9 pour le lien partag\xE9 et compl\xE9tez son URL OpenFeedback.",
+  "comment.guidance.feedback-link.ambiguous-date": "Plusieurs meetups actifs ont la date s\xE9lectionn\xE9e. Choisissez manuellement la cible du lien partag\xE9.",
   "comment.guidance.assets.prerequisites": "S\xE9lectionnez l'h\xF4te et la date avant de pr\xE9parer les fichiers Drive.",
   "comment.guidance.assets.drift": "Restaurez le fichier Drive manquant ou ses m\xE9tadonn\xE9es de mod\xE8le.",
   "comment.guidance.assets.template": "Corrigez les variables, emplacements d'images ou la structure du mod\xE8le.",
@@ -60263,8 +60200,8 @@ var EventComposition = class _EventComposition {
         )
       })
     );
-    container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
-      (context3) => new JourneyComposition().synchronizeMeetupIssueForm({
+    container.bind(ReconcileMeetupIssueForm).toDynamicValue(
+      (context3) => new JourneyComposition().reconcileMeetupIssueForm({
         validateReferentials: context3.get(ValidateMeetupReferentials),
         issueFormProjection: context3.get(
           SERVICES.issueFormProjection

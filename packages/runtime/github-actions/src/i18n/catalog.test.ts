@@ -4,6 +4,7 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"report.feedback.link": { updated: "true" },
 	"report.meetup.review": {
 		url: "https://www.meetup.com/example/events/12345/",
 	},
@@ -11,7 +12,6 @@ const parameters = {
 	"report.speaker-sync.completed": { count: 2 },
 	"report.feedback.changes": {
 		persisted: "true",
-		linkUpdated: "false",
 	},
 	"report.failed": {
 		reason: "Safe reason.",

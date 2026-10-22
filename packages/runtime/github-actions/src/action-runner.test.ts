@@ -272,7 +272,7 @@ describe("action runner reporting contract", () => {
 				actionOutput: new GithubActionsComposition().actionOutput(),
 				createActionMessages: (...args) =>
 					new GithubActionsComposition().actionMessages(...args),
-			}).run("action.communication.reconcile", operation, true);
+			}).run("action.communication.reconcile-email", operation, true);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
@@ -310,7 +310,7 @@ describe("action runner reporting contract", () => {
 			actionOutput: new GithubActionsComposition().actionOutput(),
 			createActionMessages: (...args) =>
 				new GithubActionsComposition().actionMessages(...args),
-		}).run("action.communication.reconcile", operation, false);
+		}).run("action.communication.reconcile-email", operation, false);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(

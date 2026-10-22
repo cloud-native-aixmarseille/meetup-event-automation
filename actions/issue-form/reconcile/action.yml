@@ -1,0 +1,26 @@
+name: Reconcile meetup issue form
+description:
+  Validate referentials and synchronize the public meetup issue form. Invalid records and
+  projection drift are reported without failing CI; technical failures still fail.
+author: Cloud Native Aix-Marseille
+inputs:
+  locale:
+    description:
+      Language for generated reports and guidance (en or fr). Regional variants are
+      supported; unsupported locales fall back to English.
+    required: true
+  mode:
+    description:
+      Use check to detect projection drift or fix to rewrite the checked-out issue form with
+      the validated public projection.
+    required: true
+outputs:
+  changed:
+    description: Whether the checked-out issue form differs from the desired public projection.
+  completed:
+    description:
+      Whether catalog validation and form projection completed without blocking diagnostics.
+      Gates publication of the review branch.
+runs:
+  using: node24
+  main: dist/index.js

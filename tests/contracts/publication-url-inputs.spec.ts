@@ -14,11 +14,11 @@ const inputs = [
 ] as const;
 const actions = [
 	"event/reconcile",
-	"publication/reconcile-assets",
-	"publication/reconcile-feedback",
-	"publication/reconcile-meetup",
-	"communication/reconcile",
-	"communication/reconcile-attention",
+	"assets/reconcile-documents",
+	"feedback/reconcile-event",
+	"publication/reconcile-event",
+	"communication/reconcile-email",
+	"organizer/reconcile-attention",
 ];
 
 describe("explicit publication URL configuration", () => {
@@ -37,9 +37,8 @@ describe("explicit publication URL configuration", () => {
 	});
 
 	it.each([
-		["update-meetup-issue", 5],
-		["check-active-meetup-issues", 5],
-		["reconcile-meetup-event", 1],
+		["reconcile-meetup", 5],
+		["reconcile-event-publication", 1],
 	] as const)(
 		"forwards the same required prefixes to every evaluating action in %s",
 		async (name, expectedCount) => {
@@ -71,8 +70,8 @@ describe("explicit publication URL configuration", () => {
 	it.each([
 		"event/list-active",
 		"referential/validate",
-		"referential/sync-issue-form",
-		"referential/sync-speakers",
+		"issue-form/reconcile",
+		"referential/reconcile-speakers",
 	])("keeps unrelated URL inputs out of %s", async (action) => {
 		// Arrange
 		const path = `actions/${action}/action.yml`;

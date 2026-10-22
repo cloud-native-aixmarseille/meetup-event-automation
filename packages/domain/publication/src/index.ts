@@ -41,10 +41,7 @@ export { ContentContractPolicy } from "./domain/content-contract-policy.js";
 export { ContentError } from "./domain/content-error.js";
 export { ContentFingerprint } from "./domain/content-fingerprint.js";
 export { ContentTextKey } from "./domain/content-text-key.js";
-export {
-	type FeedbackLinkConflict,
-	FeedbackLinkSelection,
-} from "./domain/feedback-link-selection.js";
+export { FeedbackLinkSelection } from "./domain/feedback-link-selection.js";
 export { FeedbackPolicy } from "./domain/feedback-policy.js";
 export { FeedbackResolutionError } from "./domain/feedback-resolution-error.js";
 export {

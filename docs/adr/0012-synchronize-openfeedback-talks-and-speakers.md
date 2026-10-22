@@ -4,6 +4,9 @@ Status: Accepted
 
 Date: 2026-10-15
 
+The combined event-feedback/shared-link action boundary is superseded by
+[ADR 0024](0024-scoped-actions-and-workflow-composition.md).
+
 ## Context
 
 Feedback automation must populate talks and speakers from the meetup issue as

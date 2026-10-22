@@ -16,10 +16,6 @@ import {
 	type FindNextAssetEventArguments,
 } from "./use-cases/find-next-asset-event.js";
 import {
-	ManageMeetupAssets,
-	type ManageMeetupAssetsArguments,
-} from "./use-cases/manage-meetup-assets.js";
-import {
 	ManageMeetupAttention,
 	type ManageMeetupAttentionArguments,
 } from "./use-cases/manage-meetup-attention.js";
@@ -27,10 +23,6 @@ import {
 	ManageMeetupEvent,
 	type ManageMeetupEventArguments,
 } from "./use-cases/manage-meetup-event.js";
-import {
-	ManageMeetupFeedback,
-	type ManageMeetupFeedbackArguments,
-} from "./use-cases/manage-meetup-feedback.js";
 import {
 	ManageMeetupPublication,
 	type ManageMeetupPublicationArguments,
@@ -40,21 +32,29 @@ import {
 	type MeetupPublicationApprovalArguments,
 } from "./use-cases/meetup-publication-approval.js";
 import {
+	ReconcileMeetupDocuments,
+	type ReconcileMeetupDocumentsArguments,
+} from "./use-cases/reconcile-meetup-documents.js";
+import {
+	ReconcileMeetupFeedback,
+	type ReconcileMeetupFeedbackArguments,
+} from "./use-cases/reconcile-meetup-feedback.js";
+import {
+	ReconcileMeetupIssueForm,
+	type ReconcileMeetupIssueFormArguments,
+} from "./use-cases/reconcile-meetup-issue-form.js";
+import {
 	ReconcileOrganizerFeedback,
 	type ReconcileOrganizerFeedbackArguments,
 } from "./use-cases/reconcile-organizer-feedback.js";
 import {
+	ReconcileSourceSpeakers,
+	type ReconcileSourceSpeakersArguments,
+} from "./use-cases/reconcile-source-speakers.js";
+import {
 	RefreshSelectedProposals,
 	type RefreshSelectedProposalsArguments,
 } from "./use-cases/refresh-selected-proposals.js";
-import {
-	SynchronizeMeetupIssueForm,
-	type SynchronizeMeetupIssueFormArguments,
-} from "./use-cases/synchronize-meetup-issue-form.js";
-import {
-	SynchronizeSourceSpeakers,
-	type SynchronizeSourceSpeakersArguments,
-} from "./use-cases/synchronize-source-speakers.js";
 import {
 	ValidateMeetupReferentials,
 	type ValidateMeetupReferentialsArguments,
@@ -94,10 +94,11 @@ export class JourneyComposition {
 			...args,
 		);
 	}
-	manageMeetupAssets(...args: ManageMeetupAssetsArguments): ManageMeetupAssets {
-		return new ManageMeetupAssets(
+	reconcileMeetupDocuments(
+		...args: ReconcileMeetupDocumentsArguments
+	): ReconcileMeetupDocuments {
+		return new ReconcileMeetupDocuments(
 			{
-				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 				eventRepositoryPatches:
@@ -159,18 +160,16 @@ export class JourneyComposition {
 			...args,
 		);
 	}
-	manageMeetupFeedback(
-		...args: ManageMeetupFeedbackArguments
-	): ManageMeetupFeedback {
-		return new ManageMeetupFeedback(
+	reconcileMeetupFeedback(
+		...args: ReconcileMeetupFeedbackArguments
+	): ReconcileMeetupFeedback {
+		return new ReconcileMeetupFeedback(
 			{
 				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
 				feedbackAgendaProjection:
 					new JourneyPolicyComposition().feedbackAgendaProjection(),
 				eventRepositoryPatches:
 					new EventDomainComposition().eventRepositoryPatches(),
-				feedbackLinkSelection:
-					new PublicationDomainComposition().feedbackLinkSelection(),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 			},
@@ -226,15 +225,15 @@ export class JourneyComposition {
 	): RefreshSelectedProposals {
 		return new RefreshSelectedProposals(...args);
 	}
-	synchronizeMeetupIssueForm(
-		...args: SynchronizeMeetupIssueFormArguments
-	): SynchronizeMeetupIssueForm {
-		return new SynchronizeMeetupIssueForm(...args);
+	reconcileMeetupIssueForm(
+		...args: ReconcileMeetupIssueFormArguments
+	): ReconcileMeetupIssueForm {
+		return new ReconcileMeetupIssueForm(...args);
 	}
-	synchronizeSourceSpeakers(
-		...args: SynchronizeSourceSpeakersArguments
-	): SynchronizeSourceSpeakers {
-		return new SynchronizeSourceSpeakers(
+	reconcileSourceSpeakers(
+		...args: ReconcileSourceSpeakersArguments
+	): ReconcileSourceSpeakers {
+		return new ReconcileSourceSpeakers(
 			{
 				speakerSynchronizationStageRunner:
 					new JourneyPolicyComposition().speakerSynchronizationStageRunner(),

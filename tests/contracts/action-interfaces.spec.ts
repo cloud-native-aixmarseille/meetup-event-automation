@@ -141,6 +141,17 @@ describe("minimal explicit action interfaces", () => {
 		const workflowPaths = (
 			await readdir(join(root, ".github/workflows"))
 		).filter((path) => path.endsWith(".yml"));
+		const workflowCatalog = new Map(
+			await Promise.all(
+				workflowPaths.map(
+					async (path) =>
+						[
+							path,
+							await readYaml<Workflow>(`.github/workflows/${path}`),
+						] as const,
+				),
+			),
+		);
 		const consumed = new Map(
 			[...manifests.keys()].map((name) => [name, new Set<string>()]),
 		);
@@ -220,18 +231,36 @@ describe("minimal explicit action interfaces", () => {
 					if (path.startsWith("__")) continue;
 					for (const [input, value] of Object.entries(step.with ?? {}))
 						inputValues.get(action)?.get(input)?.push(value);
-					let operational =
-						ActionInterfaceUsage.operationalValues(job).join("\n");
+					let operational = ActionInterfaceUsage.operationalValues(
+						job,
+						workflowCatalog,
+					).join("\n");
 					for (const [output, expression] of Object.entries(
 						job.outputs ?? {},
 					)) {
 						const downstream = Object.entries(workflow.jobs ?? {})
 							.filter(([id]) => id !== jobId)
 							.flatMap(([, other]) =>
-								ActionInterfaceUsage.operationalValues(other),
+								ActionInterfaceUsage.operationalValues(other, workflowCatalog),
 							)
 							.join("\n");
-						if (downstream.includes(`needs.${jobId}.outputs.${output}`))
+						const exported = Object.entries(
+							workflow.on?.workflow_call?.outputs ?? {},
+						).some(
+							([name, value]) =>
+								ActionInterfaceUsage.strings(value).some((text) =>
+									text.includes(`jobs.${jobId}.outputs.${output}`),
+								) &&
+								ActionInterfaceUsage.workflowOutputConsumed(
+									workflowCatalog,
+									path,
+									name,
+								),
+						);
+						if (
+							exported ||
+							downstream.includes(`needs.${jobId}.outputs.${output}`)
+						)
 							operational +=
 								ActionInterfaceUsage.strings(expression).join("\n");
 					}

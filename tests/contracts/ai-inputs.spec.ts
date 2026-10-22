@@ -35,7 +35,7 @@ describe("shared AI action configuration", () => {
 
 		// Assert
 		expect(consumers.map(({ action }) => action)).toContain(
-			"publication/reconcile-meetup",
+			"publication/reconcile-event",
 		);
 		for (const { action, manifest } of consumers) {
 			const names = Object.keys(manifest.inputs ?? {}).filter((name) =>
@@ -57,13 +57,13 @@ describe("shared AI action configuration", () => {
 	it.each([
 		"event/list-active",
 		"event/reconcile",
-		"publication/reconcile-assets",
-		"publication/reconcile-feedback",
-		"communication/reconcile",
-		"communication/reconcile-attention",
+		"assets/reconcile-documents",
+		"feedback/reconcile-event",
+		"communication/reconcile-email",
+		"organizer/reconcile-attention",
 		"referential/validate",
-		"referential/sync-issue-form",
-		"referential/sync-speakers",
+		"issue-form/reconcile",
+		"referential/reconcile-speakers",
 	])("does not require unused AI configuration in %s", async (action) => {
 		// Arrange
 		const path = `actions/${action}/action.yml`;

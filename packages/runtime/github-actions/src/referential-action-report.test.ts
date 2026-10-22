@@ -46,6 +46,7 @@ describe("referential action report facts", () => {
 		// Arrange
 		const result = {
 			changed: true,
+			completed: true,
 			changedFiles: [".github/ISSUE_TEMPLATE/example.yml"],
 			diagnostics: [],
 		};
@@ -69,6 +70,7 @@ describe("referential action report facts", () => {
 		// Arrange
 		const result = {
 			changed: true,
+			completed: true,
 			changedFiles: [".github/ISSUE_TEMPLATE/example.yml"],
 			diagnostics: [],
 		};
@@ -95,7 +97,12 @@ describe("referential action report facts", () => {
 		"reports an unchanged issue form as current in %s mode",
 		(mode) => {
 			// Arrange
-			const result = { changed: false, changedFiles: [], diagnostics: [] };
+			const result = {
+				changed: false,
+				completed: true,
+				changedFiles: [],
+				diagnostics: [],
+			};
 
 			// Act
 			const report = new ReferentialActionReport().issueForm(
@@ -116,6 +123,7 @@ describe("referential action report facts", () => {
 			// Arrange
 			const result = {
 				changed: false,
+				completed: true,
 				changedFiles: [],
 				diagnostics: [
 					{

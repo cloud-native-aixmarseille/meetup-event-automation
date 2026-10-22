@@ -84,17 +84,20 @@ describe("internal CI contracts", () => {
 		expect(workflowFiles).not.toContain("need-fix-to-issue.yml");
 		expect(workflowFiles).not.toContain("semantic-pull-request.yml");
 		expect(workflowFiles).not.toContain("stale.yml");
-		expect(sortedKeys(actionChecks.jobs)).toEqual([
-			"cleanup-synthetic-issue",
-			"prepare-synthetic-issue",
-			"test-communication-reconcile",
-			"test-event-list-active",
-			"test-event-reconcile",
-			"test-publication-reconcile-assets",
-			"test-publication-reconcile-feedback",
-			"test-referential-sync-issue-form",
-			"test-referential-validate",
-		]);
+		expect(sortedKeys(actionChecks.jobs)).toEqual(
+			[
+				"cleanup-synthetic-issue",
+				"prepare-synthetic-issue",
+				"test-communication-reconcile",
+				"test-event-list-active",
+				"test-event-reconcile",
+				"test-assets-reconcile-documents",
+				"test-feedback-reconcile-event",
+				"test-issue-form-reconcile",
+				"test-referential-validate",
+				"test-organizer-reconcile-checklist",
+			].sort(),
+		);
 		expect(actionChecks.jobs?.["prepare-synthetic-issue"]?.permissions).toEqual(
 			{
 				contents: "read",
@@ -107,7 +110,7 @@ describe("internal CI contracts", () => {
 			contents: "read",
 		});
 		expect(
-			actionChecks.jobs?.["test-referential-sync-issue-form"]?.permissions,
+			actionChecks.jobs?.["test-issue-form-reconcile"]?.permissions,
 		).toEqual({
 			contents: "read",
 		});
@@ -180,7 +183,7 @@ describe("internal CI contracts", () => {
 		const job = workflow.jobs?.["test-communication-reconcile"];
 		const eventJob = workflow.jobs?.["test-event-reconcile"];
 		const communication = job?.steps?.find(
-			(step) => step.uses === "./actions/communication/reconcile",
+			(step) => step.uses === "./actions/communication/reconcile-email",
 		);
 		const fixture = workflow.jobs?.["prepare-synthetic-issue"]?.steps?.find(
 			(step) => step.id === "create-issue",

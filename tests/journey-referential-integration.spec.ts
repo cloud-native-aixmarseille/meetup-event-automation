@@ -4,7 +4,7 @@ import {
 	JourneyComposition,
 	JourneyPolicyComposition,
 	ManageMeetupEvent,
-	SynchronizeMeetupIssueForm,
+	ReconcileMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "../packages/application/journey/src/index.js";
 import { createPublicationUrlPolicyEngine } from "../packages/application/journey/testing/meetup-journey.fixtures.js";
@@ -105,7 +105,7 @@ describe("referential journey orchestration", () => {
 		const synchronize = vi.fn();
 
 		// Act
-		const result = await new SynchronizeMeetupIssueForm({
+		const result = await new ReconcileMeetupIssueForm({
 			validateReferentials: new ValidateMeetupReferentials(
 				{
 					createValidateReferentialCatalog: (...args) =>
@@ -135,6 +135,7 @@ describe("referential journey orchestration", () => {
 		const fixture = dependenciesFor(catalog);
 		const synchronize = vi.fn().mockResolvedValue({
 			changed: true,
+			completed: true,
 			changedFiles: [config.event["issue-form"]],
 			diagnostics: [
 				{
@@ -146,7 +147,7 @@ describe("referential journey orchestration", () => {
 		});
 
 		// Act
-		const result = await new SynchronizeMeetupIssueForm({
+		const result = await new ReconcileMeetupIssueForm({
 			validateReferentials: new ValidateMeetupReferentials(
 				{
 					createValidateReferentialCatalog: (...args) =>
@@ -162,6 +163,7 @@ describe("referential journey orchestration", () => {
 		// Assert
 		expect(result).toEqual({
 			changed: true,
+			completed: true,
 			changedFiles: [config.event["issue-form"]],
 			diagnostics: [
 				{

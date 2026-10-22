@@ -43,7 +43,7 @@ does not forward it to a reusable workflow.
 
 ## Meetup publication
 
-The dedicated [Meetup publication workflow](../../.github/workflows/reconcile-meetup-event.md)
+The dedicated [Meetup publication workflow](../../.github/workflows/reconcile-event-publication.md)
 uses `MEETUP_EMAIL` and `MEETUP_PASSWORD` secrets, the shared
 [AI configuration](#ai-configuration), and the existing App and Conference Hall
 settings. Its explicit schedule and public venue mappings belong in

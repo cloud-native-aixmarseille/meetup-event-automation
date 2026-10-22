@@ -1,8 +1,10 @@
 # OpenFeedback and the shared feedback link
 
-The issue-update and daily-audit workflows create missing OpenFeedback events,
-synchronize their titles, talks and speakers, save their public URLs in the issue, and point the
-shared Kutt link to the event from the day before its date through the event day.
+The issue-update and daily-audit workflows compose two actions:
+`feedback/reconcile-event` creates or updates an OpenFeedback event and saves its
+public URL in the issue; `feedback/reconcile-short-link` selects among all active
+meetups and updates the shared Kutt target. Event feedback uses the OpenFeedback
+key. The shared-link action uses the Kutt settings and read-only issue access.
 
 ## Configure
 
@@ -34,7 +36,7 @@ trailing slashes are normalized. The adapter appends `/api/v2` and rejects
 redirects. The API key must belong to that instance.
 
 Create the Kutt short link before enabling the workflows. Missing Kutt settings
-fail feedback reconciliation. The automation does not create or replace a
+fail shared-link reconciliation. The automation does not create or replace a
 missing short link.
 
 A valid existing **OpenFeedback Link** is reused. Supported URLs are
@@ -42,7 +44,7 @@ A valid existing **OpenFeedback Link** is reused. Supported URLs are
 Query strings and fragments are rejected. The URL field can remain empty until
 the automation fills it; the API key is always required.
 
-Feedback reconciliation also requires the three [publication URL inputs](../reference/configuration.md#publication-url-inputs)
+Event feedback reconciliation also requires the three [publication URL inputs](../reference/configuration.md#publication-url-inputs)
 used by event evaluation. Forward the same values as issue updates and audits.
 
 ## Prepare the event
@@ -99,12 +101,15 @@ Keep the daily audit enabled. A manual audit on the event day can repair a misse
 update. If both eligible days pass without a successful update, update Kutt
 manually.
 
-An active meetup happening today takes priority over one scheduled for tomorrow,
-so tomorrow's audit does not replace today's feedback link. The
-future event reports `publication.feedback.current-event` and can switch on its
-own event day. Closed, cancelled, and postponed meetups do not block the switch.
+An active meetup happening today takes priority over one scheduled for tomorrow.
+Selection is independent of the issue that triggered the workflow. Closed,
+cancelled and postponed meetups do not block the switch. A selected event with
+no valid feedback URL blocks the update; tomorrow's poll is not used as a fallback.
+The shared-link workflow holds a repository/link lock and rereads all candidate
+issues before writing. Each audit issue pipeline invokes this operation, and
+unchanged targets produce no Kutt write.
 If several active meetups share the event date, the workflow reports
-`publication.feedback.ambiguous-date`; choose the target manually.
+`publication.feedback-link.ambiguous-date`; choose the target manually.
 
 ## Resolve failures
 
@@ -124,6 +129,6 @@ replace an existing event. If the issue changed during a run, rerun after editin
 is complete.
 
 The direct
-[feedback action](../../actions/publication/reconcile-feedback/README.md)
+[feedback action](../../actions/feedback/reconcile-event/README.md)
 reconciles feedback on every invocation. Call it under the shared event workflow
 lock used by the reusable workflows.

@@ -1,5 +1,14 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"action.assets.reconcile-slides-pdf": "Mettre à jour le PDF des slides",
+	"action.feedback.reconcile-short-link":
+		"Mettre à jour le lien de feedback partagé",
+	"action.organizer.reconcile-checklist":
+		"Mettre à jour la checklist organisateur",
+	"report.checklist.updated": "checklist=persisted",
+	"report.checklist.retained": "checklist=retained",
+	"report.feedback.link": "link_updated={updated}",
+
 	"diagnostic.publication.meetup.approval-pending":
 		"Approuvez ou refusez la publication dans le commentaire d'approbation. L'événement reste en brouillon avant approbation.",
 	"diagnostic.publication.meetup.approval-rejected":
@@ -13,8 +22,8 @@ export const FR_MESSAGES = {
 		"La lecture des sources a échoué. Résolvez les diagnostics techniques des sources avant de synchroniser.",
 	"diagnostic.publication.meetup.unavailable":
 		"Le démarrage du navigateur ou la connexion a échoué. Vérifiez les dépendances, le réseau, le solveur et les sélecteurs de connexion.",
-	"action.publication.reconcile-meetup":
-		"Créer ou mettre à jour un événement Meetup",
+	"action.publication.reconcile-event":
+		"Réconcilier la publication de l'événement",
 	"report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
 	"report.meetup.review": "meetup_url={url}",
 	"report.meetup.updated": "evenement_meetup=synchronise",
@@ -42,17 +51,15 @@ export const FR_MESSAGES = {
 		"feat(referential): synchroniser les intervenants Conference Hall",
 	"report.speaker-sync.pr-body":
 		"Vérifiez les identités des intervenants et les champs locaux du CSV avant fusion.",
-	"action.referential.sync-speakers":
-		"Synchroniser les intervenants Conference Hall",
+	"action.referential.reconcile-speakers":
+		"Mettre à jour le référentiel des intervenants",
 	"report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
 	"report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
 	"report.speaker-sync.stage.read-catalog": "read-catalog",
 	"report.speaker-sync.stage.load-source": "load-source",
 	"report.speaker-sync.stage.merge-speakers": "merge-speakers",
 	"report.speaker-sync.stage.validate-catalog": "validate-catalog",
-	"report.speaker-sync.stage.check-form": "check-form",
 	"report.speaker-sync.stage.save-catalog": "save-catalog",
-	"report.speaker-sync.stage.update-form": "update-form",
 	"report.speaker-sync.stage.unknown": "unknown",
 	"diagnostic.speaker-sync.configuration":
 		"Configurez le slug du CFP et sa clé Web API.",
@@ -89,17 +96,16 @@ export const FR_MESSAGES = {
 	"report.speaker-sync.private":
 		"speaker_sync=blocked reason=private-repository-required",
 
-	"action.communication.reconcile-attention":
+	"action.organizer.reconcile-attention":
 		"Synchroniser les points à traiter par les organisateurs",
 	"report.attention.updated": "attention=persisted",
 	"report.attention.skipped": "attention=skipped reason=unrelated-issue",
 	"report.attention.failed": "attention=synchronization-failed",
-	"action.publication.reconcile-feedback":
+	"action.feedback.reconcile-event":
 		"Vérifier et mettre à jour les retours du meetup",
 	"report.feedback.skipped": "feedback=skipped",
 	"report.feedback.completed": "feedback=completed",
-	"report.feedback.changes":
-		"issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+	"report.feedback.changes": "issue_persisted={persisted}",
 	"error.EventNotFoundError": "L'événement est introuvable.",
 	"error.EventConcurrentModificationError":
 		"L'événement a changé pendant la synchronisation.",
@@ -118,12 +124,12 @@ export const FR_MESSAGES = {
 	"error.GitHubEventCommentRepositoryResponseError":
 		"La réponse GitHub pour les commentaires est invalide.",
 	"action.referential.validate": "Valider les référentiels du meetup",
-	"action.referential.sync-issue-form": "Synchroniser le formulaire du meetup",
+	"action.issue-form.reconcile": "Synchroniser le formulaire du meetup",
 	"action.event.reconcile": "Vérifier et mettre à jour le meetup",
 	"action.event.list-active": "Lister les meetups actifs",
-	"action.communication.reconcile":
+	"action.communication.reconcile-email":
 		"Vérifier et envoyer les communications du meetup",
-	"action.publication.reconcile-assets":
+	"action.assets.reconcile-documents":
 		"Vérifier et mettre à jour les ressources du meetup",
 	"report.failed": "failure={reason}",
 	"report.technical-failure": "technical_failure={codes}",

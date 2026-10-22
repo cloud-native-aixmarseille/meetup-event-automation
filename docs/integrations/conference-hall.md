@@ -51,12 +51,12 @@ records or proposal status.
 
 ## Register identities and maintain the CSV snapshot
 
-Use the [speaker synchronization workflow](../../.github/workflows/synchronize-conference-hall-speakers.md)
+Use the [speaker reconciliation workflow](../../.github/workflows/reconcile-speakers.md)
 from a private consumer repository. Its GitHub App needs Contents: write and
 Pull requests: write for that repository. Add scheduled and manual callers:
 
 ```yaml
-name: Synchronize speakers
+name: Reconcile speakers
 on:
   schedule:
     - cron: "17 5 * * *"
@@ -64,7 +64,7 @@ on:
 permissions: {}
 jobs:
   synchronize:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/synchronize-conference-hall-speakers.yml@REPLACE_WITH_FULL_COMMIT_SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-speakers.yml@REPLACE_WITH_FULL_COMMIT_SHA
     with:
       locale: en
       github-app-client-id: ${{ vars.MEETUP_AUTOMATION_APP_CLIENT_ID }}
@@ -90,7 +90,9 @@ name need distinct local and source IDs. See the [CSV schema](../reference/refer
 
 The workflow maintains `chore/synchronize-conference-hall-speakers`. It merges
 the current default branch before importing, validates the complete candidate,
-and updates the CSV, allocation state, and form together. Local phone numbers,
+and composes `referential/reconcile-speakers` with `issue-form/reconcile`.
+The first action saves the CSV and allocation state; the second projects the
+form. Only a completed form projection permits publishing the candidate branch. Local phone numbers,
 structured names, extra columns and absent source records survive import. New
 IDs are retained in the open branch. When allocation state is absent, the CSV
 adapter reserves IDs from the full fetched Git history. A shallow or unreadable
@@ -116,8 +118,8 @@ consumer's referential/form checks and the active-event audit on catalog pushes.
 ## Diagnose speaker synchronization failures
 
 Read the job summary for the stage and diagnostic code: reading the local catalog, loading the export, merging identities,
-validating the candidate, checking the form, saving the catalog or updating the
-form. CI uses technical codes and safe field positions; the existing private PR
+validating the candidate or saving the catalog. Issue-form projection has its
+own action report. CI uses technical codes and safe field positions; the existing private PR
 receives concise localized guidance. Catalog corrections and mapping review block
 publication without failing CI. Source/API and unexpected execution failures fail.
 

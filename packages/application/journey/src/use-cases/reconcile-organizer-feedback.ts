@@ -22,17 +22,14 @@ export class ReconcileOrganizerFeedback {
 		private readonly meetupLabel: string,
 	) {}
 
-	async execute(
-		identity: EventIdentity,
-		stageResults: AttentionStageReports,
-	): Promise<void> {
+	async execute(identity: EventIdentity, stageResults: AttentionStageReports) {
 		const diagnostics =
 			this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
 		if (!this.collaborators.attentionStageEvaluation.complete(stageResults))
-			return;
+			return { updated: false };
 		const source = await this.events.find(identity);
 		if (!source) throw new Error("Organizer feedback issue is unavailable");
-		if (!source.labels.includes(this.meetupLabel)) return;
+		if (!source.labels.includes(this.meetupLabel)) return { updated: false };
 		await this.comments.reconcileDiagnostics(
 			identity,
 			diagnostics
@@ -42,6 +39,7 @@ export class ReconcileOrganizerFeedback {
 					category: item.severity === "error" ? "invalid" : "incomplete",
 				})),
 		);
+		return { updated: true };
 	}
 }
 export type ReconcileOrganizerFeedbackArguments =

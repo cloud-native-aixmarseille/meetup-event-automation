@@ -11,13 +11,27 @@ export class AttentionStageInput {
 		if (!this.isRecord(input))
 			throw new Error("Invalid attention stage results");
 		const reports = ATTENTION_STAGE_OWNERS.map(
-			(owner) => [owner, this.stage(input[owner])] as const,
+			(owner) => [owner, this.group(input[owner])] as const,
 		);
 		return {
 			event: reports[0][1],
 			assets: reports[1][1],
 			feedback: reports[2][1],
 			communications: reports[3][1],
+		};
+	}
+	private group(value: unknown): AttentionStageReport {
+		if (!Array.isArray(value)) return this.stage(value);
+		if (!value.length) throw new Error("Empty attention stage group");
+		const stages = value.map((item) => this.stage(item));
+		return {
+			outcome: stages.some((stage) => stage.outcome === "failure")
+				? "failure"
+				: stages.every((stage) => stage.outcome === "success")
+					? "success"
+					: "unknown",
+			reported: stages.every((stage) => stage.reported),
+			diagnostics: stages.flatMap((stage) => stage.diagnostics),
 		};
 	}
 	private stage(value: unknown): AttentionStageReport {

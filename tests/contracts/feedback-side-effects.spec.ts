@@ -1,52 +1,52 @@
 import { describe, expect, it } from "vitest";
 import {
 	automationActionPrefix,
-	findStep,
 	readWorkflow,
 	workflowExpression,
 } from "./support.js";
 
-describe("feedback workflow safeguards", () => {
-	it.each([
-		["update-meetup-issue", "manage"],
-		["check-active-meetup-issues", "audit"],
-	] as const)(
-		"requires OpenFeedback and Kutt configuration under the event lock in %s",
-		async (name, jobName) => {
-			// Arrange
-			const workflow = await readWorkflow(name);
-			const job = workflow.jobs?.[jobName] ?? {};
-
-			// Act
-			const step = findStep(
-				job,
-				`${automationActionPrefix}publication/reconcile-feedback`,
-			);
-			const secrets = workflow.on?.workflow_call?.secrets;
-
-			// Assert
-			expect(job.concurrency?.["cancel-in-progress"]).toBe(false);
-			expect(secrets?.["openfeedback-api-key"]?.required).toBe(true);
-			expect(secrets?.["kutt-api-key"]?.required).toBe(true);
-			expect(
-				workflow.on?.workflow_call?.inputs?.["kutt-link-id"]?.required,
-			).toBe(true);
-			expect(
-				workflow.on?.workflow_call?.inputs?.["kutt-base-url"],
-			).toMatchObject({ required: true, type: "string" });
-			expect(
-				workflow.on?.workflow_call?.inputs?.["kutt-base-url"]?.default,
-			).toBeUndefined();
-			expect(step?.with).not.toHaveProperty("mode");
-			expect(step?.with).toMatchObject({
-				locale: workflowExpression("inputs.locale"),
-				"openfeedback-api-key": workflowExpression(
-					"secrets.openfeedback-api-key",
-				),
-				"kutt-api-key": workflowExpression("secrets.kutt-api-key"),
-				"kutt-base-url": workflowExpression("inputs.kutt-base-url"),
-				"kutt-link-id": workflowExpression("inputs.kutt-link-id"),
-			});
-		},
-	);
+describe("feedback effect boundaries", () => {
+	it("reconciles event feedback without credentials for the shared link", async () => {
+		// Arrange
+		const workflow = await readWorkflow("reconcile-meetup");
+		// Act
+		const step = workflow.jobs?.manage?.steps?.find(
+			(item) => item.id === "feedback",
+		);
+		// Assert
+		expect(step?.uses).toBe(
+			`${automationActionPrefix}feedback/reconcile-event`,
+		);
+		expect(step?.with?.["openfeedback-api-key"]).toBe(
+			workflowExpression("secrets.openfeedback-api-key"),
+		);
+		expect(step?.with).not.toHaveProperty("kutt-api-key");
+	});
+	it("serializes repository-wide link selection and reports its outcome", async () => {
+		// Arrange
+		const workflow = await readWorkflow("reconcile-feedback-link");
+		// Act
+		const job = workflow.jobs?.reconcile;
+		const step = job?.steps?.find((item) => item.id === "link");
+		// Assert
+		expect(job?.concurrency?.["cancel-in-progress"]).toBe(false);
+		expect(job?.concurrency?.queue).toBe("max");
+		expect(job?.concurrency?.group).toContain("github.repository_id");
+		expect(job?.concurrency?.group).toContain("inputs.kutt-link-id");
+		expect(job?.concurrency?.group).not.toContain("issue-number");
+		expect(step?.uses).toBe(
+			`${automationActionPrefix}feedback/reconcile-short-link`,
+		);
+		for (const input of ["kutt-base-url", "kutt-link-id"])
+			expect(step?.with?.[input]).toBe(workflowExpression(`inputs.${input}`));
+		expect(step?.with?.["kutt-api-key"]).toBe(
+			workflowExpression("secrets.kutt-api-key"),
+		);
+		expect(step?.with).not.toHaveProperty("conference-hall-api-key");
+		expect(step?.with).not.toHaveProperty("openfeedback-api-key");
+		expect(job?.outputs).toEqual({
+			diagnostics: workflowExpression("steps.link.outputs.diagnostics"),
+			outcome: workflowExpression("steps.link.outcome"),
+		});
+	});
 });

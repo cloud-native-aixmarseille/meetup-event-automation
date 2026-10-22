@@ -61,4 +61,21 @@ describe("organizer diagnostic root causes", () => {
 		// Assert
 		expect(suppressed).toBe(false);
 	});
+	it("keeps email prerequisites independent of repository-wide shared-link guidance", () => {
+		// Arrange
+		const item = { ...diagnostic, code: "communication.feedback-unavailable" };
+		const diagnostics = [
+			item,
+			{ ...diagnostic, code: "publication.feedback-link.prerequisites" },
+		];
+		const policy = new OrganizerDiagnosticPolicy({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+		});
+		// Act
+		const suppressed = policy.suppressed(item, diagnostics);
+		const derivative = policy.derivative(item, diagnostics);
+		// Assert
+		expect(suppressed).toBe(false);
+		expect(derivative).toBe(false);
+	});
 });

@@ -20,7 +20,7 @@ import {
 	JourneyComposition,
 	JourneyPolicyComposition,
 	ManageMeetupEvent,
-	SynchronizeMeetupIssueForm,
+	ReconcileMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
 import type { Locale } from "@meetup-automation/localization";
@@ -118,8 +118,8 @@ export class EventComposition {
 				),
 			}),
 		);
-		container.bind(SynchronizeMeetupIssueForm).toDynamicValue((context) =>
-			new JourneyComposition().synchronizeMeetupIssueForm({
+		container.bind(ReconcileMeetupIssueForm).toDynamicValue((context) =>
+			new JourneyComposition().reconcileMeetupIssueForm({
 				validateReferentials: context.get(ValidateMeetupReferentials),
 				issueFormProjection: context.get<IssueFormProjection>(
 					SERVICES.issueFormProjection,

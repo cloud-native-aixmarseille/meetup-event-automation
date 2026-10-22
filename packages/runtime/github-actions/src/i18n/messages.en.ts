@@ -1,4 +1,11 @@
 export const EN_MESSAGES = {
+	"action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
+	"action.feedback.reconcile-short-link": "Reconcile shared feedback link",
+	"action.organizer.reconcile-checklist": "Reconcile organizer checklist",
+	"report.checklist.updated": "checklist=persisted",
+	"report.checklist.retained": "checklist=retained",
+	"report.feedback.link": "link_updated={updated}",
+
 	"diagnostic.publication.meetup.approval-pending":
 		"Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
 	"diagnostic.publication.meetup.approval-rejected":
@@ -12,7 +19,7 @@ export const EN_MESSAGES = {
 		"Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
 	"diagnostic.publication.meetup.unavailable":
 		"Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
-	"action.publication.reconcile-meetup": "Create or update Meetup event",
+	"action.publication.reconcile-event": "Reconcile event publication",
 	"report.meetup.draft": "meetup_event=draft approval=required",
 	"report.meetup.review": "meetup_url={url}",
 	"report.meetup.updated": "meetup_event=synchronized",
@@ -40,16 +47,14 @@ export const EN_MESSAGES = {
 		"feat(referential): synchronize Conference Hall speakers",
 	"report.speaker-sync.pr-body":
 		"Review speaker identity mappings and preserved local CSV fields before merging.",
-	"action.referential.sync-speakers": "Synchronize Conference Hall speakers",
+	"action.referential.reconcile-speakers": "Reconcile speakers",
 	"report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
 	"report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
 	"report.speaker-sync.stage.read-catalog": "read-catalog",
 	"report.speaker-sync.stage.load-source": "load-source",
 	"report.speaker-sync.stage.merge-speakers": "merge-speakers",
 	"report.speaker-sync.stage.validate-catalog": "validate-catalog",
-	"report.speaker-sync.stage.check-form": "check-form",
 	"report.speaker-sync.stage.save-catalog": "save-catalog",
-	"report.speaker-sync.stage.update-form": "update-form",
 	"report.speaker-sync.stage.unknown": "unknown",
 	"diagnostic.speaker-sync.configuration": "Set the CFP slug and Web API key.",
 	"diagnostic.speaker-sync.http":
@@ -84,16 +89,15 @@ export const EN_MESSAGES = {
 	"report.speaker-sync.private":
 		"speaker_sync=blocked reason=private-repository-required",
 
-	"action.communication.reconcile-attention": "Reconcile organizer attention",
+	"action.organizer.reconcile-attention": "Reconcile organizer attention",
 	"report.attention.updated": "attention=persisted",
 	"report.attention.skipped": "attention=skipped reason=unrelated-issue",
 	"report.attention.failed": "attention=synchronization-failed",
 
-	"action.publication.reconcile-feedback": "Reconcile meetup feedback",
+	"action.feedback.reconcile-event": "Reconcile feedback event",
 	"report.feedback.skipped": "feedback=skipped",
 	"report.feedback.completed": "feedback=completed",
-	"report.feedback.changes":
-		"issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+	"report.feedback.changes": "issue_persisted={persisted}",
 	"error.EventNotFoundError": "The event could not be found.",
 	"error.EventConcurrentModificationError":
 		"The event changed during reconciliation.",
@@ -112,11 +116,11 @@ export const EN_MESSAGES = {
 	"error.GitHubEventCommentRepositoryResponseError":
 		"GitHub returned an invalid comment response.",
 	"action.referential.validate": "Validate meetup referentials",
-	"action.referential.sync-issue-form": "Synchronize meetup issue form",
+	"action.issue-form.reconcile": "Reconcile meetup issue form",
 	"action.event.reconcile": "Reconcile meetup event",
 	"action.event.list-active": "List active meetup events",
-	"action.communication.reconcile": "Reconcile meetup communications",
-	"action.publication.reconcile-assets": "Reconcile meetup assets",
+	"action.communication.reconcile-email": "Reconcile meetup email",
+	"action.assets.reconcile-documents": "Reconcile meetup documents",
 	"report.failed": "failure={reason}",
 	"report.technical-failure": "technical_failure={codes}",
 	"report.summary-unavailable": "summary=unavailable",

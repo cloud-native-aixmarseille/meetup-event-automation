@@ -137,12 +137,12 @@ export const STAGE_GUIDANCE = [
 		["OpenFeedback Link", "comment.guidance.feedback.prerequisites"],
 	],
 	[
-		"publication.feedback.current-event",
-		["OpenFeedback Link", "comment.guidance.feedback.current-event"],
+		"publication.feedback-link.prerequisites",
+		["Meetup issue", "comment.guidance.feedback-link.prerequisites"],
 	],
 	[
-		"publication.feedback.ambiguous-date",
-		["OpenFeedback Link", "comment.guidance.feedback.ambiguous-date"],
+		"publication.feedback-link.ambiguous-date",
+		["Meetup issue", "comment.guidance.feedback-link.ambiguous-date"],
 	],
 	[
 		"publication.assets.prerequisites",

@@ -238,7 +238,7 @@ describe("communication action report facts", () => {
 			await new GithubActionsComposition()
 				.actionRunner()
 				.run(
-					"action.communication.reconcile",
+					"action.communication.reconcile-email",
 					subject().runCommunicationReconcileAction.bind(subject()),
 					true,
 				);
@@ -267,7 +267,7 @@ describe("communication action report facts", () => {
 		await new GithubActionsComposition()
 			.actionRunner()
 			.run(
-				"action.communication.reconcile",
+				"action.communication.reconcile-email",
 				subject().runCommunicationReconcileAction.bind(subject()),
 				true,
 			);

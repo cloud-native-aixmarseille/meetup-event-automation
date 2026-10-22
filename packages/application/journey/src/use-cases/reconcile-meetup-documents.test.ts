@@ -1,0 +1,345 @@
+import { EventDomainComposition } from "@meetup-automation/event";
+import {
+	type AssetRepository,
+	PublicationDomainComposition,
+	ReconcileEventAssets,
+} from "@meetup-automation/publication";
+import { ReferentialDomainComposition } from "@meetup-automation/referential";
+import { describe, expect, it, vi } from "vitest";
+import {
+	catalog,
+	config,
+	createEventDependencies,
+	createPublicationUrlPolicyEngine,
+	event,
+	identity,
+	sourceDocument,
+} from "../../testing/meetup-journey.fixtures.js";
+import { JourneyComposition } from "../dependency-composition.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
+import { ManageMeetupEvent } from "./manage-meetup-event.js";
+import { ReconcileMeetupDocuments } from "./reconcile-meetup-documents.js";
+
+describe("ReconcileMeetupDocuments", () => {
+	it.each([
+		["copy-only", true, true],
+		["ready", true, true],
+		["pending", true, false],
+		["conflict", true, false],
+		["recovery-required", true, false],
+		["ready", false, false],
+	] as const)(
+		"reports %s content with a slides URL=%s as ready=%s",
+		async (status, hasUrl, expected) => {
+			// Arrange
+			const reconcileAssets = {
+				execute: vi.fn().mockResolvedValue({
+					files: hasUrl ? { "slides-link": "https://example.test/slides" } : {},
+					content: { slides: status },
+					diagnostics: [],
+				}),
+			};
+			const { useCase } = assetJourney(reconcileAssets);
+
+			// Act
+			const result = await useCase.execute({ identity });
+
+			// Assert
+			expect(result.slidesReady).toBe(expected);
+		},
+	);
+	it("projects the managed asset link through the codec and exposes template links", async () => {
+		// Arrange
+		const { eventDependencies, assetRepository, useCase, revision } =
+			assetJourney();
+		vi.mocked(eventDependencies.documentCodec.createPatch).mockReturnValue({
+			body: "projected asset link",
+		});
+
+		// Act
+		const result = await useCase.execute({
+			identity,
+		});
+
+		// Assert
+		expect(result).toMatchObject({
+			skipped: false,
+			persisted: true,
+			assetUrl: "https://drive.google.com/drive/folders/new-folder",
+			files: { "slides-link": "https://docs.google.com/presentation/d/copy" },
+		});
+		expect(assetRepository.ensureContainer).toHaveBeenCalledWith(
+			expect.objectContaining({
+				eventId: `${identity.repository}#42`,
+				title: "2026-09-30 - September - Example Host",
+			}),
+		);
+		expect(
+			eventDependencies.documentCodec.createPatch,
+		).toHaveBeenLastCalledWith(sourceDocument, {
+			...event,
+			publicationLinks: { ...event.publicationLinks, assets: result.assetUrl },
+		});
+		expect(eventDependencies.repository.applyPatch).toHaveBeenCalledOnce();
+		expect(revision.of).toHaveBeenCalledWith({
+			...sourceDocument,
+			body: "projected asset link",
+		});
+		expect(result.pdfSource.revision).toBe(revision.of.mock.results[0].value);
+		expect(
+			vi.mocked(eventDependencies.repository.applyPatch).mock
+				.invocationCallOrder[0],
+		).toBeLessThan(revision.of.mock.invocationCallOrder[0]);
+	});
+
+	it("repairs the issue link and managed file metadata using existing asset IDs", async () => {
+		// Arrange
+		const { eventDependencies, assetRepository, useCase } = assetJourney();
+		const existingFolder = {
+			id: "existing-folder",
+			name: "2026-09-30 - September - Example Host",
+			url: "https://drive.google.com/drive/folders/existing-folder",
+			eventId: `${identity.repository}#42`,
+		};
+		const existingFile = {
+			id: "existing-slides",
+			name: "Previous slides name",
+			templateId: "template",
+			url: "https://docs.google.com/presentation/d/existing-slides",
+		};
+		assetRepository.findContainer.mockResolvedValue(existingFolder);
+		assetRepository.listFiles.mockResolvedValue([existingFile]);
+		assetRepository.updateFile.mockResolvedValue({
+			...existingFile,
+			name: "2026-09-30 Slides",
+			kind: "slides",
+		});
+		vi.mocked(eventDependencies.documentCodec.createPatch).mockReturnValue({
+			body: "projected existing asset link",
+		});
+
+		// Act
+		const result = await useCase.execute({ identity });
+
+		// Assert
+		expect(result).toMatchObject({
+			persisted: true,
+			assetUrl: existingFolder.url,
+			files: { "slides-link": existingFile.url },
+		});
+		expect(assetRepository.listFiles).toHaveBeenCalledWith(existingFolder.id);
+		expect(assetRepository.updateFile).toHaveBeenCalledWith(
+			existingFile,
+			{
+				id: existingFile.templateId,
+				name: "[EVENT_DATE:YYYY-MM-DD] Slides",
+				kind: "slides",
+			},
+			"2026-09-30 Slides",
+		);
+		expect(assetRepository.ensureContainer).not.toHaveBeenCalled();
+		expect(assetRepository.copyTemplate).not.toHaveBeenCalled();
+		expect(
+			eventDependencies.documentCodec.createPatch,
+		).toHaveBeenLastCalledWith(sourceDocument, {
+			...event,
+			publicationLinks: {
+				...event.publicationLinks,
+				assets: existingFolder.url,
+			},
+		});
+		expect(eventDependencies.repository.applyPatch).toHaveBeenCalledWith(
+			identity,
+			{ body: "projected existing asset link" },
+		);
+	});
+
+	it("does not persist an empty codec patch", async () => {
+		// Arrange
+		const { eventDependencies, useCase } = assetJourney();
+
+		// Act
+		const persisted = (await useCase.execute({ identity })).persisted;
+
+		// Assert
+		expect(persisted).toBe(false);
+		expect(eventDependencies.repository.applyPatch).not.toHaveBeenCalled();
+	});
+
+	it.each(["unrelated", "cancelled", "unresolved-host", "invalid-date"])(
+		"skips asset writes for %s events",
+		async (scenario) => {
+			// Arrange
+			const { eventDependencies, assetRepository, useCase } = assetJourney();
+			if (scenario === "unrelated")
+				vi.mocked(eventDependencies.repository.find).mockResolvedValue({
+					...sourceDocument,
+					labels: [],
+				});
+			else
+				vi.mocked(eventDependencies.documentCodec.decode).mockReturnValue({
+					event: {
+						...event,
+						...(scenario === "cancelled"
+							? {
+									occurrenceStatus: "cancelled",
+									labels: [...event.labels, "event:cancelled"],
+								}
+							: scenario === "unresolved-host"
+								? { host: { displayName: "Unknown" } }
+								: { date: "invalid" }),
+					},
+					diagnostics: [],
+				});
+
+			// Act
+			const result = await useCase.execute({
+				identity,
+			});
+
+			// Assert
+			expect(result.persisted).toBe(false);
+			expect(assetRepository.ensureContainer).not.toHaveBeenCalled();
+		},
+	);
+
+	it("fails when the issue cannot be found", async () => {
+		// Arrange
+		const { eventDependencies, useCase } = assetJourney();
+		vi.mocked(eventDependencies.repository.find).mockResolvedValue(null);
+
+		// Act
+		const operation = useCase.execute({ identity });
+
+		// Assert
+		await expect(operation).rejects.toThrow("not found");
+	});
+
+	it("detects an issue edit before contacting Drive", async () => {
+		// Arrange
+		const { eventDependencies, assetRepository, useCase } = assetJourney();
+		vi.mocked(eventDependencies.repository.find)
+			.mockResolvedValueOnce(sourceDocument)
+			.mockResolvedValue({ ...sourceDocument, body: "concurrent human edit" });
+
+		// Act
+		const operation = useCase.execute({ identity });
+
+		// Assert
+		await expect(operation).rejects.toMatchObject({
+			name: "EventConcurrentModificationError",
+		});
+		expect(assetRepository.listTemplates).not.toHaveBeenCalled();
+	});
+
+	it("preserves a human edit made while assets were being reconciled", async () => {
+		// Arrange
+		const { eventDependencies, useCase } = assetJourney();
+		vi.mocked(eventDependencies.documentCodec.createPatch).mockReturnValue({
+			body: "projected asset link",
+		});
+		vi.mocked(eventDependencies.repository.find)
+			.mockResolvedValueOnce(sourceDocument)
+			.mockResolvedValueOnce(sourceDocument)
+			.mockResolvedValue({ ...sourceDocument, body: "concurrent human edit" });
+
+		// Act
+		const operation = useCase.execute({ identity });
+
+		// Assert
+		await expect(operation).rejects.toMatchObject({
+			name: "EventConcurrentModificationError",
+		});
+		expect(eventDependencies.repository.applyPatch).not.toHaveBeenCalled();
+	});
+});
+
+function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
+	const eventDependencies = createEventDependencies();
+	const assetRepository = {
+		findContainer: vi
+			.fn<AssetRepository["findContainer"]>()
+			.mockResolvedValue(undefined),
+		ensureContainer: vi
+			.fn<AssetRepository["ensureContainer"]>()
+			.mockResolvedValue({
+				id: "new-folder",
+				name: "2026-09-30 - September - Example Host",
+				url: "https://drive.google.com/drive/folders/new-folder",
+				eventId: `${identity.repository}#42`,
+			}),
+		listTemplates: vi.fn<AssetRepository["listTemplates"]>().mockResolvedValue([
+			{
+				id: "template",
+				name: "[EVENT_DATE:YYYY-MM-DD] Slides",
+				kind: "slides",
+			},
+		]),
+		listFiles: vi.fn<AssetRepository["listFiles"]>().mockResolvedValue([]),
+		copyTemplate: vi.fn<AssetRepository["copyTemplate"]>().mockResolvedValue({
+			id: "copy",
+			name: "2026-09-30 Slides",
+			url: "https://docs.google.com/presentation/d/copy",
+		}),
+		updateFile: vi.fn<AssetRepository["updateFile"]>(),
+	};
+	const revision = { of: vi.fn().mockReturnValue("a".repeat(64)) };
+	const useCase = new ReconcileMeetupDocuments(
+		{
+			eventDocumentConcurrency:
+				new EventDomainComposition().eventDocumentConcurrency(),
+			eventRepositoryPatches:
+				new EventDomainComposition().eventRepositoryPatches(),
+		},
+		{
+			revision,
+			eventRepository: eventDependencies.repository,
+			documentCodec: eventDependencies.documentCodec,
+			manageEvent: new ManageMeetupEvent(
+				{
+					eventPublicationEvaluation:
+						new JourneyPolicyComposition().eventPublicationEvaluation(
+							createPublicationUrlPolicyEngine(),
+						),
+					eventReadinessPolicy:
+						new EventDomainComposition().eventReadinessPolicy(),
+					eventLifecycle: new EventDomainComposition().eventLifecycle(),
+					eventDiagnosticProjection:
+						new JourneyPolicyComposition().eventDiagnosticProjection(),
+					eventParticipantResolution:
+						new JourneyPolicyComposition().eventParticipantResolution(),
+					eventRepositoryPatches:
+						new EventDomainComposition().eventRepositoryPatches(),
+					eventDocumentConcurrency:
+						new EventDomainComposition().eventDocumentConcurrency(),
+					createReconcileEvent: (...args) =>
+						new EventDomainComposition().reconcileEvent(...args),
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+					createRefreshSelectedProposals: (...args) =>
+						new JourneyComposition().refreshSelectedProposals(...args),
+					resolveEventReferences:
+						new ReferentialDomainComposition().resolveEventReferences(),
+				},
+				{
+					proposalSource: { load: vi.fn() },
+					config,
+					eventDependencies,
+					referentialRepository: { load: async () => catalog },
+				},
+			),
+			reconcileAssets:
+				reconciliation ??
+				new ReconcileEventAssets(
+					{
+						createReconcileAssetFile: (...args) =>
+							new PublicationDomainComposition().reconcileAssetFile(...args),
+					},
+					assetRepository,
+				),
+		},
+	);
+	return { eventDependencies, assetRepository, useCase, revision };
+}

@@ -9,6 +9,9 @@ Date: 2026-10-14
 
 Updated: 2026-10-16
 
+The combined speaker/form action boundary is superseded by
+[ADR 0024](0024-scoped-actions-and-workflow-composition.md).
+
 ## Context
 
 All meetup talks originate in the recurring

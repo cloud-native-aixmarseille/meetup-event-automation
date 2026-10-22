@@ -129,7 +129,7 @@ describe("SpeakerSyncFailureReport", () => {
 	it("redacts unknown exceptions while retaining the failing stage", () => {
 		// Arrange
 		const error = new SpeakerSynchronizationError(
-			"check-form",
+			"validate-catalog",
 			new Error("PRIVATE private@example.test"),
 		);
 
@@ -145,7 +145,9 @@ describe("SpeakerSyncFailureReport", () => {
 		);
 
 		// Assert
-		expect(report.details).toEqual(["speaker_sync=blocked stage=check-form"]);
+		expect(report.details).toEqual([
+			"speaker_sync=blocked stage=validate-catalog",
+		]);
 		expect(prBody).toContain("Unexpected technical failure");
 		expect(report.diagnostics[0].code).toBe("speaker-sync.unexpected");
 		expect(JSON.stringify({ report, prBody })).not.toMatch(

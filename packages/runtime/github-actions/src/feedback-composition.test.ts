@@ -2,16 +2,14 @@ import { getOctokit } from "@actions/github";
 import type { EventDocument, EventRepository } from "@meetup-automation/event";
 import {
 	ManageMeetupEvent,
-	ManageMeetupFeedback,
+	ReconcileMeetupFeedback,
 } from "@meetup-automation/journey";
 import { OpenFeedbackEventGateway } from "@meetup-automation/openfeedback-event-gateway";
-import type { FeedbackLinkGateway } from "@meetup-automation/publication";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
 import { SERVICES } from "./composition.js";
 import {
 	FEEDBACK_EVENTS,
-	FEEDBACK_LINKS,
 	FeedbackComposition,
 } from "./feedback-composition.js";
 
@@ -24,56 +22,20 @@ const input = {
 	repo: "meetups",
 	commentAuthorLogin: "example[bot]",
 	workspaceRoot: "/must-not-read",
-	kuttApiKey: "synthetic-key",
-	kuttBaseUrl: "https://short.example.test",
-	kuttLinkId: "link-1",
 	openFeedbackApiKey: "oforg_synthetic-key",
 };
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("feedback composition", () => {
-	it("passes the configured base URL to the Kutt gateway", async () => {
-		// Arrange
-		const target = "https://openfeedback.io/synthetic-event";
-		const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
-			Response.json({
-				total: 1,
-				data: [
-					{
-						id: input.kuttLinkId,
-						address: "feedback",
-						link: `${input.kuttBaseUrl}/feedback`,
-						target,
-					},
-				],
-			}),
-		);
-		vi.stubGlobal("fetch", fetcher);
-		const container = FeedbackComposition.createFeedbackContainer(input);
-		const gateway = container.get<FeedbackLinkGateway>(FEEDBACK_LINKS);
-
-		// Act
-		const updated = await gateway.updateTarget(target);
-
-		// Assert
-		expect(updated).toBe(false);
-		expect(fetcher).toHaveBeenCalledExactlyOnceWith(
-			`${input.kuttBaseUrl}/api/v2/links?limit=100&skip=0`,
-			expect.objectContaining({ redirect: "error" }),
-		);
-	});
-
 	it("allows replacing feedback providers before resolving the journey", async () => {
 		// Arrange
 		const identity = { repository: "example/meetups", issueNumber: 12 };
 		const container = FeedbackComposition.createFeedbackContainer({
 			...input,
 		});
-		const links = { updateTarget: vi.fn() };
 		const events = { ensureEvent: vi.fn() };
 		container.rebind(FEEDBACK_EVENTS).toConstantValue(events);
-		container.rebind(FEEDBACK_LINKS).toConstantValue(links);
 		container
 			.rebind<EventRepository>(SERVICES.eventRepository)
 			.toConstantValue({
@@ -90,13 +52,12 @@ describe("feedback composition", () => {
 
 		// Act
 		const result = await container
-			.get(ManageMeetupFeedback)
+			.get(ReconcileMeetupFeedback)
 			.execute({ identity });
 
 		// Assert
 		expect(result.skipped).toBe(true);
 		expect(events.ensureEvent).not.toHaveBeenCalled();
-		expect(links.updateTarget).not.toHaveBeenCalled();
 	});
 
 	it("binds the required event gateway", () => {
@@ -142,7 +103,6 @@ describe("feedback composition", () => {
 		const events = { ensureEvent: vi.fn().mockResolvedValue(feedbackUrl) };
 		const applyPatch = vi.fn();
 		container.rebind(FEEDBACK_EVENTS).toConstantValue(events);
-		container.rebind(FEEDBACK_LINKS).toConstantValue({ updateTarget: vi.fn() });
 		container.rebind(SERVICES.eventRepository).toConstantValue({
 			find: vi.fn().mockResolvedValue(source),
 			applyPatch,
@@ -165,7 +125,7 @@ describe("feedback composition", () => {
 
 		// Act
 		const result = await container
-			.get(ManageMeetupFeedback)
+			.get(ReconcileMeetupFeedback)
 			.execute({ identity });
 
 		// Assert

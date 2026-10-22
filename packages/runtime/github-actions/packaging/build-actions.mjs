@@ -5,24 +5,37 @@ import { build } from "esbuild";
 
 export const actionBundles = [
 	[
-		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-meetup.ts",
-		"actions/publication/reconcile-meetup/dist/index.js",
+		"packages/runtime/github-actions/src/entrypoints/assets-reconcile-slides-pdf.ts",
+		"actions/assets/reconcile-slides-pdf/dist/index.js",
 	],
 	[
-		"packages/runtime/github-actions/src/entrypoints/referential-sync-speakers.ts",
-		"actions/referential/sync-speakers/dist/index.js",
+		"packages/runtime/github-actions/src/entrypoints/feedback-reconcile-short-link.ts",
+		"actions/feedback/reconcile-short-link/dist/index.js",
 	],
 	[
-		"packages/runtime/github-actions/src/entrypoints/communication-reconcile-attention.ts",
-		"actions/communication/reconcile-attention/dist/index.js",
+		"packages/runtime/github-actions/src/entrypoints/organizer-reconcile-checklist.ts",
+		"actions/organizer/reconcile-checklist/dist/index.js",
+	],
+
+	[
+		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-event.ts",
+		"actions/publication/reconcile-event/dist/index.js",
 	],
 	[
-		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-feedback.ts",
-		"actions/publication/reconcile-feedback/dist/index.js",
+		"packages/runtime/github-actions/src/entrypoints/referential-reconcile-speakers.ts",
+		"actions/referential/reconcile-speakers/dist/index.js",
 	],
 	[
-		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-assets.ts",
-		"actions/publication/reconcile-assets/dist/index.js",
+		"packages/runtime/github-actions/src/entrypoints/organizer-reconcile-attention.ts",
+		"actions/organizer/reconcile-attention/dist/index.js",
+	],
+	[
+		"packages/runtime/github-actions/src/entrypoints/feedback-reconcile-event.ts",
+		"actions/feedback/reconcile-event/dist/index.js",
+	],
+	[
+		"packages/runtime/github-actions/src/entrypoints/assets-reconcile-documents.ts",
+		"actions/assets/reconcile-documents/dist/index.js",
 	],
 	[
 		"packages/runtime/github-actions/src/entrypoints/event-reconcile.ts",
@@ -37,12 +50,12 @@ export const actionBundles = [
 		"actions/referential/validate/dist/index.js",
 	],
 	[
-		"packages/runtime/github-actions/src/entrypoints/referential-sync-issue-form.ts",
-		"actions/referential/sync-issue-form/dist/index.js",
+		"packages/runtime/github-actions/src/entrypoints/issue-form-reconcile.ts",
+		"actions/issue-form/reconcile/dist/index.js",
 	],
 	[
-		"packages/runtime/github-actions/src/entrypoints/communication-reconcile.ts",
-		"actions/communication/reconcile/dist/index.js",
+		"packages/runtime/github-actions/src/entrypoints/communication-reconcile-email.ts",
+		"actions/communication/reconcile-email/dist/index.js",
 	],
 ];
 

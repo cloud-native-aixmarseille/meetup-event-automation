@@ -1,0 +1,25 @@
+name: Reconcile organizer checklist
+description:
+  Merge complete stage evidence into the diagnostic checklist. Incomplete evidence
+  preserves unresolved tasks.
+inputs:
+  locale:
+    description: Language for generated reports (en or fr).
+    required: true
+  github-token:
+    description: GitHub token for reading the consumer repository and event issues.
+    required: true
+  issue-number:
+    description: Meetup issue number.
+    required: true
+  managed-comment-author:
+    description: Trusted GitHub App bot login.
+    required: true
+  stage-results:
+    description:
+      JSON stage outcomes and diagnostic outputs, including document/PDF and
+      event/shared-link feedback stages.
+    required: true
+runs:
+  using: node24
+  main: dist/index.js
