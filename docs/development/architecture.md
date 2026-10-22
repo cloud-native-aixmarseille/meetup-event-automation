@@ -501,8 +501,8 @@ Slack presenters render that shared selection with their own catalogs. Runtime
 composition supplies these capabilities without adapter-to-adapter dependencies. A placeholder
 with zero recipients shows task progress while a safe email batch is unavailable;
 it cannot authorize mail. Progress writes first verify and finalize any human
-choice. Migration persists notification reservations before retiring the earlier
-attention view. Thank-you requests use grouped attention notifications, without
+choice. Moving attention into the follow-up comment preserves notification
+reservations before removing the separate view. Thank-you requests use grouped attention notifications, without
 separate Slack approval posts or reactions. See
 [organizer attention](../integrations/communications.md#organizer-attention).
 

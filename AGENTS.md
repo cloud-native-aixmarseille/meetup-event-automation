@@ -146,9 +146,16 @@ history.
 
 - Maintain one authoritative explanation per topic. Update it in place with the
   code change, and link to it from other pages.
-- Remove obsolete, deprecated, superseded, historical, and speculative content
-  from current guides. Update explanations in place instead of appending
-  migration narratives or corrections.
+- Keep root `README.md` files limited to concise end user purpose, getting started,
+  and usage. Link to `docs/` for details; put contributor and agent guidance in
+  their dedicated entry points and `docs/development/`.
+- Treat action readmes and workflow Markdown references as generated files.
+  Change their source manifests or generator inputs and use the release
+  documentation workflow. Never hand-edit generated sections or append manual
+  guides. Keep setup, behavior, examples, and recovery guidance under `docs/`.
+- Use short, direct sentences about supported behavior. Remove legacy,
+  deprecated, historical, and speculative content from current guides. Preserve
+  decision history in ADRs instead of appending migration narratives or corrections.
 - Preserve ADRs, their numbering, context, alternatives, and consequences. Do
   not delete or rewrite past decisions during cleanup. Record changed decisions
   in new ADRs and update the affected records' status and supersession links.

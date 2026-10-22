@@ -1,6 +1,6 @@
 # Maintain current documentation
 
-Guides are the source of truth for the current implemented and supported system.
+The implementation is the source of truth. Guides describe its supported behavior.
 Update the authoritative page for a topic in the same change as its behavior,
 configuration, or contract. These rules apply to developer and agent
 instructions, user guides, and action and workflow references. ADRs under
@@ -19,8 +19,9 @@ instructions, user guides, and action and workflow references. ADRs under
 - Maintain one authoritative explanation per topic; link to it from summaries
   and related guides. Delete redundant guide pages and repair their incoming links.
 - Verify behavior against source, tests, package scripts, and public manifests.
-  Document compatibility only when it is currently supported and useful to the
-  reader. Do not change production behavior to match inaccurate prose.
+  Keep supported rerun, recovery, and data-preservation contracts; remove legacy
+  setup and compatibility instructions. Do not change production behavior to
+  match inaccurate prose.
 - State required provider capabilities, credentials, deployment prerequisites,
   limits, and manual recovery steps. An implementation in this repository does
   not establish that an external service has deployed a required API.
@@ -40,8 +41,10 @@ without reconstructing the decision history.
 
 ## Page placement and writing
 
-Keep `README.md` focused on what the project does, who uses it, how to start, and
-where to find details. Put detailed guides under `docs/`:
+Root `README.md` files contain only concise end user documentation: purpose, getting
+started, basic usage, and links into `docs/`. Keep architecture, development
+commands, contributor rules, release mechanics, and history out of them.
+Put detailed guides under `docs/`:
 
 | Location        | Purpose                                                      |
 | --------------- | ------------------------------------------------------------ |
@@ -51,15 +54,8 @@ where to find details. Put detailed guides under `docs/`:
 | `development/`  | Architecture, contributor instructions, and validation       |
 | `adr/`          | Preserved architecture decision history and status           |
 
-Keep action and workflow contract references beside their YAML manifests.
 `docs/README.md` owns the linked document inventory and directory tree.
 `CONTRIBUTING.md` and `AGENTS.md` direct contributors to the relevant guides.
-
-Preserve CI Dokumentor's paired section comments, such as `<!-- header:start -->`
-and `<!-- header:end -->`, in action and workflow references. Generate interface
-sections from the corresponding YAML manifest. Put manually maintained behavior,
-setup, and recovery guidance outside generated sections so regeneration preserves
-it.
 
 Give each page one purpose and one audience. State the task or behavior first,
 then prerequisites, steps, expected results, and relevant limitations. Use plain,
@@ -70,6 +66,21 @@ Use synthetic examples and identify required placeholders. Distinguish
 automatic work from manual tasks. Keep commands, paths, inputs, outputs,
 secrets, permissions, examples, and defaults consistent with their owners in
 source and manifests, including generated reference sections.
+
+## Generated references
+
+`actions/**/README.md` and `.github/workflows/*.md` are CI Dokumentor outputs
+beside their YAML manifests. Do not edit generated content or append manual
+sections. Put task guides, worked examples, setup, and recovery under `docs/`,
+and link them from the documentation index.
+
+Change inputs, outputs, secrets, descriptions, and permissions in the owning
+YAML. The release job in
+[`__main-ci.yml`](../../.github/workflows/__main-ci.yml) calls the pinned reusable
+release workflow to regenerate references. Preserve CI Dokumentor's paired
+section comments and review its diff against the source manifests. There is no
+local generation command; report regeneration as pending until that job runs.
+Do not hand-patch its output to simulate a successful generation.
 
 ## Review and validation
 
@@ -85,6 +96,9 @@ Before completing a documentation change:
    `pnpm check:contracts`.
 4. Run `make lint` for the repository's Markdown and YAML checks. It requires
    Docker; report checks that could not run.
+5. Confirm root readmes remain end user focused, manual details live in `docs/`,
+   and decision history lives only in ADRs. If manifests changed, review the
+   regenerated references or report the pending release job explicitly.
 
 Use [the development checklist](README.md#choose-checks-for-the-change) for
 changes that also affect code or manifests. Documentation-only edits do not

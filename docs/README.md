@@ -27,6 +27,9 @@ page for each topic below.
 
 ## Workflow contracts
 
+These references are generated from the workflow manifests. Use the integration
+guides above for setup, behavior, and recovery.
+
 | Workflow                                                                                              | Purpose                                                    |
 | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | [Create or update Meetup event](../.github/workflows/reconcile-meetup-event.md)                       | Create/update drafts and publish after organizer approval. |
@@ -37,6 +40,8 @@ page for each topic below.
 | [Check referentials and issue form](../.github/workflows/check-meetup-referentials-and-issue-form.md) | Validate consumer pull requests.                           |
 
 ## Action contracts
+
+These references are generated from the action manifests.
 
 | Action                                                                                  | Purpose                                                                                |
 | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -53,6 +58,7 @@ page for each topic below.
 
 ## Development
 
+- [Contributing](../CONTRIBUTING.md)
 - [Development workflow](development/README.md)
 - [Documentation rules](development/documentation.md)
 - [Architecture](development/architecture.md)

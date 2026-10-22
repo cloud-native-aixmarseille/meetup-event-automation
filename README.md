@@ -4,58 +4,31 @@
 
 <!-- header:end -->
 
-GitHub Actions workflows for organizing Cloud Native Aix-Marseille meetups. Each
-meetup is tracked in a GitHub issue: its date, host, speakers, agenda,
-publication links, and follow-up tasks.
+Organize meetups from GitHub issues. The automation prepares Drive assets and
+feedback polls, synchronizes Meetup events, sends approved emails, and tracks
+organizer tasks in GitHub and Slack.
 
-The automation validates and updates those issues, keeps host and speaker
-choices in sync, prepares Google Drive assets and OpenFeedback events, updates
-the shared feedback link, and sends approved email batches and Slack notifications.
+## Get started
 
-This repository contains the automation. The consuming meetup repository stores
-the issues, private host and speaker CSV files, credentials, and workflow
-triggers. The community paths, labels, timezone, and publication destinations
-are fixed by this project's [configuration](docs/reference/configuration.md).
-
-## Set up a repository
-
-Follow the [setup guide](docs/usage/setup.md) to add the issue form,
-referentials, GitHub App credentials, Drive, Slack, OpenFeedback, Kutt, and
-reusable workflow callers. Pin every caller to the same published release commit.
-
-- [Google Drive](docs/integrations/assets.md): create event folders and copy
-  templates.
-- [OpenFeedback](docs/integrations/feedback.md): create feedback events automatically.
-- [Email and Slack](docs/integrations/communications.md): approve email batches and track automatic
-  communications.
-
-Set the required `locale` workflow input to `en` for English or `fr` for French
-generated messages. There is no default. Use the same locale in all four callers.
+Follow the [setup guide](docs/usage/setup.md) to connect the automation to your
+meetup repository. That repository holds your event issues, private host and
+speaker records, credentials, and workflow triggers.
 
 ## Organize a meetup
 
-1. Open a **Meetup** issue and fill in the date, title, host, description, and
-   Conference Hall proposal IDs. The automation generates the agenda.
-2. Read the automation's diagnostic comment and complete the missing
-   information.
-3. Add `hoster:confirmed` and `speakers:confirmed` after confirming
-   participation.
-4. Publish the Meetup and CNCF event pages, then add their links to the issue.
-5. Check **Approve sending this batch** in each bot request comment. Leave the
-   issue's email tasks unchecked for automatic sending; checked tasks are already
-   complete.
-6. Complete the event and its follow-up checklist.
+1. Open a **Meetup** issue with the event details and accepted Conference Hall
+   proposal numbers.
+2. Complete the organizer checklist and confirm host and speaker participation.
+3. Review and approve Meetup publication and email requests in the bot comments.
+4. Complete the event's follow-up tasks before closing the issue.
 
-The [organizer guide](docs/usage/organize-meetup.md) covers talk selection,
-postponements, feedback preparation, email completion, and follow-up.
+Follow the [organizer guide](docs/usage/organize-meetup.md) for approvals,
+publication, postponements, and follow-up.
 
 ## Documentation
 
-Use the [documentation index](docs/README.md) for setup, configuration,
-integration guides, and action and workflow references.
-
-For code changes, see [Contributing](CONTRIBUTING.md) and the
-[development guide](docs/development/README.md).
+Use the [documentation index](docs/README.md) for configuration, integration
+guides, and action and workflow references.
 
 ## License
 

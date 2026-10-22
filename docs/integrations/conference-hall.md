@@ -107,6 +107,12 @@ Conference Hall regardless of whether a later snapshot PR has merged. An
 unchanged snapshot creates no new diff or PR. A failed snapshot sync does not
 publish candidate files or establish live source freshness.
 
+The workflow serializes imports per repository and skips public destinations.
+The action independently verifies repository privacy before reading the source
+or writing candidates. It prepares files without committing, pushing, merging,
+or dispatching mail; the workflow owns the review PR. Merging requires the
+consumer's referential/form checks and the active-event audit on catalog pushes.
+
 ## Diagnose speaker synchronization failures
 
 Read the job summary for the stage and diagnostic code: reading the local catalog, loading the export, merging identities,

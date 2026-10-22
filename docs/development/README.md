@@ -8,9 +8,10 @@ responsibilities and the [test conventions](testing.md) before adding tests. Use
 [action reporting](reporting.md) and [localization](localization.md) for
 generated messages. Follow the [documentation rules](documentation.md): guides
 describe only the current implemented and supported system, while ADRs preserve
-decision history. Update authoritative guides in place and remove historical,
-deprecated, or superseded content from them. [AGENTS.md](../../AGENTS.md) also
-applies to agent-assisted work.
+decision history. Keep root readmes concise and end user focused; put details in
+`docs/`. Action and workflow references are generated: update their source
+manifests and regenerate them, without manual additions. [AGENTS.md](../../AGENTS.md)
+also applies to agent-assisted work.
 
 ## Design and review
 
@@ -77,8 +78,8 @@ from a linked Git worktree.
   Run focused tests while developing; the full command covers behavior,
   architecture, public contracts, and packaging before review.
 - **Action metadata or workflow YAML:** run `pnpm check:contracts` and
-  `make lint`. Update the adjacent action or workflow reference and the relevant
-  usage page.
+  `make lint`. Regenerate the adjacent action or workflow reference through the
+  release workflow and update the relevant guide under `docs/`.
 - **Documentation only:** follow the [documentation review checklist](documentation.md#review-and-validation),
   including source verification, links and anchors, the index and tree, YAML
   examples, `pnpm check:contracts`, and `make lint`. Do not add
@@ -103,11 +104,12 @@ coverage reports. These reporting entrypoints must remain compatible with the
 shared CI workflows.
 
 Keep action inputs and outputs in `action.yml`, and workflow inputs, outputs,
-and secrets in the corresponding YAML. Keep their adjacent Markdown contracts in
-sync. The release job in
+and secrets in the corresponding YAML. Their adjacent Markdown references are
+generated; do not edit them manually or append guides. The release job in
 [`__main-ci.yml`](../../.github/workflows/__main-ci.yml) delegates documentation
-updates to the pinned reusable release workflow. There is no local documentation
-generation script in this repository.
+updates to the pinned reusable release workflow. Keep manual documentation under
+`docs/`. See [generated references](documentation.md#generated-references) for
+ownership and regeneration. There is no local documentation generator.
 
 ### Action interface rules
 
@@ -137,7 +139,7 @@ including manual workflow inputs:
   consumers. Follow exported values through wrappers to the final decision,
   downstream input, or published artifact. A reference alone is insufficient.
 - Remove unused outputs from the manifest and runtime together, and update
-  callers, adjacent documentation, and contract tests in the same change.
+  callers, source descriptions, current guides, and contract tests in the same change.
   Keep information intended for people in the shared logs, annotations, and
   job summary; reporting alone does not justify a public output.
 - Review the contract tests when changing an interface. Assert that every input
