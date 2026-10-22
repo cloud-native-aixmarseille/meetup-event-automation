@@ -70,8 +70,9 @@ define run_linter
 	set -eu; \
 	DEFAULT_WORKSPACE="$(CURDIR)"; \
 	LINTER_IMAGE="linter:latest"; \
-	LINTER_GIT_DIR="$$(git rev-parse --path-format=absolute --git-common-dir)"; \
+	LINTER_GIT_DIR="$$(git -C "$$DEFAULT_WORKSPACE" rev-parse --path-format=absolute --git-common-dir)"; \
 	VOLUME="$$DEFAULT_WORKSPACE:$$DEFAULT_WORKSPACE"; \
+	DEFAULT_BRANCH="$$(git -C "$$DEFAULT_WORKSPACE" rev-parse --abbrev-ref HEAD 2>/dev/null)"; \
 	docker build --platform=linux/amd64 --build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g) --tag $$LINTER_IMAGE .; \
 	docker run \
 		--platform=linux/amd64 \
@@ -80,6 +81,8 @@ define run_linter
 		--mount "type=tmpfs,destination=$$DEFAULT_WORKSPACE/node_modules" \
 		--rm \
 		-e DEFAULT_WORKSPACE="$$DEFAULT_WORKSPACE" \
+		-e DEFAULT_BRANCH="$$DEFAULT_BRANCH" \
+		-e USE_FIND_ALGORITHM=false \
 		-e FILTER_REGEX_INCLUDE="$(filter-out $@,$(MAKECMDGOALS))" \
 		-e VALIDATE_BIOME_FORMAT=false \
 		-e VALIDATE_BIOME_LINT=false \
