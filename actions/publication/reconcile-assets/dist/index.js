@@ -87903,7 +87903,7 @@ var YamlIssueFormDocument = class {
 import { readFile as readFile5, realpath as realpath2, stat as stat3, writeFile as writeFile3 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve3, sep as sep3 } from "node:path";
 
-// node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/plugins/yaml.mjs
+// node_modules/.pnpm/prettier@3.9.10/node_modules/prettier/plugins/yaml.mjs
 var yaml_exports = {};
 __export(yaml_exports, {
   __parsePrettierYamlConfig: () => fl,
@@ -92727,7 +92727,7 @@ var ll = { astFormat: "yaml", parse: al, hasPragma: br, hasIgnorePragma: kr, loc
 var cl = { yaml: Pr };
 var fl = Zi.parse;
 
-// node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/standalone.mjs
+// node_modules/.pnpm/prettier@3.9.10/node_modules/prettier/standalone.mjs
 var Ru = Object.defineProperty;
 var yt2 = (t8, e2) => {
   for (var r2 in e2) Ru(t8, r2, { get: e2[r2], enumerable: true });
@@ -95049,7 +95049,7 @@ yt2(ar2, { builders: () => _i2, printer: () => yi2, utils: () => Ai2 });
 var _i2 = { join: be2, line: Ze2, softline: Mr2, hardline: W2, literalline: Je2, group: wt2, conditionalGroup: Ir2, fill: kr2, lineSuffix: Ie2, lineSuffixBoundary: Yr2, cursor: ee2, breakParent: ae2, ifBreak: Rr2, trim: jr2, indent: oe2, indentIfBreak: vr2, align: De2, addAlignmentToDoc: Qe2, markAsRoot: Xe2, dedentToRoot: Sr2, dedent: br2, hardlineWithoutBreakParent: ke2, literallineWithoutBreakParent: Ot2, label: Lr2, concat: (t8) => t8 };
 var yi2 = { printDocToString: Ce2 };
 var Ai2 = { willBreak: xr2, traverseDoc: Oe2, findInDoc: Ke2, mapDoc: Se2, removeLines: Tr2, stripTrailingHardline: He2, replaceEndOfLine: Nr2, canBreak: wr2 };
-var gu = "3.9.9";
+var gu = "3.9.10";
 var fr2 = {};
 yt2(fr2, { addDanglingComment: () => re2, addLeadingComment: () => ce2, addTrailingComment: () => fe2, getAlignmentSize: () => he2, getIndentSize: () => _u, getMaxContinuousCount: () => yu, getNextNonSpaceNonCommentCharacter: () => Au, getNextNonSpaceNonCommentCharacterIndex: () => vi2, getPreferredQuote: () => Tu, getStringWidth: () => Re2, hasNewline: () => H2, hasNewlineInRange: () => Nu, hasSpaces: () => wu, isNextLineEmpty: () => Ui2, isNextLineEmptyAfterIndex: () => gt2, isPreviousLineEmpty: () => Mi2, makeString: () => ji2, skip: () => _e2, skipEverythingButNewLine: () => ut2, skipInlineComment: () => Be2, skipNewline: () => $, skipSpaces: () => j2, skipToLineEnd: () => nt2, skipTrailingComment: () => Te2, skipWhitespace: () => tn2 });
 function xi2(t8, e2) {
