@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { GoogleDrivePdfComposition } from "../../packages/adapter/google-drive-asset-repository/src/pdf-export-composition.js";
+import { GoogleDrivePdfComposition } from "../../packages/adapter/publication/google-drive-asset-repository/src/pdf-export-composition.js";
 import {
 	createPdfDrive,
 	exportIdentity,
 	pdfBytes,
-} from "../../packages/adapter/google-drive-asset-repository/testing/pdf-drive.fixtures.js";
+} from "../../packages/adapter/publication/google-drive-asset-repository/testing/pdf-drive.fixtures.js";
 import { PublicationDomainComposition } from "../../packages/domain/publication/src/dependency-composition.js";
 
 function exportJourney(drive: ReturnType<typeof createPdfDrive>) {

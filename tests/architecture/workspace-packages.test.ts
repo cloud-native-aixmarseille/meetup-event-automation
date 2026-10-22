@@ -15,40 +15,79 @@ describe("workspacePackageDirectories", () => {
 		await rm(directory, { recursive: true, force: true });
 	});
 
-	it("ignores dependency-only and empty directories left by removed packages", async () => {
-		// Arrange
-		const active = join(directory, "active");
-		await mkdir(active);
-		await writeFile(join(active, "package.json"), "{}");
-		await mkdir(join(directory, "retired", "node_modules", "dependency"), {
-			recursive: true,
-		});
-		await mkdir(join(directory, "empty"));
-		await mkdir(join(directory, "node_modules", "dependency"), {
-			recursive: true,
-		});
-		await writeFile(join(directory, "README.md"), "Workspace packages");
-
-		// Act
-		const packages = await workspacePackageDirectories(directory);
-
-		// Assert
-		expect(packages).toEqual([active]);
-	});
-
-	it.each(["project.json", "policy.ts"])(
-		"keeps packages with %s visible even when their manifest is missing",
-		async (file) => {
+	it.each([1, 2] as const)(
+		"ignores dependency-only and empty directories at depth %i",
+		async (depth) => {
 			// Arrange
-			const incomplete = join(directory, "incomplete");
-			await mkdir(incomplete);
+			const packageRoot =
+				depth === 2 ? join(directory, "example-scope") : directory;
+			const active = join(packageRoot, "active");
+			await mkdir(active, { recursive: true });
+			await writeFile(join(active, "package.json"), "{}");
+			await mkdir(
+				join(packageRoot, "dependencies-only", "node_modules", "dependency"),
+				{
+					recursive: true,
+				},
+			);
+			await mkdir(join(packageRoot, "empty"));
+			await mkdir(join(packageRoot, "node_modules", "dependency"), {
+				recursive: true,
+			});
+			await writeFile(join(directory, "README.md"), "Workspace packages");
+
+			// Act
+			const packages = await workspacePackageDirectories(directory, depth);
+
+			// Assert
+			expect(packages).toEqual([active]);
+		},
+	);
+
+	it.each([
+		{ depth: 1, file: "project.json" },
+		{ depth: 1, file: "src/policy.ts" },
+		{ depth: 2, file: "project.json" },
+		{ depth: 2, file: "src/policy.ts" },
+	] as const)(
+		"keeps packages with $file visible at depth $depth when their manifest is missing",
+		async ({ depth, file }) => {
+			// Arrange
+			const packageRoot =
+				depth === 2 ? join(directory, "example-scope") : directory;
+			const incomplete = join(packageRoot, "incomplete");
+			await mkdir(join(incomplete, "src"), { recursive: true });
 			await writeFile(join(incomplete, file), "");
 
 			// Act
-			const packages = await workspacePackageDirectories(directory);
+			const packages = await workspacePackageDirectories(directory, depth);
 
 			// Assert
 			expect(packages).toEqual([incomplete]);
 		},
 	);
+
+	it("discovers packages across scopes without descending into package contents", async () => {
+		// Arrange
+		const expected = [
+			join(directory, "scope-one", "scope-one-reader"),
+			join(directory, "scope-one", "scope-one-writer"),
+			join(directory, "scope-two", "scope-two-reader"),
+		];
+		for (const packageDirectory of expected) {
+			await mkdir(join(packageDirectory, "src"), { recursive: true });
+			await writeFile(join(packageDirectory, "package.json"), "{}");
+			await writeFile(join(packageDirectory, "src", "index.ts"), "");
+		}
+		await mkdir(join(directory, "empty-scope"));
+		await mkdir(join(directory, "node_modules", "dependency"), {
+			recursive: true,
+		});
+
+		// Act
+		const packages = await workspacePackageDirectories(directory, 2);
+
+		// Assert
+		expect(packages.sort()).toEqual(expected);
+	});
 });

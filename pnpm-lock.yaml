@@ -63,131 +63,146 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1
 
-  packages/adapter/conference-hall-proposal-source:
+  packages/adapter/browser-authentication/hcaptcha-captcha-resolver:
     dependencies:
-      '@meetup-automation/referential':
+      '@meetup-automation/browser-authentication':
         specifier: workspace:*
-        version: link:../../domain/referential
+        version: link:../../../application/browser-authentication
+      playwright-core:
+        specifier: 1.64.1
+        version: 1.64.1
 
-  packages/adapter/csv-referential-repository:
-    dependencies:
-      '@meetup-automation/referential':
-        specifier: workspace:*
-        version: link:../../domain/referential
-      csv-parse:
-        specifier: ^7.0.3
-        version: 7.0.3
-
-  packages/adapter/github-delivery-ledger:
+  packages/adapter/communication/github-delivery-ledger:
     dependencies:
       '@meetup-automation/communication':
         specifier: workspace:*
-        version: link:../../domain/communication
+        version: link:../../../domain/communication
       '@meetup-automation/localization':
         specifier: workspace:*
-        version: link:../../presentation/localization
+        version: link:../../../presentation/localization
 
-  packages/adapter/github-event-comment-repository:
+  packages/adapter/communication/github-organizer-attention:
     dependencies:
-      '@meetup-automation/event':
+      '@meetup-automation/communication':
         specifier: workspace:*
-        version: link:../../domain/event
+        version: link:../../../domain/communication
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../../presentation/localization
+
+  packages/adapter/communication/github-repository-dispatch-mail-gateway:
+    dependencies:
+      '@meetup-automation/communication':
+        specifier: workspace:*
+        version: link:../../../domain/communication
+
+  packages/adapter/communication/slack-notification-gateway:
+    dependencies:
+      '@meetup-automation/communication':
+        specifier: workspace:*
+        version: link:../../../domain/communication
       '@meetup-automation/journey':
         specifier: workspace:*
-        version: link:../../application/journey
+        version: link:../../../application/journey
       '@meetup-automation/localization':
         specifier: workspace:*
-        version: link:../../presentation/localization
+        version: link:../../../presentation/localization
 
-  packages/adapter/github-event-repository:
+  packages/adapter/event/github-event-comment-repository:
     dependencies:
       '@meetup-automation/event':
         specifier: workspace:*
-        version: link:../../domain/event
-
-  packages/adapter/github-issue-form-event-document-codec:
-    dependencies:
-      '@meetup-automation/event':
-        specifier: workspace:*
-        version: link:../../domain/event
-
-  packages/adapter/github-organizer-approval:
-    dependencies:
-      '@meetup-automation/communication':
-        specifier: workspace:*
-        version: link:../../domain/communication
+        version: link:../../../domain/event
       '@meetup-automation/journey':
         specifier: workspace:*
-        version: link:../../application/journey
+        version: link:../../../application/journey
       '@meetup-automation/localization':
         specifier: workspace:*
-        version: link:../../presentation/localization
-      '@meetup-automation/publication':
-        specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../presentation/localization
 
-  packages/adapter/github-organizer-attention:
+  packages/adapter/event/github-event-repository:
+    dependencies:
+      '@meetup-automation/event':
+        specifier: workspace:*
+        version: link:../../../domain/event
+
+  packages/adapter/event/github-issue-form-event-document-codec:
+    dependencies:
+      '@meetup-automation/event':
+        specifier: workspace:*
+        version: link:../../../domain/event
+
+  packages/adapter/journey/github-organizer-approval:
     dependencies:
       '@meetup-automation/communication':
         specifier: workspace:*
-        version: link:../../domain/communication
+        version: link:../../../domain/communication
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../../application/journey
       '@meetup-automation/localization':
         specifier: workspace:*
-        version: link:../../presentation/localization
+        version: link:../../../presentation/localization
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../../domain/publication
 
-  packages/adapter/github-publication-journal:
+  packages/adapter/journey/yaml-issue-form-projection:
+    dependencies:
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../../application/journey
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../../presentation/localization
+      '@meetup-automation/referential':
+        specifier: workspace:*
+        version: link:../../../domain/referential
+      prettier:
+        specifier: 3.9.9
+        version: 3.9.9
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
+
+  packages/adapter/publication/github-publication-journal:
     dependencies:
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
 
-  packages/adapter/github-repository-dispatch-mail-gateway:
-    dependencies:
-      '@meetup-automation/communication':
-        specifier: workspace:*
-        version: link:../../domain/communication
-
-  packages/adapter/google-docs-content-repository:
+  packages/adapter/publication/google-docs-content-repository:
     dependencies:
       '@googleapis/docs':
         specifier: ^14.1.1
         version: 14.1.1(supports-color@7.2.0)
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
 
-  packages/adapter/google-drive-asset-repository:
+  packages/adapter/publication/google-drive-asset-repository:
     dependencies:
       '@googleapis/drive':
         specifier: ^26.0.2
         version: 26.0.2(supports-color@7.2.0)
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
 
-  packages/adapter/google-slides-content-repository:
+  packages/adapter/publication/google-slides-content-repository:
     dependencies:
       '@googleapis/slides':
         specifier: ^10.1.1
         version: 10.1.1(supports-color@7.2.0)
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
 
-  packages/adapter/hcaptcha-captcha-resolver:
-    dependencies:
-      '@meetup-automation/browser-authentication':
-        specifier: workspace:*
-        version: link:../../application/browser-authentication
-      playwright-core:
-        specifier: 1.64.1
-        version: 1.64.1
-
-  packages/adapter/https-asset-image-repository:
+  packages/adapter/publication/https-asset-image-repository:
     dependencies:
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
       image-size:
         specifier: ^2.0.4
         version: 2.0.4
@@ -195,68 +210,53 @@ importers:
         specifier: ^2.5.0
         version: 2.5.0
 
-  packages/adapter/kutt-feedback-link-gateway:
+  packages/adapter/publication/kutt-feedback-link-gateway:
     dependencies:
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
 
-  packages/adapter/meetup-event-gateway:
+  packages/adapter/publication/meetup-event-gateway:
     dependencies:
       '@meetup-automation/browser-authentication':
         specifier: workspace:*
-        version: link:../../application/browser-authentication
+        version: link:../../../application/browser-authentication
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
       playwright-core:
         specifier: 1.64.1
         version: 1.64.1
 
-  packages/adapter/openfeedback-event-gateway:
+  packages/adapter/publication/openfeedback-event-gateway:
     dependencies:
       '@meetup-automation/publication':
         specifier: workspace:*
-        version: link:../../domain/publication
+        version: link:../../../domain/publication
 
-  packages/adapter/slack-notification-gateway:
+  packages/adapter/referential/conference-hall-proposal-source:
     dependencies:
-      '@meetup-automation/communication':
-        specifier: workspace:*
-        version: link:../../domain/communication
-      '@meetup-automation/journey':
-        specifier: workspace:*
-        version: link:../../application/journey
-      '@meetup-automation/localization':
-        specifier: workspace:*
-        version: link:../../presentation/localization
-
-  packages/adapter/system-clock:
-    dependencies:
-      '@meetup-automation/communication':
-        specifier: workspace:*
-        version: link:../../domain/communication
-      '@meetup-automation/event':
-        specifier: workspace:*
-        version: link:../../domain/event
-
-  packages/adapter/yaml-issue-form-projection:
-    dependencies:
-      '@meetup-automation/journey':
-        specifier: workspace:*
-        version: link:../../application/journey
-      '@meetup-automation/localization':
-        specifier: workspace:*
-        version: link:../../presentation/localization
       '@meetup-automation/referential':
         specifier: workspace:*
-        version: link:../../domain/referential
-      prettier:
-        specifier: 3.9.9
-        version: 3.9.9
-      yaml:
-        specifier: ^2.9.1
-        version: 2.9.1
+        version: link:../../../domain/referential
+
+  packages/adapter/referential/csv-referential-repository:
+    dependencies:
+      '@meetup-automation/referential':
+        specifier: workspace:*
+        version: link:../../../domain/referential
+      csv-parse:
+        specifier: ^7.0.3
+        version: 7.0.3
+
+  packages/adapter/time/system-clock:
+    dependencies:
+      '@meetup-automation/communication':
+        specifier: workspace:*
+        version: link:../../../domain/communication
+      '@meetup-automation/event':
+        specifier: workspace:*
+        version: link:../../../domain/event
 
   packages/application/browser-authentication: {}
 
@@ -306,67 +306,67 @@ importers:
         version: link:../../domain/communication
       '@meetup-automation/conference-hall-proposal-source':
         specifier: workspace:*
-        version: link:../../adapter/conference-hall-proposal-source
+        version: link:../../adapter/referential/conference-hall-proposal-source
       '@meetup-automation/csv-referential-repository':
         specifier: workspace:*
-        version: link:../../adapter/csv-referential-repository
+        version: link:../../adapter/referential/csv-referential-repository
       '@meetup-automation/event':
         specifier: workspace:*
         version: link:../../domain/event
       '@meetup-automation/github-delivery-ledger':
         specifier: workspace:*
-        version: link:../../adapter/github-delivery-ledger
+        version: link:../../adapter/communication/github-delivery-ledger
       '@meetup-automation/github-event-comment-repository':
         specifier: workspace:*
-        version: link:../../adapter/github-event-comment-repository
+        version: link:../../adapter/event/github-event-comment-repository
       '@meetup-automation/github-event-repository':
         specifier: workspace:*
-        version: link:../../adapter/github-event-repository
+        version: link:../../adapter/event/github-event-repository
       '@meetup-automation/github-issue-form-event-document-codec':
         specifier: workspace:*
-        version: link:../../adapter/github-issue-form-event-document-codec
+        version: link:../../adapter/event/github-issue-form-event-document-codec
       '@meetup-automation/github-organizer-approval':
         specifier: workspace:*
-        version: link:../../adapter/github-organizer-approval
+        version: link:../../adapter/journey/github-organizer-approval
       '@meetup-automation/github-organizer-attention':
         specifier: workspace:*
-        version: link:../../adapter/github-organizer-attention
+        version: link:../../adapter/communication/github-organizer-attention
       '@meetup-automation/github-publication-journal':
         specifier: workspace:*
-        version: link:../../adapter/github-publication-journal
+        version: link:../../adapter/publication/github-publication-journal
       '@meetup-automation/github-repository-dispatch-mail-gateway':
         specifier: workspace:*
-        version: link:../../adapter/github-repository-dispatch-mail-gateway
+        version: link:../../adapter/communication/github-repository-dispatch-mail-gateway
       '@meetup-automation/google-docs-content-repository':
         specifier: workspace:*
-        version: link:../../adapter/google-docs-content-repository
+        version: link:../../adapter/publication/google-docs-content-repository
       '@meetup-automation/google-drive-asset-repository':
         specifier: workspace:*
-        version: link:../../adapter/google-drive-asset-repository
+        version: link:../../adapter/publication/google-drive-asset-repository
       '@meetup-automation/google-slides-content-repository':
         specifier: workspace:*
-        version: link:../../adapter/google-slides-content-repository
+        version: link:../../adapter/publication/google-slides-content-repository
       '@meetup-automation/hcaptcha-captcha-resolver':
         specifier: workspace:*
-        version: link:../../adapter/hcaptcha-captcha-resolver
+        version: link:../../adapter/browser-authentication/hcaptcha-captcha-resolver
       '@meetup-automation/https-asset-image-repository':
         specifier: workspace:*
-        version: link:../../adapter/https-asset-image-repository
+        version: link:../../adapter/publication/https-asset-image-repository
       '@meetup-automation/journey':
         specifier: workspace:*
         version: link:../../application/journey
       '@meetup-automation/kutt-feedback-link-gateway':
         specifier: workspace:*
-        version: link:../../adapter/kutt-feedback-link-gateway
+        version: link:../../adapter/publication/kutt-feedback-link-gateway
       '@meetup-automation/localization':
         specifier: workspace:*
         version: link:../../presentation/localization
       '@meetup-automation/meetup-event-gateway':
         specifier: workspace:*
-        version: link:../../adapter/meetup-event-gateway
+        version: link:../../adapter/publication/meetup-event-gateway
       '@meetup-automation/openfeedback-event-gateway':
         specifier: workspace:*
-        version: link:../../adapter/openfeedback-event-gateway
+        version: link:../../adapter/publication/openfeedback-event-gateway
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../domain/publication
@@ -375,13 +375,13 @@ importers:
         version: link:../../domain/referential
       '@meetup-automation/slack-notification-gateway':
         specifier: workspace:*
-        version: link:../../adapter/slack-notification-gateway
+        version: link:../../adapter/communication/slack-notification-gateway
       '@meetup-automation/system-clock':
         specifier: workspace:*
-        version: link:../../adapter/system-clock
+        version: link:../../adapter/time/system-clock
       '@meetup-automation/yaml-issue-form-projection':
         specifier: workspace:*
-        version: link:../../adapter/yaml-issue-form-projection
+        version: link:../../adapter/journey/yaml-issue-form-projection
       inversify:
         specifier: ^8.2.3
         version: 8.2.3(reflect-metadata@0.2.2)

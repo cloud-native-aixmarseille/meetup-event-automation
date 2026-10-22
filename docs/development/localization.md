@@ -40,17 +40,17 @@ The shared `packages/presentation/localization` package wraps
 formatting, locale normalization, and typed catalog contracts. It contains no
 feature wording.
 
-| Responsibility                                         | Catalogs and scoped translator                                                              |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Asset dates and agenda text                            | `packages/runtime/github-actions/src/assets` - `AssetMessages`                              |
-| Technical reports, safe errors, and speaker review PRs | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                               |
-| Organizer approval issue comments                      | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`                  |
-| Slack approval notifications                           | `packages/adapter/slack-notification-gateway/src/i18n` - `SlackApprovalMessages`            |
-| Managed issue comments                                 | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages`        |
-| Issue-form speaker guidance                            | `packages/adapter/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`                |
-| Organizer attention issue comments                     | `packages/adapter/github-organizer-attention/src/i18n` - `AttentionMessages`                |
-| Slack organizer attention                              | `packages/adapter/slack-notification-gateway/src/attention-i18n` - `SlackAttentionMessages` |
-| Communication status comments                          | `packages/adapter/github-delivery-ledger/src/i18n` — `LedgerMessages`                       |
+| Responsibility                                         | Catalogs and scoped translator                                                                            |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Asset dates and agenda text                            | `packages/runtime/github-actions/src/assets` - `AssetMessages`                                            |
+| Technical reports, safe errors, and speaker review PRs | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                                             |
+| Organizer approval issue comments                      | `packages/adapter/journey/github-organizer-approval/src/i18n` - `ApprovalMessages`                        |
+| Slack approval notifications                           | `packages/adapter/communication/slack-notification-gateway/src/i18n` - `SlackApprovalMessages`            |
+| Managed issue comments                                 | `packages/adapter/event/github-event-comment-repository/src/i18n` — `EventCommentMessages`                |
+| Issue-form speaker guidance                            | `packages/adapter/journey/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`                      |
+| Organizer attention issue comments                     | `packages/adapter/communication/github-organizer-attention/src/i18n` - `AttentionMessages`                |
+| Slack organizer attention                              | `packages/adapter/communication/slack-notification-gateway/src/attention-i18n` - `SlackAttentionMessages` |
+| Communication status comments                          | `packages/adapter/communication/github-delivery-ledger/src/i18n` — `LedgerMessages`                       |
 
 Keep wording, keys, parameter types, and catalog tests with the presenter that
 owns them. Pass the resolved locale across package boundaries; each owner

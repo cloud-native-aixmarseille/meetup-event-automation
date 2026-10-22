@@ -2,7 +2,7 @@ import { getOctokit } from "@actions/github";
 import { HcaptchaCaptchaResolverComposition } from "@meetup-automation/hcaptcha-captcha-resolver";
 import { ManageMeetupPublication } from "@meetup-automation/journey";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MeetupEventGatewayFactory } from "../../../adapter/meetup-event-gateway/src/meetup-event-gateway-factory.js";
+import { MeetupEventGatewayFactory } from "../../../adapter/publication/meetup-event-gateway/src/meetup-event-gateway-factory.js";
 import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
 import { EventComposition } from "./composition.js";
 import { MeetupPublicationComposition } from "./meetup-publication-composition.js";
@@ -54,7 +54,7 @@ describe("Meetup publication composition", () => {
 		expect(publication).toBeInstanceOf(ManageMeetupPublication);
 		expect(createChallenge).toHaveBeenCalledExactlyOnceWith(
 			expect.stringMatching(
-				/\/packages\/adapter\/hcaptcha-captcha-resolver\/python\/$/,
+				/\/packages\/adapter\/browser-authentication\/hcaptcha-captcha-resolver\/python\/$/,
 			),
 			input.ai.apiKey,
 			input.ai.model,

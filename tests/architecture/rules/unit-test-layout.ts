@@ -13,7 +13,10 @@ export class UnitTestLayout {
 		for (const file of this.files) {
 			if (!/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file)) continue;
 			if (file.startsWith("tests/") && file.endsWith(".spec.ts")) continue;
-			const packageSource = /^packages\/[^/]+\/[^/]+\/src\//.test(file);
+			const packageSource =
+				/^packages\/(?:adapter\/[^/]+|domain|application|presentation|runtime)\/[^/]+\/src\//.test(
+					file,
+				);
 			const toolingOwner =
 				file.startsWith("packages/runtime/github-actions/packaging/") ||
 				/^tests\/(architecture|contracts|integration)\//.test(file);

@@ -62,7 +62,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install solver dependencies and test
-        working-directory: packages/adapter/hcaptcha-captcha-resolver/python
+        working-directory: packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt

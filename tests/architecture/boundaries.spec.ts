@@ -231,12 +231,12 @@ describe("clean architecture boundaries", () => {
 		});
 	});
 
-	it("uses responsibility-bearing adapter package names", async () => {
+	it("groups responsibility-bearing adapter packages by scope", async () => {
 		// Arrange
 		const adapterRoot = join(repositoryRoot, "packages/adapter");
 
 		// Act
-		const directories = await workspacePackageDirectories(adapterRoot);
+		const directories = await workspacePackageDirectories(adapterRoot, 2);
 		const projects = await Promise.all(
 			directories.map(async (directory) => {
 				const packageName = basename(directory);
@@ -249,13 +249,22 @@ describe("clean architecture boundaries", () => {
 				const responsibility = project.tags
 					?.find((tag) => tag.startsWith("responsibility:"))
 					?.slice("responsibility:".length);
-				return { packageName, technology, responsibility };
+				const scope = project.tags
+					?.find((tag) => tag.startsWith("scope:"))
+					?.slice("scope:".length);
+				return { packageName, technology, responsibility, scope, directory };
 			}),
 		);
 
 		// Assert
 		expect(directories.length).toBeGreaterThan(0);
-		for (const { packageName, technology, responsibility } of projects) {
+		for (const {
+			packageName,
+			technology,
+			responsibility,
+			scope,
+			directory,
+		} of projects) {
 			expect(packageName).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+){1,}$/);
 			expect(["github", "csv", "yaml", "slack", "system"]).not.toContain(
 				packageName,
@@ -263,6 +272,10 @@ describe("clean architecture boundaries", () => {
 			expect(technology, `${packageName} technology tag`).toBeTruthy();
 			expect(responsibility, `${packageName} responsibility tag`).toBeTruthy();
 			expect(packageName).toBe(`${technology}-${responsibility}`);
+			expect(scope, `${packageName} scope tag`).toMatch(/^[a-z]+(?:-[a-z]+)*$/);
+			expect(relative(adapterRoot, directory)).toBe(
+				join(scope ?? "", packageName),
+			);
 		}
 	});
 
@@ -360,7 +373,10 @@ async function workspacePackages(): Promise<readonly WorkspacePackage[]> {
 	const packages: WorkspacePackage[] = [];
 	for (const layer of layers) {
 		const layerRoot = join(packageRoot, layer);
-		for (const directory of await workspacePackageDirectories(layerRoot)) {
+		for (const directory of await workspacePackageDirectories(
+			layerRoot,
+			layer === "adapter" ? 2 : 1,
+		)) {
 			const manifest = JSON.parse(
 				await readFile(join(directory, "package.json"), "utf8"),
 			) as {

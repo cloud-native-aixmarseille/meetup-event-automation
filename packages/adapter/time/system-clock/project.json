@@ -1,0 +1,25 @@
+{
+	"name": "system-clock",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/time/system-clock/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/time/system-clock/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/time/system-clock"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:time",
+		"technology:system",
+		"responsibility:clock"
+	]
+}

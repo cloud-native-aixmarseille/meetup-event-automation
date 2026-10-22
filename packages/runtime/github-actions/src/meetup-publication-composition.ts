@@ -77,7 +77,7 @@ export class MeetupPublicationComposition {
 		return new HcaptchaCaptchaResolverComposition().captchaResolverFactory(
 			fileURLToPath(
 				new URL(
-					"../../../../packages/adapter/hcaptcha-captcha-resolver/python/",
+					"../../../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/",
 					import.meta.url,
 				),
 			),

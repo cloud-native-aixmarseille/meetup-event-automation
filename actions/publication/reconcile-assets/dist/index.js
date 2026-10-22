@@ -78723,7 +78723,7 @@ var PublicationAction = class {
   }
 };
 
-// packages/adapter/google-docs-content-repository/src/document-content-locations.ts
+// packages/adapter/publication/google-docs-content-repository/src/document-content-locations.ts
 var DocumentContentLocations = class {
   constructor(collaborators, images) {
     this.collaborators = collaborators;
@@ -78800,7 +78800,7 @@ var DocumentContentLocations = class {
   }
 };
 
-// packages/adapter/google-docs-content-repository/src/document-content-requests.ts
+// packages/adapter/publication/google-docs-content-repository/src/document-content-requests.ts
 var DocumentContentRequests = class {
   build(tabs, changes) {
     return [...changes].sort(
@@ -78862,7 +78862,7 @@ var DocumentContentRequests = class {
   }
 };
 
-// packages/adapter/google-docs-content-repository/src/document-tabs.ts
+// packages/adapter/publication/google-docs-content-repository/src/document-tabs.ts
 var DocumentTabs = class {
   all(document2) {
     const result = [];
@@ -78916,7 +78916,7 @@ var DocumentTabs = class {
   }
 };
 
-// packages/adapter/google-docs-content-repository/src/document-template-bindings.ts
+// packages/adapter/publication/google-docs-content-repository/src/document-template-bindings.ts
 var DocumentTemplateBindings = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -78991,7 +78991,7 @@ var DocumentTemplateBindings = class {
   }
 };
 
-// packages/adapter/google-docs-content-repository/src/google-docs-content-repository.ts
+// packages/adapter/publication/google-docs-content-repository/src/google-docs-content-repository.ts
 var GoogleDocsContentRepository = class {
   constructor(collaborators, client, images) {
     this.collaborators = collaborators;
@@ -79057,7 +79057,7 @@ var GoogleDocsContentRepository = class {
   }
 };
 
-// packages/adapter/google-docs-content-repository/src/google-docs-content-repository-factory.ts
+// packages/adapter/publication/google-docs-content-repository/src/google-docs-content-repository-factory.ts
 var import_docs = __toESM(require_build(), 1);
 var GoogleDocsContentRepositoryFactory = class {
   constructor(collaborators) {
@@ -79072,7 +79072,7 @@ var GoogleDocsContentRepositoryFactory = class {
   }
 };
 
-// packages/adapter/google-docs-content-repository/src/dependency-composition.ts
+// packages/adapter/publication/google-docs-content-repository/src/dependency-composition.ts
 var GoogleDocsContentRepositoryComposition = class {
   documentContentLocations(...args) {
     return new DocumentContentLocations(
@@ -79114,7 +79114,7 @@ var GoogleDocsContentRepositoryComposition = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
 var GoogleDriveAssetRepositoryError = class extends Error {
   constructor(message) {
     super(message);
@@ -79122,7 +79122,7 @@ var GoogleDriveAssetRepositoryError = class extends Error {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/drive-asset-metadata.ts
+// packages/adapter/publication/google-drive-asset-repository/src/drive-asset-metadata.ts
 var DriveAssetMetadata = class {
   templateProperties(template) {
     return { template_file_id: template.id, template_kind: template.kind };
@@ -79156,15 +79156,15 @@ var DriveAssetMetadata = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
 import { createHash as createHash3 } from "node:crypto";
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
 var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
 var GoogleDriveAssetRepository = class {
   constructor(collaborators, client, options) {
     this.collaborators = collaborators;
@@ -79369,7 +79369,7 @@ var GoogleDriveAssetRepository = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-factory.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-factory.ts
 var import_drive = __toESM(require_build2(), 1);
 var GoogleDriveAssetRepositoryFactory = class {
   constructor(collaborators) {
@@ -79392,7 +79392,7 @@ var GoogleDriveAssetRepositoryFactory = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
 var import_drive2 = __toESM(require_build2(), 1);
 var GoogleDriveAuthentication = class {
   create(credentialsJson) {
@@ -79417,7 +79417,7 @@ var GoogleDriveAuthentication = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-manifest-repository.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-manifest-repository.ts
 import { Readable } from "node:stream";
 var GoogleDriveManifestRepository = class {
   constructor(client) {
@@ -79495,7 +79495,7 @@ var GoogleDriveManifestRepository = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/dependency-composition.ts
+// packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
 var GoogleDriveAssetRepositoryComposition = class {
   driveAssetMetadata() {
     return new DriveAssetMetadata();
@@ -79520,7 +79520,7 @@ var GoogleDriveAssetRepositoryComposition = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/drive-bounded-stream.ts
+// packages/adapter/publication/google-drive-asset-repository/src/drive-bounded-stream.ts
 var DriveBoundedStream = class {
   async read(stream, limit) {
     const chunks = [];
@@ -79539,7 +79539,7 @@ var DriveBoundedStream = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/drive-pdf-binary.ts
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-binary.ts
 var DrivePdfBinary = class {
   constructor(stream, fingerprint) {
     this.stream = stream;
@@ -79560,7 +79560,7 @@ var DrivePdfBinary = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/drive-pdf-lookup.ts
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-lookup.ts
 var exportFields = "id,name,description,mimeType,parents,trashed,version,appProperties";
 var DrivePdfLookup = class {
   constructor(client, metadata, folders) {
@@ -79614,7 +79614,7 @@ var DrivePdfLookup = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/drive-pdf-metadata.ts
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-metadata.ts
 var DrivePdfMetadata = class {
   validateIdentity(identity) {
     if (![identity.folderId, identity.sourceId, identity.templateId].every(
@@ -79660,7 +79660,7 @@ var DrivePdfMetadata = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/drive-pdf-state-codec.ts
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-state-codec.ts
 var DrivePdfStateCodec = class {
   constructor(metadata, policy) {
     this.metadata = metadata;
@@ -79720,7 +79720,7 @@ var DrivePdfStateCodec = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-pdf-repository.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-repository.ts
 import { Readable as Readable2 } from "node:stream";
 var GoogleDrivePdfRepository = class {
   constructor(client, lookup2, metadata, binary, folders) {
@@ -79827,7 +79827,7 @@ var GoogleDrivePdfRepository = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-pdf-source.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-source.ts
 var GoogleDrivePdfSource = class {
   constructor(client, lookup2, metadata, binary, stream) {
     this.client = client;
@@ -79885,7 +79885,7 @@ var GoogleDrivePdfSource = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-pdf-state-repository.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-state-repository.ts
 import { Readable as Readable3 } from "node:stream";
 var GoogleDrivePdfStateRepository = class {
   constructor(client, lookup2, metadata, stream, codec) {
@@ -79972,7 +79972,7 @@ var GoogleDrivePdfStateRepository = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-public-folder.ts
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-public-folder.ts
 var folderFields = "id,name,mimeType,parents,trashed";
 var GoogleDrivePublicFolder = class {
   constructor(client, metadata, folderId) {
@@ -80003,7 +80003,7 @@ var GoogleDrivePublicFolder = class {
   }
 };
 
-// packages/adapter/google-drive-asset-repository/src/pdf-export-composition.ts
+// packages/adapter/publication/google-drive-asset-repository/src/pdf-export-composition.ts
 var GoogleDrivePdfComposition = class {
   constructor(client, publicFolderId) {
     this.client = client;
@@ -80068,7 +80068,7 @@ var GoogleDrivePdfComposition = class {
   }
 };
 
-// packages/adapter/google-slides-content-repository/src/google-slides-content-repository.ts
+// packages/adapter/publication/google-slides-content-repository/src/google-slides-content-repository.ts
 var GoogleSlidesContentRepository = class {
   constructor(collaborators, client, images) {
     this.collaborators = collaborators;
@@ -80118,7 +80118,7 @@ var GoogleSlidesContentRepository = class {
   }
 };
 
-// packages/adapter/google-slides-content-repository/src/google-slides-content-repository-factory.ts
+// packages/adapter/publication/google-slides-content-repository/src/google-slides-content-repository-factory.ts
 var import_slides = __toESM(require_build3(), 1);
 var GoogleSlidesContentRepositoryFactory = class {
   constructor(collaborators) {
@@ -80133,7 +80133,7 @@ var GoogleSlidesContentRepositoryFactory = class {
   }
 };
 
-// packages/adapter/google-slides-content-repository/src/slide-content-element.ts
+// packages/adapter/publication/google-slides-content-repository/src/slide-content-element.ts
 var SlideContentElement = class {
   find(current, binding) {
     const pages = current.slides?.filter(
@@ -80146,7 +80146,7 @@ var SlideContentElement = class {
   }
 };
 
-// packages/adapter/google-slides-content-repository/src/slide-content-locations.ts
+// packages/adapter/publication/google-slides-content-repository/src/slide-content-locations.ts
 var SlideContentLocations = class {
   constructor(collaborators, images) {
     this.collaborators = collaborators;
@@ -80192,7 +80192,7 @@ var SlideContentLocations = class {
   }
 };
 
-// packages/adapter/google-slides-content-repository/src/slide-content-requests.ts
+// packages/adapter/publication/google-slides-content-repository/src/slide-content-requests.ts
 var SlideContentRequests = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -80238,7 +80238,7 @@ var SlideContentRequests = class {
   }
 };
 
-// packages/adapter/google-slides-content-repository/src/slide-template-bindings.ts
+// packages/adapter/publication/google-slides-content-repository/src/slide-template-bindings.ts
 import { isDeepStrictEqual } from "node:util";
 var SlideTemplateBindings = class {
   constructor(collaborators) {
@@ -80319,7 +80319,7 @@ var SlideTemplateBindings = class {
   }
 };
 
-// packages/adapter/google-slides-content-repository/src/dependency-composition.ts
+// packages/adapter/publication/google-slides-content-repository/src/dependency-composition.ts
 var GoogleSlidesContentRepositoryComposition = class {
   googleSlidesContentRepository(...args) {
     return new GoogleSlidesContentRepository(
@@ -80362,11 +80362,11 @@ var GoogleSlidesContentRepositoryComposition = class {
   }
 };
 
-// packages/adapter/https-asset-image-repository/src/dependency-composition.ts
+// packages/adapter/publication/https-asset-image-repository/src/dependency-composition.ts
 import { lookup } from "node:dns/promises";
 import { request as request2 } from "node:https";
 
-// packages/adapter/https-asset-image-repository/src/bounded-image-download.ts
+// packages/adapter/publication/https-asset-image-repository/src/bounded-image-download.ts
 var BoundedImageDownload = class {
   constructor(collaborators, resolve4, send) {
     this.collaborators = collaborators;
@@ -81454,7 +81454,7 @@ function imageSize(input) {
   throw new TypeError(`unsupported file type: ${type}`);
 }
 
-// packages/adapter/https-asset-image-repository/src/https-asset-image-repository.ts
+// packages/adapter/publication/https-asset-image-repository/src/https-asset-image-repository.ts
 var HttpsAssetImageRepository = class {
   constructor(collaborators, download) {
     this.collaborators = collaborators;
@@ -81492,7 +81492,7 @@ var HttpsAssetImageRepository = class {
   }
 };
 
-// packages/adapter/https-asset-image-repository/src/public-image-url.ts
+// packages/adapter/publication/https-asset-image-repository/src/public-image-url.ts
 import { isIP as isIP2 } from "node:net";
 var import_ipaddr = __toESM(require_ipaddr(), 1);
 var PublicImageUrl = class {
@@ -81520,7 +81520,7 @@ var PublicImageUrl = class {
   }
 };
 
-// packages/adapter/https-asset-image-repository/src/dependency-composition.ts
+// packages/adapter/publication/https-asset-image-repository/src/dependency-composition.ts
 var HttpsAssetImageRepositoryComposition = class {
   boundedImageDownload(resolve4 = lookup, send = request2) {
     return new BoundedImageDownload(
@@ -81542,7 +81542,7 @@ var HttpsAssetImageRepositoryComposition = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
   constructor(collaborators, event, apiKey, request3, now2) {
     this.collaborators = collaborators;
@@ -81656,7 +81656,7 @@ var ConferenceHallProposalSource = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/proposal-export-parser.ts
 var ProposalExportParser = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -81768,7 +81768,7 @@ var ProposalExportParser = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/dependency-composition.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/dependency-composition.ts
 var ConferenceHallProposalSourceComposition = class {
   conferenceHallProposalSource(event, apiKey, request3 = fetch, now2 = Date.now) {
     return new ConferenceHallProposalSource(
@@ -81789,7 +81789,7 @@ var ConferenceHallProposalSourceComposition = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile as readFile3, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve as resolve2, sep as sep2 } from "node:path";
 var CsvReferentialRepository = class {
@@ -81839,7 +81839,7 @@ var CsvReferentialRepository = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
 import { createHash as createHash4 } from "node:crypto";
 import { readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join3 } from "node:path";
@@ -81928,7 +81928,7 @@ var CsvSpeakerCatalogStore = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+// packages/adapter/referential/csv-referential-repository/src/dependency-composition.ts
 import { execFile } from "node:child_process";
 import { promisify as promisify2 } from "node:util";
 
@@ -83636,7 +83636,7 @@ var parse4 = function(data, opts = {}) {
   return records;
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-codec.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-referential-codec.ts
 var CsvReferentialCodec = class {
   decode(hostsSource, speakersSource, hostsPath, speakersPath) {
     const hosts = this.parseRows(hostsSource).map(
@@ -83696,7 +83696,7 @@ var CsvReferentialCodec = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-allocation-history.ts
 var SpeakerAllocationHistory = class {
   constructor(collaborators, root, command) {
     this.collaborators = collaborators;
@@ -83742,7 +83742,7 @@ var SpeakerAllocationHistory = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-allocation-state-codec.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-allocation-state-codec.ts
 var STATE_LINE_WIDTH = 80;
 var STATE_INDENT_WIDTH = 2;
 var SpeakerAllocationStateCodec = class {
@@ -83784,7 +83784,7 @@ var SpeakerAllocationStateCodec = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-catalog-csv.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-catalog-csv.ts
 var IMPORT_COLUMNS = [
   "speaker_id",
   "firstname",
@@ -83877,7 +83877,7 @@ var SpeakerCatalogCsv = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+// packages/adapter/referential/csv-referential-repository/src/dependency-composition.ts
 var CsvReferentialRepositoryComposition = class {
   csvReferentialCodec() {
     return new CsvReferentialCodec();
@@ -83918,12 +83918,12 @@ var CsvReferentialRepositoryComposition = class {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
 var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
 var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
 var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
 
-// packages/adapter/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-presenter.ts
 var DiagnosticCommentPresenter = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -83961,7 +83961,7 @@ ${messages3.t("comment.resolved")}`;
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/stage-diagnostic-guidance.ts
+// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
     "publication.assets.pdf.source",
@@ -84153,7 +84153,7 @@ var STAGE_GUIDANCE = [
   ]
 ];
 
-// packages/adapter/github-event-comment-repository/src/diagnostic-guidance.ts
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.ts
 var FIELD_ORDER = [
   "Event Title",
   "Event Date",
@@ -84441,7 +84441,7 @@ var GUIDANCE = new Map([
   ]
 ]);
 
-// packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-presentation.ts
 var DiagnosticPresenter = class {
   FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
@@ -84508,7 +84508,7 @@ var DiagnosticPresenter = class {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
 var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
@@ -84516,7 +84516,7 @@ var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
 var GitHubEventCommentRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
@@ -84524,7 +84524,7 @@ var GitHubEventCommentRepositoryResponseError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
 var GitHubEventCommentRepositoryScopeError = class extends Error {
   constructor(expected, received) {
     super(
@@ -84534,7 +84534,7 @@ var GitHubEventCommentRepositoryScopeError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository.ts
 var GitHubEventCommentRepository = class {
   constructor(collaborators, client, options) {
     this.collaborators = collaborators;
@@ -84737,7 +84737,7 @@ ${this.messages.t("comment.duplicate")}`
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
@@ -84806,7 +84806,7 @@ var EN_MESSAGES3 = {
   "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
@@ -84875,7 +84875,7 @@ var FR_MESSAGES3 = {
   "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/stage-messages.en.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
   "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
   "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
@@ -84917,7 +84917,7 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/stage-messages.fr.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
   "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
   "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
@@ -84959,20 +84959,20 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
 var CATALOGS3 = {
   en: { ...EN_MESSAGES3, ...STAGE_MESSAGES_EN },
   fr: { ...FR_MESSAGES3, ...STAGE_MESSAGES_FR }
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS3, locale);
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/dependency-composition.ts
+// packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
 var GithubEventCommentRepositoryComposition = class {
   diagnosticCommentPresenter() {
     return new DiagnosticCommentPresenter({
@@ -85000,7 +85000,7 @@ var GithubEventCommentRepositoryComposition = class {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository-configuration-error.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository-configuration-error.ts
 var GitHubEventRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
@@ -85008,7 +85008,7 @@ var GitHubEventRepositoryConfigurationError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository-response-error.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository-response-error.ts
 var GitHubEventRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
@@ -85016,7 +85016,7 @@ var GitHubEventRepositoryResponseError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository-scope-error.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository-scope-error.ts
 var GitHubEventRepositoryScopeError = class extends Error {
   constructor(expected, received) {
     super(`GitHub event repository is scoped to ${expected}, not ${received}`);
@@ -85024,7 +85024,7 @@ var GitHubEventRepositoryScopeError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository.ts
 var GitHubEventRepository = class {
   constructor(collaborators, client, options) {
     this.collaborators = collaborators;
@@ -85175,7 +85175,7 @@ var GitHubEventRepository = class {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-issue-document-codec.ts
+// packages/adapter/event/github-event-repository/src/github-issue-document-codec.ts
 var GitHubIssueDocumentCodec = class {
   /** Map one GitHub issue response or webhook snapshot into the domain document. */
   decode(data, repository) {
@@ -85244,7 +85244,7 @@ var GitHubIssueDocumentCodec = class {
   }
 };
 
-// packages/adapter/github-event-repository/src/dependency-composition.ts
+// packages/adapter/event/github-event-repository/src/dependency-composition.ts
 var GithubEventRepositoryComposition = class {
   gitHubEventRepository(...args) {
     return new GitHubEventRepository(
@@ -85257,7 +85257,7 @@ var GithubEventRepositoryComposition = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
 var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
 var SCHEMA_MARKER_NAME = "meetup-event-schema";
 var REFERENCE_MARKER_NAME = "meetup-event-references";
@@ -85281,7 +85281,7 @@ var HEADINGS = Object.freeze({
   occurrenceStatus: "Event Status"
 });
 
-// packages/adapter/github-issue-form-event-document-codec/src/event-reference-metadata.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/event-reference-metadata.ts
 var EventReferenceMetadata = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -85407,7 +85407,7 @@ var EventReferenceMetadata = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
 var GitHubIssueFormEventDocumentCodec = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
@@ -85425,7 +85425,7 @@ var GitHubIssueFormEventDocumentCodec = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-checklists.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-checklists.ts
 var IssueFormChecklists = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -85544,7 +85544,7 @@ var IssueFormChecklists = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-event-mapper.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-event-mapper.ts
 var IssueFormEventMapper = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -85678,7 +85678,7 @@ var IssueFormEventMapper = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-fields.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-fields.ts
 var IssueFormFields = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -85802,7 +85802,7 @@ var IssueFormFields = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-reader.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-reader.ts
 var IssueFormReader = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
@@ -85969,7 +85969,7 @@ var IssueFormReader = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-sections.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-sections.ts
 var IssueFormSections = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -86102,7 +86102,7 @@ ${after}`;
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-writer.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-writer.ts
 var IssueFormWriter = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
@@ -86219,7 +86219,7 @@ var IssueFormWriter = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/managed-issue-markers.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/managed-issue-markers.ts
 var ManagedIssueMarkers = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -86344,7 +86344,7 @@ ${referenceMarker}`
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/markdown-lines.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/markdown-lines.ts
 var MarkdownLines = class {
   findLineEnd(value, start) {
     let cursor = start;
@@ -86436,7 +86436,7 @@ var MarkdownLines = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/participant-links.ts
 var ParticipantLinks = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -86491,7 +86491,7 @@ var ParticipantLinks = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/participant-reference-parser.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/participant-reference-parser.ts
 var ParticipantReferenceParser = class {
   parseParticipantReference(value) {
     const trimmed = value.trim();
@@ -86588,7 +86588,7 @@ var ParticipantReferenceParser = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
 var ProposalSelectionCodec = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -86660,7 +86660,7 @@ ${body}`;
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/reference-bindings.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/reference-bindings.ts
 var ReferenceBindings = class {
   referenceBinding(participant, id) {
     return {
@@ -86695,7 +86695,7 @@ var ReferenceBindings = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
 var ReferenceMetadataShape = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -86742,7 +86742,7 @@ var ReferenceMetadataShape = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/dependency-composition.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/dependency-composition.ts
 var GithubIssueFormEventDocumentCodecComposition = class {
   eventReferenceMetadata() {
     return new EventReferenceMetadata({
@@ -86850,7 +86850,7 @@ var GithubIssueFormEventDocumentCodecComposition = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-record.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-record.ts
 var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
 var AttentionRecord = class {
   constructor(collaborators) {
@@ -87000,7 +87000,7 @@ var AttentionRecord = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-comment-retention.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-comment-retention.ts
 var AttentionCommentRetention = class {
   constructor(collaborators, api, owner, repo, author) {
     this.collaborators = collaborators;
@@ -87032,7 +87032,7 @@ var AttentionCommentRetention = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-diagnostic-checklist.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-diagnostic-checklist.ts
 var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
 var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   constructor(collaborators) {
@@ -87089,7 +87089,7 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   ]);
 };
 
-// packages/adapter/github-organizer-attention/src/attention-presenter.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-presenter.ts
 var AttentionPresenter = class {
   constructor(collaborators, repository, issueNumber, diagnostics, messages3) {
     this.collaborators = collaborators;
@@ -87160,7 +87160,7 @@ var AttentionPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-record-fields.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-record-fields.ts
 var AttentionRecordFields = class {
   record(value) {
     if (typeof value !== "object" || value === null || Array.isArray(value))
@@ -87191,7 +87191,7 @@ var AttentionRecordFields = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/github-attention-client.ts
+// packages/adapter/communication/github-organizer-attention/src/github-attention-client.ts
 var GithubAttentionClient = class {
   constructor(collaborators, api, owner, repo, issue2) {
     this.collaborators = collaborators;
@@ -87321,7 +87321,7 @@ var GithubAttentionClient = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/github-attention-repository.ts
+// packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
 var GithubAttentionRepository = class {
   constructor(collaborators, client, author, presenter, checklist) {
     this.collaborators = collaborators;
@@ -87429,7 +87429,7 @@ var GithubAttentionRepository = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/github-attention-response.ts
+// packages/adapter/communication/github-organizer-attention/src/github-attention-response.ts
 var GithubAttentionResponse = class {
   record(value) {
     if (!value || typeof value !== "object" || Array.isArray(value))
@@ -87503,7 +87503,7 @@ var GithubAttentionResponse = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/i18n/messages.en.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
@@ -87547,7 +87547,7 @@ var messages = {
   "task.unknown": "review the issue"
 };
 
-// packages/adapter/github-organizer-attention/src/i18n/messages.fr.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
@@ -87591,10 +87591,10 @@ var messages2 = {
   "task.unknown": "consulter le ticket"
 };
 
-// packages/adapter/github-organizer-attention/src/i18n/catalog.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
 var CATALOGS4 = { en: messages, fr: messages2 };
 
-// packages/adapter/github-organizer-attention/src/i18n/attention-messages.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
 var AttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS4, locale);
@@ -87609,7 +87609,7 @@ var AttentionMessages = class extends MessageLocalizer {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/trusted-attention-state.ts
+// packages/adapter/communication/github-organizer-attention/src/trusted-attention-state.ts
 var TrustedAttentionState = class {
   constructor(client, author) {
     this.client = client;
@@ -87638,7 +87638,7 @@ var TrustedAttentionState = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/dependency-composition.ts
+// packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
 var GithubOrganizerAttentionComposition = class {
   attentionRecordFields() {
     return new AttentionRecordFields();
@@ -87703,7 +87703,7 @@ var GithubOrganizerAttentionComposition = class {
   }
 };
 
-// packages/adapter/system-clock/src/system-communication-clock.ts
+// packages/adapter/time/system-clock/src/system-communication-clock.ts
 var SystemCommunicationClock = class {
   constructor(dateFactory) {
     this.dateFactory = dateFactory;
@@ -87714,7 +87714,7 @@ var SystemCommunicationClock = class {
   }
 };
 
-// packages/adapter/system-clock/src/system-event-clock.ts
+// packages/adapter/time/system-clock/src/system-event-clock.ts
 var SystemEventClock = class {
   constructor(dateFactory) {
     this.dateFactory = dateFactory;
@@ -87725,7 +87725,7 @@ var SystemEventClock = class {
   }
 };
 
-// packages/adapter/system-clock/src/dependency-composition.ts
+// packages/adapter/time/system-clock/src/dependency-composition.ts
 var SystemClockComposition = class {
   systemCommunicationClock() {
     return new SystemCommunicationClock(() => /* @__PURE__ */ new Date());
@@ -87735,36 +87735,36 @@ var SystemClockComposition = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
 var CATALOGS5 = {
   en: { ...EN_MESSAGES4 },
   fr: { ...FR_MESSAGES4 }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS5, locale);
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
 
-// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/speaker-references-presenter.ts
 var SpeakerReferencesPresenter = class {
   constructor(messages3) {
     this.messages = messages3;
@@ -87790,7 +87790,7 @@ var SpeakerReferencesPresenter = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-document.ts
 var import_yaml = __toESM(require_dist3(), 1);
 var YamlIssueFormDocument = class {
   project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
@@ -87899,7 +87899,7 @@ var YamlIssueFormDocument = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 import { readFile as readFile5, realpath as realpath2, stat as stat3, writeFile as writeFile3 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve3, sep as sep3 } from "node:path";
 
@@ -95157,7 +95157,7 @@ async function Vi2(t8, e2) {
 var Wi2 = de2(it2, 0);
 var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: de2(Cu), printDocToString: de2(hu) };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 var YamlIssueFormProjection = class {
   constructor(collaborators, options) {
     this.collaborators = collaborators;
@@ -95239,7 +95239,7 @@ var YamlIssueFormProjection = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/dependency-composition.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/dependency-composition.ts
 var YamlIssueFormProjectionComposition = class {
   issueFormMessages(...args) {
     return new IssueFormMessages(

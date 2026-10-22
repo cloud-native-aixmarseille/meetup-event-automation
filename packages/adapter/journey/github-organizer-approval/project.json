@@ -1,0 +1,25 @@
+{
+	"name": "github-organizer-approval",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/journey/github-organizer-approval/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/journey/github-organizer-approval/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/journey/github-organizer-approval"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:journey",
+		"technology:github",
+		"responsibility:organizer-approval"
+	]
+}

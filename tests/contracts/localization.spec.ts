@@ -1,11 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { GUIDANCE } from "../../packages/adapter/github-event-comment-repository/src/diagnostic-guidance.js";
-import { EventCommentMessages } from "../../packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.js";
-import { GithubEventCommentRepositoryComposition } from "../../packages/adapter/github-event-comment-repository/src/index.js";
-import type { STAGE_GUIDANCE } from "../../packages/adapter/github-event-comment-repository/src/stage-diagnostic-guidance.js";
-import type { IssueFormMessages } from "../../packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.js";
+import { GUIDANCE } from "../../packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.js";
+import { EventCommentMessages } from "../../packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.js";
+import { GithubEventCommentRepositoryComposition } from "../../packages/adapter/event/github-event-comment-repository/src/index.js";
+import type { STAGE_GUIDANCE } from "../../packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.js";
+import type { IssueFormMessages } from "../../packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.js";
 import type { CommunicationJourneyDiagnostic } from "../../packages/application/journey/src/index.js";
 import { JourneyPolicyComposition } from "../../packages/application/journey/src/index.js";
 import type { CommunicationDiagnostic } from "../../packages/domain/communication/src/index.js";

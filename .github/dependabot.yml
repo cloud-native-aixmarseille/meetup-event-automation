@@ -56,7 +56,7 @@ updates:
           - "*"
 
   - package-ecosystem: pip
-    directory: "/packages/adapter/hcaptcha-captcha-resolver/python"
+    directory: "/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python"
     open-pull-requests-limit: 20
     cooldown:
       default-days: 7
