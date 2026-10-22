@@ -21,15 +21,6 @@
 
 ## Overview
 
-Reusable workflow that checks one open meetup issue and applies the due
-communication and issue updates needed to keep it current.
-
-The workflow creates a separate GitHub App installation token for
-`<repository-owner>/mailings` using the supplied App client ID and private key.
-The App must be installed there with Contents: write permission. The token is
-used in the dispatch job and revoked when the job finishes; callers do not
-provide a mailing token secret.
-
 ### Permissions
 
 - **`contents`**: `read`

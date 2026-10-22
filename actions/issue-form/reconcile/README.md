@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Action: Synchronize meetup issue form
+# GitHub Action: Reconcile meetup issue form
 
 <div align="center">
-  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Synchronize meetup issue form" />
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile meetup issue form" />
 </div>
 
 ---
@@ -11,7 +11,7 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Marketplace](https://img.shields.io/badge/Marketplace-synchronize--meetup--issue--form-blue?logo=github-actions)](https://github.com/marketplace/actions/synchronize-meetup-issue-form)
+[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--issue--form-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-issue-form)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
 [![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
@@ -30,7 +30,7 @@ Validate referentials and synchronize the public meetup issue form. Invalid reco
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/sync-issue-form@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/issue-form/reconcile@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # This input is required.
@@ -58,9 +58,10 @@ Validate referentials and synchronize the public meetup issue form. Invalid reco
 
 ## Outputs
 
-| **Output**    | **Description**                                                                |
-| ------------- | ------------------------------------------------------------------------------ |
-| **`changed`** | Whether the checked-out issue form differs from the desired public projection. |
+| **Output**      | **Description**                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **`changed`**   | Whether the checked-out issue form differs from the desired public projection.                                                 |
+| **`completed`** | Whether catalog validation and form projection completed without blocking diagnostics. Gates publication of the review branch. |
 
 <!-- outputs:end -->
 <!-- examples:start -->

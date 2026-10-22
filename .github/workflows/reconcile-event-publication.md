@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Reusable Workflow: Create or update Meetup event
+# GitHub Reusable Workflow: Reconcile event publication
 
 <div align="center">
-  <img src="../logo.svg" width="60px" align="center" alt="Create or update Meetup event" />
+  <img src="../logo.svg" width="60px" align="center" alt="Reconcile event publication" />
 </div>
 
 ---
@@ -31,15 +31,15 @@
 ## Usage
 
 ```yaml
-name: Create or update Meetup event
+name: Reconcile event publication
 on:
   push:
     branches:
       - main
 permissions: {}
 jobs:
-  reconcile-meetup-event:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-meetup-event.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+  reconcile-event-publication:
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-event-publication.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
     permissions:
       contents: read
     secrets:

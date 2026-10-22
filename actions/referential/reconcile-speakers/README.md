@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Action: Synchronize Conference Hall speakers
+# GitHub Action: Reconcile speakers
 
 <div align="center">
-  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Synchronize Conference Hall speakers" />
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile speakers" />
 </div>
 
 ---
@@ -11,7 +11,7 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Marketplace](https://img.shields.io/badge/Marketplace-synchronize--conference--hall--speakers-blue?logo=github-actions)](https://github.com/marketplace/actions/synchronize-conference-hall-speakers)
+[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--speakers-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-speakers)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
 [![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
@@ -22,7 +22,7 @@
 
 ## Overview
 
-Prepare a validated private speaker catalog and issue form from one Conference Hall snapshot.
+Reconcile the validated private speaker catalog and reserved IDs from the call-for-papers source snapshot.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -30,7 +30,7 @@ Prepare a validated private speaker catalog and issue form from one Conference H
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/sync-speakers@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/reconcile-speakers@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
     # Language for generated reports (en or fr).
     # This input is required.

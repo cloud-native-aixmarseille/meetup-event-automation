@@ -21,17 +21,6 @@
 
 ## Overview
 
-Reusable workflow that checks open meetup issues, evaluates their current
-state, and processes due communications under the shared per-event lock.
-Expected organizer tasks share one checklist; unexpected technical failures
-fail the audit under the same policy as issue-triggered reconciliation.
-
-The workflow creates a separate GitHub App installation token for
-`<repository-owner>/mailings` using the supplied App client ID and private key.
-The App must be installed there with Contents: write permission. The token is
-used in the dispatch job and revoked when the job finishes; callers do not
-provide a mailing token secret.
-
 ### Permissions
 
 - **`contents`**: `read`

@@ -21,9 +21,6 @@
 
 ## Overview
 
-Reusable workflow that validates private referentials and updates the public
-meetup issue form when the checked-out projection is stale.
-
 ### Permissions
 
 - **`contents`**: `read`
@@ -42,7 +39,7 @@ on:
 permissions: {}
 jobs:
   update-meetup-issue-form:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue-form.yml@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue-form.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
     permissions:
       contents: read
     secrets:
