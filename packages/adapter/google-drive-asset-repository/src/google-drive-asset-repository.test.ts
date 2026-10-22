@@ -55,6 +55,41 @@ function setup() {
 }
 
 describe("Google Drive asset repository", () => {
+	it("excludes export files and sidecars from template-copy reconciliation", async () => {
+		// Arrange
+		const { files, repository } = setup();
+		files.list.mockResolvedValue({
+			data: {
+				files: [
+					file,
+					{
+						...file,
+						id: "derived-pdf",
+						appProperties: {
+							...file.appProperties,
+							meetup_pdf_source: "file-1",
+						},
+					},
+					{
+						...file,
+						id: "export-state",
+						appProperties: { meetup_pdf_state: "file-1" },
+					},
+					{
+						...file,
+						id: "bindings",
+						appProperties: { meetup_binding_file: "file-1" },
+					},
+				],
+			},
+		});
+
+		// Act
+		const result = await repository.listFiles("folder-1");
+
+		// Assert
+		expect(result.map((item) => item.id)).toEqual(["file-1"]);
+	});
 	it("paginates all template files including empty pages", async () => {
 		// Arrange
 		const { files, repository } = setup();

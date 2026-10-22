@@ -1,4 +1,5 @@
 export interface MessageParameters {
+	"report.assets.pdf": { status: string; updated: string };
 	"report.meetup.review": { url: string };
 	"report.speaker-sync.failed": { stage: string };
 	"report.speaker-sync.completed": { count: number };

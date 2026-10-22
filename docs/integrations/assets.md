@@ -5,24 +5,27 @@ templates, and save the folder URL in **Drive Link** on the issue.
 
 ## Configure
 
-Create two distinct Drive folders: a parent for event folders and a folder
-containing the template files. Give the service account read access to the
+Create three distinct Drive folders: a parent for event folders, a folder
+containing the template files, and one shared folder named `public` for all
+events' generated PDFs. Give the service account read access to the
 templates and permission to create folders, copy files and update files in the
-parent. Shared drives are supported. Configure sharing for attendees and
-speakers yourself; the automation does not change permissions.
+parent and move/update permission in `public`. Shared drives are supported.
+Configure sharing for attendees and speakers yourself; the automation does not
+grant permissions.
 
 Follow [repository setup](../usage/setup.md), then pass these settings to both
 `update-meetup-issue.yml` and `check-active-meetup-issues.yml`:
 
-| Consumer setting                                  | Reusable workflow parameter                    |
-| ------------------------------------------------- | ---------------------------------------------- |
-| Secret `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`       | Secret `google-credentials`                    |
-| Variable `GOOGLE_DRIVE_MEETUP_FOLDER_ID`          | Input `google-drive-meetup-folder-id`          |
-| Variable `GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` | Input `google-drive-meetup-template-folder-id` |
+| Consumer setting                            | Reusable workflow parameter             |
+| ------------------------------------------- | --------------------------------------- |
+| Secret `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS` | Secret `google-credentials`             |
+| Variable `GOOGLE_DRIVE_FOLDER_ID`           | Input `google-drive-folder-id`          |
+| Variable `GOOGLE_DRIVE_PUBLIC_FOLDER_ID`    | Input `google-drive-public-folder-id`   |
+| Variable `GOOGLE_DRIVE_TEMPLATE_FOLDER_ID`  | Input `google-drive-template-folder-id` |
 
 The credential is the service-account JSON, including `type`, `client_email` and
-`private_key`. The credential and both folder IDs are required. Folder settings
-contain IDs, not URLs, and must differ. Missing or invalid settings fail asset
+`private_key`. The credential and all three folder IDs are required.
+Folder settings contain IDs, not URLs, and must differ. Missing or invalid settings fail asset
 reconciliation.
 
 Asset reconciliation also requires the three [publication URL inputs](../reference/configuration.md#publication-url-inputs).
@@ -46,7 +49,8 @@ Google Docs support managed text, speaker portraits, and host logos. Sheets,
 uploaded Office files, PDFs and standalone images remain copy-only. Enable the Drive,
 Slides and Docs APIs in the service-account project for the formats used. The
 existing Drive OAuth scope authorizes these file operations; access still depends
-on the service account's file permissions. Sharing is never changed automatically.
+on the service account's file permissions. The automation never grants sharing
+permissions; moved PDFs inherit their destination folder's access policy.
 
 ## Author managed content
 
@@ -351,6 +355,91 @@ batch inputs and stable links, not an immutable snapshot of linked content.
 **Drive Link** continues to identify the
 folder; email slides links identify the presentation file. See
 [email link requirements](communications.md#presentation-link).
+
+## Export the presentation PDF
+
+Asset reconciliation exports the managed Google Slides presentation as a separate
+PDF when post-event follow-up is due. With a valid event date and timezone, that
+means an explicitly `held` event or a `scheduled` event whose local calendar day
+has ended. Cancelled, postponed and unknown occurrences are ineligible. The
+normal workflows process open issues only; closing an issue stops automatic
+exports and recovery. Moving its Drive folder into an archive does not change
+file identity or prevent reconciliation while the issue remains open.
+
+The source must have a stable managed template identity and `ready` or
+`copy-only` content. Pending or conflicted source content blocks export. The PDF
+uses the presentation's name, adds the event date if needed, and ends in `.pdf`.
+Names are bounded to 204 characters. The existing editable Slides file remains
+the email target. Download the PDF from the configured shared `public` folder.
+**Drive Link** continues to identify the event folder. The action does not emit
+a PDF URL or complete any manual sharing task.
+
+Set `GOOGLE_DRIVE_PUBLIC_FOLDER_ID` to the existing `public` folder's ID
+and forward it as `google-drive-public-folder-id`. The same destination
+is used for every event, regardless of where its event folder is archived.
+The automation validates the destination by ID, name and folder type. It does
+not create per-event public folders or search for a shared folder by name.
+
+The service account needs permission to export the source and create/update
+binary files in the event folder, move PDFs into the shared folder, and update
+them there. New exports are uploaded and verified in the event folder before
+being moved; existing exports are refreshed in place. The Drive API must be
+enabled. Exported bytes are limited to 10,000,000 bytes and checked for PDF
+media type, signature and
+end marker before upload. Each request has a 30-second timeout; downloads also
+have a 30-second abort signal. Oversized exports need a smaller presentation.
+Access, transport and persistence failures remain technical action failures.
+
+One managed PDF is refreshed in place when the observed Drive source version or
+export filename changes. Its URL stays stable. An unchanged source and unchanged
+inputs cause no export or content write after the existing PDF's bytes are
+verified. Drive versions include metadata changes, so those can also trigger an
+export. The PDF is a rendered snapshot that can be refreshed, not an immutable
+record of what was shown on the event date.
+
+The PDF has separate `meetup_pdf_source` identity metadata and no template-copy
+marker. Its description is the public event identifier. Source/template
+provenance and the export contract are stored in Drive metadata; embedded PDF
+document properties are not controlled. The automation makes no permission
+grants; a moved PDF inherits access from the shared `public` folder. Configure
+that folder's audience manually. Editable sources and export sidecars stay in
+the event folder and are never moved with the PDF.
+A dedicated `.SOURCE_FILE_ID.pdf-export.json` sidecar holds the reserved PDF ID,
+source version, filename and SHA-256 fingerprints of pending and confirmed
+exports. Its schema is separate from content bindings and its size is bounded
+to 65,536 bytes. Keep this state private to the event folder.
+
+The workflow lock serializes runs for each event. Source versions are compared
+before and after export; a changing source stays pending. The PDF and sidecar
+are reread before updates to detect intervening edits. These checks are not a
+transaction with human Drive edits; finish edits before running reconciliation.
+
+### Recover a PDF export
+
+Rerun after a transport failure. The automation verifies actual PDF bytes before
+confirming a pending upload. Matching previous content allows a retry using the
+same reserved file ID. A lost create response never authorizes creating a second
+PDF. Failed or incomplete searches stop the run; duplicate managed identities
+require manual reconciliation. A verified PDF still in its event folder is moved
+with the same file ID, even when no new export is needed. A failed or uncertain
+move is retried or verified on the next run without another upload. The action
+reports readiness only after checking the destination and PDF bytes. If the
+configured folder is unavailable or renamed, restore its access and `public`
+name before retrying; do not switch destinations for existing managed PDFs.
+
+For a conflict, stop editing and inspect the PDF and its export sidecar together.
+Preserve any manual work in a separate unmanaged file. Restore the verified PDF
+bytes and matching export state from a trusted backup or Drive history before
+retrying. A missing or malformed sidecar cannot be reconstructed from the current
+PDF alone. Do not delete the managed files, change their IDs, clear email delivery
+records, or use content-binding `restore`, `remove` or `enroll` entries to replace
+a PDF. Unmanaged files with the same filename are left alone.
+
+PDF status appears as technical facts in the action report. Expected corrections
+appear in the merged organizer checklist and Slack; they do not alter
+`slides-ready` or add an email prerequisite. Unexpected failures still fail the
+asset action and prevent dependent workflow steps. Ineligible or unready runs
+preserve an existing PDF without treating it as a fresh export.
 
 ## Recover a content conflict
 

@@ -249,6 +249,7 @@ describe("action runner reporting contract", () => {
 	});
 
 	it.each([
+		["publication.assets.pdf.invalid", "warning"],
 		["communication.ledger-read-failed", "error"],
 		["communication.approval-notification-failed", "warning"],
 		["future.technical-failure", "error"],

@@ -11,6 +11,10 @@ import {
 	type ReconcileEventAssetsArguments,
 } from "./application/reconcile-event-assets.js";
 import {
+	ReconcileSlidePdf,
+	type ReconcileSlidePdfArguments,
+} from "./application/reconcile-slide-pdf.js";
+import {
 	ResolveContentValues,
 	type ResolveContentValuesArguments,
 } from "./application/resolve-content-values.js";
@@ -39,6 +43,7 @@ import {
 	type MeetupEventUrlPolicyArguments,
 } from "./domain/meetup-event-url-policy.js";
 import { PublicationDiagnostics } from "./domain/model.js";
+import { PdfExportPolicy } from "./domain/pdf-export-policy.js";
 import { PresentationFileUrl } from "./domain/presentation-file-url.js";
 import { PublicAssetUrl } from "./domain/public-asset-url.js";
 import { PublicationLinkEvaluation } from "./domain/publication-link-evaluation.js";
@@ -49,6 +54,12 @@ import {
 import { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class PublicationDomainComposition {
+	pdfExportPolicy(): PdfExportPolicy {
+		return new PdfExportPolicy();
+	}
+	reconcileSlidePdf(...args: ReconcileSlidePdfArguments): ReconcileSlidePdf {
+		return new ReconcileSlidePdf(this.pdfExportPolicy(), ...args);
+	}
 	assetFolderUrlPolicy(
 		...args: AssetFolderUrlPolicyArguments
 	): AssetFolderUrlPolicy {

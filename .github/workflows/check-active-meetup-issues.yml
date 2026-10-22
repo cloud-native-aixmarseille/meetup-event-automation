@@ -37,11 +37,15 @@ on:
         description: Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.
         required: true
         type: string
-      google-drive-meetup-folder-id:
-        description: Google Drive folder ID of the parent meetup folder used for asset reconciliation.
+      google-drive-folder-id:
+        description: Google Drive folder ID of the parent asset folder used for asset reconciliation.
         required: true
         type: string
-      google-drive-meetup-template-folder-id:
+      google-drive-public-folder-id:
+        description: Google Drive ID of the shared public folder for generated PDFs.
+        required: true
+        type: string
+      google-drive-template-folder-id:
         description: Google Drive folder ID of the template folder used for asset reconciliation.
         required: true
         type: string
@@ -171,8 +175,9 @@ jobs:
           issue-number: ${{ matrix.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          google-drive-meetup-folder-id: ${{ inputs.google-drive-meetup-folder-id }}
-          google-drive-meetup-template-folder-id: ${{ inputs.google-drive-meetup-template-folder-id }}
+          google-drive-folder-id: ${{ inputs.google-drive-folder-id }}
+          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+          google-drive-template-folder-id: ${{ inputs.google-drive-template-folder-id }}
 
       - name: Evaluate current event state
         id: event

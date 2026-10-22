@@ -20,6 +20,12 @@ describe("diagnostic policy", () => {
 		"communication.approval-rejected",
 		"publication.meetup.unpublished",
 		"publication.assets.content.conflict",
+		"publication.assets.pdf.source",
+		"publication.assets.pdf.source-pending",
+		"publication.assets.pdf.revision",
+		"publication.assets.pdf.conflict",
+		"publication.assets.pdf.recovery",
+		"publication.assets.pdf.limit",
 		"publication.assets.content.recovery",
 		"publication.feedback.agenda",
 		"publication.feedback.conflict",
@@ -74,6 +80,7 @@ describe("diagnostic policy", () => {
 	});
 
 	it.each([
+		"publication.assets.pdf.invalid",
 		"communication.gateway-delivery-uncertain",
 		"communication.gateway-delivery-rejected",
 		"communication.gateway-delivery-deferred",

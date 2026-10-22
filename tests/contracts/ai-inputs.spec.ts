@@ -3,9 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	type ActionManifest,
-	type Workflow,
 	readYaml,
 	root,
+	type Workflow,
 	workflowExpression,
 } from "./support.js";
 

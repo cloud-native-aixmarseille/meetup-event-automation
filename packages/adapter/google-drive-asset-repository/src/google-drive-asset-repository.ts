@@ -140,7 +140,12 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				`'${this.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`,
 			)
 		)
-			.filter((file) => !file.appProperties?.meetup_binding_file)
+			.filter(
+				(file) =>
+					!file.appProperties?.meetup_binding_file &&
+					!file.appProperties?.meetup_pdf_source &&
+					!file.appProperties?.meetup_pdf_state,
+			)
 			.map(
 				this.collaborators.driveAssetMetadata.assetFile.bind(
 					this.collaborators.driveAssetMetadata,

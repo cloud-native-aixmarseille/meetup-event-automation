@@ -104,13 +104,17 @@ jobs:
       # This input is required.
       slack-organizer-channel-id: ""
 
-      # Google Drive folder ID of the parent meetup folder used for asset reconciliation.
+      # Google Drive folder ID of the parent asset folder used for asset reconciliation.
       # This input is required.
-      google-drive-meetup-folder-id: ""
+      google-drive-folder-id: ""
+
+      # Google Drive ID of the shared public folder for generated PDFs.
+      # This input is required.
+      google-drive-public-folder-id: ""
 
       # Google Drive folder ID of the template folder used for asset reconciliation.
       # This input is required.
-      google-drive-meetup-template-folder-id: ""
+      google-drive-template-folder-id: ""
 
       # HTTPS base URL of the Kutt instance, without /api/v2. No default.
       # This input is required.
@@ -132,19 +136,20 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**                                    | **Description**                                                                                                                              | **Required** | **Type**   | **Default** |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`meetup-event-url-prefix`**                | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                  | **true**     | **string** | -           |
-| **`community-event-url-prefixes`**           | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                     | **true**     | **string** | -           |
-| **`asset-folder-url-prefix`**                | HTTPS prefix accepted for event asset folder URLs.                                                                                           | **true**     | **string** | -           |
-| **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.           | **true**     | **string** | -           |
-| **`github-app-client-id`**                   | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                              | **true**     | **string** | -           |
-| **`slack-organizer-channel-id`**             | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate. | **true**     | **string** | -           |
-| **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder used for asset reconciliation.                                                            | **true**     | **string** | -           |
-| **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                                 | **true**     | **string** | -           |
-| **`kutt-base-url`**                          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
-| **`kutt-link-id`**                           | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
-| **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
+| **Input**                             | **Description**                                                                                                                              | **Required** | **Type**   | **Default** |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`meetup-event-url-prefix`**         | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                  | **true**     | **string** | -           |
+| **`community-event-url-prefixes`**    | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                     | **true**     | **string** | -           |
+| **`asset-folder-url-prefix`**         | HTTPS prefix accepted for event asset folder URLs.                                                                                           | **true**     | **string** | -           |
+| **`locale`**                          | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.           | **true**     | **string** | -           |
+| **`github-app-client-id`**            | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                              | **true**     | **string** | -           |
+| **`slack-organizer-channel-id`**      | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate. | **true**     | **string** | -           |
+| **`google-drive-folder-id`**          | Google Drive folder ID of the parent asset folder used for asset reconciliation.                                                             | **true**     | **string** | -           |
+| **`google-drive-public-folder-id`**   | Google Drive ID of the shared public folder for generated PDFs.                                                                              | **true**     | **string** | -           |
+| **`google-drive-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                                 | **true**     | **string** | -           |
+| **`kutt-base-url`**                   | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
+| **`kutt-link-id`**                    | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
+| **`conference-hall-event`**           | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -209,3 +214,11 @@ This documentation was automatically generated by [CI Dokumentor](https://github
 The required `conference-hall-event` input and `conference-hall-api-key` secret
 are forwarded explicitly to event, feedback, asset and communication actions.
 See [setup, request budgeting and recovery](../../docs/integrations/conference-hall.md).
+
+## Presentation PDF
+
+The asset stage maintains the post-event PDF for eligible open events in the
+shared `public` folder selected by `google-drive-public-folder-id`. It keeps
+the editable presentation URL and `slides-ready` as communication inputs;
+unexpected export failures follow the normal asset-stage failure gates. See
+[PDF export and recovery](../../docs/integrations/assets.md#export-the-presentation-pdf).

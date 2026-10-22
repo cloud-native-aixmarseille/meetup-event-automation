@@ -1,4 +1,6 @@
+import type { PostEventPolicy } from "@meetup-automation/communication";
 import {
+	type EventClock,
 	type EventDocument,
 	type EventDocumentCodec,
 	type EventDocumentConcurrency,
@@ -10,13 +12,18 @@ import {
 import type {
 	ContentRecovery,
 	ContentStatus,
+	PdfExportResult,
 	ReconcileEventAssets,
+	ReconcileSlidePdf,
 } from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 import type { AssetRenderProjection } from "./asset-render-projection.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
+import type { ManageMeetupEventResult } from "./manage-meetup-event-contracts.js";
 
 interface ManageMeetupAssetsDependencies {
+	readonly clock: EventClock;
+	readonly reconcilePdf: Pick<ReconcileSlidePdf, "execute">;
 	readonly renderProjection?: Pick<AssetRenderProjection, "create">;
 	readonly recovery?: Readonly<Record<string, ContentRecovery>>;
 	readonly eventRepository: EventRepository;
@@ -26,6 +33,7 @@ interface ManageMeetupAssetsDependencies {
 }
 
 export interface ManageMeetupAssetsCollaborators {
+	readonly postEventPolicy: Pick<PostEventPolicy, "isDue">;
 	readonly eventDocumentConcurrency: Pick<
 		EventDocumentConcurrency,
 		"ensureEventDocumentIsCurrent"
@@ -37,6 +45,7 @@ export interface ManageMeetupAssetsCollaborators {
 }
 
 interface ManageMeetupAssetsResult {
+	readonly pdf: PdfExportResult;
 	readonly skipped: boolean;
 	readonly persisted: boolean;
 	readonly slidesReady: boolean;
@@ -87,10 +96,22 @@ export class ManageMeetupAssets {
 			input.identity,
 			source,
 		);
+		return this.reconcile(
+			source,
+			evaluation,
+			evaluation.event.host.displayName,
+		);
+	}
+
+	private async reconcile(
+		source: EventDocument,
+		evaluation: Extract<ManageMeetupEventResult, { skipped: false }>,
+		hostName: string,
+	): Promise<ManageMeetupAssetsResult> {
 		const assets = await this.dependencies.reconcileAssets.execute({
-			eventId: `${input.identity.repository}#${input.identity.issueNumber}`,
+			eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
 			date: evaluation.event.date,
-			hostName: evaluation.event.host.displayName,
+			hostName,
 			existingUrl: evaluation.event.publicationLinks.assets,
 			mode: "fix",
 			model: await this.dependencies.renderProjection?.create(
@@ -99,17 +120,36 @@ export class ManageMeetupAssets {
 			),
 			recovery: this.dependencies.recovery,
 		});
+		await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+			this.dependencies.eventRepository,
+			source.identity,
+			source,
+		);
+		const slidesReady =
+			Boolean(assets.files["slides-link"]) &&
+			["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
+		const pdf = await this.dependencies.reconcilePdf.execute({
+			eligible: this.collaborators.postEventPolicy.isDue({
+				eventDate: evaluation.event.date,
+				timeZone: evaluation.event.timeZone,
+				occurrenceStatus: evaluation.event.occurrenceStatus ?? "unknown",
+				now: new Date(this.dependencies.clock.now()),
+			}),
+			sourceReady: slidesReady,
+			date: evaluation.event.date,
+			container: assets.container,
+			source: assets.presentation,
+		});
 		const persisted = await this.persistAsset(source, assets.container?.url);
 		return {
 			skipped: false,
 			persisted,
-			slidesReady:
-				Boolean(assets.files["slides-link"]) &&
-				["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only"),
+			slidesReady,
+			pdf,
 			assetUrl: assets.container?.url,
 			files: assets.files,
 			content: assets.content,
-			diagnostics: assets.diagnostics.map((item) => ({
+			diagnostics: [...assets.diagnostics, ...pdf.diagnostics].map((item) => ({
 				...item,
 				field: "publicationLinks.assets",
 			})),
@@ -120,6 +160,7 @@ export class ManageMeetupAssets {
 		diagnostics: readonly PublicDiagnostic[],
 	): ManageMeetupAssetsResult {
 		return {
+			pdf: { status: "not-applicable", updated: false, diagnostics: [] },
 			skipped: true,
 			persisted: false,
 			slidesReady: false,

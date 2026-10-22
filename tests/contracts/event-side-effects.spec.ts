@@ -33,8 +33,9 @@ describe("event side-effect safeguards", () => {
 			// Assert
 			for (const inputName of [
 				"google-credentials",
-				"google-drive-meetup-folder-id",
-				"google-drive-meetup-template-folder-id",
+				"google-drive-folder-id",
+				"google-drive-public-folder-id",
+				"google-drive-template-folder-id",
 			]) {
 				expect(action.inputs?.[inputName]?.required).toBe(true);
 				expect(action.inputs?.[inputName]?.default).toBeUndefined();
@@ -43,11 +44,14 @@ describe("event side-effect safeguards", () => {
 			expect(step?.with).not.toHaveProperty("mode");
 			expect(step?.with).toMatchObject({
 				"google-credentials": workflowExpression("secrets.google-credentials"),
-				"google-drive-meetup-folder-id": workflowExpression(
-					"inputs.google-drive-meetup-folder-id",
+				"google-drive-folder-id": workflowExpression(
+					"inputs.google-drive-folder-id",
 				),
-				"google-drive-meetup-template-folder-id": workflowExpression(
-					"inputs.google-drive-meetup-template-folder-id",
+				"google-drive-public-folder-id": workflowExpression(
+					"inputs.google-drive-public-folder-id",
+				),
+				"google-drive-template-folder-id": workflowExpression(
+					"inputs.google-drive-template-folder-id",
 				),
 			});
 			expect(step?.with).not.toHaveProperty("mutation-authorized");
@@ -56,8 +60,9 @@ describe("event side-effect safeguards", () => {
 				workflow.on?.workflow_call?.secrets?.["google-credentials"]?.required,
 			).toBe(true);
 			for (const inputName of [
-				"google-drive-meetup-folder-id",
-				"google-drive-meetup-template-folder-id",
+				"google-drive-folder-id",
+				"google-drive-public-folder-id",
+				"google-drive-template-folder-id",
 			]) {
 				expect(workflow.on?.workflow_call?.inputs?.[inputName]?.required).toBe(
 					true,
@@ -182,8 +187,9 @@ describe("event side-effect safeguards", () => {
 			"community-event-url-prefixes",
 			"conference-hall-event",
 			"github-app-client-id",
-			"google-drive-meetup-folder-id",
-			"google-drive-meetup-template-folder-id",
+			"google-drive-folder-id",
+			"google-drive-public-folder-id",
+			"google-drive-template-folder-id",
 			"kutt-base-url",
 			"kutt-link-id",
 			"locale",

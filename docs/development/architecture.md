@@ -510,6 +510,19 @@ explicit recovery when embedded observations cannot prove success. File URLs and
 content readiness remain separate; communication holds pending managed slides.
 See [managed asset content](../integrations/assets.md#author-managed-content).
 
+Presentation PDF exports have separate publication policies and ports for source
+observation, binary persistence and export state. Journey evaluates follow-up
+eligibility with `PostEventPolicy` and the injected clock before requesting an
+export. The Drive adapter owns bounded byte validation, derived-file metadata and
+the export-state codec. Pending state reserves a stable PDF ID before upload;
+recovery requires observed content fingerprints. Publication requests placement
+of verified PDFs through its binary repository port. The Drive adapter moves
+only the PDF into the configured shared `public` folder and verifies the move;
+editable sources and export state remain in the event folder. Runtime injects
+the required destination ID. PDF readiness never changes
+the editable slides readiness or the communication link contract. See
+[PDF export and recovery](../integrations/assets.md#export-the-presentation-pdf).
+
 ## Privacy and trust boundaries
 
 - Store real catalogs and contact records only in the consuming repository. Use

@@ -31901,6 +31901,7 @@ var ReconcileEventAssets = class {
   async reconcileFiles(container, templates, input, diagnostics) {
     const currentFiles = await this.repository.listFiles(container.id);
     const files = {};
+    let presentation;
     const content = {};
     const reconcile = this.collaborators.createReconcileAssetFile(
       this.repository,
@@ -31915,9 +31916,11 @@ var ReconcileEventAssets = class {
         diagnostics
       });
       if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+      if (template.kind === "slides" && result.file)
+        presentation = { ...result.file, templateId: template.id };
       content[template.kind] = result.status;
     }
-    return { container, files, content, diagnostics };
+    return { container, files, content, diagnostics, presentation };
   }
   diagnostic(code, message, fixApplied) {
     return {
@@ -31942,6 +31945,122 @@ var ReconcileEventAssets = class {
         "Asset templates must have unique IDs, unique kinds, and non-empty names"
       );
     }
+  }
+};
+
+// packages/domain/publication/src/domain/pdf-export-error.ts
+var PdfExportError = class extends Error {
+  constructor(code) {
+    super(`PDF export could not complete: ${code}`);
+    this.code = code;
+    this.name = "PdfExportError";
+  }
+  code;
+};
+
+// packages/domain/publication/src/application/reconcile-slide-pdf.ts
+var ReconcileSlidePdf = class {
+  constructor(policy, source, files, states) {
+    this.policy = policy;
+    this.source = source;
+    this.files = files;
+    this.states = states;
+  }
+  policy;
+  source;
+  files;
+  states;
+  async execute(input) {
+    if (!input.eligible)
+      return { status: "not-applicable", updated: false, diagnostics: [] };
+    if (!input.sourceReady) return this.failure("source-pending");
+    if (!input.container || !input.source?.templateId)
+      return this.failure("source");
+    const identity = {
+      eventId: input.container.eventId,
+      folderId: input.container.id,
+      sourceId: input.source.id,
+      templateId: input.source.templateId
+    };
+    try {
+      return await this.reconcile(
+        identity,
+        this.policy.name(input.source.name, input.date)
+      );
+    } catch (error2) {
+      if (!(error2 instanceof PdfExportError)) throw error2;
+      return this.failure(error2.code);
+    }
+  }
+  async reconcile(identity, name) {
+    const state = await this.states.load(identity);
+    const observed = await this.files.find(identity, state?.fileId);
+    const confirmed = this.policy.recover(state, observed);
+    if (state?.pending && confirmed === state.pending) {
+      await this.states.save({ identity, fileId: state.fileId, confirmed });
+    }
+    const sourceVersion = await this.source.observe(identity);
+    if (observed && this.policy.current(confirmed, sourceVersion, name)) {
+      if (state?.pending && confirmed !== state.pending)
+        await this.states.save({ identity, fileId: state.fileId, confirmed });
+      const updated = await this.files.placeInPublicFolder(identity, observed);
+      return { status: "ready", updated, diagnostics: [] };
+    }
+    const binary = await this.source.export(identity);
+    if (await this.source.observe(identity) !== sourceVersion)
+      throw new PdfExportError("revision");
+    const pending = {
+      sourceVersion,
+      contract: "pdf-v1",
+      name,
+      fingerprint: binary.fingerprint
+    };
+    const next = {
+      identity,
+      fileId: state?.fileId ?? await this.files.reserveId(),
+      confirmed,
+      pending
+    };
+    await this.states.save(next);
+    await this.files.write({
+      identity,
+      fileId: next.fileId,
+      snapshot: pending,
+      binary,
+      previous: observed
+    });
+    const uploaded = await this.confirm(
+      next,
+      await this.files.find(identity, next.fileId)
+    );
+    await this.files.placeInPublicFolder(identity, uploaded);
+    return { status: "ready", updated: true, diagnostics: [] };
+  }
+  async confirm(state, observed) {
+    if (observed?.id !== state.fileId || !this.policy.matches(state.pending, observed)) {
+      throw new PdfExportError("invalid");
+    }
+    await this.states.save({
+      identity: state.identity,
+      fileId: state.fileId,
+      confirmed: state.pending
+    });
+    return observed;
+  }
+  failure(code) {
+    return {
+      status: code === "conflict" ? "conflict" : code === "recovery" ? "recovery-required" : "pending",
+      updated: false,
+      diagnostics: [
+        {
+          code: `publication.assets.pdf.${code}`,
+          field: "assets",
+          severity: "warning",
+          message: "The presentation PDF could not be reconciled",
+          fixAvailable: false
+        }
+      ]
+    };
   }
 };
 
@@ -32936,6 +33055,40 @@ var PublicationDiagnostics = class {
   }
 };
 
+// packages/domain/publication/src/domain/pdf-export-policy.ts
+var PdfExportPolicy = class {
+  name(sourceName, date) {
+    const clipped = sourceName.slice(0, 187);
+    const title = clipped.includes(date) ? clipped : `${date} - ${clipped}`;
+    return `${title.slice(0, 200)}.pdf`;
+  }
+  matches(snapshot, observed) {
+    return Boolean(
+      snapshot && observed && snapshot.name === observed.name && snapshot.fingerprint === observed.fingerprint
+    );
+  }
+  current(snapshot, sourceVersion, name) {
+    return snapshot?.contract === "pdf-v1" && snapshot.sourceVersion === sourceVersion && snapshot.name === name;
+  }
+  sameIdentity(left, right) {
+    return left.eventId === right.eventId && left.folderId === right.folderId && left.sourceId === right.sourceId && left.templateId === right.templateId;
+  }
+  recover(state, observed) {
+    if (!state) {
+      if (observed) throw new PdfExportError("recovery");
+      return void 0;
+    }
+    if (observed && observed.id !== state.fileId)
+      throw new PdfExportError("recovery");
+    if (state.pending && this.matches(state.pending, observed))
+      return state.pending;
+    if (state.confirmed && this.matches(state.confirmed, observed))
+      return state.confirmed;
+    if (state.confirmed || observed) throw new PdfExportError("conflict");
+    return void 0;
+  }
+};
+
 // packages/domain/publication/src/domain/presentation-file-url.ts
 var PresentationFileUrl = class {
   normalize(value) {
@@ -33119,6 +33272,12 @@ var ScheduledEventPolicy = class {
 
 // packages/domain/publication/src/dependency-composition.ts
 var PublicationDomainComposition = class {
+  pdfExportPolicy() {
+    return new PdfExportPolicy();
+  }
+  reconcileSlidePdf(...args) {
+    return new ReconcileSlidePdf(this.pdfExportPolicy(), ...args);
+  }
   assetFolderUrlPolicy(...args) {
     return new AssetFolderUrlPolicy(
       { publicationLinkEvaluation: this.publicationLinkEvaluation() },
@@ -33394,6 +33553,12 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.assets.pdf.source",
+  "publication.assets.pdf.source-pending",
+  "publication.assets.pdf.revision",
+  "publication.assets.pdf.conflict",
+  "publication.assets.pdf.recovery",
+  "publication.assets.pdf.limit",
   "publication.meetup.authentication",
   "publication.meetup.prerequisites",
   "publication.meetup.link",
@@ -33552,6 +33717,14 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
     ) ?? false;
   }
   static PREREQUISITES = /* @__PURE__ */ new Map([
+    [
+      "publication.assets.pdf.source-pending",
+      [
+        "publication.assets.content.",
+        "publication.assets.prerequisites",
+        "publication.assets.file."
+      ]
+    ],
     ["event.agenda.missing", ["event.proposals."]],
     ["publication.assets.prerequisites", ["event.", "referential.reference."]],
     [
@@ -34452,10 +34625,17 @@ var ManageMeetupAssets = class {
       input.identity,
       source
     );
+    return this.reconcile(
+      source,
+      evaluation,
+      evaluation.event.host.displayName
+    );
+  }
+  async reconcile(source, evaluation, hostName) {
     const assets = await this.dependencies.reconcileAssets.execute({
-      eventId: `${input.identity.repository}#${input.identity.issueNumber}`,
+      eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
       date: evaluation.event.date,
-      hostName: evaluation.event.host.displayName,
+      hostName,
       existingUrl: evaluation.event.publicationLinks.assets,
       mode: "fix",
       model: await this.dependencies.renderProjection?.create(
@@ -34464,15 +34644,34 @@ var ManageMeetupAssets = class {
       ),
       recovery: this.dependencies.recovery
     });
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      source.identity,
+      source
+    );
+    const slidesReady = Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
+    const pdf = await this.dependencies.reconcilePdf.execute({
+      eligible: this.collaborators.postEventPolicy.isDue({
+        eventDate: evaluation.event.date,
+        timeZone: evaluation.event.timeZone,
+        occurrenceStatus: evaluation.event.occurrenceStatus ?? "unknown",
+        now: new Date(this.dependencies.clock.now())
+      }),
+      sourceReady: slidesReady,
+      date: evaluation.event.date,
+      container: assets.container,
+      source: assets.presentation
+    });
     const persisted = await this.persistAsset(source, assets.container?.url);
     return {
       skipped: false,
       persisted,
-      slidesReady: Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only"),
+      slidesReady,
+      pdf,
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
-      diagnostics: assets.diagnostics.map((item) => ({
+      diagnostics: [...assets.diagnostics, ...pdf.diagnostics].map((item) => ({
         ...item,
         field: "publicationLinks.assets"
       }))
@@ -34480,6 +34679,7 @@ var ManageMeetupAssets = class {
   }
   skipped(diagnostics) {
     return {
+      pdf: { status: "not-applicable", updated: false, diagnostics: [] },
       skipped: true,
       persisted: false,
       slidesReady: false,
@@ -35434,6 +35634,7 @@ var JourneyComposition = class {
   manageMeetupAssets(...args) {
     return new ManageMeetupAssets(
       {
+        postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
         eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
         eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches()
       },
@@ -49142,6 +49343,34 @@ ${messages5.t("comment.resolved")}`;
 // packages/adapter/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.assets.pdf.source",
+    ["Slides & Content", "comment.guidance.pdf.source"]
+  ],
+  [
+    "publication.assets.pdf.source-pending",
+    ["Slides & Content", "comment.guidance.pdf.source-pending"]
+  ],
+  [
+    "publication.assets.pdf.revision",
+    ["Slides & Content", "comment.guidance.pdf.revision"]
+  ],
+  [
+    "publication.assets.pdf.conflict",
+    ["Slides & Content", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.recovery",
+    ["Slides & Content", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.limit",
+    ["Slides & Content", "comment.guidance.pdf.limit"]
+  ],
+  [
+    "publication.assets.pdf.invalid",
+    ["Slides & Content", "comment.guidance.pdf.invalid"]
+  ],
+  [
     "communication.checklist-concurrently-modified",
     ["Communication", "comment.guidance.communication.concurrent-checklist"]
   ],
@@ -50058,7 +50287,13 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
   "comment.guidance.assets.revision": "The document changed. Retry after editing.",
   "comment.guidance.assets.image": "Use a public HTTPS PNG, JPEG or GIF image under 50 MB and 25 megapixels.",
-  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo."
+  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
+  "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
+  "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
+  "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
+  "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
+  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
+  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying."
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/stage-messages.fr.ts
@@ -50094,7 +50329,13 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
   "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
   "comment.guidance.assets.image": "Utilisez une image PNG, JPEG ou GIF publique en HTTPS, de moins de 50 Mo et 25 m\xE9gapixels.",
-  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te."
+  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
+  "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
+  "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
+  "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
+  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 10 Mo.",
+  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer."
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
@@ -65815,6 +66056,7 @@ var EN_MESSAGES7 = {
   "report.events.issues": "issues={issues}",
   "report.events.empty": "active_events=0",
   "report.assets.skipped": "assets=skipped",
+  "report.assets.pdf": "pdf={status}; updated={updated}",
   "report.assets.completed": "assets=completed",
   "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
   "report.communication.mode": "communication_mode={mode}",
@@ -65920,6 +66162,7 @@ var FR_MESSAGES7 = {
   "report.events.issues": "issues={issues}",
   "report.events.empty": "active_events=0",
   "report.assets.skipped": "assets=skipped",
+  "report.assets.pdf": "pdf={status}; updated={updated}",
   "report.assets.completed": "assets=completed",
   "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
   "report.communication.mode": "communication_mode={mode}",

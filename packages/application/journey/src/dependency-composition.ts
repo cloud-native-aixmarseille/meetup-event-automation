@@ -97,6 +97,7 @@ export class JourneyComposition {
 	manageMeetupAssets(...args: ManageMeetupAssetsArguments): ManageMeetupAssets {
 		return new ManageMeetupAssets(
 			{
+				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 				eventRepositoryPatches:

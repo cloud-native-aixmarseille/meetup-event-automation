@@ -15,6 +15,18 @@ describe("organizer diagnostic presentation", () => {
 	it.each([
 		[
 			"en",
+			"publication.assets.pdf.conflict",
+			"Slides & Content",
+			"shared public folder",
+		],
+		[
+			"fr",
+			"publication.assets.pdf.conflict",
+			"Slides & Content",
+			"dossier public partagé",
+		],
+		[
+			"en",
 			"communication.missing-mail-destination",
 			"Communication",
 			"Add an email address",

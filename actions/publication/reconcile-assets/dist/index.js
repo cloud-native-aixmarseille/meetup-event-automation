@@ -9448,7 +9448,7 @@ var require_readable = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/api/readable.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable: Readable2 } = __require("node:stream");
+    var { Readable: Readable4 } = __require("node:stream");
     var { RequestAbortedError, NotSupportedError, InvalidArgumentError, AbortError: AbortError2 } = require_errors();
     var util = require_util();
     var { ReadableStreamFrom } = require_util();
@@ -9460,7 +9460,7 @@ var require_readable = __commonJS({
     var kContentLength = /* @__PURE__ */ Symbol("kContentLength");
     var noop4 = () => {
     };
-    var BodyReadable = class extends Readable2 {
+    var BodyReadable = class extends Readable4 {
       constructor({
         resume,
         abort,
@@ -9802,7 +9802,7 @@ var require_api_request = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/api/api-request.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable: Readable2 } = require_readable();
+    var { Readable: Readable4 } = require_readable();
     var { InvalidArgumentError, RequestAbortedError } = require_errors();
     var util = require_util();
     var { getResolveErrorBodyCallback } = require_util3();
@@ -9897,7 +9897,7 @@ var require_api_request = __commonJS({
         const parsedHeaders = responseHeaders === "raw" ? util.parseHeaders(rawHeaders) : headers;
         const contentType = parsedHeaders["content-type"];
         const contentLength = parsedHeaders["content-length"];
-        const res = new Readable2({
+        const res = new Readable4({
           resume,
           abort,
           contentType,
@@ -10212,7 +10212,7 @@ var require_api_pipeline = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/api/api-pipeline.js"(exports, module) {
     "use strict";
     var {
-      Readable: Readable2,
+      Readable: Readable4,
       Duplex,
       PassThrough: PassThrough3
     } = __require("node:stream");
@@ -10226,7 +10226,7 @@ var require_api_pipeline = __commonJS({
     var { addSignal, removeSignal } = require_abort_signal();
     var assert = __require("node:assert");
     var kResume = /* @__PURE__ */ Symbol("resume");
-    var PipelineRequest = class extends Readable2 {
+    var PipelineRequest = class extends Readable4 {
       constructor() {
         super({ autoDestroy: true });
         this[kResume] = null;
@@ -10243,7 +10243,7 @@ var require_api_pipeline = __commonJS({
         callback(err);
       }
     };
-    var PipelineResponse = class extends Readable2 {
+    var PipelineResponse = class extends Readable4 {
       constructor(resume) {
         super({ autoDestroy: true });
         this[kResume] = resume;
@@ -13568,7 +13568,7 @@ var require_fetch = __commonJS({
       subresourceSet
     } = require_constants3();
     var EE = __require("node:events");
-    var { Readable: Readable2, pipeline: pipeline2, finished } = __require("node:stream");
+    var { Readable: Readable4, pipeline: pipeline2, finished } = __require("node:stream");
     var { addAbortListener, isErrored, isReadable, bufferToLowerCasedHeaderName } = require_util();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
     var { getGlobalDispatcher } = require_global2();
@@ -14469,7 +14469,7 @@ var require_fetch = __commonJS({
                 headersList.append(bufferToLowerCasedHeaderName(rawHeaders[i2]), rawHeaders[i2 + 1].toString("latin1"), true);
               }
               location = headersList.get("location", true);
-              this.body = new Readable2({ read: resume });
+              this.body = new Readable4({ read: resume });
               const decoders = [];
               const willFollow = location && request3.redirect === "follow" && redirectStatusSet.has(status);
               if (request3.method !== "HEAD" && request3.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
@@ -59879,6 +59879,7 @@ var ReconcileEventAssets = class {
   async reconcileFiles(container, templates, input, diagnostics) {
     const currentFiles = await this.repository.listFiles(container.id);
     const files = {};
+    let presentation;
     const content = {};
     const reconcile = this.collaborators.createReconcileAssetFile(
       this.repository,
@@ -59893,9 +59894,11 @@ var ReconcileEventAssets = class {
         diagnostics
       });
       if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+      if (template.kind === "slides" && result.file)
+        presentation = { ...result.file, templateId: template.id };
       content[template.kind] = result.status;
     }
-    return { container, files, content, diagnostics };
+    return { container, files, content, diagnostics, presentation };
   }
   diagnostic(code, message, fixApplied) {
     return {
@@ -59920,6 +59923,122 @@ var ReconcileEventAssets = class {
         "Asset templates must have unique IDs, unique kinds, and non-empty names"
       );
     }
+  }
+};
+
+// packages/domain/publication/src/domain/pdf-export-error.ts
+var PdfExportError = class extends Error {
+  constructor(code) {
+    super(`PDF export could not complete: ${code}`);
+    this.code = code;
+    this.name = "PdfExportError";
+  }
+  code;
+};
+
+// packages/domain/publication/src/application/reconcile-slide-pdf.ts
+var ReconcileSlidePdf = class {
+  constructor(policy, source, files, states) {
+    this.policy = policy;
+    this.source = source;
+    this.files = files;
+    this.states = states;
+  }
+  policy;
+  source;
+  files;
+  states;
+  async execute(input) {
+    if (!input.eligible)
+      return { status: "not-applicable", updated: false, diagnostics: [] };
+    if (!input.sourceReady) return this.failure("source-pending");
+    if (!input.container || !input.source?.templateId)
+      return this.failure("source");
+    const identity = {
+      eventId: input.container.eventId,
+      folderId: input.container.id,
+      sourceId: input.source.id,
+      templateId: input.source.templateId
+    };
+    try {
+      return await this.reconcile(
+        identity,
+        this.policy.name(input.source.name, input.date)
+      );
+    } catch (error2) {
+      if (!(error2 instanceof PdfExportError)) throw error2;
+      return this.failure(error2.code);
+    }
+  }
+  async reconcile(identity, name) {
+    const state = await this.states.load(identity);
+    const observed = await this.files.find(identity, state?.fileId);
+    const confirmed = this.policy.recover(state, observed);
+    if (state?.pending && confirmed === state.pending) {
+      await this.states.save({ identity, fileId: state.fileId, confirmed });
+    }
+    const sourceVersion = await this.source.observe(identity);
+    if (observed && this.policy.current(confirmed, sourceVersion, name)) {
+      if (state?.pending && confirmed !== state.pending)
+        await this.states.save({ identity, fileId: state.fileId, confirmed });
+      const updated = await this.files.placeInPublicFolder(identity, observed);
+      return { status: "ready", updated, diagnostics: [] };
+    }
+    const binary = await this.source.export(identity);
+    if (await this.source.observe(identity) !== sourceVersion)
+      throw new PdfExportError("revision");
+    const pending = {
+      sourceVersion,
+      contract: "pdf-v1",
+      name,
+      fingerprint: binary.fingerprint
+    };
+    const next = {
+      identity,
+      fileId: state?.fileId ?? await this.files.reserveId(),
+      confirmed,
+      pending
+    };
+    await this.states.save(next);
+    await this.files.write({
+      identity,
+      fileId: next.fileId,
+      snapshot: pending,
+      binary,
+      previous: observed
+    });
+    const uploaded = await this.confirm(
+      next,
+      await this.files.find(identity, next.fileId)
+    );
+    await this.files.placeInPublicFolder(identity, uploaded);
+    return { status: "ready", updated: true, diagnostics: [] };
+  }
+  async confirm(state, observed) {
+    if (observed?.id !== state.fileId || !this.policy.matches(state.pending, observed)) {
+      throw new PdfExportError("invalid");
+    }
+    await this.states.save({
+      identity: state.identity,
+      fileId: state.fileId,
+      confirmed: state.pending
+    });
+    return observed;
+  }
+  failure(code) {
+    return {
+      status: code === "conflict" ? "conflict" : code === "recovery" ? "recovery-required" : "pending",
+      updated: false,
+      diagnostics: [
+        {
+          code: `publication.assets.pdf.${code}`,
+          field: "assets",
+          severity: "warning",
+          message: "The presentation PDF could not be reconciled",
+          fixAvailable: false
+        }
+      ]
+    };
   }
 };
 
@@ -60914,6 +61033,40 @@ var PublicationDiagnostics = class {
   }
 };
 
+// packages/domain/publication/src/domain/pdf-export-policy.ts
+var PdfExportPolicy = class {
+  name(sourceName, date) {
+    const clipped = sourceName.slice(0, 187);
+    const title = clipped.includes(date) ? clipped : `${date} - ${clipped}`;
+    return `${title.slice(0, 200)}.pdf`;
+  }
+  matches(snapshot, observed) {
+    return Boolean(
+      snapshot && observed && snapshot.name === observed.name && snapshot.fingerprint === observed.fingerprint
+    );
+  }
+  current(snapshot, sourceVersion, name) {
+    return snapshot?.contract === "pdf-v1" && snapshot.sourceVersion === sourceVersion && snapshot.name === name;
+  }
+  sameIdentity(left, right) {
+    return left.eventId === right.eventId && left.folderId === right.folderId && left.sourceId === right.sourceId && left.templateId === right.templateId;
+  }
+  recover(state, observed) {
+    if (!state) {
+      if (observed) throw new PdfExportError("recovery");
+      return void 0;
+    }
+    if (observed && observed.id !== state.fileId)
+      throw new PdfExportError("recovery");
+    if (state.pending && this.matches(state.pending, observed))
+      return state.pending;
+    if (state.confirmed && this.matches(state.confirmed, observed))
+      return state.confirmed;
+    if (state.confirmed || observed) throw new PdfExportError("conflict");
+    return void 0;
+  }
+};
+
 // packages/domain/publication/src/domain/presentation-file-url.ts
 var PresentationFileUrl = class {
   normalize(value) {
@@ -61097,6 +61250,12 @@ var ScheduledEventPolicy = class {
 
 // packages/domain/publication/src/dependency-composition.ts
 var PublicationDomainComposition = class {
+  pdfExportPolicy() {
+    return new PdfExportPolicy();
+  }
+  reconcileSlidePdf(...args) {
+    return new ReconcileSlidePdf(this.pdfExportPolicy(), ...args);
+  }
   assetFolderUrlPolicy(...args) {
     return new AssetFolderUrlPolicy(
       { publicationLinkEvaluation: this.publicationLinkEvaluation() },
@@ -61372,6 +61531,12 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.assets.pdf.source",
+  "publication.assets.pdf.source-pending",
+  "publication.assets.pdf.revision",
+  "publication.assets.pdf.conflict",
+  "publication.assets.pdf.recovery",
+  "publication.assets.pdf.limit",
   "publication.meetup.authentication",
   "publication.meetup.prerequisites",
   "publication.meetup.link",
@@ -61530,6 +61695,14 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
     ) ?? false;
   }
   static PREREQUISITES = /* @__PURE__ */ new Map([
+    [
+      "publication.assets.pdf.source-pending",
+      [
+        "publication.assets.content.",
+        "publication.assets.prerequisites",
+        "publication.assets.file."
+      ]
+    ],
     ["event.agenda.missing", ["event.proposals."]],
     ["publication.assets.prerequisites", ["event.", "referential.reference."]],
     [
@@ -62430,10 +62603,17 @@ var ManageMeetupAssets = class {
       input.identity,
       source
     );
+    return this.reconcile(
+      source,
+      evaluation,
+      evaluation.event.host.displayName
+    );
+  }
+  async reconcile(source, evaluation, hostName) {
     const assets = await this.dependencies.reconcileAssets.execute({
-      eventId: `${input.identity.repository}#${input.identity.issueNumber}`,
+      eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
       date: evaluation.event.date,
-      hostName: evaluation.event.host.displayName,
+      hostName,
       existingUrl: evaluation.event.publicationLinks.assets,
       mode: "fix",
       model: await this.dependencies.renderProjection?.create(
@@ -62442,15 +62622,34 @@ var ManageMeetupAssets = class {
       ),
       recovery: this.dependencies.recovery
     });
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      source.identity,
+      source
+    );
+    const slidesReady = Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
+    const pdf = await this.dependencies.reconcilePdf.execute({
+      eligible: this.collaborators.postEventPolicy.isDue({
+        eventDate: evaluation.event.date,
+        timeZone: evaluation.event.timeZone,
+        occurrenceStatus: evaluation.event.occurrenceStatus ?? "unknown",
+        now: new Date(this.dependencies.clock.now())
+      }),
+      sourceReady: slidesReady,
+      date: evaluation.event.date,
+      container: assets.container,
+      source: assets.presentation
+    });
     const persisted = await this.persistAsset(source, assets.container?.url);
     return {
       skipped: false,
       persisted,
-      slidesReady: Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only"),
+      slidesReady,
+      pdf,
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
-      diagnostics: assets.diagnostics.map((item) => ({
+      diagnostics: [...assets.diagnostics, ...pdf.diagnostics].map((item) => ({
         ...item,
         field: "publicationLinks.assets"
       }))
@@ -62458,6 +62657,7 @@ var ManageMeetupAssets = class {
   }
   skipped(diagnostics) {
     return {
+      pdf: { status: "not-applicable", updated: false, diagnostics: [] },
       skipped: true,
       persisted: false,
       slidesReady: false,
@@ -63412,6 +63612,7 @@ var JourneyComposition = class {
   manageMeetupAssets(...args) {
     return new ManageMeetupAssets(
       {
+        postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
         eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
         eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches()
       },
@@ -68200,6 +68401,7 @@ var EN_MESSAGES2 = {
   "report.events.issues": "issues={issues}",
   "report.events.empty": "active_events=0",
   "report.assets.skipped": "assets=skipped",
+  "report.assets.pdf": "pdf={status}; updated={updated}",
   "report.assets.completed": "assets=completed",
   "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
   "report.communication.mode": "communication_mode={mode}",
@@ -68305,6 +68507,7 @@ var FR_MESSAGES2 = {
   "report.events.issues": "issues={issues}",
   "report.events.empty": "active_events=0",
   "report.assets.skipped": "assets=skipped",
+  "report.assets.pdf": "pdf={status}; updated={updated}",
   "report.assets.completed": "assets=completed",
   "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
   "report.communication.mode": "communication_mode={mode}",
@@ -72875,15 +73078,15 @@ var PublicationAction = class {
       owner,
       repo,
       credentials,
-      parentFolderId: getInput("google-drive-meetup-folder-id", {
+      parentFolderId: getInput("google-drive-folder-id", {
         required: true
       }),
-      templateFolderId: getInput(
-        "google-drive-meetup-template-folder-id",
-        {
-          required: true
-        }
-      )
+      publicFolderId: getInput("google-drive-public-folder-id", {
+        required: true
+      }),
+      templateFolderId: getInput("google-drive-template-folder-id", {
+        required: true
+      })
     });
     const outcome = await journey.execute({
       identity: { repository: `${owner}/${repo}`, issueNumber }
@@ -72897,6 +73100,10 @@ var PublicationAction = class {
       details: [
         messages3.t("report.event.context", { issue: issueNumber, mode: "fix" }),
         outcome.skipped ? messages3.t("report.assets.skipped") : messages3.t("report.assets.completed"),
+        messages3.t("report.assets.pdf", {
+          status: outcome.pdf.status,
+          updated: String(outcome.pdf.updated)
+        }),
         messages3.t("report.assets.counts", {
           persisted: String(outcome.persisted),
           count: Object.keys(outcome.files).length
@@ -73439,7 +73646,9 @@ var GoogleDriveAssetRepository = class {
   async listFiles(containerId) {
     return (await this.list(
       `'${this.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
-    )).filter((file) => !file.appProperties?.meetup_binding_file).map(
+    )).filter(
+      (file) => !file.appProperties?.meetup_binding_file && !file.appProperties?.meetup_pdf_source && !file.appProperties?.meetup_pdf_state
+    ).map(
       this.collaborators.driveAssetMetadata.assetFile.bind(
         this.collaborators.driveAssetMetadata
       )
@@ -73699,6 +73908,554 @@ var GoogleDriveAssetRepositoryComposition = class {
   }
   googleDriveManifestRepository(...args) {
     return new GoogleDriveManifestRepository(...args);
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/drive-bounded-stream.ts
+var DriveBoundedStream = class {
+  async read(stream, limit) {
+    const chunks = [];
+    let size = 0;
+    try {
+      for await (const chunk of stream) {
+        if (!(chunk instanceof Uint8Array)) throw new PdfExportError("invalid");
+        size += chunk.byteLength;
+        if (size > limit) throw new PdfExportError("limit");
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } finally {
+      stream.destroy();
+    }
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/drive-pdf-binary.ts
+var DrivePdfBinary = class {
+  constructor(stream, fingerprint) {
+    this.stream = stream;
+    this.fingerprint = fingerprint;
+  }
+  stream;
+  fingerprint;
+  async read(content, mimeType) {
+    if (typeof mimeType !== "string" || mimeType.split(";", 1)[0]?.trim().toLowerCase() !== "application/pdf") {
+      content.destroy();
+      throw new PdfExportError("invalid");
+    }
+    const bytes = await this.stream.read(content, 1e7);
+    if (!/^%PDF-\d\.\d\b/.test(bytes.subarray(0, 16).toString("ascii")) || !/%%EOF\s*$/.test(bytes.subarray(-1024).toString("ascii"))) {
+      throw new PdfExportError("invalid");
+    }
+    return { bytes, fingerprint: this.fingerprint.of(bytes) };
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/drive-pdf-lookup.ts
+var exportFields = "id,name,description,mimeType,parents,trashed,version,appProperties";
+var DrivePdfLookup = class {
+  constructor(client, metadata, folders) {
+    this.client = client;
+    this.metadata = metadata;
+    this.folders = folders;
+  }
+  client;
+  metadata;
+  folders;
+  async find(identity, kind, expectedId) {
+    this.metadata.validateIdentity(identity);
+    const publicFolderId = kind === "pdf" ? await this.folders.resolve(identity) : void 0;
+    const parents = publicFolderId ? `('${identity.folderId}' in parents or '${publicFolderId}' in parents)` : `'${identity.folderId}' in parents`;
+    const { data } = await this.client.files.list(
+      {
+        q: `${parents} and trashed=false and appProperties has { key='${this.metadata.marker(kind)}' and value='${identity.sourceId}' }`,
+        fields: `nextPageToken,incompleteSearch,files(${exportFields})`,
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.files !== void 0 && !Array.isArray(data.files) || data.incompleteSearch || data.nextPageToken)
+      throw new Error("Google Drive PDF search is incomplete");
+    if ((data.files?.length ?? 0) > 1) throw new PdfExportError("recovery");
+    const file = data.files?.[0] ?? (expectedId ? await this.get(expectedId) : void 0);
+    if (!file) return void 0;
+    const result = this.metadata.file(file, identity, kind, publicFolderId);
+    if (expectedId && result.id !== expectedId)
+      throw new PdfExportError("recovery");
+    return result;
+  }
+  async get(fileId) {
+    if (!/^[\w-]{1,120}$/.test(fileId)) throw new PdfExportError("recovery");
+    try {
+      const { data } = await this.client.files.get(
+        { fileId, fields: exportFields, supportsAllDrives: true },
+        requestOptions
+      );
+      return data;
+    } catch (error2) {
+      if (error2 && typeof error2 === "object" && "response" in error2) {
+        const response = error2.response;
+        if (response && typeof response === "object" && "status" in response && response.status === 404)
+          return void 0;
+      }
+      throw error2;
+    }
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/drive-pdf-metadata.ts
+var DrivePdfMetadata = class {
+  validateIdentity(identity) {
+    if (![identity.folderId, identity.sourceId, identity.templateId].every(
+      (id) => /^[\w-]{1,120}$/.test(id)
+    ) || !identity.eventId || identity.eventId.length > 512) {
+      throw new PdfExportError("recovery");
+    }
+  }
+  marker(kind) {
+    return kind === "pdf" ? "meetup_pdf_source" : "meetup_pdf_state";
+  }
+  properties(identity, kind) {
+    return {
+      [this.marker(kind)]: identity.sourceId,
+      meetup_pdf_template: identity.templateId,
+      meetup_pdf_contract: "pdf-v1"
+    };
+  }
+  file(file, identity, kind, publicFolderId) {
+    const properties = this.properties(identity, kind);
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name.trim() || typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version) || file.trashed || !Array.isArray(file.parents) || file.parents.length !== 1 || !(file.parents[0] === identity.folderId || kind === "pdf" && publicFolderId && file.parents[0] === publicFolderId) || file.mimeType !== (kind === "pdf" ? "application/pdf" : "application/json")) {
+      throw new PdfExportError("recovery");
+    }
+    if (file.description !== identity.eventId || file.appProperties?.template_file_id || Object.entries(properties).some(
+      ([key, value]) => file.appProperties?.[key] !== value
+    )) {
+      throw new PdfExportError("recovery");
+    }
+    return {
+      id: file.id,
+      name: file.name,
+      version: file.version,
+      folderId: file.parents[0]
+    };
+  }
+  source(file, identity) {
+    if (file.id !== identity.sourceId || file.trashed || !Array.isArray(file.parents) || !file.parents.includes(identity.folderId) || file.mimeType !== "application/vnd.google-apps.presentation" || file.appProperties?.template_file_id !== identity.templateId || file.appProperties?.template_kind !== "slides") {
+      throw new PdfExportError("source");
+    }
+    if (typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version))
+      throw new PdfExportError("invalid");
+    return file.version;
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/drive-pdf-state-codec.ts
+var DrivePdfStateCodec = class {
+  constructor(metadata, policy) {
+    this.metadata = metadata;
+    this.policy = policy;
+  }
+  metadata;
+  policy;
+  decode(value, identity) {
+    if (!this.record(value) || value.version !== 1 || !this.record(value.identity))
+      throw new PdfExportError("recovery");
+    const storedIdentity = this.identity(value.identity);
+    this.metadata.validateIdentity(storedIdentity);
+    if (!this.policy.sameIdentity(storedIdentity, identity) || typeof value.fileId !== "string" || !/^[\w-]{1,120}$/.test(value.fileId))
+      throw new PdfExportError("recovery");
+    if ([identity.sourceId, identity.templateId, identity.folderId].includes(
+      value.fileId
+    ))
+      throw new PdfExportError("recovery");
+    const confirmed = value.confirmed === void 0 ? void 0 : this.snapshot(value.confirmed);
+    const pending = value.pending === void 0 ? void 0 : this.snapshot(value.pending);
+    if (!confirmed && !pending) throw new PdfExportError("recovery");
+    return {
+      identity: storedIdentity,
+      fileId: value.fileId,
+      confirmed,
+      pending
+    };
+  }
+  encode(state) {
+    const normalized = this.decode({ ...state, version: 1 }, state.identity);
+    return JSON.stringify({ version: 1, ...normalized });
+  }
+  identity(value) {
+    if (typeof value.eventId !== "string" || typeof value.folderId !== "string" || typeof value.sourceId !== "string" || typeof value.templateId !== "string")
+      throw new PdfExportError("recovery");
+    return {
+      eventId: value.eventId,
+      folderId: value.folderId,
+      sourceId: value.sourceId,
+      templateId: value.templateId
+    };
+  }
+  snapshot(value) {
+    if (!this.record(value) || value.contract !== "pdf-v1" || typeof value.sourceVersion !== "string" || !/^\d{1,120}$/.test(value.sourceVersion))
+      throw new PdfExportError("recovery");
+    if (typeof value.name !== "string" || !value.name.trim() || value.name.length > 204 || typeof value.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(value.fingerprint))
+      throw new PdfExportError("recovery");
+    return {
+      sourceVersion: value.sourceVersion,
+      contract: value.contract,
+      name: value.name,
+      fingerprint: value.fingerprint
+    };
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-pdf-repository.ts
+import { Readable as Readable2 } from "node:stream";
+var GoogleDrivePdfRepository = class {
+  constructor(client, lookup2, metadata, binary, folders) {
+    this.client = client;
+    this.lookup = lookup2;
+    this.metadata = metadata;
+    this.binary = binary;
+    this.folders = folders;
+  }
+  client;
+  lookup;
+  metadata;
+  binary;
+  folders;
+  async find(identity, expectedId) {
+    const file = await this.lookup.find(identity, "pdf", expectedId);
+    if (!file) return void 0;
+    try {
+      const response = await this.client.files.get(
+        { fileId: file.id, alt: "media", supportsAllDrives: true },
+        {
+          ...requestOptions,
+          responseType: "stream",
+          signal: AbortSignal.timeout(3e4)
+        }
+      );
+      const binary = await this.binary.read(
+        response.data,
+        response.headers["content-type"]
+      );
+      const current = await this.lookup.get(file.id);
+      if (!current || this.metadata.file(current, identity, "pdf", file.folderId).version !== file.version)
+        throw new PdfExportError("conflict");
+      return { ...file, fingerprint: binary.fingerprint };
+    } catch (error2) {
+      if (error2 instanceof PdfExportError && ["invalid", "limit"].includes(error2.code))
+        throw new PdfExportError("conflict");
+      throw error2;
+    }
+  }
+  async placeInPublicFolder(identity, expected) {
+    const folderId = await this.folders.resolve(identity);
+    const current = await this.find(identity, expected.id);
+    if (!current || current.version !== expected.version || current.fingerprint !== expected.fingerprint || current.name !== expected.name)
+      throw new PdfExportError("conflict");
+    if (current.folderId === folderId) return false;
+    await this.client.files.update(
+      {
+        fileId: expected.id,
+        addParents: folderId,
+        removeParents: identity.folderId,
+        supportsAllDrives: true
+      },
+      requestOptions
+    );
+    const moved = await this.find(identity, expected.id);
+    if (!moved || moved.folderId !== folderId || moved.name !== expected.name || moved.fingerprint !== expected.fingerprint)
+      throw new PdfExportError("invalid");
+    return true;
+  }
+  async reserveId() {
+    const { data } = await this.client.files.generateIds(
+      { count: 1, space: "drive", type: "files" },
+      requestOptions
+    );
+    const id = data.ids?.[0];
+    if (data.ids?.length !== 1 || !id || !/^[\w-]{1,120}$/.test(id))
+      throw new PdfExportError("invalid");
+    return id;
+  }
+  async write(input) {
+    const current = await this.find(input.identity, input.fileId);
+    if (current?.version !== input.previous?.version || current?.fingerprint !== input.previous?.fingerprint)
+      throw new PdfExportError("conflict");
+    const requestBody = {
+      name: input.snapshot.name,
+      description: input.identity.eventId,
+      mimeType: "application/pdf",
+      appProperties: this.metadata.properties(input.identity, "pdf")
+    };
+    const media = {
+      mimeType: "application/pdf",
+      body: Readable2.from([input.binary.bytes])
+    };
+    if (current) {
+      await this.client.files.update(
+        { fileId: input.fileId, requestBody, media, supportsAllDrives: true },
+        requestOptions
+      );
+    } else {
+      await this.client.files.create(
+        {
+          requestBody: {
+            ...requestBody,
+            id: input.fileId,
+            parents: [input.identity.folderId]
+          },
+          media,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+    }
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-pdf-source.ts
+var GoogleDrivePdfSource = class {
+  constructor(client, lookup2, metadata, binary, stream) {
+    this.client = client;
+    this.lookup = lookup2;
+    this.metadata = metadata;
+    this.binary = binary;
+    this.stream = stream;
+  }
+  client;
+  lookup;
+  metadata;
+  binary;
+  stream;
+  async observe(identity) {
+    this.metadata.validateIdentity(identity);
+    const file = await this.lookup.get(identity.sourceId);
+    if (!file) throw new PdfExportError("source");
+    return this.metadata.source(file, identity);
+  }
+  async export(identity) {
+    this.metadata.validateIdentity(identity);
+    const response = await this.client.files.export(
+      { fileId: identity.sourceId, mimeType: "application/pdf" },
+      {
+        ...requestOptions,
+        responseType: "stream",
+        signal: AbortSignal.timeout(3e4),
+        // Read errors ourselves so the SDK cannot buffer an unbounded error body.
+        validateStatus: () => true
+      }
+    );
+    if (response.status !== 200) await this.rejectResponse(response.data);
+    return this.binary.read(response.data, response.headers["content-type"]);
+  }
+  async rejectResponse(content) {
+    let value;
+    try {
+      const bytes = await this.stream.read(content, 65536);
+      value = JSON.parse(bytes.toString("utf8"));
+    } catch {
+      throw new PdfExportError("invalid");
+    }
+    if (this.sizeFailure(value)) throw new PdfExportError("limit");
+    throw new Error("Google Drive PDF export request failed");
+  }
+  sizeFailure(value) {
+    if (!value || typeof value !== "object" || !("error" in value))
+      return false;
+    const details = value.error;
+    if (!details || typeof details !== "object" || !("errors" in details) || !Array.isArray(details.errors))
+      return false;
+    return details.errors.some(
+      (item) => item && typeof item === "object" && item.reason === "exportSizeLimitExceeded"
+    );
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-pdf-state-repository.ts
+import { Readable as Readable3 } from "node:stream";
+var GoogleDrivePdfStateRepository = class {
+  constructor(client, lookup2, metadata, stream, codec) {
+    this.client = client;
+    this.lookup = lookup2;
+    this.metadata = metadata;
+    this.stream = stream;
+    this.codec = codec;
+  }
+  client;
+  lookup;
+  metadata;
+  stream;
+  codec;
+  loaded = /* @__PURE__ */ new Map();
+  async load(identity) {
+    const file = await this.lookup.find(identity, "state");
+    this.loaded.set(identity.sourceId, file);
+    if (!file) return void 0;
+    const response = await this.client.files.get(
+      { fileId: file.id, alt: "media", supportsAllDrives: true },
+      {
+        ...requestOptions,
+        responseType: "stream",
+        signal: AbortSignal.timeout(3e4)
+      }
+    );
+    let value;
+    try {
+      const bytes = await this.stream.read(response.data, 65536);
+      value = JSON.parse(bytes.toString("utf8"));
+    } catch (error2) {
+      if (error2 instanceof SyntaxError || error2 instanceof PdfExportError)
+        throw new PdfExportError("recovery");
+      throw error2;
+    }
+    const current = await this.lookup.get(file.id);
+    if (!current || this.metadata.file(current, identity, "state").version !== file.version)
+      throw new PdfExportError("recovery");
+    return this.codec.decode(value, identity);
+  }
+  async save(state) {
+    const json = this.codec.encode(state);
+    const prior = this.loaded.get(state.identity.sourceId);
+    if (!this.loaded.has(state.identity.sourceId))
+      throw new PdfExportError("recovery");
+    const current = await this.lookup.find(state.identity, "state", prior?.id);
+    if (current?.id !== prior?.id || current?.version !== prior?.version)
+      throw new PdfExportError("recovery");
+    const media = { mimeType: "application/json", body: Readable3.from([json]) };
+    const options = {
+      supportsAllDrives: true,
+      fields: "id,name,description,parents,mimeType,trashed,version,appProperties",
+      media
+    };
+    const response = current ? await this.client.files.update(
+      { ...options, fileId: current.id },
+      requestOptions
+    ) : await this.client.files.create(
+      {
+        ...options,
+        requestBody: {
+          name: `.${state.identity.sourceId}.pdf-export.json`,
+          description: state.identity.eventId,
+          mimeType: "application/json",
+          parents: [state.identity.folderId],
+          appProperties: this.metadata.properties(state.identity, "state")
+        }
+      },
+      requestOptions
+    );
+    this.acceptWrite(response.data, state.identity, current?.id);
+  }
+  acceptWrite(file, identity, previousId) {
+    try {
+      const saved = this.metadata.file(file, identity, "state");
+      if (previousId && saved.id !== previousId)
+        throw new PdfExportError("invalid");
+      this.loaded.set(identity.sourceId, saved);
+    } catch (error2) {
+      if (error2 instanceof PdfExportError) throw new PdfExportError("invalid");
+      throw error2;
+    }
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-public-folder.ts
+var folderFields = "id,name,mimeType,parents,trashed";
+var GoogleDrivePublicFolder = class {
+  constructor(client, metadata, folderId) {
+    this.client = client;
+    this.metadata = metadata;
+    this.folderId = folderId;
+  }
+  client;
+  metadata;
+  folderId;
+  async resolve(identity) {
+    this.metadata.validateIdentity(identity);
+    if (!/^[\w-]{1,120}$/.test(this.folderId) || [identity.folderId, identity.sourceId, identity.templateId].includes(
+      this.folderId
+    ))
+      throw new PdfExportError("recovery");
+    const { data } = await this.client.files.get(
+      {
+        fileId: this.folderId,
+        fields: folderFields,
+        supportsAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.id !== this.folderId || data.name !== "public" || data.mimeType !== folderMimeType || data.trashed)
+      throw new PdfExportError("recovery");
+    return this.folderId;
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/pdf-export-composition.ts
+var GoogleDrivePdfComposition = class {
+  constructor(client, publicFolderId) {
+    this.client = client;
+    this.publicFolderId = publicFolderId;
+  }
+  client;
+  publicFolderId;
+  metadata() {
+    return new DrivePdfMetadata();
+  }
+  stream() {
+    return new DriveBoundedStream();
+  }
+  binary() {
+    return new DrivePdfBinary(
+      this.stream(),
+      new PublicationDomainComposition().contentFingerprint()
+    );
+  }
+  lookup() {
+    return new DrivePdfLookup(this.client, this.metadata(), this.folders());
+  }
+  folders() {
+    return new GoogleDrivePublicFolder(
+      this.client,
+      this.metadata(),
+      this.publicFolderId
+    );
+  }
+  codec() {
+    return new DrivePdfStateCodec(
+      this.metadata(),
+      new PublicationDomainComposition().pdfExportPolicy()
+    );
+  }
+  source() {
+    return new GoogleDrivePdfSource(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.binary(),
+      this.stream()
+    );
+  }
+  repository() {
+    return new GoogleDrivePdfRepository(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.binary(),
+      this.folders()
+    );
+  }
+  states() {
+    return new GoogleDrivePdfStateRepository(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.stream(),
+      this.codec()
+    );
   }
 };
 
@@ -77598,6 +78355,34 @@ ${messages3.t("comment.resolved")}`;
 // packages/adapter/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.assets.pdf.source",
+    ["Slides & Content", "comment.guidance.pdf.source"]
+  ],
+  [
+    "publication.assets.pdf.source-pending",
+    ["Slides & Content", "comment.guidance.pdf.source-pending"]
+  ],
+  [
+    "publication.assets.pdf.revision",
+    ["Slides & Content", "comment.guidance.pdf.revision"]
+  ],
+  [
+    "publication.assets.pdf.conflict",
+    ["Slides & Content", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.recovery",
+    ["Slides & Content", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.limit",
+    ["Slides & Content", "comment.guidance.pdf.limit"]
+  ],
+  [
+    "publication.assets.pdf.invalid",
+    ["Slides & Content", "comment.guidance.pdf.invalid"]
+  ],
+  [
     "communication.checklist-concurrently-modified",
     ["Communication", "comment.guidance.communication.concurrent-checklist"]
   ],
@@ -78514,7 +79299,13 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
   "comment.guidance.assets.revision": "The document changed. Retry after editing.",
   "comment.guidance.assets.image": "Use a public HTTPS PNG, JPEG or GIF image under 50 MB and 25 megapixels.",
-  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo."
+  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
+  "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
+  "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
+  "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
+  "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
+  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
+  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying."
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/stage-messages.fr.ts
@@ -78550,7 +79341,13 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
   "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
   "comment.guidance.assets.image": "Utilisez une image PNG, JPEG ou GIF publique en HTTPS, de moins de 50 Mo et 25 m\xE9gapixels.",
-  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te."
+  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
+  "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
+  "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
+  "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
+  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 10 Mo.",
+  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer."
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
@@ -94559,6 +95356,12 @@ var EventComposition = class _EventComposition {
 var ASSET_REPOSITORY = /* @__PURE__ */ Symbol("AssetRepository");
 var PublicationComposition = class _PublicationComposition {
   static createPublicationContainer(input) {
+    if ([input.parentFolderId, input.templateFolderId].includes(
+      input.publicFolderId
+    ))
+      throw new Error(
+        "The shared public folder must differ from the parent and template folders"
+      );
     const container = EventComposition.createEventContainer(input);
     container.bind(ASSET_REPOSITORY).toDynamicValue(
       () => new GoogleDriveAssetRepositoryComposition().googleDriveAssetRepositoryFactory().createGoogleDriveAssetRepository(input.credentials, {
@@ -94568,6 +95371,11 @@ var PublicationComposition = class _PublicationComposition {
       })
     );
     _PublicationComposition.bindContent(container, input.credentials);
+    _PublicationComposition.bindPdf(
+      container,
+      input.credentials,
+      input.publicFolderId
+    );
     container.bind(ReconcileEventAssets).toDynamicValue(
       (context3) => new PublicationDomainComposition().reconcileEventAssets(
         context3.get(ASSET_REPOSITORY),
@@ -94580,6 +95388,8 @@ var PublicationComposition = class _PublicationComposition {
   static bindManageAssets(container, input) {
     container.bind(ManageMeetupAssets).toDynamicValue(
       (context3) => new JourneyComposition().manageMeetupAssets({
+        clock: context3.get(SERVICES.eventClock),
+        reconcilePdf: context3.get(ReconcileSlidePdf),
         renderProjection: new JourneyComposition().assetRenderProjection(
           new GithubActionsComposition().assetRenderPresenterImpl(
             new GithubActionsComposition().assetMessages(input.locale)
@@ -94612,6 +95422,19 @@ var PublicationComposition = class _PublicationComposition {
         reconcileAssets: context3.get(ReconcileEventAssets)
       })
     );
+  }
+  static bindPdf(container, credentials, publicFolderId) {
+    container.bind(ReconcileSlidePdf).toDynamicValue(() => {
+      const adapter = new GoogleDrivePdfComposition(
+        new GoogleDriveAssetRepositoryComposition().googleDriveAssetRepositoryFactory().client(credentials),
+        publicFolderId
+      );
+      return new PublicationDomainComposition().reconcileSlidePdf(
+        adapter.source(),
+        adapter.repository(),
+        adapter.states()
+      );
+    });
   }
   static bindContent(container, credentials) {
     container.bind(ReconcileAssetContent).toDynamicValue(() => {

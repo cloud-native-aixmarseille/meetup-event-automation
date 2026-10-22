@@ -43,6 +43,7 @@ const parameters = {
 	"report.events.issues": {
 		issues: "42, 43",
 	},
+	"report.assets.pdf": { status: "ready", updated: "true" },
 	"report.assets.counts": {
 		persisted: "false",
 		count: 2,
