@@ -61,9 +61,17 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.14"
+      - name: Check solver dependency lock
+        working-directory: packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
+        run: |
+          python -m venv .venv-lock
+          .venv-lock/bin/python -m pip install --disable-pip-version-check -r requirements-dev.txt
+          .venv-lock/bin/pip-compile --strip-extras requirements.in
+          git diff --exit-code -- requirements.txt
       - name: Install solver dependencies and test
         working-directory: packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt
+          .venv/bin/python -m pip check
           .venv/bin/python -m unittest discover -p '*_test.py'

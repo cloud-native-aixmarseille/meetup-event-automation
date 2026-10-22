@@ -130,10 +130,34 @@ With Python 3.14, run from
 ```sh
 python -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip check
 .venv/bin/python -m unittest discover -p '*_test.py'
 ```
 
-Shared CI runs these checks separately from the TypeScript suite. Adapter tests
+Direct dependencies live in
+[`requirements.in`](../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/requirements.in).
+[`requirements.txt`](../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/requirements.txt)
+is the generated runtime lockfile. Use a separate environment for the compiler,
+pinned in
+[`requirements-dev.txt`](../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/requirements-dev.txt):
+
+```sh
+python -m venv .venv-lock
+.venv-lock/bin/python -m pip install -r requirements-dev.txt
+.venv-lock/bin/pip-compile --strip-extras requirements.in
+```
+
+Edit direct pins in `requirements.in`, then compile and run the checks above.
+For a transitive update, pass `--upgrade-package PACKAGE` to `pip-compile`.
+The resolver honors upstream version bounds and preserves other compatible pins.
+Commit both the input and generated lockfile when direct dependencies change.
+Dependabot's `pip` integration recognizes the generated header and resolves
+updates with pip-compile. Do not edit transitive pins independently or bypass
+upstream dependency bounds.
+
+Shared CI checks lockfile freshness, installs the runtime dependencies in a clean
+environment, checks their compatibility, and runs the Python tests separately
+from the TypeScript suite. Adapter tests
 cover CAPTCHA inspection, verified responses, the shared attempt limit, solver
 deadlines, subprocess isolation, and cleanup. Meetup login tests inject the
 provider-neutral resolver to verify credential ordering and unresolved challenges.
