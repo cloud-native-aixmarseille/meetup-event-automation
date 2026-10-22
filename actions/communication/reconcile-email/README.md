@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Action: Reconcile meetup communications
+# GitHub Action: Reconcile meetup email
 
 <div align="center">
-  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile meetup communications" />
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile meetup email" />
 </div>
 
 ---
@@ -11,7 +11,7 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--communications-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-communications)
+[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--email-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-email)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
 [![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
@@ -22,7 +22,7 @@
 
 ## Overview
 
-Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Report concise technical facts and diagnostic codes in logs and the job summary.
+Reconcile due email batches, verified organizer approval, delivery records and checklist completion.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -30,7 +30,7 @@ Reconcile due meetup communications and dispatch them through the configured mai
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile-email@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.

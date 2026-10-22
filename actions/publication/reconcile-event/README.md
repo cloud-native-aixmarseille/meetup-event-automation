@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Action: Create or update Meetup event
+# GitHub Action: Reconcile event publication
 
 <div align="center">
-  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Create or update Meetup event" />
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile event publication" />
 </div>
 
 ---
@@ -11,7 +11,7 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Marketplace](https://img.shields.io/badge/Marketplace-create--or--update--meetup--event-blue?logo=github-actions)](https://github.com/marketplace/actions/create-or-update-meetup-event)
+[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--event--publication-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-event-publication)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
 [![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
@@ -22,7 +22,7 @@
 
 ## Overview
 
-Create or update a Meetup draft and publish it after verified organizer approval.
+Create or update an event draft and publish it after verified organizer approval.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -30,7 +30,7 @@ Create or update a Meetup draft and publish it after verified organizer approval
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-meetup@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-event@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.

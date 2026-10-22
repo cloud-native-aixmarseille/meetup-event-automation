@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Reusable Workflow: Synchronize Conference Hall speakers
+# GitHub Reusable Workflow: Reconcile speakers
 
 <div align="center">
-  <img src="../logo.svg" width="60px" align="center" alt="Synchronize Conference Hall speakers" />
+  <img src="../logo.svg" width="60px" align="center" alt="Reconcile speakers" />
 </div>
 
 ---
@@ -31,15 +31,15 @@
 ## Usage
 
 ```yaml
-name: Synchronize Conference Hall speakers
+name: Reconcile speakers
 on:
   push:
     branches:
       - main
 permissions: {}
 jobs:
-  synchronize-conference-hall-speakers:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/synchronize-conference-hall-speakers.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+  reconcile-speakers:
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-speakers.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
     permissions:
       contents: read
     secrets:

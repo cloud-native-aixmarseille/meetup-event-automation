@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Action: Reconcile meetup assets
+# GitHub Action: Reconcile meetup documents
 
 <div align="center">
-  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile meetup assets" />
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile meetup documents" />
 </div>
 
 ---
@@ -11,7 +11,7 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--assets-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-assets)
+[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--documents-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-documents)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
 [![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
@@ -22,7 +22,7 @@
 
 ## Overview
 
-Reconcile the event Drive folder, template copies, post-event presentation PDF, and issue asset link. Report concise technical facts and diagnostic codes in logs and the job summary.
+Reconcile managed Drive folders, template copies, document content and the issue asset link.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -30,7 +30,7 @@ Reconcile the event Drive folder, template copies, post-event presentation PDF, 
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-assets@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-documents@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
@@ -64,10 +64,6 @@ Reconcile the event Drive folder, template copies, post-event presentation PDF, 
     # This input is required.
     google-drive-folder-id: ""
 
-    # Google Drive ID of the shared public folder for generated PDFs.
-    # This input is required.
-    google-drive-public-folder-id: ""
-
     # Google Drive folder ID of the template folder.
     # This input is required.
     google-drive-template-folder-id: ""
@@ -96,7 +92,6 @@ Reconcile the event Drive folder, template copies, post-event presentation PDF, 
 | **`github-token`**                    | Token for the caller repository. Requires issues:read and issues:write.                                                            | **true**     | -           |
 | **`google-credentials`**              | Service-account JSON with access to the configured Drive parent, template and public folders.                                      | **true**     | -           |
 | **`google-drive-folder-id`**          | Google Drive folder ID of the parent asset folder.                                                                                 | **true**     | -           |
-| **`google-drive-public-folder-id`**   | Google Drive ID of the shared public folder for generated PDFs.                                                                    | **true**     | -           |
 | **`google-drive-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |
 | **`conference-hall-event`**           | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`**         | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
@@ -108,11 +103,12 @@ Reconcile the event Drive folder, template copies, post-event presentation PDF, 
 
 ## Outputs
 
-| **Output**         | **Description**                                                                     |
-| ------------------ | ----------------------------------------------------------------------------------- |
-| **`drive-files`**  | JSON map from template kind followed by -link to the corresponding copied file URL. |
-| **`slides-ready`** | Whether a slides URL exists and its content is copy-only or ready.                  |
-| **`diagnostics`**  | Redacted JSON diagnostics for asset reconciliation.                                 |
+| **Output**         | **Description**                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| **`drive-files`**  | JSON map from template kind followed by -link to the corresponding copied file URL.      |
+| **`slides-ready`** | Whether a slides URL exists and its content is copy-only or ready.                       |
+| **`diagnostics`**  | Redacted JSON diagnostics for asset reconciliation.                                      |
+| **`pdf-source`**   | Public asset identities and opaque issue revision consumed by slides PDF reconciliation. |
 
 <!-- outputs:end -->
 <!-- examples:start -->
