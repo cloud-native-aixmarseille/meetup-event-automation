@@ -32,6 +32,10 @@ Reconcile managed Drive folders, template copies, document content and the issue
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-documents@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
+    # GitHub App bot owning content approval state.
+    # This input is required.
+    managed-comment-author: ""
+
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
     meetup-event-url-prefix: ""
@@ -84,6 +88,7 @@ Reconcile managed Drive folders, template copies, document content and the issue
 
 | **Input**                             | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`managed-comment-author`**          | GitHub App bot owning content approval state.                                                                                      | **true**     | -           |
 | **`meetup-event-url-prefix`**         | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | -           |
 | **`community-event-url-prefixes`**    | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | -           |
 | **`asset-folder-url-prefix`**         | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | -           |
