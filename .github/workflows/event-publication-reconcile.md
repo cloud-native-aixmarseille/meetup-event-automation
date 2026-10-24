@@ -21,9 +21,9 @@
 
 ## Overview
 
-Goal: Reconcile an event's publication on Meetup.
-Behavior: Use browser authentication checks to reconcile the Meetup draft and
-publish after organizer approval, with updates serialized by the event lock.
+Goal: Reconcile an event across its configured publication destinations.
+Behavior: Prepare the required adapter runtimes and reconcile each destination
+after its organizer approval, with updates serialized by the shared event lock.
 
 ### Permissions
 
@@ -59,17 +59,9 @@ jobs:
       # This input is required.
       conference-hall-api-key: ""
 
-      # Email of the authorized Meetup organizer account.
+      # JSON credentials for exactly the configured publication providers, including AI settings only when Meetup is configured.
       # This input is required.
-      meetup-email: ""
-
-      # Password of the authorized Meetup organizer account.
-      # This input is required.
-      meetup-password: ""
-
-      # API key for the selected AI provider.
-      # This input is required.
-      ai-api-key: ""
+      publication-credentials: ""
     with:
       # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
       # This input is required.
@@ -102,14 +94,6 @@ jobs:
       # Language for the publication report (en or fr).
       # This input is required.
       locale: ""
-
-      # AI provider identifier (gemini).
-      # This input is required.
-      ai-provider: ""
-
-      # Model identifier for the selected AI provider.
-      # This input is required.
-      ai-model: ""
 ```
 
 <!-- usage:end -->
@@ -129,22 +113,18 @@ jobs:
 | **`github-app-client-id`**         | GitHub App client ID for the consumer repository.                           | **true**     | **string** | -           |
 | **`conference-hall-event`**        | Conference Hall CFP slug for the current event agenda.                      | **true**     | **string** | -           |
 | **`locale`**                       | Language for the publication report (en or fr).                             | **true**     | **string** | -           |
-| **`ai-provider`**                  | AI provider identifier (gemini).                                            | **true**     | **string** | -           |
-| **`ai-model`**                     | Model identifier for the selected AI provider.                              | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
 
 ## Secrets
 
-| **Secret**                    | **Description**                                                | **Required** |
-| ----------------------------- | -------------------------------------------------------------- | ------------ |
-| **`slack-token`**             | Slack bot token for approval requests and decision reactions.  | **true**     |
-| **`github-app-private-key`**  | GitHub App private key for the narrowly scoped consumer token. | **true**     |
-| **`conference-hall-api-key`** | Read-only Conference Hall event API key.                       | **true**     |
-| **`meetup-email`**            | Email of the authorized Meetup organizer account.              | **true**     |
-| **`meetup-password`**         | Password of the authorized Meetup organizer account.           | **true**     |
-| **`ai-api-key`**              | API key for the selected AI provider.                          | **true**     |
+| **Secret**                    | **Description**                                                                                                          | **Required** |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| **`slack-token`**             | Slack bot token for approval requests and decision reactions.                                                            | **true**     |
+| **`github-app-private-key`**  | GitHub App private key for the narrowly scoped consumer token.                                                           | **true**     |
+| **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                 | **true**     |
+| **`publication-credentials`** | JSON credentials for exactly the configured publication providers, including AI settings only when Meetup is configured. | **true**     |
 
 <!-- secrets:end -->
 <!-- outputs:start -->
