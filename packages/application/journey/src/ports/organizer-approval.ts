@@ -2,6 +2,7 @@ export type OrganizerApprovalKind =
 	| "email-introduction"
 	| "email-thanks"
 	| "meetup-publication"
+	| "community-publication"
 	| "content-review";
 
 export interface ContentApprovalDetails {
@@ -19,7 +20,7 @@ export interface ContentApprovalDetails {
 	readonly draft: import("../proposals/promotional-content.js").ContentDraft;
 }
 
-export interface MeetupPublicationApprovalDetails {
+export interface EventPublicationApprovalDetails {
 	readonly url: string;
 	readonly title: string;
 	readonly startTime: string;
@@ -42,7 +43,14 @@ export type OrganizerApprovalRequest = {
 	  }
 	| {
 			readonly kind: "meetup-publication";
-			readonly publication: MeetupPublicationApprovalDetails;
+			readonly publication: EventPublicationApprovalDetails;
+			readonly recipientCount?: never;
+			readonly details?: never;
+			readonly content?: never;
+	  }
+	| {
+			readonly kind: "community-publication";
+			readonly publication: EventPublicationApprovalDetails;
 			readonly recipientCount?: never;
 			readonly details?: never;
 			readonly content?: never;

@@ -63318,6 +63318,30 @@ var EventDomainComposition = class {
   }
 };
 
+// packages/domain/event/src/domain/event-copy-agenda.ts
+var EventCopyAgenda = class {
+  ready(talks) {
+    return talks.length > 0 && talks.every(
+      (talk) => Boolean(talk.title.trim()) && talk.speakers.length > 0 && talk.speakers.every(
+        (speaker) => Boolean(speaker.id && speaker.name.trim())
+      )
+    );
+  }
+  source(talks) {
+    return {
+      talks: talks.map((talk) => ({
+        id: talk.id,
+        title: talk.title,
+        abstract: talk.abstract,
+        speakers: talk.speakers.map((speaker) => ({
+          id: speaker.id,
+          name: speaker.name
+        }))
+      }))
+    };
+  }
+};
+
 // packages/domain/event/src/domain/event-copy-description-draft.ts
 var EventCopyDescriptionDraft = class {
   constructor(agenda) {
@@ -63396,30 +63420,6 @@ var EventCopyTitleDraft = class {
           abstract: talk.abstract
         }))
       }
-    };
-  }
-};
-
-// packages/domain/event/src/domain/event-copy-agenda.ts
-var EventCopyAgenda = class {
-  ready(talks) {
-    return talks.length > 0 && talks.every(
-      (talk) => Boolean(talk.title.trim()) && talk.speakers.length > 0 && talk.speakers.every(
-        (speaker) => Boolean(speaker.id && speaker.name.trim())
-      )
-    );
-  }
-  source(talks) {
-    return {
-      talks: talks.map((talk) => ({
-        id: talk.id,
-        title: talk.title,
-        abstract: talk.abstract,
-        speakers: talk.speakers.map((speaker) => ({
-          id: speaker.id,
-          name: speaker.name
-        }))
-      }))
     };
   }
 };
@@ -63740,7 +63740,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request3) {
     this.validateIdentity(request3);
-    if (request3.kind === "meetup-publication" || request3.kind === "content-review")
+    if (request3.kind === "meetup-publication" || request3.kind === "community-publication" || request3.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request3.recipientCount) || request3.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -63760,7 +63760,7 @@ var ApprovalRequestPolicy = class {
       return false;
     if (previous.kind === "content-review" && request3.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request3.content);
-    if (previous.kind === "meetup-publication" && request3.kind === "meetup-publication")
+    if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request3.kind === "meetup-publication" || request3.kind === "community-publication"))
       return previous.publication.url === request3.publication.url && previous.publication.title === request3.publication.title && previous.publication.startTime === request3.publication.startTime && previous.publication.endTime === request3.publication.endTime && previous.publication.timeZone === request3.publication.timeZone && previous.publication.venue.name === request3.publication.venue.name && previous.publication.venue.city === request3.publication.venue.city;
     return previous.recipientCount === request3.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request3.details));
   }
@@ -63808,6 +63808,43 @@ var FollowUpApprovalPolicy = class {
     return progress.pendingTasks.some(
       (task) => task === "thank-host" || task === "thank-speakers"
     ) ? "waiting" : "emails-complete";
+  }
+};
+
+// packages/application/journey/src/assets/cover-artwork-approval-gate.ts
+var CoverArtworkApprovalGate = class {
+  constructor(store, authority, projection, plans, policy, settings) {
+    this.store = store;
+    this.authority = authority;
+    this.projection = projection;
+    this.plans = plans;
+    this.policy = policy;
+    this.settings = settings;
+  }
+  store;
+  authority;
+  projection;
+  plans;
+  policy;
+  settings;
+  async cover(event) {
+    const proposal = (await this.store.load()).proposals.filter((item) => item.plan.target === "cover").at(-1);
+    if (proposal?.accepted?.media.length !== 1) return void 0;
+    const settings = await this.settings();
+    const plan2 = this.plans.create(
+      "cover",
+      proposal.plan.language,
+      this.projection.create(
+        event,
+        settings.publication,
+        settings.content,
+        null
+      ),
+      settings.content.reminderTime
+    );
+    if (!this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
+      return void 0;
+    return proposal.accepted.media[0];
   }
 };
 
@@ -64072,6 +64109,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("community-publication:"))
+      return "community-approval";
     return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
   }
   covered(episode, entries) {
@@ -64174,13 +64213,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -67756,6 +67795,9 @@ var MeetupEventUrl = class _MeetupEventUrl {
   get value() {
     return `${this.group.eventUrlPrefix}${this.identifier}/`;
   }
+  get id() {
+    return this.identifier;
+  }
 };
 
 // packages/domain/publication/src/domain/meetup-event-url-policy.ts
@@ -67981,6 +68023,11 @@ var ScheduledEventPolicy = class {
   valid(event, now2) {
     if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
       return false;
+    return this.validSchedule(event, now2);
+  }
+  validSchedule(event, now2) {
+    if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
     const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
       return false;
@@ -68157,6 +68204,57 @@ var PublicationDomainComposition = class {
   }
 };
 
+// packages/domain/publication/src/domain/community-event-policy.ts
+var CommunityEventPolicy = class {
+  constructor(schedule) {
+    this.schedule = schedule;
+  }
+  schedule;
+  valid(event, now2) {
+    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+  }
+  venue(venue) {
+    return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
+  }
+  registration(value) {
+    return Number.isSafeInteger(value.capacity) && value.capacity > 0 && value.capacity <= 1e5 && typeof value.waitlist === "boolean" && typeof value.approvalRequired === "boolean" && typeof value.reminder === "boolean" && !(value.waitlist && value.approvalRequired);
+  }
+  text(value, maximum) {
+    return value.trim().length > 0 && Buffer.byteLength(value, "utf8") <= maximum && ![...value].some(
+      (character) => character.charCodeAt(0) < 32 && !"\n\r	".includes(character)
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/community-group-url.ts
+var CommunityGroupUrl = class _CommunityGroupUrl {
+  constructor(eventUrlPrefix, origin, community, group) {
+    this.eventUrlPrefix = eventUrlPrefix;
+    this.origin = origin;
+    this.community = community;
+    this.group = group;
+  }
+  eventUrlPrefix;
+  origin;
+  community;
+  group;
+  static parse(value) {
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      return void 0;
+    }
+    const match = /^\/([a-z0-9-]+)\/group\/([a-z0-9-]+)\/event\/$/.exec(
+      url.pathname
+    );
+    if (!match || url.protocol !== "https:" || url.username || url.password || value !== `${url.origin}${url.pathname}`)
+      return void 0;
+    return new _CommunityGroupUrl(value, url.origin, match[1], match[2]);
+  }
+};
+
 // packages/domain/publication/src/domain/cover-artwork.ts
 var CoverArtwork = class {
   directions = [
@@ -68217,14 +68315,24 @@ var FeedbackResolutionError = class extends Error {
   kind;
 };
 
-// packages/domain/publication/src/domain/scheduled-event-error.ts
-var ScheduledEventError = class extends Error {
-  constructor(kind) {
-    super(`Event publication failed: ${kind}`);
-    this.kind = kind;
-    this.name = "ScheduledEventError";
+// packages/application/journey/src/approval/approval-value-fingerprint.ts
+var ApprovalValueFingerprint = class {
+  constructor(hash) {
+    this.hash = hash;
   }
-  kind;
+  hash;
+  digest(value) {
+    return this.hash.of(JSON.stringify(this.canonical(value)));
+  }
+  canonical(value) {
+    if (value === void 0) return null;
+    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
+      );
+    return value;
+  }
 };
 
 // packages/application/journey/src/approval/meetup-publication-revision.ts
@@ -68233,10 +68341,10 @@ var MeetupPublicationRevision = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  of(event, url) {
+  of(event, identity) {
     return this.collaborators.contentFingerprint.of(
       JSON.stringify({
-        url,
+        url: identity.reviewUrl,
         event: {
           title: event.title,
           description: event.description,
@@ -68276,26 +68384,6 @@ var AutomationConfigFactory = class {
         "policy-version": 1
       }
     };
-  }
-};
-
-// packages/application/journey/src/approval/approval-value-fingerprint.ts
-var ApprovalValueFingerprint = class {
-  constructor(hash) {
-    this.hash = hash;
-  }
-  hash;
-  digest(value) {
-    return this.hash.of(JSON.stringify(this.canonical(value)));
-  }
-  canonical(value) {
-    if (value === void 0) return null;
-    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
-    if (value && typeof value === "object")
-      return Object.fromEntries(
-        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
-      );
-    return value;
   }
 };
 
@@ -68374,6 +68462,17 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.community.content-review",
+  "publication.community.authentication",
+  "publication.community.prerequisites",
+  "publication.community.link",
+  "publication.community.conflict",
+  "publication.community.uncertain",
+  "publication.community-url.invalid",
+  "publication.community.missing",
+  "publication.community.unpublished",
+  "publication.community.approval-pending",
+  "publication.community.approval-rejected",
   "publication.content.prerequisites",
   "publication.content.pending",
   "publication.content.rejected",
@@ -69127,8 +69226,8 @@ var FeedbackAgendaProjection = class {
   }
 };
 
-// packages/application/journey/src/use-cases/meetup-publication-projection.ts
-var MeetupPublicationProjection = class {
+// packages/application/journey/src/use-cases/scheduled-event-projection.ts
+var ScheduledEventProjection = class {
   create(event, settings) {
     const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
     if (!venue || !event.description.trim() || !event.confirmations.host || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
@@ -69255,8 +69354,8 @@ var JourneyPolicyComposition = class {
   feedbackAgendaProjection() {
     return new FeedbackAgendaProjection();
   }
-  meetupPublicationProjection() {
-    return new MeetupPublicationProjection();
+  scheduledEventProjection() {
+    return new ScheduledEventProjection();
   }
   meetupPublicationRevision() {
     return new MeetupPublicationRevision({
@@ -69628,227 +69727,6 @@ var ManageMeetupEvent = class {
       repositoryPatch
     );
     return true;
-  }
-};
-
-// packages/application/journey/src/use-cases/manage-meetup-publication.ts
-var PUBLICATION_LINK_FIELDS = [
-  "publicationLinks.meetup",
-  "publicationLinks.community",
-  "publicationLinks.assets",
-  "publicationLinks.feedback"
-];
-var ManageMeetupPublication = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(identity) {
-    const source = await this.dependencies.repository.find(identity);
-    if (!source) throw new Error("Meetup source issue was not found");
-    const evaluation = await this.dependencies.manageEvent.execute({
-      identity,
-      mode: "check",
-      sourceDocument: source
-    });
-    if (evaluation.skipped) return this.result("skipped", "inactive");
-    if (evaluation.diagnostics.some(
-      this.collaborators.diagnosticPolicy.isTechnicalFailure.bind(
-        this.collaborators.diagnosticPolicy
-      )
-    ))
-      return this.result("blocked", "source");
-    const event = evaluation.event;
-    if ((await this.dependencies.contentGate.blocked(event)).length)
-      return this.result("blocked", "content-review");
-    if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
-      return this.result("skipped", "inactive");
-    const draft = this.collaborators.meetupPublicationProjection.create(
-      event,
-      this.dependencies.settings
-    );
-    if (evaluation.diagnostics.some(
-      (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication"
-    ) || !draft || !this.collaborators.scheduledEventPolicy.valid(
-      draft,
-      this.dependencies.clock.now()
-    ) || evaluation.diagnostics.some(
-      (item) => item.severity === "error" && !PUBLICATION_LINK_FIELDS.includes(item.field ?? "")
-    ))
-      return this.result("blocked", "prerequisites");
-    return this.synchronize(source, draft, event.publicationLinks.meetup);
-  }
-  async synchronize(source, draft, supplied) {
-    const record = await this.dependencies.journal.load();
-    const suppliedUrl = this.eventUrl(supplied);
-    const recordedUrl = this.eventUrl(record?.url);
-    if (supplied && !suppliedUrl || record?.url && !recordedUrl)
-      return this.result("blocked", "link");
-    if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
-      return this.result("blocked", "conflict");
-    const url = (suppliedUrl ?? recordedUrl)?.value;
-    if (!url && record) return this.result("blocked", "uncertain");
-    try {
-      const saved = await this.dependencies.gateway.save(
-        draft,
-        url,
-        async () => {
-          await this.ensureCurrent(source);
-          if (!url) await this.dependencies.journal.reserve();
-          await this.ensureCurrent(source);
-        },
-        async (savedUrl) => {
-          if (!this.eventUrl(savedUrl))
-            throw new ScheduledEventError("verification");
-          await this.dependencies.journal.record(savedUrl);
-        }
-      );
-      if (!this.eventUrl(saved.url) || !url && saved.status !== "draft")
-        throw new ScheduledEventError("verification");
-      return await this.complete(source, draft, saved);
-    } catch (error2) {
-      if (!(error2 instanceof ScheduledEventError)) throw error2;
-      return this.result("blocked", error2.kind);
-    }
-  }
-  eventUrl(value) {
-    const group = MeetupGroupUrl.fromEventUrlPrefix(
-      this.dependencies.meetupUrlPrefix
-    );
-    return group ? MeetupEventUrl.parse(value, group) : void 0;
-  }
-  async persist(source, saved) {
-    await this.ensureCurrent(source);
-    const event = this.dependencies.codec.decode(source).event;
-    const updated = this.collaborators.meetupPublicationChecklist.withStatus(
-      event,
-      saved.status === "published"
-    );
-    const patch = this.dependencies.codec.createPatch(source, {
-      ...updated,
-      publicationLinks: { ...event.publicationLinks, meetup: saved.url }
-    });
-    if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
-      patch
-    )) {
-      await this.ensureCurrent(source);
-      await this.dependencies.repository.applyPatch(source.identity, patch);
-    }
-    return { ...source, ...patch };
-  }
-  async complete(source, event, saved) {
-    const current = await this.persist(source, saved);
-    if (saved.status === "published")
-      return { status: "updated", diagnostics: [] };
-    await this.ensureCurrent(current);
-    const approval = this.collaborators.createMeetupPublicationApproval(
-      this.dependencies.approval,
-      this.dependencies.clock
-    );
-    const decision = await approval.request(event, saved.url);
-    const diagnostics = decision.notificationFailed ? this.result("blocked", "approval-notification-failed").diagnostics : [];
-    if (decision.status !== "approved")
-      return {
-        status: "draft",
-        reviewUrl: saved.url,
-        diagnostics: [
-          ...diagnostics,
-          ...this.result("blocked", `approval-${decision.status}`).diagnostics
-        ]
-      };
-    const published = await this.dependencies.gateway.publish(
-      event,
-      saved.url,
-      async () => {
-        await this.ensureCurrent(current);
-        if (!this.collaborators.scheduledEventPolicy.valid(
-          event,
-          this.dependencies.clock.now()
-        ))
-          throw new ScheduledEventError("verification");
-        await approval.requireApproved(event, saved.url);
-        await this.ensureCurrent(current);
-      }
-    );
-    if (published.status !== "published" || published.url !== saved.url)
-      throw new ScheduledEventError("verification");
-    await this.persist(current, published);
-    return { status: "updated", diagnostics };
-  }
-  async ensureCurrent(source) {
-    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-      this.dependencies.repository,
-      source.identity,
-      source
-    );
-    const evaluated = await this.dependencies.manageEvent.execute({
-      identity: source.identity,
-      sourceDocument: source,
-      mode: "check"
-    });
-    if (evaluated.skipped || (await this.dependencies.contentGate.blocked(evaluated.event)).length)
-      throw new ScheduledEventError("content-review");
-  }
-  result(status, code) {
-    return {
-      status,
-      diagnostics: [
-        {
-          code: `publication.meetup.${code}`,
-          severity: [
-            "editor",
-            "verification",
-            "source",
-            "unavailable",
-            "approval-unavailable",
-            "approval-notification-failed"
-          ].includes(code) ? "error" : status === "blocked" ? "warning" : "info",
-          field: "publicationLinks.meetup",
-          message: `Meetup publication: ${code}`
-        }
-      ]
-    };
-  }
-};
-
-// packages/application/journey/src/use-cases/meetup-publication-approval.ts
-var MeetupPublicationApproval = class {
-  constructor(collaborators, approvals, clock) {
-    this.collaborators = collaborators;
-    this.approvals = approvals;
-    this.clock = clock;
-  }
-  collaborators;
-  approvals;
-  clock;
-  async request(event, url) {
-    try {
-      return await this.approvals.request({
-        kind: "meetup-publication",
-        revision: this.collaborators.meetupPublicationRevision.of(event, url),
-        eventDate: event.date,
-        requestedAt: this.clock.now(),
-        publication: {
-          url,
-          title: event.title,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          timeZone: event.timeZone,
-          venue: event.venue
-        }
-      });
-    } catch {
-      throw new ScheduledEventError("approval-unavailable");
-    }
-  }
-  async requireApproved(event, url) {
-    const result = await this.request(event, url);
-    if (result.status !== "approved")
-      throw new ScheduledEventError(
-        result.status === "pending" ? "approval-pending" : "approval-rejected"
-      );
   }
 };
 
@@ -70459,28 +70337,6 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupPublication(...args) {
-    return new ManageMeetupPublication(
-      {
-        diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-        meetupPublicationProjection: new JourneyPolicyComposition().meetupPublicationProjection(),
-        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy(),
-        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
-        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
-        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
-        createMeetupPublicationApproval: (...args2) => this.meetupPublicationApproval(...args2)
-      },
-      ...args
-    );
-  }
-  meetupPublicationApproval(...args) {
-    return new MeetupPublicationApproval(
-      {
-        meetupPublicationRevision: new JourneyPolicyComposition().meetupPublicationRevision()
-      },
-      ...args
-    );
-  }
   reconcileOrganizerFeedback(...args) {
     return new ReconcileOrganizerFeedback(
       {
@@ -70666,6 +70522,52 @@ var DraftProposalComposition = class {
   }
 };
 
+// packages/application/journey/src/event/event-copy-approval-gate.ts
+var EventCopyApprovalGate = class {
+  constructor(store, authority, projection, plans, policy, settings) {
+    this.store = store;
+    this.authority = authority;
+    this.projection = projection;
+    this.plans = plans;
+    this.policy = policy;
+    this.settings = settings;
+  }
+  store;
+  authority;
+  projection;
+  plans;
+  policy;
+  settings;
+  async blocked(event) {
+    const { proposals } = await this.store.load();
+    const managed = proposals.filter(
+      (item) => item.plan.target === "title" || item.plan.target === "description"
+    );
+    if (!managed.length) return [];
+    const settings = await this.settings();
+    const facts = this.projection.create(
+      event,
+      settings.publication,
+      settings.content,
+      null
+    );
+    const blocked = [];
+    for (const target of ["title", "description"]) {
+      const proposal = managed.filter((item) => item.plan.target === target).at(-1);
+      if (!proposal) continue;
+      const plan2 = this.plans.create(
+        target,
+        proposal.plan.language,
+        facts,
+        settings.content.reminderTime
+      );
+      if (!proposal.accepted || proposal.accepted.text !== this.projection.destination(event, target) || !this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
+        blocked.push(target);
+    }
+    return blocked;
+  }
+};
+
 // packages/application/journey/src/proposals/content-plan-factory.ts
 var ContentPlanFactory = class {
   constructor(fingerprints, timing) {
@@ -70761,89 +70663,6 @@ var ContentFactsProjection = class {
     if (target === "title") return event.eventTitle;
     if (target === "description") return event.description;
     return null;
-  }
-};
-
-// packages/application/journey/src/event/event-copy-approval-gate.ts
-var EventCopyApprovalGate = class {
-  constructor(store, authority, projection, plans, policy, settings) {
-    this.store = store;
-    this.authority = authority;
-    this.projection = projection;
-    this.plans = plans;
-    this.policy = policy;
-    this.settings = settings;
-  }
-  store;
-  authority;
-  projection;
-  plans;
-  policy;
-  settings;
-  async blocked(event) {
-    const { proposals } = await this.store.load();
-    const managed = proposals.filter(
-      (item) => item.plan.target === "title" || item.plan.target === "description"
-    );
-    if (!managed.length) return [];
-    const settings = await this.settings();
-    const facts = this.projection.create(
-      event,
-      settings.publication,
-      settings.content,
-      null
-    );
-    const blocked = [];
-    for (const target of ["title", "description"]) {
-      const proposal = managed.filter((item) => item.plan.target === target).at(-1);
-      if (!proposal) continue;
-      const plan2 = this.plans.create(
-        target,
-        proposal.plan.language,
-        facts,
-        settings.content.reminderTime
-      );
-      if (!proposal.accepted || proposal.accepted.text !== this.projection.destination(event, target) || !this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
-        blocked.push(target);
-    }
-    return blocked;
-  }
-};
-
-// packages/application/journey/src/assets/cover-artwork-approval-gate.ts
-var CoverArtworkApprovalGate = class {
-  constructor(store, authority, projection, plans, policy, settings) {
-    this.store = store;
-    this.authority = authority;
-    this.projection = projection;
-    this.plans = plans;
-    this.policy = policy;
-    this.settings = settings;
-  }
-  store;
-  authority;
-  projection;
-  plans;
-  policy;
-  settings;
-  async cover(event) {
-    const proposal = (await this.store.load()).proposals.filter((item) => item.plan.target === "cover").at(-1);
-    if (proposal?.accepted?.media.length !== 1) return void 0;
-    const settings = await this.settings();
-    const plan2 = this.plans.create(
-      "cover",
-      proposal.plan.language,
-      this.projection.create(
-        event,
-        settings.publication,
-        settings.content,
-        null
-      ),
-      settings.content.reminderTime
-    );
-    if (!this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
-      return void 0;
-    return proposal.accepted.media[0];
   }
 };
 
@@ -71023,36 +70842,64 @@ var ConferenceHallInput = class {
   }
 };
 
-// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+// packages/runtime/github-actions/src/event-publication-configuration.ts
 import { readFile as readFile2 } from "node:fs/promises";
 import { join as join2 } from "node:path";
-var MeetupPublicationConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
+var EventPublicationConfiguration = class {
+  constructor(input, schedule, ocgroups) {
+    this.input = input;
+    this.schedule = schedule;
+    this.ocgroups = ocgroups;
   }
-  collaborators;
+  input;
+  schedule;
+  ocgroups;
   async load(root) {
     const text = await readFile2(
-      join2(root, ".github/meetup-publication.json"),
+      join2(root, ".github/event-publication.json"),
       "utf8"
     );
     if (Buffer.byteLength(text) > 1e5)
-      throw new Error("Meetup publication configuration is too large");
+      throw new Error("Event publication configuration is too large");
     return this.parse(JSON.parse(text));
   }
-  parse(input) {
-    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
-      throw new Error("Invalid Meetup publication configuration");
-    const venues = {};
-    for (const [id, venue] of Object.entries(input.venues)) {
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
-        throw new Error("Invalid public Meetup venue mapping");
-      venues[id] = { name: venue.name, city: venue.city };
-    }
-    return { startTime: input.startTime, endTime: input.endTime, venues };
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !Array.isArray(value.destinations) || value.destinations.length > 2)
+      throw new Error("Invalid publication destinations");
+    const destinations = value.destinations.map(
+      (destination) => this.destination(destination, schedule, value.venues)
+    );
+    if (new Set(destinations.map((destination) => destination.provider)).size !== destinations.length)
+      throw new Error("Duplicate publication provider");
+    return { schedule, destinations };
   }
-  text(value) {
-    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  destination(value, schedule, venues) {
+    if (!this.input.isObject(value))
+      throw new Error("Invalid publication destination");
+    if (value.provider === "meetup" && Object.keys(value).length === 1)
+      return { provider: "meetup", settings: schedule };
+    if (value.provider !== "ocgroups" || Object.keys(value).some(
+      (key) => ![
+        "provider",
+        "eventUrlPrefix",
+        "communityId",
+        "groupId",
+        "categoryId",
+        "registration"
+      ].includes(key)
+    ))
+      throw new Error("Unsupported publication destination");
+    return {
+      provider: "ocgroups",
+      settings: this.ocgroups.parse({
+        ...value,
+        version: 1,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        venues
+      })
+    };
   }
 };
 
@@ -71182,6 +71029,89 @@ var RuntimeInput = class {
   }
 };
 
+// packages/runtime/github-actions/src/event-schedule-configuration.ts
+var EventScheduleConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid event schedule configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public event venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/ocgroups-publication-settings.ts
+var OcgroupsPublicationSettings = class {
+  constructor(input, schedule, policy) {
+    this.input = input;
+    this.schedule = schedule;
+    this.policy = policy;
+  }
+  input;
+  schedule;
+  policy;
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !CommunityGroupUrl.parse(value.eventUrlPrefix) || typeof value.eventUrlPrefix !== "string" || !this.uuid(value.communityId) || !this.uuid(value.groupId) || !this.uuid(value.categoryId) || !this.input.isObject(value.venues))
+      throw new Error("Invalid OCGroups target configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(value.venues))
+      venues[id] = this.venue(venue);
+    return {
+      ...schedule,
+      venues,
+      eventUrlPrefix: value.eventUrlPrefix,
+      communityId: value.communityId,
+      groupId: value.groupId,
+      categoryId: value.categoryId,
+      registration: this.registration(value.registration)
+    };
+  }
+  venue(value) {
+    if (!this.input.isObject(value) || typeof value.name !== "string" || typeof value.address !== "string" || typeof value.city !== "string" || typeof value.zipCode !== "string" || typeof value.state !== "string" || typeof value.country !== "string" || typeof value.countryCode !== "string")
+      throw new Error("Invalid public OCGroups venue mapping");
+    const venue = {
+      name: value.name,
+      address: value.address,
+      city: value.city,
+      zipCode: value.zipCode,
+      state: value.state,
+      country: value.country,
+      countryCode: value.countryCode
+    };
+    if (!this.policy.venue(venue))
+      throw new Error("Invalid public OCGroups venue mapping");
+    return venue;
+  }
+  registration(value) {
+    if (!this.input.isObject(value) || typeof value.capacity !== "number" || typeof value.waitlist !== "boolean" || typeof value.approvalRequired !== "boolean" || typeof value.reminder !== "boolean")
+      throw new Error("Invalid OCGroups registration configuration");
+    const registration = {
+      capacity: value.capacity,
+      waitlist: value.waitlist,
+      approvalRequired: value.approvalRequired,
+      reminder: value.reminder
+    };
+    if (!this.policy.registration(registration))
+      throw new Error("Invalid OCGroups registration configuration");
+    return registration;
+  }
+  uuid(value) {
+    return typeof value === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);
+  }
+};
+
 // packages/runtime/github-actions/src/runtime-input-composition.ts
 var RuntimeInputComposition = class _RuntimeInputComposition {
   static bind(container) {
@@ -71198,6 +71128,7 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
     );
     _RuntimeInputComposition.bindAttention(container);
     _RuntimeInputComposition.bindConfiguration(container);
+    _RuntimeInputComposition.bindPublication(container);
   }
   static bindAttention(container) {
     container.bind(AttentionStageInput).toResolvedValue(() => new AttentionStageInput());
@@ -71231,12 +71162,26 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
       }),
       [RuntimeInput, ContentContractPolicy, AssetRenderConfiguration]
     );
-    container.bind(MeetupPublicationConfiguration).toResolvedValue(
-      (runtimeInput, scheduledEventPolicy) => new MeetupPublicationConfiguration({
+  }
+  static bindPublication(container) {
+    container.bind(EventScheduleConfiguration).toResolvedValue(
+      (runtimeInput, scheduledEventPolicy) => new EventScheduleConfiguration({
         runtimeInput,
         scheduledEventPolicy
       }),
       [RuntimeInput, ScheduledEventPolicy]
+    );
+    container.bind(OcgroupsPublicationSettings).toResolvedValue(
+      (runtime, schedule, policy) => new OcgroupsPublicationSettings(
+        runtime,
+        schedule,
+        new CommunityEventPolicy(policy)
+      ),
+      [RuntimeInput, EventScheduleConfiguration, ScheduledEventPolicy]
+    );
+    container.bind(EventPublicationConfiguration).toResolvedValue(
+      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+      [RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings]
     );
   }
 };
@@ -74963,6 +74908,27 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Prepare event publication runtime",
+  "report.publication.draft": "publication_provider={provider} event=draft approval=required",
+  "report.publication.updated": "publication_provider={provider} event=synchronized",
+  "report.publication.skipped": "publication_provider={provider} event=skipped",
+  "report.publication.blocked": "publication_provider={provider} event=blocked",
+  "report.publication.review": "publication_provider={provider} review_url={url}",
+  "diagnostic.publication.community.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+  "diagnostic.publication.community.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+  "diagnostic.publication.community.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+  "diagnostic.publication.community.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+  "diagnostic.publication.community.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.community.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
+  "diagnostic.publication.community.inactive": "OCGroups publication is inactive for this issue.",
+  "diagnostic.publication.community.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.community.link": "Set a valid event URL belonging to the configured OCGroups group.",
+  "diagnostic.publication.community.conflict": "The issue link and recorded OCGroups event differ. Restore the recorded event link before running again.",
+  "diagnostic.publication.community.uncertain": "Publication outcome is uncertain. Check the OCGroups dashboard and recover the verified event UUID in the community journal before retrying. Keep drafts out of CNCF Link. Clear a reservation only after confirming no event was created.",
+  "diagnostic.publication.community.authentication": "Organizer login could not be verified. Check the account, credentials, and group permissions; complete any unsupported challenge interactively.",
+  "diagnostic.publication.community.editor": "The OCGroups editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+  "diagnostic.publication.community.verification": "OCGroups did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "action.event.generate-copy": "Generate event copy",
   "action.assets.generate-cover": "Generate cover artwork",
   "action.communication.generate-slack-post": "Generate Slack post",
@@ -74993,11 +74959,6 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
   "action.publication.reconcile-event": "Reconcile event publication",
-  "report.meetup.draft": "meetup_event=draft approval=required",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "meetup_event=synchronized",
-  "report.meetup.skipped": "meetup_event=skipped",
-  "report.meetup.blocked": "meetup_event=blocked",
   "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
   "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
@@ -75090,6 +75051,27 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Pr\xE9parer le runtime de publication",
+  "report.publication.draft": "fournisseur_publication={provider} evenement=brouillon approbation=requise",
+  "report.publication.updated": "fournisseur_publication={provider} evenement=synchronise",
+  "report.publication.skipped": "fournisseur_publication={provider} evenement=ignore",
+  "report.publication.blocked": "fournisseur_publication={provider} evenement=bloque",
+  "report.publication.review": "fournisseur_publication={provider} url_validation={url}",
+  "diagnostic.publication.community.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
+  "diagnostic.publication.community.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
+  "diagnostic.publication.community.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+  "diagnostic.publication.community.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
+  "diagnostic.publication.community.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.community.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, les s\xE9lecteurs de connexion.",
+  "diagnostic.publication.community.inactive": "La publication OCGroups est inactive pour cette issue.",
+  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.community.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe OCGroups configur\xE9.",
+  "diagnostic.publication.community.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.community.uncertain": "Le r\xE9sultat est incertain. V\xE9rifiez le tableau de bord OCGroups et r\xE9cup\xE9rez le UUID v\xE9rifi\xE9 dans le journal community avant de relancer. Gardez les brouillons hors de CNCF Link. Effacez une r\xE9servation seulement apr\xE8s avoir confirm\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
+  "diagnostic.publication.community.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et les droits du groupe ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.community.editor": "Impossible de pr\xE9parer l'\xE9diteur OCGroups. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
+  "diagnostic.publication.community.verification": "Les champs enregistr\xE9s sur OCGroups ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "action.event.generate-copy": "G\xE9n\xE9rer le titre ou la description",
   "action.assets.generate-cover": "G\xE9n\xE9rer les illustrations",
   "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
@@ -75120,11 +75102,6 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
   "action.publication.reconcile-event": "R\xE9concilier la publication de l'\xE9v\xE9nement",
-  "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "evenement_meetup=synchronise",
-  "report.meetup.skipped": "evenement_meetup=ignore",
-  "report.meetup.blocked": "evenement_meetup=bloque",
   "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
   "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
@@ -75443,8 +75420,8 @@ var GithubActionsComposition = class _GithubActionsComposition {
   conferenceHallInput() {
     return this.container.get(ConferenceHallInput);
   }
-  meetupPublicationConfiguration() {
-    return this.container.get(MeetupPublicationConfiguration);
+  eventPublicationConfiguration() {
+    return this.container.get(EventPublicationConfiguration);
   }
   referentialActionReport() {
     return this.container.get(ReferentialActionReport);
@@ -80121,414 +80098,13 @@ var GoogleDocsContentRepositoryComposition = class {
   }
 };
 
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
-var GoogleDriveAssetRepositoryError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GoogleDriveAssetRepositoryError";
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/drive-asset-metadata.ts
-var DriveAssetMetadata = class {
-  templateProperties(template) {
-    return { template_file_id: template.id, template_kind: template.kind };
-  }
-  container(file, eventId) {
-    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
-      throw new GoogleDriveAssetRepositoryError(
-        "Google Drive returned an invalid asset folder"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      url: `https://drive.google.com/drive/folders/${file.id}`,
-      eventId
-    };
-  }
-  assetFile(file) {
-    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
-      throw new GoogleDriveAssetRepositoryError(
-        "Google Drive returned an invalid asset file"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      ...file.webViewLink ? { url: file.webViewLink } : {},
-      templateId: file.appProperties?.template_file_id,
-      kind: file.appProperties?.template_kind,
-      mimeType: file.mimeType ?? void 0,
-      contentManaged: file.appProperties?.meetup_content === "v1"
-    };
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
-import { createHash as createHash3 } from "node:crypto";
+// packages/adapter/publication/google-drive-asset-repository/src/content-media-composition.ts
+var import_drive2 = __toESM(require_build2(), 1);
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
 var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
-var GoogleDriveAssetRepository = class {
-  constructor(collaborators, client, options) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.options = options;
-    if (![options.parentFolderId, options.templateFolderId].every(
-      (id) => /^[\w-]+$/.test(id)
-    ) || options.parentFolderId === options.templateFolderId)
-      throw this.failure(
-        "Distinct Google Drive parent and template folder IDs are required"
-      );
-  }
-  collaborators;
-  client;
-  options;
-  async findContainer(request3) {
-    const matches = await this.list(
-      `mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${this.key(request3)}' }`,
-      "allDrives"
-    );
-    if (matches.length > 1)
-      throw this.failure(
-        "Multiple asset folders match this event; manual reconciliation is required"
-      );
-    const file = matches[0];
-    if (!file) return void 0;
-    if (file.trashed || file.mimeType !== folderMimeType || file.appProperties?.meetup_event_key !== this.key(request3)) {
-      throw this.failure("The asset folder does not match the requested event");
-    }
-    return this.collaborators.driveAssetMetadata.container(
-      file,
-      request3.eventId
-    );
-  }
-  async ensureContainer(request3) {
-    const current = await this.findContainer(request3);
-    if (current?.name === request3.title) return current;
-    const appProperties = {
-      meetup_event_key: this.key(request3)
-    };
-    const response = current ? await this.remote(
-      () => this.client.files.update(
-        {
-          fileId: current.id,
-          requestBody: { name: request3.title, appProperties },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    ) : await this.remote(
-      () => this.client.files.create(
-        {
-          requestBody: {
-            name: request3.title,
-            mimeType: folderMimeType,
-            parents: [this.options.parentFolderId],
-            appProperties
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return this.collaborators.driveAssetMetadata.container(
-      response.data,
-      request3.eventId
-    );
-  }
-  async listTemplates() {
-    return (await this.list(
-      `'${this.escapeQuery(this.options.templateFolderId)}' in parents`
-    )).map((file) => {
-      if (!file.id || !file.name || !file.appProperties?.template_kind || file.mimeType === folderMimeType)
-        throw this.failure(
-          "Every asset template must be a file with an ID, name, and template_kind"
-        );
-      return {
-        id: file.id,
-        name: file.name,
-        kind: file.appProperties.template_kind,
-        mimeType: file.mimeType ?? void 0,
-        contentContract: this.options.contentContracts?.[file.appProperties.template_kind]
-      };
-    });
-  }
-  async listFiles(containerId) {
-    return (await this.list(
-      `'${this.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
-    )).filter(
-      (file) => !file.appProperties?.meetup_binding_file && !file.appProperties?.meetup_pdf_source && !file.appProperties?.meetup_pdf_state
-    ).map(
-      this.collaborators.driveAssetMetadata.assetFile.bind(
-        this.collaborators.driveAssetMetadata
-      )
-    );
-  }
-  async copyTemplate(containerId, template, name) {
-    const { data } = await this.remote(
-      () => this.client.files.copy(
-        {
-          fileId: template.id,
-          requestBody: {
-            name,
-            parents: [containerId],
-            appProperties: {
-              ...this.collaborators.driveAssetMetadata.templateProperties(
-                template
-              ),
-              ...template.contentContract ? { meetup_content: "v1" } : {}
-            }
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return this.collaborators.driveAssetMetadata.assetFile(data);
-  }
-  async updateFile(file, template, name) {
-    const { data } = await this.remote(
-      () => this.client.files.update(
-        {
-          fileId: file.id,
-          requestBody: {
-            name,
-            appProperties: {
-              ...this.collaborators.driveAssetMetadata.templateProperties(
-                template
-              ),
-              ...file.contentManaged ? { meetup_content: "v1" } : {}
-            }
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return this.collaborators.driveAssetMetadata.assetFile(data);
-  }
-  async list(query, corpora = "user") {
-    const files = [];
-    let pageToken;
-    const tokens = /* @__PURE__ */ new Set();
-    do {
-      const { data } = await this.remote(
-        () => this.client.files.list(
-          {
-            q: `${query} and trashed=false`,
-            corpora,
-            fields: `nextPageToken,incompleteSearch,files(${fields})`,
-            pageSize: 100,
-            pageToken,
-            supportsAllDrives: true,
-            includeItemsFromAllDrives: true
-          },
-          requestOptions
-        )
-      );
-      if (data.incompleteSearch)
-        throw this.failure(
-          "Google Drive returned an incomplete search; reconciliation was stopped"
-        );
-      files.push(...data.files ?? []);
-      pageToken = data.nextPageToken || void 0;
-      if (pageToken && tokens.has(pageToken))
-        throw this.failure("Google Drive returned a repeated pagination token");
-      if (pageToken) tokens.add(pageToken);
-    } while (pageToken);
-    return files;
-  }
-  key(request3) {
-    return createHash3("sha256").update(request3.idempotencyKey).digest("hex");
-  }
-  escapeQuery(value) {
-    return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
-  }
-  failure(message) {
-    return new GoogleDriveAssetRepositoryError(message);
-  }
-  async remote(operation) {
-    try {
-      return await operation();
-    } catch (error2) {
-      const response = error2 !== null && typeof error2 === "object" && "response" in error2 ? error2.response : void 0;
-      const status = response !== null && typeof response === "object" && "status" in response ? response.status : void 0;
-      if (status === 429)
-        throw this.failure(
-          "Google Drive rate limit reached; retry reconciliation later"
-        );
-      if (status === 401 || status === 403)
-        throw this.failure(
-          "Google Drive denied access; check credentials, folder access, and quota"
-        );
-      throw this.failure(
-        "Google Drive request failed; inspect provider state before retrying an uncertain write"
-      );
-    }
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-factory.ts
-var import_drive = __toESM(require_build2(), 1);
-var GoogleDriveAssetRepositoryFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  createGoogleDriveAssetRepository(credentialsJson, options) {
-    return this.collaborators.createGoogleDriveAssetRepository(
-      this.client(credentialsJson),
-      options
-    );
-  }
-  client(credentialsJson) {
-    return (0, import_drive.drive)({
-      version: "v3",
-      auth: this.collaborators.googleDriveAuthentication.create(
-        credentialsJson
-      )
-    });
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
-var import_drive2 = __toESM(require_build2(), 1);
-var GoogleDriveAuthentication = class {
-  create(credentialsJson) {
-    let credentials;
-    try {
-      credentials = JSON.parse(credentialsJson);
-    } catch {
-      throw new GoogleDriveAssetRepositoryError(
-        "Invalid Google service-account credentials"
-      );
-    }
-    if (!credentials || typeof credentials !== "object" || Array.isArray(credentials) || !("type" in credentials) || credentials.type !== "service_account" || !("client_email" in credentials) || typeof credentials.client_email !== "string" || !credentials.client_email || !("private_key" in credentials) || typeof credentials.private_key !== "string" || !credentials.private_key) {
-      throw new GoogleDriveAssetRepositoryError(
-        "Invalid Google service-account credentials"
-      );
-    }
-    return new import_drive2.auth.JWT({
-      email: credentials.client_email,
-      key: credentials.private_key,
-      scopes: ["https://www.googleapis.com/auth/drive"]
-    });
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-manifest-repository.ts
-import { Readable } from "node:stream";
-var GoogleDriveManifestRepository = class {
-  constructor(client) {
-    this.client = client;
-  }
-  client;
-  async load(folderId, fileId) {
-    const id = await this.find(folderId, fileId);
-    if (!id) return void 0;
-    const { data } = await this.client.files.get(
-      { fileId: id, alt: "media", supportsAllDrives: true },
-      { ...requestOptions, responseType: "stream" }
-    );
-    const chunks = [];
-    let size = 0;
-    for await (const chunk of data) {
-      size += chunk.length;
-      if (size > 1e6) {
-        data.destroy();
-        throw new ContentError("recovery");
-      }
-      chunks.push(Buffer.from(chunk));
-    }
-    try {
-      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-    } catch {
-      throw new ContentError("recovery");
-    }
-  }
-  async save(folderId, manifest) {
-    const id = await this.find(folderId, manifest.fileId);
-    const json = JSON.stringify(manifest);
-    if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
-    const media = { mimeType: "application/json", body: Readable.from([json]) };
-    if (id) {
-      await this.client.files.update(
-        { fileId: id, media, supportsAllDrives: true },
-        requestOptions
-      );
-    } else {
-      await this.client.files.create(
-        {
-          requestBody: {
-            name: `.${manifest.fileId}.bindings.json`,
-            mimeType: "application/json",
-            parents: [folderId],
-            appProperties: { meetup_binding_file: manifest.fileId }
-          },
-          media,
-          supportsAllDrives: true
-        },
-        requestOptions
-      );
-    }
-  }
-  async find(folderId, fileId) {
-    if (![folderId, fileId].every((id) => /^[\w-]+$/.test(id)))
-      throw new ContentError("recovery");
-    const { data } = await this.client.files.list(
-      {
-        q: `'${folderId}' in parents and trashed=false and appProperties has { key='meetup_binding_file' and value='${fileId}' }`,
-        fields: "nextPageToken,incompleteSearch,files(id,mimeType,parents,appProperties)",
-        pageSize: 100,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true
-      },
-      requestOptions
-    );
-    if (data.incompleteSearch || data.nextPageToken || (data.files?.length ?? 0) > 1)
-      throw new ContentError("recovery");
-    const file = data.files?.[0];
-    if (file && (!file.id || file.mimeType !== "application/json" || !file.parents?.includes(folderId) || file.appProperties?.meetup_binding_file !== fileId))
-      throw new ContentError("recovery");
-    return file?.id ?? void 0;
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
-var GoogleDriveAssetRepositoryComposition = class {
-  driveAssetMetadata() {
-    return new DriveAssetMetadata();
-  }
-  googleDriveAssetRepository(...args) {
-    return new GoogleDriveAssetRepository(
-      { driveAssetMetadata: this.driveAssetMetadata() },
-      ...args
-    );
-  }
-  googleDriveAssetRepositoryFactory() {
-    return new GoogleDriveAssetRepositoryFactory({
-      googleDriveAuthentication: this.googleDriveAuthentication(),
-      createGoogleDriveAssetRepository: (...args) => this.googleDriveAssetRepository(...args)
-    });
-  }
-  googleDriveAuthentication() {
-    return new GoogleDriveAuthentication();
-  }
-  googleDriveManifestRepository(...args) {
-    return new GoogleDriveManifestRepository(...args);
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/content-media-composition.ts
-var import_drive3 = __toESM(require_build2(), 1);
 
 // node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
 var decoder = new TextDecoder();
@@ -81535,6 +81111,407 @@ function imageSize(input) {
   throw new TypeError(`unsupported file type: ${type}`);
 }
 
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
+var import_drive = __toESM(require_build2(), 1);
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
+var GoogleDriveAssetRepositoryError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GoogleDriveAssetRepositoryError";
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
+var GoogleDriveAuthentication = class {
+  create(credentialsJson) {
+    let credentials;
+    try {
+      credentials = JSON.parse(credentialsJson);
+    } catch {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    if (!credentials || typeof credentials !== "object" || Array.isArray(credentials) || !("type" in credentials) || credentials.type !== "service_account" || !("client_email" in credentials) || typeof credentials.client_email !== "string" || !credentials.client_email || !("private_key" in credentials) || typeof credentials.private_key !== "string" || !credentials.private_key) {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    return new import_drive.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ["https://www.googleapis.com/auth/drive"]
+    });
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-asset-metadata.ts
+var DriveAssetMetadata = class {
+  templateProperties(template) {
+    return { template_file_id: template.id, template_kind: template.kind };
+  }
+  container(file, eventId) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset folder"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      url: `https://drive.google.com/drive/folders/${file.id}`,
+      eventId
+    };
+  }
+  assetFile(file) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset file"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      ...file.webViewLink ? { url: file.webViewLink } : {},
+      templateId: file.appProperties?.template_file_id,
+      kind: file.appProperties?.template_kind,
+      mimeType: file.mimeType ?? void 0,
+      contentManaged: file.appProperties?.meetup_content === "v1"
+    };
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
+import { createHash as createHash3 } from "node:crypto";
+var GoogleDriveAssetRepository = class {
+  constructor(collaborators, client, options) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.options = options;
+    if (![options.parentFolderId, options.templateFolderId].every(
+      (id) => /^[\w-]+$/.test(id)
+    ) || options.parentFolderId === options.templateFolderId)
+      throw this.failure(
+        "Distinct Google Drive parent and template folder IDs are required"
+      );
+  }
+  collaborators;
+  client;
+  options;
+  async findContainer(request3) {
+    const matches = await this.list(
+      `mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${this.key(request3)}' }`,
+      "allDrives"
+    );
+    if (matches.length > 1)
+      throw this.failure(
+        "Multiple asset folders match this event; manual reconciliation is required"
+      );
+    const file = matches[0];
+    if (!file) return void 0;
+    if (file.trashed || file.mimeType !== folderMimeType || file.appProperties?.meetup_event_key !== this.key(request3)) {
+      throw this.failure("The asset folder does not match the requested event");
+    }
+    return this.collaborators.driveAssetMetadata.container(
+      file,
+      request3.eventId
+    );
+  }
+  async ensureContainer(request3) {
+    const current = await this.findContainer(request3);
+    if (current?.name === request3.title) return current;
+    const appProperties = {
+      meetup_event_key: this.key(request3)
+    };
+    const response = current ? await this.remote(
+      () => this.client.files.update(
+        {
+          fileId: current.id,
+          requestBody: { name: request3.title, appProperties },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    ) : await this.remote(
+      () => this.client.files.create(
+        {
+          requestBody: {
+            name: request3.title,
+            mimeType: folderMimeType,
+            parents: [this.options.parentFolderId],
+            appProperties
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return this.collaborators.driveAssetMetadata.container(
+      response.data,
+      request3.eventId
+    );
+  }
+  async listTemplates() {
+    return (await this.list(
+      `'${this.escapeQuery(this.options.templateFolderId)}' in parents`
+    )).map((file) => {
+      if (!file.id || !file.name || !file.appProperties?.template_kind || file.mimeType === folderMimeType)
+        throw this.failure(
+          "Every asset template must be a file with an ID, name, and template_kind"
+        );
+      return {
+        id: file.id,
+        name: file.name,
+        kind: file.appProperties.template_kind,
+        mimeType: file.mimeType ?? void 0,
+        contentContract: this.options.contentContracts?.[file.appProperties.template_kind]
+      };
+    });
+  }
+  async listFiles(containerId) {
+    return (await this.list(
+      `'${this.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
+    )).filter(
+      (file) => !file.appProperties?.meetup_binding_file && !file.appProperties?.meetup_pdf_source && !file.appProperties?.meetup_pdf_state
+    ).map(
+      this.collaborators.driveAssetMetadata.assetFile.bind(
+        this.collaborators.driveAssetMetadata
+      )
+    );
+  }
+  async copyTemplate(containerId, template, name) {
+    const { data } = await this.remote(
+      () => this.client.files.copy(
+        {
+          fileId: template.id,
+          requestBody: {
+            name,
+            parents: [containerId],
+            appProperties: {
+              ...this.collaborators.driveAssetMetadata.templateProperties(
+                template
+              ),
+              ...template.contentContract ? { meetup_content: "v1" } : {}
+            }
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return this.collaborators.driveAssetMetadata.assetFile(data);
+  }
+  async updateFile(file, template, name) {
+    const { data } = await this.remote(
+      () => this.client.files.update(
+        {
+          fileId: file.id,
+          requestBody: {
+            name,
+            appProperties: {
+              ...this.collaborators.driveAssetMetadata.templateProperties(
+                template
+              ),
+              ...file.contentManaged ? { meetup_content: "v1" } : {}
+            }
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return this.collaborators.driveAssetMetadata.assetFile(data);
+  }
+  async list(query, corpora = "user") {
+    const files = [];
+    let pageToken;
+    const tokens = /* @__PURE__ */ new Set();
+    do {
+      const { data } = await this.remote(
+        () => this.client.files.list(
+          {
+            q: `${query} and trashed=false`,
+            corpora,
+            fields: `nextPageToken,incompleteSearch,files(${fields})`,
+            pageSize: 100,
+            pageToken,
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+          },
+          requestOptions
+        )
+      );
+      if (data.incompleteSearch)
+        throw this.failure(
+          "Google Drive returned an incomplete search; reconciliation was stopped"
+        );
+      files.push(...data.files ?? []);
+      pageToken = data.nextPageToken || void 0;
+      if (pageToken && tokens.has(pageToken))
+        throw this.failure("Google Drive returned a repeated pagination token");
+      if (pageToken) tokens.add(pageToken);
+    } while (pageToken);
+    return files;
+  }
+  key(request3) {
+    return createHash3("sha256").update(request3.idempotencyKey).digest("hex");
+  }
+  escapeQuery(value) {
+    return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+  }
+  failure(message) {
+    return new GoogleDriveAssetRepositoryError(message);
+  }
+  async remote(operation) {
+    try {
+      return await operation();
+    } catch (error2) {
+      const response = error2 !== null && typeof error2 === "object" && "response" in error2 ? error2.response : void 0;
+      const status = response !== null && typeof response === "object" && "status" in response ? response.status : void 0;
+      if (status === 429)
+        throw this.failure(
+          "Google Drive rate limit reached; retry reconciliation later"
+        );
+      if (status === 401 || status === 403)
+        throw this.failure(
+          "Google Drive denied access; check credentials, folder access, and quota"
+        );
+      throw this.failure(
+        "Google Drive request failed; inspect provider state before retrying an uncertain write"
+      );
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-factory.ts
+var import_drive3 = __toESM(require_build2(), 1);
+var GoogleDriveAssetRepositoryFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  createGoogleDriveAssetRepository(credentialsJson, options) {
+    return this.collaborators.createGoogleDriveAssetRepository(
+      this.client(credentialsJson),
+      options
+    );
+  }
+  client(credentialsJson) {
+    return (0, import_drive3.drive)({
+      version: "v3",
+      auth: this.collaborators.googleDriveAuthentication.create(
+        credentialsJson
+      )
+    });
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-manifest-repository.ts
+import { Readable } from "node:stream";
+var GoogleDriveManifestRepository = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async load(folderId, fileId) {
+    const id = await this.find(folderId, fileId);
+    if (!id) return void 0;
+    const { data } = await this.client.files.get(
+      { fileId: id, alt: "media", supportsAllDrives: true },
+      { ...requestOptions, responseType: "stream" }
+    );
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of data) {
+      size += chunk.length;
+      if (size > 1e6) {
+        data.destroy();
+        throw new ContentError("recovery");
+      }
+      chunks.push(Buffer.from(chunk));
+    }
+    try {
+      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    } catch {
+      throw new ContentError("recovery");
+    }
+  }
+  async save(folderId, manifest) {
+    const id = await this.find(folderId, manifest.fileId);
+    const json = JSON.stringify(manifest);
+    if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
+    const media = { mimeType: "application/json", body: Readable.from([json]) };
+    if (id) {
+      await this.client.files.update(
+        { fileId: id, media, supportsAllDrives: true },
+        requestOptions
+      );
+    } else {
+      await this.client.files.create(
+        {
+          requestBody: {
+            name: `.${manifest.fileId}.bindings.json`,
+            mimeType: "application/json",
+            parents: [folderId],
+            appProperties: { meetup_binding_file: manifest.fileId }
+          },
+          media,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+    }
+  }
+  async find(folderId, fileId) {
+    if (![folderId, fileId].every((id) => /^[\w-]+$/.test(id)))
+      throw new ContentError("recovery");
+    const { data } = await this.client.files.list(
+      {
+        q: `'${folderId}' in parents and trashed=false and appProperties has { key='meetup_binding_file' and value='${fileId}' }`,
+        fields: "nextPageToken,incompleteSearch,files(id,mimeType,parents,appProperties)",
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.incompleteSearch || data.nextPageToken || (data.files?.length ?? 0) > 1)
+      throw new ContentError("recovery");
+    const file = data.files?.[0];
+    if (file && (!file.id || file.mimeType !== "application/json" || !file.parents?.includes(folderId) || file.appProperties?.meetup_binding_file !== fileId))
+      throw new ContentError("recovery");
+    return file?.id ?? void 0;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
+var GoogleDriveAssetRepositoryComposition = class {
+  driveAssetMetadata() {
+    return new DriveAssetMetadata();
+  }
+  googleDriveAssetRepository(...args) {
+    return new GoogleDriveAssetRepository(
+      { driveAssetMetadata: this.driveAssetMetadata() },
+      ...args
+    );
+  }
+  googleDriveAssetRepositoryFactory() {
+    return new GoogleDriveAssetRepositoryFactory({
+      googleDriveAuthentication: this.googleDriveAuthentication(),
+      createGoogleDriveAssetRepository: (...args) => this.googleDriveAssetRepository(...args)
+    });
+  }
+  googleDriveAuthentication() {
+    return new GoogleDriveAuthentication();
+  }
+  googleDriveManifestRepository(...args) {
+    return new GoogleDriveManifestRepository(...args);
+  }
+};
+
 // packages/adapter/publication/google-slides-content-repository/src/google-slides-content-repository.ts
 var GoogleSlidesContentRepository = class {
   constructor(collaborators, client, images) {
@@ -81842,20 +81819,6 @@ var GoogleSlidesContentRepositoryComposition = class {
   }
 };
 
-// packages/adapter/publication/https-asset-image-repository/src/https-content-image-loader.ts
-var HttpsContentImageLoader = class {
-  constructor(download) {
-    this.download = download;
-  }
-  download;
-  async load(url) {
-    const result = await this.download.get(url, true);
-    if (result.mediaType !== "image/png" && result.mediaType !== "image/jpeg")
-      throw new Error("Unsupported submitted image type");
-    return { bytes: result.bytes, mimeType: result.mediaType };
-  }
-};
-
 // packages/adapter/publication/https-asset-image-repository/src/dependency-composition.ts
 import { lookup } from "node:dns/promises";
 import { request as request2 } from "node:https";
@@ -81978,6 +81941,20 @@ var HttpsAssetImageRepository = class {
     } catch {
       throw new ContentError("image");
     }
+  }
+};
+
+// packages/adapter/publication/https-asset-image-repository/src/https-content-image-loader.ts
+var HttpsContentImageLoader = class {
+  constructor(download) {
+    this.download = download;
+  }
+  download;
+  async load(url) {
+    const result = await this.download.get(url, true);
+    if (result.mediaType !== "image/png" && result.mediaType !== "image/jpeg")
+      throw new Error("Unsupported submitted image type");
+    return { bytes: result.bytes, mimeType: result.mediaType };
   }
 };
 
@@ -87634,6 +87611,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
       const messages3 = this.collaborators.createAttentionMessages(locale);
       if (description === messages3.t("action.approval-pending"))
         return "email-approval";
+      if (description === messages3.t("action.community-approval-pending"))
+        return "community-approval";
       if (description === messages3.t("action.meetup-approval-pending"))
         return "meetup-approval";
       if (description === messages3.t("action.delivery-recovery"))
@@ -87702,6 +87681,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
       return this.messages.t("action.meetup-approval-pending");
     return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
@@ -88068,6 +88049,7 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
   "failure.assets": "Drive file preparation failed.",
@@ -88113,6 +88095,7 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
   "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
@@ -96159,6 +96142,9 @@ var ApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES5 = {
+  "approval.community.details": "### Organizer confirmation: publish CNCF community event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing can send OCGroups notifications to group members and speakers.",
+  "approval.community.request": "Repository writers: select one choice. Approval authorizes publication of this OCGroups draft and its native notifications. Changed content requires a new approval.\n\n- [{approveMark}] Approve publishing this CNCF community event\n- [{rejectMark}] Reject publishing this CNCF community event",
+  "approval.community.final": "{status, select, approved {\u2705 **Community publication approved**} rejected {\u274C **Community publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nAutomation rechecks the saved draft before publishing. CNCF Link is filled only after publication is verified. Changed content requires a new approval.",
   "approval.content.planned": "Planned publication: {time}. Recheck eligibility before posting.",
   "approval.content.slot": "Image {index}: {status, select, complete {stored} reserved {outcome uncertain; no automatic retry} failed {failed} other {not requested}}.",
   "approval.content.title": "### Review event content: {target}\n\nLanguage: {language} \xB7 Author: {origin}",
@@ -96188,6 +96174,9 @@ var EN_MESSAGES5 = {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES5 = {
+  "approval.community.details": "### Confirmation organisateur : publier l'\xE9v\xE9nement CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut envoyer les notifications OCGroups aux membres du groupe et aux speakers.",
+  "approval.community.request": "Membres avec droit d'\xE9criture : s\xE9lectionner un choix. L'approbation autorise la publication de ce brouillon OCGroups et ses notifications natives. Un changement de contenu n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de cet \xE9v\xE9nement CNCF\n- [{rejectMark}] Refuser la publication de cet \xE9v\xE9nement CNCF",
+  "approval.community.final": "{status, select, approved {\u2705 **Publication CNCF approuv\xE9e**} rejected {\u274C **Publication CNCF refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nL'automatisation v\xE9rifie le brouillon avant publication. CNCF Link est rempli apr\xE8s v\xE9rification de la publication. Un changement de contenu n\xE9cessite une nouvelle approbation.",
   "approval.content.planned": "Publication pr\xE9vue : {time}. V\xE9rifiez \xE0 nouveau la validit\xE9 avant publication.",
   "approval.content.slot": "Image {index} : {status, select, complete {enregistr\xE9e} reserved {r\xE9sultat incertain ; aucun nouvel essai automatique} failed {\xE9chec} other {non demand\xE9e}}.",
   "approval.content.title": "### V\xE9rification du contenu : {target}\n\nLangue : {language} \xB7 Auteur : {origin}",
@@ -96693,17 +96682,25 @@ var ApprovalRequestSchema = class {
     }
     if (value.content !== void 0)
       throw new Error("Invalid content approval kind");
-    if (value.kind === "meetup-publication") {
-      if (value.recipientCount !== void 0 || value.details !== void 0)
-        throw new Error("Invalid publication approval fields");
-      this.collaborators.meetupApprovalDetailsSchema.validate(
-        value.publication
-      );
+    if (value.kind === "community-publication" || value.kind === "meetup-publication") {
+      this.publication(value);
       return;
     }
     if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !this.collaborators.approvalSchema.count(value.recipientCount))
       throw new Error("Invalid approval request");
     this.collaborators.emailApprovalDetailsSchema.validate(value.details);
+  }
+  publication(value) {
+    if (value.recipientCount !== void 0 || value.details !== void 0)
+      throw new Error("Invalid publication approval fields");
+    if (value.kind === "community-publication")
+      this.collaborators.communityApprovalDetailsSchema.validate(
+        value.publication
+      );
+    else
+      this.collaborators.meetupApprovalDetailsSchema.validate(
+        value.publication
+      );
   }
 };
 
@@ -96717,6 +96714,64 @@ var ApprovalSchema = class {
   }
   text(value, maximum) {
     return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/community-approval-details-schema.ts
+var CommunityApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || !this.reviewUrl(value.url) || !this.text(value.title, 120) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
+      throw new Error("Invalid community approval details");
+  }
+  reviewUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && value === `${url.origin}${url.pathname}` && /^\/dashboard\/group\/events\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\/update$/.test(
+        url.pathname
+      );
+    } catch {
+      return false;
+    }
+  }
+  text(value, maximum) {
+    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/community-approval-presenter.ts
+var CommunityApprovalPresenter = class {
+  constructor(messages3) {
+    this.messages = messages3;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.community.details", {
+      title: this.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: this.escape(details.timeZone),
+      venue: this.escape(details.venue.name),
+      city: this.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.community.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.community.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [content, controls].join("\n\n");
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
   }
 };
 
@@ -97598,6 +97653,7 @@ var GithubOrganizerApprovalComposition = class {
       "email-introduction": email,
       "email-thanks": email,
       "meetup-publication": this.meetupApprovalPresenter(messages3),
+      "community-publication": new CommunityApprovalPresenter(messages3),
       "content-review": this.contentApprovalPresenter(messages3)
     });
   }
@@ -97623,6 +97679,10 @@ var GithubOrganizerApprovalComposition = class {
   }
   approvalRequestSchema() {
     return new ApprovalRequestSchema({
+      communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
+        approvalSchema: this.approvalSchema(),
+        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+      }),
       approvalSchema: this.approvalSchema(),
       contentApprovalSchema: new ContentApprovalSchema(
         this.approvalSchema(),
@@ -98080,7 +98140,7 @@ var ContentGateComposition = class {
       ),
       new DraftProposalComposition().policy(),
       async () => ({
-        publication: await runtime.meetupPublicationConfiguration().load(input.workspaceRoot ?? process.cwd()),
+        publication: (await runtime.eventPublicationConfiguration().load(input.workspaceRoot ?? process.cwd())).schedule,
         content: await new ContentConfiguration(
           runtime.runtimeInput(),
           new PublicAssetUrl()

@@ -14,6 +14,7 @@ import { ApprovalDecisionParser } from "../src/approval-decision-parser.js";
 import { ApprovalNotifications } from "../src/approval-notifications.js";
 import { ApprovalPresenter } from "../src/approval-presenter.js";
 import { ApprovalRecordFactory } from "../src/approval-record-factory.js";
+import { CommunityApprovalPresenter } from "../src/community-approval-presenter.js";
 import { FinalizeApprovalDecision } from "../src/finalize-approval-decision.js";
 import { GithubApprovalAttentionSource } from "../src/github-approval-attention-source.js";
 import { GithubApprovalClient } from "../src/github-approval-client.js";
@@ -58,6 +59,9 @@ export function fixture(locale = "en") {
 				new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 					new GithubOrganizerApprovalComposition().approvalMessages("en"),
 				),
+			"community-publication": new CommunityApprovalPresenter(
+				new GithubOrganizerApprovalComposition().approvalMessages("en"),
+			),
 			"meetup-publication":
 				new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
 					new ApprovalMessages(
@@ -322,3 +326,12 @@ export function approvalDependencies(
 		notifications,
 	};
 }
+
+export const communityRequest = {
+	...publicationRequest,
+	kind: "community-publication",
+	publication: {
+		...publicationRequest.publication,
+		url: "https://community.example.test/dashboard/group/events/10000000-0000-4000-8000-000000000001/update",
+	},
+} satisfies OrganizerApprovalRequest;

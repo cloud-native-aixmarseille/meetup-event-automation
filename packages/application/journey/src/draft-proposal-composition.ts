@@ -1,4 +1,3 @@
-import { ApprovalValueFingerprint } from "./approval/approval-value-fingerprint.js";
 import { SocialPostDraft } from "@meetup-automation/communication";
 import {
 	EventCopyAgenda,
@@ -9,6 +8,7 @@ import {
 	ContentFingerprint,
 	CoverArtwork,
 } from "@meetup-automation/publication";
+import { ApprovalValueFingerprint } from "./approval/approval-value-fingerprint.js";
 import { CoverArtworkDrafts } from "./assets/cover-artwork-drafts.js";
 import { SocialPostDrafts } from "./communication/social-post-drafts.js";
 import { EventCopyDrafts } from "./event/event-copy-drafts.js";

@@ -1,5 +1,48 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"action.publication.prepare-runtime": "Préparer le runtime de publication",
+	"report.publication.draft":
+		"fournisseur_publication={provider} evenement=brouillon approbation=requise",
+	"report.publication.updated":
+		"fournisseur_publication={provider} evenement=synchronise",
+	"report.publication.skipped":
+		"fournisseur_publication={provider} evenement=ignore",
+	"report.publication.blocked":
+		"fournisseur_publication={provider} evenement=bloque",
+	"report.publication.review":
+		"fournisseur_publication={provider} url_validation={url}",
+	"diagnostic.publication.community.content-review":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.community.approval-pending":
+		"Approuvez ou refusez la publication dans le commentaire d'approbation. L'événement reste en brouillon avant approbation.",
+	"diagnostic.publication.community.approval-rejected":
+		"La publication a été refusée. L'événement reste en brouillon ; toute modification nécessite une nouvelle approbation.",
+	"diagnostic.publication.community.approval-unavailable":
+		"Impossible de vérifier l'approbation de publication. Vérifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+	"diagnostic.publication.community.approval-notification-failed":
+		"La notification d'approbation n'a pas pu être confirmée. Consultez le commentaire d'approbation dans l'issue.",
+	"diagnostic.publication.community.source":
+		"La lecture des sources a échoué. Résolvez les diagnostics techniques des sources avant de synchroniser.",
+	"diagnostic.publication.community.unavailable":
+		"Le démarrage du navigateur ou la connexion a échoué. Vérifiez les dépendances, le réseau, les sélecteurs de connexion.",
+
+	"diagnostic.publication.community.inactive":
+		"La publication OCGroups est inactive pour cette issue.",
+	"diagnostic.publication.community.prerequisites":
+		"Complétez la date future, le titre, la description, les confirmations, le programme résolu et le lieu public, puis corrigez les cases mal formées dans Communication avant de synchroniser.",
+	"diagnostic.publication.community.link":
+		"Renseignez une URL d'événement valide du groupe OCGroups configuré.",
+	"diagnostic.publication.community.conflict":
+		"Le lien de l'issue diffère de l'événement enregistré. Rétablissez le lien enregistré avant de relancer.",
+	"diagnostic.publication.community.uncertain":
+		"Le résultat est incertain. Vérifiez le tableau de bord OCGroups et récupérez le UUID vérifié dans le journal community avant de relancer. Gardez les brouillons hors de CNCF Link. Effacez une réservation seulement après avoir confirmé qu'aucun événement n'a été créé.",
+	"diagnostic.publication.community.authentication":
+		"Connexion organisateur non vérifiée. Vérifiez le compte, les identifiants et les droits du groupe ; terminez manuellement toute vérification non prise en charge.",
+	"diagnostic.publication.community.editor":
+		"Impossible de préparer l'éditeur OCGroups. Vérifiez les droits organisateur, le lieu configuré et les sélecteurs du navigateur.",
+	"diagnostic.publication.community.verification":
+		"Les champs enregistrés sur OCGroups ne correspondent pas. L'identité est conservée ; vérifiez l'événement puis relancez sa mise à jour.",
+
 	"action.event.generate-copy": "Générer le titre ou la description",
 	"action.assets.generate-cover": "Générer les illustrations",
 	"action.communication.generate-slack-post": "Générer le message Slack",
@@ -54,11 +97,7 @@ export const FR_MESSAGES = {
 		"Le démarrage du navigateur ou la connexion a échoué. Vérifiez les dépendances, le réseau, le solveur et les sélecteurs de connexion.",
 	"action.publication.reconcile-event":
 		"Réconcilier la publication de l'événement",
-	"report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-	"report.meetup.review": "meetup_url={url}",
-	"report.meetup.updated": "evenement_meetup=synchronise",
-	"report.meetup.skipped": "evenement_meetup=ignore",
-	"report.meetup.blocked": "evenement_meetup=bloque",
+
 	"diagnostic.publication.meetup.inactive":
 		"La publication Meetup est inactive pour cette issue.",
 	"diagnostic.publication.meetup.prerequisites":

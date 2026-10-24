@@ -15,6 +15,7 @@ const event: ScheduledEvent = {
 	venue: { name: "Example Venue", city: "Marseille" },
 };
 const url = "https://www.meetup.com/example/events/123/";
+const identity = { id: "123", reviewUrl: url, publicUrl: url };
 
 describe("reviewed publication revision", () => {
 	it("preserves the serialized public event contract", () => {
@@ -29,7 +30,7 @@ describe("reviewed publication revision", () => {
 		const revision = new MeetupPublicationRevision({
 			contentFingerprint:
 				new PublicationDomainComposition().contentFingerprint(),
-		}).of(event, url);
+		}).of(event, identity);
 
 		// Assert
 		expect(revision).toBe(expected);
@@ -56,11 +57,11 @@ describe("reviewed publication revision", () => {
 		const original = new MeetupPublicationRevision({
 			contentFingerprint:
 				new PublicationDomainComposition().contentFingerprint(),
-		}).of(event, url);
+		}).of(event, identity);
 		const same = new MeetupPublicationRevision({
 			contentFingerprint:
 				new PublicationDomainComposition().contentFingerprint(),
-		}).of(reordered, url);
+		}).of(reordered, identity);
 
 		// Assert
 		expect(same).toBe(original);

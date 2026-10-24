@@ -28,9 +28,10 @@ function fixture(configuredGroup = groupUrl) {
 	const login = vi
 		.spyOn(MeetupLoginPage.prototype, "login")
 		.mockResolvedValue("verified");
-	const save = vi
-		.spyOn(MeetupEventEditor.prototype, "save")
-		.mockResolvedValue({ url: eventUrl, status: "draft" });
+	const save = vi.spyOn(MeetupEventEditor.prototype, "save").mockResolvedValue({
+		url: `${configuredGroup}events/12345/`,
+		status: "draft",
+	});
 	const createLogin = vi.fn((...args: MeetupLoginPageArguments) =>
 		new MeetupEventGatewayComposition().meetupLoginPage(...args),
 	);
@@ -85,7 +86,14 @@ describe("Meetup event browser session", () => {
 			const result = await gateway.save(desiredEvent, undefined, before, after);
 
 			// Assert
-			expect(result).toEqual({ url: eventUrl, status: "draft" });
+			expect(result).toEqual({
+				identity: {
+					id: "12345",
+					reviewUrl: `${configuredGroup}events/12345/`,
+					publicUrl: `${configuredGroup}events/12345/`,
+				},
+				status: "draft",
+			});
 			expect(launch).toHaveBeenCalledWith(
 				expect.objectContaining({
 					args: [
@@ -105,7 +113,12 @@ describe("Meetup event browser session", () => {
 				"organizer@example.test",
 				" synthetic-password ",
 			);
-			expect(save).toHaveBeenCalledWith(desiredEvent, undefined, before, after);
+			expect(save).toHaveBeenCalledWith(
+				desiredEvent,
+				undefined,
+				before,
+				expect.any(Function),
+			);
 			expect(browser.close).toHaveBeenCalledOnce();
 			expect(createCaptchaResolver).toHaveBeenCalledExactlyOnceWith(page);
 			expect(createLogin).toHaveBeenCalledExactlyOnceWith(
@@ -158,7 +171,15 @@ describe("Meetup event browser session", () => {
 			.mockResolvedValue({ url: eventUrl, status: "published" });
 
 		// Act
-		const result = await gateway.publish(desiredEvent, eventUrl, guard);
+		const result = await gateway.publish(
+			desiredEvent,
+			{
+				id: /events\/([0-9]+)/.exec(eventUrl)?.[1] ?? "",
+				reviewUrl: eventUrl,
+				publicUrl: eventUrl,
+			},
+			guard,
+		);
 
 		// Assert
 		expect(result.status).toBe("published");

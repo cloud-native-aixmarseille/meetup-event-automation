@@ -17,6 +17,7 @@ export class ApprovalNotificationPolicy {
 					recipientCount: request.recipientCount,
 				};
 			case "meetup-publication":
+			case "community-publication":
 				return { kind: request.kind, eventDate: request.eventDate };
 			case "content-review":
 				return {

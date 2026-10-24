@@ -5,6 +5,28 @@ import { type ActionManifest, readYaml, root, sortedKeys } from "./support.js";
 
 const actionContracts = [
 	{
+		directory: "actions/publication/prepare-runtime",
+		inputs: [],
+		outputs: ["requires-challenge-solver"],
+	},
+	{
+		directory: "actions/publication/reconcile-event",
+		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
+			"conference-hall-api-key",
+			"conference-hall-event",
+			"github-token",
+			"issue-number",
+			"managed-comment-author",
+			"publication-credentials",
+			"slack-token",
+			"slack-organizer-channel-id",
+		],
+		outputs: [],
+	},
+	{
 		directory: "actions/organizer/review-drafts",
 		inputs: [
 			"asset-folder-url-prefix",
@@ -232,7 +254,6 @@ describe("public action contracts", () => {
 		expect(paths.sort()).toEqual(
 			[
 				...actionContracts.map((item) => item.directory),
-				"actions/publication/reconcile-event",
 				"actions/referential/reconcile-speakers",
 			].sort(),
 		);

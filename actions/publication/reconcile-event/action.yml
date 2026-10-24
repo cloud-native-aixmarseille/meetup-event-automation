@@ -1,5 +1,5 @@
 name: Reconcile event publication
-description: Create or update an event draft and publish it after verified organizer approval.
+description: Reconcile configured publication destinations and publish each event after its verified organizer approval.
 inputs:
   meetup-event-url-prefix:
     description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
@@ -34,20 +34,8 @@ inputs:
   locale:
     description: Language for the publication report (en or fr).
     required: true
-  meetup-email:
-    description: Email of the authorized Meetup organizer account.
-    required: true
-  meetup-password:
-    description: Password of the authorized Meetup organizer account.
-    required: true
-  ai-provider:
-    description: AI provider identifier (gemini).
-    required: true
-  ai-model:
-    description: Model identifier for the selected AI provider.
-    required: true
-  ai-api-key:
-    description: API key for the selected AI provider.
+  publication-credentials:
+    description: JSON credentials keyed by configured provider. Meetup requires email, password, and ai (provider, model, apiKey); OCGroups requires username and password.
     required: true
 runs:
   using: node24

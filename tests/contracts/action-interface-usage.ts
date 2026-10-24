@@ -177,7 +177,13 @@ export function shellConsumes(script: string, name: string): boolean {
 }
 
 function operationalCommand(line: string): boolean {
-	return /^\s*(?:gh\s+(?:pr|issue)\s+(?:create|edit)|git\s+(?:commit|push))\s/m.test(
-		line,
+	return (
+		/^\s*(?:gh\s+(?:pr|issue)\s+(?:create|edit)|git\s+(?:commit|push))\s/m.test(
+			line,
+		) ||
+		// Installing a locked requirements file changes the runtime used by later actions.
+		/^\s*\.venv\/bin\/python\s+-m\s+pip\s+install\b[^\n]*\s-r\s+requirements\.txt\s*$/m.test(
+			line,
+		)
 	);
 }

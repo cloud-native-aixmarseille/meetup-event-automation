@@ -35296,6 +35296,30 @@ var EventDomainComposition = class {
   }
 };
 
+// packages/domain/event/src/domain/event-copy-agenda.ts
+var EventCopyAgenda = class {
+  ready(talks) {
+    return talks.length > 0 && talks.every(
+      (talk) => Boolean(talk.title.trim()) && talk.speakers.length > 0 && talk.speakers.every(
+        (speaker) => Boolean(speaker.id && speaker.name.trim())
+      )
+    );
+  }
+  source(talks) {
+    return {
+      talks: talks.map((talk) => ({
+        id: talk.id,
+        title: talk.title,
+        abstract: talk.abstract,
+        speakers: talk.speakers.map((speaker) => ({
+          id: speaker.id,
+          name: speaker.name
+        }))
+      }))
+    };
+  }
+};
+
 // packages/domain/event/src/domain/event-copy-description-draft.ts
 var EventCopyDescriptionDraft = class {
   constructor(agenda) {
@@ -35374,30 +35398,6 @@ var EventCopyTitleDraft = class {
           abstract: talk.abstract
         }))
       }
-    };
-  }
-};
-
-// packages/domain/event/src/domain/event-copy-agenda.ts
-var EventCopyAgenda = class {
-  ready(talks) {
-    return talks.length > 0 && talks.every(
-      (talk) => Boolean(talk.title.trim()) && talk.speakers.length > 0 && talk.speakers.every(
-        (speaker) => Boolean(speaker.id && speaker.name.trim())
-      )
-    );
-  }
-  source(talks) {
-    return {
-      talks: talks.map((talk) => ({
-        id: talk.id,
-        title: talk.title,
-        abstract: talk.abstract,
-        speakers: talk.speakers.map((speaker) => ({
-          id: speaker.id,
-          name: speaker.name
-        }))
-      }))
     };
   }
 };
@@ -35708,6 +35708,7 @@ var ApprovalNotificationPolicy = class {
           recipientCount: request2.recipientCount
         };
       case "meetup-publication":
+      case "community-publication":
         return { kind: request2.kind, eventDate: request2.eventDate };
       case "content-review":
         return {
@@ -35742,7 +35743,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication" || request2.kind === "content-review")
+    if (request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -35762,7 +35763,7 @@ var ApprovalRequestPolicy = class {
       return false;
     if (previous.kind === "content-review" && request2.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
-    if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
+    if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request2.kind === "meetup-publication" || request2.kind === "community-publication"))
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
     return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
   }
@@ -35810,6 +35811,43 @@ var FollowUpApprovalPolicy = class {
     return progress.pendingTasks.some(
       (task) => task === "thank-host" || task === "thank-speakers"
     ) ? "waiting" : "emails-complete";
+  }
+};
+
+// packages/application/journey/src/assets/cover-artwork-approval-gate.ts
+var CoverArtworkApprovalGate = class {
+  constructor(store, authority, projection, plans, policy, settings) {
+    this.store = store;
+    this.authority = authority;
+    this.projection = projection;
+    this.plans = plans;
+    this.policy = policy;
+    this.settings = settings;
+  }
+  store;
+  authority;
+  projection;
+  plans;
+  policy;
+  settings;
+  async cover(event) {
+    const proposal = (await this.store.load()).proposals.filter((item) => item.plan.target === "cover").at(-1);
+    if (proposal?.accepted?.media.length !== 1) return void 0;
+    const settings = await this.settings();
+    const plan2 = this.plans.create(
+      "cover",
+      proposal.plan.language,
+      this.projection.create(
+        event,
+        settings.publication,
+        settings.content,
+        null
+      ),
+      settings.content.reminderTime
+    );
+    if (!this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
+      return void 0;
+    return proposal.accepted.media[0];
   }
 };
 
@@ -36074,6 +36112,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("community-publication:"))
+      return "community-approval";
     return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
   }
   covered(episode, entries) {
@@ -36176,13 +36216,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -39758,6 +39798,9 @@ var MeetupEventUrl = class _MeetupEventUrl {
   get value() {
     return `${this.group.eventUrlPrefix}${this.identifier}/`;
   }
+  get id() {
+    return this.identifier;
+  }
 };
 
 // packages/domain/publication/src/domain/meetup-event-url-policy.ts
@@ -39983,6 +40026,11 @@ var ScheduledEventPolicy = class {
   valid(event, now2) {
     if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
       return false;
+    return this.validSchedule(event, now2);
+  }
+  validSchedule(event, now2) {
+    if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
     const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
       return false;
@@ -40159,6 +40207,87 @@ var PublicationDomainComposition = class {
   }
 };
 
+// packages/domain/publication/src/domain/community-event-identity-policy.ts
+var CommunityEventIdentityPolicy = class {
+  constructor(group) {
+    this.group = group;
+  }
+  group;
+  validId(value) {
+    return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+      value
+    );
+  }
+  publicUrl(value) {
+    return typeof value === "string" && value.startsWith(this.group.eventUrlPrefix) && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
+      value.slice(this.group.eventUrlPrefix.length)
+    );
+  }
+  reviewUrl(value) {
+    if (typeof value !== "string") return false;
+    try {
+      const url = new URL(value);
+      return url.origin === this.group.origin && !url.username && !url.password && value === `${url.origin}${url.pathname}` && /^\/dashboard\/group\/events\/[0-9a-f-]{36}\/update$/.test(url.pathname);
+    } catch {
+      return false;
+    }
+  }
+  valid(value) {
+    return this.validId(value.id) && this.reviewUrl(value.reviewUrl) && (value.publicUrl === void 0 || this.publicUrl(value.publicUrl)) && value.reviewUrl === `${this.group.origin}/dashboard/group/events/${value.id}/update`;
+  }
+};
+
+// packages/domain/publication/src/domain/community-event-policy.ts
+var CommunityEventPolicy = class {
+  constructor(schedule) {
+    this.schedule = schedule;
+  }
+  schedule;
+  valid(event, now2) {
+    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+  }
+  venue(venue) {
+    return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
+  }
+  registration(value) {
+    return Number.isSafeInteger(value.capacity) && value.capacity > 0 && value.capacity <= 1e5 && typeof value.waitlist === "boolean" && typeof value.approvalRequired === "boolean" && typeof value.reminder === "boolean" && !(value.waitlist && value.approvalRequired);
+  }
+  text(value, maximum) {
+    return value.trim().length > 0 && Buffer.byteLength(value, "utf8") <= maximum && ![...value].some(
+      (character) => character.charCodeAt(0) < 32 && !"\n\r	".includes(character)
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/community-group-url.ts
+var CommunityGroupUrl = class _CommunityGroupUrl {
+  constructor(eventUrlPrefix, origin, community, group) {
+    this.eventUrlPrefix = eventUrlPrefix;
+    this.origin = origin;
+    this.community = community;
+    this.group = group;
+  }
+  eventUrlPrefix;
+  origin;
+  community;
+  group;
+  static parse(value) {
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      return void 0;
+    }
+    const match = /^\/([a-z0-9-]+)\/group\/([a-z0-9-]+)\/event\/$/.exec(
+      url.pathname
+    );
+    if (!match || url.protocol !== "https:" || url.username || url.password || value !== `${url.origin}${url.pathname}`)
+      return void 0;
+    return new _CommunityGroupUrl(value, url.origin, match[1], match[2]);
+  }
+};
+
 // packages/domain/publication/src/domain/cover-artwork.ts
 var CoverArtwork = class {
   directions = [
@@ -40219,6 +40348,25 @@ var FeedbackResolutionError = class extends Error {
   kind;
 };
 
+// packages/domain/publication/src/domain/meetup-event-identity-policy.ts
+var MeetupEventIdentityPolicy = class {
+  constructor(group) {
+    this.group = group;
+  }
+  group;
+  fromUrl(value) {
+    const url = MeetupEventUrl.parse(value, this.group);
+    return url ? { id: url.id, reviewUrl: url.value, publicUrl: url.value } : void 0;
+  }
+  publicUrl(value) {
+    return MeetupEventUrl.parse(value, this.group) !== void 0;
+  }
+  valid(identity) {
+    const expected = this.fromUrl(identity.reviewUrl);
+    return expected !== void 0 && identity.id === expected.id && identity.reviewUrl === expected.reviewUrl && identity.publicUrl === expected.publicUrl;
+  }
+};
+
 // packages/domain/publication/src/domain/scheduled-event-error.ts
 var ScheduledEventError = class extends Error {
   constructor(kind) {
@@ -40229,16 +40377,36 @@ var ScheduledEventError = class extends Error {
   kind;
 };
 
+// packages/application/journey/src/approval/approval-value-fingerprint.ts
+var ApprovalValueFingerprint = class {
+  constructor(hash) {
+    this.hash = hash;
+  }
+  hash;
+  digest(value) {
+    return this.hash.of(JSON.stringify(this.canonical(value)));
+  }
+  canonical(value) {
+    if (value === void 0) return null;
+    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
+      );
+    return value;
+  }
+};
+
 // packages/application/journey/src/approval/meetup-publication-revision.ts
 var MeetupPublicationRevision = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
   }
   collaborators;
-  of(event, url) {
+  of(event, identity) {
     return this.collaborators.contentFingerprint.of(
       JSON.stringify({
-        url,
+        url: identity.reviewUrl,
         event: {
           title: event.title,
           description: event.description,
@@ -40278,26 +40446,6 @@ var AutomationConfigFactory = class {
         "policy-version": 1
       }
     };
-  }
-};
-
-// packages/application/journey/src/approval/approval-value-fingerprint.ts
-var ApprovalValueFingerprint = class {
-  constructor(hash) {
-    this.hash = hash;
-  }
-  hash;
-  digest(value) {
-    return this.hash.of(JSON.stringify(this.canonical(value)));
-  }
-  canonical(value) {
-    if (value === void 0) return null;
-    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
-    if (value && typeof value === "object")
-      return Object.fromEntries(
-        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
-      );
-    return value;
   }
 };
 
@@ -40376,6 +40524,17 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.community.content-review",
+  "publication.community.authentication",
+  "publication.community.prerequisites",
+  "publication.community.link",
+  "publication.community.conflict",
+  "publication.community.uncertain",
+  "publication.community-url.invalid",
+  "publication.community.missing",
+  "publication.community.unpublished",
+  "publication.community.approval-pending",
+  "publication.community.approval-rejected",
   "publication.content.prerequisites",
   "publication.content.pending",
   "publication.content.rejected",
@@ -41129,8 +41288,8 @@ var FeedbackAgendaProjection = class {
   }
 };
 
-// packages/application/journey/src/use-cases/meetup-publication-projection.ts
-var MeetupPublicationProjection = class {
+// packages/application/journey/src/use-cases/scheduled-event-projection.ts
+var ScheduledEventProjection = class {
   create(event, settings) {
     const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
     if (!venue || !event.description.trim() || !event.confirmations.host || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
@@ -41257,8 +41416,8 @@ var JourneyPolicyComposition = class {
   feedbackAgendaProjection() {
     return new FeedbackAgendaProjection();
   }
-  meetupPublicationProjection() {
-    return new MeetupPublicationProjection();
+  scheduledEventProjection() {
+    return new ScheduledEventProjection();
   }
   meetupPublicationRevision() {
     return new MeetupPublicationRevision({
@@ -41630,227 +41789,6 @@ var ManageMeetupEvent = class {
       repositoryPatch
     );
     return true;
-  }
-};
-
-// packages/application/journey/src/use-cases/manage-meetup-publication.ts
-var PUBLICATION_LINK_FIELDS = [
-  "publicationLinks.meetup",
-  "publicationLinks.community",
-  "publicationLinks.assets",
-  "publicationLinks.feedback"
-];
-var ManageMeetupPublication = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(identity) {
-    const source = await this.dependencies.repository.find(identity);
-    if (!source) throw new Error("Meetup source issue was not found");
-    const evaluation = await this.dependencies.manageEvent.execute({
-      identity,
-      mode: "check",
-      sourceDocument: source
-    });
-    if (evaluation.skipped) return this.result("skipped", "inactive");
-    if (evaluation.diagnostics.some(
-      this.collaborators.diagnosticPolicy.isTechnicalFailure.bind(
-        this.collaborators.diagnosticPolicy
-      )
-    ))
-      return this.result("blocked", "source");
-    const event = evaluation.event;
-    if ((await this.dependencies.contentGate.blocked(event)).length)
-      return this.result("blocked", "content-review");
-    if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
-      return this.result("skipped", "inactive");
-    const draft = this.collaborators.meetupPublicationProjection.create(
-      event,
-      this.dependencies.settings
-    );
-    if (evaluation.diagnostics.some(
-      (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication"
-    ) || !draft || !this.collaborators.scheduledEventPolicy.valid(
-      draft,
-      this.dependencies.clock.now()
-    ) || evaluation.diagnostics.some(
-      (item) => item.severity === "error" && !PUBLICATION_LINK_FIELDS.includes(item.field ?? "")
-    ))
-      return this.result("blocked", "prerequisites");
-    return this.synchronize(source, draft, event.publicationLinks.meetup);
-  }
-  async synchronize(source, draft, supplied) {
-    const record = await this.dependencies.journal.load();
-    const suppliedUrl = this.eventUrl(supplied);
-    const recordedUrl = this.eventUrl(record?.url);
-    if (supplied && !suppliedUrl || record?.url && !recordedUrl)
-      return this.result("blocked", "link");
-    if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
-      return this.result("blocked", "conflict");
-    const url = (suppliedUrl ?? recordedUrl)?.value;
-    if (!url && record) return this.result("blocked", "uncertain");
-    try {
-      const saved = await this.dependencies.gateway.save(
-        draft,
-        url,
-        async () => {
-          await this.ensureCurrent(source);
-          if (!url) await this.dependencies.journal.reserve();
-          await this.ensureCurrent(source);
-        },
-        async (savedUrl) => {
-          if (!this.eventUrl(savedUrl))
-            throw new ScheduledEventError("verification");
-          await this.dependencies.journal.record(savedUrl);
-        }
-      );
-      if (!this.eventUrl(saved.url) || !url && saved.status !== "draft")
-        throw new ScheduledEventError("verification");
-      return await this.complete(source, draft, saved);
-    } catch (error2) {
-      if (!(error2 instanceof ScheduledEventError)) throw error2;
-      return this.result("blocked", error2.kind);
-    }
-  }
-  eventUrl(value) {
-    const group = MeetupGroupUrl.fromEventUrlPrefix(
-      this.dependencies.meetupUrlPrefix
-    );
-    return group ? MeetupEventUrl.parse(value, group) : void 0;
-  }
-  async persist(source, saved) {
-    await this.ensureCurrent(source);
-    const event = this.dependencies.codec.decode(source).event;
-    const updated = this.collaborators.meetupPublicationChecklist.withStatus(
-      event,
-      saved.status === "published"
-    );
-    const patch = this.dependencies.codec.createPatch(source, {
-      ...updated,
-      publicationLinks: { ...event.publicationLinks, meetup: saved.url }
-    });
-    if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
-      patch
-    )) {
-      await this.ensureCurrent(source);
-      await this.dependencies.repository.applyPatch(source.identity, patch);
-    }
-    return { ...source, ...patch };
-  }
-  async complete(source, event, saved) {
-    const current = await this.persist(source, saved);
-    if (saved.status === "published")
-      return { status: "updated", diagnostics: [] };
-    await this.ensureCurrent(current);
-    const approval = this.collaborators.createMeetupPublicationApproval(
-      this.dependencies.approval,
-      this.dependencies.clock
-    );
-    const decision = await approval.request(event, saved.url);
-    const diagnostics = decision.notificationFailed ? this.result("blocked", "approval-notification-failed").diagnostics : [];
-    if (decision.status !== "approved")
-      return {
-        status: "draft",
-        reviewUrl: saved.url,
-        diagnostics: [
-          ...diagnostics,
-          ...this.result("blocked", `approval-${decision.status}`).diagnostics
-        ]
-      };
-    const published = await this.dependencies.gateway.publish(
-      event,
-      saved.url,
-      async () => {
-        await this.ensureCurrent(current);
-        if (!this.collaborators.scheduledEventPolicy.valid(
-          event,
-          this.dependencies.clock.now()
-        ))
-          throw new ScheduledEventError("verification");
-        await approval.requireApproved(event, saved.url);
-        await this.ensureCurrent(current);
-      }
-    );
-    if (published.status !== "published" || published.url !== saved.url)
-      throw new ScheduledEventError("verification");
-    await this.persist(current, published);
-    return { status: "updated", diagnostics };
-  }
-  async ensureCurrent(source) {
-    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-      this.dependencies.repository,
-      source.identity,
-      source
-    );
-    const evaluated = await this.dependencies.manageEvent.execute({
-      identity: source.identity,
-      sourceDocument: source,
-      mode: "check"
-    });
-    if (evaluated.skipped || (await this.dependencies.contentGate.blocked(evaluated.event)).length)
-      throw new ScheduledEventError("content-review");
-  }
-  result(status, code) {
-    return {
-      status,
-      diagnostics: [
-        {
-          code: `publication.meetup.${code}`,
-          severity: [
-            "editor",
-            "verification",
-            "source",
-            "unavailable",
-            "approval-unavailable",
-            "approval-notification-failed"
-          ].includes(code) ? "error" : status === "blocked" ? "warning" : "info",
-          field: "publicationLinks.meetup",
-          message: `Meetup publication: ${code}`
-        }
-      ]
-    };
-  }
-};
-
-// packages/application/journey/src/use-cases/meetup-publication-approval.ts
-var MeetupPublicationApproval = class {
-  constructor(collaborators, approvals, clock) {
-    this.collaborators = collaborators;
-    this.approvals = approvals;
-    this.clock = clock;
-  }
-  collaborators;
-  approvals;
-  clock;
-  async request(event, url) {
-    try {
-      return await this.approvals.request({
-        kind: "meetup-publication",
-        revision: this.collaborators.meetupPublicationRevision.of(event, url),
-        eventDate: event.date,
-        requestedAt: this.clock.now(),
-        publication: {
-          url,
-          title: event.title,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          timeZone: event.timeZone,
-          venue: event.venue
-        }
-      });
-    } catch {
-      throw new ScheduledEventError("approval-unavailable");
-    }
-  }
-  async requireApproved(event, url) {
-    const result = await this.request(event, url);
-    if (result.status !== "approved")
-      throw new ScheduledEventError(
-        result.status === "pending" ? "approval-pending" : "approval-rejected"
-      );
   }
 };
 
@@ -42461,28 +42399,6 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupPublication(...args) {
-    return new ManageMeetupPublication(
-      {
-        diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-        meetupPublicationProjection: new JourneyPolicyComposition().meetupPublicationProjection(),
-        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy(),
-        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
-        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
-        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
-        createMeetupPublicationApproval: (...args2) => this.meetupPublicationApproval(...args2)
-      },
-      ...args
-    );
-  }
-  meetupPublicationApproval(...args) {
-    return new MeetupPublicationApproval(
-      {
-        meetupPublicationRevision: new JourneyPolicyComposition().meetupPublicationRevision()
-      },
-      ...args
-    );
-  }
   reconcileOrganizerFeedback(...args) {
     return new ReconcileOrganizerFeedback(
       {
@@ -42668,6 +42584,405 @@ var DraftProposalComposition = class {
   }
 };
 
+// packages/application/journey/src/event/event-copy-approval-gate.ts
+var EventCopyApprovalGate = class {
+  constructor(store, authority, projection, plans, policy, settings) {
+    this.store = store;
+    this.authority = authority;
+    this.projection = projection;
+    this.plans = plans;
+    this.policy = policy;
+    this.settings = settings;
+  }
+  store;
+  authority;
+  projection;
+  plans;
+  policy;
+  settings;
+  async blocked(event) {
+    const { proposals } = await this.store.load();
+    const managed = proposals.filter(
+      (item) => item.plan.target === "title" || item.plan.target === "description"
+    );
+    if (!managed.length) return [];
+    const settings = await this.settings();
+    const facts = this.projection.create(
+      event,
+      settings.publication,
+      settings.content,
+      null
+    );
+    const blocked = [];
+    for (const target of ["title", "description"]) {
+      const proposal = managed.filter((item) => item.plan.target === target).at(-1);
+      if (!proposal) continue;
+      const plan2 = this.plans.create(
+        target,
+        proposal.plan.language,
+        facts,
+        settings.content.reminderTime
+      );
+      if (!proposal.accepted || proposal.accepted.text !== this.projection.destination(event, target) || !this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
+        blocked.push(target);
+    }
+    return blocked;
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-approval.ts
+var EventPublicationApproval = class {
+  constructor(revision, approvals, clock, kind, target) {
+    this.revision = revision;
+    this.approvals = approvals;
+    this.clock = clock;
+    this.kind = kind;
+    this.target = target;
+  }
+  revision;
+  approvals;
+  clock;
+  kind;
+  target;
+  async request(event, identity) {
+    try {
+      return await this.approvals.request({
+        kind: this.kind,
+        revision: this.revision.of(event, identity, this.target),
+        eventDate: event.date,
+        requestedAt: this.clock.now(),
+        publication: {
+          url: identity.reviewUrl,
+          title: event.title,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          timeZone: event.timeZone,
+          venue: event.venue
+        }
+      });
+    } catch {
+      throw new ScheduledEventError("approval-unavailable");
+    }
+  }
+  async requireApproved(event, identity) {
+    const result = await this.request(event, identity);
+    if (result.status !== "approved")
+      throw new ScheduledEventError(
+        result.status === "pending" ? "approval-pending" : "approval-rejected"
+      );
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-results.ts
+var EventPublicationResults = class {
+  constructor(field, label) {
+    this.field = field;
+    this.label = label;
+  }
+  field;
+  label;
+  result(status, code) {
+    return {
+      status,
+      diagnostics: [
+        {
+          code: `publication.${this.field}.${code}`,
+          severity: [
+            "editor",
+            "verification",
+            "source",
+            "unavailable",
+            "approval-unavailable",
+            "approval-notification-failed"
+          ].includes(code) ? "error" : status === "blocked" ? "warning" : "info",
+          field: `publicationLinks.${this.field}`,
+          message: `${this.label} publication: ${code}`
+        }
+      ]
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-source.ts
+var EventPublicationSource = class {
+  constructor(collaborators, dependencies, document) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+    this.document = document;
+  }
+  collaborators;
+  dependencies;
+  document;
+  evaluated;
+  get event() {
+    if (!this.evaluated)
+      throw new Error("Publication source has not been evaluated");
+    return this.evaluated;
+  }
+  async readiness() {
+    const result = await this.dependencies.manageEvent.execute({
+      identity: this.document.identity,
+      mode: "check",
+      sourceDocument: this.document
+    });
+    if (result.skipped) return "inactive";
+    this.evaluated = result.event;
+    if (this.inactive(result.event)) return "inactive";
+    if (result.diagnostics.some(
+      this.collaborators.diagnostics.isTechnicalFailure.bind(
+        this.collaborators.diagnostics
+      )
+    ))
+      return "source";
+    if ((await this.dependencies.contentGate.blocked(result.event)).length)
+      return "content-review";
+    if (result.diagnostics.some(
+      (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication" || item.severity === "error" && ![
+        "publicationLinks.meetup",
+        "publicationLinks.community",
+        "publicationLinks.assets",
+        "publicationLinks.feedback"
+      ].includes(item.field ?? "")
+    ))
+      return "prerequisites";
+    return void 0;
+  }
+  async ensureCurrent() {
+    await this.collaborators.concurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.repository,
+      this.document.identity,
+      this.document
+    );
+    const result = await this.dependencies.manageEvent.execute({
+      identity: this.document.identity,
+      mode: "check",
+      sourceDocument: this.document
+    });
+    if (result.skipped || this.inactive(result.event) || (await this.dependencies.contentGate.blocked(result.event)).length)
+      throw new ScheduledEventError("content-review");
+  }
+  async persist(projection, saved) {
+    await this.ensureCurrent();
+    const event = projection.apply(
+      this.dependencies.codec.decode(this.document).event,
+      saved
+    );
+    const patch = this.dependencies.codec.createPatch(this.document, event);
+    if (!this.collaborators.patches.eventRepositoryPatchIsEmpty(patch)) {
+      await this.ensureCurrent();
+      await this.dependencies.repository.applyPatch(
+        this.document.identity,
+        patch
+      );
+      this.document = { ...this.document, ...patch };
+    }
+    this.evaluated = projection.apply(this.event, saved);
+  }
+  inactive(event) {
+    return event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? "");
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-event-publication.ts
+var ReconcileEventPublication = class {
+  constructor(configuration, clock, approval, results) {
+    this.configuration = configuration;
+    this.clock = clock;
+    this.approval = approval;
+    this.results = results;
+  }
+  configuration;
+  clock;
+  approval;
+  results;
+  get key() {
+    return this.configuration.key;
+  }
+  get field() {
+    return this.configuration.field;
+  }
+  blocked(reason) {
+    return this.results.result(
+      reason === "inactive" ? "skipped" : "blocked",
+      reason
+    );
+  }
+  async reconcile(source) {
+    const event = this.configuration.projection.create(
+      source.event,
+      this.configuration.settings
+    );
+    if (!event || !this.configuration.policy.valid(event, this.clock.now()))
+      return this.blocked("prerequisites");
+    try {
+      const remote = await this.resolveIdentity(source);
+      const saved = await this.configuration.gateway.save(
+        event,
+        remote,
+        async () => {
+          await source.ensureCurrent();
+          if (!remote) await this.configuration.journal.reserve();
+          await source.ensureCurrent();
+        },
+        async (identity) => {
+          this.verifyIdentity(identity, remote);
+          await this.configuration.journal.record(identity);
+        }
+      );
+      this.verifyIdentity(saved.identity, remote);
+      if (!remote && saved.status !== "draft")
+        throw new ScheduledEventError("verification");
+      await this.configuration.journal.record(saved.identity);
+      return await this.complete(source, event, saved);
+    } catch (error2) {
+      if (error2 instanceof EventConcurrentModificationError || error2 instanceof EventNotFoundError)
+        throw error2;
+      return this.blocked(
+        error2 instanceof ScheduledEventError ? error2.kind : "unavailable"
+      );
+    }
+  }
+  async resolveIdentity(source) {
+    const supplied = source.event.publicationLinks[this.configuration.field];
+    const record = await this.configuration.journal.load();
+    this.validateRecovery(record, supplied);
+    const reference = record?.identity && supplied === record.identity.publicUrl ? record.identity.reviewUrl : supplied;
+    if (!supplied) return record?.identity;
+    const existing = await this.configuration.gateway.inspect(
+      reference ?? supplied
+    );
+    if (!this.configuration.identityPolicy.valid(existing.identity))
+      throw new ScheduledEventError("verification");
+    if (record?.identity && existing.identity.id !== record.identity.id)
+      throw new ScheduledEventError("conflict");
+    await this.configuration.journal.record(existing.identity);
+    await this.persist(source, existing);
+    return existing.identity;
+  }
+  validateRecovery(record, supplied) {
+    if (record && !record.identity && (!supplied || this.configuration.pendingRecovery === "journal-identity"))
+      throw new ScheduledEventError("uncertain");
+    if (record?.identity && !this.configuration.identityPolicy.valid(record.identity))
+      throw new ScheduledEventError("link");
+    if (supplied && !this.configuration.identityPolicy.publicUrl(supplied))
+      throw new ScheduledEventError("link");
+  }
+  verifyIdentity(identity, expected) {
+    if (!this.configuration.identityPolicy.valid(identity) || expected && (identity.id !== expected.id || identity.reviewUrl !== expected.reviewUrl))
+      throw new ScheduledEventError("verification");
+  }
+  async persist(source, saved) {
+    if (saved.status === "published" && !this.configuration.identityPolicy.publicUrl(saved.identity.publicUrl))
+      throw new ScheduledEventError("verification");
+    await source.persist(this.configuration.issueProjection, saved);
+  }
+  async complete(source, event, saved) {
+    await this.persist(source, saved);
+    if (saved.status === "published")
+      return { status: "updated", diagnostics: [] };
+    await source.ensureCurrent();
+    const decision = await this.approval.request(event, saved.identity);
+    const diagnostics = decision.notificationFailed ? this.blocked("approval-notification-failed").diagnostics : [];
+    if (decision.status !== "approved")
+      return {
+        status: "draft",
+        reviewUrl: saved.identity.reviewUrl,
+        diagnostics: [
+          ...diagnostics,
+          ...this.blocked(`approval-${decision.status}`).diagnostics
+        ]
+      };
+    const published = await this.configuration.gateway.publish(
+      event,
+      saved.identity,
+      async () => {
+        await source.ensureCurrent();
+        if (!this.configuration.policy.valid(event, this.clock.now()))
+          throw new ScheduledEventError("verification");
+        await this.approval.requireApproved(event, saved.identity);
+        await source.ensureCurrent();
+      }
+    );
+    this.verifyIdentity(published.identity, saved.identity);
+    if (published.status !== "published")
+      throw new ScheduledEventError("verification");
+    await this.configuration.journal.record(published.identity);
+    await this.persist(source, published);
+    return { status: "updated", diagnostics };
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-event-publications.ts
+var ReconcileEventPublications = class {
+  constructor(repository, createSource, destinations) {
+    this.repository = repository;
+    this.createSource = createSource;
+    this.destinations = destinations;
+    const keys = destinations.map(
+      ({ key }) => JSON.stringify([key.provider, key.target])
+    );
+    if (new Set(keys).size !== keys.length)
+      throw new Error("Duplicate publication destination");
+    if (new Set(destinations.map((destination) => destination.field)).size !== destinations.length)
+      throw new Error(
+        "Publication destinations must use distinct issue fields"
+      );
+  }
+  repository;
+  createSource;
+  destinations;
+  async execute(identity) {
+    const document = await this.repository.find(identity);
+    if (!document) throw new Error("Event source issue was not found");
+    const source = this.createSource(document);
+    const reason = await source.readiness();
+    const publications = [];
+    for (const destination of this.destinations) {
+      if (!reason) await source.ensureCurrent();
+      const result = reason ? destination.blocked(reason) : await destination.reconcile(source);
+      publications.push({ ...result, destination: destination.key });
+      if (!reason) await source.ensureCurrent();
+    }
+    return {
+      publications,
+      diagnostics: publications.flatMap((result) => result.diagnostics)
+    };
+  }
+};
+
+// packages/application/journey/src/event-publication-composition.ts
+var EventPublicationComposition = class {
+  destination(configuration, clock) {
+    return new ReconcileEventPublication(
+      configuration,
+      clock,
+      new EventPublicationApproval(
+        configuration.revision,
+        configuration.approval,
+        clock,
+        configuration.approvalKind,
+        configuration.key.target
+      ),
+      new EventPublicationResults(configuration.field, configuration.label)
+    );
+  }
+  collection(dependencies, destinations) {
+    return new ReconcileEventPublications(
+      dependencies.repository,
+      (document) => new EventPublicationSource(
+        {
+          concurrency: new EventDomainComposition().eventDocumentConcurrency(),
+          patches: new EventDomainComposition().eventRepositoryPatches(),
+          diagnostics: new JourneyPolicyComposition().diagnosticPolicy()
+        },
+        dependencies,
+        document
+      ),
+      destinations
+    );
+  }
+};
+
 // packages/application/journey/src/proposals/content-plan-factory.ts
 var ContentPlanFactory = class {
   constructor(fingerprints, timing) {
@@ -42729,6 +43044,144 @@ var ContentProposalTransition = class {
   }
 };
 
+// packages/application/journey/src/approval/community-publication-revision.ts
+var CommunityPublicationRevision = class {
+  constructor(fingerprint) {
+    this.fingerprint = fingerprint;
+  }
+  fingerprint;
+  of(event, identity, target) {
+    return this.fingerprint.of(
+      JSON.stringify({
+        provider: "ocgroups",
+        target,
+        id: identity.id,
+        reviewUrl: identity.reviewUrl,
+        publicUrl: identity.publicUrl,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        timeZone: event.timeZone,
+        categoryId: event.categoryId,
+        venue: {
+          name: event.venue.name,
+          address: event.venue.address,
+          city: event.venue.city,
+          zipCode: event.venue.zipCode,
+          state: event.venue.state,
+          country: event.venue.country,
+          countryCode: event.venue.countryCode
+        },
+        registration: {
+          capacity: event.registration.capacity,
+          waitlist: event.registration.waitlist,
+          approvalRequired: event.registration.approvalRequired,
+          reminder: event.registration.reminder
+        }
+      })
+    );
+  }
+};
+
+// packages/application/journey/src/use-cases/community-publication-issue-projection.ts
+var CommunityPublicationIssueProjection = class {
+  apply(event, saved) {
+    return {
+      ...event,
+      publicationLinks: {
+        ...event.publicationLinks,
+        community: saved.status === "published" ? saved.identity.publicUrl : void 0
+      }
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/community-publication-projection.ts
+var CommunityPublicationProjection = class {
+  constructor(projection) {
+    this.projection = projection;
+  }
+  projection;
+  create(event, settings) {
+    const schedule = this.projection.create(event, settings);
+    const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
+    if (!schedule || !venue) return void 0;
+    return {
+      ...schedule,
+      venue,
+      categoryId: settings.categoryId,
+      registration: settings.registration
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/meetup-publication-issue-projection.ts
+var MeetupPublicationIssueProjection = class {
+  constructor(checklist) {
+    this.checklist = checklist;
+  }
+  checklist;
+  apply(event, saved) {
+    return {
+      ...this.checklist.withStatus(event, saved.status === "published"),
+      publicationLinks: {
+        ...event.publicationLinks,
+        meetup: saved.identity.reviewUrl
+      }
+    };
+  }
+};
+
+// packages/application/journey/src/publication-destination-composition.ts
+var PublicationDestinationComposition = class {
+  meetup(input, group) {
+    return new EventPublicationComposition().destination(
+      {
+        ...input,
+        key: { provider: "meetup", target: group.eventUrlPrefix },
+        field: "meetup",
+        label: "Meetup",
+        approvalKind: "meetup-publication",
+        projection: new JourneyPolicyComposition().scheduledEventProjection(),
+        policy: new PublicationDomainComposition().scheduledEventPolicy(),
+        identityPolicy: new MeetupEventIdentityPolicy(group),
+        pendingRecovery: "verified-link",
+        issueProjection: new MeetupPublicationIssueProjection(
+          new EventDomainComposition().meetupPublicationChecklist()
+        ),
+        revision: new JourneyPolicyComposition().meetupPublicationRevision()
+      },
+      input.clock
+    );
+  }
+  community(input, group) {
+    return new EventPublicationComposition().destination(
+      {
+        ...input,
+        key: { provider: "ocgroups", target: input.target },
+        field: "community",
+        label: "Community",
+        approvalKind: "community-publication",
+        projection: new CommunityPublicationProjection(
+          new JourneyPolicyComposition().scheduledEventProjection()
+        ),
+        policy: new CommunityEventPolicy(
+          new PublicationDomainComposition().scheduledEventPolicy()
+        ),
+        identityPolicy: new CommunityEventIdentityPolicy(group),
+        pendingRecovery: "journal-identity",
+        issueProjection: new CommunityPublicationIssueProjection(),
+        revision: new CommunityPublicationRevision(
+          new PublicationDomainComposition().contentFingerprint()
+        )
+      },
+      input.clock
+    );
+  }
+};
+
 // packages/application/journey/src/review/content-facts-projection.ts
 var ContentFactsProjection = class {
   create(event, publication, settings, announcement) {
@@ -42763,89 +43216,6 @@ var ContentFactsProjection = class {
     if (target === "title") return event.eventTitle;
     if (target === "description") return event.description;
     return null;
-  }
-};
-
-// packages/application/journey/src/event/event-copy-approval-gate.ts
-var EventCopyApprovalGate = class {
-  constructor(store, authority, projection, plans, policy, settings) {
-    this.store = store;
-    this.authority = authority;
-    this.projection = projection;
-    this.plans = plans;
-    this.policy = policy;
-    this.settings = settings;
-  }
-  store;
-  authority;
-  projection;
-  plans;
-  policy;
-  settings;
-  async blocked(event) {
-    const { proposals } = await this.store.load();
-    const managed = proposals.filter(
-      (item) => item.plan.target === "title" || item.plan.target === "description"
-    );
-    if (!managed.length) return [];
-    const settings = await this.settings();
-    const facts = this.projection.create(
-      event,
-      settings.publication,
-      settings.content,
-      null
-    );
-    const blocked = [];
-    for (const target of ["title", "description"]) {
-      const proposal = managed.filter((item) => item.plan.target === target).at(-1);
-      if (!proposal) continue;
-      const plan2 = this.plans.create(
-        target,
-        proposal.plan.language,
-        facts,
-        settings.content.reminderTime
-      );
-      if (!proposal.accepted || proposal.accepted.text !== this.projection.destination(event, target) || !this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
-        blocked.push(target);
-    }
-    return blocked;
-  }
-};
-
-// packages/application/journey/src/assets/cover-artwork-approval-gate.ts
-var CoverArtworkApprovalGate = class {
-  constructor(store, authority, projection, plans, policy, settings) {
-    this.store = store;
-    this.authority = authority;
-    this.projection = projection;
-    this.plans = plans;
-    this.policy = policy;
-    this.settings = settings;
-  }
-  store;
-  authority;
-  projection;
-  plans;
-  policy;
-  settings;
-  async cover(event) {
-    const proposal = (await this.store.load()).proposals.filter((item) => item.plan.target === "cover").at(-1);
-    if (proposal?.accepted?.media.length !== 1) return void 0;
-    const settings = await this.settings();
-    const plan2 = this.plans.create(
-      "cover",
-      proposal.plan.language,
-      this.projection.create(
-        event,
-        settings.publication,
-        settings.content,
-        null
-      ),
-      settings.content.reminderTime
-    );
-    if (!this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
-      return void 0;
-    return proposal.accepted.media[0];
   }
 };
 
@@ -43025,36 +43395,64 @@ var ConferenceHallInput = class {
   }
 };
 
-// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+// packages/runtime/github-actions/src/event-publication-configuration.ts
 import { readFile as readFile2 } from "node:fs/promises";
 import { join as join2 } from "node:path";
-var MeetupPublicationConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
+var EventPublicationConfiguration = class {
+  constructor(input, schedule, ocgroups) {
+    this.input = input;
+    this.schedule = schedule;
+    this.ocgroups = ocgroups;
   }
-  collaborators;
+  input;
+  schedule;
+  ocgroups;
   async load(root) {
     const text = await readFile2(
-      join2(root, ".github/meetup-publication.json"),
+      join2(root, ".github/event-publication.json"),
       "utf8"
     );
     if (Buffer.byteLength(text) > 1e5)
-      throw new Error("Meetup publication configuration is too large");
+      throw new Error("Event publication configuration is too large");
     return this.parse(JSON.parse(text));
   }
-  parse(input) {
-    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
-      throw new Error("Invalid Meetup publication configuration");
-    const venues = {};
-    for (const [id, venue] of Object.entries(input.venues)) {
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
-        throw new Error("Invalid public Meetup venue mapping");
-      venues[id] = { name: venue.name, city: venue.city };
-    }
-    return { startTime: input.startTime, endTime: input.endTime, venues };
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !Array.isArray(value.destinations) || value.destinations.length > 2)
+      throw new Error("Invalid publication destinations");
+    const destinations = value.destinations.map(
+      (destination) => this.destination(destination, schedule, value.venues)
+    );
+    if (new Set(destinations.map((destination) => destination.provider)).size !== destinations.length)
+      throw new Error("Duplicate publication provider");
+    return { schedule, destinations };
   }
-  text(value) {
-    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  destination(value, schedule, venues) {
+    if (!this.input.isObject(value))
+      throw new Error("Invalid publication destination");
+    if (value.provider === "meetup" && Object.keys(value).length === 1)
+      return { provider: "meetup", settings: schedule };
+    if (value.provider !== "ocgroups" || Object.keys(value).some(
+      (key) => ![
+        "provider",
+        "eventUrlPrefix",
+        "communityId",
+        "groupId",
+        "categoryId",
+        "registration"
+      ].includes(key)
+    ))
+      throw new Error("Unsupported publication destination");
+    return {
+      provider: "ocgroups",
+      settings: this.ocgroups.parse({
+        ...value,
+        version: 1,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        venues
+      })
+    };
   }
 };
 
@@ -43184,6 +43582,89 @@ var RuntimeInput = class {
   }
 };
 
+// packages/runtime/github-actions/src/event-schedule-configuration.ts
+var EventScheduleConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid event schedule configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public event venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/ocgroups-publication-settings.ts
+var OcgroupsPublicationSettings = class {
+  constructor(input, schedule, policy) {
+    this.input = input;
+    this.schedule = schedule;
+    this.policy = policy;
+  }
+  input;
+  schedule;
+  policy;
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !CommunityGroupUrl.parse(value.eventUrlPrefix) || typeof value.eventUrlPrefix !== "string" || !this.uuid(value.communityId) || !this.uuid(value.groupId) || !this.uuid(value.categoryId) || !this.input.isObject(value.venues))
+      throw new Error("Invalid OCGroups target configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(value.venues))
+      venues[id] = this.venue(venue);
+    return {
+      ...schedule,
+      venues,
+      eventUrlPrefix: value.eventUrlPrefix,
+      communityId: value.communityId,
+      groupId: value.groupId,
+      categoryId: value.categoryId,
+      registration: this.registration(value.registration)
+    };
+  }
+  venue(value) {
+    if (!this.input.isObject(value) || typeof value.name !== "string" || typeof value.address !== "string" || typeof value.city !== "string" || typeof value.zipCode !== "string" || typeof value.state !== "string" || typeof value.country !== "string" || typeof value.countryCode !== "string")
+      throw new Error("Invalid public OCGroups venue mapping");
+    const venue = {
+      name: value.name,
+      address: value.address,
+      city: value.city,
+      zipCode: value.zipCode,
+      state: value.state,
+      country: value.country,
+      countryCode: value.countryCode
+    };
+    if (!this.policy.venue(venue))
+      throw new Error("Invalid public OCGroups venue mapping");
+    return venue;
+  }
+  registration(value) {
+    if (!this.input.isObject(value) || typeof value.capacity !== "number" || typeof value.waitlist !== "boolean" || typeof value.approvalRequired !== "boolean" || typeof value.reminder !== "boolean")
+      throw new Error("Invalid OCGroups registration configuration");
+    const registration = {
+      capacity: value.capacity,
+      waitlist: value.waitlist,
+      approvalRequired: value.approvalRequired,
+      reminder: value.reminder
+    };
+    if (!this.policy.registration(registration))
+      throw new Error("Invalid OCGroups registration configuration");
+    return registration;
+  }
+  uuid(value) {
+    return typeof value === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);
+  }
+};
+
 // packages/runtime/github-actions/src/runtime-input-composition.ts
 var RuntimeInputComposition = class _RuntimeInputComposition {
   static bind(container) {
@@ -43200,6 +43681,7 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
     );
     _RuntimeInputComposition.bindAttention(container);
     _RuntimeInputComposition.bindConfiguration(container);
+    _RuntimeInputComposition.bindPublication(container);
   }
   static bindAttention(container) {
     container.bind(AttentionStageInput).toResolvedValue(() => new AttentionStageInput());
@@ -43233,12 +43715,26 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
       }),
       [RuntimeInput, ContentContractPolicy, AssetRenderConfiguration]
     );
-    container.bind(MeetupPublicationConfiguration).toResolvedValue(
-      (runtimeInput, scheduledEventPolicy) => new MeetupPublicationConfiguration({
+  }
+  static bindPublication(container) {
+    container.bind(EventScheduleConfiguration).toResolvedValue(
+      (runtimeInput, scheduledEventPolicy) => new EventScheduleConfiguration({
         runtimeInput,
         scheduledEventPolicy
       }),
       [RuntimeInput, ScheduledEventPolicy]
+    );
+    container.bind(OcgroupsPublicationSettings).toResolvedValue(
+      (runtime, schedule, policy) => new OcgroupsPublicationSettings(
+        runtime,
+        schedule,
+        new CommunityEventPolicy(policy)
+      ),
+      [RuntimeInput, EventScheduleConfiguration, ScheduledEventPolicy]
+    );
+    container.bind(EventPublicationConfiguration).toResolvedValue(
+      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+      [RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings]
     );
   }
 };
@@ -46965,6 +47461,27 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Prepare event publication runtime",
+  "report.publication.draft": "publication_provider={provider} event=draft approval=required",
+  "report.publication.updated": "publication_provider={provider} event=synchronized",
+  "report.publication.skipped": "publication_provider={provider} event=skipped",
+  "report.publication.blocked": "publication_provider={provider} event=blocked",
+  "report.publication.review": "publication_provider={provider} review_url={url}",
+  "diagnostic.publication.community.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+  "diagnostic.publication.community.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+  "diagnostic.publication.community.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+  "diagnostic.publication.community.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+  "diagnostic.publication.community.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.community.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
+  "diagnostic.publication.community.inactive": "OCGroups publication is inactive for this issue.",
+  "diagnostic.publication.community.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.community.link": "Set a valid event URL belonging to the configured OCGroups group.",
+  "diagnostic.publication.community.conflict": "The issue link and recorded OCGroups event differ. Restore the recorded event link before running again.",
+  "diagnostic.publication.community.uncertain": "Publication outcome is uncertain. Check the OCGroups dashboard and recover the verified event UUID in the community journal before retrying. Keep drafts out of CNCF Link. Clear a reservation only after confirming no event was created.",
+  "diagnostic.publication.community.authentication": "Organizer login could not be verified. Check the account, credentials, and group permissions; complete any unsupported challenge interactively.",
+  "diagnostic.publication.community.editor": "The OCGroups editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+  "diagnostic.publication.community.verification": "OCGroups did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "action.event.generate-copy": "Generate event copy",
   "action.assets.generate-cover": "Generate cover artwork",
   "action.communication.generate-slack-post": "Generate Slack post",
@@ -46995,11 +47512,6 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
   "action.publication.reconcile-event": "Reconcile event publication",
-  "report.meetup.draft": "meetup_event=draft approval=required",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "meetup_event=synchronized",
-  "report.meetup.skipped": "meetup_event=skipped",
-  "report.meetup.blocked": "meetup_event=blocked",
   "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
   "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
@@ -47092,6 +47604,27 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Pr\xE9parer le runtime de publication",
+  "report.publication.draft": "fournisseur_publication={provider} evenement=brouillon approbation=requise",
+  "report.publication.updated": "fournisseur_publication={provider} evenement=synchronise",
+  "report.publication.skipped": "fournisseur_publication={provider} evenement=ignore",
+  "report.publication.blocked": "fournisseur_publication={provider} evenement=bloque",
+  "report.publication.review": "fournisseur_publication={provider} url_validation={url}",
+  "diagnostic.publication.community.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
+  "diagnostic.publication.community.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
+  "diagnostic.publication.community.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+  "diagnostic.publication.community.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
+  "diagnostic.publication.community.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.community.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, les s\xE9lecteurs de connexion.",
+  "diagnostic.publication.community.inactive": "La publication OCGroups est inactive pour cette issue.",
+  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.community.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe OCGroups configur\xE9.",
+  "diagnostic.publication.community.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.community.uncertain": "Le r\xE9sultat est incertain. V\xE9rifiez le tableau de bord OCGroups et r\xE9cup\xE9rez le UUID v\xE9rifi\xE9 dans le journal community avant de relancer. Gardez les brouillons hors de CNCF Link. Effacez une r\xE9servation seulement apr\xE8s avoir confirm\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
+  "diagnostic.publication.community.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et les droits du groupe ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.community.editor": "Impossible de pr\xE9parer l'\xE9diteur OCGroups. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
+  "diagnostic.publication.community.verification": "Les champs enregistr\xE9s sur OCGroups ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "action.event.generate-copy": "G\xE9n\xE9rer le titre ou la description",
   "action.assets.generate-cover": "G\xE9n\xE9rer les illustrations",
   "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
@@ -47122,11 +47655,6 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
   "action.publication.reconcile-event": "R\xE9concilier la publication de l'\xE9v\xE9nement",
-  "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "evenement_meetup=synchronise",
-  "report.meetup.skipped": "evenement_meetup=ignore",
-  "report.meetup.blocked": "evenement_meetup=bloque",
   "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
   "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
@@ -47445,8 +47973,8 @@ var GithubActionsComposition = class _GithubActionsComposition {
   conferenceHallInput() {
     return this.container.get(ConferenceHallInput);
   }
-  meetupPublicationConfiguration() {
-    return this.container.get(MeetupPublicationConfiguration);
+  eventPublicationConfiguration() {
+    return this.container.get(EventPublicationConfiguration);
   }
   referentialActionReport() {
     return this.container.get(ReferentialActionReport);
@@ -51660,9 +52188,12 @@ var EventPublicationAction = class {
       "issue-number",
       getInput("issue-number", { required: true })
     );
-    const email = this.secret("meetup-email");
-    const password = this.secret("meetup-password");
-    const ai3 = this.collaborators.aiInput.read();
+    const configuration = await this.collaborators.eventPublicationConfiguration.load(
+      process.cwd()
+    );
+    const adapters = this.collaborators.credentials.read(
+      configuration.destinations
+    );
     const githubToken = this.secret("github-token");
     const { owner, repo } = context2.repo;
     const journey = this.collaborators.createJourney({
@@ -51675,19 +52206,14 @@ var EventPublicationAction = class {
       issueNumber,
       locale: messages5.locale,
       client: getOctokit(githubToken),
-      email,
-      password,
-      ai: ai3,
+      adapters,
       slackToken: this.secret("slack-token"),
       slackOrganizerChannelId: getInput("slack-organizer-channel-id", {
         required: true
       }),
       commentAuthorLogin: getInput("managed-comment-author", {
         required: true
-      }),
-      settings: await this.collaborators.meetupPublicationConfiguration.load(
-        process.cwd()
-      )
+      })
     });
     const result = await journey.execute({
       repository: `${owner}/${repo}`,
@@ -51696,8 +52222,17 @@ var EventPublicationAction = class {
     return {
       details: [
         messages5.t("report.event.context", { issue: issueNumber, mode: "fix" }),
-        messages5.t(`report.meetup.${result.status}`),
-        ...result.reviewUrl ? [messages5.t("report.meetup.review", { url: result.reviewUrl })] : []
+        ...result.publications.flatMap((publication) => [
+          messages5.t(`report.publication.${publication.status}`, {
+            provider: publication.destination.provider
+          }),
+          ...publication.reviewUrl ? [
+            messages5.t("report.publication.review", {
+              provider: publication.destination.provider,
+              url: publication.reviewUrl
+            })
+          ] : []
+        ])
       ],
       diagnostics: result.diagnostics
     };
@@ -51705,3415 +52240,10 @@ var EventPublicationAction = class {
   secret(name) {
     const value = getInput(name, {
       required: true,
-      trimWhitespace: name !== "meetup-password"
+      trimWhitespace: false
     });
     setSecret(value);
     return value;
-  }
-};
-
-// packages/runtime/github-actions/src/meetup-publication-composition.ts
-import { fileURLToPath } from "node:url";
-
-// packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
-var ApprovalDecisionParser = class {
-  constructor(policy, comments) {
-    this.policy = policy;
-    this.comments = comments;
-  }
-  policy;
-  comments;
-  parse(record, body) {
-    if (this.policy.reviewPhase({
-      recipientCount: record.recipientCount,
-      followUpActive: record.followUp?.active,
-      decided: record.decision !== void 0
-    }) !== "pending")
-      return { status: "pending" };
-    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
-    if (record.kind === "content-review")
-      return this.content(record, normalized);
-    for (const comment of this.comments) {
-      for (const status of ["approved", "rejected"]) {
-        if (normalized === comment.issue(record, { status })) return { status };
-      }
-    }
-    return { status: "pending" };
-  }
-  content(record, body) {
-    const approvals = record.content.target === "cover" ? record.content.draft.media.map((media) => ({
-      status: "approved",
-      selectedImage: media.id
-    })) : [{ status: "approved" }];
-    for (const decision of [
-      ...approvals,
-      { status: "rejected" },
-      { status: "iteration-requested" }
-    ])
-      if (this.comments.some(
-        (comment) => comment.issue(record, decision) === body
-      ))
-        return decision;
-    return { status: "pending" };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-notifications.ts
-var ApprovalNotifications = class {
-  constructor(policy, client, presenter, notifications, channelId) {
-    this.policy = policy;
-    this.client = client;
-    this.presenter = presenter;
-    this.notifications = notifications;
-    this.channelId = channelId;
-  }
-  policy;
-  client;
-  presenter;
-  notifications;
-  channelId;
-  async send(record, commentId) {
-    const facts = this.policy.notificationFor(record);
-    if (!facts) return false;
-    if (record.notification !== "new" && record.notification !== "retry")
-      return record.notification === "reserved";
-    const before = this.presenter.issue(record, { status: "pending" });
-    record.notification = "reserved";
-    const reserved = this.presenter.issue(record, { status: "pending" });
-    await this.client.replace(commentId, before, reserved);
-    try {
-      const result = await this.notifications.send({
-        ...facts,
-        destination: this.channelId,
-        approvalUrl: this.client.url(commentId)
-      });
-      record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
-      if (result.outcome === "accepted" && result.message)
-        record.notificationMessage = result.message;
-    } catch {
-    }
-    await this.client.replace(
-      commentId,
-      reserved,
-      this.presenter.issue(record, { status: "pending" })
-    );
-    return record.notification !== "sent";
-  }
-  async react(record, commentId) {
-    if (!this.policy.notificationFor(record)) return false;
-    if (!record.decision || record.reactionSent) return false;
-    if (!record.notificationMessage) return record.notification !== "sent";
-    const before = this.presenter.issue(record, record.decision);
-    try {
-      const accepted = await this.notifications.react(
-        record.notificationMessage,
-        record.decision.status
-      );
-      if (!accepted) return true;
-      record.reactionSent = true;
-      await this.client.replace(
-        commentId,
-        before,
-        this.presenter.issue(record, record.decision)
-      );
-      return false;
-    } catch {
-      return true;
-    }
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-presenter.ts
-var ApprovalPresenter = class {
-  constructor(codec, renderers) {
-    this.codec = codec;
-    this.renderers = renderers;
-  }
-  codec;
-  renderers;
-  issue(record, decision) {
-    return [
-      this.codec.marker(record),
-      this.renderers[record.kind].issue(record, decision)
-    ].filter(Boolean).join("\n\n");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
-  "approval.content.planned": "Planned publication: {time}. Recheck eligibility before posting.",
-  "approval.content.slot": "Image {index}: {status, select, complete {stored} reserved {outcome uncertain; no automatic retry} failed {failed} other {not requested}}.",
-  "approval.content.title": "### Review event content: {target}\n\nLanguage: {language} \xB7 Author: {origin}",
-  "approval.content.request": "Review the exact text and images above. Select exactly one choice. Approval authorizes this content; publication and sending have separate controls. Submit replacements or iteration guidance separately.\n\n{approve}\n- [{rejectMark}] Reject this content\n- [{iterateMark}] Request another iteration",
-  "approval.content.text-choice": "- [{mark}] Approve this content",
-  "approval.content.image-choice": "- [{mark}] Approve image {index, number} as the cover",
-  "approval.content.final": "{status, select, approved {\u2705 Content approved} rejected {\u274C Content rejected} iteration_requested {\u{1F504} Another iteration requested} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSelected image: {image}\n\nThis decision is final for this revision. Changed content requires a new review.",
-  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
-  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
-  "follow-up.title": "## Post-event follow-up \xB7 {date}",
-  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
-  "follow-up.stopped": "Follow-up paused.",
-  "follow-up.waiting": "Thank-you emails are not ready for approval.",
-  "follow-up.emails-complete": "No thank-you emails pending.",
-  "approval.details.summary": "Review email details",
-  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
-  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
-  "approval.details.feedback": "Feedback results: {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
-  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
-  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
-  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
-  "approval.content.planned": "Publication pr\xE9vue : {time}. V\xE9rifiez \xE0 nouveau la validit\xE9 avant publication.",
-  "approval.content.slot": "Image {index} : {status, select, complete {enregistr\xE9e} reserved {r\xE9sultat incertain ; aucun nouvel essai automatique} failed {\xE9chec} other {non demand\xE9e}}.",
-  "approval.content.title": "### V\xE9rification du contenu : {target}\n\nLangue : {language} \xB7 Auteur : {origin}",
-  "approval.content.request": "V\xE9rifiez le texte exact et les images ci-dessus. Cochez un seul choix. L'approbation autorise ce contenu ; la publication et l'envoi ont leurs propres validations. Soumettez les remplacements ou consignes s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] Refuser ce contenu\n- [{iterateMark}] Demander une nouvelle proposition",
-  "approval.content.text-choice": "- [{mark}] Approuver ce contenu",
-  "approval.content.image-choice": "- [{mark}] Approuver l'image {index, number} comme couverture",
-  "approval.content.final": "{status, select, approved {\u2705 Contenu approuv\xE9} rejected {\u274C Contenu refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nImage s\xE9lectionn\xE9e : {image}\n\nCette d\xE9cision est d\xE9finitive pour cette version. Un contenu modifi\xE9 n\xE9cessite une nouvelle v\xE9rification.",
-  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
-  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
-  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
-  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
-  "follow-up.stopped": "Suivi suspendu.",
-  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
-  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
-  "approval.details.summary": "Voir le d\xE9tail des e-mails",
-  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
-  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
-  "approval.details.feedback": "R\xE9sultats des retours : {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
-  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
-  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
-  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
-
-// packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
-var ApprovalPresenterFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  supportedLocales() {
-    return Object.keys(CATALOGS3).map(
-      (locale) => this.collaborators.createApprovalPresenter(
-        this.collaborators.createApprovalMessages(locale)
-      )
-    );
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-record-factory.ts
-var ApprovalRecordFactory = class {
-  constructor(collaborators, nextIdentity) {
-    this.collaborators = collaborators;
-    this.nextIdentity = nextIdentity;
-  }
-  collaborators;
-  nextIdentity;
-  create(request2) {
-    this.collaborators.approvalRequestSchema.validate(request2);
-    this.collaborators.approvalRequestPolicy.validate(request2);
-    return this.allocate(request2);
-  }
-  placeholder(input) {
-    return this.allocate({
-      ...this.collaborators.followUpApprovalPolicy.placeholder(input),
-      followUp: {
-        active: input.active,
-        pendingTasks: input.pendingTasks
-      }
-    });
-  }
-  allocate(request2) {
-    const record = {
-      ...request2,
-      requestId: `approval-${this.nextIdentity()}`,
-      notification: "new"
-    };
-    this.collaborators.storedApprovalSchema.validate(record);
-    return record;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-proposal-codec.ts
-var CONTENT_STATE_MARKER = "<!-- meetup-content-proposal:v1 ";
-var ContentProposalCodec = class {
-  constructor(values, policy, fingerprints) {
-    this.values = values;
-    this.policy = policy;
-    this.fingerprints = fingerprints;
-  }
-  values;
-  policy;
-  fingerprints;
-  read(body) {
-    if (!body.startsWith(CONTENT_STATE_MARKER) || !body.endsWith(" -->"))
-      throw new Error("Invalid content proposal marker");
-    return this.parse(JSON.parse(body.slice(CONTENT_STATE_MARKER.length, -4)));
-  }
-  write(proposal) {
-    this.parse(proposal);
-    return `${CONTENT_STATE_MARKER}${JSON.stringify(proposal).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026")} -->`;
-  }
-  parse(value) {
-    const item = this.values.object(value, [
-      "recoveryRequest",
-      "destinationBefore",
-      "version",
-      "promptVersion",
-      "id",
-      "plan",
-      "origin",
-      "guidance",
-      "createdAt",
-      "attempts",
-      "draft",
-      "revision",
-      "decision",
-      "accepted"
-    ]);
-    if (item.version !== 1 || item.promptVersion !== "1")
-      throw new Error("Unsupported content proposal schema");
-    const id = this.values.text(item.id, 44);
-    if (!/^content-[a-f0-9-]{36}$/.test(id))
-      throw new Error("Invalid content proposal identity");
-    const recovery = this.recovery(item.recoveryRequest);
-    const proposal = {
-      ...recovery ? { recoveryRequest: recovery } : {},
-      version: 1,
-      promptVersion: "1",
-      id,
-      plan: this.plan(item.plan),
-      origin: this.origin(item.origin),
-      guidance: this.values.text(item.guidance, 2e3),
-      destinationBefore: item.destinationBefore === null ? null : this.values.text(item.destinationBefore, 12e3),
-      createdAt: this.instant(item.createdAt),
-      attempts: this.values.list(item.attempts, 4).map((attempt) => this.attempt(attempt)),
-      draft: item.draft === null ? null : this.values.draft(item.draft),
-      revision: item.revision === null ? null : this.values.text(item.revision, 64),
-      decision: item.decision === null ? null : this.decision(item.decision),
-      accepted: item.accepted === null ? null : this.values.draft(item.accepted)
-    };
-    this.validate(proposal);
-    return proposal;
-  }
-  recovery(value) {
-    if (value === void 0) return void 0;
-    const item = this.values.object(value, [
-      "id",
-      "actor",
-      "proposalId",
-      "guidance"
-    ]);
-    return {
-      id: this.values.text(item.id, 200),
-      actor: this.values.text(item.actor, 39),
-      proposalId: this.values.text(item.proposalId, 44),
-      guidance: this.values.text(item.guidance, 2e3)
-    };
-  }
-  validate(proposal) {
-    if (proposal.draft && (!this.policy.validDraft(proposal.plan, proposal.draft) || proposal.revision !== this.fingerprints.proposal(proposal, proposal.draft)))
-      throw new Error("Invalid content proposal fingerprint");
-    if (!proposal.draft && (proposal.revision || proposal.decision || proposal.accepted))
-      throw new Error("Incomplete content proposal");
-    if (proposal.accepted && proposal.decision?.status !== "approved")
-      throw new Error("Unapproved applied content");
-    this.accepted(proposal);
-  }
-  accepted(proposal) {
-    const selected = proposal.decision?.selectedImage;
-    if (proposal.plan.target === "cover" && proposal.decision?.status === "approved" && (!selected || !proposal.draft?.media.some((image) => image.id === selected)))
-      throw new Error("Approved cover selection is missing");
-    if (selected && (proposal.plan.target !== "cover" || proposal.decision?.status !== "approved"))
-      throw new Error("Unexpected cover selection");
-    if (!proposal.accepted || !proposal.draft) return;
-    const expected = selected ? {
-      text: "",
-      media: proposal.draft.media.filter((image) => image.id === selected)
-    } : proposal.draft;
-    if (this.fingerprints.proposal(proposal, expected) !== this.fingerprints.proposal(proposal, proposal.accepted))
-      throw new Error("Accepted content differs from the approved value");
-  }
-  plan(value) {
-    const item = this.values.object(value, [
-      "target",
-      "language",
-      "facts",
-      "plannedAt",
-      "sourceFingerprint"
-    ]);
-    if (!this.policy.target(item.target) || item.language !== "en" && item.language !== "fr")
-      throw new Error("Invalid content target or language");
-    const plan2 = {
-      target: item.target,
-      language: item.language,
-      facts: this.values.facts(item.facts),
-      plannedAt: item.plannedAt === null ? null : this.instant(item.plannedAt)
-    };
-    const sourceFingerprint = this.values.text(item.sourceFingerprint, 64);
-    if (this.fingerprints.source(plan2) !== sourceFingerprint)
-      throw new Error("Invalid content source fingerprint");
-    return { ...plan2, sourceFingerprint };
-  }
-  origin(value) {
-    const item = this.values.object(value, [
-      "kind",
-      "provider",
-      "model",
-      "login",
-      "submissionId"
-    ]);
-    if (item.kind === "ai") {
-      this.values.object(value, ["kind", "provider", "model"]);
-      return {
-        kind: "ai",
-        provider: this.values.text(item.provider, 100),
-        model: this.values.text(item.model, 100)
-      };
-    }
-    if (item.kind === "organizer") {
-      this.values.object(value, ["kind", "login", "submissionId"]);
-      return {
-        kind: "organizer",
-        login: this.values.text(item.login, 39),
-        submissionId: this.values.text(item.submissionId, 200)
-      };
-    }
-    throw new Error("Invalid content author");
-  }
-  attempt(value) {
-    const item = this.values.object(value, ["id", "phase", "media"]);
-    if (item.phase !== "reserved" && item.phase !== "complete" && item.phase !== "failed")
-      throw new Error("Invalid content attempt");
-    return {
-      id: this.values.text(item.id, 200),
-      phase: item.phase,
-      ...item.media === void 0 ? {} : { media: this.values.media(item.media) }
-    };
-  }
-  decision(value) {
-    const item = this.values.object(value, [
-      "status",
-      "actor",
-      "decidedAt",
-      "selectedImage"
-    ]);
-    if (item.status !== "approved" && item.status !== "rejected" && item.status !== "iteration-requested")
-      throw new Error("Invalid content decision");
-    return {
-      status: item.status,
-      actor: this.values.text(item.actor, 39),
-      decidedAt: this.instant(item.decidedAt),
-      ...item.selectedImage === void 0 ? {} : { selectedImage: this.values.text(item.selectedImage, 200) }
-    };
-  }
-  instant(value) {
-    const text = this.values.text(value, 40);
-    if (!Number.isFinite(Date.parse(text)))
-      throw new Error("Invalid content timestamp");
-    return text;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-value-schema.ts
-var ContentValueSchema = class {
-  constructor(urls) {
-    this.urls = urls;
-  }
-  urls;
-  object(value, keys) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
-      throw new Error("Invalid content object");
-    return value;
-  }
-  text(value, max) {
-    if (typeof value !== "string" || value.length > max)
-      throw new Error("Invalid content text");
-    return value;
-  }
-  list(value, max) {
-    if (!Array.isArray(value) || value.length > max)
-      throw new Error("Invalid content list");
-    return value;
-  }
-  media(value) {
-    const item = this.object(value, [
-      "source",
-      "id",
-      "url",
-      "fingerprint",
-      "description",
-      "mimeType",
-      "width",
-      "height",
-      "sourceRevision"
-    ]);
-    const id = this.text(item.id, 200), url = this.text(item.url, 2e3);
-    const description = this.text(item.description, 1e3), sourceRevision = this.text(item.sourceRevision, 200);
-    const fingerprint = this.text(item.fingerprint, 64);
-    if (!id || !description.trim() || !sourceRevision || !this.urls.valid(url) || /[<>\r\n]/.test(url) || !/^[a-f0-9]{64}$/.test(fingerprint))
-      throw new Error("Invalid content media identity");
-    if (item.mimeType !== "image/png" && item.mimeType !== "image/jpeg")
-      throw new Error("Invalid content media format");
-    if (!Number.isSafeInteger(item.width) || !Number.isSafeInteger(item.height) || Number(item.width) <= 0 || Number(item.height) <= 0 || Number(item.width) * Number(item.height) > 25e6)
-      throw new Error("Invalid content dimensions");
-    const source = item.source === void 0 ? void 0 : this.object(item.source, ["id", "revision"]);
-    return {
-      ...source ? {
-        source: {
-          id: this.text(source.id, 200),
-          revision: this.text(source.revision, 200)
-        }
-      } : {},
-      id,
-      url,
-      description,
-      sourceRevision,
-      fingerprint,
-      mimeType: item.mimeType,
-      width: Number(item.width),
-      height: Number(item.height)
-    };
-  }
-  draft(value) {
-    const item = this.object(value, ["text", "media"]);
-    return {
-      text: this.text(item.text, 12e3),
-      media: this.list(item.media, 4).map((image) => this.media(image))
-    };
-  }
-  facts(value) {
-    const item = this.object(value, [
-      "date",
-      "startTime",
-      "endTime",
-      "timeZone",
-      "month",
-      "host",
-      "talks",
-      "registrationUrl",
-      "aperitif",
-      "mentions",
-      "announcement"
-    ]);
-    const host = this.object(item.host, ["name", "city"]);
-    const registrationUrl = this.text(item.registrationUrl, 2e3);
-    if (registrationUrl && !this.urls.valid(registrationUrl))
-      throw new Error("Invalid registration URL");
-    if (typeof item.aperitif !== "boolean")
-      throw new Error("Invalid content logistics");
-    return {
-      date: this.text(item.date, 10),
-      startTime: this.text(item.startTime, 5),
-      endTime: this.text(item.endTime, 5),
-      timeZone: this.text(item.timeZone, 100),
-      month: this.text(item.month, 40),
-      host: {
-        name: this.text(host.name, 200),
-        city: this.text(host.city, 200)
-      },
-      talks: this.list(item.talks, 10).map((talk) => this.talk(talk)),
-      registrationUrl,
-      aperitif: item.aperitif,
-      mentions: this.list(item.mentions, 20).map(
-        (name) => this.text(name, 100)
-      ),
-      announcement: item.announcement === null ? null : this.media(item.announcement)
-    };
-  }
-  talk(value) {
-    const item = this.object(value, ["id", "title", "abstract", "speakers"]);
-    return {
-      id: this.text(item.id, 200),
-      title: this.text(item.title, 500),
-      abstract: this.text(item.abstract, 3e3),
-      speakers: this.list(item.speakers, 10).map((speaker) => {
-        const person = this.object(speaker, ["id", "name"]);
-        return {
-          id: this.text(person.id, 200),
-          name: this.text(person.name, 200)
-        };
-      })
-    };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-comment-codec.ts
-var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
-var ApprovalCommentCodec = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  read(body) {
-    const line = body.split("\n", 1)[0];
-    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
-      throw new Error("Invalid approval record");
-    const record = JSON.parse(line.slice(APPROVAL_MARKER.length, -4));
-    this.collaborators.storedApprovalSchema.validate(record);
-    return record;
-  }
-  marker(record) {
-    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
-    return `${APPROVAL_MARKER}${json} -->`;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-details-presenter.ts
-var ApprovalDetailsPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(details) {
-    const lines = [
-      "<details>",
-      `<summary>${this.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
-      "",
-      ...details.emails.map((email) => this.email(email))
-    ];
-    if (details.omittedEmails > 0)
-      lines.push(
-        `<p>${this.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
-      );
-    return [...lines, "", "</details>"].join("\n");
-  }
-  email(email) {
-    const heading = this.messages.t("approval.details.email", {
-      kind: email.kind.replaceAll("-", "_")
-    });
-    const name = email.recipientName ? `: ${this.escape(email.recipientName)}` : "";
-    const lines = [
-      `<p><strong>${this.escape(heading)}${name}</strong></p>`,
-      `<p>${this.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
-    ];
-    if (email.links.length)
-      lines.push(
-        "<ul>",
-        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
-        "</ul>"
-      );
-    if (email.omittedLinks > 0)
-      lines.push(
-        `<p>${this.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
-      );
-    return lines.join("\n");
-  }
-  link(link) {
-    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
-      title: link.title ?? ""
-    }) : this.messages.t("approval.details.link", { kind: link.kind });
-    return `<a href="${this.escape(link.url)}">${this.escape(label)}</a>`;
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-details-preview.ts
-var ApprovalDetailsPreview = class {
-  create(details) {
-    const emails = details.emails.slice(0, 20).map((email) => ({
-      ...email,
-      recipientName: this.text(email.recipientName),
-      links: email.links.slice(0, 8).map((link) => ({
-        ...link,
-        ...link.title === void 0 ? {} : { title: this.text(link.title) }
-      })),
-      omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0)
-    }));
-    while (JSON.stringify(emails).length > 4e3) {
-      const largest = [...emails].sort(
-        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
-      )[0];
-      if (largest?.links.length) {
-        largest.links.pop();
-        largest.omittedLinks++;
-      } else {
-        emails.pop();
-      }
-    }
-    return {
-      emails,
-      omittedEmails: details.omittedEmails + details.emails.length - emails.length
-    };
-  }
-  text(value) {
-    const normalized = value.trim().replace(/\s+/g, " ");
-    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-request-schema.ts
-var ApprovalRequestSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
-      throw new Error("Invalid approval request");
-    if (value.kind === "content-review") {
-      if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
-        throw new Error("Invalid content approval fields");
-      this.collaborators.contentApprovalSchema.validate(value.content);
-      return;
-    }
-    if (value.content !== void 0)
-      throw new Error("Invalid content approval kind");
-    if (value.kind === "meetup-publication") {
-      if (value.recipientCount !== void 0 || value.details !== void 0)
-        throw new Error("Invalid publication approval fields");
-      this.collaborators.meetupApprovalDetailsSchema.validate(
-        value.publication
-      );
-      return;
-    }
-    if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !this.collaborators.approvalSchema.count(value.recipientCount))
-      throw new Error("Invalid approval request");
-    this.collaborators.emailApprovalDetailsSchema.validate(value.details);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
-var ApprovalSchema = class {
-  object(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  count(value) {
-    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
-  }
-  text(value, maximum) {
-    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-approval-presenter.ts
-var ContentApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  issue(record, decision) {
-    const content = record.content;
-    return [
-      this.messages.t("approval.content.title", {
-        target: content.target,
-        language: content.language,
-        origin: this.escape(content.origin)
-      }),
-      content.plannedAt ? this.messages.t("approval.content.planned", {
-        time: content.plannedAt
-      }) : "",
-      ...(content.attempts ?? []).map(
-        (status, index) => this.messages.t("approval.content.slot", {
-          index: index + 1,
-          status: status.replaceAll("-", "_")
-        })
-      ),
-      content.draft.text ? `<pre>${this.escape(content.draft.text)}</pre>` : "",
-      ...content.draft.media.map(
-        (media) => [
-          `![${this.escape(media.description)}](<${media.url}>)`,
-          `${this.escape(media.id)} \xB7 ${this.escape(media.sourceRevision)}${media.source ? ` \xB7 ${this.escape(media.source.id)} \xB7 ${this.escape(media.source.revision)}` : ""} \xB7 ${media.width}\xD7${media.height} \xB7 ${media.mimeType} \xB7 ${media.fingerprint}`
-        ].join("\n\n")
-      ),
-      record.decision ? this.messages.t("approval.content.final", {
-        status: record.decision.status.replaceAll("-", "_"),
-        actor: record.decision.actor,
-        decidedAt: record.decision.decidedAt,
-        image: record.decision.selectedImage ?? ""
-      }) : this.controls(record, decision)
-    ].filter(Boolean).join("\n\n");
-  }
-  controls(record, decision) {
-    const images = record.content.target === "cover" ? record.content.draft.media : [];
-    const approve = images.length ? images.map(
-      (image, index) => this.messages.t("approval.content.image-choice", {
-        mark: decision.status === "approved" && decision.selectedImage === image.id ? "x" : " ",
-        index: index + 1
-      })
-    ).join("\n") : this.messages.t("approval.content.text-choice", {
-      mark: decision.status === "approved" ? "x" : " "
-    });
-    return this.messages.t("approval.content.request", {
-      approve,
-      rejectMark: decision.status === "rejected" ? "x" : " ",
-      iterateMark: decision.status === "iteration-requested" ? "x" : " "
-    });
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-approval-schema.ts
-var ContentApprovalSchema = class {
-  constructor(schema, policy, values) {
-    this.schema = schema;
-    this.policy = policy;
-    this.values = values;
-  }
-  schema;
-  policy;
-  values;
-  validate(value) {
-    if (!this.schema.object(value) || typeof value.key !== "string" || !/^content-[a-f0-9-]{36}$/.test(value.key) || !this.policy.target(value.target) || !["en", "fr"].includes(String(value.language)) || typeof value.origin !== "string" || !value.origin || value.origin.length > 200)
-      throw new Error("Invalid content approval");
-    this.values.object(value, [
-      "key",
-      "target",
-      "language",
-      "origin",
-      "draft",
-      "plannedAt",
-      "attempts"
-    ]);
-    const draft = this.values.draft(value.draft);
-    if (value.target === "cover" && (!draft.media.length || draft.text))
-      throw new Error("Invalid cover preview");
-    if (value.target !== "cover" && !draft.text.trim())
-      throw new Error("Missing content preview");
-    this.schedule(value);
-  }
-  schedule(value) {
-    if (value.plannedAt !== void 0 && (typeof value.plannedAt !== "string" || !Number.isFinite(Date.parse(value.plannedAt))))
-      throw new Error("Invalid planned publication time");
-    if (value.attempts !== void 0 && (!Array.isArray(value.attempts) || value.attempts.length !== 4 || value.attempts.some(
-      (phase) => !["not-started", "reserved", "complete", "failed"].includes(phase)
-    )))
-      throw new Error("Invalid cover attempt summary");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/email-approval-details-schema.ts
-var EmailApprovalDetailsSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(details) {
-    if (details === void 0) return;
-    if (!this.collaborators.approvalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !this.collaborators.approvalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(this.email.bind(this)))
-      throw new Error("Invalid approval details");
-  }
-  email(email) {
-    return this.collaborators.approvalSchema.object(email) && typeof email.kind === "string" && [
-      "host-introduction",
-      "speaker-introduction",
-      "host-thanks",
-      "speaker-thanks"
-    ].includes(email.kind) && this.collaborators.approvalSchema.text(email.recipientName, 200) && this.collaborators.approvalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(this.link.bind(this));
-  }
-  link(link) {
-    return this.collaborators.approvalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || this.collaborators.approvalSchema.text(link.title, 200)) && this.url(link.url);
-  }
-  url(value) {
-    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
-      return false;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password;
-    } catch {
-      return false;
-    }
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/email-approval-presenter.ts
-var EmailApprovalPresenter = class {
-  constructor(collaborators, messages5) {
-    this.collaborators = collaborators;
-    this.messages = messages5;
-  }
-  collaborators;
-  messages;
-  issue(record, decision) {
-    const heading = [...this.collaborators.followUpPresenter.render(record)];
-    const phase = this.collaborators.approvalRequestPolicy.reviewPhase({
-      recipientCount: record.recipientCount,
-      followUpActive: record.followUp?.active,
-      decided: record.decision !== void 0
-    });
-    if (phase === "inactive")
-      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
-    const details = record.details ? [this.collaborators.approvalDetailsPresenter.render(record.details)] : [];
-    if (record.followUp?.attentionDetails)
-      details.push(record.followUp.attentionDetails);
-    if (record.decision)
-      return [
-        ...heading,
-        this.messages.t("approval.final", {
-          kind: record.kind.replace("email-", ""),
-          date: record.eventDate,
-          count: record.recipientCount,
-          status: record.decision.status,
-          actor: record.decision.actor,
-          decidedAt: record.decision.decidedAt
-        }),
-        ...details
-      ].join("\n\n");
-    return [
-      ...heading,
-      this.messages.t("approval.request", {
-        kind: record.kind.replace("email-", ""),
-        date: record.eventDate,
-        count: record.recipientCount,
-        approveMark: decision.status === "approved" ? "x" : " ",
-        rejectMark: decision.status === "rejected" ? "x" : " "
-      }),
-      ...details
-    ].join("\n\n");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/finalize-approval-decision.ts
-var FinalizeApprovalDecision = class {
-  constructor(decisions, repository, notifications) {
-    this.decisions = decisions;
-    this.repository = repository;
-    this.notifications = notifications;
-  }
-  decisions;
-  repository;
-  notifications;
-  async execute(state) {
-    const { record, comment } = state;
-    const decision = await this.decisions.execute(record, comment);
-    if (decision.status !== "pending" && !record.decision) {
-      if (!decision.actor || !decision.decidedAt)
-        throw new Error("Missing verified approval identity");
-      record.decision = {
-        status: decision.status,
-        actor: decision.actor,
-        decidedAt: decision.decidedAt,
-        ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
-      };
-    }
-    await this.repository.save(record, state);
-    return {
-      status: decision.status,
-      ...record.kind === "content-review" ? decision : {},
-      notificationFailed: await this.notifications.react(record, comment.id)
-    };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/follow-up-presenter.ts
-var FollowUpPresenter = class {
-  constructor(policy, messages5) {
-    this.policy = policy;
-    this.messages = messages5;
-  }
-  policy;
-  messages;
-  render(record) {
-    if (!record.followUp) return [];
-    const lines = [
-      this.messages.t("follow-up.title", { date: record.eventDate }),
-      this.messages.t("follow-up.instructions", {})
-    ];
-    for (const task of FOLLOW_UP_TASKS) {
-      const pending = record.followUp.pendingTasks.includes(task);
-      lines.push(
-        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
-      );
-    }
-    const progress = this.policy.progressState(
-      record.followUp,
-      record.recipientCount ?? 0
-    );
-    if (progress !== "review")
-      lines.push(this.messages.t(`follow-up.${progress}`, {}));
-    return lines;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/follow-up-schema.ts
-var FollowUpSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (value === void 0) return;
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
-      throw new Error("Invalid post-event follow-up state");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-attention-source.ts
-var GithubApprovalAttentionSource = class {
-  constructor(repository, finalizer) {
-    this.repository = repository;
-    this.finalizer = finalizer;
-  }
-  repository;
-  finalizer;
-  async synchronizeApprovals() {
-    const result = [];
-    for (const state of await this.repository.activeStates()) {
-      if (state.record.recipientCount === 0) continue;
-      const decision = await this.finalizer.execute(state);
-      result.push({
-        revision: state.record.revision,
-        requestedAt: state.record.requestedAt,
-        commentId: state.comment.id,
-        eventDate: state.record.eventDate,
-        kind: state.record.kind,
-        status: decision.status
-      });
-    }
-    return result;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-client.ts
-var GithubApprovalClient = class {
-  constructor(collaborators, api, owner, repo, issue2) {
-    this.collaborators = collaborators;
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.issue = issue2;
-  }
-  collaborators;
-  api;
-  owner;
-  repo;
-  issue;
-  async list() {
-    const comments = [];
-    let page = 1;
-    while (true) {
-      const raw = await this.api.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: this.issue,
-        page,
-        per_page: 100
-      });
-      const response = this.collaborators.githubApprovalResponse.comments(raw);
-      comments.push(...response.data);
-      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!next) return comments;
-      page += 1;
-    }
-  }
-  async create(body) {
-    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
-    const response = await this.api.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: this.issue,
-      body
-    });
-    return this.collaborators.githubApprovalResponse.identity(response);
-  }
-  async update(commentId, body) {
-    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
-    await this.api.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
-  }
-  async canApprove(username) {
-    const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
-      owner: this.owner,
-      repo: this.repo,
-      username
-    });
-    const permission = this.collaborators.githubApprovalResponse.permission(response);
-    return ["write", "maintain", "admin"].includes(permission);
-  }
-  async replace(commentId, before, after) {
-    if (before === after) return;
-    const current = (await this.list()).find(
-      (comment) => comment.id === commentId
-    );
-    if (current?.body !== before)
-      throw new Error("Approval comment changed before persistence");
-    await this.update(commentId, after);
-  }
-  async edit(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing approval comment node identity");
-    const result = await this.api.graphql(
-      `query ApprovalCommentEditor($id: ID!) {
-				node(id: $id) {
-					... on IssueComment {
-						id body lastEditedAt editor { login __typename }
-					}
-				}
-			}`,
-      { id: comment.node_id }
-    );
-    return this.collaborators.githubApprovalResponse.edit(result, comment);
-  }
-  url(commentId) {
-    return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
-  }
-  async history(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing approval comment node identity");
-    const edits = [];
-    let after;
-    do {
-      const response = await this.api.graphql(
-        `query ApprovalCommentHistory($id: ID!, $after: String) {
-				node(id: $id) { ... on IssueComment {
-					id body userContentEdits(first: 100, after: $after) {
-						nodes { diff deletedAt editor { login __typename } }
-						pageInfo { hasNextPage endCursor }
-					}
-				} }
-			}`,
-        { id: comment.node_id, ...after ? { after } : {} }
-      );
-      const history = this.collaborators.githubApprovalResponse.history(
-        response,
-        comment
-      );
-      edits.push(...history.nodes);
-      if (!history.pageInfo.hasNextPage) return edits;
-      const next = history.pageInfo.endCursor;
-      if (!next || next === after)
-        throw new Error("Invalid approval history cursor");
-      after = next;
-    } while (after);
-    return edits;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-repository.ts
-var GithubApprovalRepository = class {
-  constructor(collaborators, client, trusted, authorLogin, presenter) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.trusted = trusted;
-    this.authorLogin = authorLogin;
-    this.presenter = presenter;
-  }
-  collaborators;
-  client;
-  trusted;
-  authorLogin;
-  presenter;
-  async states() {
-    const states = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
-        continue;
-      const record = await this.trusted.read(comment);
-      if (!record) continue;
-      if (states.some(
-        (state) => state.record.kind === record.kind && (record.kind !== "content-review" || state.record.content?.key === record.content.key)
-      ))
-        throw new Error("Ambiguous approval state");
-      states.push({ record, comment });
-    }
-    return states;
-  }
-  async activeStates() {
-    const active = /* @__PURE__ */ new Map();
-    for (const state of await this.states()) {
-      const record = state.record;
-      const key = record.kind === "content-review" ? `content:${record.content.target}` : record.kind;
-      active.set(key, state);
-    }
-    return [...active.values()];
-  }
-  async save(record, existing) {
-    this.collaborators.storedApprovalSchema.validate(record);
-    const body = this.presenter.issue(
-      record,
-      record.decision ?? { status: "pending" }
-    );
-    if (!existing) {
-      const id = await this.client.create(body);
-      return { record, comment: { id, body } };
-    }
-    await this.client.replace(
-      existing.comment.id,
-      existing.comment.body ?? "",
-      body
-    );
-    existing.comment = { ...existing.comment, body };
-    return { record, comment: existing.comment };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-response.ts
-var GithubApprovalResponse = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  comments(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.data) || !value.data.every(this.comment.bind(this)) || !this.collaborators.approvalSchema.object(value.headers) || value.headers.link !== void 0 && typeof value.headers.link !== "string")
-      throw new Error("Invalid approval comment response");
-    return { data: value.data, headers: { link: value.headers.link } };
-  }
-  identity(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || !this.collaborators.approvalSchema.count(value.data.id) || value.data.id === 0)
-      throw new Error("Invalid approval comment identity");
-    return value.data.id;
-  }
-  permission(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || typeof value.data.permission !== "string")
-      throw new Error("Invalid approval permission response");
-    return value.data.permission;
-  }
-  edit(value, comment) {
-    const node = this.snapshot(value, comment);
-    if (!this.nullableText(node.lastEditedAt) || !this.actor(node.editor))
-      throw new Error("Invalid approval editor response");
-    return {
-      id: node.id,
-      body: node.body,
-      lastEditedAt: node.lastEditedAt,
-      editor: node.editor
-    };
-  }
-  history(value, comment) {
-    const node = this.snapshot(value, comment);
-    const history = node.userContentEdits;
-    if (!this.collaborators.approvalSchema.object(history) || !Array.isArray(history.nodes) || !history.nodes.every(this.historyEdit.bind(this)) || !this.collaborators.approvalSchema.object(history.pageInfo) || typeof history.pageInfo.hasNextPage !== "boolean" || !this.nullableText(history.pageInfo.endCursor))
-      throw new Error("Approval history is unavailable");
-    return {
-      nodes: history.nodes,
-      pageInfo: {
-        hasNextPage: history.pageInfo.hasNextPage,
-        endCursor: history.pageInfo.endCursor
-      }
-    };
-  }
-  snapshot(value, comment) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
-      throw new Error("Approval comment changed during verification");
-    return { ...value.node, id: value.node.id, body: value.node.body };
-  }
-  comment(value) {
-    return this.collaborators.approvalSchema.object(value) && this.collaborators.approvalSchema.count(value.id) && value.id > 0 && (value.node_id === void 0 || typeof value.node_id === "string") && (value.body === void 0 || this.nullableText(value.body)) && (value.user === void 0 || value.user === null || this.collaborators.approvalSchema.object(value.user) && typeof value.user.login === "string");
-  }
-  historyEdit(value) {
-    return this.collaborators.approvalSchema.object(value) && this.nullableText(value.diff) && this.nullableText(value.deletedAt) && this.actor(value.editor);
-  }
-  actor(value) {
-    return value === null || this.collaborators.approvalSchema.object(value) && typeof value.login === "string" && typeof value.__typename === "string";
-  }
-  nullableText(value) {
-    return value === null || typeof value === "string";
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-follow-up-attention-repository.ts
-var GithubFollowUpAttentionRepository = class {
-  constructor(approvals, previous, codec, presentation) {
-    this.approvals = approvals;
-    this.previous = previous;
-    this.codec = codec;
-    this.presentation = presentation;
-  }
-  approvals;
-  previous;
-  codec;
-  presentation;
-  sharedCommentId;
-  async load() {
-    const shared = await this.approvals.followUpAttention();
-    this.sharedCommentId = shared?.commentId;
-    const previous = await this.previous.load();
-    return shared?.body ? this.codec.read(shared.body) : previous;
-  }
-  async save(state) {
-    if (!this.sharedCommentId) return this.previous.save(state);
-    await this.approvals.saveFollowUpAttention(
-      this.codec.marker(state),
-      this.presentation.details(state)
-    );
-    await this.previous.retire(this.sharedCommentId);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-organizer-approval.ts
-var GithubOrganizerApproval = class {
-  constructor(collaborators, repository, records, finalizer, notifications, permissions) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.records = records;
-    this.finalizer = finalizer;
-    this.notifications = notifications;
-    this.permissions = permissions;
-  }
-  collaborators;
-  repository;
-  records;
-  finalizer;
-  notifications;
-  permissions;
-  async request(input) {
-    input = this.reviewedRequest(input);
-    this.collaborators.approvalRequestSchema.validate(input);
-    this.collaborators.approvalRequestPolicy.validate(input);
-    const existing = (await this.repository.states()).find(
-      ({ record: record2 }) => record2.kind === input.kind && (input.kind !== "content-review" || record2.content?.key === input.content.key)
-    );
-    if (existing && this.collaborators.approvalRequestPolicy.matches(
-      existing.record,
-      input,
-      existing.record.decision?.status ?? "pending"
-    )) {
-      const result = await this.finalizer.execute(existing);
-      if ((result.status === "approved" || result.status === "iteration-requested") && !await this.permissions.canApprove(
-        existing.record.decision?.actor ?? ""
-      ))
-        throw new Error(
-          "The recorded organizer no longer has approval permission"
-        );
-      if (result.status !== "pending") return result;
-      return {
-        status: "pending",
-        notificationFailed: await this.notifications.send(
-          existing.record,
-          existing.comment.id
-        )
-      };
-    }
-    const record = this.records.create(input);
-    const followUp = this.collaborators.followUpApprovalPolicy.initialFor(
-      input,
-      existing?.record.followUp
-    );
-    if (followUp)
-      record.followUp = { ...existing?.record.followUp, ...followUp };
-    const state = await this.repository.save(record, existing);
-    return {
-      status: "pending",
-      notificationFailed: await this.notifications.send(
-        record,
-        state.comment.id
-      )
-    };
-  }
-  async synchronize() {
-    let notificationFailed = false;
-    for (const state of await this.repository.activeStates()) {
-      const result = await this.finalizer.execute(state);
-      notificationFailed = result.notificationFailed || notificationFailed;
-    }
-    return { notificationFailed };
-  }
-  reviewedRequest(input) {
-    if (input.kind === "meetup-publication" || !input.details) return input;
-    return {
-      ...input,
-      details: this.collaborators.approvalDetailsPreview.create(input.details)
-    };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-organizer-follow-up.ts
-var GithubOrganizerFollowUp = class {
-  constructor(policy, repository, records, finalizer) {
-    this.policy = policy;
-    this.repository = repository;
-    this.records = records;
-    this.finalizer = finalizer;
-  }
-  policy;
-  repository;
-  records;
-  finalizer;
-  async synchronizeFollowUp(input) {
-    const existing = (await this.repository.states()).find(
-      ({ record: record2 }) => record2.kind === "email-thanks"
-    );
-    if (!existing && !input.active) return void 0;
-    if (existing) await this.finalizer.execute(existing);
-    const attention = existing?.record.followUp?.attention;
-    const attentionDetails = existing?.record.followUp?.attentionDetails;
-    const record = existing && this.policy.retainRequest(input, existing.record.eventDate) ? existing.record : this.records.placeholder(input);
-    record.followUp = {
-      active: input.active,
-      pendingTasks: input.pendingTasks,
-      attention,
-      attentionDetails
-    };
-    const state = await this.repository.save(record, existing);
-    return state.comment.id;
-  }
-  async followUpAttention() {
-    const state = (await this.repository.states()).find(
-      ({ record }) => record.followUp
-    );
-    return state ? { commentId: state.comment.id, body: state.record.followUp?.attention } : void 0;
-  }
-  async saveFollowUpAttention(body, details) {
-    const state = (await this.repository.states()).find(
-      ({ record }) => record.followUp
-    );
-    if (!state?.record.followUp)
-      throw new Error("Missing post-event follow-up comment");
-    await this.finalizer.execute(state);
-    state.record.followUp = {
-      ...state.record.followUp,
-      attention: body,
-      attentionDetails: details
-    };
-    await this.repository.save(state.record, state);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
-var ApprovalMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS3, locale);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/meetup-approval-details-schema.ts
-var MeetupApprovalDetailsSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !this.text(value.title, 80) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
-      throw new Error("Invalid Meetup approval details");
-  }
-  text(value, maximum) {
-    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/meetup-approval-presenter.ts
-var MeetupApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  issue(record, decision) {
-    const details = record.publication;
-    const content = this.messages.t("approval.meetup.details", {
-      title: this.escape(details.title),
-      date: record.eventDate,
-      startTime: details.startTime,
-      endTime: details.endTime,
-      timeZone: this.escape(details.timeZone),
-      venue: this.escape(details.venue.name),
-      city: this.escape(details.venue.city),
-      url: details.url
-    });
-    const controls = record.decision ? this.messages.t("approval.meetup.final", {
-      status: record.decision.status,
-      actor: record.decision.actor,
-      decidedAt: record.decision.decidedAt
-    }) : this.messages.t("approval.meetup.request", {
-      approveMark: decision.status === "approved" ? "x" : " ",
-      rejectMark: decision.status === "rejected" ? "x" : " "
-    });
-    return [content, controls].join("\n\n");
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/resolve-approval-decision.ts
-var ResolveApprovalDecision = class {
-  constructor(client, parser) {
-    this.client = client;
-    this.parser = parser;
-  }
-  client;
-  parser;
-  async execute(record, comment) {
-    if (record.decision) return record.decision;
-    const decision = this.parser.parse(record, comment.body ?? "");
-    if (decision.status === "pending") return decision;
-    const edit = await this.client.edit(comment);
-    const editedAt = Date.parse(edit.lastEditedAt ?? "");
-    if (edit.editor?.__typename !== "User" || !edit.editor.login || edit.editor.login === "ghost" || !Number.isFinite(editedAt) || editedAt < Math.floor(Date.parse(record.requestedAt) / 1e3) * 1e3)
-      return { status: "pending" };
-    return await this.client.canApprove(edit.editor.login) ? {
-      ...decision,
-      actor: edit.editor.login,
-      decidedAt: edit.lastEditedAt ?? void 0
-    } : { status: "pending" };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
-var StoredApprovalSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value))
-      throw new Error("Invalid approval state");
-    const state = value;
-    this.collaborators.approvalRequestSchema.validate(value);
-    this.collaborators.followUpSchema.validate(state.followUp);
-    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
-      hasFollowUp: state.followUp !== void 0,
-      decided: state.decision !== void 0
-    });
-    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
-      (status) => status === state.notification
-    ))
-      throw new Error("Invalid approval state");
-    if (state.decision !== void 0) {
-      this.decision(state.decision);
-      const decision = state.decision;
-      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0))
-        throw new Error("Invalid content decision kind");
-      if (value.kind === "content-review")
-        this.contentDecision(value, decision);
-    }
-    if (state.notificationMessage !== void 0)
-      this.notificationMessage(state.notificationMessage);
-    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
-      throw new Error("Invalid approval reaction state");
-  }
-  decision(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
-      String(value.status)
-    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
-      throw new Error("Invalid final approval decision");
-  }
-  contentDecision(value, decision) {
-    const selected = decision.selectedImage;
-    if (value.content.target === "cover" && decision.status === "approved") {
-      if (!value.content.draft.media.some((media) => media.id === selected))
-        throw new Error("Missing approved cover identity");
-    } else if (selected !== void 0)
-      throw new Error("Unexpected cover identity");
-  }
-  notificationMessage(value) {
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
-      throw new Error("Invalid approval notification reference");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
-var TrustedApprovalState = class {
-  constructor(collaborators, client, authorLogin) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.authorLogin = authorLogin;
-  }
-  collaborators;
-  client;
-  authorLogin;
-  async read(comment) {
-    const current = await this.client.edit(comment);
-    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
-      return this.record(current.body);
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Approval history was deleted");
-      if (this.isAuthor(edit.editor)) {
-        if (edit.diff === null)
-          throw new Error("Approval history is unavailable");
-        return this.record(edit.diff);
-      }
-    }
-    throw new Error("A trusted approval revision could not be verified");
-  }
-  record(body) {
-    if (!body?.startsWith(APPROVAL_MARKER)) return void 0;
-    return this.collaborators.approvalCommentCodec.read(body);
-  }
-  isAuthor(editor) {
-    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.authorLogin.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/dependency-composition.ts
-var GithubOrganizerApprovalComposition = class {
-  approvalCommentCodec() {
-    return new ApprovalCommentCodec({
-      storedApprovalSchema: this.storedApprovalSchema()
-    });
-  }
-  approvalDecisionParser(...args) {
-    return new ApprovalDecisionParser(
-      new JourneyPolicyComposition().approvalRequestPolicy(),
-      ...args
-    );
-  }
-  approvalDetailsPresenter(...args) {
-    return new ApprovalDetailsPresenter(...args);
-  }
-  approvalDetailsPreview() {
-    return new ApprovalDetailsPreview();
-  }
-  approvalMessages(...args) {
-    return new ApprovalMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  approvalNotifications(...args) {
-    return new ApprovalNotifications(...args);
-  }
-  approvalPresenter(messages5) {
-    const email = this.emailApprovalPresenter(messages5);
-    return new ApprovalPresenter(this.approvalCommentCodec(), {
-      "email-introduction": email,
-      "email-thanks": email,
-      "meetup-publication": this.meetupApprovalPresenter(messages5),
-      "content-review": this.contentApprovalPresenter(messages5)
-    });
-  }
-  contentApprovalPresenter(messages5) {
-    return new ContentApprovalPresenter(messages5);
-  }
-  approvalPresenterFactory() {
-    return new ApprovalPresenterFactory({
-      createApprovalPresenter: (...args) => this.approvalPresenter(...args),
-      createApprovalMessages: (...args) => this.approvalMessages(...args)
-    });
-  }
-  approvalRecordFactory(...args) {
-    return new ApprovalRecordFactory(
-      {
-        approvalRequestSchema: this.approvalRequestSchema(),
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
-        storedApprovalSchema: this.storedApprovalSchema(),
-        followUpApprovalPolicy: new FollowUpApprovalPolicy()
-      },
-      ...args
-    );
-  }
-  approvalRequestSchema() {
-    return new ApprovalRequestSchema({
-      approvalSchema: this.approvalSchema(),
-      contentApprovalSchema: new ContentApprovalSchema(
-        this.approvalSchema(),
-        new DraftProposalComposition().policy(),
-        new ContentValueSchema(new PublicAssetUrl())
-      ),
-      meetupApprovalDetailsSchema: this.meetupApprovalDetailsSchema(),
-      emailApprovalDetailsSchema: this.emailApprovalDetailsSchema()
-    });
-  }
-  approvalSchema() {
-    return new ApprovalSchema();
-  }
-  emailApprovalDetailsSchema() {
-    return new EmailApprovalDetailsSchema({
-      approvalSchema: this.approvalSchema()
-    });
-  }
-  emailApprovalPresenter(...args) {
-    return new EmailApprovalPresenter(
-      {
-        followUpPresenter: this.followUpPresenter(args[0]),
-        approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
-      },
-      ...args
-    );
-  }
-  finalizeApprovalDecision(...args) {
-    return new FinalizeApprovalDecision(...args);
-  }
-  followUpPresenter(...args) {
-    return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
-  }
-  followUpSchema() {
-    return new FollowUpSchema({ approvalSchema: this.approvalSchema() });
-  }
-  githubApprovalAttentionSource(...args) {
-    return new GithubApprovalAttentionSource(...args);
-  }
-  githubApprovalClient(...args) {
-    return new GithubApprovalClient(
-      { githubApprovalResponse: this.githubApprovalResponse() },
-      ...args
-    );
-  }
-  githubApprovalRepository(...args) {
-    return new GithubApprovalRepository(
-      { storedApprovalSchema: this.storedApprovalSchema() },
-      ...args
-    );
-  }
-  githubApprovalResponse() {
-    return new GithubApprovalResponse({
-      approvalSchema: this.approvalSchema()
-    });
-  }
-  githubFollowUpAttentionRepository(...args) {
-    return new GithubFollowUpAttentionRepository(...args);
-  }
-  githubOrganizerApproval(...args) {
-    return new GithubOrganizerApproval(
-      {
-        approvalRequestSchema: this.approvalRequestSchema(),
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
-        approvalDetailsPreview: this.approvalDetailsPreview(),
-        followUpApprovalPolicy: new FollowUpApprovalPolicy()
-      },
-      ...args
-    );
-  }
-  githubOrganizerFollowUp(...args) {
-    return new GithubOrganizerFollowUp(new FollowUpApprovalPolicy(), ...args);
-  }
-  meetupApprovalDetailsSchema() {
-    return new MeetupApprovalDetailsSchema({
-      approvalSchema: this.approvalSchema(),
-      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
-    });
-  }
-  meetupApprovalPresenter(...args) {
-    return new MeetupApprovalPresenter(...args);
-  }
-  resolveApprovalDecision(...args) {
-    return new ResolveApprovalDecision(...args);
-  }
-  storedApprovalSchema() {
-    return new StoredApprovalSchema({
-      approvalSchema: this.approvalSchema(),
-      approvalRequestSchema: this.approvalRequestSchema(),
-      followUpSchema: this.followUpSchema(),
-      approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
-    });
-  }
-  trustedApprovalState(...args) {
-    return new TrustedApprovalState(
-      { approvalCommentCodec: this.approvalCommentCodec() },
-      ...args
-    );
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-content-authority.ts
-var GithubContentAuthority = class {
-  constructor(approvals, client) {
-    this.approvals = approvals;
-    this.client = client;
-  }
-  approvals;
-  client;
-  async authorized(proposal) {
-    const record = (await this.approvals.states()).find(
-      (state) => state.record.kind === "content-review" && state.record.content.key === proposal.id
-    )?.record;
-    return record?.kind === "content-review" && record.revision === proposal.revision && record.decision?.status === "approved" && record.decision.actor === proposal.decision?.actor && record.decision.decidedAt === proposal.decision?.decidedAt && record.decision.selectedImage === proposal.decision?.selectedImage && await this.client.canApprove(record.decision.actor);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-content-proposal-store.ts
-var GithubContentProposalStore = class {
-  constructor(client, author, codec, fingerprints, transitions) {
-    this.client = client;
-    this.author = author;
-    this.codec = codec;
-    this.fingerprints = fingerprints;
-    this.transitions = transitions;
-  }
-  client;
-  author;
-  codec;
-  fingerprints;
-  transitions;
-  async load() {
-    const records = await this.records();
-    const proposals = records.map((record) => record.proposal);
-    return { revision: this.fingerprints.digest(proposals), proposals };
-  }
-  async save(previous, proposals) {
-    const records = await this.records();
-    if (this.fingerprints.digest(records.map((record) => record.proposal)) !== previous.revision)
-      throw new Error("Content proposals changed before persistence");
-    if (records.some(
-      (record) => !proposals.some((proposal) => proposal.id === record.proposal.id)
-    ))
-      throw new Error("Content proposal history cannot be removed");
-    for (const proposal of proposals) {
-      const existing = records.find(
-        (record) => record.proposal.id === proposal.id
-      );
-      const body = this.codec.write(proposal);
-      if (existing) {
-        this.transitions.validate(existing.proposal, proposal);
-        await this.client.replace(
-          existing.comment.id,
-          existing.comment.body ?? "",
-          body
-        );
-      } else await this.client.create(body);
-    }
-    const saved = await this.load();
-    if (proposals.some(
-      (proposal) => this.fingerprints.digest(
-        saved.proposals.find((item) => item.id === proposal.id)
-      ) !== this.fingerprints.digest(proposal)
-    ))
-      throw new Error("Content persistence readback is uncertain");
-    return saved;
-  }
-  async records() {
-    const result = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.author.toLowerCase() || comment.user.type !== "Bot")
-        continue;
-      const edit = await this.client.edit(comment);
-      if (edit.editor && (edit.editor.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))) {
-        await this.requireUnrelated(comment);
-        continue;
-      }
-      if (!edit.editor && edit.lastEditedAt !== null)
-        throw new Error("Content proposal editor is unavailable");
-      if (!edit.body.startsWith(CONTENT_STATE_MARKER)) continue;
-      const proposal = this.codec.read(edit.body);
-      if (result.some((record) => record.proposal.id === proposal.id))
-        throw new Error("Ambiguous content proposal state");
-      result.push({ comment, proposal });
-    }
-    return result;
-  }
-  async requireUnrelated(comment) {
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Content state history was deleted");
-      if (edit.editor?.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))
-        continue;
-      if (edit.diff === null || edit.diff.startsWith(CONTENT_STATE_MARKER))
-        throw new Error("Content proposal state was edited outside automation");
-      return;
-    }
-    throw new Error("Content proposal history could not be verified");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-content-recoveries.ts
-var GithubContentRecoveries = class {
-  constructor(client, values, fingerprints) {
-    this.client = client;
-    this.values = values;
-    this.fingerprints = fingerprints;
-  }
-  client;
-  values;
-  fingerprints;
-  async read() {
-    const requests = [];
-    const marker = "<!-- meetup-content-recovery:v1 -->";
-    for (const comment of await this.client.list()) {
-      if (!comment.body?.startsWith(marker) || comment.user?.type !== "User")
-        continue;
-      const edit = await this.client.edit(comment);
-      const actor = edit.editor ?? (edit.lastEditedAt === null ? { login: comment.user.login, __typename: "User" } : null);
-      if (actor?.__typename !== "User" || actor.login === "ghost" || !await this.client.canApprove(actor.login))
-        continue;
-      if (edit.body.length > 3e3)
-        throw new Error("Content recovery request exceeds limit");
-      const item = this.values.object(
-        JSON.parse(edit.body.slice(marker.length)),
-        ["proposalId", "guidance"]
-      );
-      const proposalId = this.values.text(item.proposalId, 44);
-      if (!/^content-[a-f0-9-]{36}$/.test(proposalId))
-        throw new Error("Invalid recovery proposal identity");
-      requests.push({
-        id: `${comment.id}:${this.fingerprints.digest(edit.body)}`,
-        actor: actor.login,
-        proposalId,
-        guidance: this.values.text(item.guidance, 2e3)
-      });
-    }
-    return requests;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-content-submissions.ts
-var CONTENT_SUBMISSION_MARKER = "<!-- meetup-content-submission:v1 -->";
-var GithubContentSubmissions = class {
-  constructor(client, values, policy, fingerprints, urls) {
-    this.client = client;
-    this.values = values;
-    this.policy = policy;
-    this.fingerprints = fingerprints;
-    this.urls = urls;
-  }
-  client;
-  values;
-  policy;
-  fingerprints;
-  urls;
-  async read() {
-    const result = [];
-    for (const comment of await this.client.list()) {
-      if (!comment.body?.startsWith(CONTENT_SUBMISSION_MARKER) || comment.user?.type !== "User")
-        continue;
-      const edit = await this.client.edit(comment);
-      const actor = edit.editor ?? (edit.lastEditedAt === null ? { login: comment.user.login, __typename: "User" } : null);
-      if (actor?.__typename !== "User" || actor.login === "ghost" || !await this.client.canApprove(actor.login))
-        continue;
-      if (edit.body.length > 2e4)
-        throw new Error("Content submission limit exceeded");
-      const parsed = this.parse(
-        JSON.parse(edit.body.slice(CONTENT_SUBMISSION_MARKER.length))
-      );
-      result.push({
-        ...parsed,
-        actor: actor.login,
-        id: `${comment.id}:${this.fingerprints.digest({ body: edit.body, actor: actor.login })}`
-      });
-    }
-    return result;
-  }
-  async verify(submission) {
-    return (await this.read()).some(
-      (item) => item.id === submission.id && item.actor === submission.actor
-    );
-  }
-  parse(value) {
-    const item = this.values.object(value, [
-      "target",
-      "language",
-      "text",
-      "image"
-    ]);
-    if (!this.policy.target(item.target) || item.language !== "en" && item.language !== "fr")
-      throw new Error("Invalid content submission target or language");
-    let image = null;
-    if (item.image !== null) {
-      const input = this.values.object(item.image, ["url", "description"]);
-      const url = this.values.text(input.url, 2e3), description = this.values.text(input.description, 1e3);
-      if (!this.urls.valid(url) || !description.trim())
-        throw new Error("Invalid submitted image");
-      image = { url, description };
-    }
-    return {
-      target: item.target,
-      language: item.language,
-      text: this.values.text(item.text, 12e3),
-      image
-    };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-store-composition.ts
-var GithubContentStoreComposition = class {
-  recoveries(client) {
-    return new GithubContentRecoveries(
-      client,
-      new ContentValueSchema(new PublicAssetUrl()),
-      new DraftProposalComposition().fingerprints()
-    );
-  }
-  authority(client, author, presenter) {
-    const adapter = new GithubOrganizerApprovalComposition();
-    return new GithubContentAuthority(
-      adapter.githubApprovalRepository(
-        client,
-        adapter.trustedApprovalState(client, author),
-        author,
-        presenter
-      ),
-      client
-    );
-  }
-  store(client, author) {
-    const fingerprints = new DraftProposalComposition().fingerprints();
-    return new GithubContentProposalStore(
-      client,
-      author,
-      new ContentProposalCodec(
-        new ContentValueSchema(new PublicAssetUrl()),
-        new DraftProposalComposition().policy(),
-        fingerprints
-      ),
-      fingerprints,
-      new ContentProposalTransition(fingerprints)
-    );
-  }
-  submissions(client) {
-    return new GithubContentSubmissions(
-      client,
-      new ContentValueSchema(new PublicAssetUrl()),
-      new DraftProposalComposition().policy(),
-      new DraftProposalComposition().fingerprints(),
-      new PublicAssetUrl()
-    );
-  }
-};
-
-// packages/adapter/publication/github-publication-journal/src/publication-comment-codec.ts
-var PublicationCommentCodec = class _PublicationCommentCodec {
-  static marker = "<!-- meetup-publication:v1\n";
-  decode(body) {
-    if (!body.startsWith(_PublicationCommentCodec.marker) || !body.endsWith("\n-->"))
-      throw new Error("Publication journal is corrupted");
-    let value;
-    try {
-      value = JSON.parse(body.slice(_PublicationCommentCodec.marker.length, -4));
-    } catch {
-      throw new Error("Publication journal is corrupted");
-    }
-    if (!this.object(value))
-      throw new Error("Publication journal is corrupted");
-    if (value.state === "pending" && value.url === void 0) return {};
-    if ((value.state === "saved" || value.state === "published") && typeof value.url === "string")
-      return { url: value.url };
-    throw new Error("Publication journal is corrupted");
-  }
-  encode(record) {
-    const state = record.url === void 0 ? { state: "pending" } : { state: "saved", url: record.url };
-    const json = JSON.stringify(state).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e");
-    return `${_PublicationCommentCodec.marker}${json}
--->`;
-  }
-  object(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/publication/github-publication-journal/src/github-publication-journal.ts
-var GithubPublicationJournal = class {
-  constructor(collaborators, client, scope, author) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.scope = scope;
-    this.author = author;
-    if (!author.endsWith("[bot]"))
-      throw new Error("Publication journal requires the GitHub App bot");
-  }
-  collaborators;
-  client;
-  scope;
-  author;
-  async load() {
-    const comment = await this.find();
-    if (!comment) return void 0;
-    return this.collaborators.publicationCommentCodec.decode(
-      comment.body ?? ""
-    );
-  }
-  async reserve() {
-    if (await this.load())
-      throw new Error("Publication creation was already reserved");
-    await this.client.rest.issues.createComment({
-      ...this.scope,
-      body: this.collaborators.publicationCommentCodec.encode({})
-    });
-    if (!await this.load())
-      throw new Error("Publication reservation was not persisted");
-  }
-  async record(url) {
-    const existing = await this.load();
-    if (existing?.url && existing.url !== url)
-      throw new Error("Publication journal identity conflict");
-    if (existing?.url === url) return;
-    const comment = await this.find();
-    const body = this.collaborators.publicationCommentCodec.encode({ url });
-    if (comment) {
-      await this.client.rest.issues.updateComment({
-        owner: this.scope.owner,
-        repo: this.scope.repo,
-        comment_id: comment.id,
-        body
-      });
-    } else await this.client.rest.issues.createComment({ ...this.scope, body });
-  }
-  async find() {
-    const matches = [];
-    for (let page = 1; page <= 100; page++) {
-      const response = await this.client.rest.issues.listComments({
-        ...this.scope,
-        page,
-        per_page: 100
-      });
-      matches.push(
-        ...response.data.filter(
-          (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && comment.body?.startsWith(PublicationCommentCodec.marker)
-        )
-      );
-      if (matches.length > 1) throw new Error("Multiple publication journals");
-      const hasNext = response.headers.link !== void 0 ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!hasNext) return matches[0];
-    }
-    throw new Error("Publication journal pagination exceeded its bound");
-  }
-};
-
-// packages/adapter/publication/github-publication-journal/src/dependency-composition.ts
-var GithubPublicationJournalComposition = class {
-  githubPublicationJournal(...args) {
-    return new GithubPublicationJournal(
-      { publicationCommentCodec: this.publicationCommentCodec() },
-      ...args
-    );
-  }
-  publicationCommentCodec() {
-    return new PublicationCommentCodec();
-  }
-};
-
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/chromium-endpoint.ts
-import { readFile as readFile3 } from "node:fs/promises";
-import { join as join3 } from "node:path";
-var ChromiumEndpoint = class {
-  async read(browser) {
-    const session = await browser.newBrowserCDPSession();
-    try {
-      const command = await session.send("Browser.getBrowserCommandLine");
-      const profile = command.arguments.find((argument) => argument.startsWith("--user-data-dir="))?.slice("--user-data-dir=".length);
-      if (!profile) throw new Error("Browser profile unavailable.");
-      const [port, path] = (await readFile3(join3(profile, "DevToolsActivePort"), "utf8")).trim().split("\n");
-      if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535 || !/^\/devtools\/browser\/[a-f0-9-]+$/.test(path))
-        throw new Error("Browser endpoint unavailable.");
-      return `ws://127.0.0.1:${port}${path}`;
-    } finally {
-      await session.detach();
-    }
-  }
-};
-
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-captcha-resolver.ts
-var HcaptchaCaptchaResolver = class {
-  constructor(challenge, page) {
-    this.challenge = challenge;
-    this.page = page;
-  }
-  challenge;
-  page;
-  async inspect() {
-    return await this.state() === "clear" ? "clear" : "required";
-  }
-  async resolve() {
-    const state = await this.state();
-    if (state === "clear") return "clear";
-    if (state === "unsupported" || !await this.challenge.solve(this.page))
-      return "required";
-    if (!await this.hasResponse()) return "required";
-    return this.inspect();
-  }
-  async state() {
-    if (await this.visible('iframe[src*="/recaptcha/"]')) return "unsupported";
-    if (await this.hasResponse()) return "clear";
-    return await this.visible('iframe[src*="hcaptcha.com"]') ? "supported" : "clear";
-  }
-  async hasResponse() {
-    const response = this.page.locator('[name="h-captcha-response"]').first();
-    return await response.count() > 0 && (await response.inputValue()).length > 0;
-  }
-  async visible(selector) {
-    for (const element of await this.page.locator(selector).all())
-      if (await element.isVisible()) return true;
-    return false;
-  }
-};
-
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-challenge.ts
-var HcaptchaChallenge = class {
-  constructor(collaborators, process2, apiKey, model) {
-    this.collaborators = collaborators;
-    this.process = process2;
-    this.apiKey = apiKey;
-    this.model = model;
-    if (!apiKey.trim() || !model.trim())
-      throw new Error("Gemini credentials and model are required.");
-  }
-  collaborators;
-  process;
-  apiKey;
-  model;
-  attempted = false;
-  async solve(page) {
-    if (this.attempted) return false;
-    this.attempted = true;
-    const targetUrl = page.url();
-    const browser = page.context().browser();
-    if (!browser) throw new Error("Browser unavailable.");
-    const endpoint2 = await this.collaborators.chromiumEndpoint.read(browser);
-    const result = await this.process.run({
-      endpoint: endpoint2,
-      targetUrl,
-      apiKey: this.apiKey,
-      model: this.model
-    });
-    if (result === "unavailable")
-      throw new Error("Challenge solver unavailable.");
-    return result === "solved";
-  }
-};
-
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-challenge-factory.ts
-var HcaptchaChallengeFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  create(directory, apiKey, model) {
-    return this.collaborators.createHcaptchaChallenge(
-      this.collaborators.hcaptchaProcessFactory.create(directory),
-      apiKey,
-      model
-    );
-  }
-};
-
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-process.ts
-import { mkdtemp, rm as rm2 } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join as join4 } from "node:path";
-var HcaptchaProcess = class {
-  constructor(directory, launch) {
-    this.directory = directory;
-    this.launch = launch;
-  }
-  directory;
-  launch;
-  async run(request2) {
-    const scratch = await mkdtemp(join4(tmpdir(), "hcaptcha-"));
-    try {
-      return await this.execute(scratch, request2);
-    } catch {
-      return "unavailable";
-    } finally {
-      await rm2(scratch, { recursive: true, force: true });
-    }
-  }
-  execute(scratch, request2) {
-    return new Promise((resolve4) => {
-      const child = this.launch(
-        join4(this.directory, ".venv/bin/python"),
-        [join4(this.directory, "solve.py")],
-        {
-          cwd: scratch,
-          detached: true,
-          stdio: ["pipe", "ignore", "ignore", "pipe"],
-          env: {
-            PATH: process.env.PATH,
-            LANG: "C.UTF-8",
-            TMPDIR: scratch,
-            MPLCONFIGDIR: join4(scratch, "matplotlib"),
-            DEBUG: "",
-            PWDEBUG: ""
-          }
-        }
-      );
-      let output = "";
-      let timedOut = false;
-      const timer = setTimeout(() => {
-        timedOut = true;
-        this.stop(child);
-      }, 12e4);
-      const status = child.stdio[3];
-      status.on("data", (chunk) => {
-        output += chunk.toString("utf8", 0, 33);
-        if (output.length > 32) {
-          output = "invalid";
-          this.stop(child);
-        }
-      });
-      child.on("error", () => this.stop(child));
-      child.on("close", (code) => {
-        clearTimeout(timer);
-        this.stop(child);
-        resolve4(this.result(code, output, timedOut));
-      });
-      child.stdin?.on("error", () => this.stop(child));
-      child.stdin?.end(JSON.stringify(request2));
-    });
-  }
-  result(code, output, timedOut) {
-    if (timedOut) return "blocked";
-    if (code === 0 && output === "solved\n") return "solved";
-    if (code === 0 && output === "blocked\n") return "blocked";
-    return "unavailable";
-  }
-  stop(child) {
-    if (!child.pid) return;
-    try {
-      process.kill(-child.pid, "SIGKILL");
-    } catch {
-    }
-  }
-};
-
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-process-factory.ts
-import { spawn } from "node:child_process";
-var HcaptchaProcessFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  create(directory) {
-    return this.collaborators.createHcaptchaProcess(directory, spawn);
-  }
-};
-
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/dependency-composition.ts
-var HcaptchaCaptchaResolverComposition = class {
-  captchaResolverFactory(directory, apiKey, model) {
-    const challenge = this.hcaptchaChallengeFactory().create(
-      directory,
-      apiKey,
-      model
-    );
-    return (page) => new HcaptchaCaptchaResolver(challenge, page);
-  }
-  chromiumEndpoint() {
-    return new ChromiumEndpoint();
-  }
-  hcaptchaChallenge(...args) {
-    return new HcaptchaChallenge(
-      { chromiumEndpoint: this.chromiumEndpoint() },
-      ...args
-    );
-  }
-  hcaptchaChallengeFactory() {
-    return new HcaptchaChallengeFactory({
-      hcaptchaProcessFactory: this.hcaptchaProcessFactory(),
-      createHcaptchaChallenge: (...args) => this.hcaptchaChallenge(...args)
-    });
-  }
-  hcaptchaProcess(...args) {
-    return new HcaptchaProcess(...args);
-  }
-  hcaptchaProcessFactory() {
-    return new HcaptchaProcessFactory({
-      createHcaptchaProcess: (...args) => this.hcaptchaProcess(...args)
-    });
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-browser-routes.ts
-var MeetupBrowserRoutes = class {
-  login(origin) {
-    return `${origin}/login/`;
-  }
-  account(origin) {
-    return `${origin}/account/management/`;
-  }
-  schedule(group) {
-    return `${group.value}schedule/`;
-  }
-  edit(event) {
-    return `${event.value}edit/`;
-  }
-  isMeetupLocation(url, origin) {
-    return url.origin === origin && !url.username && !url.password;
-  }
-  isPath(url, path, origin) {
-    return this.isMeetupLocation(url, origin) && (url.pathname === path || url.pathname.startsWith(`${path}/`));
-  }
-  matchesEditor(location, expected) {
-    return location.replace(/\/$/, "") === expected.replace(/\/$/, "");
-  }
-  eventLocation(location, group) {
-    if (!this.isMeetupLocation(location, group.origin)) return void 0;
-    return MeetupEventUrl.parse(
-      `${location.origin}${location.pathname}`,
-      group
-    );
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-calendar.ts
-var MeetupCalendar = class {
-  constructor(page) {
-    this.page = page;
-  }
-  page;
-  async select(label, date) {
-    await this.page.getByRole("button", { name: label, exact: true }).click();
-    const target = this.page.locator(`[data-day="${date}"] button`);
-    for (let month = 0; month < 25; month++) {
-      if (await target.isVisible()) {
-        await target.click();
-        return;
-      }
-      const dates = await this.page.locator("[data-day]").evaluateAll(
-        (cells) => cells.map((cell) => cell.getAttribute("data-day") ?? "").filter((date2) => /^\d{4}-\d{2}-\d{2}$/.test(date2)).sort()
-      );
-      if (!dates.length) throw new Error("Calendar date cells are unavailable");
-      const direction = date < (dates[0] ?? "") ? "previous" : "next";
-      await this.page.getByRole("button", {
-        name: new RegExp(`^Go to the ${direction} month$`, "i")
-      }).click();
-    }
-    throw new Error("Calendar date is outside the supported range");
-  }
-  async fill(date, startTime, endTime) {
-    await this.select("Open date picker", date);
-    await this.page.getByLabel("Edit start time", { exact: true }).fill(startTime);
-    await this.showEndTime();
-    await this.select("Open end date picker", date);
-    const end = this.page.getByLabel("Edit end time", { exact: true });
-    await end.fill(endTime);
-    await end.press("Tab");
-  }
-  async matches(date, startTime, endTime) {
-    if (!await this.matchesDate("Open date picker", date)) return false;
-    await this.showEndTime();
-    return await this.matchesDate("Open end date picker", date) && await this.page.getByLabel("Edit start time", { exact: true }).inputValue() === startTime && await this.page.getByLabel("Edit end time", { exact: true }).inputValue() === endTime;
-  }
-  async matchesDate(label, date) {
-    const trigger = this.page.getByRole("button", { name: label, exact: true });
-    await trigger.click();
-    await this.page.locator("[data-day]:visible").first().waitFor();
-    const selected = this.page.locator(
-      `[data-day="${date}"][data-selected="true"]`
-    );
-    const matches = await selected.isVisible();
-    await this.page.keyboard.press("Escape");
-    return matches;
-  }
-  async showEndTime() {
-    const end = this.page.getByLabel("Edit end time", { exact: true });
-    if (!await end.isVisible()) {
-      await this.page.locator("#duration").getByRole("button").click();
-      await this.page.getByRole("menuitem", { name: "Set an end time...", exact: true }).click();
-    }
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-event-editor.ts
-var MeetupEventEditor = class {
-  constructor(collaborators, page, groupUrl) {
-    this.collaborators = collaborators;
-    this.page = page;
-    const group = MeetupGroupUrl.parse(groupUrl);
-    if (!group) throw new ScheduledEventError("editor");
-    this.group = group;
-    page.setDefaultTimeout(15e3);
-    page.setDefaultNavigationTimeout(3e4);
-  }
-  collaborators;
-  page;
-  group;
-  async save(event, url, beforeSubmit, onSaved) {
-    const identity = MeetupEventUrl.parse(url, this.group);
-    if (url && !identity) throw new ScheduledEventError("editor");
-    const verification = this.collaborators.createMeetupEventVerification(
-      this.page
-    );
-    const existing = identity ? await verification.verify(event, identity).catch(() => {
-      throw new ScheduledEventError("editor");
-    }) : void 0;
-    if (identity && existing?.matches) {
-      await onSaved(identity.value);
-      return { url: identity.value, status: existing.status };
-    }
-    const status = await this.prepare(event, identity).catch(() => {
-      throw new ScheduledEventError("editor");
-    });
-    if (status !== (existing?.status ?? "draft"))
-      throw new ScheduledEventError("editor");
-    await beforeSubmit();
-    const savedUrl = await this.submit(identity, status);
-    await onSaved(savedUrl.value);
-    const saved = await verification.verify(event, savedUrl).catch(() => void 0);
-    if (!saved?.matches || saved.status !== status)
-      throw new ScheduledEventError("verification");
-    return { url: savedUrl.value, status: saved.status };
-  }
-  async submit(url, status) {
-    try {
-      const submit = status === "draft" ? this.page.getByTestId("event-preview-btn").filter({ visible: true }) : this.page.getByRole("button", { name: "Save changes", exact: true }).filter({ visible: true });
-      await submit.click();
-      await this.page.waitForURL(
-        (value) => this.collaborators.meetupBrowserRoutes.eventLocation(
-          value,
-          this.group
-        ) !== void 0,
-        { waitUntil: "domcontentloaded" }
-      );
-      const saved = this.collaborators.meetupBrowserRoutes.eventLocation(
-        new URL(this.page.url()),
-        this.group
-      );
-      if (!saved || url && saved.value !== url.value)
-        throw new Error("Unexpected event identity");
-      return saved;
-    } catch {
-      throw new ScheduledEventError("uncertain");
-    }
-  }
-  async prepare(event, url) {
-    const editorUrl = url ? this.collaborators.meetupBrowserRoutes.edit(url) : this.collaborators.meetupBrowserRoutes.schedule(this.group);
-    await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-    if (!this.collaborators.meetupBrowserRoutes.matchesEditor(
-      this.page.url(),
-      editorUrl
-    ))
-      throw new Error("The organizer editor is unavailable");
-    const status = await this.collaborators.createMeetupEventVerification(this.page).status();
-    const announcement = this.page.getByTestId("announcement-close-btn");
-    if (await announcement.isVisible()) await announcement.click();
-    await this.page.getByTestId("event-name-input").fill(event.title);
-    await this.collaborators.createMeetupCalendar(this.page).fill(event.date, event.startTime, event.endTime);
-    await this.page.getByTestId("event-description-editor").locator('[contenteditable="true"]:visible').fill(event.description);
-    await this.collaborators.createMeetupVenue(this.page).select(event.venue);
-    return status;
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-event-gateway.ts
-var MeetupEventGateway = class {
-  constructor(collaborators, browserType, credentials, createCaptchaResolver, groupUrl) {
-    this.collaborators = collaborators;
-    this.browserType = browserType;
-    this.credentials = credentials;
-    this.createCaptchaResolver = createCaptchaResolver;
-    const group = MeetupGroupUrl.parse(groupUrl);
-    if (!group) throw new ScheduledEventError("editor");
-    this.group = group;
-  }
-  collaborators;
-  browserType;
-  credentials;
-  createCaptchaResolver;
-  group;
-  async save(event, url, beforeSubmit, onSaved) {
-    return this.withSession(
-      event,
-      (page) => this.collaborators.createMeetupEventEditor(page, this.group.value).save(event, url, beforeSubmit, onSaved)
-    );
-  }
-  async publish(event, url, beforePublish) {
-    return this.withSession(
-      event,
-      (page) => this.collaborators.createMeetupEventPublisher(page, this.group.value).publish(event, url, beforePublish)
-    );
-  }
-  async withSession(event, operation) {
-    if (!this.credentials.email.trim() || !this.credentials.password)
-      throw new ScheduledEventError("authentication");
-    const browser = await this.browserType.launch({
-      headless: true,
-      args: [
-        "--enable-automation",
-        "--remote-debugging-address=127.0.0.1",
-        "--remote-debugging-port=0"
-      ]
-    }).catch(() => {
-      throw new ScheduledEventError("unavailable");
-    });
-    try {
-      const context3 = await browser.newContext({
-        locale: "en-US",
-        timezoneId: event.timeZone,
-        viewport: { width: 1440, height: 1e3 }
-      });
-      const page = await context3.newPage();
-      const status = await this.collaborators.createMeetupLoginPage(
-        page,
-        this.createCaptchaResolver(page),
-        this.group.origin
-      ).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
-      if (status !== "verified")
-        throw new ScheduledEventError(
-          ["unavailable", "unexpected-page"].includes(status) ? "unavailable" : "authentication"
-        );
-      return await operation(page);
-    } finally {
-      await browser.close().catch(() => void 0);
-    }
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-event-gateway-factory.ts
-import { chromium } from "playwright-core";
-var MeetupEventGatewayFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  create(credentials, createCaptchaResolver, groupUrl) {
-    return this.collaborators.createMeetupEventGateway(
-      chromium,
-      credentials,
-      createCaptchaResolver,
-      groupUrl
-    );
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-event-publisher.ts
-var MeetupEventPublisher = class {
-  constructor(collaborators, page, groupUrl) {
-    this.collaborators = collaborators;
-    this.page = page;
-    this.groupUrl = groupUrl;
-    page.setDefaultTimeout(15e3);
-    page.setDefaultNavigationTimeout(3e4);
-  }
-  collaborators;
-  page;
-  groupUrl;
-  async publish(event, url, beforePublish) {
-    const group = MeetupGroupUrl.parse(this.groupUrl);
-    const identity = group && MeetupEventUrl.parse(url, group);
-    if (!identity || identity.value !== url)
-      throw new ScheduledEventError("editor");
-    const verification = this.collaborators.createMeetupEventVerification(
-      this.page
-    );
-    const current = await verification.verify(event, identity).catch(() => {
-      throw new ScheduledEventError("verification");
-    });
-    if (!current.matches) throw new ScheduledEventError("verification");
-    if (current.status === "published") return { url, status: "published" };
-    const publish = this.page.getByTestId("event-publish-btn").filter({ visible: true });
-    await publish.waitFor().catch(() => {
-      throw new ScheduledEventError("editor");
-    });
-    await beforePublish();
-    try {
-      await publish.click();
-      await this.page.waitForURL(
-        (value) => this.collaborators.meetupBrowserRoutes.eventLocation(
-          value,
-          identity.group
-        )?.value === url,
-        { waitUntil: "domcontentloaded" }
-      );
-    } catch {
-      throw new ScheduledEventError("uncertain");
-    }
-    const saved = await verification.verify(event, identity).catch(() => void 0);
-    if (!saved?.matches || saved.status !== "published")
-      throw new ScheduledEventError("verification");
-    return { url, status: "published" };
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-event-verification.ts
-var MeetupEventVerification = class {
-  constructor(collaborators, page) {
-    this.collaborators = collaborators;
-    this.page = page;
-  }
-  collaborators;
-  page;
-  async verify(event, url) {
-    const editorUrl = this.collaborators.meetupBrowserRoutes.edit(url);
-    await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-    if (!this.collaborators.meetupBrowserRoutes.matchesEditor(
-      this.page.url(),
-      editorUrl
-    ))
-      throw new Error("The saved event editor is unavailable");
-    const status = await this.status();
-    const announcement = this.page.getByTestId("announcement-close-btn");
-    if (await announcement.isVisible()) await announcement.click();
-    const title = await this.page.getByTestId("event-name-input").inputValue();
-    const description = await this.page.getByTestId("event-description-editor").locator('[contenteditable="true"]:visible').innerText();
-    const matches = title === event.title && this.normalize(description) === this.normalize(event.description) && await this.collaborators.createMeetupVenue(this.page).matches(event.venue) && await this.collaborators.createMeetupCalendar(this.page).matches(event.date, event.startTime, event.endTime);
-    return { matches, status };
-  }
-  async status() {
-    const draft = this.page.getByTestId("event-save-draft-btn").filter({ visible: true });
-    const published = this.page.getByRole("button", { name: "Save changes", exact: true }).filter({ visible: true });
-    await draft.or(published).first().waitFor();
-    const isDraft = await draft.isVisible();
-    const isPublished = await published.isVisible();
-    if (isDraft === isPublished)
-      throw new Error("Unknown event publication status");
-    return isDraft ? "draft" : "published";
-  }
-  normalize(value) {
-    return value.replace(/\s+/g, " ").trim();
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-login-page.ts
-var MeetupLoginPage = class {
-  constructor(collaborators, page, captcha, origin) {
-    this.collaborators = collaborators;
-    this.page = page;
-    this.captcha = captcha;
-    this.origin = origin;
-    page.setDefaultTimeout(15e3);
-    page.setDefaultNavigationTimeout(3e4);
-  }
-  collaborators;
-  page;
-  captcha;
-  origin;
-  async login(email, password) {
-    await this.page.goto(
-      this.collaborators.meetupBrowserRoutes.login(this.origin),
-      {
-        waitUntil: "domcontentloaded"
-      }
-    );
-    await this.dismissCookieNotice();
-    if (!this.isMeetupPath("/login")) return "unexpected-page";
-    await this.page.locator('input[name="email"]').waitFor();
-    const challengeStatus = await this.prepareChallenge();
-    if (challengeStatus) return challengeStatus;
-    await this.page.locator('input[name="email"]').fill(email);
-    await this.page.locator('input[name="current-password"]').fill(password);
-    const submit = this.page.getByRole("button", {
-      name: "Log in",
-      exact: true
-    });
-    if (!await submit.isEnabled())
-      return await this.hasChallenge() ? "challenge-required" : "unexpected-page";
-    await submit.click();
-    try {
-      await this.page.waitForURL(
-        (url) => this.collaborators.meetupBrowserRoutes.isMeetupLocation(
-          url,
-          this.origin
-        ) && !url.pathname.startsWith("/login"),
-        { timeout: 15e3, waitUntil: "domcontentloaded" }
-      );
-    } catch {
-      if (await this.hasChallenge()) return "challenge-required";
-      if (await this.hasRejectedCredentials()) return "credentials-rejected";
-      return "unexpected-page";
-    }
-    return this.verifyAccount(email);
-  }
-  async verifyAccount(email) {
-    await this.page.goto(
-      this.collaborators.meetupBrowserRoutes.account(this.origin),
-      {
-        waitUntil: "domcontentloaded"
-      }
-    );
-    if (await this.hasChallenge()) return "challenge-required";
-    if (this.isMeetupPath("/login")) return "session-not-reusable";
-    if (!this.isMeetupPath("/account/management")) return "unexpected-page";
-    const accountEmail = this.page.locator('input[name="email"]');
-    await accountEmail.waitFor();
-    return (await accountEmail.inputValue()).toLowerCase() === email.toLowerCase() ? "verified" : "unexpected-page";
-  }
-  isMeetupPath(path) {
-    const url = new URL(this.page.url());
-    return this.collaborators.meetupBrowserRoutes.isPath(
-      url,
-      path,
-      this.origin
-    );
-  }
-  async hasChallenge() {
-    return await this.hasOneTimeCode() || await this.captcha.inspect() === "required";
-  }
-  async prepareChallenge() {
-    if (!await this.hasChallenge()) return null;
-    if (await this.hasOneTimeCode() || await this.captcha.resolve() !== "clear")
-      return "challenge-required";
-    if (!this.isMeetupPath("/login")) return "unexpected-page";
-    if (await this.hasChallenge()) return "challenge-required";
-    return null;
-  }
-  async hasOneTimeCode() {
-    for (const input of await this.page.locator('input[autocomplete="one-time-code"]').all())
-      if (await input.isVisible()) return true;
-    return false;
-  }
-  async hasRejectedCredentials() {
-    return this.page.getByText(/incorrect (email|password)|invalid (email|password)/i).first().isVisible();
-  }
-  async dismissCookieNotice() {
-    const decline = this.page.getByRole("button", {
-      name: "Continue without accepting",
-      exact: true
-    });
-    try {
-      await decline.waitFor({ timeout: 5e3 });
-    } catch {
-      return;
-    }
-    await decline.click();
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/meetup-venue.ts
-var MeetupVenue = class {
-  constructor(page) {
-    this.page = page;
-  }
-  page;
-  async select(venue) {
-    if (await this.matches(venue)) return;
-    const selected = this.page.getByRole("heading", {
-      name: venue.name,
-      exact: true
-    });
-    const change = this.page.getByRole("button", {
-      name: "Change",
-      exact: true
-    });
-    if (await change.isVisible()) await change.click();
-    const search = this.page.getByPlaceholder("Search or add location...", {
-      exact: true
-    });
-    await search.fill(`${venue.name} ${venue.city}`);
-    const matches = this.page.locator("#venue-search-dropdown li").filter({ has: this.page.getByText(venue.name, { exact: true }) }).filter({ hasText: venue.city });
-    await matches.first().waitFor();
-    if (await matches.count() !== 1)
-      throw new Error("Ambiguous venue selection");
-    await matches.click();
-    await selected.waitFor();
-  }
-  async matches(venue) {
-    const selected = this.page.getByRole("heading", {
-      name: venue.name,
-      exact: true
-    });
-    return await selected.isVisible() && (await selected.locator("../..").innerText()).includes(venue.city);
-  }
-};
-
-// packages/adapter/publication/meetup-event-gateway/src/dependency-composition.ts
-var MeetupEventGatewayComposition = class {
-  meetupBrowserRoutes() {
-    return new MeetupBrowserRoutes();
-  }
-  meetupCalendar(...args) {
-    return new MeetupCalendar(...args);
-  }
-  meetupEventEditor(...args) {
-    return new MeetupEventEditor(
-      {
-        meetupBrowserRoutes: this.meetupBrowserRoutes(),
-        createMeetupEventVerification: (...args2) => this.meetupEventVerification(...args2),
-        createMeetupCalendar: (...args2) => this.meetupCalendar(...args2),
-        createMeetupVenue: (...args2) => this.meetupVenue(...args2)
-      },
-      ...args
-    );
-  }
-  meetupEventGateway(...args) {
-    return new MeetupEventGateway(
-      {
-        createMeetupEventEditor: (...args2) => this.meetupEventEditor(...args2),
-        createMeetupEventPublisher: (...args2) => this.meetupEventPublisher(...args2),
-        createMeetupLoginPage: (...args2) => this.meetupLoginPage(...args2)
-      },
-      ...args
-    );
-  }
-  meetupEventGatewayFactory() {
-    return new MeetupEventGatewayFactory({
-      createMeetupEventGateway: (...args) => this.meetupEventGateway(...args)
-    });
-  }
-  meetupEventPublisher(...args) {
-    return new MeetupEventPublisher(
-      {
-        meetupBrowserRoutes: this.meetupBrowserRoutes(),
-        createMeetupEventVerification: (...args2) => this.meetupEventVerification(...args2)
-      },
-      ...args
-    );
-  }
-  meetupEventVerification(...args) {
-    return new MeetupEventVerification(
-      {
-        meetupBrowserRoutes: this.meetupBrowserRoutes(),
-        createMeetupVenue: (...args2) => this.meetupVenue(...args2),
-        createMeetupCalendar: (...args2) => this.meetupCalendar(...args2)
-      },
-      ...args
-    );
-  }
-  meetupLoginPage(...args) {
-    return new MeetupLoginPage(
-      { meetupBrowserRoutes: this.meetupBrowserRoutes() },
-      ...args
-    );
-  }
-  meetupVenue(...args) {
-    return new MeetupVenue(...args);
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
-var messages = {
-  "failure.communications": "Email preparation or delivery failed.",
-  "failure.feedback": "OpenFeedback synchronization failed.",
-  "failure.assets": "Drive file preparation failed.",
-  "failure.event": "Meetup issue update failed.",
-  "task.event-data": "meetup details",
-  "slack.title": "Meetup #{issue}",
-  "slack.more": "+{count, plural, one {# more task} other {# more tasks}} \u2192 View all",
-  "slack.run": "Review run",
-  "slack.review": "Review details",
-  "slack.unknown": "status unverified",
-  "action.missing-date": "Set the event date.",
-  "action.required-data": "Complete the event details.",
-  "action.host-confirmation": "Confirm the host (`hoster:confirmed`).",
-  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
-  "action.approval-pending": "Approve or reject the email batch.",
-  "action.integration-failure": "Automation failed: {task}.",
-  "action.delivery-recovery": "Verify delivery before retrying.",
-  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "Check the incomplete stage: {task}.",
-  "task.approvals": "email approvals",
-  "task.delivery": "delivery recovery",
-  "task.public-slack-local": "Post the local community Slack announcement",
-  "task.public-slack-community": "Post the community Slack announcement",
-  "task.public-social": "Publish on social networks",
-  "attention.clear": "No pending tasks.",
-  "task.publish-meetup-event": "Approve Meetup publication",
-  "task.publish-community-event": "Publish on the CNCF platform",
-  "task.create-asset-folder": "Prepare the asset folder",
-  "task.thank-host": "Send host thanks",
-  "task.thank-speakers": "Send speaker thanks",
-  "task.share-slides": "Share slides",
-  "task.import-attendance": "Import attendance",
-  "task.share-social": "Share on social networks",
-  "task.event": "event validation",
-  "task.assets": "assets",
-  "task.feedback": "feedback",
-  "task.communications": "communications",
-  "task.unknown": "review the issue"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
-var messages2 = {
-  "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
-  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
-  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
-  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
-  "task.event-data": "informations du meetup",
-  "slack.title": "Meetup #{issue}",
-  "slack.more": "+{count, plural, one {# autre t\xE2che} other {# autres t\xE2ches}} \u2192 Tout voir",
-  "slack.run": "Voir l'ex\xE9cution",
-  "slack.review": "Voir les d\xE9tails",
-  "slack.unknown": "statut non v\xE9rifi\xE9",
-  "action.missing-date": "Renseignez la date du meetup.",
-  "action.required-data": "Compl\xE9tez les informations du meetup.",
-  "action.host-confirmation": "Confirmez l'h\xF4te (`hoster:confirmed`).",
-  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
-  "action.approval-pending": "Approuvez ou refusez le lot de courriels.",
-  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
-  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
-  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
-  "task.approvals": "approbation des courriels",
-  "task.delivery": "reprise des envois",
-  "task.public-slack-local": "Publiez l'annonce sur le Slack local",
-  "task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
-  "task.public-social": "Publiez sur les r\xE9seaux sociaux",
-  "attention.clear": "Aucune t\xE2che en attente.",
-  "task.publish-meetup-event": "Approuver la publication Meetup",
-  "task.publish-community-event": "Publiez sur la plateforme CNCF",
-  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
-  "task.thank-host": "Envoyez les remerciements au lieu h\xF4te",
-  "task.thank-speakers": "Envoyez les remerciements aux intervenants",
-  "task.share-slides": "Partagez les pr\xE9sentations",
-  "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Partagez sur les r\xE9seaux sociaux",
-  "task.event": "validation du meetup",
-  "task.assets": "ressources",
-  "task.feedback": "\xE9valuations",
-  "task.communications": "communications",
-  "task.unknown": "consulter le ticket"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
-var CATALOGS4 = { en: messages, fr: messages2 };
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
-var SlackAttentionMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS4, locale);
-  }
-  failure(resource) {
-    const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS4.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
-  }
-  task(resource) {
-    const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS4.en, key) ? key : "task.unknown");
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES4 = {
-  "request.content": "Content review needed for {date}: {target}. Review and approve, reject, or request another iteration: {url}",
-  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
-  "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES4 = {
-  "request.content": "Contenu \xE0 v\xE9rifier pour le {date} : {target}. Approuvez, refusez ou demandez une nouvelle proposition : {url}",
-  "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
-  "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
-var CATALOGS5 = { en: EN_MESSAGES4, fr: FR_MESSAGES4 };
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
-var SlackApprovalMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale) {
-    super(collaborators, CATALOGS5, locale);
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-api-client.ts
-var SlackApiClient = class {
-  constructor(token, fetcher) {
-    this.token = token;
-    this.fetcher = fetcher;
-  }
-  token;
-  fetcher;
-  async post(method, body) {
-    let response;
-    try {
-      response = await this.fetcher(`https://slack.com/api/${method}`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${this.token}`,
-          "content-type": "application/json; charset=utf-8"
-        },
-        body: JSON.stringify(body)
-      });
-    } catch {
-      return {
-        result: {
-          outcome: "uncertain",
-          diagnosticCode: "unknown-provider-state"
-        }
-      };
-    }
-    if (!response.ok)
-      return {
-        retryAfterSeconds: this.retryAfter(response),
-        result: this.httpRejection(response.status) ?? {
-          outcome: "uncertain",
-          diagnosticCode: "ambiguous-response"
-        }
-      };
-    let payload;
-    try {
-      payload = await response.json();
-    } catch {
-      return {
-        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
-      };
-    }
-    if (typeof payload !== "object" || payload === null || Array.isArray(payload))
-      return {
-        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
-      };
-    const data = payload;
-    return {
-      result: data.ok === true ? { outcome: "accepted" } : this.slackApiRejection(data.error),
-      payload: data
-    };
-  }
-  retryAfter(response) {
-    const value = Number(response.headers.get("retry-after"));
-    return Number.isFinite(value) && value > 0 ? value : void 0;
-  }
-  httpRejection(status) {
-    switch (status) {
-      case 400:
-      case 422:
-        return { outcome: "rejected", diagnosticCode: "invalid-request" };
-      case 401:
-        return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-      case 403:
-        return { outcome: "rejected", diagnosticCode: "permission-denied" };
-      case 404:
-        return {
-          outcome: "rejected",
-          diagnosticCode: "destination-unavailable"
-        };
-      case 429:
-        return { outcome: "deferred", diagnosticCode: "rate-limited" };
-      default:
-        return void 0;
-    }
-  }
-  slackApiRejection(error2) {
-    if (typeof error2 !== "string") {
-      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-    }
-    if ([
-      "invalid_auth",
-      "not_authed",
-      "account_inactive",
-      "token_revoked"
-    ].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-    }
-    if (["channel_not_found", "not_in_channel", "is_archived"].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "destination-unavailable" };
-    }
-    if (["missing_scope", "restricted_action"].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "permission-denied" };
-    }
-    if ([
-      "invalid_arguments",
-      "invalid_arg_name",
-      "msg_too_long",
-      "no_text"
-    ].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "invalid-request" };
-    }
-    if (error2 === "ratelimited") {
-      return { outcome: "deferred", diagnosticCode: "rate-limited" };
-    }
-    return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-approval-notification.ts
-var SlackApprovalNotification = class {
-  constructor(collaborators, client, presenter) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.presenter = presenter;
-  }
-  collaborators;
-  client;
-  presenter;
-  async send(input) {
-    const { result, payload } = await this.client.post("chat.postMessage", {
-      channel: input.destination,
-      text: this.presenter.render(input)
-    });
-    if (result.outcome !== "accepted") return result;
-    const message = this.collaborators.slackMessageReference.read(
-      payload,
-      input.destination
-    );
-    return message ? { outcome: "accepted", message } : { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-  }
-  async react(message, decision) {
-    if (!this.collaborators.slackMessageReference.valid(message)) return false;
-    const { result, payload } = await this.client.post("reactions.add", {
-      channel: message.destination,
-      timestamp: message.messageId,
-      name: decision === "approved" ? "white_check_mark" : decision === "iteration-requested" ? "arrows_counterclockwise" : "x"
-    });
-    return result.outcome === "accepted" || payload?.error === "already_reacted";
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-approval-presenter.ts
-var SlackApprovalPresenter = class {
-  constructor(renderers) {
-    this.renderers = renderers;
-  }
-  renderers;
-  render(request2) {
-    return this.renderers[request2.kind].render(request2);
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
-import { createHash as createHash3 } from "node:crypto";
-var SlackAttentionNotification = class {
-  constructor(collaborators, client, channel, presenter) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.channel = channel;
-    this.presenter = presenter;
-    if (!/^[CG][A-Z0-9]+$/.test(channel))
-      throw new Error("Invalid organizer channel");
-  }
-  collaborators;
-  client;
-  channel;
-  presenter;
-  fingerprint(view) {
-    return createHash3("sha256").update(this.presenter.render(view)).digest("hex");
-  }
-  async post(view) {
-    const response = await this.client.post(
-      "chat.postMessage",
-      this.body(this.channel, view)
-    );
-    const { result, payload } = response;
-    if (result.outcome === "uncertain") return { outcome: "uncertain" };
-    if (result.outcome !== "accepted")
-      return {
-        outcome: "retry",
-        retryAfterSeconds: response.retryAfterSeconds
-      };
-    const message = this.collaborators.slackMessageReference.read(
-      payload,
-      this.channel
-    );
-    return message ? { outcome: "accepted", message } : { outcome: "uncertain" };
-  }
-  async update(message, view) {
-    if (!this.collaborators.slackMessageReference.valid(message)) return false;
-    const { result } = await this.client.post("chat.update", {
-      ...this.body(message.destination, view),
-      ts: message.messageId
-    });
-    return result.outcome === "accepted";
-  }
-  body(channel, view) {
-    return {
-      channel,
-      text: this.presenter.render(view),
-      parse: "none",
-      link_names: false,
-      mrkdwn: true,
-      unfurl_links: false,
-      unfurl_media: false
-    };
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-attention-presenter.ts
-var SlackAttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, messages5, checklist) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.issueNumber = issueNumber;
-    this.messages = messages5;
-    this.checklist = checklist;
-    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
-      throw new Error("Invalid attention issue identity");
-    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
-  }
-  collaborators;
-  repository;
-  issueNumber;
-  messages;
-  checklist;
-  issueUrl;
-  render(view) {
-    const title = this.messages.t("slack.title", {
-      issue: String(this.issueNumber)
-    });
-    const actions = this.slackActions(view);
-    const icon = actions.length ? "\u26A0\uFE0F" : "\u2705";
-    const date = this.slackDate(view.state.eventDate);
-    const lines = [
-      `${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` \xB7 ${date}` : ""}`,
-      ""
-    ];
-    lines.push(...actions.slice(0, 6));
-    if (!actions.length)
-      lines.push(this.escape(this.messages.t("attention.clear")));
-    if (actions.length > 6)
-      lines.push(
-        this.link(
-          this.overviewUrl(view.state),
-          this.messages.t("slack.more", { count: actions.length - 6 })
-        )
-      );
-    return lines.join("\n");
-  }
-  slackActions(view) {
-    const selection = this.collaborators.attentionTaskSelection.select(
-      view,
-      this.checklist.read()
-    );
-    return [
-      .../* @__PURE__ */ new Set([
-        ...selection.urgent.map(
-          (episode) => this.slackCondition(episode, view.state)
-        ),
-        ...selection.checklist.map(
-          (entry) => `\u2022 ${this.escape(`${entry.label}: ${entry.description}`)}`
-        ),
-        ...selection.remaining.map(
-          (episode) => this.slackCondition(episode, view.state)
-        )
-      ])
-    ];
-  }
-  slackDate(date) {
-    if (this.collaborators.attentionPolicy.eventDay(date) === void 0)
-      return "";
-    return new Intl.DateTimeFormat(this.messages.locale, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC"
-    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
-  }
-  slackCondition(episode, state) {
-    const text = this.action(episode);
-    const url = this.url(episode, state);
-    const label = this.messages.t(
-      episode.condition.commentId || state.commentId && episode.condition.code === "follow-up" ? "slack.review" : "slack.run"
-    );
-    const link = url === this.overviewUrl(state) ? "" : ` \xB7 ${this.link(url, label)}`;
-    const unknown = episode.status === "unknown" ? ` _(${this.escape(this.messages.t("slack.unknown"))})_` : "";
-    return `\u2022 ${this.escape(text)}${unknown}${link}`;
-  }
-  link(url, label) {
-    return `<${this.escape(url)}|${this.escape(label)}>`;
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  }
-  action(episode) {
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
-      return this.messages.t("action.meetup-approval-pending");
-    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
-      task: this.messages.task(episode.condition.resource)
-    });
-  }
-  url(episode, state) {
-    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
-      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
-    if (["integration-failure", "stage-unknown"].includes(
-      episode.condition.code
-    ) && state.runId && /^\d+$/.test(state.runId))
-      return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
-    return this.overviewUrl(state);
-  }
-  overviewUrl(state) {
-    const commentId = state.commentId ?? this.checklist.read().commentId;
-    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-email-approval-presenter.ts
-var SlackEmailApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.introduction", {
-      date: request2.eventDate,
-      url: request2.approvalUrl,
-      count: request2.recipientCount
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
-var SlackMeetupApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.publication", {
-      date: request2.eventDate,
-      url: request2.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-content-approval-presenter.ts
-var SlackContentApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.content", {
-      date: request2.eventDate,
-      target: request2.target,
-      url: request2.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-message-reference.ts
-var SlackMessageReference = class {
-  valid(message) {
-    return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
-  }
-  read(payload, destination) {
-    if (payload?.channel !== destination || typeof payload.ts !== "string")
-      return void 0;
-    const message = { destination, messageId: payload.ts };
-    return this.valid(message) ? message : void 0;
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
-var SlackNotificationGatewayComposition = class {
-  slackApiClient(token, fetcher = fetch) {
-    return new SlackApiClient(token, fetcher);
-  }
-  slackApprovalMessages(...args) {
-    return new SlackApprovalMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  slackApprovalNotification(token, presenter, fetcher = fetch) {
-    return new SlackApprovalNotification(
-      {
-        slackMessageReference: this.slackMessageReference()
-      },
-      this.slackApiClient(token, fetcher),
-      presenter
-    );
-  }
-  slackApprovalPresenter(locale) {
-    const messages5 = this.slackApprovalMessages(locale);
-    return new SlackApprovalPresenter({
-      "email-introduction": new SlackEmailApprovalPresenter(messages5),
-      "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
-      "content-review": new SlackContentApprovalPresenter(messages5)
-    });
-  }
-  slackAttentionMessages(...args) {
-    return new SlackAttentionMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  slackAttentionNotification(token, channel, presenter, fetcher = fetch) {
-    return new SlackAttentionNotification(
-      {
-        slackMessageReference: this.slackMessageReference()
-      },
-      this.slackApiClient(token, fetcher),
-      channel,
-      presenter
-    );
-  }
-  slackAttentionPresenter(repository, issueNumber, locale, checklist) {
-    return new SlackAttentionPresenter(
-      {
-        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
-        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
-      },
-      repository,
-      issueNumber,
-      this.slackAttentionMessages(locale),
-      checklist
-    );
-  }
-  slackMessageReference() {
-    return new SlackMessageReference();
   }
 };
 
@@ -55365,7 +52495,7 @@ var ConferenceHallProposalSourceComposition = class {
 };
 
 // packages/adapter/referential/csv-referential-repository/src/csv-referential-repository.ts
-import { readFile as readFile4, realpath } from "node:fs/promises";
+import { readFile as readFile3, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve as resolve2, sep as sep2 } from "node:path";
 var CsvReferentialRepository = class {
   constructor(collaborators, options) {
@@ -55376,14 +52506,14 @@ var CsvReferentialRepository = class {
   options;
   async load() {
     const [hostsSource, speakersSource] = await Promise.all([
-      readFile4(
+      readFile3(
         await this.localPath(
           this.options.workspaceRoot,
           this.options.hostsPath
         ),
         "utf8"
       ),
-      readFile4(
+      readFile3(
         await this.localPath(
           this.options.workspaceRoot,
           this.options.speakersPath
@@ -55415,9 +52545,9 @@ var CsvReferentialRepository = class {
 };
 
 // packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
-import { createHash as createHash4 } from "node:crypto";
-import { readFile as readFile5, writeFile as writeFile2 } from "node:fs/promises";
-import { join as join5 } from "node:path";
+import { createHash as createHash3 } from "node:crypto";
+import { readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
+import { join as join3 } from "node:path";
 var CsvSpeakerCatalogStore = class {
   constructor(collaborators, root, history) {
     this.collaborators = collaborators;
@@ -55470,25 +52600,25 @@ var CsvSpeakerCatalogStore = class {
     );
     const stateText = this.collaborators.speakerAllocationStateCodec.encode(reservedIds);
     if (csv === current.csv && stateText === current.state) return false;
-    await writeFile2(join5(this.root, "referentials/speakers.csv"), csv, {
+    await writeFile2(join3(this.root, "referentials/speakers.csv"), csv, {
       mode: 384
     });
     await writeFile2(
-      join5(this.root, "referentials/speaker-sync-state.json"),
+      join3(this.root, "referentials/speaker-sync-state.json"),
       stateText,
       { mode: 384 }
     );
     return true;
   }
   async sources() {
-    const csv = await readFile5(
-      join5(this.root, "referentials/speakers.csv"),
+    const csv = await readFile4(
+      join3(this.root, "referentials/speakers.csv"),
       "utf8"
     );
     let state;
     try {
-      state = await readFile5(
-        join5(this.root, "referentials/speaker-sync-state.json"),
+      state = await readFile4(
+        join3(this.root, "referentials/speaker-sync-state.json"),
         "utf8"
       );
     } catch (error2) {
@@ -55499,7 +52629,7 @@ var CsvSpeakerCatalogStore = class {
     return { csv, state, historicalIds };
   }
   revision(csv, state, historicalIds) {
-    return createHash4("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+    return createHash3("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
 
@@ -58353,7 +55483,7 @@ ${this.messages.t("comment.duplicate")}`
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES5 = {
+var EN_MESSAGES3 = {
   "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
@@ -58423,7 +55553,7 @@ var EN_MESSAGES5 = {
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES5 = {
+var FR_MESSAGES3 = {
   "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
@@ -58577,15 +55707,15 @@ var STAGE_MESSAGES_FR = {
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS6 = {
-  en: { ...EN_MESSAGES5, ...STAGE_MESSAGES_EN },
-  fr: { ...FR_MESSAGES5, ...STAGE_MESSAGES_FR }
+var CATALOGS3 = {
+  en: { ...EN_MESSAGES3, ...STAGE_MESSAGES_EN },
+  fr: { ...FR_MESSAGES3, ...STAGE_MESSAGES_FR }
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS6, locale);
+    super(collaborators, CATALOGS3, locale);
   }
 };
 
@@ -60689,6 +57819,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
       const messages5 = this.collaborators.createAttentionMessages(locale);
       if (description === messages5.t("action.approval-pending"))
         return "email-approval";
+      if (description === messages5.t("action.community-approval-pending"))
+        return "community-approval";
       if (description === messages5.t("action.meetup-approval-pending"))
         return "meetup-approval";
       if (description === messages5.t("action.delivery-recovery"))
@@ -60757,6 +57889,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
       return this.messages.t("action.meetup-approval-pending");
     return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
@@ -61122,7 +58256,8 @@ var GithubAttentionResponse = class {
 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
-var messages3 = {
+var messages = {
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
   "failure.assets": "Drive file preparation failed.",
@@ -61167,7 +58302,8 @@ var messages3 = {
 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
-var messages4 = {
+var messages2 = {
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
   "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
@@ -61212,20 +58348,20 @@ var messages4 = {
 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
-var CATALOGS7 = { en: messages3, fr: messages4 };
+var CATALOGS4 = { en: messages, fr: messages2 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
 var AttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS7, locale);
+    super(collaborators, CATALOGS4, locale);
   }
   failure(resource) {
     const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS7.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+    return Object.hasOwn(CATALOGS4.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
   }
   task(resource) {
     const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
+    return this.t(Object.hasOwn(CATALOGS4.en, key) ? key : "task.unknown");
   }
 };
 
@@ -61356,27 +58492,27 @@ var SystemClockComposition = class {
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES6 = {
+var EN_MESSAGES4 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES6 = {
+var FR_MESSAGES4 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS8 = {
-  en: { ...EN_MESSAGES6 },
-  fr: { ...FR_MESSAGES6 }
+var CATALOGS5 = {
+  en: { ...EN_MESSAGES4 },
+  fr: { ...FR_MESSAGES4 }
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS8, locale);
+    super(collaborators, CATALOGS5, locale);
   }
 };
 
@@ -61520,7 +58656,7 @@ var YamlIssueFormDocument = class {
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-import { readFile as readFile6, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
+import { readFile as readFile5, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve3, sep as sep3 } from "node:path";
 
 // node_modules/.pnpm/prettier@3.9.10/node_modules/prettier/plugins/yaml.mjs
@@ -68794,7 +65930,7 @@ var YamlIssueFormProjection = class {
   async synchronize(input) {
     this.assertInput(input);
     const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
-    const source = await readFile6(issueFormPath.absolutePath, "utf8");
+    const source = await readFile5(issueFormPath.absolutePath, "utf8");
     const projection = this.choices.execute(input.catalog);
     const { changed, document } = this.collaborators.yamlIssueFormDocument.project(
       source,
@@ -69088,9 +66224,2031 @@ var EventComposition = class _EventComposition {
   }
 };
 
+// packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
+var ApprovalDecisionParser = class {
+  constructor(policy, comments) {
+    this.policy = policy;
+    this.comments = comments;
+  }
+  policy;
+  comments;
+  parse(record, body) {
+    if (this.policy.reviewPhase({
+      recipientCount: record.recipientCount,
+      followUpActive: record.followUp?.active,
+      decided: record.decision !== void 0
+    }) !== "pending")
+      return { status: "pending" };
+    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+    if (record.kind === "content-review")
+      return this.content(record, normalized);
+    for (const comment of this.comments) {
+      for (const status of ["approved", "rejected"]) {
+        if (normalized === comment.issue(record, { status })) return { status };
+      }
+    }
+    return { status: "pending" };
+  }
+  content(record, body) {
+    const approvals = record.content.target === "cover" ? record.content.draft.media.map((media) => ({
+      status: "approved",
+      selectedImage: media.id
+    })) : [{ status: "approved" }];
+    for (const decision of [
+      ...approvals,
+      { status: "rejected" },
+      { status: "iteration-requested" }
+    ])
+      if (this.comments.some(
+        (comment) => comment.issue(record, decision) === body
+      ))
+        return decision;
+    return { status: "pending" };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-notifications.ts
+var ApprovalNotifications = class {
+  constructor(policy, client, presenter, notifications, channelId) {
+    this.policy = policy;
+    this.client = client;
+    this.presenter = presenter;
+    this.notifications = notifications;
+    this.channelId = channelId;
+  }
+  policy;
+  client;
+  presenter;
+  notifications;
+  channelId;
+  async send(record, commentId) {
+    const facts = this.policy.notificationFor(record);
+    if (!facts) return false;
+    if (record.notification !== "new" && record.notification !== "retry")
+      return record.notification === "reserved";
+    const before = this.presenter.issue(record, { status: "pending" });
+    record.notification = "reserved";
+    const reserved = this.presenter.issue(record, { status: "pending" });
+    await this.client.replace(commentId, before, reserved);
+    try {
+      const result = await this.notifications.send({
+        ...facts,
+        destination: this.channelId,
+        approvalUrl: this.client.url(commentId)
+      });
+      record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
+      if (result.outcome === "accepted" && result.message)
+        record.notificationMessage = result.message;
+    } catch {
+    }
+    await this.client.replace(
+      commentId,
+      reserved,
+      this.presenter.issue(record, { status: "pending" })
+    );
+    return record.notification !== "sent";
+  }
+  async react(record, commentId) {
+    if (!this.policy.notificationFor(record)) return false;
+    if (!record.decision || record.reactionSent) return false;
+    if (!record.notificationMessage) return record.notification !== "sent";
+    const before = this.presenter.issue(record, record.decision);
+    try {
+      const accepted = await this.notifications.react(
+        record.notificationMessage,
+        record.decision.status
+      );
+      if (!accepted) return true;
+      record.reactionSent = true;
+      await this.client.replace(
+        commentId,
+        before,
+        this.presenter.issue(record, record.decision)
+      );
+      return false;
+    } catch {
+      return true;
+    }
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-presenter.ts
+var ApprovalPresenter = class {
+  constructor(codec, renderers) {
+    this.codec = codec;
+    this.renderers = renderers;
+  }
+  codec;
+  renderers;
+  issue(record, decision) {
+    return [
+      this.codec.marker(record),
+      this.renderers[record.kind].issue(record, decision)
+    ].filter(Boolean).join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
+var EN_MESSAGES5 = {
+  "approval.community.details": "### Organizer confirmation: publish CNCF community event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing can send OCGroups notifications to group members and speakers.",
+  "approval.community.request": "Repository writers: select one choice. Approval authorizes publication of this OCGroups draft and its native notifications. Changed content requires a new approval.\n\n- [{approveMark}] Approve publishing this CNCF community event\n- [{rejectMark}] Reject publishing this CNCF community event",
+  "approval.community.final": "{status, select, approved {\u2705 **Community publication approved**} rejected {\u274C **Community publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nAutomation rechecks the saved draft before publishing. CNCF Link is filled only after publication is verified. Changed content requires a new approval.",
+  "approval.content.planned": "Planned publication: {time}. Recheck eligibility before posting.",
+  "approval.content.slot": "Image {index}: {status, select, complete {stored} reserved {outcome uncertain; no automatic retry} failed {failed} other {not requested}}.",
+  "approval.content.title": "### Review event content: {target}\n\nLanguage: {language} \xB7 Author: {origin}",
+  "approval.content.request": "Review the exact text and images above. Select exactly one choice. Approval authorizes this content; publication and sending have separate controls. Submit replacements or iteration guidance separately.\n\n{approve}\n- [{rejectMark}] Reject this content\n- [{iterateMark}] Request another iteration",
+  "approval.content.text-choice": "- [{mark}] Approve this content",
+  "approval.content.image-choice": "- [{mark}] Approve image {index, number} as the cover",
+  "approval.content.final": "{status, select, approved {\u2705 Content approved} rejected {\u274C Content rejected} iteration_requested {\u{1F504} Another iteration requested} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSelected image: {image}\n\nThis decision is final for this revision. Changed content requires a new review.",
+  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
+  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+  "follow-up.title": "## Post-event follow-up \xB7 {date}",
+  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+  "follow-up.stopped": "Follow-up paused.",
+  "follow-up.waiting": "Thank-you emails are not ready for approval.",
+  "follow-up.emails-complete": "No thank-you emails pending.",
+  "approval.details.summary": "Review email details",
+  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
+  "approval.details.feedback": "Feedback results: {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
+  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
+  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
+  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
+var FR_MESSAGES5 = {
+  "approval.community.details": "### Confirmation organisateur : publier l'\xE9v\xE9nement CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut envoyer les notifications OCGroups aux membres du groupe et aux speakers.",
+  "approval.community.request": "Membres avec droit d'\xE9criture : s\xE9lectionner un choix. L'approbation autorise la publication de ce brouillon OCGroups et ses notifications natives. Un changement de contenu n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de cet \xE9v\xE9nement CNCF\n- [{rejectMark}] Refuser la publication de cet \xE9v\xE9nement CNCF",
+  "approval.community.final": "{status, select, approved {\u2705 **Publication CNCF approuv\xE9e**} rejected {\u274C **Publication CNCF refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nL'automatisation v\xE9rifie le brouillon avant publication. CNCF Link est rempli apr\xE8s v\xE9rification de la publication. Un changement de contenu n\xE9cessite une nouvelle approbation.",
+  "approval.content.planned": "Publication pr\xE9vue : {time}. V\xE9rifiez \xE0 nouveau la validit\xE9 avant publication.",
+  "approval.content.slot": "Image {index} : {status, select, complete {enregistr\xE9e} reserved {r\xE9sultat incertain ; aucun nouvel essai automatique} failed {\xE9chec} other {non demand\xE9e}}.",
+  "approval.content.title": "### V\xE9rification du contenu : {target}\n\nLangue : {language} \xB7 Auteur : {origin}",
+  "approval.content.request": "V\xE9rifiez le texte exact et les images ci-dessus. Cochez un seul choix. L'approbation autorise ce contenu ; la publication et l'envoi ont leurs propres validations. Soumettez les remplacements ou consignes s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] Refuser ce contenu\n- [{iterateMark}] Demander une nouvelle proposition",
+  "approval.content.text-choice": "- [{mark}] Approuver ce contenu",
+  "approval.content.image-choice": "- [{mark}] Approuver l'image {index, number} comme couverture",
+  "approval.content.final": "{status, select, approved {\u2705 Contenu approuv\xE9} rejected {\u274C Contenu refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nImage s\xE9lectionn\xE9e : {image}\n\nCette d\xE9cision est d\xE9finitive pour cette version. Un contenu modifi\xE9 n\xE9cessite une nouvelle v\xE9rification.",
+  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
+  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
+  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
+  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.stopped": "Suivi suspendu.",
+  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
+  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
+  "approval.details.summary": "Voir le d\xE9tail des e-mails",
+  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
+  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
+  "approval.details.feedback": "R\xE9sultats des retours : {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
+  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
+  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
+  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
+var CATALOGS6 = { en: EN_MESSAGES5, fr: FR_MESSAGES5 };
+
+// packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
+var ApprovalPresenterFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  supportedLocales() {
+    return Object.keys(CATALOGS6).map(
+      (locale) => this.collaborators.createApprovalPresenter(
+        this.collaborators.createApprovalMessages(locale)
+      )
+    );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-record-factory.ts
+var ApprovalRecordFactory = class {
+  constructor(collaborators, nextIdentity) {
+    this.collaborators = collaborators;
+    this.nextIdentity = nextIdentity;
+  }
+  collaborators;
+  nextIdentity;
+  create(request2) {
+    this.collaborators.approvalRequestSchema.validate(request2);
+    this.collaborators.approvalRequestPolicy.validate(request2);
+    return this.allocate(request2);
+  }
+  placeholder(input) {
+    return this.allocate({
+      ...this.collaborators.followUpApprovalPolicy.placeholder(input),
+      followUp: {
+        active: input.active,
+        pendingTasks: input.pendingTasks
+      }
+    });
+  }
+  allocate(request2) {
+    const record = {
+      ...request2,
+      requestId: `approval-${this.nextIdentity()}`,
+      notification: "new"
+    };
+    this.collaborators.storedApprovalSchema.validate(record);
+    return record;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-proposal-codec.ts
+var CONTENT_STATE_MARKER = "<!-- meetup-content-proposal:v1 ";
+var ContentProposalCodec = class {
+  constructor(values, policy, fingerprints) {
+    this.values = values;
+    this.policy = policy;
+    this.fingerprints = fingerprints;
+  }
+  values;
+  policy;
+  fingerprints;
+  read(body) {
+    if (!body.startsWith(CONTENT_STATE_MARKER) || !body.endsWith(" -->"))
+      throw new Error("Invalid content proposal marker");
+    return this.parse(JSON.parse(body.slice(CONTENT_STATE_MARKER.length, -4)));
+  }
+  write(proposal) {
+    this.parse(proposal);
+    return `${CONTENT_STATE_MARKER}${JSON.stringify(proposal).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026")} -->`;
+  }
+  parse(value) {
+    const item = this.values.object(value, [
+      "recoveryRequest",
+      "destinationBefore",
+      "version",
+      "promptVersion",
+      "id",
+      "plan",
+      "origin",
+      "guidance",
+      "createdAt",
+      "attempts",
+      "draft",
+      "revision",
+      "decision",
+      "accepted"
+    ]);
+    if (item.version !== 1 || item.promptVersion !== "1")
+      throw new Error("Unsupported content proposal schema");
+    const id = this.values.text(item.id, 44);
+    if (!/^content-[a-f0-9-]{36}$/.test(id))
+      throw new Error("Invalid content proposal identity");
+    const recovery = this.recovery(item.recoveryRequest);
+    const proposal = {
+      ...recovery ? { recoveryRequest: recovery } : {},
+      version: 1,
+      promptVersion: "1",
+      id,
+      plan: this.plan(item.plan),
+      origin: this.origin(item.origin),
+      guidance: this.values.text(item.guidance, 2e3),
+      destinationBefore: item.destinationBefore === null ? null : this.values.text(item.destinationBefore, 12e3),
+      createdAt: this.instant(item.createdAt),
+      attempts: this.values.list(item.attempts, 4).map((attempt) => this.attempt(attempt)),
+      draft: item.draft === null ? null : this.values.draft(item.draft),
+      revision: item.revision === null ? null : this.values.text(item.revision, 64),
+      decision: item.decision === null ? null : this.decision(item.decision),
+      accepted: item.accepted === null ? null : this.values.draft(item.accepted)
+    };
+    this.validate(proposal);
+    return proposal;
+  }
+  recovery(value) {
+    if (value === void 0) return void 0;
+    const item = this.values.object(value, [
+      "id",
+      "actor",
+      "proposalId",
+      "guidance"
+    ]);
+    return {
+      id: this.values.text(item.id, 200),
+      actor: this.values.text(item.actor, 39),
+      proposalId: this.values.text(item.proposalId, 44),
+      guidance: this.values.text(item.guidance, 2e3)
+    };
+  }
+  validate(proposal) {
+    if (proposal.draft && (!this.policy.validDraft(proposal.plan, proposal.draft) || proposal.revision !== this.fingerprints.proposal(proposal, proposal.draft)))
+      throw new Error("Invalid content proposal fingerprint");
+    if (!proposal.draft && (proposal.revision || proposal.decision || proposal.accepted))
+      throw new Error("Incomplete content proposal");
+    if (proposal.accepted && proposal.decision?.status !== "approved")
+      throw new Error("Unapproved applied content");
+    this.accepted(proposal);
+  }
+  accepted(proposal) {
+    const selected = proposal.decision?.selectedImage;
+    if (proposal.plan.target === "cover" && proposal.decision?.status === "approved" && (!selected || !proposal.draft?.media.some((image) => image.id === selected)))
+      throw new Error("Approved cover selection is missing");
+    if (selected && (proposal.plan.target !== "cover" || proposal.decision?.status !== "approved"))
+      throw new Error("Unexpected cover selection");
+    if (!proposal.accepted || !proposal.draft) return;
+    const expected = selected ? {
+      text: "",
+      media: proposal.draft.media.filter((image) => image.id === selected)
+    } : proposal.draft;
+    if (this.fingerprints.proposal(proposal, expected) !== this.fingerprints.proposal(proposal, proposal.accepted))
+      throw new Error("Accepted content differs from the approved value");
+  }
+  plan(value) {
+    const item = this.values.object(value, [
+      "target",
+      "language",
+      "facts",
+      "plannedAt",
+      "sourceFingerprint"
+    ]);
+    if (!this.policy.target(item.target) || item.language !== "en" && item.language !== "fr")
+      throw new Error("Invalid content target or language");
+    const plan2 = {
+      target: item.target,
+      language: item.language,
+      facts: this.values.facts(item.facts),
+      plannedAt: item.plannedAt === null ? null : this.instant(item.plannedAt)
+    };
+    const sourceFingerprint = this.values.text(item.sourceFingerprint, 64);
+    if (this.fingerprints.source(plan2) !== sourceFingerprint)
+      throw new Error("Invalid content source fingerprint");
+    return { ...plan2, sourceFingerprint };
+  }
+  origin(value) {
+    const item = this.values.object(value, [
+      "kind",
+      "provider",
+      "model",
+      "login",
+      "submissionId"
+    ]);
+    if (item.kind === "ai") {
+      this.values.object(value, ["kind", "provider", "model"]);
+      return {
+        kind: "ai",
+        provider: this.values.text(item.provider, 100),
+        model: this.values.text(item.model, 100)
+      };
+    }
+    if (item.kind === "organizer") {
+      this.values.object(value, ["kind", "login", "submissionId"]);
+      return {
+        kind: "organizer",
+        login: this.values.text(item.login, 39),
+        submissionId: this.values.text(item.submissionId, 200)
+      };
+    }
+    throw new Error("Invalid content author");
+  }
+  attempt(value) {
+    const item = this.values.object(value, ["id", "phase", "media"]);
+    if (item.phase !== "reserved" && item.phase !== "complete" && item.phase !== "failed")
+      throw new Error("Invalid content attempt");
+    return {
+      id: this.values.text(item.id, 200),
+      phase: item.phase,
+      ...item.media === void 0 ? {} : { media: this.values.media(item.media) }
+    };
+  }
+  decision(value) {
+    const item = this.values.object(value, [
+      "status",
+      "actor",
+      "decidedAt",
+      "selectedImage"
+    ]);
+    if (item.status !== "approved" && item.status !== "rejected" && item.status !== "iteration-requested")
+      throw new Error("Invalid content decision");
+    return {
+      status: item.status,
+      actor: this.values.text(item.actor, 39),
+      decidedAt: this.instant(item.decidedAt),
+      ...item.selectedImage === void 0 ? {} : { selectedImage: this.values.text(item.selectedImage, 200) }
+    };
+  }
+  instant(value) {
+    const text = this.values.text(value, 40);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid content timestamp");
+    return text;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-value-schema.ts
+var ContentValueSchema = class {
+  constructor(urls) {
+    this.urls = urls;
+  }
+  urls;
+  object(value, keys) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
+      throw new Error("Invalid content object");
+    return value;
+  }
+  text(value, max) {
+    if (typeof value !== "string" || value.length > max)
+      throw new Error("Invalid content text");
+    return value;
+  }
+  list(value, max) {
+    if (!Array.isArray(value) || value.length > max)
+      throw new Error("Invalid content list");
+    return value;
+  }
+  media(value) {
+    const item = this.object(value, [
+      "source",
+      "id",
+      "url",
+      "fingerprint",
+      "description",
+      "mimeType",
+      "width",
+      "height",
+      "sourceRevision"
+    ]);
+    const id = this.text(item.id, 200), url = this.text(item.url, 2e3);
+    const description = this.text(item.description, 1e3), sourceRevision = this.text(item.sourceRevision, 200);
+    const fingerprint = this.text(item.fingerprint, 64);
+    if (!id || !description.trim() || !sourceRevision || !this.urls.valid(url) || /[<>\r\n]/.test(url) || !/^[a-f0-9]{64}$/.test(fingerprint))
+      throw new Error("Invalid content media identity");
+    if (item.mimeType !== "image/png" && item.mimeType !== "image/jpeg")
+      throw new Error("Invalid content media format");
+    if (!Number.isSafeInteger(item.width) || !Number.isSafeInteger(item.height) || Number(item.width) <= 0 || Number(item.height) <= 0 || Number(item.width) * Number(item.height) > 25e6)
+      throw new Error("Invalid content dimensions");
+    const source = item.source === void 0 ? void 0 : this.object(item.source, ["id", "revision"]);
+    return {
+      ...source ? {
+        source: {
+          id: this.text(source.id, 200),
+          revision: this.text(source.revision, 200)
+        }
+      } : {},
+      id,
+      url,
+      description,
+      sourceRevision,
+      fingerprint,
+      mimeType: item.mimeType,
+      width: Number(item.width),
+      height: Number(item.height)
+    };
+  }
+  draft(value) {
+    const item = this.object(value, ["text", "media"]);
+    return {
+      text: this.text(item.text, 12e3),
+      media: this.list(item.media, 4).map((image) => this.media(image))
+    };
+  }
+  facts(value) {
+    const item = this.object(value, [
+      "date",
+      "startTime",
+      "endTime",
+      "timeZone",
+      "month",
+      "host",
+      "talks",
+      "registrationUrl",
+      "aperitif",
+      "mentions",
+      "announcement"
+    ]);
+    const host = this.object(item.host, ["name", "city"]);
+    const registrationUrl = this.text(item.registrationUrl, 2e3);
+    if (registrationUrl && !this.urls.valid(registrationUrl))
+      throw new Error("Invalid registration URL");
+    if (typeof item.aperitif !== "boolean")
+      throw new Error("Invalid content logistics");
+    return {
+      date: this.text(item.date, 10),
+      startTime: this.text(item.startTime, 5),
+      endTime: this.text(item.endTime, 5),
+      timeZone: this.text(item.timeZone, 100),
+      month: this.text(item.month, 40),
+      host: {
+        name: this.text(host.name, 200),
+        city: this.text(host.city, 200)
+      },
+      talks: this.list(item.talks, 10).map((talk) => this.talk(talk)),
+      registrationUrl,
+      aperitif: item.aperitif,
+      mentions: this.list(item.mentions, 20).map(
+        (name) => this.text(name, 100)
+      ),
+      announcement: item.announcement === null ? null : this.media(item.announcement)
+    };
+  }
+  talk(value) {
+    const item = this.object(value, ["id", "title", "abstract", "speakers"]);
+    return {
+      id: this.text(item.id, 200),
+      title: this.text(item.title, 500),
+      abstract: this.text(item.abstract, 3e3),
+      speakers: this.list(item.speakers, 10).map((speaker) => {
+        const person = this.object(speaker, ["id", "name"]);
+        return {
+          id: this.text(person.id, 200),
+          name: this.text(person.name, 200)
+        };
+      })
+    };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-comment-codec.ts
+var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
+var ApprovalCommentCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body) {
+    const line = body.split("\n", 1)[0];
+    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
+      throw new Error("Invalid approval record");
+    const record = JSON.parse(line.slice(APPROVAL_MARKER.length, -4));
+    this.collaborators.storedApprovalSchema.validate(record);
+    return record;
+  }
+  marker(record) {
+    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${APPROVAL_MARKER}${json} -->`;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-details-presenter.ts
+var ApprovalDetailsPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(details) {
+    const lines = [
+      "<details>",
+      `<summary>${this.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
+      "",
+      ...details.emails.map((email) => this.email(email))
+    ];
+    if (details.omittedEmails > 0)
+      lines.push(
+        `<p>${this.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
+      );
+    return [...lines, "", "</details>"].join("\n");
+  }
+  email(email) {
+    const heading = this.messages.t("approval.details.email", {
+      kind: email.kind.replaceAll("-", "_")
+    });
+    const name = email.recipientName ? `: ${this.escape(email.recipientName)}` : "";
+    const lines = [
+      `<p><strong>${this.escape(heading)}${name}</strong></p>`,
+      `<p>${this.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
+    ];
+    if (email.links.length)
+      lines.push(
+        "<ul>",
+        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
+        "</ul>"
+      );
+    if (email.omittedLinks > 0)
+      lines.push(
+        `<p>${this.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
+      );
+    return lines.join("\n");
+  }
+  link(link) {
+    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
+      title: link.title ?? ""
+    }) : this.messages.t("approval.details.link", { kind: link.kind });
+    return `<a href="${this.escape(link.url)}">${this.escape(label)}</a>`;
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-details-preview.ts
+var ApprovalDetailsPreview = class {
+  create(details) {
+    const emails = details.emails.slice(0, 20).map((email) => ({
+      ...email,
+      recipientName: this.text(email.recipientName),
+      links: email.links.slice(0, 8).map((link) => ({
+        ...link,
+        ...link.title === void 0 ? {} : { title: this.text(link.title) }
+      })),
+      omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0)
+    }));
+    while (JSON.stringify(emails).length > 4e3) {
+      const largest = [...emails].sort(
+        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
+      )[0];
+      if (largest?.links.length) {
+        largest.links.pop();
+        largest.omittedLinks++;
+      } else {
+        emails.pop();
+      }
+    }
+    return {
+      emails,
+      omittedEmails: details.omittedEmails + details.emails.length - emails.length
+    };
+  }
+  text(value) {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-request-schema.ts
+var ApprovalRequestSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
+      throw new Error("Invalid approval request");
+    if (value.kind === "content-review") {
+      if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
+        throw new Error("Invalid content approval fields");
+      this.collaborators.contentApprovalSchema.validate(value.content);
+      return;
+    }
+    if (value.content !== void 0)
+      throw new Error("Invalid content approval kind");
+    if (value.kind === "community-publication" || value.kind === "meetup-publication") {
+      this.publication(value);
+      return;
+    }
+    if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !this.collaborators.approvalSchema.count(value.recipientCount))
+      throw new Error("Invalid approval request");
+    this.collaborators.emailApprovalDetailsSchema.validate(value.details);
+  }
+  publication(value) {
+    if (value.recipientCount !== void 0 || value.details !== void 0)
+      throw new Error("Invalid publication approval fields");
+    if (value.kind === "community-publication")
+      this.collaborators.communityApprovalDetailsSchema.validate(
+        value.publication
+      );
+    else
+      this.collaborators.meetupApprovalDetailsSchema.validate(
+        value.publication
+      );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
+var ApprovalSchema = class {
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  count(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  }
+  text(value, maximum) {
+    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/community-approval-details-schema.ts
+var CommunityApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || !this.reviewUrl(value.url) || !this.text(value.title, 120) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
+      throw new Error("Invalid community approval details");
+  }
+  reviewUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && value === `${url.origin}${url.pathname}` && /^\/dashboard\/group\/events\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\/update$/.test(
+        url.pathname
+      );
+    } catch {
+      return false;
+    }
+  }
+  text(value, maximum) {
+    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/community-approval-presenter.ts
+var CommunityApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.community.details", {
+      title: this.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: this.escape(details.timeZone),
+      venue: this.escape(details.venue.name),
+      city: this.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.community.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.community.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [content, controls].join("\n\n");
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-approval-presenter.ts
+var ContentApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const content = record.content;
+    return [
+      this.messages.t("approval.content.title", {
+        target: content.target,
+        language: content.language,
+        origin: this.escape(content.origin)
+      }),
+      content.plannedAt ? this.messages.t("approval.content.planned", {
+        time: content.plannedAt
+      }) : "",
+      ...(content.attempts ?? []).map(
+        (status, index) => this.messages.t("approval.content.slot", {
+          index: index + 1,
+          status: status.replaceAll("-", "_")
+        })
+      ),
+      content.draft.text ? `<pre>${this.escape(content.draft.text)}</pre>` : "",
+      ...content.draft.media.map(
+        (media) => [
+          `![${this.escape(media.description)}](<${media.url}>)`,
+          `${this.escape(media.id)} \xB7 ${this.escape(media.sourceRevision)}${media.source ? ` \xB7 ${this.escape(media.source.id)} \xB7 ${this.escape(media.source.revision)}` : ""} \xB7 ${media.width}\xD7${media.height} \xB7 ${media.mimeType} \xB7 ${media.fingerprint}`
+        ].join("\n\n")
+      ),
+      record.decision ? this.messages.t("approval.content.final", {
+        status: record.decision.status.replaceAll("-", "_"),
+        actor: record.decision.actor,
+        decidedAt: record.decision.decidedAt,
+        image: record.decision.selectedImage ?? ""
+      }) : this.controls(record, decision)
+    ].filter(Boolean).join("\n\n");
+  }
+  controls(record, decision) {
+    const images = record.content.target === "cover" ? record.content.draft.media : [];
+    const approve = images.length ? images.map(
+      (image, index) => this.messages.t("approval.content.image-choice", {
+        mark: decision.status === "approved" && decision.selectedImage === image.id ? "x" : " ",
+        index: index + 1
+      })
+    ).join("\n") : this.messages.t("approval.content.text-choice", {
+      mark: decision.status === "approved" ? "x" : " "
+    });
+    return this.messages.t("approval.content.request", {
+      approve,
+      rejectMark: decision.status === "rejected" ? "x" : " ",
+      iterateMark: decision.status === "iteration-requested" ? "x" : " "
+    });
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-approval-schema.ts
+var ContentApprovalSchema = class {
+  constructor(schema, policy, values) {
+    this.schema = schema;
+    this.policy = policy;
+    this.values = values;
+  }
+  schema;
+  policy;
+  values;
+  validate(value) {
+    if (!this.schema.object(value) || typeof value.key !== "string" || !/^content-[a-f0-9-]{36}$/.test(value.key) || !this.policy.target(value.target) || !["en", "fr"].includes(String(value.language)) || typeof value.origin !== "string" || !value.origin || value.origin.length > 200)
+      throw new Error("Invalid content approval");
+    this.values.object(value, [
+      "key",
+      "target",
+      "language",
+      "origin",
+      "draft",
+      "plannedAt",
+      "attempts"
+    ]);
+    const draft = this.values.draft(value.draft);
+    if (value.target === "cover" && (!draft.media.length || draft.text))
+      throw new Error("Invalid cover preview");
+    if (value.target !== "cover" && !draft.text.trim())
+      throw new Error("Missing content preview");
+    this.schedule(value);
+  }
+  schedule(value) {
+    if (value.plannedAt !== void 0 && (typeof value.plannedAt !== "string" || !Number.isFinite(Date.parse(value.plannedAt))))
+      throw new Error("Invalid planned publication time");
+    if (value.attempts !== void 0 && (!Array.isArray(value.attempts) || value.attempts.length !== 4 || value.attempts.some(
+      (phase) => !["not-started", "reserved", "complete", "failed"].includes(phase)
+    )))
+      throw new Error("Invalid cover attempt summary");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-approval-details-schema.ts
+var EmailApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(details) {
+    if (details === void 0) return;
+    if (!this.collaborators.approvalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !this.collaborators.approvalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(this.email.bind(this)))
+      throw new Error("Invalid approval details");
+  }
+  email(email) {
+    return this.collaborators.approvalSchema.object(email) && typeof email.kind === "string" && [
+      "host-introduction",
+      "speaker-introduction",
+      "host-thanks",
+      "speaker-thanks"
+    ].includes(email.kind) && this.collaborators.approvalSchema.text(email.recipientName, 200) && this.collaborators.approvalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(this.link.bind(this));
+  }
+  link(link) {
+    return this.collaborators.approvalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || this.collaborators.approvalSchema.text(link.title, 200)) && this.url(link.url);
+  }
+  url(value) {
+    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
+      return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-approval-presenter.ts
+var EmailApprovalPresenter = class {
+  constructor(collaborators, messages5) {
+    this.collaborators = collaborators;
+    this.messages = messages5;
+  }
+  collaborators;
+  messages;
+  issue(record, decision) {
+    const heading = [...this.collaborators.followUpPresenter.render(record)];
+    const phase = this.collaborators.approvalRequestPolicy.reviewPhase({
+      recipientCount: record.recipientCount,
+      followUpActive: record.followUp?.active,
+      decided: record.decision !== void 0
+    });
+    if (phase === "inactive")
+      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
+    const details = record.details ? [this.collaborators.approvalDetailsPresenter.render(record.details)] : [];
+    if (record.followUp?.attentionDetails)
+      details.push(record.followUp.attentionDetails);
+    if (record.decision)
+      return [
+        ...heading,
+        this.messages.t("approval.final", {
+          kind: record.kind.replace("email-", ""),
+          date: record.eventDate,
+          count: record.recipientCount,
+          status: record.decision.status,
+          actor: record.decision.actor,
+          decidedAt: record.decision.decidedAt
+        }),
+        ...details
+      ].join("\n\n");
+    return [
+      ...heading,
+      this.messages.t("approval.request", {
+        kind: record.kind.replace("email-", ""),
+        date: record.eventDate,
+        count: record.recipientCount,
+        approveMark: decision.status === "approved" ? "x" : " ",
+        rejectMark: decision.status === "rejected" ? "x" : " "
+      }),
+      ...details
+    ].join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/finalize-approval-decision.ts
+var FinalizeApprovalDecision = class {
+  constructor(decisions, repository, notifications) {
+    this.decisions = decisions;
+    this.repository = repository;
+    this.notifications = notifications;
+  }
+  decisions;
+  repository;
+  notifications;
+  async execute(state) {
+    const { record, comment } = state;
+    const decision = await this.decisions.execute(record, comment);
+    if (decision.status !== "pending" && !record.decision) {
+      if (!decision.actor || !decision.decidedAt)
+        throw new Error("Missing verified approval identity");
+      record.decision = {
+        status: decision.status,
+        actor: decision.actor,
+        decidedAt: decision.decidedAt,
+        ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
+      };
+    }
+    await this.repository.save(record, state);
+    return {
+      status: decision.status,
+      ...record.kind === "content-review" ? decision : {},
+      notificationFailed: await this.notifications.react(record, comment.id)
+    };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/follow-up-presenter.ts
+var FollowUpPresenter = class {
+  constructor(policy, messages5) {
+    this.policy = policy;
+    this.messages = messages5;
+  }
+  policy;
+  messages;
+  render(record) {
+    if (!record.followUp) return [];
+    const lines = [
+      this.messages.t("follow-up.title", { date: record.eventDate }),
+      this.messages.t("follow-up.instructions", {})
+    ];
+    for (const task of FOLLOW_UP_TASKS) {
+      const pending = record.followUp.pendingTasks.includes(task);
+      lines.push(
+        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
+      );
+    }
+    const progress = this.policy.progressState(
+      record.followUp,
+      record.recipientCount ?? 0
+    );
+    if (progress !== "review")
+      lines.push(this.messages.t(`follow-up.${progress}`, {}));
+    return lines;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/follow-up-schema.ts
+var FollowUpSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (value === void 0) return;
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
+      throw new Error("Invalid post-event follow-up state");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-attention-source.ts
+var GithubApprovalAttentionSource = class {
+  constructor(repository, finalizer) {
+    this.repository = repository;
+    this.finalizer = finalizer;
+  }
+  repository;
+  finalizer;
+  async synchronizeApprovals() {
+    const result = [];
+    for (const state of await this.repository.activeStates()) {
+      if (state.record.recipientCount === 0) continue;
+      const decision = await this.finalizer.execute(state);
+      result.push({
+        revision: state.record.revision,
+        requestedAt: state.record.requestedAt,
+        commentId: state.comment.id,
+        eventDate: state.record.eventDate,
+        kind: state.record.kind,
+        status: decision.status
+      });
+    }
+    return result;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-client.ts
+var GithubApprovalClient = class {
+  constructor(collaborators, api, owner, repo, issue2) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.issue = issue2;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  issue;
+  async list() {
+    const comments = [];
+    let page = 1;
+    while (true) {
+      const raw = await this.api.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issue,
+        page,
+        per_page: 100
+      });
+      const response = this.collaborators.githubApprovalResponse.comments(raw);
+      comments.push(...response.data);
+      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!next) return comments;
+      page += 1;
+    }
+  }
+  async create(body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
+    const response = await this.api.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issue,
+      body
+    });
+    return this.collaborators.githubApprovalResponse.identity(response);
+  }
+  async update(commentId, body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
+    await this.api.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  async canApprove(username) {
+    const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
+      owner: this.owner,
+      repo: this.repo,
+      username
+    });
+    const permission = this.collaborators.githubApprovalResponse.permission(response);
+    return ["write", "maintain", "admin"].includes(permission);
+  }
+  async replace(commentId, before, after) {
+    if (before === after) return;
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Approval comment changed before persistence");
+    await this.update(commentId, after);
+  }
+  async edit(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const result = await this.api.graphql(
+      `query ApprovalCommentEditor($id: ID!) {
+				node(id: $id) {
+					... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					}
+				}
+			}`,
+      { id: comment.node_id }
+    );
+    return this.collaborators.githubApprovalResponse.edit(result, comment);
+  }
+  url(commentId) {
+    return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
+  }
+  async history(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const edits = [];
+    let after;
+    do {
+      const response = await this.api.graphql(
+        `query ApprovalCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+        { id: comment.node_id, ...after ? { after } : {} }
+      );
+      const history = this.collaborators.githubApprovalResponse.history(
+        response,
+        comment
+      );
+      edits.push(...history.nodes);
+      if (!history.pageInfo.hasNextPage) return edits;
+      const next = history.pageInfo.endCursor;
+      if (!next || next === after)
+        throw new Error("Invalid approval history cursor");
+      after = next;
+    } while (after);
+    return edits;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-repository.ts
+var GithubApprovalRepository = class {
+  constructor(collaborators, client, trusted, authorLogin, presenter) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.trusted = trusted;
+    this.authorLogin = authorLogin;
+    this.presenter = presenter;
+  }
+  collaborators;
+  client;
+  trusted;
+  authorLogin;
+  presenter;
+  async states() {
+    const states = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
+        continue;
+      const record = await this.trusted.read(comment);
+      if (!record) continue;
+      if (states.some(
+        (state) => state.record.kind === record.kind && (record.kind !== "content-review" || state.record.content?.key === record.content.key)
+      ))
+        throw new Error("Ambiguous approval state");
+      states.push({ record, comment });
+    }
+    return states;
+  }
+  async activeStates() {
+    const active = /* @__PURE__ */ new Map();
+    for (const state of await this.states()) {
+      const record = state.record;
+      const key = record.kind === "content-review" ? `content:${record.content.target}` : record.kind;
+      active.set(key, state);
+    }
+    return [...active.values()];
+  }
+  async save(record, existing) {
+    this.collaborators.storedApprovalSchema.validate(record);
+    const body = this.presenter.issue(
+      record,
+      record.decision ?? { status: "pending" }
+    );
+    if (!existing) {
+      const id = await this.client.create(body);
+      return { record, comment: { id, body } };
+    }
+    await this.client.replace(
+      existing.comment.id,
+      existing.comment.body ?? "",
+      body
+    );
+    existing.comment = { ...existing.comment, body };
+    return { record, comment: existing.comment };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-response.ts
+var GithubApprovalResponse = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  comments(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.data) || !value.data.every(this.comment.bind(this)) || !this.collaborators.approvalSchema.object(value.headers) || value.headers.link !== void 0 && typeof value.headers.link !== "string")
+      throw new Error("Invalid approval comment response");
+    return { data: value.data, headers: { link: value.headers.link } };
+  }
+  identity(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || !this.collaborators.approvalSchema.count(value.data.id) || value.data.id === 0)
+      throw new Error("Invalid approval comment identity");
+    return value.data.id;
+  }
+  permission(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || typeof value.data.permission !== "string")
+      throw new Error("Invalid approval permission response");
+    return value.data.permission;
+  }
+  edit(value, comment) {
+    const node = this.snapshot(value, comment);
+    if (!this.nullableText(node.lastEditedAt) || !this.actor(node.editor))
+      throw new Error("Invalid approval editor response");
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: node.lastEditedAt,
+      editor: node.editor
+    };
+  }
+  history(value, comment) {
+    const node = this.snapshot(value, comment);
+    const history = node.userContentEdits;
+    if (!this.collaborators.approvalSchema.object(history) || !Array.isArray(history.nodes) || !history.nodes.every(this.historyEdit.bind(this)) || !this.collaborators.approvalSchema.object(history.pageInfo) || typeof history.pageInfo.hasNextPage !== "boolean" || !this.nullableText(history.pageInfo.endCursor))
+      throw new Error("Approval history is unavailable");
+    return {
+      nodes: history.nodes,
+      pageInfo: {
+        hasNextPage: history.pageInfo.hasNextPage,
+        endCursor: history.pageInfo.endCursor
+      }
+    };
+  }
+  snapshot(value, comment) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
+      throw new Error("Approval comment changed during verification");
+    return { ...value.node, id: value.node.id, body: value.node.body };
+  }
+  comment(value) {
+    return this.collaborators.approvalSchema.object(value) && this.collaborators.approvalSchema.count(value.id) && value.id > 0 && (value.node_id === void 0 || typeof value.node_id === "string") && (value.body === void 0 || this.nullableText(value.body)) && (value.user === void 0 || value.user === null || this.collaborators.approvalSchema.object(value.user) && typeof value.user.login === "string");
+  }
+  historyEdit(value) {
+    return this.collaborators.approvalSchema.object(value) && this.nullableText(value.diff) && this.nullableText(value.deletedAt) && this.actor(value.editor);
+  }
+  actor(value) {
+    return value === null || this.collaborators.approvalSchema.object(value) && typeof value.login === "string" && typeof value.__typename === "string";
+  }
+  nullableText(value) {
+    return value === null || typeof value === "string";
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-follow-up-attention-repository.ts
+var GithubFollowUpAttentionRepository = class {
+  constructor(approvals, previous, codec, presentation) {
+    this.approvals = approvals;
+    this.previous = previous;
+    this.codec = codec;
+    this.presentation = presentation;
+  }
+  approvals;
+  previous;
+  codec;
+  presentation;
+  sharedCommentId;
+  async load() {
+    const shared = await this.approvals.followUpAttention();
+    this.sharedCommentId = shared?.commentId;
+    const previous = await this.previous.load();
+    return shared?.body ? this.codec.read(shared.body) : previous;
+  }
+  async save(state) {
+    if (!this.sharedCommentId) return this.previous.save(state);
+    await this.approvals.saveFollowUpAttention(
+      this.codec.marker(state),
+      this.presentation.details(state)
+    );
+    await this.previous.retire(this.sharedCommentId);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-organizer-approval.ts
+var GithubOrganizerApproval = class {
+  constructor(collaborators, repository, records, finalizer, notifications, permissions) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.records = records;
+    this.finalizer = finalizer;
+    this.notifications = notifications;
+    this.permissions = permissions;
+  }
+  collaborators;
+  repository;
+  records;
+  finalizer;
+  notifications;
+  permissions;
+  async request(input) {
+    input = this.reviewedRequest(input);
+    this.collaborators.approvalRequestSchema.validate(input);
+    this.collaborators.approvalRequestPolicy.validate(input);
+    const existing = (await this.repository.states()).find(
+      ({ record: record2 }) => record2.kind === input.kind && (input.kind !== "content-review" || record2.content?.key === input.content.key)
+    );
+    if (existing && this.collaborators.approvalRequestPolicy.matches(
+      existing.record,
+      input,
+      existing.record.decision?.status ?? "pending"
+    )) {
+      const result = await this.finalizer.execute(existing);
+      if ((result.status === "approved" || result.status === "iteration-requested") && !await this.permissions.canApprove(
+        existing.record.decision?.actor ?? ""
+      ))
+        throw new Error(
+          "The recorded organizer no longer has approval permission"
+        );
+      if (result.status !== "pending") return result;
+      return {
+        status: "pending",
+        notificationFailed: await this.notifications.send(
+          existing.record,
+          existing.comment.id
+        )
+      };
+    }
+    const record = this.records.create(input);
+    const followUp = this.collaborators.followUpApprovalPolicy.initialFor(
+      input,
+      existing?.record.followUp
+    );
+    if (followUp)
+      record.followUp = { ...existing?.record.followUp, ...followUp };
+    const state = await this.repository.save(record, existing);
+    return {
+      status: "pending",
+      notificationFailed: await this.notifications.send(
+        record,
+        state.comment.id
+      )
+    };
+  }
+  async synchronize() {
+    let notificationFailed = false;
+    for (const state of await this.repository.activeStates()) {
+      const result = await this.finalizer.execute(state);
+      notificationFailed = result.notificationFailed || notificationFailed;
+    }
+    return { notificationFailed };
+  }
+  reviewedRequest(input) {
+    if (input.kind === "meetup-publication" || !input.details) return input;
+    return {
+      ...input,
+      details: this.collaborators.approvalDetailsPreview.create(input.details)
+    };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-organizer-follow-up.ts
+var GithubOrganizerFollowUp = class {
+  constructor(policy, repository, records, finalizer) {
+    this.policy = policy;
+    this.repository = repository;
+    this.records = records;
+    this.finalizer = finalizer;
+  }
+  policy;
+  repository;
+  records;
+  finalizer;
+  async synchronizeFollowUp(input) {
+    const existing = (await this.repository.states()).find(
+      ({ record: record2 }) => record2.kind === "email-thanks"
+    );
+    if (!existing && !input.active) return void 0;
+    if (existing) await this.finalizer.execute(existing);
+    const attention = existing?.record.followUp?.attention;
+    const attentionDetails = existing?.record.followUp?.attentionDetails;
+    const record = existing && this.policy.retainRequest(input, existing.record.eventDate) ? existing.record : this.records.placeholder(input);
+    record.followUp = {
+      active: input.active,
+      pendingTasks: input.pendingTasks,
+      attention,
+      attentionDetails
+    };
+    const state = await this.repository.save(record, existing);
+    return state.comment.id;
+  }
+  async followUpAttention() {
+    const state = (await this.repository.states()).find(
+      ({ record }) => record.followUp
+    );
+    return state ? { commentId: state.comment.id, body: state.record.followUp?.attention } : void 0;
+  }
+  async saveFollowUpAttention(body, details) {
+    const state = (await this.repository.states()).find(
+      ({ record }) => record.followUp
+    );
+    if (!state?.record.followUp)
+      throw new Error("Missing post-event follow-up comment");
+    await this.finalizer.execute(state);
+    state.record.followUp = {
+      ...state.record.followUp,
+      attention: body,
+      attentionDetails: details
+    };
+    await this.repository.save(state.record, state);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
+var ApprovalMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS6, locale);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/meetup-approval-details-schema.ts
+var MeetupApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !this.text(value.title, 80) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
+      throw new Error("Invalid Meetup approval details");
+  }
+  text(value, maximum) {
+    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/meetup-approval-presenter.ts
+var MeetupApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.meetup.details", {
+      title: this.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: this.escape(details.timeZone),
+      venue: this.escape(details.venue.name),
+      city: this.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.meetup.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.meetup.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [content, controls].join("\n\n");
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/resolve-approval-decision.ts
+var ResolveApprovalDecision = class {
+  constructor(client, parser) {
+    this.client = client;
+    this.parser = parser;
+  }
+  client;
+  parser;
+  async execute(record, comment) {
+    if (record.decision) return record.decision;
+    const decision = this.parser.parse(record, comment.body ?? "");
+    if (decision.status === "pending") return decision;
+    const edit = await this.client.edit(comment);
+    const editedAt = Date.parse(edit.lastEditedAt ?? "");
+    if (edit.editor?.__typename !== "User" || !edit.editor.login || edit.editor.login === "ghost" || !Number.isFinite(editedAt) || editedAt < Math.floor(Date.parse(record.requestedAt) / 1e3) * 1e3)
+      return { status: "pending" };
+    return await this.client.canApprove(edit.editor.login) ? {
+      ...decision,
+      actor: edit.editor.login,
+      decidedAt: edit.lastEditedAt ?? void 0
+    } : { status: "pending" };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
+var StoredApprovalSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value))
+      throw new Error("Invalid approval state");
+    const state = value;
+    this.collaborators.approvalRequestSchema.validate(value);
+    this.collaborators.followUpSchema.validate(state.followUp);
+    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
+      hasFollowUp: state.followUp !== void 0,
+      decided: state.decision !== void 0
+    });
+    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
+      (status) => status === state.notification
+    ))
+      throw new Error("Invalid approval state");
+    if (state.decision !== void 0) {
+      this.decision(state.decision);
+      const decision = state.decision;
+      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0))
+        throw new Error("Invalid content decision kind");
+      if (value.kind === "content-review")
+        this.contentDecision(value, decision);
+    }
+    if (state.notificationMessage !== void 0)
+      this.notificationMessage(state.notificationMessage);
+    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
+      throw new Error("Invalid approval reaction state");
+  }
+  decision(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
+      String(value.status)
+    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
+      throw new Error("Invalid final approval decision");
+  }
+  contentDecision(value, decision) {
+    const selected = decision.selectedImage;
+    if (value.content.target === "cover" && decision.status === "approved") {
+      if (!value.content.draft.media.some((media) => media.id === selected))
+        throw new Error("Missing approved cover identity");
+    } else if (selected !== void 0)
+      throw new Error("Unexpected cover identity");
+  }
+  notificationMessage(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
+      throw new Error("Invalid approval notification reference");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
+var TrustedApprovalState = class {
+  constructor(collaborators, client, authorLogin) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.authorLogin = authorLogin;
+  }
+  collaborators;
+  client;
+  authorLogin;
+  async read(comment) {
+    const current = await this.client.edit(comment);
+    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
+      return this.record(current.body);
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Approval history was deleted");
+      if (this.isAuthor(edit.editor)) {
+        if (edit.diff === null)
+          throw new Error("Approval history is unavailable");
+        return this.record(edit.diff);
+      }
+    }
+    throw new Error("A trusted approval revision could not be verified");
+  }
+  record(body) {
+    if (!body?.startsWith(APPROVAL_MARKER)) return void 0;
+    return this.collaborators.approvalCommentCodec.read(body);
+  }
+  isAuthor(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.authorLogin.toLowerCase().replace(/\[bot\]$/, "");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/dependency-composition.ts
+var GithubOrganizerApprovalComposition = class {
+  approvalCommentCodec() {
+    return new ApprovalCommentCodec({
+      storedApprovalSchema: this.storedApprovalSchema()
+    });
+  }
+  approvalDecisionParser(...args) {
+    return new ApprovalDecisionParser(
+      new JourneyPolicyComposition().approvalRequestPolicy(),
+      ...args
+    );
+  }
+  approvalDetailsPresenter(...args) {
+    return new ApprovalDetailsPresenter(...args);
+  }
+  approvalDetailsPreview() {
+    return new ApprovalDetailsPreview();
+  }
+  approvalMessages(...args) {
+    return new ApprovalMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  approvalNotifications(...args) {
+    return new ApprovalNotifications(...args);
+  }
+  approvalPresenter(messages5) {
+    const email = this.emailApprovalPresenter(messages5);
+    return new ApprovalPresenter(this.approvalCommentCodec(), {
+      "email-introduction": email,
+      "email-thanks": email,
+      "meetup-publication": this.meetupApprovalPresenter(messages5),
+      "community-publication": new CommunityApprovalPresenter(messages5),
+      "content-review": this.contentApprovalPresenter(messages5)
+    });
+  }
+  contentApprovalPresenter(messages5) {
+    return new ContentApprovalPresenter(messages5);
+  }
+  approvalPresenterFactory() {
+    return new ApprovalPresenterFactory({
+      createApprovalPresenter: (...args) => this.approvalPresenter(...args),
+      createApprovalMessages: (...args) => this.approvalMessages(...args)
+    });
+  }
+  approvalRecordFactory(...args) {
+    return new ApprovalRecordFactory(
+      {
+        approvalRequestSchema: this.approvalRequestSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        storedApprovalSchema: this.storedApprovalSchema(),
+        followUpApprovalPolicy: new FollowUpApprovalPolicy()
+      },
+      ...args
+    );
+  }
+  approvalRequestSchema() {
+    return new ApprovalRequestSchema({
+      communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
+        approvalSchema: this.approvalSchema(),
+        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+      }),
+      approvalSchema: this.approvalSchema(),
+      contentApprovalSchema: new ContentApprovalSchema(
+        this.approvalSchema(),
+        new DraftProposalComposition().policy(),
+        new ContentValueSchema(new PublicAssetUrl())
+      ),
+      meetupApprovalDetailsSchema: this.meetupApprovalDetailsSchema(),
+      emailApprovalDetailsSchema: this.emailApprovalDetailsSchema()
+    });
+  }
+  approvalSchema() {
+    return new ApprovalSchema();
+  }
+  emailApprovalDetailsSchema() {
+    return new EmailApprovalDetailsSchema({
+      approvalSchema: this.approvalSchema()
+    });
+  }
+  emailApprovalPresenter(...args) {
+    return new EmailApprovalPresenter(
+      {
+        followUpPresenter: this.followUpPresenter(args[0]),
+        approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+      },
+      ...args
+    );
+  }
+  finalizeApprovalDecision(...args) {
+    return new FinalizeApprovalDecision(...args);
+  }
+  followUpPresenter(...args) {
+    return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
+  }
+  followUpSchema() {
+    return new FollowUpSchema({ approvalSchema: this.approvalSchema() });
+  }
+  githubApprovalAttentionSource(...args) {
+    return new GithubApprovalAttentionSource(...args);
+  }
+  githubApprovalClient(...args) {
+    return new GithubApprovalClient(
+      { githubApprovalResponse: this.githubApprovalResponse() },
+      ...args
+    );
+  }
+  githubApprovalRepository(...args) {
+    return new GithubApprovalRepository(
+      { storedApprovalSchema: this.storedApprovalSchema() },
+      ...args
+    );
+  }
+  githubApprovalResponse() {
+    return new GithubApprovalResponse({
+      approvalSchema: this.approvalSchema()
+    });
+  }
+  githubFollowUpAttentionRepository(...args) {
+    return new GithubFollowUpAttentionRepository(...args);
+  }
+  githubOrganizerApproval(...args) {
+    return new GithubOrganizerApproval(
+      {
+        approvalRequestSchema: this.approvalRequestSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        approvalDetailsPreview: this.approvalDetailsPreview(),
+        followUpApprovalPolicy: new FollowUpApprovalPolicy()
+      },
+      ...args
+    );
+  }
+  githubOrganizerFollowUp(...args) {
+    return new GithubOrganizerFollowUp(new FollowUpApprovalPolicy(), ...args);
+  }
+  meetupApprovalDetailsSchema() {
+    return new MeetupApprovalDetailsSchema({
+      approvalSchema: this.approvalSchema(),
+      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+    });
+  }
+  meetupApprovalPresenter(...args) {
+    return new MeetupApprovalPresenter(...args);
+  }
+  resolveApprovalDecision(...args) {
+    return new ResolveApprovalDecision(...args);
+  }
+  storedApprovalSchema() {
+    return new StoredApprovalSchema({
+      approvalSchema: this.approvalSchema(),
+      approvalRequestSchema: this.approvalRequestSchema(),
+      followUpSchema: this.followUpSchema(),
+      approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+    });
+  }
+  trustedApprovalState(...args) {
+    return new TrustedApprovalState(
+      { approvalCommentCodec: this.approvalCommentCodec() },
+      ...args
+    );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-authority.ts
+var GithubContentAuthority = class {
+  constructor(approvals, client) {
+    this.approvals = approvals;
+    this.client = client;
+  }
+  approvals;
+  client;
+  async authorized(proposal) {
+    const record = (await this.approvals.states()).find(
+      (state) => state.record.kind === "content-review" && state.record.content.key === proposal.id
+    )?.record;
+    return record?.kind === "content-review" && record.revision === proposal.revision && record.decision?.status === "approved" && record.decision.actor === proposal.decision?.actor && record.decision.decidedAt === proposal.decision?.decidedAt && record.decision.selectedImage === proposal.decision?.selectedImage && await this.client.canApprove(record.decision.actor);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-proposal-store.ts
+var GithubContentProposalStore = class {
+  constructor(client, author, codec, fingerprints, transitions) {
+    this.client = client;
+    this.author = author;
+    this.codec = codec;
+    this.fingerprints = fingerprints;
+    this.transitions = transitions;
+  }
+  client;
+  author;
+  codec;
+  fingerprints;
+  transitions;
+  async load() {
+    const records = await this.records();
+    const proposals = records.map((record) => record.proposal);
+    return { revision: this.fingerprints.digest(proposals), proposals };
+  }
+  async save(previous, proposals) {
+    const records = await this.records();
+    if (this.fingerprints.digest(records.map((record) => record.proposal)) !== previous.revision)
+      throw new Error("Content proposals changed before persistence");
+    if (records.some(
+      (record) => !proposals.some((proposal) => proposal.id === record.proposal.id)
+    ))
+      throw new Error("Content proposal history cannot be removed");
+    for (const proposal of proposals) {
+      const existing = records.find(
+        (record) => record.proposal.id === proposal.id
+      );
+      const body = this.codec.write(proposal);
+      if (existing) {
+        this.transitions.validate(existing.proposal, proposal);
+        await this.client.replace(
+          existing.comment.id,
+          existing.comment.body ?? "",
+          body
+        );
+      } else await this.client.create(body);
+    }
+    const saved = await this.load();
+    if (proposals.some(
+      (proposal) => this.fingerprints.digest(
+        saved.proposals.find((item) => item.id === proposal.id)
+      ) !== this.fingerprints.digest(proposal)
+    ))
+      throw new Error("Content persistence readback is uncertain");
+    return saved;
+  }
+  async records() {
+    const result = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.login.toLowerCase() !== this.author.toLowerCase() || comment.user.type !== "Bot")
+        continue;
+      const edit = await this.client.edit(comment);
+      if (edit.editor && (edit.editor.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))) {
+        await this.requireUnrelated(comment);
+        continue;
+      }
+      if (!edit.editor && edit.lastEditedAt !== null)
+        throw new Error("Content proposal editor is unavailable");
+      if (!edit.body.startsWith(CONTENT_STATE_MARKER)) continue;
+      const proposal = this.codec.read(edit.body);
+      if (result.some((record) => record.proposal.id === proposal.id))
+        throw new Error("Ambiguous content proposal state");
+      result.push({ comment, proposal });
+    }
+    return result;
+  }
+  async requireUnrelated(comment) {
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Content state history was deleted");
+      if (edit.editor?.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))
+        continue;
+      if (edit.diff === null || edit.diff.startsWith(CONTENT_STATE_MARKER))
+        throw new Error("Content proposal state was edited outside automation");
+      return;
+    }
+    throw new Error("Content proposal history could not be verified");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-recoveries.ts
+var GithubContentRecoveries = class {
+  constructor(client, values, fingerprints) {
+    this.client = client;
+    this.values = values;
+    this.fingerprints = fingerprints;
+  }
+  client;
+  values;
+  fingerprints;
+  async read() {
+    const requests = [];
+    const marker = "<!-- meetup-content-recovery:v1 -->";
+    for (const comment of await this.client.list()) {
+      if (!comment.body?.startsWith(marker) || comment.user?.type !== "User")
+        continue;
+      const edit = await this.client.edit(comment);
+      const actor = edit.editor ?? (edit.lastEditedAt === null ? { login: comment.user.login, __typename: "User" } : null);
+      if (actor?.__typename !== "User" || actor.login === "ghost" || !await this.client.canApprove(actor.login))
+        continue;
+      if (edit.body.length > 3e3)
+        throw new Error("Content recovery request exceeds limit");
+      const item = this.values.object(
+        JSON.parse(edit.body.slice(marker.length)),
+        ["proposalId", "guidance"]
+      );
+      const proposalId = this.values.text(item.proposalId, 44);
+      if (!/^content-[a-f0-9-]{36}$/.test(proposalId))
+        throw new Error("Invalid recovery proposal identity");
+      requests.push({
+        id: `${comment.id}:${this.fingerprints.digest(edit.body)}`,
+        actor: actor.login,
+        proposalId,
+        guidance: this.values.text(item.guidance, 2e3)
+      });
+    }
+    return requests;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-submissions.ts
+var CONTENT_SUBMISSION_MARKER = "<!-- meetup-content-submission:v1 -->";
+var GithubContentSubmissions = class {
+  constructor(client, values, policy, fingerprints, urls) {
+    this.client = client;
+    this.values = values;
+    this.policy = policy;
+    this.fingerprints = fingerprints;
+    this.urls = urls;
+  }
+  client;
+  values;
+  policy;
+  fingerprints;
+  urls;
+  async read() {
+    const result = [];
+    for (const comment of await this.client.list()) {
+      if (!comment.body?.startsWith(CONTENT_SUBMISSION_MARKER) || comment.user?.type !== "User")
+        continue;
+      const edit = await this.client.edit(comment);
+      const actor = edit.editor ?? (edit.lastEditedAt === null ? { login: comment.user.login, __typename: "User" } : null);
+      if (actor?.__typename !== "User" || actor.login === "ghost" || !await this.client.canApprove(actor.login))
+        continue;
+      if (edit.body.length > 2e4)
+        throw new Error("Content submission limit exceeded");
+      const parsed = this.parse(
+        JSON.parse(edit.body.slice(CONTENT_SUBMISSION_MARKER.length))
+      );
+      result.push({
+        ...parsed,
+        actor: actor.login,
+        id: `${comment.id}:${this.fingerprints.digest({ body: edit.body, actor: actor.login })}`
+      });
+    }
+    return result;
+  }
+  async verify(submission) {
+    return (await this.read()).some(
+      (item) => item.id === submission.id && item.actor === submission.actor
+    );
+  }
+  parse(value) {
+    const item = this.values.object(value, [
+      "target",
+      "language",
+      "text",
+      "image"
+    ]);
+    if (!this.policy.target(item.target) || item.language !== "en" && item.language !== "fr")
+      throw new Error("Invalid content submission target or language");
+    let image = null;
+    if (item.image !== null) {
+      const input = this.values.object(item.image, ["url", "description"]);
+      const url = this.values.text(input.url, 2e3), description = this.values.text(input.description, 1e3);
+      if (!this.urls.valid(url) || !description.trim())
+        throw new Error("Invalid submitted image");
+      image = { url, description };
+    }
+    return {
+      target: item.target,
+      language: item.language,
+      text: this.values.text(item.text, 12e3),
+      image
+    };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-store-composition.ts
+var GithubContentStoreComposition = class {
+  recoveries(client) {
+    return new GithubContentRecoveries(
+      client,
+      new ContentValueSchema(new PublicAssetUrl()),
+      new DraftProposalComposition().fingerprints()
+    );
+  }
+  authority(client, author, presenter) {
+    const adapter = new GithubOrganizerApprovalComposition();
+    return new GithubContentAuthority(
+      adapter.githubApprovalRepository(
+        client,
+        adapter.trustedApprovalState(client, author),
+        author,
+        presenter
+      ),
+      client
+    );
+  }
+  store(client, author) {
+    const fingerprints = new DraftProposalComposition().fingerprints();
+    return new GithubContentProposalStore(
+      client,
+      author,
+      new ContentProposalCodec(
+        new ContentValueSchema(new PublicAssetUrl()),
+        new DraftProposalComposition().policy(),
+        fingerprints
+      ),
+      fingerprints,
+      new ContentProposalTransition(fingerprints)
+    );
+  }
+  submissions(client) {
+    return new GithubContentSubmissions(
+      client,
+      new ContentValueSchema(new PublicAssetUrl()),
+      new DraftProposalComposition().policy(),
+      new DraftProposalComposition().fingerprints(),
+      new PublicAssetUrl()
+    );
+  }
+};
+
 // packages/runtime/github-actions/src/content-configuration.ts
-import { readFile as readFile7 } from "node:fs/promises";
-import { join as join6 } from "node:path";
+import { readFile as readFile6 } from "node:fs/promises";
+import { join as join4 } from "node:path";
 var ContentConfiguration = class {
   constructor(input, urls) {
     this.input = input;
@@ -69099,8 +68257,8 @@ var ContentConfiguration = class {
   input;
   urls;
   async load(root) {
-    const text = await readFile7(
-      join6(root, ".github/meetup-content.json"),
+    const text = await readFile6(
+      join4(root, ".github/meetup-content.json"),
       "utf8"
     );
     if (Buffer.byteLength(text) > 1e5)
@@ -69190,7 +68348,7 @@ var ContentGateComposition = class {
       ),
       new DraftProposalComposition().policy(),
       async () => ({
-        publication: await runtime.meetupPublicationConfiguration().load(input.workspaceRoot ?? process.cwd()),
+        publication: (await runtime.eventPublicationConfiguration().load(input.workspaceRoot ?? process.cwd())).schedule,
         content: await new ContentConfiguration(
           runtime.runtimeInput(),
           new PublicAssetUrl()
@@ -69203,6 +68361,596 @@ var ContentGateComposition = class {
       blocked: copy.blocked.bind(copy),
       cover: artwork.cover.bind(artwork)
     };
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
+var messages3 = {
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
+  "failure.communications": "Email preparation or delivery failed.",
+  "failure.feedback": "OpenFeedback synchronization failed.",
+  "failure.assets": "Drive file preparation failed.",
+  "failure.event": "Meetup issue update failed.",
+  "task.event-data": "meetup details",
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# more task} other {# more tasks}} \u2192 View all",
+  "slack.run": "Review run",
+  "slack.review": "Review details",
+  "slack.unknown": "status unverified",
+  "action.missing-date": "Set the event date.",
+  "action.required-data": "Complete the event details.",
+  "action.host-confirmation": "Confirm the host (`hoster:confirmed`).",
+  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.approval-pending": "Approve or reject the email batch.",
+  "action.integration-failure": "Automation failed: {task}.",
+  "action.delivery-recovery": "Verify delivery before retrying.",
+  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "Check the incomplete stage: {task}.",
+  "task.approvals": "email approvals",
+  "task.delivery": "delivery recovery",
+  "task.public-slack-local": "Post the local community Slack announcement",
+  "task.public-slack-community": "Post the community Slack announcement",
+  "task.public-social": "Publish on social networks",
+  "attention.clear": "No pending tasks.",
+  "task.publish-meetup-event": "Approve Meetup publication",
+  "task.publish-community-event": "Publish on the CNCF platform",
+  "task.create-asset-folder": "Prepare the asset folder",
+  "task.thank-host": "Send host thanks",
+  "task.thank-speakers": "Send speaker thanks",
+  "task.share-slides": "Share slides",
+  "task.import-attendance": "Import attendance",
+  "task.share-social": "Share on social networks",
+  "task.event": "event validation",
+  "task.assets": "assets",
+  "task.feedback": "feedback",
+  "task.communications": "communications",
+  "task.unknown": "review the issue"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
+var messages4 = {
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
+  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
+  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
+  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
+  "task.event-data": "informations du meetup",
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# autre t\xE2che} other {# autres t\xE2ches}} \u2192 Tout voir",
+  "slack.run": "Voir l'ex\xE9cution",
+  "slack.review": "Voir les d\xE9tails",
+  "slack.unknown": "statut non v\xE9rifi\xE9",
+  "action.missing-date": "Renseignez la date du meetup.",
+  "action.required-data": "Compl\xE9tez les informations du meetup.",
+  "action.host-confirmation": "Confirmez l'h\xF4te (`hoster:confirmed`).",
+  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.approval-pending": "Approuvez ou refusez le lot de courriels.",
+  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
+  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
+  "task.approvals": "approbation des courriels",
+  "task.delivery": "reprise des envois",
+  "task.public-slack-local": "Publiez l'annonce sur le Slack local",
+  "task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
+  "task.public-social": "Publiez sur les r\xE9seaux sociaux",
+  "attention.clear": "Aucune t\xE2che en attente.",
+  "task.publish-meetup-event": "Approuver la publication Meetup",
+  "task.publish-community-event": "Publiez sur la plateforme CNCF",
+  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
+  "task.thank-host": "Envoyez les remerciements au lieu h\xF4te",
+  "task.thank-speakers": "Envoyez les remerciements aux intervenants",
+  "task.share-slides": "Partagez les pr\xE9sentations",
+  "task.import-attendance": "Importez les pr\xE9sences",
+  "task.share-social": "Partagez sur les r\xE9seaux sociaux",
+  "task.event": "validation du meetup",
+  "task.assets": "ressources",
+  "task.feedback": "\xE9valuations",
+  "task.communications": "communications",
+  "task.unknown": "consulter le ticket"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
+var CATALOGS7 = { en: messages3, fr: messages4 };
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
+var SlackAttentionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS7, locale);
+  }
+  failure(resource) {
+    const key = `failure.${resource}`;
+    return Object.hasOwn(CATALOGS7.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+  }
+  task(resource) {
+    const key = `task.${resource}`;
+    return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
+var EN_MESSAGES6 = {
+  "request.community-publication": "CNCF community event for {date}: review the OCGroups draft and approve publication, including native notifications, in GitHub: {url}",
+  "request.content": "Content review needed for {date}: {target}. Review and approve, reject, or request another iteration: {url}",
+  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
+  "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
+var FR_MESSAGES6 = {
+  "request.community-publication": "\xC9v\xE9nement CNCF du {date} : v\xE9rifier le brouillon OCGroups et approuver la publication, avec ses notifications natives, dans GitHub : {url}",
+  "request.content": "Contenu \xE0 v\xE9rifier pour le {date} : {target}. Approuvez, refusez ou demandez une nouvelle proposition : {url}",
+  "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
+  "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
+var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
+var SlackApprovalMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS8, locale);
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-api-client.ts
+var SlackApiClient = class {
+  constructor(token, fetcher) {
+    this.token = token;
+    this.fetcher = fetcher;
+  }
+  token;
+  fetcher;
+  async post(method, body) {
+    let response;
+    try {
+      response = await this.fetcher(`https://slack.com/api/${method}`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${this.token}`,
+          "content-type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify(body)
+      });
+    } catch {
+      return {
+        result: {
+          outcome: "uncertain",
+          diagnosticCode: "unknown-provider-state"
+        }
+      };
+    }
+    if (!response.ok)
+      return {
+        retryAfterSeconds: this.retryAfter(response),
+        result: this.httpRejection(response.status) ?? {
+          outcome: "uncertain",
+          diagnosticCode: "ambiguous-response"
+        }
+      };
+    let payload;
+    try {
+      payload = await response.json();
+    } catch {
+      return {
+        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
+      };
+    }
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload))
+      return {
+        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
+      };
+    const data = payload;
+    return {
+      result: data.ok === true ? { outcome: "accepted" } : this.slackApiRejection(data.error),
+      payload: data
+    };
+  }
+  retryAfter(response) {
+    const value = Number(response.headers.get("retry-after"));
+    return Number.isFinite(value) && value > 0 ? value : void 0;
+  }
+  httpRejection(status) {
+    switch (status) {
+      case 400:
+      case 422:
+        return { outcome: "rejected", diagnosticCode: "invalid-request" };
+      case 401:
+        return { outcome: "rejected", diagnosticCode: "authentication-failed" };
+      case 403:
+        return { outcome: "rejected", diagnosticCode: "permission-denied" };
+      case 404:
+        return {
+          outcome: "rejected",
+          diagnosticCode: "destination-unavailable"
+        };
+      case 429:
+        return { outcome: "deferred", diagnosticCode: "rate-limited" };
+      default:
+        return void 0;
+    }
+  }
+  slackApiRejection(error2) {
+    if (typeof error2 !== "string") {
+      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+    }
+    if ([
+      "invalid_auth",
+      "not_authed",
+      "account_inactive",
+      "token_revoked"
+    ].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "authentication-failed" };
+    }
+    if (["channel_not_found", "not_in_channel", "is_archived"].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "destination-unavailable" };
+    }
+    if (["missing_scope", "restricted_action"].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "permission-denied" };
+    }
+    if ([
+      "invalid_arguments",
+      "invalid_arg_name",
+      "msg_too_long",
+      "no_text"
+    ].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "invalid-request" };
+    }
+    if (error2 === "ratelimited") {
+      return { outcome: "deferred", diagnosticCode: "rate-limited" };
+    }
+    return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-approval-notification.ts
+var SlackApprovalNotification = class {
+  constructor(collaborators, client, presenter) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.presenter = presenter;
+  }
+  collaborators;
+  client;
+  presenter;
+  async send(input) {
+    const { result, payload } = await this.client.post("chat.postMessage", {
+      channel: input.destination,
+      text: this.presenter.render(input)
+    });
+    if (result.outcome !== "accepted") return result;
+    const message = this.collaborators.slackMessageReference.read(
+      payload,
+      input.destination
+    );
+    return message ? { outcome: "accepted", message } : { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+  }
+  async react(message, decision) {
+    if (!this.collaborators.slackMessageReference.valid(message)) return false;
+    const { result, payload } = await this.client.post("reactions.add", {
+      channel: message.destination,
+      timestamp: message.messageId,
+      name: decision === "approved" ? "white_check_mark" : decision === "iteration-requested" ? "arrows_counterclockwise" : "x"
+    });
+    return result.outcome === "accepted" || payload?.error === "already_reacted";
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-approval-presenter.ts
+var SlackApprovalPresenter = class {
+  constructor(renderers) {
+    this.renderers = renderers;
+  }
+  renderers;
+  render(request2) {
+    return this.renderers[request2.kind].render(request2);
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
+import { createHash as createHash4 } from "node:crypto";
+var SlackAttentionNotification = class {
+  constructor(collaborators, client, channel, presenter) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.channel = channel;
+    this.presenter = presenter;
+    if (!/^[CG][A-Z0-9]+$/.test(channel))
+      throw new Error("Invalid organizer channel");
+  }
+  collaborators;
+  client;
+  channel;
+  presenter;
+  fingerprint(view) {
+    return createHash4("sha256").update(this.presenter.render(view)).digest("hex");
+  }
+  async post(view) {
+    const response = await this.client.post(
+      "chat.postMessage",
+      this.body(this.channel, view)
+    );
+    const { result, payload } = response;
+    if (result.outcome === "uncertain") return { outcome: "uncertain" };
+    if (result.outcome !== "accepted")
+      return {
+        outcome: "retry",
+        retryAfterSeconds: response.retryAfterSeconds
+      };
+    const message = this.collaborators.slackMessageReference.read(
+      payload,
+      this.channel
+    );
+    return message ? { outcome: "accepted", message } : { outcome: "uncertain" };
+  }
+  async update(message, view) {
+    if (!this.collaborators.slackMessageReference.valid(message)) return false;
+    const { result } = await this.client.post("chat.update", {
+      ...this.body(message.destination, view),
+      ts: message.messageId
+    });
+    return result.outcome === "accepted";
+  }
+  body(channel, view) {
+    return {
+      channel,
+      text: this.presenter.render(view),
+      parse: "none",
+      link_names: false,
+      mrkdwn: true,
+      unfurl_links: false,
+      unfurl_media: false
+    };
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-attention-presenter.ts
+var SlackAttentionPresenter = class {
+  constructor(collaborators, repository, issueNumber, messages5, checklist) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.issueNumber = issueNumber;
+    this.messages = messages5;
+    this.checklist = checklist;
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      throw new Error("Invalid attention issue identity");
+    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
+  }
+  collaborators;
+  repository;
+  issueNumber;
+  messages;
+  checklist;
+  issueUrl;
+  render(view) {
+    const title = this.messages.t("slack.title", {
+      issue: String(this.issueNumber)
+    });
+    const actions = this.slackActions(view);
+    const icon = actions.length ? "\u26A0\uFE0F" : "\u2705";
+    const date = this.slackDate(view.state.eventDate);
+    const lines = [
+      `${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` \xB7 ${date}` : ""}`,
+      ""
+    ];
+    lines.push(...actions.slice(0, 6));
+    if (!actions.length)
+      lines.push(this.escape(this.messages.t("attention.clear")));
+    if (actions.length > 6)
+      lines.push(
+        this.link(
+          this.overviewUrl(view.state),
+          this.messages.t("slack.more", { count: actions.length - 6 })
+        )
+      );
+    return lines.join("\n");
+  }
+  slackActions(view) {
+    const selection = this.collaborators.attentionTaskSelection.select(
+      view,
+      this.checklist.read()
+    );
+    return [
+      .../* @__PURE__ */ new Set([
+        ...selection.urgent.map(
+          (episode) => this.slackCondition(episode, view.state)
+        ),
+        ...selection.checklist.map(
+          (entry) => `\u2022 ${this.escape(`${entry.label}: ${entry.description}`)}`
+        ),
+        ...selection.remaining.map(
+          (episode) => this.slackCondition(episode, view.state)
+        )
+      ])
+    ];
+  }
+  slackDate(date) {
+    if (this.collaborators.attentionPolicy.eventDay(date) === void 0)
+      return "";
+    return new Intl.DateTimeFormat(this.messages.locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
+  }
+  slackCondition(episode, state) {
+    const text = this.action(episode);
+    const url = this.url(episode, state);
+    const label = this.messages.t(
+      episode.condition.commentId || state.commentId && episode.condition.code === "follow-up" ? "slack.review" : "slack.run"
+    );
+    const link = url === this.overviewUrl(state) ? "" : ` \xB7 ${this.link(url, label)}`;
+    const unknown = episode.status === "unknown" ? ` _(${this.escape(this.messages.t("slack.unknown"))})_` : "";
+    return `\u2022 ${this.escape(text)}${unknown}${link}`;
+  }
+  link(url, label) {
+    return `<${this.escape(url)}|${this.escape(label)}>`;
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+  action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
+      return this.messages.t("action.meetup-approval-pending");
+    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+  }
+  url(episode, state) {
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
+      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
+    if (["integration-failure", "stage-unknown"].includes(
+      episode.condition.code
+    ) && state.runId && /^\d+$/.test(state.runId))
+      return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
+    return this.overviewUrl(state);
+  }
+  overviewUrl(state) {
+    const commentId = state.commentId ?? this.checklist.read().commentId;
+    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-community-approval-presenter.ts
+var SlackCommunityApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.community-publication", {
+      date: request2.eventDate,
+      url: request2.approvalUrl
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-content-approval-presenter.ts
+var SlackContentApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.content", {
+      date: request2.eventDate,
+      target: request2.target,
+      url: request2.approvalUrl
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-email-approval-presenter.ts
+var SlackEmailApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.introduction", {
+      date: request2.eventDate,
+      url: request2.approvalUrl,
+      count: request2.recipientCount
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
+var SlackMeetupApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.publication", {
+      date: request2.eventDate,
+      url: request2.approvalUrl
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-message-reference.ts
+var SlackMessageReference = class {
+  valid(message) {
+    return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
+  }
+  read(payload, destination) {
+    if (payload?.channel !== destination || typeof payload.ts !== "string")
+      return void 0;
+    const message = { destination, messageId: payload.ts };
+    return this.valid(message) ? message : void 0;
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
+var SlackNotificationGatewayComposition = class {
+  slackApiClient(token, fetcher = fetch) {
+    return new SlackApiClient(token, fetcher);
+  }
+  slackApprovalMessages(...args) {
+    return new SlackApprovalMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  slackApprovalNotification(token, presenter, fetcher = fetch) {
+    return new SlackApprovalNotification(
+      {
+        slackMessageReference: this.slackMessageReference()
+      },
+      this.slackApiClient(token, fetcher),
+      presenter
+    );
+  }
+  slackApprovalPresenter(locale) {
+    const messages5 = this.slackApprovalMessages(locale);
+    return new SlackApprovalPresenter({
+      "email-introduction": new SlackEmailApprovalPresenter(messages5),
+      "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
+      "community-publication": new SlackCommunityApprovalPresenter(messages5),
+      "content-review": new SlackContentApprovalPresenter(messages5)
+    });
+  }
+  slackAttentionMessages(...args) {
+    return new SlackAttentionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  slackAttentionNotification(token, channel, presenter, fetcher = fetch) {
+    return new SlackAttentionNotification(
+      {
+        slackMessageReference: this.slackMessageReference()
+      },
+      this.slackApiClient(token, fetcher),
+      channel,
+      presenter
+    );
+  }
+  slackAttentionPresenter(repository, issueNumber, locale, checklist) {
+    return new SlackAttentionPresenter(
+      {
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
+      },
+      repository,
+      issueNumber,
+      this.slackAttentionMessages(locale),
+      checklist
+    );
+  }
+  slackMessageReference() {
+    return new SlackMessageReference();
   }
 };
 
@@ -69260,59 +69008,9 @@ var OrganizerApprovalComposition = class {
   }
 };
 
-// packages/runtime/github-actions/src/meetup-publication-composition.ts
-var MeetupPublicationComposition = class _MeetupPublicationComposition {
+// packages/runtime/github-actions/src/event-publication-approval-composition.ts
+var EventPublicationApprovalComposition = class {
   static create(input) {
-    const ai3 = new GithubActionsComposition().aiInput().validate(input.ai);
-    const container = EventComposition.createEventContainer(input);
-    container.bind(ManageMeetupPublication).toDynamicValue((context3) => {
-      const prefix = input.meetupEventUrlPrefix;
-      const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
-      if (!group) throw new Error("Invalid Meetup event URL prefix");
-      return new JourneyComposition().manageMeetupPublication({
-        contentGate: new ContentGateComposition().create(
-          input,
-          input.issueNumber,
-          input.commentAuthorLogin
-        ),
-        repository: context3.get(SERVICES.eventRepository),
-        codec: context3.get(SERVICES.eventDocumentCodec),
-        clock: context3.get(SERVICES.eventClock),
-        manageEvent: context3.get(ManageMeetupEvent),
-        settings: input.settings,
-        approval: _MeetupPublicationComposition.approval(input),
-        meetupUrlPrefix: prefix,
-        journal: new GithubPublicationJournalComposition().githubPublicationJournal(
-          input.client,
-          {
-            owner: input.owner,
-            repo: input.repo,
-            issue_number: input.issueNumber
-          },
-          input.commentAuthorLogin
-        ),
-        gateway: new MeetupEventGatewayComposition().meetupEventGatewayFactory().create(
-          { email: input.email, password: input.password },
-          _MeetupPublicationComposition.captchaResolverFactory(ai3),
-          group.value
-        )
-      });
-    });
-    return container;
-  }
-  static captchaResolverFactory(ai3) {
-    return new HcaptchaCaptchaResolverComposition().captchaResolverFactory(
-      fileURLToPath(
-        new URL(
-          "../../../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/",
-          import.meta.url
-        )
-      ),
-      ai3.apiKey,
-      ai3.model
-    );
-  }
-  static approval(input) {
     return OrganizerApprovalComposition.create(
       new GithubOrganizerApprovalComposition().githubApprovalClient(
         input.client,
@@ -69335,17 +69033,1803 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
   }
 };
 
+// packages/runtime/github-actions/src/publication-adapter-composition.ts
+import { fileURLToPath } from "node:url";
+
+// packages/adapter/publication/github-publication-journal/src/community-publication-comment-codec.ts
+var CommunityPublicationCommentCodec = class _CommunityPublicationCommentCodec {
+  constructor(identities, target) {
+    this.identities = identities;
+    this.target = target;
+  }
+  identities;
+  target;
+  static marker = "<!-- community-publication:v1\n";
+  decode(body) {
+    try {
+      if (!body.startsWith(_CommunityPublicationCommentCodec.marker) || !body.endsWith("\n-->"))
+        throw new Error();
+      const value = JSON.parse(
+        body.slice(_CommunityPublicationCommentCodec.marker.length, -4)
+      );
+      if (!this.object(value) || value.target !== this.target)
+        throw new Error();
+      if (value.state === "pending" && value.identity === void 0) return {};
+      if (value.state !== "saved" || !this.identity(value.identity))
+        throw new Error();
+      return { identity: value.identity };
+    } catch {
+      throw new ScheduledEventError("conflict");
+    }
+  }
+  encode(record) {
+    if (record.identity && !this.identities.valid(record.identity))
+      throw new ScheduledEventError("link");
+    const json = JSON.stringify({
+      target: this.target,
+      state: record.identity ? "saved" : "pending",
+      identity: record.identity
+    }).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e");
+    return `${_CommunityPublicationCommentCodec.marker}${json}
+-->`;
+  }
+  identity(value) {
+    return this.object(value) && typeof value.id === "string" && typeof value.reviewUrl === "string" && (value.publicUrl === void 0 || typeof value.publicUrl === "string") && this.identities.valid({
+      id: value.id,
+      reviewUrl: value.reviewUrl,
+      publicUrl: value.publicUrl
+    });
+  }
+  object(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/publication/github-publication-journal/src/github-community-publication-journal.ts
+var GithubCommunityPublicationJournal = class {
+  constructor(codec, client, scope, author) {
+    this.codec = codec;
+    this.client = client;
+    this.scope = scope;
+    this.author = author;
+    if (!author.endsWith("[bot]"))
+      throw new Error("Community publication requires the GitHub App bot");
+  }
+  codec;
+  client;
+  scope;
+  author;
+  async load() {
+    const comment = await this.find();
+    return comment ? this.codec.decode(comment.body ?? "") : void 0;
+  }
+  async reserve() {
+    if (await this.load()) throw new ScheduledEventError("uncertain");
+    await this.client.rest.issues.createComment({
+      ...this.scope,
+      body: this.codec.encode({})
+    });
+    if (!await this.load()) throw new ScheduledEventError("uncertain");
+  }
+  async record(identity) {
+    const comment = await this.find();
+    const previous = comment ? this.codec.decode(comment.body ?? "").identity : void 0;
+    if (previous && (previous.id !== identity.id || previous.reviewUrl !== identity.reviewUrl))
+      throw new ScheduledEventError("conflict");
+    if (previous && (identity.publicUrl === void 0 || previous.publicUrl === identity.publicUrl))
+      return;
+    const body = this.codec.encode({ identity });
+    if (comment) {
+      await this.client.rest.issues.updateComment({
+        owner: this.scope.owner,
+        repo: this.scope.repo,
+        comment_id: comment.id,
+        body
+      });
+    } else await this.client.rest.issues.createComment({ ...this.scope, body });
+    const saved = await this.load();
+    if (saved?.identity?.id !== identity.id || saved.identity.publicUrl !== identity.publicUrl)
+      throw new ScheduledEventError("uncertain");
+  }
+  async find() {
+    const matches = [];
+    for (let page = 1; page <= 100; page++) {
+      const response = await this.client.rest.issues.listComments({
+        ...this.scope,
+        page,
+        per_page: 100
+      });
+      matches.push(
+        ...response.data.filter(
+          (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && comment.body?.startsWith(CommunityPublicationCommentCodec.marker)
+        )
+      );
+      if (matches.length > 1) throw new ScheduledEventError("conflict");
+      const hasNext = response.headers.link !== void 0 ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!hasNext) return matches[0];
+    }
+    throw new Error(
+      "Community publication journal pagination exceeded its bound"
+    );
+  }
+};
+
+// packages/adapter/publication/github-publication-journal/src/publication-comment-codec.ts
+var PublicationCommentCodec = class _PublicationCommentCodec {
+  static marker = "<!-- meetup-publication:v1\n";
+  decode(body) {
+    if (!body.startsWith(_PublicationCommentCodec.marker) || !body.endsWith("\n-->"))
+      throw new Error("Publication journal is corrupted");
+    let value;
+    try {
+      value = JSON.parse(body.slice(_PublicationCommentCodec.marker.length, -4));
+    } catch {
+      throw new Error("Publication journal is corrupted");
+    }
+    if (!this.object(value))
+      throw new Error("Publication journal is corrupted");
+    if (value.state === "pending" && value.url === void 0) return {};
+    if ((value.state === "saved" || value.state === "published") && typeof value.url === "string")
+      return { url: value.url };
+    throw new Error("Publication journal is corrupted");
+  }
+  encode(record) {
+    const state = record.url === void 0 ? { state: "pending" } : { state: "saved", url: record.url };
+    const json = JSON.stringify(state).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e");
+    return `${_PublicationCommentCodec.marker}${json}
+-->`;
+  }
+  object(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/publication/github-publication-journal/src/github-publication-journal.ts
+var GithubPublicationJournal = class {
+  constructor(collaborators, client, scope, author) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.scope = scope;
+    this.author = author;
+    if (!author.endsWith("[bot]"))
+      throw new Error("Publication journal requires the GitHub App bot");
+  }
+  collaborators;
+  client;
+  scope;
+  author;
+  async load() {
+    const comment = await this.find();
+    if (!comment) return void 0;
+    const record = this.collaborators.publicationCommentCodec.decode(
+      comment.body ?? ""
+    );
+    if (!record.url) return {};
+    const url = MeetupEventUrl.parse(record.url);
+    if (!url) throw new Error("Invalid Meetup journal identity");
+    return {
+      identity: { id: url.id, reviewUrl: url.value, publicUrl: url.value }
+    };
+  }
+  async reserve() {
+    if (await this.load())
+      throw new Error("Publication creation was already reserved");
+    await this.client.rest.issues.createComment({
+      ...this.scope,
+      body: this.collaborators.publicationCommentCodec.encode({})
+    });
+    if (!await this.load())
+      throw new Error("Publication reservation was not persisted");
+  }
+  async record(identity) {
+    const parsed = MeetupEventUrl.parse(identity.reviewUrl);
+    if (!parsed || parsed.id !== identity.id || parsed.value !== identity.reviewUrl || parsed.value !== identity.publicUrl)
+      throw new Error("Invalid Meetup journal identity");
+    const url = parsed.value;
+    const existing = await this.load();
+    if (existing?.identity?.reviewUrl && existing.identity.reviewUrl !== url)
+      throw new Error("Publication journal identity conflict");
+    if (existing?.identity?.reviewUrl === url) return;
+    const comment = await this.find();
+    const body = this.collaborators.publicationCommentCodec.encode({ url });
+    if (comment) {
+      await this.client.rest.issues.updateComment({
+        owner: this.scope.owner,
+        repo: this.scope.repo,
+        comment_id: comment.id,
+        body
+      });
+    } else await this.client.rest.issues.createComment({ ...this.scope, body });
+  }
+  async find() {
+    const matches = [];
+    for (let page = 1; page <= 100; page++) {
+      const response = await this.client.rest.issues.listComments({
+        ...this.scope,
+        page,
+        per_page: 100
+      });
+      matches.push(
+        ...response.data.filter(
+          (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && comment.body?.startsWith(PublicationCommentCodec.marker)
+        )
+      );
+      if (matches.length > 1) throw new Error("Multiple publication journals");
+      const hasNext = response.headers.link !== void 0 ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!hasNext) return matches[0];
+    }
+    throw new Error("Publication journal pagination exceeded its bound");
+  }
+};
+
+// packages/adapter/publication/github-publication-journal/src/dependency-composition.ts
+var GithubPublicationJournalComposition = class {
+  communityJournal(group, target, ...args) {
+    return new GithubCommunityPublicationJournal(
+      new CommunityPublicationCommentCodec(
+        new CommunityEventIdentityPolicy(group),
+        target
+      ),
+      ...args
+    );
+  }
+  githubPublicationJournal(...args) {
+    return new GithubPublicationJournal(
+      { publicationCommentCodec: this.publicationCommentCodec() },
+      ...args
+    );
+  }
+  publicationCommentCodec() {
+    return new PublicationCommentCodec();
+  }
+};
+
+// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/chromium-endpoint.ts
+import { readFile as readFile7 } from "node:fs/promises";
+import { join as join5 } from "node:path";
+var ChromiumEndpoint = class {
+  async read(browser) {
+    const session = await browser.newBrowserCDPSession();
+    try {
+      const command = await session.send("Browser.getBrowserCommandLine");
+      const profile = command.arguments.find((argument) => argument.startsWith("--user-data-dir="))?.slice("--user-data-dir=".length);
+      if (!profile) throw new Error("Browser profile unavailable.");
+      const [port, path] = (await readFile7(join5(profile, "DevToolsActivePort"), "utf8")).trim().split("\n");
+      if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535 || !/^\/devtools\/browser\/[a-f0-9-]+$/.test(path))
+        throw new Error("Browser endpoint unavailable.");
+      return `ws://127.0.0.1:${port}${path}`;
+    } finally {
+      await session.detach();
+    }
+  }
+};
+
+// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-captcha-resolver.ts
+var HcaptchaCaptchaResolver = class {
+  constructor(challenge, page) {
+    this.challenge = challenge;
+    this.page = page;
+  }
+  challenge;
+  page;
+  async inspect() {
+    return await this.state() === "clear" ? "clear" : "required";
+  }
+  async resolve() {
+    const state = await this.state();
+    if (state === "clear") return "clear";
+    if (state === "unsupported" || !await this.challenge.solve(this.page))
+      return "required";
+    if (!await this.hasResponse()) return "required";
+    return this.inspect();
+  }
+  async state() {
+    if (await this.visible('iframe[src*="/recaptcha/"]')) return "unsupported";
+    if (await this.hasResponse()) return "clear";
+    return await this.visible('iframe[src*="hcaptcha.com"]') ? "supported" : "clear";
+  }
+  async hasResponse() {
+    const response = this.page.locator('[name="h-captcha-response"]').first();
+    return await response.count() > 0 && (await response.inputValue()).length > 0;
+  }
+  async visible(selector) {
+    for (const element of await this.page.locator(selector).all())
+      if (await element.isVisible()) return true;
+    return false;
+  }
+};
+
+// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-challenge.ts
+var HcaptchaChallenge = class {
+  constructor(collaborators, process2, apiKey, model) {
+    this.collaborators = collaborators;
+    this.process = process2;
+    this.apiKey = apiKey;
+    this.model = model;
+    if (!apiKey.trim() || !model.trim())
+      throw new Error("Gemini credentials and model are required.");
+  }
+  collaborators;
+  process;
+  apiKey;
+  model;
+  attempted = false;
+  async solve(page) {
+    if (this.attempted) return false;
+    this.attempted = true;
+    const targetUrl = page.url();
+    const browser = page.context().browser();
+    if (!browser) throw new Error("Browser unavailable.");
+    const endpoint2 = await this.collaborators.chromiumEndpoint.read(browser);
+    const result = await this.process.run({
+      endpoint: endpoint2,
+      targetUrl,
+      apiKey: this.apiKey,
+      model: this.model
+    });
+    if (result === "unavailable")
+      throw new Error("Challenge solver unavailable.");
+    return result === "solved";
+  }
+};
+
+// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-challenge-factory.ts
+var HcaptchaChallengeFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(directory, apiKey, model) {
+    return this.collaborators.createHcaptchaChallenge(
+      this.collaborators.hcaptchaProcessFactory.create(directory),
+      apiKey,
+      model
+    );
+  }
+};
+
+// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-process.ts
+import { mkdtemp, rm as rm2 } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join as join6 } from "node:path";
+var HcaptchaProcess = class {
+  constructor(directory, launch) {
+    this.directory = directory;
+    this.launch = launch;
+  }
+  directory;
+  launch;
+  async run(request2) {
+    const scratch = await mkdtemp(join6(tmpdir(), "hcaptcha-"));
+    try {
+      return await this.execute(scratch, request2);
+    } catch {
+      return "unavailable";
+    } finally {
+      await rm2(scratch, { recursive: true, force: true });
+    }
+  }
+  execute(scratch, request2) {
+    return new Promise((resolve4) => {
+      const child = this.launch(
+        join6(this.directory, ".venv/bin/python"),
+        [join6(this.directory, "solve.py")],
+        {
+          cwd: scratch,
+          detached: true,
+          stdio: ["pipe", "ignore", "ignore", "pipe"],
+          env: {
+            PATH: process.env.PATH,
+            LANG: "C.UTF-8",
+            TMPDIR: scratch,
+            MPLCONFIGDIR: join6(scratch, "matplotlib"),
+            DEBUG: "",
+            PWDEBUG: ""
+          }
+        }
+      );
+      let output = "";
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        this.stop(child);
+      }, 12e4);
+      const status = child.stdio[3];
+      status.on("data", (chunk) => {
+        output += chunk.toString("utf8", 0, 33);
+        if (output.length > 32) {
+          output = "invalid";
+          this.stop(child);
+        }
+      });
+      child.on("error", () => this.stop(child));
+      child.on("close", (code) => {
+        clearTimeout(timer);
+        this.stop(child);
+        resolve4(this.result(code, output, timedOut));
+      });
+      child.stdin?.on("error", () => this.stop(child));
+      child.stdin?.end(JSON.stringify(request2));
+    });
+  }
+  result(code, output, timedOut) {
+    if (timedOut) return "blocked";
+    if (code === 0 && output === "solved\n") return "solved";
+    if (code === 0 && output === "blocked\n") return "blocked";
+    return "unavailable";
+  }
+  stop(child) {
+    if (!child.pid) return;
+    try {
+      process.kill(-child.pid, "SIGKILL");
+    } catch {
+    }
+  }
+};
+
+// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-process-factory.ts
+import { spawn } from "node:child_process";
+var HcaptchaProcessFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(directory) {
+    return this.collaborators.createHcaptchaProcess(directory, spawn);
+  }
+};
+
+// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/dependency-composition.ts
+var HcaptchaCaptchaResolverComposition = class {
+  captchaResolverFactory(directory, apiKey, model) {
+    const challenge = this.hcaptchaChallengeFactory().create(
+      directory,
+      apiKey,
+      model
+    );
+    return (page) => new HcaptchaCaptchaResolver(challenge, page);
+  }
+  chromiumEndpoint() {
+    return new ChromiumEndpoint();
+  }
+  hcaptchaChallenge(...args) {
+    return new HcaptchaChallenge(
+      { chromiumEndpoint: this.chromiumEndpoint() },
+      ...args
+    );
+  }
+  hcaptchaChallengeFactory() {
+    return new HcaptchaChallengeFactory({
+      hcaptchaProcessFactory: this.hcaptchaProcessFactory(),
+      createHcaptchaChallenge: (...args) => this.hcaptchaChallenge(...args)
+    });
+  }
+  hcaptchaProcess(...args) {
+    return new HcaptchaProcess(...args);
+  }
+  hcaptchaProcessFactory() {
+    return new HcaptchaProcessFactory({
+      createHcaptchaProcess: (...args) => this.hcaptchaProcess(...args)
+    });
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-browser-routes.ts
+var MeetupBrowserRoutes = class {
+  login(origin) {
+    return `${origin}/login/`;
+  }
+  account(origin) {
+    return `${origin}/account/management/`;
+  }
+  schedule(group) {
+    return `${group.value}schedule/`;
+  }
+  edit(event) {
+    return `${event.value}edit/`;
+  }
+  isMeetupLocation(url, origin) {
+    return url.origin === origin && !url.username && !url.password;
+  }
+  isPath(url, path, origin) {
+    return this.isMeetupLocation(url, origin) && (url.pathname === path || url.pathname.startsWith(`${path}/`));
+  }
+  matchesEditor(location, expected) {
+    return location.replace(/\/$/, "") === expected.replace(/\/$/, "");
+  }
+  eventLocation(location, group) {
+    if (!this.isMeetupLocation(location, group.origin)) return void 0;
+    return MeetupEventUrl.parse(
+      `${location.origin}${location.pathname}`,
+      group
+    );
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-calendar.ts
+var MeetupCalendar = class {
+  constructor(page) {
+    this.page = page;
+  }
+  page;
+  async select(label, date) {
+    await this.page.getByRole("button", { name: label, exact: true }).click();
+    const target = this.page.locator(`[data-day="${date}"] button`);
+    for (let month = 0; month < 25; month++) {
+      if (await target.isVisible()) {
+        await target.click();
+        return;
+      }
+      const dates = await this.page.locator("[data-day]").evaluateAll(
+        (cells) => cells.map((cell) => cell.getAttribute("data-day") ?? "").filter((date2) => /^\d{4}-\d{2}-\d{2}$/.test(date2)).sort()
+      );
+      if (!dates.length) throw new Error("Calendar date cells are unavailable");
+      const direction = date < (dates[0] ?? "") ? "previous" : "next";
+      await this.page.getByRole("button", {
+        name: new RegExp(`^Go to the ${direction} month$`, "i")
+      }).click();
+    }
+    throw new Error("Calendar date is outside the supported range");
+  }
+  async fill(date, startTime, endTime) {
+    await this.select("Open date picker", date);
+    await this.page.getByLabel("Edit start time", { exact: true }).fill(startTime);
+    await this.showEndTime();
+    await this.select("Open end date picker", date);
+    const end = this.page.getByLabel("Edit end time", { exact: true });
+    await end.fill(endTime);
+    await end.press("Tab");
+  }
+  async matches(date, startTime, endTime) {
+    if (!await this.matchesDate("Open date picker", date)) return false;
+    await this.showEndTime();
+    return await this.matchesDate("Open end date picker", date) && await this.page.getByLabel("Edit start time", { exact: true }).inputValue() === startTime && await this.page.getByLabel("Edit end time", { exact: true }).inputValue() === endTime;
+  }
+  async matchesDate(label, date) {
+    const trigger = this.page.getByRole("button", { name: label, exact: true });
+    await trigger.click();
+    await this.page.locator("[data-day]:visible").first().waitFor();
+    const selected = this.page.locator(
+      `[data-day="${date}"][data-selected="true"]`
+    );
+    const matches = await selected.isVisible();
+    await this.page.keyboard.press("Escape");
+    return matches;
+  }
+  async showEndTime() {
+    const end = this.page.getByLabel("Edit end time", { exact: true });
+    if (!await end.isVisible()) {
+      await this.page.locator("#duration").getByRole("button").click();
+      await this.page.getByRole("menuitem", { name: "Set an end time...", exact: true }).click();
+    }
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-event-editor.ts
+var MeetupEventEditor = class {
+  constructor(collaborators, page, groupUrl) {
+    this.collaborators = collaborators;
+    this.page = page;
+    const group = MeetupGroupUrl.parse(groupUrl);
+    if (!group) throw new ScheduledEventError("editor");
+    this.group = group;
+    page.setDefaultTimeout(15e3);
+    page.setDefaultNavigationTimeout(3e4);
+  }
+  collaborators;
+  page;
+  group;
+  async inspect(reference) {
+    const identity = MeetupEventUrl.parse(reference, this.group);
+    if (!identity) throw new ScheduledEventError("link");
+    try {
+      const editorUrl = this.collaborators.meetupBrowserRoutes.edit(identity);
+      await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
+      if (!this.collaborators.meetupBrowserRoutes.matchesEditor(
+        this.page.url(),
+        editorUrl
+      ))
+        throw new ScheduledEventError("verification");
+      const status = await this.collaborators.createMeetupEventVerification(this.page).status();
+      return { url: identity.value, status };
+    } catch {
+      throw new ScheduledEventError("verification");
+    }
+  }
+  async save(event, url, beforeSubmit, onSaved) {
+    const identity = MeetupEventUrl.parse(url, this.group);
+    if (url && !identity) throw new ScheduledEventError("editor");
+    const verification = this.collaborators.createMeetupEventVerification(
+      this.page
+    );
+    const existing = identity ? await verification.verify(event, identity).catch(() => {
+      throw new ScheduledEventError("editor");
+    }) : void 0;
+    if (identity && existing?.matches) {
+      await onSaved(identity.value);
+      return { url: identity.value, status: existing.status };
+    }
+    const status = await this.prepare(event, identity).catch(() => {
+      throw new ScheduledEventError("editor");
+    });
+    if (status !== (existing?.status ?? "draft"))
+      throw new ScheduledEventError("editor");
+    await beforeSubmit();
+    const savedUrl = await this.submit(identity, status);
+    await onSaved(savedUrl.value);
+    const saved = await verification.verify(event, savedUrl).catch(() => void 0);
+    if (!saved?.matches || saved.status !== status)
+      throw new ScheduledEventError("verification");
+    return { url: savedUrl.value, status: saved.status };
+  }
+  async submit(url, status) {
+    try {
+      const submit = status === "draft" ? this.page.getByTestId("event-preview-btn").filter({ visible: true }) : this.page.getByRole("button", { name: "Save changes", exact: true }).filter({ visible: true });
+      await submit.click();
+      await this.page.waitForURL(
+        (value) => this.collaborators.meetupBrowserRoutes.eventLocation(
+          value,
+          this.group
+        ) !== void 0,
+        { waitUntil: "domcontentloaded" }
+      );
+      const saved = this.collaborators.meetupBrowserRoutes.eventLocation(
+        new URL(this.page.url()),
+        this.group
+      );
+      if (!saved || url && saved.value !== url.value)
+        throw new Error("Unexpected event identity");
+      return saved;
+    } catch {
+      throw new ScheduledEventError("uncertain");
+    }
+  }
+  async prepare(event, url) {
+    const editorUrl = url ? this.collaborators.meetupBrowserRoutes.edit(url) : this.collaborators.meetupBrowserRoutes.schedule(this.group);
+    await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
+    if (!this.collaborators.meetupBrowserRoutes.matchesEditor(
+      this.page.url(),
+      editorUrl
+    ))
+      throw new Error("The organizer editor is unavailable");
+    const status = await this.collaborators.createMeetupEventVerification(this.page).status();
+    const announcement = this.page.getByTestId("announcement-close-btn");
+    if (await announcement.isVisible()) await announcement.click();
+    await this.page.getByTestId("event-name-input").fill(event.title);
+    await this.collaborators.createMeetupCalendar(this.page).fill(event.date, event.startTime, event.endTime);
+    await this.page.getByTestId("event-description-editor").locator('[contenteditable="true"]:visible').fill(event.description);
+    await this.collaborators.createMeetupVenue(this.page).select(event.venue);
+    return status;
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-event-gateway.ts
+var MeetupEventGateway = class {
+  constructor(collaborators, browserType, credentials, createCaptchaResolver, groupUrl) {
+    this.collaborators = collaborators;
+    this.browserType = browserType;
+    this.credentials = credentials;
+    this.createCaptchaResolver = createCaptchaResolver;
+    const group = MeetupGroupUrl.parse(groupUrl);
+    if (!group) throw new ScheduledEventError("editor");
+    this.group = group;
+  }
+  collaborators;
+  browserType;
+  credentials;
+  createCaptchaResolver;
+  group;
+  async inspect(reference) {
+    return this.withSession(
+      "UTC",
+      (page) => this.collaborators.createMeetupEventEditor(page, this.group.value).inspect(reference)
+    );
+  }
+  async save(event, identity, beforeSubmit, onSaved) {
+    if (identity) this.verifyIdentity(identity);
+    return this.withSession(
+      event.timeZone,
+      (page) => this.collaborators.createMeetupEventEditor(page, this.group.value).save(
+        event,
+        identity?.reviewUrl,
+        beforeSubmit,
+        (url) => onSaved(this.identity(url))
+      )
+    );
+  }
+  async publish(event, identity, beforePublish) {
+    this.verifyIdentity(identity);
+    return this.withSession(
+      event.timeZone,
+      (page) => this.collaborators.createMeetupEventPublisher(page, this.group.value).publish(event, identity.reviewUrl, beforePublish)
+    );
+  }
+  identity(value) {
+    const url = MeetupEventUrl.parse(value, this.group);
+    if (!url) throw new ScheduledEventError("verification");
+    return { id: url.id, reviewUrl: url.value, publicUrl: url.value };
+  }
+  verifyIdentity(value) {
+    const expected = this.identity(value.reviewUrl);
+    if (value.id !== expected.id || value.reviewUrl !== expected.reviewUrl || value.publicUrl !== expected.publicUrl)
+      throw new ScheduledEventError("verification");
+  }
+  async withSession(timezoneId, operation) {
+    if (!this.credentials.email.trim() || !this.credentials.password)
+      throw new ScheduledEventError("authentication");
+    const browser = await this.browserType.launch({
+      headless: true,
+      args: [
+        "--enable-automation",
+        "--remote-debugging-address=127.0.0.1",
+        "--remote-debugging-port=0"
+      ]
+    }).catch(() => {
+      throw new ScheduledEventError("unavailable");
+    });
+    try {
+      const context3 = await browser.newContext({
+        locale: "en-US",
+        timezoneId,
+        viewport: { width: 1440, height: 1e3 }
+      });
+      const page = await context3.newPage();
+      const status = await this.collaborators.createMeetupLoginPage(
+        page,
+        this.createCaptchaResolver(page),
+        this.group.origin
+      ).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
+      if (status !== "verified")
+        throw new ScheduledEventError(
+          ["unavailable", "unexpected-page"].includes(status) ? "unavailable" : "authentication"
+        );
+      const saved = await operation(page);
+      return { identity: this.identity(saved.url), status: saved.status };
+    } finally {
+      await browser.close().catch(() => void 0);
+    }
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-event-gateway-factory.ts
+import { chromium } from "playwright-core";
+var MeetupEventGatewayFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(credentials, createCaptchaResolver, groupUrl) {
+    return this.collaborators.createMeetupEventGateway(
+      chromium,
+      credentials,
+      createCaptchaResolver,
+      groupUrl
+    );
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-event-publisher.ts
+var MeetupEventPublisher = class {
+  constructor(collaborators, page, groupUrl) {
+    this.collaborators = collaborators;
+    this.page = page;
+    this.groupUrl = groupUrl;
+    page.setDefaultTimeout(15e3);
+    page.setDefaultNavigationTimeout(3e4);
+  }
+  collaborators;
+  page;
+  groupUrl;
+  async publish(event, url, beforePublish) {
+    const group = MeetupGroupUrl.parse(this.groupUrl);
+    const identity = group && MeetupEventUrl.parse(url, group);
+    if (!identity || identity.value !== url)
+      throw new ScheduledEventError("editor");
+    const verification = this.collaborators.createMeetupEventVerification(
+      this.page
+    );
+    const current = await verification.verify(event, identity).catch(() => {
+      throw new ScheduledEventError("verification");
+    });
+    if (!current.matches) throw new ScheduledEventError("verification");
+    if (current.status === "published") return { url, status: "published" };
+    const publish = this.page.getByTestId("event-publish-btn").filter({ visible: true });
+    await publish.waitFor().catch(() => {
+      throw new ScheduledEventError("editor");
+    });
+    await beforePublish();
+    try {
+      await publish.click();
+      await this.page.waitForURL(
+        (value) => this.collaborators.meetupBrowserRoutes.eventLocation(
+          value,
+          identity.group
+        )?.value === url,
+        { waitUntil: "domcontentloaded" }
+      );
+    } catch {
+      throw new ScheduledEventError("uncertain");
+    }
+    const saved = await verification.verify(event, identity).catch(() => void 0);
+    if (!saved?.matches || saved.status !== "published")
+      throw new ScheduledEventError("verification");
+    return { url, status: "published" };
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-event-verification.ts
+var MeetupEventVerification = class {
+  constructor(collaborators, page) {
+    this.collaborators = collaborators;
+    this.page = page;
+  }
+  collaborators;
+  page;
+  async verify(event, url) {
+    const editorUrl = this.collaborators.meetupBrowserRoutes.edit(url);
+    await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
+    if (!this.collaborators.meetupBrowserRoutes.matchesEditor(
+      this.page.url(),
+      editorUrl
+    ))
+      throw new Error("The saved event editor is unavailable");
+    const status = await this.status();
+    const announcement = this.page.getByTestId("announcement-close-btn");
+    if (await announcement.isVisible()) await announcement.click();
+    const title = await this.page.getByTestId("event-name-input").inputValue();
+    const description = await this.page.getByTestId("event-description-editor").locator('[contenteditable="true"]:visible').innerText();
+    const matches = title === event.title && this.normalize(description) === this.normalize(event.description) && await this.collaborators.createMeetupVenue(this.page).matches(event.venue) && await this.collaborators.createMeetupCalendar(this.page).matches(event.date, event.startTime, event.endTime);
+    return { matches, status };
+  }
+  async status() {
+    const draft = this.page.getByTestId("event-save-draft-btn").filter({ visible: true });
+    const published = this.page.getByRole("button", { name: "Save changes", exact: true }).filter({ visible: true });
+    await draft.or(published).first().waitFor();
+    const isDraft = await draft.isVisible();
+    const isPublished = await published.isVisible();
+    if (isDraft === isPublished)
+      throw new Error("Unknown event publication status");
+    return isDraft ? "draft" : "published";
+  }
+  normalize(value) {
+    return value.replace(/\s+/g, " ").trim();
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-login-page.ts
+var MeetupLoginPage = class {
+  constructor(collaborators, page, captcha, origin) {
+    this.collaborators = collaborators;
+    this.page = page;
+    this.captcha = captcha;
+    this.origin = origin;
+    page.setDefaultTimeout(15e3);
+    page.setDefaultNavigationTimeout(3e4);
+  }
+  collaborators;
+  page;
+  captcha;
+  origin;
+  async login(email, password) {
+    await this.page.goto(
+      this.collaborators.meetupBrowserRoutes.login(this.origin),
+      {
+        waitUntil: "domcontentloaded"
+      }
+    );
+    await this.dismissCookieNotice();
+    if (!this.isMeetupPath("/login")) return "unexpected-page";
+    await this.page.locator('input[name="email"]').waitFor();
+    const challengeStatus = await this.prepareChallenge();
+    if (challengeStatus) return challengeStatus;
+    await this.page.locator('input[name="email"]').fill(email);
+    await this.page.locator('input[name="current-password"]').fill(password);
+    const submit = this.page.getByRole("button", {
+      name: "Log in",
+      exact: true
+    });
+    if (!await submit.isEnabled())
+      return await this.hasChallenge() ? "challenge-required" : "unexpected-page";
+    await submit.click();
+    try {
+      await this.page.waitForURL(
+        (url) => this.collaborators.meetupBrowserRoutes.isMeetupLocation(
+          url,
+          this.origin
+        ) && !url.pathname.startsWith("/login"),
+        { timeout: 15e3, waitUntil: "domcontentloaded" }
+      );
+    } catch {
+      if (await this.hasChallenge()) return "challenge-required";
+      if (await this.hasRejectedCredentials()) return "credentials-rejected";
+      return "unexpected-page";
+    }
+    return this.verifyAccount(email);
+  }
+  async verifyAccount(email) {
+    await this.page.goto(
+      this.collaborators.meetupBrowserRoutes.account(this.origin),
+      {
+        waitUntil: "domcontentloaded"
+      }
+    );
+    if (await this.hasChallenge()) return "challenge-required";
+    if (this.isMeetupPath("/login")) return "session-not-reusable";
+    if (!this.isMeetupPath("/account/management")) return "unexpected-page";
+    const accountEmail = this.page.locator('input[name="email"]');
+    await accountEmail.waitFor();
+    return (await accountEmail.inputValue()).toLowerCase() === email.toLowerCase() ? "verified" : "unexpected-page";
+  }
+  isMeetupPath(path) {
+    const url = new URL(this.page.url());
+    return this.collaborators.meetupBrowserRoutes.isPath(
+      url,
+      path,
+      this.origin
+    );
+  }
+  async hasChallenge() {
+    return await this.hasOneTimeCode() || await this.captcha.inspect() === "required";
+  }
+  async prepareChallenge() {
+    if (!await this.hasChallenge()) return null;
+    if (await this.hasOneTimeCode() || await this.captcha.resolve() !== "clear")
+      return "challenge-required";
+    if (!this.isMeetupPath("/login")) return "unexpected-page";
+    if (await this.hasChallenge()) return "challenge-required";
+    return null;
+  }
+  async hasOneTimeCode() {
+    for (const input of await this.page.locator('input[autocomplete="one-time-code"]').all())
+      if (await input.isVisible()) return true;
+    return false;
+  }
+  async hasRejectedCredentials() {
+    return this.page.getByText(/incorrect (email|password)|invalid (email|password)/i).first().isVisible();
+  }
+  async dismissCookieNotice() {
+    const decline = this.page.getByRole("button", {
+      name: "Continue without accepting",
+      exact: true
+    });
+    try {
+      await decline.waitFor({ timeout: 5e3 });
+    } catch {
+      return;
+    }
+    await decline.click();
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-venue.ts
+var MeetupVenue = class {
+  constructor(page) {
+    this.page = page;
+  }
+  page;
+  async select(venue) {
+    if (await this.matches(venue)) return;
+    const selected = this.page.getByRole("heading", {
+      name: venue.name,
+      exact: true
+    });
+    const change = this.page.getByRole("button", {
+      name: "Change",
+      exact: true
+    });
+    if (await change.isVisible()) await change.click();
+    const search = this.page.getByPlaceholder("Search or add location...", {
+      exact: true
+    });
+    await search.fill(`${venue.name} ${venue.city}`);
+    const matches = this.page.locator("#venue-search-dropdown li").filter({ has: this.page.getByText(venue.name, { exact: true }) }).filter({ hasText: venue.city });
+    await matches.first().waitFor();
+    if (await matches.count() !== 1)
+      throw new Error("Ambiguous venue selection");
+    await matches.click();
+    await selected.waitFor();
+  }
+  async matches(venue) {
+    const selected = this.page.getByRole("heading", {
+      name: venue.name,
+      exact: true
+    });
+    return await selected.isVisible() && (await selected.locator("../..").innerText()).includes(venue.city);
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/dependency-composition.ts
+var MeetupEventGatewayComposition = class {
+  meetupBrowserRoutes() {
+    return new MeetupBrowserRoutes();
+  }
+  meetupCalendar(...args) {
+    return new MeetupCalendar(...args);
+  }
+  meetupEventEditor(...args) {
+    return new MeetupEventEditor(
+      {
+        meetupBrowserRoutes: this.meetupBrowserRoutes(),
+        createMeetupEventVerification: (...args2) => this.meetupEventVerification(...args2),
+        createMeetupCalendar: (...args2) => this.meetupCalendar(...args2),
+        createMeetupVenue: (...args2) => this.meetupVenue(...args2)
+      },
+      ...args
+    );
+  }
+  meetupEventGateway(...args) {
+    return new MeetupEventGateway(
+      {
+        createMeetupEventEditor: (...args2) => this.meetupEventEditor(...args2),
+        createMeetupEventPublisher: (...args2) => this.meetupEventPublisher(...args2),
+        createMeetupLoginPage: (...args2) => this.meetupLoginPage(...args2)
+      },
+      ...args
+    );
+  }
+  meetupEventGatewayFactory() {
+    return new MeetupEventGatewayFactory({
+      createMeetupEventGateway: (...args) => this.meetupEventGateway(...args)
+    });
+  }
+  meetupEventPublisher(...args) {
+    return new MeetupEventPublisher(
+      {
+        meetupBrowserRoutes: this.meetupBrowserRoutes(),
+        createMeetupEventVerification: (...args2) => this.meetupEventVerification(...args2)
+      },
+      ...args
+    );
+  }
+  meetupEventVerification(...args) {
+    return new MeetupEventVerification(
+      {
+        meetupBrowserRoutes: this.meetupBrowserRoutes(),
+        createMeetupVenue: (...args2) => this.meetupVenue(...args2),
+        createMeetupCalendar: (...args2) => this.meetupCalendar(...args2)
+      },
+      ...args
+    );
+  }
+  meetupLoginPage(...args) {
+    return new MeetupLoginPage(
+      { meetupBrowserRoutes: this.meetupBrowserRoutes() },
+      ...args
+    );
+  }
+  meetupVenue(...args) {
+    return new MeetupVenue(...args);
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/dependency-composition.ts
+import { chromium as chromium2 } from "playwright-core";
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-dashboard.ts
+var OcgroupsDashboard = class {
+  constructor(page, target) {
+    this.page = page;
+    this.target = target;
+  }
+  page;
+  target;
+  async select() {
+    await this.page.goto(
+      `${this.target.group.origin}/dashboard/group?tab=events`,
+      { waitUntil: "domcontentloaded" }
+    );
+    await this.selectItem("community", this.target.communityId);
+    await this.selectItem("group", this.target.groupId);
+    await this.assertTarget();
+  }
+  async assertTarget() {
+    if (new URL(this.page.url()).origin !== this.target.group.origin || await this.page.locator("community-selector").getAttribute("selected-community-id") !== this.target.communityId || await this.page.locator("group-selector").getAttribute("selected-group-id") !== this.target.groupId)
+      throw new ScheduledEventError("verification");
+    if (await this.page.getByRole("link", { name: "Group public site", exact: true }).getAttribute("href") !== `/${this.target.group.community}/group/${this.target.group.group}`)
+      throw new ScheduledEventError("verification");
+  }
+  async add() {
+    await this.assertTarget();
+    await this.page.locator('button[hx-get="/dashboard/group/events/add"]').click();
+    await this.page.locator('[data-event-page="add"]').waitFor();
+  }
+  async open(id) {
+    await this.select();
+    for (let index = 0; index < 100; index++) {
+      const button = this.page.locator(
+        `#upcoming-events-list button[hx-get="/dashboard/group/events/${id}/update"]`
+      ).first();
+      if (await button.count()) {
+        await button.click();
+        await this.page.locator("#event-update-page").waitFor();
+        return;
+      }
+      if (!await this.next()) break;
+    }
+    throw new ScheduledEventError("verification");
+  }
+  async candidates() {
+    await this.select();
+    const ids = /* @__PURE__ */ new Set();
+    for (let index = 0; index < 100; index++) {
+      const paths = await this.page.locator("#upcoming-events-list button[hx-get]").evaluateAll(
+        (elements) => elements.map((element) => element.getAttribute("hx-get"))
+      );
+      for (const path of paths) {
+        const id = path?.match(
+          /^\/dashboard\/group\/events\/([0-9a-f-]{36})\/update$/
+        )?.[1];
+        if (id) ids.add(id);
+      }
+      if (!await this.next()) return [...ids];
+    }
+    throw new ScheduledEventError("verification");
+  }
+  async next() {
+    const next = this.page.locator("#upcoming-content").getByRole("link", { name: "Next", exact: true });
+    if (!await next.count()) return false;
+    const href = await next.getAttribute("href");
+    if (!href?.startsWith("/dashboard/group?"))
+      throw new ScheduledEventError("verification");
+    await next.click();
+    await this.page.waitForURL(`${this.target.group.origin}${href}`);
+    await this.page.locator("#upcoming-events-list").waitFor();
+    return true;
+  }
+  async selectItem(kind, id) {
+    const selector = this.page.locator(`${kind}-selector`);
+    if (await selector.getAttribute(`selected-${kind}-id`) === id) return;
+    await this.page.locator(`#${kind}-selector-button`).click();
+    await this.page.locator(`#${kind}-option-${id}`).click();
+    await this.page.locator(`${kind}-selector[selected-${kind}-id="${id}"]`).waitFor();
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-editor-location.ts
+var OcgroupsEditorLocation = class {
+  constructor(origin, identities) {
+    this.origin = origin;
+    this.identities = identities;
+  }
+  origin;
+  identities;
+  decode(header) {
+    try {
+      const value = JSON.parse(header ?? "");
+      if (!value || typeof value !== "object" || !("path" in value) || typeof value.path !== "string")
+        throw new Error();
+      const id = value.path.match(
+        /^\/dashboard\/group\/events\/([0-9a-f-]{36})\/update$/
+      )?.[1];
+      const identity = {
+        id: id ?? "",
+        reviewUrl: `${this.origin}${value.path}`
+      };
+      if (!this.identities.valid(identity)) throw new Error();
+      return identity;
+    } catch {
+      throw new ScheduledEventError("uncertain");
+    }
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-editor-state.ts
+var OcgroupsEditorState = class {
+  constructor(page, target, identities) {
+    this.page = page;
+    this.target = target;
+    this.identities = identities;
+  }
+  page;
+  target;
+  identities;
+  async read() {
+    const root = this.page.locator("#event-update-page");
+    await root.waitFor();
+    if (await root.getAttribute("data-event-canceled") !== "false" || await root.getAttribute("data-event-past") !== "false" || await root.getAttribute("data-can-manage-events") !== "true" || await root.getAttribute("data-community-name") !== this.target.group.community || await root.getAttribute("data-group-slug") !== this.target.group.group)
+      throw new ScheduledEventError("verification");
+    const path = await this.page.locator("#update-event-button").getAttribute("hx-put");
+    const id = path?.match(
+      /^\/dashboard\/group\/events\/([0-9a-f-]{36})\/update$/
+    )?.[1];
+    const publicPath = await root.getAttribute("data-event-public-url");
+    const identity = {
+      id: id ?? "",
+      reviewUrl: `${this.target.group.origin}${path}`,
+      publicUrl: `${this.target.group.origin}${publicPath}`
+    };
+    if (!this.identities.valid(identity))
+      throw new ScheduledEventError("verification");
+    const enabled = await root.getAttribute("data-event-public-url-enabled");
+    const publish = this.page.locator("#publish-event-button");
+    if (await publish.getAttribute("data-has-related-events") !== "false")
+      throw new ScheduledEventError("verification");
+    if (enabled === "false") return { identity, status: "draft" };
+    if (enabled !== "true" || !await publish.isDisabled() || await publish.getAttribute("title") !== "This event is already published.")
+      throw new ScheduledEventError("verification");
+    return { identity, status: "published" };
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-event-editor.ts
+var OcgroupsEventEditor = class {
+  constructor(page, origin, dashboard, state, fields, registration, location) {
+    this.page = page;
+    this.origin = origin;
+    this.dashboard = dashboard;
+    this.state = state;
+    this.fields = fields;
+    this.registration = registration;
+    this.location = location;
+  }
+  page;
+  origin;
+  dashboard;
+  state;
+  fields;
+  registration;
+  location;
+  async inspect(reference) {
+    const editorPrefix = `${this.origin}/dashboard/group/events/`;
+    const id = reference.startsWith(editorPrefix) ? reference.slice(editorPrefix.length).match(/^([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\/update$/)?.[1] : void 0;
+    if (id) {
+      await this.dashboard.open(id);
+      const saved = await this.state.read();
+      if (saved.identity.id !== id)
+        throw new ScheduledEventError("verification");
+      return saved;
+    }
+    for (const id2 of await this.dashboard.candidates()) {
+      await this.dashboard.open(id2);
+      const url = await this.page.locator("#event-update-page").getAttribute("data-event-public-url");
+      if (`${this.origin}${url}` === reference) return this.state.read();
+    }
+    throw new ScheduledEventError("link");
+  }
+  async save(event, identity, beforeSubmit, onSaved) {
+    let previous;
+    if (identity) {
+      await this.dashboard.open(identity.id);
+      previous = await this.state.read();
+      if (previous.identity.id !== identity.id)
+        throw new ScheduledEventError("verification");
+      if (previous.status === "draft")
+        await this.registration.verify(event.registration);
+      if (await this.fields.matches(event)) return previous;
+    } else {
+      await this.dashboard.select();
+      await this.dashboard.add();
+      await this.registration.create(event.registration);
+    }
+    await this.fields.write(event);
+    if (!await this.fields.matches(event))
+      throw new ScheduledEventError("verification");
+    if (!previous || previous.status === "draft")
+      await this.registration.verify(event.registration);
+    await this.dashboard.assertTarget();
+    await beforeSubmit();
+    const savedIdentity = await this.submit(identity);
+    await onSaved(savedIdentity);
+    await this.dashboard.open(savedIdentity.id);
+    const saved = await this.state.read();
+    if (saved.identity.id !== savedIdentity.id || saved.status !== (previous?.status ?? "draft") || !await this.fields.matches(event))
+      throw new ScheduledEventError("verification");
+    if (saved.status === "draft")
+      await this.registration.verify(event.registration);
+    return saved;
+  }
+  async submit(identity) {
+    const path = identity ? `/dashboard/group/events/${identity.id}/update` : "/dashboard/group/events/add";
+    const button = this.page.locator(
+      identity ? "#update-event-button" : "#add-event-button"
+    );
+    if (await button.getAttribute(identity ? "hx-put" : "hx-post") !== path)
+      throw new ScheduledEventError("verification");
+    const response = this.page.waitForResponse(
+      (item) => item.url() === `${this.origin}${path}` && item.request().method() === (identity ? "PUT" : "POST")
+    );
+    const [saved] = await Promise.all([response, button.click()]);
+    if (!saved.ok()) throw new ScheduledEventError("uncertain");
+    const observed = this.location.decode(
+      await saved.headerValue("hx-location")
+    );
+    if (identity && identity.id !== observed.id)
+      throw new ScheduledEventError("verification");
+    return observed;
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-event-fields.ts
+var OcgroupsEventFields = class {
+  constructor(page) {
+    this.page = page;
+  }
+  page;
+  async matches(event) {
+    for (const [name, expected] of Object.entries(this.values(event))) {
+      if (await this.page.locator(`[name="${name}"]`).inputValue() !== expected)
+        return false;
+    }
+    return true;
+  }
+  async write(event) {
+    await this.page.locator('button[data-section="details"]').click();
+    await this.page.locator("#name").fill(event.title);
+    await this.page.locator("#kind_id").selectOption("in-person");
+    await this.page.locator("#category_id").selectOption(event.categoryId);
+    const editor = this.page.locator("markdown-editor#description .CodeMirror");
+    await editor.click();
+    await this.page.keyboard.press("ControlOrMeta+A");
+    await this.page.keyboard.insertText(event.description);
+    await this.page.locator('button[data-section="date-venue"]').click();
+    if (await this.page.locator('[name="timezone"]').inputValue() !== event.timeZone) {
+      await this.page.locator("#timezone-selector-button").click();
+      await this.page.locator("#timezone-search-input").fill(event.timeZone);
+      await this.page.getByRole("option", { name: event.timeZone, exact: true }).click();
+    }
+    for (const [name, value] of Object.entries(this.values(event))) {
+      if (["name", "kind_id", "category_id", "description", "timezone"].includes(
+        name
+      ))
+        continue;
+      await this.page.locator(`[name="${name}"]`).fill(value);
+    }
+  }
+  values(event) {
+    return {
+      name: event.title,
+      description: event.description,
+      kind_id: "in-person",
+      category_id: event.categoryId,
+      timezone: event.timeZone,
+      starts_at: `${event.date}T${event.startTime}`,
+      ends_at: `${event.date}T${event.endTime}`,
+      venue_name: event.venue.name,
+      venue_address: event.venue.address,
+      venue_city: event.venue.city,
+      venue_zip_code: event.venue.zipCode,
+      venue_state_name: event.venue.state,
+      venue_country_name: event.venue.country,
+      venue_country_code: event.venue.countryCode,
+      venue_state_code: "",
+      latitude: "",
+      longitude: ""
+    };
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-event-gateway.ts
+var OcgroupsEventGateway = class {
+  constructor(browserType, credentials, createSession) {
+    this.browserType = browserType;
+    this.credentials = credentials;
+    this.createSession = createSession;
+  }
+  browserType;
+  credentials;
+  createSession;
+  inspect(reference) {
+    return this.withSession(
+      "UTC",
+      (components) => components.editor.inspect(reference)
+    );
+  }
+  save(event, identity, beforeSubmit, onSaved) {
+    return this.withSession(
+      event.timeZone,
+      (components) => components.editor.save(event, identity, beforeSubmit, onSaved)
+    );
+  }
+  publish(event, identity, beforePublish) {
+    return this.withSession(
+      event.timeZone,
+      (components) => components.publisher.publish(event, identity, beforePublish)
+    );
+  }
+  async withSession(timezoneId, operation) {
+    const browser = await this.browserType.launch({ headless: true }).catch(() => {
+      throw new ScheduledEventError("unavailable");
+    });
+    try {
+      const context3 = await browser.newContext({
+        locale: "en-US",
+        timezoneId,
+        viewport: { width: 1600, height: 1200 }
+      });
+      const page = await context3.newPage();
+      page.setDefaultTimeout(2e4);
+      const session = this.createSession(page);
+      await session.login.login(
+        this.credentials.username,
+        this.credentials.password
+      );
+      return await operation(session);
+    } catch (error2) {
+      if (error2 instanceof ScheduledEventError) throw error2;
+      throw new ScheduledEventError("editor");
+    } finally {
+      await browser.close().catch(() => void 0);
+    }
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-event-publisher.ts
+var OcgroupsEventPublisher = class {
+  constructor(page, origin, dashboard, state, fields, registration) {
+    this.page = page;
+    this.origin = origin;
+    this.dashboard = dashboard;
+    this.state = state;
+    this.fields = fields;
+    this.registration = registration;
+  }
+  page;
+  origin;
+  dashboard;
+  state;
+  fields;
+  registration;
+  async publish(event, identity, beforePublish) {
+    await this.dashboard.open(identity.id);
+    const saved = await this.state.read();
+    if (saved.identity.id !== identity.id || saved.identity.publicUrl !== identity.publicUrl || !await this.fields.matches(event))
+      throw new ScheduledEventError("verification");
+    if (saved.status === "published") return saved;
+    await this.registration.verify(event.registration);
+    const button = this.page.locator("#publish-event-button");
+    const path = `/dashboard/group/events/${identity.id}/publish`;
+    if (await button.getAttribute("data-action-url") !== path || await button.isDisabled())
+      throw new ScheduledEventError("verification");
+    await button.click();
+    const modal = this.page.locator(".swal2-popup");
+    await modal.waitFor();
+    if ((await modal.locator(".swal2-html-container").textContent())?.trim() !== "Are you sure you wish to publish this event?")
+      throw new ScheduledEventError("verification");
+    await this.dashboard.assertTarget();
+    await beforePublish();
+    const response = this.page.waitForResponse(
+      (item) => item.url() === `${this.origin}${path}?return=editor` && item.request().method() === "PUT"
+    );
+    const [published] = await Promise.all([
+      response,
+      modal.getByRole("button", { name: "Yes", exact: true }).click()
+    ]);
+    if (!published.ok()) throw new ScheduledEventError("uncertain");
+    await this.dashboard.open(identity.id);
+    const verified = await this.state.read();
+    if (verified.status !== "published" || verified.identity.id !== identity.id || !await this.fields.matches(event))
+      throw new ScheduledEventError("verification");
+    return verified;
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-login.ts
+var OcgroupsLogin = class {
+  constructor(page, origin) {
+    this.page = page;
+    this.origin = origin;
+  }
+  page;
+  origin;
+  async login(username, password) {
+    try {
+      if (!username.trim() || !password) throw new Error();
+      await this.page.goto(`${this.origin}/log-in`, {
+        waitUntil: "domcontentloaded"
+      });
+      const form = this.page.locator('form:has(input[name="username"])');
+      const action2 = new URL(
+        await form.getAttribute("action") ?? "",
+        this.page.url()
+      );
+      if (this.page.url() !== `${this.origin}/log-in` || action2.href !== `${this.origin}/log-in` || await this.page.locator(
+        'iframe[src*="captcha"], input[autocomplete="one-time-code"]'
+      ).count())
+        throw new Error();
+      await form.locator("#username").fill(username);
+      await form.locator("#password").fill(password);
+      await form.getByRole("button", { name: "Sign In", exact: true }).click();
+      await this.page.locator('#user-dropdown-button[data-logged-in="true"]').waitFor();
+      if (new URL(this.page.url()).origin !== this.origin || (await this.page.locator("#user-dropdown > ul > li:first-child .font-medium").textContent())?.trim() !== username)
+        throw new Error();
+    } catch {
+      throw new ScheduledEventError("authentication");
+    }
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-registration.ts
+var OcgroupsRegistration = class {
+  constructor(page) {
+    this.page = page;
+  }
+  page;
+  async create(value) {
+    await this.page.locator('button[data-section="details"]').click();
+    await this.page.locator("#toggle_test_event").setChecked(false);
+    await this.page.locator("#toggle_waitlist_enabled").setChecked(value.waitlist);
+    await this.page.locator("#toggle_attendee_approval_required").setChecked(value.approvalRequired);
+    await this.page.locator('button[data-section="date-venue"]').click();
+    await this.page.locator("#recurrence_pattern").selectOption("just-once");
+    await this.page.locator("#registration_starts_at").fill("");
+    await this.page.locator("#registration_ends_at").fill("");
+    await this.page.locator("#toggle_event_reminder_enabled").setChecked(value.reminder);
+    await this.page.locator('button[data-section="payments"]').click();
+    await this.page.locator('[data-ticketing-action="edit-ticket"]').click();
+    await this.page.locator("#ticket-title-draft").fill("General Admission");
+    await this.page.locator("#ticket-seats-draft").fill(String(value.capacity));
+    await this.page.locator("#ticket-availability-draft").selectOption("public");
+    await this.page.locator('[data-ticket-field="active"]').setChecked(true);
+    await this.page.locator('[data-ticket-window-field="amount"]').fill("0");
+    await this.page.locator('[data-ticketing-action="save-ticket"]').click();
+  }
+  async verify(value) {
+    const expected = {
+      waitlist_enabled: String(value.waitlist),
+      attendee_approval_required: String(value.approvalRequired),
+      event_reminder_enabled: String(value.reminder),
+      test_event: "false",
+      meeting_requested: "false",
+      registration_starts_at: "",
+      registration_ends_at: "",
+      "ticket_types[0][active]": "true",
+      "ticket_types[0][availability]": "public",
+      "ticket_types[0][seats_total]": String(value.capacity),
+      "ticket_types[0][price_windows][0][amount_minor]": "0"
+    };
+    for (const [name, text] of Object.entries(expected)) {
+      if (await this.page.locator(`[name="${name}"]`).inputValue() !== text)
+        throw new ScheduledEventError("verification");
+    }
+    if (await this.page.locator(
+      '[name="ticket_types[1][active]"], [name="ticket_types[0][price_windows][1][amount_minor]"], input[name^="ticket_types"][name$="[starts_at]"], input[name^="ticket_types"][name$="[ends_at]"]'
+    ).count())
+      throw new ScheduledEventError("verification");
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/dependency-composition.ts
+var OcgroupsEventGatewayComposition = class {
+  create(target, credentials) {
+    return new OcgroupsEventGateway(
+      chromium2,
+      credentials,
+      (page) => this.session(page, target)
+    );
+  }
+  session(page, target) {
+    const identities = new CommunityEventIdentityPolicy(target.group);
+    const dashboard = new OcgroupsDashboard(page, target);
+    const state = new OcgroupsEditorState(page, target, identities);
+    const fields = new OcgroupsEventFields(page);
+    const registration = new OcgroupsRegistration(page);
+    return {
+      login: new OcgroupsLogin(page, target.group.origin),
+      editor: new OcgroupsEventEditor(
+        page,
+        target.group.origin,
+        dashboard,
+        state,
+        fields,
+        registration,
+        new OcgroupsEditorLocation(target.group.origin, identities)
+      ),
+      publisher: new OcgroupsEventPublisher(
+        page,
+        target.group.origin,
+        dashboard,
+        state,
+        fields,
+        registration
+      )
+    };
+  }
+};
+
+// packages/runtime/github-actions/src/publication-adapter-composition.ts
+var PublicationAdapterComposition = class {
+  create(input, adapter) {
+    return adapter.provider === "meetup" ? this.meetup(input, adapter) : this.ocgroups(input, adapter);
+  }
+  meetup(input, adapter) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(input.meetupEventUrlPrefix);
+    if (!group) throw new Error("Invalid Meetup event URL prefix");
+    const { ai: ai3, email, password } = adapter.credentials;
+    const resolver = new HcaptchaCaptchaResolverComposition().captchaResolverFactory(
+      fileURLToPath(
+        new URL(
+          "../../../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/",
+          import.meta.url
+        )
+      ),
+      ai3.apiKey,
+      ai3.model
+    );
+    return new PublicationDestinationComposition().meetup(
+      {
+        settings: adapter.settings,
+        clock: input.clock,
+        approval: input.approval,
+        journal: new GithubPublicationJournalComposition().githubPublicationJournal(
+          input.client,
+          {
+            owner: input.owner,
+            repo: input.repo,
+            issue_number: input.issueNumber
+          },
+          input.commentAuthorLogin
+        ),
+        gateway: new MeetupEventGatewayComposition().meetupEventGatewayFactory().create({ email, password }, resolver, group.value)
+      },
+      group
+    );
+  }
+  ocgroups(input, adapter) {
+    const settings = adapter.settings;
+    const group = CommunityGroupUrl.parse(settings.eventUrlPrefix);
+    if (!group || !input.communityEventUrlPrefixes.includes(settings.eventUrlPrefix))
+      throw new Error("Invalid OCGroups event URL prefix");
+    const target = `${settings.eventUrlPrefix}|${settings.communityId}|${settings.groupId}`;
+    return new PublicationDestinationComposition().community(
+      {
+        settings,
+        clock: input.clock,
+        approval: input.approval,
+        target,
+        journal: new GithubPublicationJournalComposition().communityJournal(
+          group,
+          target,
+          input.client,
+          {
+            owner: input.owner,
+            repo: input.repo,
+            issue_number: input.issueNumber
+          },
+          input.commentAuthorLogin
+        ),
+        gateway: new OcgroupsEventGatewayComposition().create(
+          {
+            group,
+            communityId: settings.communityId,
+            groupId: settings.groupId
+          },
+          adapter.credentials
+        )
+      },
+      group
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/event-publication-journey-composition.ts
+var EventPublicationJourneyComposition = class {
+  static create(input) {
+    const container = EventComposition.createEventContainer(input);
+    container.bind(ReconcileEventPublications).toDynamicValue((context3) => {
+      const clock = context3.get(SERVICES.eventClock);
+      const approval = EventPublicationApprovalComposition.create(input);
+      const adapters = new PublicationAdapterComposition();
+      return new EventPublicationComposition().collection(
+        {
+          repository: context3.get(SERVICES.eventRepository),
+          codec: context3.get(SERVICES.eventDocumentCodec),
+          clock,
+          manageEvent: context3.get(ManageMeetupEvent),
+          contentGate: new ContentGateComposition().create(
+            input,
+            input.issueNumber,
+            input.commentAuthorLogin
+          )
+        },
+        input.adapters.map(
+          (adapter) => adapters.create({ ...input, clock, approval }, adapter)
+        )
+      );
+    });
+    return container;
+  }
+};
+
+// packages/runtime/github-actions/src/publication-credentials-input.ts
+var PublicationCredentialsInput = class {
+  constructor(input, ai3) {
+    this.input = input;
+    this.ai = ai3;
+  }
+  input;
+  ai;
+  read(destinations) {
+    return this.parse(
+      getInput("publication-credentials", {
+        required: true,
+        trimWhitespace: false
+      }),
+      destinations
+    );
+  }
+  parse(text, destinations) {
+    setSecret(text);
+    if (Buffer.byteLength(text) > 64e3)
+      throw new Error("Publication credentials are too large");
+    let value;
+    try {
+      value = JSON.parse(text);
+    } catch {
+      throw new Error("Invalid publication credentials JSON");
+    }
+    this.mask(value);
+    if (!this.input.isObject(value))
+      throw new Error("Invalid publication credentials");
+    const credentials = value;
+    if (Object.keys(credentials).some(
+      (key) => !destinations.some((destination) => destination.provider === key)
+    ))
+      throw new Error(
+        "Credentials supplied for an unconfigured publication provider"
+      );
+    return destinations.map(
+      (destination) => this.adapter(destination, credentials[destination.provider])
+    );
+  }
+  adapter(destination, value) {
+    if (!this.input.isObject(value))
+      throw new Error(`Missing credentials for ${destination.provider}`);
+    const keys = destination.provider === "meetup" ? ["email", "password", "ai"] : ["username", "password"];
+    if (Object.keys(value).some((key) => !keys.includes(key)))
+      throw new Error(`Unsupported credentials for ${destination.provider}`);
+    const password = this.password(value.password);
+    if (destination.provider === "meetup")
+      return {
+        ...destination,
+        credentials: {
+          email: this.text(value.email),
+          password,
+          ai: this.ai.validate(value.ai)
+        }
+      };
+    return {
+      ...destination,
+      credentials: { username: this.text(value.username), password }
+    };
+  }
+  text(value) {
+    if (typeof value !== "string" || !value.trim())
+      throw new Error("Missing publication account identifier");
+    setSecret(value.trim());
+    return value.trim();
+  }
+  password(value) {
+    if (typeof value !== "string" || !value.trim())
+      throw new Error("Missing publication password");
+    return value;
+  }
+  mask(value) {
+    if (typeof value === "string") {
+      setSecret(value);
+      if (value.trim()) setSecret(value.trim());
+    } else if (Array.isArray(value))
+      for (const entry of value) this.mask(entry);
+    else if (this.input.isObject(value))
+      for (const entry of Object.values(value)) this.mask(entry);
+  }
+};
+
 // packages/runtime/github-actions/src/event-publication-action-composition.ts
 var EventPublicationActionComposition = class {
   runtime = new GithubActionsComposition();
   action() {
     return new EventPublicationAction({
-      aiInput: this.runtime.aiInput(),
+      credentials: new PublicationCredentialsInput(
+        this.runtime.runtimeInput(),
+        this.runtime.aiInput()
+      ),
       publicationUrlInput: this.runtime.publicationUrlInput(),
-      createJourney: (input) => MeetupPublicationComposition.create(input).get(ManageMeetupPublication),
+      createJourney: (input) => EventPublicationJourneyComposition.create(input).get(
+        ReconcileEventPublications
+      ),
       runtimeInput: this.runtime.runtimeInput(),
       conferenceHallInput: this.runtime.conferenceHallInput(),
-      meetupPublicationConfiguration: this.runtime.meetupPublicationConfiguration()
+      eventPublicationConfiguration: this.runtime.eventPublicationConfiguration()
     });
   }
 };

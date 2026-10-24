@@ -1,7 +1,6 @@
 import {
 	MeetupEventUrl,
 	MeetupGroupUrl,
-	type SavedScheduledEvent,
 	type ScheduledEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
@@ -11,6 +10,7 @@ import type {
 	MeetupEventVerification,
 	MeetupEventVerificationArguments,
 } from "./meetup-event-verification.js";
+import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventPublisherCollaborators {
 	readonly meetupBrowserRoutes: Pick<MeetupBrowserRoutes, "eventLocation">;
@@ -32,7 +32,7 @@ export class MeetupEventPublisher {
 		event: ScheduledEvent,
 		url: string,
 		beforePublish: () => Promise<void>,
-	): Promise<SavedScheduledEvent> {
+	): Promise<SavedMeetupEvent> {
 		const group = MeetupGroupUrl.parse(this.groupUrl);
 		const identity = group && MeetupEventUrl.parse(url, group);
 		if (!identity || identity.value !== url)

@@ -1,10 +1,12 @@
 import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import {
+	type EventPublicationGateway,
+	type EventPublicationIdentity,
+	MeetupEventUrl,
 	MeetupGroupUrl,
-	type SavedScheduledEvent,
+	type SavedEventPublication,
 	type ScheduledEvent,
 	ScheduledEventError,
-	type ScheduledEventGateway,
 } from "@meetup-automation/publication";
 import type { BrowserType, Page } from "playwright-core";
 import type {
@@ -19,6 +21,7 @@ import type {
 	MeetupLoginPage,
 	MeetupLoginPageArguments,
 } from "./meetup-login-page.js";
+import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventGatewayCollaborators {
 	readonly createMeetupEventEditor: (
@@ -32,7 +35,7 @@ export interface MeetupEventGatewayCollaborators {
 	) => MeetupLoginPage;
 }
 
-export class MeetupEventGateway implements ScheduledEventGateway {
+export class MeetupEventGateway implements EventPublicationGateway {
 	private readonly group: MeetupGroupUrl;
 
 	constructor(
@@ -47,35 +50,63 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 		this.group = group;
 	}
 
-	async save(
-		event: ScheduledEvent,
-		url: string | undefined,
-		beforeSubmit: () => Promise<void>,
-		onSaved: (url: string) => Promise<void>,
-	): Promise<SavedScheduledEvent> {
-		return this.withSession(event, (page) =>
+	async inspect(reference: string): Promise<SavedEventPublication> {
+		return this.withSession("UTC", (page) =>
 			this.collaborators
 				.createMeetupEventEditor(page, this.group.value)
-				.save(event, url, beforeSubmit, onSaved),
+				.inspect(reference),
+		);
+	}
+
+	async save(
+		event: ScheduledEvent,
+		identity: EventPublicationIdentity | undefined,
+		beforeSubmit: () => Promise<void>,
+		onSaved: (identity: EventPublicationIdentity) => Promise<void>,
+	): Promise<SavedEventPublication> {
+		if (identity) this.verifyIdentity(identity);
+		return this.withSession(event.timeZone, (page) =>
+			this.collaborators
+				.createMeetupEventEditor(page, this.group.value)
+				.save(event, identity?.reviewUrl, beforeSubmit, (url) =>
+					onSaved(this.identity(url)),
+				),
 		);
 	}
 
 	async publish(
 		event: ScheduledEvent,
-		url: string,
+		identity: EventPublicationIdentity,
 		beforePublish: () => Promise<void>,
-	): Promise<SavedScheduledEvent> {
-		return this.withSession(event, (page) =>
+	): Promise<SavedEventPublication> {
+		this.verifyIdentity(identity);
+		return this.withSession(event.timeZone, (page) =>
 			this.collaborators
 				.createMeetupEventPublisher(page, this.group.value)
-				.publish(event, url, beforePublish),
+				.publish(event, identity.reviewUrl, beforePublish),
 		);
 	}
 
+	private identity(value: string): EventPublicationIdentity {
+		const url = MeetupEventUrl.parse(value, this.group);
+		if (!url) throw new ScheduledEventError("verification");
+		return { id: url.id, reviewUrl: url.value, publicUrl: url.value };
+	}
+
+	private verifyIdentity(value: EventPublicationIdentity): void {
+		const expected = this.identity(value.reviewUrl);
+		if (
+			value.id !== expected.id ||
+			value.reviewUrl !== expected.reviewUrl ||
+			value.publicUrl !== expected.publicUrl
+		)
+			throw new ScheduledEventError("verification");
+	}
+
 	private async withSession(
-		event: ScheduledEvent,
-		operation: (page: Page) => Promise<SavedScheduledEvent>,
-	): Promise<SavedScheduledEvent> {
+		timezoneId: string,
+		operation: (page: Page) => Promise<SavedMeetupEvent>,
+	): Promise<SavedEventPublication> {
 		if (!this.credentials.email.trim() || !this.credentials.password)
 			throw new ScheduledEventError("authentication");
 		const browser = await this.browserType
@@ -93,7 +124,7 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 		try {
 			const context = await browser.newContext({
 				locale: "en-US",
-				timezoneId: event.timeZone,
+				timezoneId,
 				viewport: { width: 1440, height: 1000 },
 			});
 			const page = await context.newPage();
@@ -111,7 +142,8 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 						? "unavailable"
 						: "authentication",
 				);
-			return await operation(page);
+			const saved = await operation(page);
+			return { identity: this.identity(saved.url), status: saved.status };
 		} finally {
 			// Do not let cleanup replace a publication result or its recovery state.
 			await browser.close().catch(() => undefined);

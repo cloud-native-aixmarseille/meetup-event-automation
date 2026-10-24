@@ -1,5 +1,11 @@
+export type {
+	CommunityEvent,
+	CommunityRegistration,
+	CommunityVenue,
+} from "./application/community-event-ports.js";
 export type * from "./application/content-media-ports.js";
 export type * from "./application/content-ports.js";
+export type * from "./application/event-publication-ports.js";
 export type {
 	FeedbackAgenda,
 	FeedbackTalk,
@@ -26,13 +32,7 @@ export {
 	type ReconcileEventAssetsResult,
 } from "./application/reconcile-event-assets.js";
 export { ReconcileSlidePdf } from "./application/reconcile-slide-pdf.js";
-export type {
-	PublicationJournal,
-	PublicationRecord,
-	SavedScheduledEvent,
-	ScheduledEvent,
-	ScheduledEventGateway,
-} from "./application/scheduled-event-ports.js";
+export type { ScheduledEvent } from "./application/scheduled-event-ports.js";
 export { PublicationDomainComposition } from "./dependency-composition.js";
 export type * from "./domain/asset-content.js";
 export { AssetFileName } from "./domain/asset-file-name.js";
@@ -42,7 +42,10 @@ export type {
 	AssetTemplateRenderer,
 	AssetTemplateValue,
 } from "./domain/asset-template-renderer.js";
+export { CommunityEventIdentityPolicy } from "./domain/community-event-identity-policy.js";
+export { CommunityEventPolicy } from "./domain/community-event-policy.js";
 export { CommunityEventUrlPolicy } from "./domain/community-event-url-policy.js";
+export { CommunityGroupUrl } from "./domain/community-group-url.js";
 export { ContentContractPolicy } from "./domain/content-contract-policy.js";
 export { ContentError } from "./domain/content-error.js";
 export { ContentFingerprint } from "./domain/content-fingerprint.js";
@@ -59,6 +62,7 @@ export {
 	type ManualPublicationTaskKind,
 	type ManualPublicationTaskStatus,
 } from "./domain/manual-task-policy.js";
+export { MeetupEventIdentityPolicy } from "./domain/meetup-event-identity-policy.js";
 export { MeetupEventUrl } from "./domain/meetup-event-url.js";
 export { MeetupEventUrlPolicy } from "./domain/meetup-event-url-policy.js";
 export { MeetupGroupUrl } from "./domain/meetup-group-url.js";

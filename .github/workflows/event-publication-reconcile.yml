@@ -1,6 +1,6 @@
-# Goal: Reconcile an event's publication on Meetup.
-# Behavior: Use browser authentication checks to reconcile the Meetup draft and
-# publish after organizer approval, with updates serialized by the event lock.
+# Goal: Reconcile an event across its configured publication destinations.
+# Behavior: Prepare the required adapter runtimes and reconcile each destination
+# after its organizer approval, with updates serialized by the shared event lock.
 
 name: Event / Publication / Reconcile
 
@@ -39,14 +39,6 @@ on:
         description: Language for the publication report (en or fr).
         required: true
         type: string
-      ai-provider:
-        description: AI provider identifier (gemini).
-        required: true
-        type: string
-      ai-model:
-        description: Model identifier for the selected AI provider.
-        required: true
-        type: string
     secrets:
       slack-token:
         description: Slack bot token for approval requests and decision reactions.
@@ -57,14 +49,8 @@ on:
       conference-hall-api-key:
         description: Read-only Conference Hall event API key.
         required: true
-      meetup-email:
-        description: Email of the authorized Meetup organizer account.
-        required: true
-      meetup-password:
-        description: Password of the authorized Meetup organizer account.
-        required: true
-      ai-api-key:
-        description: API key for the selected AI provider.
+      publication-credentials:
+        description: JSON credentials for exactly the configured publication providers, including AI settings only when Meetup is configured.
         required: true
 
 permissions: {}
@@ -77,7 +63,8 @@ jobs:
            github.event.action == 'edited' && github.event.sender.type == 'User' &&
            github.event.comment.user.type == 'Bot' &&
            startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ') &&
-           contains(github.event.comment.body, '"kind":"meetup-publication"')) }}
+           (contains(github.event.comment.body, '"kind":"meetup-publication"') ||
+            contains(github.event.comment.body, '"kind":"community-publication"'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -120,12 +107,20 @@ jobs:
         working-directory: ../self-workflow
         run: pnpm exec playwright-core install --with-deps chromium
 
+      - name: Prepare publication runtime
+        id: publication-runtime
+        uses: ./../self-workflow/actions/publication/prepare-runtime
+        with:
+          locale: ${{ inputs.locale }}
+
       - name: Set up Python
+        if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.14"
 
       - name: Install locked challenge solver dependencies
+        if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
         working-directory: ../self-workflow/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
         run: |
           python -m venv .venv
@@ -143,10 +138,6 @@ jobs:
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
-          meetup-email: ${{ secrets.meetup-email }} # zizmor: ignore[secrets-outside-env] required reusable workflow secret is forwarded explicitly
-          meetup-password: ${{ secrets.meetup-password }} # zizmor: ignore[secrets-outside-env] required reusable workflow secret is forwarded explicitly
-          ai-provider: ${{ inputs.ai-provider }}
-          ai-model: ${{ inputs.ai-model }}
-          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] required reusable workflow secret is forwarded explicitly
+          publication-credentials: ${{ secrets.publication-credentials }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret

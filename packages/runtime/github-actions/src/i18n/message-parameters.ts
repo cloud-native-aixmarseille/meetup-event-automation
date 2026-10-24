@@ -1,7 +1,11 @@
 export interface MessageParameters {
 	"report.feedback.link": { updated: string };
 	"report.assets.pdf": { status: string; updated: string };
-	"report.meetup.review": { url: string };
+	"report.publication.review": { provider: string; url: string };
+	"report.publication.draft": { provider: string };
+	"report.publication.updated": { provider: string };
+	"report.publication.skipped": { provider: string };
+	"report.publication.blocked": { provider: string };
 	"report.speaker-sync.failed": { stage: string };
 	"report.speaker-sync.completed": { count: number };
 	"report.feedback.changes": { persisted: string };

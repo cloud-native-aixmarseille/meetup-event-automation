@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 import { event } from "../../testing/meetup-journey.fixtures.js";
+import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 import { ContentFactsProjection } from "../review/content-facts-projection.js";
 import { EventCopyApprovalGate } from "./event-copy-approval-gate.js";
 

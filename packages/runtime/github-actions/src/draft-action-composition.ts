@@ -23,7 +23,7 @@ export class DraftActionComposition {
 			runtime.publicationUrlInput(),
 			runtime.conferenceHallInput(),
 			new ContentConfiguration(runtime.runtimeInput(), new PublicAssetUrl()),
-			runtime.meetupPublicationConfiguration(),
+			runtime.eventPublicationConfiguration(),
 		);
 	}
 	eventCopy() {

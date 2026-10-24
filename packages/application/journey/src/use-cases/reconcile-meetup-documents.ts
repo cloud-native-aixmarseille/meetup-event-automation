@@ -1,4 +1,3 @@
-import type { CoverArtworkApprovalGate } from "../assets/cover-artwork-approval-gate.js";
 import {
 	type EventDocument,
 	type EventDocumentCodec,
@@ -13,9 +12,10 @@ import type {
 	ContentStatus,
 	ReconcileEventAssets,
 } from "@meetup-automation/publication";
+import type { CoverArtworkApprovalGate } from "../assets/cover-artwork-approval-gate.js";
+import type { EventCopyApprovalGate } from "../event/event-copy-approval-gate.js";
 import type { EventDocumentRevision } from "../ports/event-document-revision.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
-import type { EventCopyApprovalGate } from "../event/event-copy-approval-gate.js";
 import type { AssetRenderProjection } from "./asset-render-projection.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 import type { ManageMeetupEventResult } from "./manage-meetup-event-contracts.js";

@@ -35,8 +35,10 @@ operations use `reconcile`; queries and validation use `list-active` and
 `validate`. Action paths, workflow filenames and public display names describe
 business responsibilities, independently of adapter implementations. Use
 `referential-reconcile-speakers.yml` for the speaker referential and
-`publication/reconcile-event` with `event-publication-reconcile.yml` for event
-publication. Provider identities belong in adapter wiring, integration guides
+`publication/reconcile-event` with `event-publication-reconcile.yml` for the
+configured Meetup and OCGroups adapter collection. `publication/prepare-runtime`
+reads the shared configuration to select required runtime capabilities. Provider
+identities belong in adapter wiring, integration guides
 and provider-specific settings. An action accepts only credentials and inputs
 needed by its own operation. See the [action inventory](../README.md#action-contracts).
 
@@ -483,7 +485,7 @@ the API; it is not a second meetup role. Organizer notifications receive their
 explicit destination through `slack-organizer-channel-id`. Public Slack
 announcement tasks are manual and do not share this routing.
 
-The journey's `OrganizerApproval` port gates email batches and Meetup publication.
+The journey's `OrganizerApproval` port gates email batches, content review, and separate Meetup and OCGroups publication.
 Journey policies own request eligibility, matching and revision fingerprints.
 They also own whether a request can be reviewed, the non-authorizing follow-up
 placeholder and post-event progress. Rendering and checkbox parsing consult the
@@ -495,7 +497,7 @@ notification delivery are separate collaborators. Follow-up persistence and
 attention synchronization expose their own capabilities.
 The GitHub adapter owns trusted request comments, GitHub GraphQL editor/history
 verification, and current write-permission checks. Its comment presenter delegates
-to explicitly injected email and Meetup renderers through a complete kind map.
+to explicitly injected email, content, Meetup, and OCGroups renderers through a complete kind map.
 The outer presenter encodes metadata once; the kind-specific renderers format
 their content. Slack uses its own injected renderer map and catalogs.
 A decision parser compares checkbox edits
@@ -531,6 +533,35 @@ and uncertain intents are not automatically resent. A definitively deferred
 attempt releases its reservation for a safe retry. The GitHub ledger depends on
 the shared workflow lock; do not dispatch outside the official workflows or
 claim exactly-once delivery.
+
+Event publication uses a configured destination collection in
+`ReconcileEventPublications` and one shared `ReconcileEventPublication` lifecycle.
+The collection evaluates shared readiness and runs destinations sequentially
+under the event lock. Its source snapshot advances with guarded issue patches;
+source changes stop the run. Pending approvals and provider failures remain
+independent results, so another destination can proceed. Destinations must write
+distinct issue fields. One publication workflow and action compose all configured destinations.
+`EventPublicationConfiguration` parses the common schedule and venue map, with
+typed provider settings under `destinations`. `PublicationCredentialsInput`
+validates and masks credentials for exactly those providers. Only
+`PublicationAdapterComposition` selects providers and maps credentials to their
+gateways. Content review consumes the same schedule. The workflow prepares
+Chromium once and installs the challenge solver only when Meetup is configured.
+
+Both browser adapters implement `EventPublicationGateway` with `inspect`, `save`,
+and `publish`. They return a stable ID, review URL, optional public URL, and
+explicit status. Typed destination policies supply managed fields, validation,
+approval revisions, and issue mappings. The shared journey owns effects and
+approval order; adapters own provider operations. GitHub journal codecs retain
+their existing formats, and Meetup approval fingerprints retain their meaning.
+
+OCGroups publication uses its own community journal, UUID/editor identity, and
+approval kind. The shared schedule projection and validation contain no browser
+selectors. The OCGroups adapter owns account and target verification, form
+controls, and observed response decoding. The journey alone reserves creation,
+checks source concurrency and approval, and projects verified published URLs into
+CNCF Link. Its workflow shares the existing per-event lock. See
+[OCGroups publication](../integrations/event-publication.md).
 
 Meetup publication approval binds the complete projected event and draft URL to
 a SHA-256 revision. The browser publishes only an existing matching draft after

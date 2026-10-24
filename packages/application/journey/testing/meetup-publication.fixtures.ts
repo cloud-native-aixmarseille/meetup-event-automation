@@ -1,7 +1,8 @@
 import type { EventDocument, MeetupEvent } from "@meetup-automation/event";
 import type {
+	EventPublicationGateway,
+	EventPublicationIdentity,
 	PublicationRecord,
-	ScheduledEventGateway,
 } from "@meetup-automation/publication";
 import { vi } from "vitest";
 import type { OrganizerApproval } from "../src/ports/organizer-approval.js";
@@ -14,6 +15,15 @@ import {
 
 export const publicationUrl =
 	"https://www.meetup.com/example-group/events/12345/";
+export function publicationIdentity(
+	url = publicationUrl,
+): EventPublicationIdentity {
+	return {
+		id: /events\/([1-9]\d*)/.exec(url)?.[1] ?? "invalid",
+		reviewUrl: url,
+		publicUrl: url,
+	};
+}
 const publicationSettings = {
 	startTime: "18:45",
 	endTime: "20:45",
@@ -37,9 +47,11 @@ export function publicationFixture(
 		reserve: vi.fn().mockImplementation(async () => {
 			record = {};
 		}),
-		record: vi.fn().mockImplementation(async (url: string) => {
-			record = { url };
-		}),
+		record: vi
+			.fn()
+			.mockImplementation(async (identity: EventPublicationIdentity) => {
+				record = { identity };
+			}),
 	};
 	const manageEvent = {
 		execute: vi.fn<ManageMeetupEvent["execute"]>().mockResolvedValue({
@@ -59,19 +71,27 @@ export function publicationFixture(
 		synchronize: vi.fn<OrganizerApproval["synchronize"]>(),
 	};
 	const gateway = {
+		inspect: vi
+			.fn<EventPublicationGateway["inspect"]>()
+			.mockImplementation(async (reference) => ({
+				identity: publicationIdentity(
+					reference.endsWith("/") ? reference : `${reference}/`,
+				),
+				status: "published",
+			})),
 		publish: vi
-			.fn<ScheduledEventGateway["publish"]>()
+			.fn<EventPublicationGateway["publish"]>()
 			.mockImplementation(async (_, url, guard) => {
 				await guard();
-				return { url, status: "published" };
+				return { identity: url, status: "published" };
 			}),
 		save: vi
-			.fn<ScheduledEventGateway["save"]>()
+			.fn<EventPublicationGateway["save"]>()
 			.mockImplementation(async (_, url, before, after) => {
 				await before();
-				await after(url ?? publicationUrl);
+				await after(url ?? publicationIdentity());
 				return {
-					url: url ?? publicationUrl,
+					identity: url ?? publicationIdentity(),
 					status: url ? "published" : "draft",
 				};
 			}),

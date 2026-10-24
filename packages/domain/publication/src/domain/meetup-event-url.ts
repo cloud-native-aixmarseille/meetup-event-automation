@@ -23,4 +23,8 @@ export class MeetupEventUrl {
 	get value(): string {
 		return `${this.group.eventUrlPrefix}${this.identifier}/`;
 	}
+
+	get id(): string {
+		return this.identifier;
+	}
 }

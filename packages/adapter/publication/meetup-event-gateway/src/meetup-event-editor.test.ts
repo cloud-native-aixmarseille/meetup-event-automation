@@ -24,6 +24,24 @@ afterEach(async () => {
 });
 
 describe("Meetup browser event editor", () => {
+	it.each(["draft", "published"] as const)(
+		"inspects an existing %s without saving or publishing",
+		async (status) => {
+			// Arrange
+			const state = await editorFixture(context, desiredEvent, status);
+			const editor = new MeetupEventGatewayComposition().meetupEventEditor(
+				await context.newPage(),
+				groupUrl,
+			);
+			// Act
+			const result = await editor.inspect(eventUrl);
+			// Assert
+			expect(result).toEqual({ url: eventUrl, status });
+			expect(state.writes).toBe(0);
+			expect(state.publishClicks).toBe(0);
+		},
+	);
+
 	it("creates a draft without publishing and verifies saved fields", async () => {
 		// Arrange
 		const state = await editorFixture(context);

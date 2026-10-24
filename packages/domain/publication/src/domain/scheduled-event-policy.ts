@@ -15,6 +15,20 @@ export class ScheduledEventPolicy {
 			!/^\d{4}-\d{2}-\d{2}$/.test(event.date)
 		)
 			return false;
+		return this.validSchedule(event, now);
+	}
+
+	validSchedule(
+		event: Pick<ScheduledEvent, "date" | "startTime" | "endTime" | "timeZone">,
+		now: string,
+	): boolean {
+		if (
+			!this.validTime(event.startTime) ||
+			!this.validTime(event.endTime) ||
+			event.endTime <= event.startTime ||
+			!/^\d{4}-\d{2}-\d{2}$/.test(event.date)
+		)
+			return false;
 		const date = new Date(`${event.date}T12:00:00Z`);
 		if (
 			!Number.isFinite(date.getTime()) ||

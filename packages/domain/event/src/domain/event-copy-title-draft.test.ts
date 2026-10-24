@@ -1,6 +1,7 @@
-import { EventCopyAgenda } from "./event-copy-agenda.js";
 import { describe, expect, it } from "vitest";
+import { EventCopyAgenda } from "./event-copy-agenda.js";
 import { EventCopyTitleDraft } from "./event-copy-title-draft.js";
+
 const talk = {
 	id: "talk-one",
 	title: "Observable clusters",

@@ -97,6 +97,7 @@ export interface AttentionApproval {
 		| "email-introduction"
 		| "email-thanks"
 		| "meetup-publication"
+		| "community-publication"
 		| "content-review";
 	readonly eventDate: string;
 	readonly status: "pending" | "approved" | "rejected" | "iteration-requested";

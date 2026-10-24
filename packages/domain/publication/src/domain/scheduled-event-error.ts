@@ -1,4 +1,6 @@
 export type ScheduledEventFailure =
+	| "conflict"
+	| "link"
 	| "content-review"
 	| "approval-pending"
 	| "approval-rejected"

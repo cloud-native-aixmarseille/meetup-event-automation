@@ -80,6 +80,11 @@ describe("organizer attention task selection", () => {
 	it.each([
 		["approval-pending", "revision", "email-approval"],
 		["approval-pending", "meetup-publication:revision", "meetup-approval"],
+		[
+			"approval-pending",
+			"community-publication:revision",
+			"community-approval",
+		],
 		["delivery-recovery", "reservation", "delivery-recovery"],
 	] as const)(
 		"keeps the actionable link for %s instead of an equivalent diagnostic",

@@ -4,10 +4,16 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
-	"report.feedback.link": { updated: "true" },
-	"report.meetup.review": {
+	"report.publication.review": {
+		provider: "ocgroups",
 		url: "https://www.meetup.com/example/events/12345/",
 	},
+
+	"report.feedback.link": { updated: "true" },
+	"report.publication.draft": { provider: "meetup" },
+	"report.publication.updated": { provider: "meetup" },
+	"report.publication.skipped": { provider: "meetup" },
+	"report.publication.blocked": { provider: "meetup" },
 	"report.speaker-sync.failed": { stage: "loading the Conference Hall export" },
 	"report.speaker-sync.completed": { count: 2 },
 	"report.feedback.changes": {

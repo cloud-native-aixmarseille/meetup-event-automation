@@ -31,6 +31,22 @@ export interface MessageParameters {
 	};
 	"approval.meetup.request": { approveMark: string; rejectMark: string };
 	"approval.meetup.final": { status: string; actor: string; decidedAt: string };
+	"approval.community.details": {
+		title: string;
+		date: string;
+		startTime: string;
+		endTime: string;
+		timeZone: string;
+		venue: string;
+		city: string;
+		url: string;
+	};
+	"approval.community.request": { approveMark: string; rejectMark: string };
+	"approval.community.final": {
+		status: string;
+		actor: string;
+		decidedAt: string;
+	};
 	"follow-up.title": { date: string };
 	"follow-up.instructions": Record<string, never>;
 	"follow-up.task": { task: string };

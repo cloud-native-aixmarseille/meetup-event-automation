@@ -47,12 +47,14 @@ describe("GitHub publication journal", () => {
 		// Act
 		await journal.reserve();
 		const pending = await fixture(comments).journal.load();
-		await journal.record(url);
+		await journal.record({ id: "123", reviewUrl: url, publicUrl: url });
 		const saved = await fixture(comments).journal.load();
 
 		// Assert
 		expect(pending).toEqual({});
-		expect(saved).toEqual({ url });
+		expect(saved).toEqual({
+			identity: { id: "123", reviewUrl: url, publicUrl: url },
+		});
 		expect(issues.createComment).toHaveBeenCalledTimes(1);
 		expect(issues.updateComment).toHaveBeenCalledTimes(1);
 		expect(comments[0]?.body).toContain('"state":"saved"');
@@ -92,7 +94,9 @@ describe("GitHub publication journal", () => {
 			const record = await journal.load();
 
 			// Assert
-			expect(record).toEqual({ url });
+			expect(record).toEqual({
+				identity: { id: "123", reviewUrl: url, publicUrl: url },
+			});
 		},
 	);
 
@@ -134,10 +138,16 @@ describe("GitHub publication journal", () => {
 	it("does not replace an established remote identity", async () => {
 		// Arrange
 		const { journal } = fixture();
-		await journal.record("https://www.meetup.com/example/events/123/");
+		const url = "https://www.meetup.com/example/events/123/";
+		await journal.record({ id: "123", reviewUrl: url, publicUrl: url });
 
 		// Act
-		const result = journal.record("https://www.meetup.com/example/events/456/");
+		const other = "https://www.meetup.com/example/events/456/";
+		const result = journal.record({
+			id: "456",
+			reviewUrl: other,
+			publicUrl: other,
+		});
 
 		// Assert
 		await expect(result).rejects.toThrow("identity conflict");

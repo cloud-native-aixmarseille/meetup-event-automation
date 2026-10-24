@@ -11,7 +11,7 @@ item, approve an email batch, or authorize initial Meetup publication.
 ## Configure the repository
 
 Provide the public venue and event hours in
-[`.github/meetup-publication.json`](meetup-publication.md). Add
+[`.github/event-publication.json`](event-publication.md). Add
 `.github/meetup-content.json`:
 
 ```json

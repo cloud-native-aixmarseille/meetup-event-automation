@@ -1,4 +1,6 @@
 export const messages = {
+	"action.community-approval-pending":
+		"Approve or reject OCGroups publication.",
 	"failure.communications": "Email preparation or delivery failed.",
 	"failure.feedback": "OpenFeedback synchronization failed.",
 	"failure.assets": "Drive file preparation failed.",

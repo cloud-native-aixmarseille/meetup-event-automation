@@ -35612,7 +35612,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication" || request2.kind === "content-review")
+    if (request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -35632,7 +35632,7 @@ var ApprovalRequestPolicy = class {
       return false;
     if (previous.kind === "content-review" && request2.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
-    if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
+    if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request2.kind === "meetup-publication" || request2.kind === "community-publication"))
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
     return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
   }
@@ -35842,6 +35842,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("community-publication:"))
+      return "community-approval";
     return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
   }
   covered(episode, entries) {
@@ -35944,13 +35946,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -39403,6 +39405,9 @@ var MeetupEventUrl = class _MeetupEventUrl {
   get value() {
     return `${this.group.eventUrlPrefix}${this.identifier}/`;
   }
+  get id() {
+    return this.identifier;
+  }
 };
 
 // packages/domain/publication/src/domain/meetup-event-url-policy.ts
@@ -39628,6 +39633,11 @@ var ScheduledEventPolicy = class {
   valid(event, now2) {
     if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
       return false;
+    return this.validSchedule(event, now2);
+  }
+  validSchedule(event, now2) {
+    if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
     const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
       return false;
@@ -39804,6 +39814,57 @@ var PublicationDomainComposition = class {
   }
 };
 
+// packages/domain/publication/src/domain/community-event-policy.ts
+var CommunityEventPolicy = class {
+  constructor(schedule) {
+    this.schedule = schedule;
+  }
+  schedule;
+  valid(event, now2) {
+    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+  }
+  venue(venue) {
+    return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
+  }
+  registration(value) {
+    return Number.isSafeInteger(value.capacity) && value.capacity > 0 && value.capacity <= 1e5 && typeof value.waitlist === "boolean" && typeof value.approvalRequired === "boolean" && typeof value.reminder === "boolean" && !(value.waitlist && value.approvalRequired);
+  }
+  text(value, maximum) {
+    return value.trim().length > 0 && Buffer.byteLength(value, "utf8") <= maximum && ![...value].some(
+      (character) => character.charCodeAt(0) < 32 && !"\n\r	".includes(character)
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/community-group-url.ts
+var CommunityGroupUrl = class _CommunityGroupUrl {
+  constructor(eventUrlPrefix, origin, community, group) {
+    this.eventUrlPrefix = eventUrlPrefix;
+    this.origin = origin;
+    this.community = community;
+    this.group = group;
+  }
+  eventUrlPrefix;
+  origin;
+  community;
+  group;
+  static parse(value) {
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      return void 0;
+    }
+    const match = /^\/([a-z0-9-]+)\/group\/([a-z0-9-]+)\/event\/$/.exec(
+      url.pathname
+    );
+    if (!match || url.protocol !== "https:" || url.username || url.password || value !== `${url.origin}${url.pathname}`)
+      return void 0;
+    return new _CommunityGroupUrl(value, url.origin, match[1], match[2]);
+  }
+};
+
 // packages/domain/publication/src/domain/feedback-resolution-error.ts
 var FeedbackResolutionError = class extends Error {
   constructor(kind) {
@@ -39816,14 +39877,24 @@ var FeedbackResolutionError = class extends Error {
   kind;
 };
 
-// packages/domain/publication/src/domain/scheduled-event-error.ts
-var ScheduledEventError = class extends Error {
-  constructor(kind) {
-    super(`Event publication failed: ${kind}`);
-    this.kind = kind;
-    this.name = "ScheduledEventError";
+// packages/application/journey/src/approval/approval-value-fingerprint.ts
+var ApprovalValueFingerprint = class {
+  constructor(hash) {
+    this.hash = hash;
   }
-  kind;
+  hash;
+  digest(value) {
+    return this.hash.of(JSON.stringify(this.canonical(value)));
+  }
+  canonical(value) {
+    if (value === void 0) return null;
+    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
+      );
+    return value;
+  }
 };
 
 // packages/application/journey/src/approval/meetup-publication-revision.ts
@@ -39832,10 +39903,10 @@ var MeetupPublicationRevision = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  of(event, url) {
+  of(event, identity) {
     return this.collaborators.contentFingerprint.of(
       JSON.stringify({
-        url,
+        url: identity.reviewUrl,
         event: {
           title: event.title,
           description: event.description,
@@ -39875,26 +39946,6 @@ var AutomationConfigFactory = class {
         "policy-version": 1
       }
     };
-  }
-};
-
-// packages/application/journey/src/approval/approval-value-fingerprint.ts
-var ApprovalValueFingerprint = class {
-  constructor(hash) {
-    this.hash = hash;
-  }
-  hash;
-  digest(value) {
-    return this.hash.of(JSON.stringify(this.canonical(value)));
-  }
-  canonical(value) {
-    if (value === void 0) return null;
-    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
-    if (value && typeof value === "object")
-      return Object.fromEntries(
-        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
-      );
-    return value;
   }
 };
 
@@ -39973,6 +40024,17 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.community.content-review",
+  "publication.community.authentication",
+  "publication.community.prerequisites",
+  "publication.community.link",
+  "publication.community.conflict",
+  "publication.community.uncertain",
+  "publication.community-url.invalid",
+  "publication.community.missing",
+  "publication.community.unpublished",
+  "publication.community.approval-pending",
+  "publication.community.approval-rejected",
   "publication.content.prerequisites",
   "publication.content.pending",
   "publication.content.rejected",
@@ -40726,8 +40788,8 @@ var FeedbackAgendaProjection = class {
   }
 };
 
-// packages/application/journey/src/use-cases/meetup-publication-projection.ts
-var MeetupPublicationProjection = class {
+// packages/application/journey/src/use-cases/scheduled-event-projection.ts
+var ScheduledEventProjection = class {
   create(event, settings) {
     const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
     if (!venue || !event.description.trim() || !event.confirmations.host || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
@@ -40854,8 +40916,8 @@ var JourneyPolicyComposition = class {
   feedbackAgendaProjection() {
     return new FeedbackAgendaProjection();
   }
-  meetupPublicationProjection() {
-    return new MeetupPublicationProjection();
+  scheduledEventProjection() {
+    return new ScheduledEventProjection();
   }
   meetupPublicationRevision() {
     return new MeetupPublicationRevision({
@@ -41227,227 +41289,6 @@ var ManageMeetupEvent = class {
       repositoryPatch
     );
     return true;
-  }
-};
-
-// packages/application/journey/src/use-cases/manage-meetup-publication.ts
-var PUBLICATION_LINK_FIELDS = [
-  "publicationLinks.meetup",
-  "publicationLinks.community",
-  "publicationLinks.assets",
-  "publicationLinks.feedback"
-];
-var ManageMeetupPublication = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(identity) {
-    const source = await this.dependencies.repository.find(identity);
-    if (!source) throw new Error("Meetup source issue was not found");
-    const evaluation = await this.dependencies.manageEvent.execute({
-      identity,
-      mode: "check",
-      sourceDocument: source
-    });
-    if (evaluation.skipped) return this.result("skipped", "inactive");
-    if (evaluation.diagnostics.some(
-      this.collaborators.diagnosticPolicy.isTechnicalFailure.bind(
-        this.collaborators.diagnosticPolicy
-      )
-    ))
-      return this.result("blocked", "source");
-    const event = evaluation.event;
-    if ((await this.dependencies.contentGate.blocked(event)).length)
-      return this.result("blocked", "content-review");
-    if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
-      return this.result("skipped", "inactive");
-    const draft = this.collaborators.meetupPublicationProjection.create(
-      event,
-      this.dependencies.settings
-    );
-    if (evaluation.diagnostics.some(
-      (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication"
-    ) || !draft || !this.collaborators.scheduledEventPolicy.valid(
-      draft,
-      this.dependencies.clock.now()
-    ) || evaluation.diagnostics.some(
-      (item) => item.severity === "error" && !PUBLICATION_LINK_FIELDS.includes(item.field ?? "")
-    ))
-      return this.result("blocked", "prerequisites");
-    return this.synchronize(source, draft, event.publicationLinks.meetup);
-  }
-  async synchronize(source, draft, supplied) {
-    const record = await this.dependencies.journal.load();
-    const suppliedUrl = this.eventUrl(supplied);
-    const recordedUrl = this.eventUrl(record?.url);
-    if (supplied && !suppliedUrl || record?.url && !recordedUrl)
-      return this.result("blocked", "link");
-    if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
-      return this.result("blocked", "conflict");
-    const url = (suppliedUrl ?? recordedUrl)?.value;
-    if (!url && record) return this.result("blocked", "uncertain");
-    try {
-      const saved = await this.dependencies.gateway.save(
-        draft,
-        url,
-        async () => {
-          await this.ensureCurrent(source);
-          if (!url) await this.dependencies.journal.reserve();
-          await this.ensureCurrent(source);
-        },
-        async (savedUrl) => {
-          if (!this.eventUrl(savedUrl))
-            throw new ScheduledEventError("verification");
-          await this.dependencies.journal.record(savedUrl);
-        }
-      );
-      if (!this.eventUrl(saved.url) || !url && saved.status !== "draft")
-        throw new ScheduledEventError("verification");
-      return await this.complete(source, draft, saved);
-    } catch (error2) {
-      if (!(error2 instanceof ScheduledEventError)) throw error2;
-      return this.result("blocked", error2.kind);
-    }
-  }
-  eventUrl(value) {
-    const group = MeetupGroupUrl.fromEventUrlPrefix(
-      this.dependencies.meetupUrlPrefix
-    );
-    return group ? MeetupEventUrl.parse(value, group) : void 0;
-  }
-  async persist(source, saved) {
-    await this.ensureCurrent(source);
-    const event = this.dependencies.codec.decode(source).event;
-    const updated = this.collaborators.meetupPublicationChecklist.withStatus(
-      event,
-      saved.status === "published"
-    );
-    const patch = this.dependencies.codec.createPatch(source, {
-      ...updated,
-      publicationLinks: { ...event.publicationLinks, meetup: saved.url }
-    });
-    if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
-      patch
-    )) {
-      await this.ensureCurrent(source);
-      await this.dependencies.repository.applyPatch(source.identity, patch);
-    }
-    return { ...source, ...patch };
-  }
-  async complete(source, event, saved) {
-    const current = await this.persist(source, saved);
-    if (saved.status === "published")
-      return { status: "updated", diagnostics: [] };
-    await this.ensureCurrent(current);
-    const approval = this.collaborators.createMeetupPublicationApproval(
-      this.dependencies.approval,
-      this.dependencies.clock
-    );
-    const decision = await approval.request(event, saved.url);
-    const diagnostics = decision.notificationFailed ? this.result("blocked", "approval-notification-failed").diagnostics : [];
-    if (decision.status !== "approved")
-      return {
-        status: "draft",
-        reviewUrl: saved.url,
-        diagnostics: [
-          ...diagnostics,
-          ...this.result("blocked", `approval-${decision.status}`).diagnostics
-        ]
-      };
-    const published = await this.dependencies.gateway.publish(
-      event,
-      saved.url,
-      async () => {
-        await this.ensureCurrent(current);
-        if (!this.collaborators.scheduledEventPolicy.valid(
-          event,
-          this.dependencies.clock.now()
-        ))
-          throw new ScheduledEventError("verification");
-        await approval.requireApproved(event, saved.url);
-        await this.ensureCurrent(current);
-      }
-    );
-    if (published.status !== "published" || published.url !== saved.url)
-      throw new ScheduledEventError("verification");
-    await this.persist(current, published);
-    return { status: "updated", diagnostics };
-  }
-  async ensureCurrent(source) {
-    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-      this.dependencies.repository,
-      source.identity,
-      source
-    );
-    const evaluated = await this.dependencies.manageEvent.execute({
-      identity: source.identity,
-      sourceDocument: source,
-      mode: "check"
-    });
-    if (evaluated.skipped || (await this.dependencies.contentGate.blocked(evaluated.event)).length)
-      throw new ScheduledEventError("content-review");
-  }
-  result(status, code) {
-    return {
-      status,
-      diagnostics: [
-        {
-          code: `publication.meetup.${code}`,
-          severity: [
-            "editor",
-            "verification",
-            "source",
-            "unavailable",
-            "approval-unavailable",
-            "approval-notification-failed"
-          ].includes(code) ? "error" : status === "blocked" ? "warning" : "info",
-          field: "publicationLinks.meetup",
-          message: `Meetup publication: ${code}`
-        }
-      ]
-    };
-  }
-};
-
-// packages/application/journey/src/use-cases/meetup-publication-approval.ts
-var MeetupPublicationApproval = class {
-  constructor(collaborators, approvals, clock) {
-    this.collaborators = collaborators;
-    this.approvals = approvals;
-    this.clock = clock;
-  }
-  collaborators;
-  approvals;
-  clock;
-  async request(event, url) {
-    try {
-      return await this.approvals.request({
-        kind: "meetup-publication",
-        revision: this.collaborators.meetupPublicationRevision.of(event, url),
-        eventDate: event.date,
-        requestedAt: this.clock.now(),
-        publication: {
-          url,
-          title: event.title,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          timeZone: event.timeZone,
-          venue: event.venue
-        }
-      });
-    } catch {
-      throw new ScheduledEventError("approval-unavailable");
-    }
-  }
-  async requireApproved(event, url) {
-    const result = await this.request(event, url);
-    if (result.status !== "approved")
-      throw new ScheduledEventError(
-        result.status === "pending" ? "approval-pending" : "approval-rejected"
-      );
   }
 };
 
@@ -42058,28 +41899,6 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupPublication(...args) {
-    return new ManageMeetupPublication(
-      {
-        diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-        meetupPublicationProjection: new JourneyPolicyComposition().meetupPublicationProjection(),
-        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy(),
-        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
-        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
-        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
-        createMeetupPublicationApproval: (...args2) => this.meetupPublicationApproval(...args2)
-      },
-      ...args
-    );
-  }
-  meetupPublicationApproval(...args) {
-    return new MeetupPublicationApproval(
-      {
-        meetupPublicationRevision: new JourneyPolicyComposition().meetupPublicationRevision()
-      },
-      ...args
-    );
-  }
   reconcileOrganizerFeedback(...args) {
     return new ReconcileOrganizerFeedback(
       {
@@ -42294,36 +42113,64 @@ var ConferenceHallInput = class {
   }
 };
 
-// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+// packages/runtime/github-actions/src/event-publication-configuration.ts
 import { readFile as readFile2 } from "node:fs/promises";
 import { join as join2 } from "node:path";
-var MeetupPublicationConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
+var EventPublicationConfiguration = class {
+  constructor(input, schedule, ocgroups) {
+    this.input = input;
+    this.schedule = schedule;
+    this.ocgroups = ocgroups;
   }
-  collaborators;
+  input;
+  schedule;
+  ocgroups;
   async load(root) {
     const text = await readFile2(
-      join2(root, ".github/meetup-publication.json"),
+      join2(root, ".github/event-publication.json"),
       "utf8"
     );
     if (Buffer.byteLength(text) > 1e5)
-      throw new Error("Meetup publication configuration is too large");
+      throw new Error("Event publication configuration is too large");
     return this.parse(JSON.parse(text));
   }
-  parse(input) {
-    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
-      throw new Error("Invalid Meetup publication configuration");
-    const venues = {};
-    for (const [id, venue] of Object.entries(input.venues)) {
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
-        throw new Error("Invalid public Meetup venue mapping");
-      venues[id] = { name: venue.name, city: venue.city };
-    }
-    return { startTime: input.startTime, endTime: input.endTime, venues };
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !Array.isArray(value.destinations) || value.destinations.length > 2)
+      throw new Error("Invalid publication destinations");
+    const destinations = value.destinations.map(
+      (destination) => this.destination(destination, schedule, value.venues)
+    );
+    if (new Set(destinations.map((destination) => destination.provider)).size !== destinations.length)
+      throw new Error("Duplicate publication provider");
+    return { schedule, destinations };
   }
-  text(value) {
-    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  destination(value, schedule, venues) {
+    if (!this.input.isObject(value))
+      throw new Error("Invalid publication destination");
+    if (value.provider === "meetup" && Object.keys(value).length === 1)
+      return { provider: "meetup", settings: schedule };
+    if (value.provider !== "ocgroups" || Object.keys(value).some(
+      (key) => ![
+        "provider",
+        "eventUrlPrefix",
+        "communityId",
+        "groupId",
+        "categoryId",
+        "registration"
+      ].includes(key)
+    ))
+      throw new Error("Unsupported publication destination");
+    return {
+      provider: "ocgroups",
+      settings: this.ocgroups.parse({
+        ...value,
+        version: 1,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        venues
+      })
+    };
   }
 };
 
@@ -42453,6 +42300,89 @@ var RuntimeInput = class {
   }
 };
 
+// packages/runtime/github-actions/src/event-schedule-configuration.ts
+var EventScheduleConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid event schedule configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public event venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/ocgroups-publication-settings.ts
+var OcgroupsPublicationSettings = class {
+  constructor(input, schedule, policy) {
+    this.input = input;
+    this.schedule = schedule;
+    this.policy = policy;
+  }
+  input;
+  schedule;
+  policy;
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !CommunityGroupUrl.parse(value.eventUrlPrefix) || typeof value.eventUrlPrefix !== "string" || !this.uuid(value.communityId) || !this.uuid(value.groupId) || !this.uuid(value.categoryId) || !this.input.isObject(value.venues))
+      throw new Error("Invalid OCGroups target configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(value.venues))
+      venues[id] = this.venue(venue);
+    return {
+      ...schedule,
+      venues,
+      eventUrlPrefix: value.eventUrlPrefix,
+      communityId: value.communityId,
+      groupId: value.groupId,
+      categoryId: value.categoryId,
+      registration: this.registration(value.registration)
+    };
+  }
+  venue(value) {
+    if (!this.input.isObject(value) || typeof value.name !== "string" || typeof value.address !== "string" || typeof value.city !== "string" || typeof value.zipCode !== "string" || typeof value.state !== "string" || typeof value.country !== "string" || typeof value.countryCode !== "string")
+      throw new Error("Invalid public OCGroups venue mapping");
+    const venue = {
+      name: value.name,
+      address: value.address,
+      city: value.city,
+      zipCode: value.zipCode,
+      state: value.state,
+      country: value.country,
+      countryCode: value.countryCode
+    };
+    if (!this.policy.venue(venue))
+      throw new Error("Invalid public OCGroups venue mapping");
+    return venue;
+  }
+  registration(value) {
+    if (!this.input.isObject(value) || typeof value.capacity !== "number" || typeof value.waitlist !== "boolean" || typeof value.approvalRequired !== "boolean" || typeof value.reminder !== "boolean")
+      throw new Error("Invalid OCGroups registration configuration");
+    const registration = {
+      capacity: value.capacity,
+      waitlist: value.waitlist,
+      approvalRequired: value.approvalRequired,
+      reminder: value.reminder
+    };
+    if (!this.policy.registration(registration))
+      throw new Error("Invalid OCGroups registration configuration");
+    return registration;
+  }
+  uuid(value) {
+    return typeof value === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);
+  }
+};
+
 // packages/runtime/github-actions/src/runtime-input-composition.ts
 var RuntimeInputComposition = class _RuntimeInputComposition {
   static bind(container) {
@@ -42469,6 +42399,7 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
     );
     _RuntimeInputComposition.bindAttention(container);
     _RuntimeInputComposition.bindConfiguration(container);
+    _RuntimeInputComposition.bindPublication(container);
   }
   static bindAttention(container) {
     container.bind(AttentionStageInput).toResolvedValue(() => new AttentionStageInput());
@@ -42502,12 +42433,26 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
       }),
       [RuntimeInput, ContentContractPolicy, AssetRenderConfiguration]
     );
-    container.bind(MeetupPublicationConfiguration).toResolvedValue(
-      (runtimeInput, scheduledEventPolicy) => new MeetupPublicationConfiguration({
+  }
+  static bindPublication(container) {
+    container.bind(EventScheduleConfiguration).toResolvedValue(
+      (runtimeInput, scheduledEventPolicy) => new EventScheduleConfiguration({
         runtimeInput,
         scheduledEventPolicy
       }),
       [RuntimeInput, ScheduledEventPolicy]
+    );
+    container.bind(OcgroupsPublicationSettings).toResolvedValue(
+      (runtime, schedule, policy) => new OcgroupsPublicationSettings(
+        runtime,
+        schedule,
+        new CommunityEventPolicy(policy)
+      ),
+      [RuntimeInput, EventScheduleConfiguration, ScheduledEventPolicy]
+    );
+    container.bind(EventPublicationConfiguration).toResolvedValue(
+      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+      [RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings]
     );
   }
 };
@@ -46234,6 +46179,27 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Prepare event publication runtime",
+  "report.publication.draft": "publication_provider={provider} event=draft approval=required",
+  "report.publication.updated": "publication_provider={provider} event=synchronized",
+  "report.publication.skipped": "publication_provider={provider} event=skipped",
+  "report.publication.blocked": "publication_provider={provider} event=blocked",
+  "report.publication.review": "publication_provider={provider} review_url={url}",
+  "diagnostic.publication.community.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+  "diagnostic.publication.community.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+  "diagnostic.publication.community.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+  "diagnostic.publication.community.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+  "diagnostic.publication.community.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.community.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
+  "diagnostic.publication.community.inactive": "OCGroups publication is inactive for this issue.",
+  "diagnostic.publication.community.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.community.link": "Set a valid event URL belonging to the configured OCGroups group.",
+  "diagnostic.publication.community.conflict": "The issue link and recorded OCGroups event differ. Restore the recorded event link before running again.",
+  "diagnostic.publication.community.uncertain": "Publication outcome is uncertain. Check the OCGroups dashboard and recover the verified event UUID in the community journal before retrying. Keep drafts out of CNCF Link. Clear a reservation only after confirming no event was created.",
+  "diagnostic.publication.community.authentication": "Organizer login could not be verified. Check the account, credentials, and group permissions; complete any unsupported challenge interactively.",
+  "diagnostic.publication.community.editor": "The OCGroups editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+  "diagnostic.publication.community.verification": "OCGroups did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "action.event.generate-copy": "Generate event copy",
   "action.assets.generate-cover": "Generate cover artwork",
   "action.communication.generate-slack-post": "Generate Slack post",
@@ -46264,11 +46230,6 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
   "action.publication.reconcile-event": "Reconcile event publication",
-  "report.meetup.draft": "meetup_event=draft approval=required",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "meetup_event=synchronized",
-  "report.meetup.skipped": "meetup_event=skipped",
-  "report.meetup.blocked": "meetup_event=blocked",
   "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
   "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
@@ -46361,6 +46322,27 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Pr\xE9parer le runtime de publication",
+  "report.publication.draft": "fournisseur_publication={provider} evenement=brouillon approbation=requise",
+  "report.publication.updated": "fournisseur_publication={provider} evenement=synchronise",
+  "report.publication.skipped": "fournisseur_publication={provider} evenement=ignore",
+  "report.publication.blocked": "fournisseur_publication={provider} evenement=bloque",
+  "report.publication.review": "fournisseur_publication={provider} url_validation={url}",
+  "diagnostic.publication.community.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
+  "diagnostic.publication.community.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
+  "diagnostic.publication.community.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+  "diagnostic.publication.community.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
+  "diagnostic.publication.community.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.community.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, les s\xE9lecteurs de connexion.",
+  "diagnostic.publication.community.inactive": "La publication OCGroups est inactive pour cette issue.",
+  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.community.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe OCGroups configur\xE9.",
+  "diagnostic.publication.community.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.community.uncertain": "Le r\xE9sultat est incertain. V\xE9rifiez le tableau de bord OCGroups et r\xE9cup\xE9rez le UUID v\xE9rifi\xE9 dans le journal community avant de relancer. Gardez les brouillons hors de CNCF Link. Effacez une r\xE9servation seulement apr\xE8s avoir confirm\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
+  "diagnostic.publication.community.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et les droits du groupe ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.community.editor": "Impossible de pr\xE9parer l'\xE9diteur OCGroups. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
+  "diagnostic.publication.community.verification": "Les champs enregistr\xE9s sur OCGroups ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "action.event.generate-copy": "G\xE9n\xE9rer le titre ou la description",
   "action.assets.generate-cover": "G\xE9n\xE9rer les illustrations",
   "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
@@ -46391,11 +46373,6 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
   "action.publication.reconcile-event": "R\xE9concilier la publication de l'\xE9v\xE9nement",
-  "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "evenement_meetup=synchronise",
-  "report.meetup.skipped": "evenement_meetup=ignore",
-  "report.meetup.blocked": "evenement_meetup=bloque",
   "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
   "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
@@ -46714,8 +46691,8 @@ var GithubActionsComposition = class _GithubActionsComposition {
   conferenceHallInput() {
     return this.container.get(ConferenceHallInput);
   }
-  meetupPublicationConfiguration() {
-    return this.container.get(MeetupPublicationConfiguration);
+  eventPublicationConfiguration() {
+    return this.container.get(EventPublicationConfiguration);
   }
   referentialActionReport() {
     return this.container.get(ReferentialActionReport);
@@ -52325,6 +52302,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
       const messages3 = this.collaborators.createAttentionMessages(locale);
       if (description === messages3.t("action.approval-pending"))
         return "email-approval";
+      if (description === messages3.t("action.community-approval-pending"))
+        return "community-approval";
       if (description === messages3.t("action.meetup-approval-pending"))
         return "meetup-approval";
       if (description === messages3.t("action.delivery-recovery"))
@@ -52393,6 +52372,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
       return this.messages.t("action.meetup-approval-pending");
     return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
@@ -52759,6 +52740,7 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
   "failure.assets": "Drive file preparation failed.",
@@ -52804,6 +52786,7 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
   "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",

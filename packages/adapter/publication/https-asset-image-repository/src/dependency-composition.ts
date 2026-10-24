@@ -1,9 +1,9 @@
-import { HttpsContentImageLoader } from "./https-content-image-loader.js";
 import { lookup } from "node:dns/promises";
 import { request } from "node:https";
 import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { BoundedImageDownload } from "./bounded-image-download.js";
 import { HttpsAssetImageRepository } from "./https-asset-image-repository.js";
+import { HttpsContentImageLoader } from "./https-content-image-loader.js";
 import { PublicImageUrl } from "./public-image-url.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class HttpsAssetImageRepositoryComposition {

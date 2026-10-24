@@ -1,59 +1,104 @@
-# Community event publication
+# Event publication destinations
 
-Status: Proposed. No OCGroups adapter is implemented.
+Status: Accepted. Implemented in this branch; live deployment validation is pending.
 
-Scope: creating, reviewing, publishing, and reconciling the CNCF Open Community
-Groups (OCG) event associated with a meetup issue.
+Scope: creating, reviewing, publishing, and reconciling the events associated
+with a meetup issue on Meetup.com and CNCF Open Community Groups (OCGroups).
 Follow the shared [architecture](0001-architecture.md),
 [action contracts](0002-action-contracts.md), and
 [organizer approval](0003-organizer-approvals.md) decisions.
 
 ## Context
 
-Organizers currently publish the CNCF event manually and paste its public URL
-into **CNCF Link**. `CommunityEventUrlPolicy` validates configured URL prefixes;
+The existing manual workflow publishes the CNCF event and stores its public URL
+in **CNCF Link**. `CommunityEventUrlPolicy` validates configured URL prefixes;
 `ManualPublicationPolicy` treats a community link as publication completion.
 
-[Meetup publication](../integrations/meetup-publication.md) already addresses the
+[Meetup publication](../integrations/event-publication.md) already addresses the
 same need through the organizer site: save a draft, retain its identity,
 request approval, publish the approved revision, and verify remote state before
 recording completion. Its browser integration demonstrates a repository pattern,
 not proof that OCG authentication or editor behavior works with a live account.
 
-## Proposed decision
+## Decision
 
-Use an OCG-specific browser adapter with Playwright and Chromium, following the
-Meetup publication lifecycle. A supported write API can replace the adapter
-later; its availability is not a prerequisite for implementation. Authenticate
-with an explicitly configured organizer account authorized for the target group.
-Verify the deployment's login method and permissions before enabling the caller.
+Treat event publication as one business capability. A provider implements remote
+operations; a destination binds that provider to an explicit group, settings,
+credentials, journal, and approval scope. Compose the destinations as a collection
+and run one shared lifecycle for each: recover, save, review, publish, verify,
+and project the result onto the issue.
 
-Reuse publication policies, approval verification, reporting, and recovery
-mechanics where their contracts fit. Keep OCG login, navigation, editor controls,
-provider identity, and verification separate from the Meetup adapter. Do not
-call undocumented dashboard routes as if they were a stable integration API.
+Meetup and OCGroups implement the same publication gateway using Playwright and
+Chromium. Keep login, navigation, editor controls, and remote verification in
+their adapters. A supported write API can replace either browser implementation
+without changing the lifecycle. Verify the deployed login method and permissions
+before enabling a caller; do not treat internal dashboard routes as a stable API.
 
 ### Ownership and reusable contracts
 
-- Publication owns managed event values, identity validation, and remote state
-  contracts. Start from the separate `save` and `publish` operations in
-  [`ScheduledEventGateway`](../../packages/domain/publication/src/application/scheduled-event-ports.ts).
-  Saving must never publish a draft. Extend narrow contracts where OCG needs a
-  stable remote ID, organizer review URL, and public URL; do not force those
-  identities into the current single-URL Meetup representation.
-- Journey coordinates source evaluation, the content-review gate, approval,
-  recovery, and issue projection. Follow
-  [`ManageMeetupPublication`](../../packages/application/journey/src/use-cases/manage-meetup-publication.ts),
-  extracting shared lifecycle collaborators only where both consumers need them.
-  OCG prerequisites and projections remain separate from Meetup venue lookup,
-  URL parsing, and field limits.
-- A proposed `packages/adapter/publication/ocgroups-event-gateway` owns browser
+- Publication owns managed event values, identity validation, and
+  [`EventPublicationGateway`](../../packages/domain/publication/src/application/event-publication-ports.ts).
+  Its operations are `inspect`, `save`, and `publish`. Saving creates drafts and
+  preserves an existing event's status. Both adapters return a stable ID,
+  organizer review URL, optional public URL, and explicit draft/published status.
+- Journey's
+  [`ReconcileEventPublications`](../../packages/application/journey/src/use-cases/reconcile-event-publications.ts)
+  evaluates shared readiness and processes the configured collection sequentially.
+  Each destination uses
+  [`ReconcileEventPublication`](../../packages/application/journey/src/use-cases/reconcile-event-publication.ts)
+  for recovery, creation reservation, approval, publication, and issue projection.
+  Destination policies supply typed event projections, field limits, identity
+  validation, approval revisions, and issue-field mappings. The lifecycle contains
+  no provider dispatch or browser operations.
+- `packages/adapter/publication/ocgroups-event-gateway` owns browser
   operations and maps observed provider values into publication contracts.
   Runtime composition injects its credentials, collaborators, and settings.
 - GitHub adapters own versioned journal and approval representations. Give OCG
   records a separate provider identity and approval kind. Existing Meetup
   journals and decisions must retain their meanings and remain readable.
   Presenters own English/French review and diagnostic wording.
+
+### Collection execution and provider differences
+
+Hold the existing event lock for the entire collection. Carry forward issue
+patches in the invocation's source snapshot and check that snapshot before and
+after each destination, as well as immediately before remote writes. A changed
+source or invalidated content review stops further effects. A pending approval,
+uncertain creation, or provider failure produces a destination-specific result
+and allows the other destination to proceed. Successful remote operations remain
+durable if another destination fails; there is no cross-provider transaction.
+
+Each destination owns its journal and approval scope. Preserve existing Meetup
+journal JSON and approval fingerprints, normalizing its URL into a numeric ID
+and review/public URLs at the adapter boundary. OCGroups retains its UUID and
+editor URL independently of the public slug. Shared approval mechanics never
+allow one provider's approval to authorize another provider.
+Recovery policies also retain their boundaries: Meetup can recover a pending
+creation through a verified organizer-supplied link; OCGroups requires the saved
+identity in its journal before resuming an uncertain creation.
+
+Meetup projects draft URLs into Meetup Link and keeps its publication checkbox.
+OCGroups projects only verified published URLs into CNCF Link. The collection
+rejects duplicate destinations and destinations that would write the same issue
+field. The supported issue model has one destination for each provider.
+
+Use one `publication/reconcile-event` action and one
+`event-publication-reconcile.yml` workflow for the collection. Read the common
+schedule and public venue mapping once per configuration load from
+`.github/event-publication.json`; content review uses that same schedule.
+`destinations` selects Meetup, OCGroups, or both, with at most one of each.
+Provider settings remain typed and local to their configured destination.
+An explicit empty collection supports content review with manual publication.
+
+Require one `publication-credentials` JSON secret with exactly the enabled
+provider keys. Meetup supplies email, password, and an AI configuration validated
+by the shared `AiInput` contract; OCGroups supplies username and password only.
+Mask the bundle and its decoded values before validation. Bind credentials and
+provider selection in `PublicationAdapterComposition`; the application receives
+owned ports. A small `publication/prepare-runtime` action derives whether the
+workflow needs Python and the challenge solver from the same configuration.
+The workflow installs Chromium once and forwards credentials only to the
+reconciliation action. OCGroups-only callers need no AI configuration.
 
 ### Draft, approval, and publication
 
@@ -62,7 +107,7 @@ call undocumented dashboard routes as if they were a stable integration API.
    copy, resolved agenda, explicit times, and configured public venue data.
    Missing Meetup, CNCF, or Drive links must not block creating an OCG draft.
    Skip closed, cancelled, postponed, and held events. Automatic cancellation,
-   deletion, unpublishing, and series operations are outside this proposal.
+   deletion, unpublishing, and series operations are outside this integration.
 2. Reconcile only the declared managed fields: title, description with public
    talk/speaker information, date, start/end times, event timezone, in-person
    type, configured category, and public venue. Validate OCG-required fields
@@ -125,8 +170,8 @@ policy is not automatically an editable OCG identity.
 
 Recover an interrupted save or publish by inspecting the recorded event before
 retrying. Recover draft identity into the provider journal, not **CNCF Link**.
-Document a validated organizer recovery procedure during implementation; remove
-a pending reservation only after confirming that creation did not occur.
+Use the [organizer recovery procedure](../integrations/event-publication.md#recover-an-interrupted-run);
+remove a pending reservation only after confirming that creation did not occur.
 Keep journal identity even when field verification or the GitHub patch fails.
 
 ### Authentication and workflow boundary
@@ -144,11 +189,9 @@ with organizer guidance. Reuse browser-authentication capabilities only after
 establishing an actual OCG need and testing their boundary; do not add AI inputs
 or solver dependencies merely because Meetup uses them.
 
-Expose a thin `publication/reconcile-community-event` action and a dedicated
-publication lifecycle caller, proposed as
-`event-publication-reconcile-community.yml`. Keep this work out of the general
-event normalization and active-event audit workflows. Trigger it on relevant
-issue changes, edits of OCG approval comments, and explicit recovery runs. It
+Keep the shared publication action and workflow separate from general event
+normalization and active-event audits. Trigger publication on relevant issue
+changes, edits of either provider's approval comments, and explicit recovery runs. It
 shares `meetup-event-REPOSITORY_ID-ISSUE_NUMBER` with other event effects and
 sets `cancel-in-progress: false`. Direct callers must hold the same lock.
 
@@ -177,27 +220,27 @@ source, or verification failures remain technical failures with redacted details
 - Workflow locks and source rereads reduce races but cannot make GitHub and OCG
   writes transactional. Uncertain outcomes require recovery, not blind retries.
 
-## Implementation acceptance
+## Implementation and validation
 
-These are requirements for a future implementation, not completed validation:
+The [event publication guide](../integrations/event-publication.md) defines the
+implemented configuration, approval, update, and recovery behavior. The browser
+adapter records the UUID from the save response before reloading; the public URL
+is optional until the saved editor is verified. It navigates the full dashboard
+through its controls, verifies the selected UUIDs and public group link, and
+observes browser responses without calling internal endpoints directly.
+Registration creation uses one free public ticket tier. Draft verification also
+rejects automatic online meetings and recurring series.
 
-- Synthetic journey tests cover missing prerequisites, content-review blocks,
-  stale issues, independent provider approvals, changed revisions, rejection,
-  verified completion, and preservation of unrelated issue fields.
-- Chromium tests cover actual draft saving, preview without persistence,
-  scoped identity capture, managed-field verification, approved publication,
-  published updates, unchanged reruns, wrong accounts/groups, unsupported login,
-  changed selectors, and preservation of unmanaged settings.
-- Recovery tests cover interrupted creation, saved identity before verification,
-  interrupted publication, unknown outcomes, corrupt/conflicting journals,
-  supplied event adoption, slug changes, and isolation from Meetup state.
-- Contract tests cover explicit action inputs, approval-comment routing, shared
-  locking, scoped credentials, localized reporting, and redaction. Readiness and
-  promotion tests prove that an unpublished OCG draft cannot satisfy completion.
-- Before enabling the consumer caller, an authorized live organizer run must
-  establish login, draft persistence, review access, identity capture, publication
-  and notification behavior on the deployed instance. Fixture tests and upstream
-  source inspection do not establish those capabilities.
+Synthetic journey, journal, approval, configuration, and Chromium tests cover
+source and approval guards, UUID recovery, verified URL projection, provider
+isolation, published updates, and blocked unsupported states. Public contract
+checks cover explicit inputs, approval routing, shared locking, localized
+reporting, credential forwarding, and conditional challenge runtime preparation. Existing readiness and promotion consumers
+retain their URL semantics; draft URLs are kept outside CNCF Link.
+
+Before enabling a consumer caller, an authorized organizer run must establish
+login, draft persistence, review access, publication, and notification behavior
+on the deployed instance. No live organizer run has been performed.
 
 ## Supporting evidence
 

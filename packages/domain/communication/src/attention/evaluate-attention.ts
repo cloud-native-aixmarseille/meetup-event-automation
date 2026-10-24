@@ -144,6 +144,7 @@ export class EvaluateAttention {
 				approval.kind === (postEvent ? "email-thanks" : "email-introduction") ||
 				(!postEvent &&
 					(approval.kind === "meetup-publication" ||
+						approval.kind === "community-publication" ||
 						approval.kind === "content-review"));
 			if (
 				approval.status === "pending" &&
@@ -155,6 +156,7 @@ export class EvaluateAttention {
 						"approval-pending",
 						"approvals",
 						approval.kind === "meetup-publication" ||
+							approval.kind === "community-publication" ||
 							approval.kind === "content-review"
 							? `${approval.kind}:${approval.revision}`
 							: approval.revision,

@@ -1,4 +1,46 @@
 export const EN_MESSAGES = {
+	"action.publication.prepare-runtime": "Prepare event publication runtime",
+	"report.publication.draft":
+		"publication_provider={provider} event=draft approval=required",
+	"report.publication.updated":
+		"publication_provider={provider} event=synchronized",
+	"report.publication.skipped": "publication_provider={provider} event=skipped",
+	"report.publication.blocked": "publication_provider={provider} event=blocked",
+	"report.publication.review":
+		"publication_provider={provider} review_url={url}",
+
+	"diagnostic.publication.community.content-review":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.community.approval-pending":
+		"Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+	"diagnostic.publication.community.approval-rejected":
+		"Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+	"diagnostic.publication.community.approval-unavailable":
+		"Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+	"diagnostic.publication.community.approval-notification-failed":
+		"The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+	"diagnostic.publication.community.source":
+		"Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+	"diagnostic.publication.community.unavailable":
+		"Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
+
+	"diagnostic.publication.community.inactive":
+		"OCGroups publication is inactive for this issue.",
+	"diagnostic.publication.community.prerequisites":
+		"Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+	"diagnostic.publication.community.link":
+		"Set a valid event URL belonging to the configured OCGroups group.",
+	"diagnostic.publication.community.conflict":
+		"The issue link and recorded OCGroups event differ. Restore the recorded event link before running again.",
+	"diagnostic.publication.community.uncertain":
+		"Publication outcome is uncertain. Check the OCGroups dashboard and recover the verified event UUID in the community journal before retrying. Keep drafts out of CNCF Link. Clear a reservation only after confirming no event was created.",
+	"diagnostic.publication.community.authentication":
+		"Organizer login could not be verified. Check the account, credentials, and group permissions; complete any unsupported challenge interactively.",
+	"diagnostic.publication.community.editor":
+		"The OCGroups editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+	"diagnostic.publication.community.verification":
+		"OCGroups did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
+
 	"action.event.generate-copy": "Generate event copy",
 	"action.assets.generate-cover": "Generate cover artwork",
 	"action.communication.generate-slack-post": "Generate Slack post",
@@ -50,11 +92,7 @@ export const EN_MESSAGES = {
 	"diagnostic.publication.meetup.unavailable":
 		"Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
 	"action.publication.reconcile-event": "Reconcile event publication",
-	"report.meetup.draft": "meetup_event=draft approval=required",
-	"report.meetup.review": "meetup_url={url}",
-	"report.meetup.updated": "meetup_event=synchronized",
-	"report.meetup.skipped": "meetup_event=skipped",
-	"report.meetup.blocked": "meetup_event=blocked",
+
 	"diagnostic.publication.meetup.inactive":
 		"Meetup publication is inactive for this issue.",
 	"diagnostic.publication.meetup.prerequisites":

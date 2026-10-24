@@ -11,8 +11,8 @@ import type {
 import type { FeedbackTalkResultsGateway } from "@meetup-automation/publication";
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import type { AutomationConfig } from "../config/automation-config.js";
-import type { OrganizerApproval } from "../ports/organizer-approval.js";
 import type { EventCopyApprovalGate } from "../event/event-copy-approval-gate.js";
+import type { OrganizerApproval } from "../ports/organizer-approval.js";
 import type {
 	ApproveCommunicationBatch,
 	ApproveCommunicationBatchArguments,

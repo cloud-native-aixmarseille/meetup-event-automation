@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SocialPostDraft } from "./social-post-draft.js";
+
 const talk = {
 	id: "talk-one",
 	title: "Observable clusters",

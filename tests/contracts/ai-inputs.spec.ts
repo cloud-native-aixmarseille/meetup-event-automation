@@ -35,7 +35,7 @@ describe("shared AI action configuration", () => {
 
 		// Assert
 		expect(consumers.map(({ action }) => action)).toContain(
-			"publication/reconcile-event",
+			"event/generate-copy",
 		);
 		for (const { action, manifest } of consumers) {
 			const names = Object.keys(manifest.inputs ?? {}).filter((name) =>

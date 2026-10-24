@@ -175,10 +175,13 @@ corresponding runtime responsibilities.
 
 Actions that use AI must follow the shared
 [AI configuration contract](../reference/configuration.md#ai-configuration)
-and parse its inputs through runtime `AiInput`. Reusable workflows must require
-and explicitly forward that contract. A workflow composing text and image
+and parse its configuration through runtime `AiInput`. Reusable workflows must
+require and explicitly forward the applicable contract. A workflow composing text and image
 generation requires separate `ai-text-model` and `ai-image-model` inputs and
 binds each to the relevant action's `ai-model`; provider and secret remain shared.
+Publication adapters take their conditional `ai` object from the required
+`publication-credentials` bundle and validate it with the same `AiInput.validate`
+contract. Require AI only for the enabled Meetup adapter; OCGroups needs none.
 Inject the validated configuration through
 runtime composition; keep provider-specific credential mapping at the provider
 adapter boundary. Do not add AI settings to actions that do not use them.

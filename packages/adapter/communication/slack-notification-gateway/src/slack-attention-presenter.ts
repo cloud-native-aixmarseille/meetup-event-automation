@@ -120,6 +120,11 @@ export class SlackAttentionPresenter {
 	private action(episode: AttentionEpisode): string {
 		if (
 			this.collaborators.attentionTaskSelection.actionFor(episode) ===
+			"community-approval"
+		)
+			return this.messages.t("action.community-approval-pending");
+		if (
+			this.collaborators.attentionTaskSelection.actionFor(episode) ===
 			"meetup-approval"
 		)
 			return this.messages.t("action.meetup-approval-pending");

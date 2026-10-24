@@ -1,4 +1,10 @@
 export const FR_MESSAGES = {
+	"approval.community.details":
+		"### Confirmation organisateur : publier l'événement CNCF\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Vérifier le brouillon OCGroups]({url}). La publication peut envoyer les notifications OCGroups aux membres du groupe et aux speakers.",
+	"approval.community.request":
+		"Membres avec droit d'écriture : sélectionner un choix. L'approbation autorise la publication de ce brouillon OCGroups et ses notifications natives. Un changement de contenu nécessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de cet événement CNCF\n- [{rejectMark}] Refuser la publication de cet événement CNCF",
+	"approval.community.final":
+		"{status, select, approved {✅ **Publication CNCF approuvée**} rejected {❌ **Publication CNCF refusée**} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\nL'automatisation vérifie le brouillon avant publication. CNCF Link est rempli après vérification de la publication. Un changement de contenu nécessite une nouvelle approbation.",
 	"approval.content.planned":
 		"Publication prévue : {time}. Vérifiez à nouveau la validité avant publication.",
 	"approval.content.slot":

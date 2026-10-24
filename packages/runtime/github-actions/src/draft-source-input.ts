@@ -3,7 +3,7 @@ import { context, getOctokit } from "@actions/github";
 import type { Locale } from "@meetup-automation/localization";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ContentConfiguration } from "./content-configuration.js";
-import type { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import type { EventPublicationConfiguration } from "./event-publication-configuration.js";
 import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
@@ -18,7 +18,7 @@ export class DraftSourceInput {
 		>,
 		private readonly conference: Pick<ConferenceHallInput, "read">,
 		private readonly configuration: Pick<ContentConfiguration, "load">,
-		private readonly publication: Pick<MeetupPublicationConfiguration, "load">,
+		private readonly publication: Pick<EventPublicationConfiguration, "load">,
 	) {}
 	async read(locale: Locale) {
 		return {
@@ -37,7 +37,7 @@ export class DraftSourceInput {
 				required: true,
 			}),
 			settings: await this.configuration.load(process.cwd()),
-			publication: await this.publication.load(process.cwd()),
+			publication: (await this.publication.load(process.cwd())).schedule,
 		};
 	}
 	secret(name: string): string {

@@ -1,36 +1,41 @@
 import type { EventClock } from "@meetup-automation/event";
 import {
+	type EventPublicationIdentity,
 	type ScheduledEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
-import type { MeetupPublicationRevision } from "../approval/meetup-publication-revision.js";
 import type {
 	OrganizerApproval,
 	OrganizerApprovalResult,
 } from "../ports/organizer-approval.js";
+import type { EventPublicationConfiguration } from "./event-publication-contracts.js";
 
-export interface MeetupPublicationApprovalCollaborators {
-	readonly meetupPublicationRevision: Pick<MeetupPublicationRevision, "of">;
-}
-
-export class MeetupPublicationApproval {
+export class EventPublicationApproval<Event extends ScheduledEvent> {
 	constructor(
-		private readonly collaborators: MeetupPublicationApprovalCollaborators,
+		private readonly revision: EventPublicationConfiguration<
+			Event,
+			unknown
+		>["revision"],
 		private readonly approvals: OrganizerApproval,
 		private readonly clock: EventClock,
+		private readonly kind: EventPublicationConfiguration<
+			Event,
+			unknown
+		>["approvalKind"],
+		private readonly target: string,
 	) {}
 	async request(
-		event: ScheduledEvent,
-		url: string,
+		event: Event,
+		identity: EventPublicationIdentity,
 	): Promise<OrganizerApprovalResult> {
 		try {
 			return await this.approvals.request({
-				kind: "meetup-publication",
-				revision: this.collaborators.meetupPublicationRevision.of(event, url),
+				kind: this.kind,
+				revision: this.revision.of(event, identity, this.target),
 				eventDate: event.date,
 				requestedAt: this.clock.now(),
 				publication: {
-					url,
+					url: identity.reviewUrl,
 					title: event.title,
 					startTime: event.startTime,
 					endTime: event.endTime,
@@ -42,18 +47,14 @@ export class MeetupPublicationApproval {
 			throw new ScheduledEventError("approval-unavailable");
 		}
 	}
-	async requireApproved(event: ScheduledEvent, url: string): Promise<void> {
-		const result = await this.request(event, url);
+	async requireApproved(
+		event: Event,
+		identity: EventPublicationIdentity,
+	): Promise<void> {
+		const result = await this.request(event, identity);
 		if (result.status !== "approved")
 			throw new ScheduledEventError(
 				result.status === "pending" ? "approval-pending" : "approval-rejected",
 			);
 	}
 }
-export type MeetupPublicationApprovalArguments =
-	ConstructorParameters<typeof MeetupPublicationApproval> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

@@ -7,10 +7,10 @@ import {
 } from "@meetup-automation/publication";
 import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
+import { ApprovalValueFingerprint } from "./approval/approval-value-fingerprint.js";
 import { MeetupPublicationRevision } from "./approval/meetup-publication-revision.js";
 import { CommunicationDiagnosticProjection } from "./communication/communication-diagnostic-projection.js";
 import { AutomationConfigFactory } from "./config/automation-config.js";
-import { ApprovalValueFingerprint } from "./approval/approval-value-fingerprint.js";
 import { AttentionStageEvaluation } from "./result/attention-stage-evaluation.js";
 import { DiagnosticPolicy } from "./result/diagnostic-policy.js";
 import { OrganizerDiagnosticPolicy } from "./result/organizer-diagnostic-policy.js";
@@ -26,7 +26,7 @@ import { EventDiagnosticProjection } from "./use-cases/event-diagnostic-projecti
 import { EventParticipantResolution } from "./use-cases/event-participant-resolution.js";
 import { EventPublicationEvaluation } from "./use-cases/event-publication-evaluation.js";
 import { FeedbackAgendaProjection } from "./use-cases/feedback-agenda-projection.js";
-import { MeetupPublicationProjection } from "./use-cases/meetup-publication-projection.js";
+import { ScheduledEventProjection } from "./use-cases/scheduled-event-projection.js";
 import { SpeakerSynchronizationStageRunner } from "./use-cases/speaker-synchronization-stage-runner.js";
 export class JourneyPolicyComposition {
 	approvalRequestPolicy(): ApprovalRequestPolicy {
@@ -115,8 +115,8 @@ export class JourneyPolicyComposition {
 	feedbackAgendaProjection(): FeedbackAgendaProjection {
 		return new FeedbackAgendaProjection();
 	}
-	meetupPublicationProjection(): MeetupPublicationProjection {
-		return new MeetupPublicationProjection();
+	scheduledEventProjection(): ScheduledEventProjection {
+		return new ScheduledEventProjection();
 	}
 	meetupPublicationRevision(): MeetupPublicationRevision {
 		return new MeetupPublicationRevision({

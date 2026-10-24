@@ -5,7 +5,7 @@ import { ActionReport } from "./action-report.js";
 import { ActionRunner } from "./action-runner.js";
 import { AiInput } from "./ai-input.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
-import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import { EventPublicationConfiguration } from "./event-publication-configuration.js";
 import { RuntimeInput } from "./runtime-input.js";
 import {
 	RUNTIME_FACTORIES,
@@ -59,7 +59,7 @@ describe("shared runtime dependency composition", () => {
 		container.get(ActionRunner);
 		const activationsBeforeInput = activate.mock.calls.length;
 		container.get(AiInput);
-		container.get(MeetupPublicationConfiguration);
+		container.get(EventPublicationConfiguration);
 
 		// Assert
 		expect(activationsBeforeInput).toBe(0);
@@ -88,14 +88,12 @@ describe("shared runtime dependency composition", () => {
 		const validateAi = () => container.get(AiInput).validate(aiConfiguration);
 		const parsePublication = () =>
 			container
-				.get(MeetupPublicationConfiguration)
+				.get(EventPublicationConfiguration)
 				.parse(publicationConfiguration);
 
 		// Assert
 		expect(validateAi).toThrow("Invalid AI configuration");
-		expect(parsePublication).toThrow(
-			"Invalid Meetup publication configuration",
-		);
+		expect(parsePublication).toThrow("Invalid event schedule configuration");
 		expect(isObject).toHaveBeenCalledWith(aiConfiguration);
 		expect(isObject).toHaveBeenCalledWith(publicationConfiguration);
 	});

@@ -3,8 +3,8 @@ import type {
 	TextGeneration,
 } from "@meetup-automation/journey";
 import type { GeminiGenerationHttp } from "./gemini-generation-http.js";
-import type { GeminiGenerationResponse } from "./gemini-generation-response.js";
 import type { GeminiGenerationPrompt } from "./gemini-generation-prompt.js";
+import type { GeminiGenerationResponse } from "./gemini-generation-response.js";
 
 export class GeminiTextGeneration implements TextGeneration {
 	readonly provider = "gemini";

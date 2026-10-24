@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GeminiGenerationPrompt } from "./gemini-generation-prompt.js";
+
 describe("Gemini brief encoding", () => {
 	it("encodes an arbitrary prepared brief without adding business rules", () => {
 		// Arrange

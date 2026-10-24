@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
 import { DriveContentImage } from "./drive-content-image.js";
+import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
 import { GoogleDriveContentMediaStore } from "./google-drive-content-media-store.js";
 
 describe("immutable content media", () => {

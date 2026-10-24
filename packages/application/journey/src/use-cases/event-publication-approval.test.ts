@@ -2,10 +2,11 @@ import type { ScheduledEvent } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import {
 	publicationFixture,
+	publicationIdentity,
 	publicationUrl,
 } from "../../testing/meetup-publication.fixtures.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
-import { MeetupPublicationApproval } from "./meetup-publication-approval.js";
+import { EventPublicationApproval } from "./event-publication-approval.js";
 
 describe("Meetup publication approval revision", () => {
 	it.each([
@@ -22,21 +23,20 @@ describe("Meetup publication approval revision", () => {
 			// Arrange
 			const f = publicationFixture();
 			const event = new JourneyPolicyComposition()
-				.meetupPublicationProjection()
+				.scheduledEventProjection()
 				.create(f.currentEvent, f.dependencies.settings);
 			if (!event) throw new Error("Expected event fixture");
-			const approval = new MeetupPublicationApproval(
-				{
-					meetupPublicationRevision:
-						new JourneyPolicyComposition().meetupPublicationRevision(),
-				},
+			const approval = new EventPublicationApproval(
+				new JourneyPolicyComposition().meetupPublicationRevision(),
 				f.approval,
 				f.dependencies.clock,
+				"meetup-publication",
+				f.dependencies.meetupUrlPrefix,
 			);
 
 			// Act
-			await approval.request(event, publicationUrl);
-			await approval.request({ ...event, ...change }, publicationUrl);
+			await approval.request(event, publicationIdentity());
+			await approval.request({ ...event, ...change }, publicationIdentity());
 
 			// Assert
 			expect(f.approval.request.mock.calls[0]?.[0].revision).not.toBe(
@@ -48,21 +48,23 @@ describe("Meetup publication approval revision", () => {
 		// Arrange
 		const f = publicationFixture();
 		const event = new JourneyPolicyComposition()
-			.meetupPublicationProjection()
+			.scheduledEventProjection()
 			.create(f.currentEvent, f.dependencies.settings);
 		if (!event) throw new Error("Expected event fixture");
-		const approval = new MeetupPublicationApproval(
-			{
-				meetupPublicationRevision:
-					new JourneyPolicyComposition().meetupPublicationRevision(),
-			},
+		const approval = new EventPublicationApproval(
+			new JourneyPolicyComposition().meetupPublicationRevision(),
 			f.approval,
 			f.dependencies.clock,
+			"meetup-publication",
+			f.dependencies.meetupUrlPrefix,
 		);
 
 		// Act
-		await approval.request(event, publicationUrl);
-		await approval.request(event, publicationUrl.replace("12345", "67890"));
+		await approval.request(event, publicationIdentity());
+		await approval.request(
+			event,
+			publicationIdentity(publicationUrl.replace("12345", "67890")),
+		);
 
 		// Assert
 		expect(f.approval.request.mock.calls[0]?.[0].revision).not.toBe(

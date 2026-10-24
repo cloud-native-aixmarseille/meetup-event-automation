@@ -2,12 +2,17 @@ import * as core from "@actions/core";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	eventPublicationConfigurationFixture,
+	publicationCredentialsFixture,
+} from "../testing/event-publication.fixtures.js";
+import {
 	eventPublicationSettings,
 	publicationUrlInputs,
 } from "../testing/publication-urls.fixtures.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { EventPublicationAction } from "./event-publication-action.js";
 import { ActionMessages } from "./i18n/action-messages.js";
+import { PublicationCredentialsInput } from "./publication-credentials-input.js";
 
 const mocks = vi.hoisted(() => ({
 	inputs: {} as Record<string, string>,
@@ -28,20 +33,12 @@ vi.mock("@actions/github", () => ({
 	context: { repo: { owner: "example", repo: "events" } },
 	getOctokit: vi.fn().mockReturnValue({}),
 }));
-vi.mock("./meetup-publication-composition.js", () => ({
-	MeetupPublicationComposition: { create: mocks.create },
-}));
-
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.inputs = {
 		...publicationUrlInputs,
 		"issue-number": "42",
-		"meetup-email": "organizer@example.test",
-		"meetup-password": " synthetic-password ",
-		"ai-api-key": "synthetic-key",
-		"ai-provider": "gemini",
-		"ai-model": "example-model",
+		"publication-credentials": JSON.stringify(publicationCredentialsFixture()),
 		"slack-token": "synthetic-slack-token",
 		"slack-organizer-channel-id": "C12345",
 		"github-token": "synthetic-token",
@@ -50,19 +47,33 @@ beforeEach(() => {
 		"conference-hall-api-key": "synthetic-source-key",
 	};
 	mocks.create.mockReturnValue({ get: () => ({ execute: mocks.execute }) });
-	mocks.load.mockResolvedValue({
-		startTime: "18:45",
-		endTime: "20:45",
-		venues: {},
-	});
+	mocks.load.mockResolvedValue(
+		new GithubActionsComposition()
+			.eventPublicationConfiguration()
+			.parse(eventPublicationConfigurationFixture()),
+	);
 	mocks.execute.mockResolvedValue({
-		status: "draft",
-		reviewUrl: "https://www.meetup.com/example/events/12345/",
+		publications: [
+			{
+				status: "draft",
+				destination: {
+					provider: "meetup",
+					target: "https://www.meetup.com/example/",
+				},
+				reviewUrl: "https://www.meetup.com/example/events/12345/",
+				diagnostics: [],
+			},
+			{
+				status: "updated",
+				destination: { provider: "ocgroups", target: "example" },
+				diagnostics: [],
+			},
+		],
 		diagnostics: [],
 	});
 });
 
-describe("Meetup publication action", () => {
+describe("event publication action", () => {
 	it("prepares the selected issue and masks all account credentials", async () => {
 		// Arrange
 		const messages = new ActionMessages(
@@ -77,11 +88,16 @@ describe("Meetup publication action", () => {
 		expect(mocks.create).toHaveBeenCalledWith(
 			expect.objectContaining({
 				...eventPublicationSettings,
-				ai: {
-					provider: "gemini",
-					model: "example-model",
-					apiKey: "synthetic-key",
-				},
+				adapters: [
+					expect.objectContaining({
+						provider: "meetup",
+						credentials: publicationCredentialsFixture().meetup,
+					}),
+					expect.objectContaining({
+						provider: "ocgroups",
+						credentials: publicationCredentialsFixture().ocgroups,
+					}),
+				],
 			}),
 		);
 		expect(mocks.execute).toHaveBeenCalledWith({
@@ -89,14 +105,19 @@ describe("Meetup publication action", () => {
 			issueNumber: 42,
 		});
 		expect(mocks.setSecret).toHaveBeenCalledWith("organizer@example.test");
-		expect(mocks.setSecret).toHaveBeenCalledWith(" synthetic-password ");
-		expect(mocks.setSecret).toHaveBeenCalledWith("synthetic-key");
-		expect(core.getInput).toHaveBeenCalledWith("meetup-password", {
+		expect(mocks.setSecret).toHaveBeenCalledWith(" synthetic-meetup-password ");
+		expect(mocks.setSecret).toHaveBeenCalledWith("synthetic-ai-key");
+		expect(core.getInput).toHaveBeenCalledWith("publication-credentials", {
 			required: true,
 			trimWhitespace: false,
 		});
-		expect(result.details).toContain("meetup_event=draft approval=required");
-		expect(result.details.join("\n")).toContain("meetup_url=");
+		expect(result.details).toContain(
+			"publication_provider=meetup event=draft approval=required",
+		);
+		expect(result.details.join("\n")).toContain("review_url=");
+		expect(result.details).toContain(
+			"publication_provider=ocgroups event=synchronized",
+		);
 		expect(result.details.join("\n")).toContain(
 			"https://www.meetup.com/example/events/12345/",
 		);
@@ -106,12 +127,18 @@ describe("Meetup publication action", () => {
 	it("reports blocked state and leaves diagnostic rendering to the shared reporter", async () => {
 		// Arrange
 		mocks.execute.mockResolvedValue({
-			status: "blocked",
+			publications: [
+				{
+					destination: { provider: "ocgroups", target: "example" },
+					status: "blocked",
+					diagnostics: [],
+				},
+			],
 			diagnostics: [
 				{
-					code: "publication.meetup.uncertain",
+					code: "publication.community.uncertain",
 					severity: "warning",
-					message: "Meetup publication: uncertain",
+					message: "Community publication: uncertain",
 				},
 			],
 		});
@@ -125,12 +152,14 @@ describe("Meetup publication action", () => {
 		);
 
 		// Assert
-		expect(result.details).toContain("evenement_meetup=bloque");
+		expect(result.details).toContain(
+			"fournisseur_publication=ocgroups evenement=bloque",
+		);
 		expect(result.details.join("\n")).not.toContain(
 			"Synchronisation interrompue",
 		);
 		expect(result.diagnostics).toContainEqual(
-			expect.objectContaining({ code: "publication.meetup.uncertain" }),
+			expect.objectContaining({ code: "publication.community.uncertain" }),
 		);
 	});
 
@@ -138,11 +167,7 @@ describe("Meetup publication action", () => {
 		"meetup-event-url-prefix",
 		"community-event-url-prefixes",
 		"asset-folder-url-prefix",
-		"meetup-email",
-		"meetup-password",
-		"ai-api-key",
-		"ai-provider",
-		"ai-model",
+		"publication-credentials",
 		"github-token",
 		"issue-number",
 		"slack-token",
@@ -167,11 +192,14 @@ describe("Meetup publication action", () => {
 
 function subject() {
 	return new EventPublicationAction({
-		aiInput: new GithubActionsComposition().aiInput(),
+		credentials: new PublicationCredentialsInput(
+			new GithubActionsComposition().runtimeInput(),
+			new GithubActionsComposition().aiInput(),
+		),
 		publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 		createJourney: (input) => mocks.create(input).get(),
 		runtimeInput: new GithubActionsComposition().runtimeInput(),
 		conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-		meetupPublicationConfiguration: { load: mocks.load },
+		eventPublicationConfiguration: { load: mocks.load },
 	});
 }
