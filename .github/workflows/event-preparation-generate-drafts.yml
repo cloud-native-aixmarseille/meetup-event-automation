@@ -101,7 +101,7 @@ jobs:
           NODE
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -114,7 +114,7 @@ jobs:
         with:
           persist-credentials: false
       - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
+        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@ab69f41f76e77ec84e733dedb03492b3ee95a05f
         with:
           actions-path: actions
       - name: Generate event title

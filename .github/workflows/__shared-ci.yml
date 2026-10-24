@@ -11,7 +11,7 @@ permissions: {}
 
 jobs:
   linter:
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@ab69f41f76e77ec84e733dedb03492b3ee95a05f # 0.39.0
     permissions:
       actions: read
       contents: read
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
       - name: Check solver dependency lock
