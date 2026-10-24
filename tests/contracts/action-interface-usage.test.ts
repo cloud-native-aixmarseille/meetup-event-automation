@@ -277,3 +277,32 @@ describe("internal workflow reachability", () => {
 		},
 	);
 });
+
+describe("conditional runtime installation", () => {
+	it.each([
+		{
+			run: "python -m venv .venv\n.venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt",
+			consumed: true,
+		},
+		{
+			run: 'echo ".venv/bin/python -m pip install -r requirements.txt"',
+			consumed: false,
+		},
+		{
+			run: "# .venv/bin/python -m pip install -r requirements.txt",
+			consumed: false,
+		},
+		{ run: ".venv/bin/python -m pip --version", consumed: false },
+	])(
+		"recognizes dependency installation effects: $run",
+		({ run, consumed }) => {
+			// Arrange
+			const condition = `\${{ steps.runtime.outputs.requires-challenge-solver == 'true' }}`;
+			const job = { steps: [{ if: condition, run }] };
+			// Act
+			const values = ActionInterfaceUsage.operationalValues(job);
+			// Assert
+			expect(values.includes(condition)).toBe(consumed);
+		},
+	);
+});

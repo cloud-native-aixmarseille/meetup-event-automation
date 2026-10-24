@@ -16,9 +16,10 @@ import { SlackApprovalNotification } from "./slack-approval-notification.js";
 import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 import { SlackAttentionNotification } from "./slack-attention-notification.js";
 import { SlackAttentionPresenter } from "./slack-attention-presenter.js";
+import { SlackCommunityApprovalPresenter } from "./slack-community-approval-presenter.js";
+import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import { SlackEmailApprovalPresenter } from "./slack-email-approval-presenter.js";
 import { SlackMeetupApprovalPresenter } from "./slack-meetup-approval-presenter.js";
-import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import { SlackMessageReference } from "./slack-message-reference.js";
 import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
@@ -52,6 +53,7 @@ export class SlackNotificationGatewayComposition {
 		return new SlackApprovalPresenter({
 			"email-introduction": new SlackEmailApprovalPresenter(messages),
 			"meetup-publication": new SlackMeetupApprovalPresenter(messages),
+			"community-publication": new SlackCommunityApprovalPresenter(messages),
 			"content-review": new SlackContentApprovalPresenter(messages),
 		});
 	}

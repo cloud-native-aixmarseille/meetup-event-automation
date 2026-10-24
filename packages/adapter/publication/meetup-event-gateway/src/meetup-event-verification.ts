@@ -1,6 +1,5 @@
 import type {
 	MeetupEventUrl,
-	SavedScheduledEvent,
 	ScheduledEvent,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
@@ -10,6 +9,7 @@ import type {
 	MeetupCalendarArguments,
 } from "./meetup-calendar.js";
 import type { MeetupVenue, MeetupVenueArguments } from "./meetup-venue.js";
+import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventVerificationCollaborators {
 	readonly meetupBrowserRoutes: Pick<
@@ -33,7 +33,7 @@ export class MeetupEventVerification {
 		url: MeetupEventUrl,
 	): Promise<{
 		matches: boolean;
-		status: SavedScheduledEvent["status"];
+		status: SavedMeetupEvent["status"];
 	}> {
 		const editorUrl = this.collaborators.meetupBrowserRoutes.edit(url);
 		await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
@@ -66,7 +66,7 @@ export class MeetupEventVerification {
 		return { matches, status };
 	}
 
-	async status(): Promise<SavedScheduledEvent["status"]> {
+	async status(): Promise<SavedMeetupEvent["status"]> {
 		const draft = this.page
 			.getByTestId("event-save-draft-btn")
 			.filter({ visible: true });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CoverArtwork } from "./cover-artwork.js";
+
 const talk = {
 	id: "talk-one",
 	title: "Observable clusters",

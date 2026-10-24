@@ -1,16 +1,16 @@
 import type { MeetupEvent } from "@meetup-automation/event";
 import type { ScheduledEvent } from "@meetup-automation/publication";
 
-export type MeetupPublicationSettings = Readonly<{
+export type ScheduledEventSettings = Readonly<{
 	startTime: string;
 	endTime: string;
 	venues: Readonly<Record<string, Readonly<{ name: string; city: string }>>>;
 }>;
 
-export class MeetupPublicationProjection {
+export class ScheduledEventProjection {
 	create(
 		event: MeetupEvent,
-		settings: MeetupPublicationSettings,
+		settings: ScheduledEventSettings,
 	): ScheduledEvent | undefined {
 		const venue = event.host?.id ? settings.venues[event.host.id] : undefined;
 		if (

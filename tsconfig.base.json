@@ -106,6 +106,9 @@
 			],
 			"@meetup-automation/templating": [
 				"./packages/presentation/templating/src/index.ts"
+			],
+			"@meetup-automation/ocgroups-event-gateway": [
+				"./packages/adapter/publication/ocgroups-event-gateway/src/index.ts"
 			]
 		}
 	}

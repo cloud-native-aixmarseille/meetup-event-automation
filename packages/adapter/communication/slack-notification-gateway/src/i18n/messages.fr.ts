@@ -1,4 +1,6 @@
 export const FR_MESSAGES = {
+	"request.community-publication":
+		"Événement CNCF du {date} : vérifier le brouillon OCGroups et approuver la publication, avec ses notifications natives, dans GitHub : {url}",
 	"request.content":
 		"Contenu à vérifier pour le {date} : {target}. Approuvez, refusez ou demandez une nouvelle proposition : {url}",
 	"request.introduction":

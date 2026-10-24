@@ -45,7 +45,7 @@ Meetup/CNCF/Drive links, a checked **Meetup event published** task in
 **Communication**, and no blocking diagnostics. The **OpenFeedback Link**
 field may stay empty until the automation creates the feedback event.
 
-Use [Meetup synchronization](../integrations/meetup-publication.md) to create a
+Use [Meetup synchronization](../integrations/event-publication.md) to create a
 draft and fill **Meetup Link**. Once the required information is complete,
 review the draft through the approval comment or its Slack link, then check
 **Approve publishing this Meetup event**. Automation publishes it and checks

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DriveContentImage } from "./drive-content-image.js";
+
 describe("stored image validation", () => {
 	it("derives dimensions and fingerprint from the actual bytes", () => {
 		// Arrange

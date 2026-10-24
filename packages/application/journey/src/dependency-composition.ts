@@ -24,14 +24,6 @@ import {
 	type ManageMeetupEventArguments,
 } from "./use-cases/manage-meetup-event.js";
 import {
-	ManageMeetupPublication,
-	type ManageMeetupPublicationArguments,
-} from "./use-cases/manage-meetup-publication.js";
-import {
-	MeetupPublicationApproval,
-	type MeetupPublicationApprovalArguments,
-} from "./use-cases/meetup-publication-approval.js";
-import {
 	ReconcileMeetupDocuments,
 	type ReconcileMeetupDocumentsArguments,
 } from "./use-cases/reconcile-meetup-documents.js";
@@ -172,39 +164,6 @@ export class JourneyComposition {
 					new EventDomainComposition().eventRepositoryPatches(),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
-			},
-			...args,
-		);
-	}
-	manageMeetupPublication(
-		...args: ManageMeetupPublicationArguments
-	): ManageMeetupPublication {
-		return new ManageMeetupPublication(
-			{
-				diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-				meetupPublicationProjection:
-					new JourneyPolicyComposition().meetupPublicationProjection(),
-				scheduledEventPolicy:
-					new PublicationDomainComposition().scheduledEventPolicy(),
-				meetupPublicationChecklist:
-					new EventDomainComposition().meetupPublicationChecklist(),
-				eventRepositoryPatches:
-					new EventDomainComposition().eventRepositoryPatches(),
-				eventDocumentConcurrency:
-					new EventDomainComposition().eventDocumentConcurrency(),
-				createMeetupPublicationApproval: (...args) =>
-					this.meetupPublicationApproval(...args),
-			},
-			...args,
-		);
-	}
-	meetupPublicationApproval(
-		...args: MeetupPublicationApprovalArguments
-	): MeetupPublicationApproval {
-		return new MeetupPublicationApproval(
-			{
-				meetupPublicationRevision:
-					new JourneyPolicyComposition().meetupPublicationRevision(),
 			},
 			...args,
 		);

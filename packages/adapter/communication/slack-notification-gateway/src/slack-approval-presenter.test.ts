@@ -1,8 +1,9 @@
-import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import type { ApprovalNotificationRequest } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
+import { SlackCommunityApprovalPresenter } from "./slack-community-approval-presenter.js";
+import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import { SlackEmailApprovalPresenter } from "./slack-email-approval-presenter.js";
 import { SlackMeetupApprovalPresenter } from "./slack-meetup-approval-presenter.js";
 
@@ -28,6 +29,11 @@ describe("Slack approval presentation", () => {
 				),
 				"content-review": new SlackContentApprovalPresenter(
 					new SlackNotificationGatewayComposition().slackApprovalMessages("en"),
+				),
+				"community-publication": new SlackCommunityApprovalPresenter(
+					new SlackNotificationGatewayComposition().slackApprovalMessages(
+						locale,
+					),
 				),
 				"meetup-publication": new SlackMeetupApprovalPresenter(
 					new SlackNotificationGatewayComposition().slackApprovalMessages(

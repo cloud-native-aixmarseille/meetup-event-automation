@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-	contentFixture,
-	media,
-} from "../../testing/promotional-content.fixtures.js";
-import {
 	event,
 	identity,
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
+import {
+	contentFixture,
+	media,
+} from "../../testing/promotional-content.fixtures.js";
 import { SubmitPromotionalContent } from "./submit-promotional-content.js";
 
 describe("organizer content import", () => {

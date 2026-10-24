@@ -54,7 +54,9 @@ const actionWiring = {
 	"referential-reconcile-speakers": {
 		synchronize: ["referential/reconcile-speakers", "issue-form/reconcile"],
 	},
-	"event-publication-reconcile": { publish: ["publication/reconcile-event"] },
+	"event-publication-reconcile": {
+		publish: ["publication/prepare-runtime", "publication/reconcile-event"],
+	},
 };
 
 describe("public reusable workflow contracts", () => {
@@ -74,7 +76,9 @@ describe("public reusable workflow contracts", () => {
 					(step) =>
 						step.uses === localWorkflowActionsRef &&
 						step.with?.["actions-path"] ===
-							(name === "event-publication-reconcile" ? "." : "actions"),
+							(["event-publication-reconcile"].includes(name)
+								? "."
+								: "actions"),
 				);
 				const actions = steps.filter((step) =>
 					step.uses?.startsWith(automationActionPrefix),

@@ -1,17 +1,17 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import type { ManageMeetupPublication } from "@meetup-automation/journey";
+import type { ReconcileEventPublications } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
-import type { AiInput } from "./ai-input.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
+import type { EventPublicationConfiguration } from "./event-publication-configuration.js";
+import type { EventPublicationJourneyComposition } from "./event-publication-journey-composition.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
-import type { MeetupPublicationComposition } from "./meetup-publication-composition.js";
-import type { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import type { PublicationCredentialsInput } from "./publication-credentials-input.js";
 import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface EventPublicationActionCollaborators {
-	readonly aiInput: Pick<AiInput, "read">;
+	readonly credentials: Pick<PublicationCredentialsInput, "read">;
 	readonly publicationUrlInput: Pick<
 		PublicationUrlInput,
 		| "readMeetupEventUrlPrefix"
@@ -19,12 +19,12 @@ export interface EventPublicationActionCollaborators {
 		| "readAssetFolderUrlPrefix"
 	>;
 	readonly createJourney: (
-		input: Parameters<typeof MeetupPublicationComposition.create>[0],
-	) => Pick<ManageMeetupPublication, "execute">;
+		input: Parameters<typeof EventPublicationJourneyComposition.create>[0],
+	) => Pick<ReconcileEventPublications, "execute">;
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
-	readonly meetupPublicationConfiguration: Pick<
-		MeetupPublicationConfiguration,
+	readonly eventPublicationConfiguration: Pick<
+		EventPublicationConfiguration,
 		"load"
 	>;
 }
@@ -39,9 +39,13 @@ export class EventPublicationAction {
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
-		const email = this.secret("meetup-email");
-		const password = this.secret("meetup-password");
-		const ai = this.collaborators.aiInput.read();
+		const configuration =
+			await this.collaborators.eventPublicationConfiguration.load(
+				process.cwd(),
+			);
+		const adapters = this.collaborators.credentials.read(
+			configuration.destinations,
+		);
 		const githubToken = this.secret("github-token");
 		const { owner, repo } = context.repo;
 		const journey = this.collaborators.createJourney({
@@ -57,9 +61,7 @@ export class EventPublicationAction {
 			issueNumber,
 			locale: messages.locale,
 			client: getOctokit(githubToken),
-			email,
-			password,
-			ai,
+			adapters,
 			slackToken: this.secret("slack-token"),
 			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
 				required: true,
@@ -67,9 +69,6 @@ export class EventPublicationAction {
 			commentAuthorLogin: core.getInput("managed-comment-author", {
 				required: true,
 			}),
-			settings: await this.collaborators.meetupPublicationConfiguration.load(
-				process.cwd(),
-			),
 		});
 		const result = await journey.execute({
 			repository: `${owner}/${repo}`,
@@ -78,10 +77,19 @@ export class EventPublicationAction {
 		return {
 			details: [
 				messages.t("report.event.context", { issue: issueNumber, mode: "fix" }),
-				messages.t(`report.meetup.${result.status}`),
-				...(result.reviewUrl
-					? [messages.t("report.meetup.review", { url: result.reviewUrl })]
-					: []),
+				...result.publications.flatMap((publication) => [
+					messages.t(`report.publication.${publication.status}`, {
+						provider: publication.destination.provider,
+					}),
+					...(publication.reviewUrl
+						? [
+								messages.t("report.publication.review", {
+									provider: publication.destination.provider,
+									url: publication.reviewUrl,
+								}),
+							]
+						: []),
+				]),
 			],
 			diagnostics: result.diagnostics,
 		};
@@ -90,7 +98,7 @@ export class EventPublicationAction {
 	private secret(name: string): string {
 		const value = core.getInput(name, {
 			required: true,
-			trimWhitespace: name !== "meetup-password",
+			trimWhitespace: false,
 		});
 		core.setSecret(value);
 		return value;

@@ -1,5 +1,6 @@
 import type {
 	ContentFingerprint,
+	EventPublicationIdentity,
 	ScheduledEvent,
 } from "@meetup-automation/publication";
 
@@ -13,10 +14,10 @@ export class MeetupPublicationRevision {
 		private readonly collaborators: MeetupPublicationRevisionCollaborators,
 	) {}
 
-	of(event: ScheduledEvent, url: string): string {
+	of(event: ScheduledEvent, identity: EventPublicationIdentity): string {
 		return this.collaborators.contentFingerprint.of(
 			JSON.stringify({
-				url,
+				url: identity.reviewUrl,
 				event: {
 					title: event.title,
 					description: event.description,

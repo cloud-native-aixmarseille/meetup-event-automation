@@ -3,11 +3,11 @@ import type { ContentAuthority } from "../ports/content-authority.js";
 import type { ContentPlanFactory } from "../proposals/content-plan-factory.js";
 import type { PromotionalContentPolicy } from "../proposals/promotional-content-policy.js";
 import type { ContentProposalStore } from "../proposals/promotional-content-ports.js";
-import type { MeetupPublicationSettings } from "../use-cases/meetup-publication-projection.js";
 import type {
 	ContentFactsProjection,
 	ContentSettings,
 } from "../review/content-facts-projection.js";
+import type { ScheduledEventSettings } from "../use-cases/scheduled-event-projection.js";
 
 /** Only proposal-managed fields acquire a content gate; other event work keeps its own rules. */
 export class EventCopyApprovalGate {
@@ -21,7 +21,7 @@ export class EventCopyApprovalGate {
 		private readonly plans: Pick<ContentPlanFactory, "create">,
 		private readonly policy: Pick<PromotionalContentPolicy, "current">,
 		private readonly settings: () => Promise<{
-			publication: MeetupPublicationSettings;
+			publication: ScheduledEventSettings;
 			content: ContentSettings;
 		}>,
 	) {}

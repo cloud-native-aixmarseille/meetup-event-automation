@@ -62456,7 +62456,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication" || request2.kind === "content-review")
+    if (request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -62476,7 +62476,7 @@ var ApprovalRequestPolicy = class {
       return false;
     if (previous.kind === "content-review" && request2.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
-    if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
+    if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request2.kind === "meetup-publication" || request2.kind === "community-publication"))
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
     return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
   }
@@ -62686,6 +62686,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("community-publication:"))
+      return "community-approval";
     return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
   }
   covered(episode, entries) {
@@ -62788,13 +62790,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -66247,6 +66249,9 @@ var MeetupEventUrl = class _MeetupEventUrl {
   get value() {
     return `${this.group.eventUrlPrefix}${this.identifier}/`;
   }
+  get id() {
+    return this.identifier;
+  }
 };
 
 // packages/domain/publication/src/domain/meetup-event-url-policy.ts
@@ -66472,6 +66477,11 @@ var ScheduledEventPolicy = class {
   valid(event, now2) {
     if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
       return false;
+    return this.validSchedule(event, now2);
+  }
+  validSchedule(event, now2) {
+    if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
     const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
       return false;
@@ -66648,6 +66658,57 @@ var PublicationDomainComposition = class {
   }
 };
 
+// packages/domain/publication/src/domain/community-event-policy.ts
+var CommunityEventPolicy = class {
+  constructor(schedule) {
+    this.schedule = schedule;
+  }
+  schedule;
+  valid(event, now2) {
+    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+  }
+  venue(venue) {
+    return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
+  }
+  registration(value) {
+    return Number.isSafeInteger(value.capacity) && value.capacity > 0 && value.capacity <= 1e5 && typeof value.waitlist === "boolean" && typeof value.approvalRequired === "boolean" && typeof value.reminder === "boolean" && !(value.waitlist && value.approvalRequired);
+  }
+  text(value, maximum) {
+    return value.trim().length > 0 && Buffer.byteLength(value, "utf8") <= maximum && ![...value].some(
+      (character) => character.charCodeAt(0) < 32 && !"\n\r	".includes(character)
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/community-group-url.ts
+var CommunityGroupUrl = class _CommunityGroupUrl {
+  constructor(eventUrlPrefix, origin, community, group) {
+    this.eventUrlPrefix = eventUrlPrefix;
+    this.origin = origin;
+    this.community = community;
+    this.group = group;
+  }
+  eventUrlPrefix;
+  origin;
+  community;
+  group;
+  static parse(value) {
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      return void 0;
+    }
+    const match = /^\/([a-z0-9-]+)\/group\/([a-z0-9-]+)\/event\/$/.exec(
+      url.pathname
+    );
+    if (!match || url.protocol !== "https:" || url.username || url.password || value !== `${url.origin}${url.pathname}`)
+      return void 0;
+    return new _CommunityGroupUrl(value, url.origin, match[1], match[2]);
+  }
+};
+
 // packages/domain/publication/src/domain/feedback-resolution-error.ts
 var FeedbackResolutionError = class extends Error {
   constructor(kind) {
@@ -66660,14 +66721,24 @@ var FeedbackResolutionError = class extends Error {
   kind;
 };
 
-// packages/domain/publication/src/domain/scheduled-event-error.ts
-var ScheduledEventError = class extends Error {
-  constructor(kind) {
-    super(`Event publication failed: ${kind}`);
-    this.kind = kind;
-    this.name = "ScheduledEventError";
+// packages/application/journey/src/approval/approval-value-fingerprint.ts
+var ApprovalValueFingerprint = class {
+  constructor(hash) {
+    this.hash = hash;
   }
-  kind;
+  hash;
+  digest(value) {
+    return this.hash.of(JSON.stringify(this.canonical(value)));
+  }
+  canonical(value) {
+    if (value === void 0) return null;
+    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
+      );
+    return value;
+  }
 };
 
 // packages/application/journey/src/approval/meetup-publication-revision.ts
@@ -66676,10 +66747,10 @@ var MeetupPublicationRevision = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  of(event, url) {
+  of(event, identity) {
     return this.collaborators.contentFingerprint.of(
       JSON.stringify({
-        url,
+        url: identity.reviewUrl,
         event: {
           title: event.title,
           description: event.description,
@@ -66719,26 +66790,6 @@ var AutomationConfigFactory = class {
         "policy-version": 1
       }
     };
-  }
-};
-
-// packages/application/journey/src/approval/approval-value-fingerprint.ts
-var ApprovalValueFingerprint = class {
-  constructor(hash) {
-    this.hash = hash;
-  }
-  hash;
-  digest(value) {
-    return this.hash.of(JSON.stringify(this.canonical(value)));
-  }
-  canonical(value) {
-    if (value === void 0) return null;
-    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
-    if (value && typeof value === "object")
-      return Object.fromEntries(
-        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
-      );
-    return value;
   }
 };
 
@@ -66817,6 +66868,17 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.community.content-review",
+  "publication.community.authentication",
+  "publication.community.prerequisites",
+  "publication.community.link",
+  "publication.community.conflict",
+  "publication.community.uncertain",
+  "publication.community-url.invalid",
+  "publication.community.missing",
+  "publication.community.unpublished",
+  "publication.community.approval-pending",
+  "publication.community.approval-rejected",
   "publication.content.prerequisites",
   "publication.content.pending",
   "publication.content.rejected",
@@ -67570,8 +67632,8 @@ var FeedbackAgendaProjection = class {
   }
 };
 
-// packages/application/journey/src/use-cases/meetup-publication-projection.ts
-var MeetupPublicationProjection = class {
+// packages/application/journey/src/use-cases/scheduled-event-projection.ts
+var ScheduledEventProjection = class {
   create(event, settings) {
     const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
     if (!venue || !event.description.trim() || !event.confirmations.host || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
@@ -67698,8 +67760,8 @@ var JourneyPolicyComposition = class {
   feedbackAgendaProjection() {
     return new FeedbackAgendaProjection();
   }
-  meetupPublicationProjection() {
-    return new MeetupPublicationProjection();
+  scheduledEventProjection() {
+    return new ScheduledEventProjection();
   }
   meetupPublicationRevision() {
     return new MeetupPublicationRevision({
@@ -68071,227 +68133,6 @@ var ManageMeetupEvent = class {
       repositoryPatch
     );
     return true;
-  }
-};
-
-// packages/application/journey/src/use-cases/manage-meetup-publication.ts
-var PUBLICATION_LINK_FIELDS = [
-  "publicationLinks.meetup",
-  "publicationLinks.community",
-  "publicationLinks.assets",
-  "publicationLinks.feedback"
-];
-var ManageMeetupPublication = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.dependencies = dependencies;
-  }
-  collaborators;
-  dependencies;
-  async execute(identity) {
-    const source = await this.dependencies.repository.find(identity);
-    if (!source) throw new Error("Meetup source issue was not found");
-    const evaluation = await this.dependencies.manageEvent.execute({
-      identity,
-      mode: "check",
-      sourceDocument: source
-    });
-    if (evaluation.skipped) return this.result("skipped", "inactive");
-    if (evaluation.diagnostics.some(
-      this.collaborators.diagnosticPolicy.isTechnicalFailure.bind(
-        this.collaborators.diagnosticPolicy
-      )
-    ))
-      return this.result("blocked", "source");
-    const event = evaluation.event;
-    if ((await this.dependencies.contentGate.blocked(event)).length)
-      return this.result("blocked", "content-review");
-    if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
-      return this.result("skipped", "inactive");
-    const draft = this.collaborators.meetupPublicationProjection.create(
-      event,
-      this.dependencies.settings
-    );
-    if (evaluation.diagnostics.some(
-      (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication"
-    ) || !draft || !this.collaborators.scheduledEventPolicy.valid(
-      draft,
-      this.dependencies.clock.now()
-    ) || evaluation.diagnostics.some(
-      (item) => item.severity === "error" && !PUBLICATION_LINK_FIELDS.includes(item.field ?? "")
-    ))
-      return this.result("blocked", "prerequisites");
-    return this.synchronize(source, draft, event.publicationLinks.meetup);
-  }
-  async synchronize(source, draft, supplied) {
-    const record = await this.dependencies.journal.load();
-    const suppliedUrl = this.eventUrl(supplied);
-    const recordedUrl = this.eventUrl(record?.url);
-    if (supplied && !suppliedUrl || record?.url && !recordedUrl)
-      return this.result("blocked", "link");
-    if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
-      return this.result("blocked", "conflict");
-    const url = (suppliedUrl ?? recordedUrl)?.value;
-    if (!url && record) return this.result("blocked", "uncertain");
-    try {
-      const saved = await this.dependencies.gateway.save(
-        draft,
-        url,
-        async () => {
-          await this.ensureCurrent(source);
-          if (!url) await this.dependencies.journal.reserve();
-          await this.ensureCurrent(source);
-        },
-        async (savedUrl) => {
-          if (!this.eventUrl(savedUrl))
-            throw new ScheduledEventError("verification");
-          await this.dependencies.journal.record(savedUrl);
-        }
-      );
-      if (!this.eventUrl(saved.url) || !url && saved.status !== "draft")
-        throw new ScheduledEventError("verification");
-      return await this.complete(source, draft, saved);
-    } catch (error2) {
-      if (!(error2 instanceof ScheduledEventError)) throw error2;
-      return this.result("blocked", error2.kind);
-    }
-  }
-  eventUrl(value) {
-    const group = MeetupGroupUrl.fromEventUrlPrefix(
-      this.dependencies.meetupUrlPrefix
-    );
-    return group ? MeetupEventUrl.parse(value, group) : void 0;
-  }
-  async persist(source, saved) {
-    await this.ensureCurrent(source);
-    const event = this.dependencies.codec.decode(source).event;
-    const updated = this.collaborators.meetupPublicationChecklist.withStatus(
-      event,
-      saved.status === "published"
-    );
-    const patch = this.dependencies.codec.createPatch(source, {
-      ...updated,
-      publicationLinks: { ...event.publicationLinks, meetup: saved.url }
-    });
-    if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
-      patch
-    )) {
-      await this.ensureCurrent(source);
-      await this.dependencies.repository.applyPatch(source.identity, patch);
-    }
-    return { ...source, ...patch };
-  }
-  async complete(source, event, saved) {
-    const current = await this.persist(source, saved);
-    if (saved.status === "published")
-      return { status: "updated", diagnostics: [] };
-    await this.ensureCurrent(current);
-    const approval = this.collaborators.createMeetupPublicationApproval(
-      this.dependencies.approval,
-      this.dependencies.clock
-    );
-    const decision = await approval.request(event, saved.url);
-    const diagnostics = decision.notificationFailed ? this.result("blocked", "approval-notification-failed").diagnostics : [];
-    if (decision.status !== "approved")
-      return {
-        status: "draft",
-        reviewUrl: saved.url,
-        diagnostics: [
-          ...diagnostics,
-          ...this.result("blocked", `approval-${decision.status}`).diagnostics
-        ]
-      };
-    const published = await this.dependencies.gateway.publish(
-      event,
-      saved.url,
-      async () => {
-        await this.ensureCurrent(current);
-        if (!this.collaborators.scheduledEventPolicy.valid(
-          event,
-          this.dependencies.clock.now()
-        ))
-          throw new ScheduledEventError("verification");
-        await approval.requireApproved(event, saved.url);
-        await this.ensureCurrent(current);
-      }
-    );
-    if (published.status !== "published" || published.url !== saved.url)
-      throw new ScheduledEventError("verification");
-    await this.persist(current, published);
-    return { status: "updated", diagnostics };
-  }
-  async ensureCurrent(source) {
-    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
-      this.dependencies.repository,
-      source.identity,
-      source
-    );
-    const evaluated = await this.dependencies.manageEvent.execute({
-      identity: source.identity,
-      sourceDocument: source,
-      mode: "check"
-    });
-    if (evaluated.skipped || (await this.dependencies.contentGate.blocked(evaluated.event)).length)
-      throw new ScheduledEventError("content-review");
-  }
-  result(status, code) {
-    return {
-      status,
-      diagnostics: [
-        {
-          code: `publication.meetup.${code}`,
-          severity: [
-            "editor",
-            "verification",
-            "source",
-            "unavailable",
-            "approval-unavailable",
-            "approval-notification-failed"
-          ].includes(code) ? "error" : status === "blocked" ? "warning" : "info",
-          field: "publicationLinks.meetup",
-          message: `Meetup publication: ${code}`
-        }
-      ]
-    };
-  }
-};
-
-// packages/application/journey/src/use-cases/meetup-publication-approval.ts
-var MeetupPublicationApproval = class {
-  constructor(collaborators, approvals, clock) {
-    this.collaborators = collaborators;
-    this.approvals = approvals;
-    this.clock = clock;
-  }
-  collaborators;
-  approvals;
-  clock;
-  async request(event, url) {
-    try {
-      return await this.approvals.request({
-        kind: "meetup-publication",
-        revision: this.collaborators.meetupPublicationRevision.of(event, url),
-        eventDate: event.date,
-        requestedAt: this.clock.now(),
-        publication: {
-          url,
-          title: event.title,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          timeZone: event.timeZone,
-          venue: event.venue
-        }
-      });
-    } catch {
-      throw new ScheduledEventError("approval-unavailable");
-    }
-  }
-  async requireApproved(event, url) {
-    const result = await this.request(event, url);
-    if (result.status !== "approved")
-      throw new ScheduledEventError(
-        result.status === "pending" ? "approval-pending" : "approval-rejected"
-      );
   }
 };
 
@@ -68902,28 +68743,6 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupPublication(...args) {
-    return new ManageMeetupPublication(
-      {
-        diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
-        meetupPublicationProjection: new JourneyPolicyComposition().meetupPublicationProjection(),
-        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy(),
-        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
-        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
-        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
-        createMeetupPublicationApproval: (...args2) => this.meetupPublicationApproval(...args2)
-      },
-      ...args
-    );
-  }
-  meetupPublicationApproval(...args) {
-    return new MeetupPublicationApproval(
-      {
-        meetupPublicationRevision: new JourneyPolicyComposition().meetupPublicationRevision()
-      },
-      ...args
-    );
-  }
   reconcileOrganizerFeedback(...args) {
     return new ReconcileOrganizerFeedback(
       {
@@ -69178,36 +68997,64 @@ var ConferenceHallInput = class {
   }
 };
 
-// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+// packages/runtime/github-actions/src/event-publication-configuration.ts
 import { readFile as readFile2 } from "node:fs/promises";
 import { join as join2 } from "node:path";
-var MeetupPublicationConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
+var EventPublicationConfiguration = class {
+  constructor(input, schedule, ocgroups) {
+    this.input = input;
+    this.schedule = schedule;
+    this.ocgroups = ocgroups;
   }
-  collaborators;
+  input;
+  schedule;
+  ocgroups;
   async load(root) {
     const text = await readFile2(
-      join2(root, ".github/meetup-publication.json"),
+      join2(root, ".github/event-publication.json"),
       "utf8"
     );
     if (Buffer.byteLength(text) > 1e5)
-      throw new Error("Meetup publication configuration is too large");
+      throw new Error("Event publication configuration is too large");
     return this.parse(JSON.parse(text));
   }
-  parse(input) {
-    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
-      throw new Error("Invalid Meetup publication configuration");
-    const venues = {};
-    for (const [id, venue] of Object.entries(input.venues)) {
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
-        throw new Error("Invalid public Meetup venue mapping");
-      venues[id] = { name: venue.name, city: venue.city };
-    }
-    return { startTime: input.startTime, endTime: input.endTime, venues };
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !Array.isArray(value.destinations) || value.destinations.length > 2)
+      throw new Error("Invalid publication destinations");
+    const destinations = value.destinations.map(
+      (destination) => this.destination(destination, schedule, value.venues)
+    );
+    if (new Set(destinations.map((destination) => destination.provider)).size !== destinations.length)
+      throw new Error("Duplicate publication provider");
+    return { schedule, destinations };
   }
-  text(value) {
-    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  destination(value, schedule, venues) {
+    if (!this.input.isObject(value))
+      throw new Error("Invalid publication destination");
+    if (value.provider === "meetup" && Object.keys(value).length === 1)
+      return { provider: "meetup", settings: schedule };
+    if (value.provider !== "ocgroups" || Object.keys(value).some(
+      (key) => ![
+        "provider",
+        "eventUrlPrefix",
+        "communityId",
+        "groupId",
+        "categoryId",
+        "registration"
+      ].includes(key)
+    ))
+      throw new Error("Unsupported publication destination");
+    return {
+      provider: "ocgroups",
+      settings: this.ocgroups.parse({
+        ...value,
+        version: 1,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        venues
+      })
+    };
   }
 };
 
@@ -69337,6 +69184,89 @@ var RuntimeInput = class {
   }
 };
 
+// packages/runtime/github-actions/src/event-schedule-configuration.ts
+var EventScheduleConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid event schedule configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public event venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/ocgroups-publication-settings.ts
+var OcgroupsPublicationSettings = class {
+  constructor(input, schedule, policy) {
+    this.input = input;
+    this.schedule = schedule;
+    this.policy = policy;
+  }
+  input;
+  schedule;
+  policy;
+  parse(value) {
+    const schedule = this.schedule.parse(value);
+    if (!this.input.isObject(value) || !CommunityGroupUrl.parse(value.eventUrlPrefix) || typeof value.eventUrlPrefix !== "string" || !this.uuid(value.communityId) || !this.uuid(value.groupId) || !this.uuid(value.categoryId) || !this.input.isObject(value.venues))
+      throw new Error("Invalid OCGroups target configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(value.venues))
+      venues[id] = this.venue(venue);
+    return {
+      ...schedule,
+      venues,
+      eventUrlPrefix: value.eventUrlPrefix,
+      communityId: value.communityId,
+      groupId: value.groupId,
+      categoryId: value.categoryId,
+      registration: this.registration(value.registration)
+    };
+  }
+  venue(value) {
+    if (!this.input.isObject(value) || typeof value.name !== "string" || typeof value.address !== "string" || typeof value.city !== "string" || typeof value.zipCode !== "string" || typeof value.state !== "string" || typeof value.country !== "string" || typeof value.countryCode !== "string")
+      throw new Error("Invalid public OCGroups venue mapping");
+    const venue = {
+      name: value.name,
+      address: value.address,
+      city: value.city,
+      zipCode: value.zipCode,
+      state: value.state,
+      country: value.country,
+      countryCode: value.countryCode
+    };
+    if (!this.policy.venue(venue))
+      throw new Error("Invalid public OCGroups venue mapping");
+    return venue;
+  }
+  registration(value) {
+    if (!this.input.isObject(value) || typeof value.capacity !== "number" || typeof value.waitlist !== "boolean" || typeof value.approvalRequired !== "boolean" || typeof value.reminder !== "boolean")
+      throw new Error("Invalid OCGroups registration configuration");
+    const registration = {
+      capacity: value.capacity,
+      waitlist: value.waitlist,
+      approvalRequired: value.approvalRequired,
+      reminder: value.reminder
+    };
+    if (!this.policy.registration(registration))
+      throw new Error("Invalid OCGroups registration configuration");
+    return registration;
+  }
+  uuid(value) {
+    return typeof value === "string" && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);
+  }
+};
+
 // packages/runtime/github-actions/src/runtime-input-composition.ts
 var RuntimeInputComposition = class _RuntimeInputComposition {
   static bind(container) {
@@ -69353,6 +69283,7 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
     );
     _RuntimeInputComposition.bindAttention(container);
     _RuntimeInputComposition.bindConfiguration(container);
+    _RuntimeInputComposition.bindPublication(container);
   }
   static bindAttention(container) {
     container.bind(AttentionStageInput).toResolvedValue(() => new AttentionStageInput());
@@ -69386,12 +69317,26 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
       }),
       [RuntimeInput, ContentContractPolicy, AssetRenderConfiguration]
     );
-    container.bind(MeetupPublicationConfiguration).toResolvedValue(
-      (runtimeInput, scheduledEventPolicy) => new MeetupPublicationConfiguration({
+  }
+  static bindPublication(container) {
+    container.bind(EventScheduleConfiguration).toResolvedValue(
+      (runtimeInput, scheduledEventPolicy) => new EventScheduleConfiguration({
         runtimeInput,
         scheduledEventPolicy
       }),
       [RuntimeInput, ScheduledEventPolicy]
+    );
+    container.bind(OcgroupsPublicationSettings).toResolvedValue(
+      (runtime, schedule, policy) => new OcgroupsPublicationSettings(
+        runtime,
+        schedule,
+        new CommunityEventPolicy(policy)
+      ),
+      [RuntimeInput, EventScheduleConfiguration, ScheduledEventPolicy]
+    );
+    container.bind(EventPublicationConfiguration).toResolvedValue(
+      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+      [RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings]
     );
   }
 };
@@ -73118,6 +73063,27 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Prepare event publication runtime",
+  "report.publication.draft": "publication_provider={provider} event=draft approval=required",
+  "report.publication.updated": "publication_provider={provider} event=synchronized",
+  "report.publication.skipped": "publication_provider={provider} event=skipped",
+  "report.publication.blocked": "publication_provider={provider} event=blocked",
+  "report.publication.review": "publication_provider={provider} review_url={url}",
+  "diagnostic.publication.community.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+  "diagnostic.publication.community.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+  "diagnostic.publication.community.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+  "diagnostic.publication.community.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+  "diagnostic.publication.community.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.community.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
+  "diagnostic.publication.community.inactive": "OCGroups publication is inactive for this issue.",
+  "diagnostic.publication.community.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.community.link": "Set a valid event URL belonging to the configured OCGroups group.",
+  "diagnostic.publication.community.conflict": "The issue link and recorded OCGroups event differ. Restore the recorded event link before running again.",
+  "diagnostic.publication.community.uncertain": "Publication outcome is uncertain. Check the OCGroups dashboard and recover the verified event UUID in the community journal before retrying. Keep drafts out of CNCF Link. Clear a reservation only after confirming no event was created.",
+  "diagnostic.publication.community.authentication": "Organizer login could not be verified. Check the account, credentials, and group permissions; complete any unsupported challenge interactively.",
+  "diagnostic.publication.community.editor": "The OCGroups editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+  "diagnostic.publication.community.verification": "OCGroups did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "action.event.generate-copy": "Generate event copy",
   "action.assets.generate-cover": "Generate cover artwork",
   "action.communication.generate-slack-post": "Generate Slack post",
@@ -73148,11 +73114,6 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
   "action.publication.reconcile-event": "Reconcile event publication",
-  "report.meetup.draft": "meetup_event=draft approval=required",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "meetup_event=synchronized",
-  "report.meetup.skipped": "meetup_event=skipped",
-  "report.meetup.blocked": "meetup_event=blocked",
   "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
   "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
@@ -73245,6 +73206,27 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.publication.prepare-runtime": "Pr\xE9parer le runtime de publication",
+  "report.publication.draft": "fournisseur_publication={provider} evenement=brouillon approbation=requise",
+  "report.publication.updated": "fournisseur_publication={provider} evenement=synchronise",
+  "report.publication.skipped": "fournisseur_publication={provider} evenement=ignore",
+  "report.publication.blocked": "fournisseur_publication={provider} evenement=bloque",
+  "report.publication.review": "fournisseur_publication={provider} url_validation={url}",
+  "diagnostic.publication.community.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
+  "diagnostic.publication.community.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
+  "diagnostic.publication.community.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+  "diagnostic.publication.community.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
+  "diagnostic.publication.community.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.community.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, les s\xE9lecteurs de connexion.",
+  "diagnostic.publication.community.inactive": "La publication OCGroups est inactive pour cette issue.",
+  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.community.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe OCGroups configur\xE9.",
+  "diagnostic.publication.community.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.community.uncertain": "Le r\xE9sultat est incertain. V\xE9rifiez le tableau de bord OCGroups et r\xE9cup\xE9rez le UUID v\xE9rifi\xE9 dans le journal community avant de relancer. Gardez les brouillons hors de CNCF Link. Effacez une r\xE9servation seulement apr\xE8s avoir confirm\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
+  "diagnostic.publication.community.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et les droits du groupe ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.community.editor": "Impossible de pr\xE9parer l'\xE9diteur OCGroups. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
+  "diagnostic.publication.community.verification": "Les champs enregistr\xE9s sur OCGroups ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "action.event.generate-copy": "G\xE9n\xE9rer le titre ou la description",
   "action.assets.generate-cover": "G\xE9n\xE9rer les illustrations",
   "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
@@ -73275,11 +73257,6 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
   "action.publication.reconcile-event": "R\xE9concilier la publication de l'\xE9v\xE9nement",
-  "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "evenement_meetup=synchronise",
-  "report.meetup.skipped": "evenement_meetup=ignore",
-  "report.meetup.blocked": "evenement_meetup=bloque",
   "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
   "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
@@ -73598,8 +73575,8 @@ var GithubActionsComposition = class _GithubActionsComposition {
   conferenceHallInput() {
     return this.container.get(ConferenceHallInput);
   }
-  meetupPublicationConfiguration() {
-    return this.container.get(MeetupPublicationConfiguration);
+  eventPublicationConfiguration() {
+    return this.container.get(EventPublicationConfiguration);
   }
   referentialActionReport() {
     return this.container.get(ReferentialActionReport);
@@ -73637,411 +73614,13 @@ var GithubActionsComposition = class _GithubActionsComposition {
   }
 };
 
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
-var GoogleDriveAssetRepositoryError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GoogleDriveAssetRepositoryError";
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/drive-asset-metadata.ts
-var DriveAssetMetadata = class {
-  templateProperties(template) {
-    return { template_file_id: template.id, template_kind: template.kind };
-  }
-  container(file, eventId) {
-    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
-      throw new GoogleDriveAssetRepositoryError(
-        "Google Drive returned an invalid asset folder"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      url: `https://drive.google.com/drive/folders/${file.id}`,
-      eventId
-    };
-  }
-  assetFile(file) {
-    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
-      throw new GoogleDriveAssetRepositoryError(
-        "Google Drive returned an invalid asset file"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      ...file.webViewLink ? { url: file.webViewLink } : {},
-      templateId: file.appProperties?.template_file_id,
-      kind: file.appProperties?.template_kind,
-      mimeType: file.mimeType ?? void 0,
-      contentManaged: file.appProperties?.meetup_content === "v1"
-    };
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
-import { createHash as createHash3 } from "node:crypto";
+// packages/adapter/publication/google-drive-asset-repository/src/content-media-composition.ts
+var import_drive2 = __toESM(require_build(), 1);
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
 var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
-var GoogleDriveAssetRepository = class {
-  constructor(collaborators, client, options) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.options = options;
-    if (![options.parentFolderId, options.templateFolderId].every(
-      (id) => /^[\w-]+$/.test(id)
-    ) || options.parentFolderId === options.templateFolderId)
-      throw this.failure(
-        "Distinct Google Drive parent and template folder IDs are required"
-      );
-  }
-  collaborators;
-  client;
-  options;
-  async findContainer(request2) {
-    const matches = await this.list(
-      `mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${this.key(request2)}' }`,
-      "allDrives"
-    );
-    if (matches.length > 1)
-      throw this.failure(
-        "Multiple asset folders match this event; manual reconciliation is required"
-      );
-    const file = matches[0];
-    if (!file) return void 0;
-    if (file.trashed || file.mimeType !== folderMimeType || file.appProperties?.meetup_event_key !== this.key(request2)) {
-      throw this.failure("The asset folder does not match the requested event");
-    }
-    return this.collaborators.driveAssetMetadata.container(
-      file,
-      request2.eventId
-    );
-  }
-  async ensureContainer(request2) {
-    const current = await this.findContainer(request2);
-    if (current?.name === request2.title) return current;
-    const appProperties = {
-      meetup_event_key: this.key(request2)
-    };
-    const response = current ? await this.remote(
-      () => this.client.files.update(
-        {
-          fileId: current.id,
-          requestBody: { name: request2.title, appProperties },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    ) : await this.remote(
-      () => this.client.files.create(
-        {
-          requestBody: {
-            name: request2.title,
-            mimeType: folderMimeType,
-            parents: [this.options.parentFolderId],
-            appProperties
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return this.collaborators.driveAssetMetadata.container(
-      response.data,
-      request2.eventId
-    );
-  }
-  async listTemplates() {
-    return (await this.list(
-      `'${this.escapeQuery(this.options.templateFolderId)}' in parents`
-    )).map((file) => {
-      if (!file.id || !file.name || !file.appProperties?.template_kind || file.mimeType === folderMimeType)
-        throw this.failure(
-          "Every asset template must be a file with an ID, name, and template_kind"
-        );
-      return {
-        id: file.id,
-        name: file.name,
-        kind: file.appProperties.template_kind,
-        mimeType: file.mimeType ?? void 0,
-        contentContract: this.options.contentContracts?.[file.appProperties.template_kind]
-      };
-    });
-  }
-  async listFiles(containerId) {
-    return (await this.list(
-      `'${this.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
-    )).filter(
-      (file) => !file.appProperties?.meetup_binding_file && !file.appProperties?.meetup_pdf_source && !file.appProperties?.meetup_pdf_state
-    ).map(
-      this.collaborators.driveAssetMetadata.assetFile.bind(
-        this.collaborators.driveAssetMetadata
-      )
-    );
-  }
-  async copyTemplate(containerId, template, name) {
-    const { data } = await this.remote(
-      () => this.client.files.copy(
-        {
-          fileId: template.id,
-          requestBody: {
-            name,
-            parents: [containerId],
-            appProperties: {
-              ...this.collaborators.driveAssetMetadata.templateProperties(
-                template
-              ),
-              ...template.contentContract ? { meetup_content: "v1" } : {}
-            }
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return this.collaborators.driveAssetMetadata.assetFile(data);
-  }
-  async updateFile(file, template, name) {
-    const { data } = await this.remote(
-      () => this.client.files.update(
-        {
-          fileId: file.id,
-          requestBody: {
-            name,
-            appProperties: {
-              ...this.collaborators.driveAssetMetadata.templateProperties(
-                template
-              ),
-              ...file.contentManaged ? { meetup_content: "v1" } : {}
-            }
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return this.collaborators.driveAssetMetadata.assetFile(data);
-  }
-  async list(query, corpora = "user") {
-    const files = [];
-    let pageToken;
-    const tokens = /* @__PURE__ */ new Set();
-    do {
-      const { data } = await this.remote(
-        () => this.client.files.list(
-          {
-            q: `${query} and trashed=false`,
-            corpora,
-            fields: `nextPageToken,incompleteSearch,files(${fields})`,
-            pageSize: 100,
-            pageToken,
-            supportsAllDrives: true,
-            includeItemsFromAllDrives: true
-          },
-          requestOptions
-        )
-      );
-      if (data.incompleteSearch)
-        throw this.failure(
-          "Google Drive returned an incomplete search; reconciliation was stopped"
-        );
-      files.push(...data.files ?? []);
-      pageToken = data.nextPageToken || void 0;
-      if (pageToken && tokens.has(pageToken))
-        throw this.failure("Google Drive returned a repeated pagination token");
-      if (pageToken) tokens.add(pageToken);
-    } while (pageToken);
-    return files;
-  }
-  key(request2) {
-    return createHash3("sha256").update(request2.idempotencyKey).digest("hex");
-  }
-  escapeQuery(value) {
-    return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
-  }
-  failure(message) {
-    return new GoogleDriveAssetRepositoryError(message);
-  }
-  async remote(operation) {
-    try {
-      return await operation();
-    } catch (error2) {
-      const response = error2 !== null && typeof error2 === "object" && "response" in error2 ? error2.response : void 0;
-      const status = response !== null && typeof response === "object" && "status" in response ? response.status : void 0;
-      if (status === 429)
-        throw this.failure(
-          "Google Drive rate limit reached; retry reconciliation later"
-        );
-      if (status === 401 || status === 403)
-        throw this.failure(
-          "Google Drive denied access; check credentials, folder access, and quota"
-        );
-      throw this.failure(
-        "Google Drive request failed; inspect provider state before retrying an uncertain write"
-      );
-    }
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-factory.ts
-var import_drive = __toESM(require_build(), 1);
-var GoogleDriveAssetRepositoryFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  createGoogleDriveAssetRepository(credentialsJson, options) {
-    return this.collaborators.createGoogleDriveAssetRepository(
-      this.client(credentialsJson),
-      options
-    );
-  }
-  client(credentialsJson) {
-    return (0, import_drive.drive)({
-      version: "v3",
-      auth: this.collaborators.googleDriveAuthentication.create(
-        credentialsJson
-      )
-    });
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
-var import_drive2 = __toESM(require_build(), 1);
-var GoogleDriveAuthentication = class {
-  create(credentialsJson) {
-    let credentials;
-    try {
-      credentials = JSON.parse(credentialsJson);
-    } catch {
-      throw new GoogleDriveAssetRepositoryError(
-        "Invalid Google service-account credentials"
-      );
-    }
-    if (!credentials || typeof credentials !== "object" || Array.isArray(credentials) || !("type" in credentials) || credentials.type !== "service_account" || !("client_email" in credentials) || typeof credentials.client_email !== "string" || !credentials.client_email || !("private_key" in credentials) || typeof credentials.private_key !== "string" || !credentials.private_key) {
-      throw new GoogleDriveAssetRepositoryError(
-        "Invalid Google service-account credentials"
-      );
-    }
-    return new import_drive2.auth.JWT({
-      email: credentials.client_email,
-      key: credentials.private_key,
-      scopes: ["https://www.googleapis.com/auth/drive"]
-    });
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-manifest-repository.ts
-import { Readable } from "node:stream";
-var GoogleDriveManifestRepository = class {
-  constructor(client) {
-    this.client = client;
-  }
-  client;
-  async load(folderId, fileId) {
-    const id = await this.find(folderId, fileId);
-    if (!id) return void 0;
-    const { data } = await this.client.files.get(
-      { fileId: id, alt: "media", supportsAllDrives: true },
-      { ...requestOptions, responseType: "stream" }
-    );
-    const chunks = [];
-    let size = 0;
-    for await (const chunk of data) {
-      size += chunk.length;
-      if (size > 1e6) {
-        data.destroy();
-        throw new ContentError("recovery");
-      }
-      chunks.push(Buffer.from(chunk));
-    }
-    try {
-      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-    } catch {
-      throw new ContentError("recovery");
-    }
-  }
-  async save(folderId, manifest) {
-    const id = await this.find(folderId, manifest.fileId);
-    const json = JSON.stringify(manifest);
-    if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
-    const media = { mimeType: "application/json", body: Readable.from([json]) };
-    if (id) {
-      await this.client.files.update(
-        { fileId: id, media, supportsAllDrives: true },
-        requestOptions
-      );
-    } else {
-      await this.client.files.create(
-        {
-          requestBody: {
-            name: `.${manifest.fileId}.bindings.json`,
-            mimeType: "application/json",
-            parents: [folderId],
-            appProperties: { meetup_binding_file: manifest.fileId }
-          },
-          media,
-          supportsAllDrives: true
-        },
-        requestOptions
-      );
-    }
-  }
-  async find(folderId, fileId) {
-    if (![folderId, fileId].every((id) => /^[\w-]+$/.test(id)))
-      throw new ContentError("recovery");
-    const { data } = await this.client.files.list(
-      {
-        q: `'${folderId}' in parents and trashed=false and appProperties has { key='meetup_binding_file' and value='${fileId}' }`,
-        fields: "nextPageToken,incompleteSearch,files(id,mimeType,parents,appProperties)",
-        pageSize: 100,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true
-      },
-      requestOptions
-    );
-    if (data.incompleteSearch || data.nextPageToken || (data.files?.length ?? 0) > 1)
-      throw new ContentError("recovery");
-    const file = data.files?.[0];
-    if (file && (!file.id || file.mimeType !== "application/json" || !file.parents?.includes(folderId) || file.appProperties?.meetup_binding_file !== fileId))
-      throw new ContentError("recovery");
-    return file?.id ?? void 0;
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
-var GoogleDriveAssetRepositoryComposition = class {
-  driveAssetMetadata() {
-    return new DriveAssetMetadata();
-  }
-  googleDriveAssetRepository(...args) {
-    return new GoogleDriveAssetRepository(
-      { driveAssetMetadata: this.driveAssetMetadata() },
-      ...args
-    );
-  }
-  googleDriveAssetRepositoryFactory() {
-    return new GoogleDriveAssetRepositoryFactory({
-      googleDriveAuthentication: this.googleDriveAuthentication(),
-      createGoogleDriveAssetRepository: (...args) => this.googleDriveAssetRepository(...args)
-    });
-  }
-  googleDriveAuthentication() {
-    return new GoogleDriveAuthentication();
-  }
-  googleDriveManifestRepository(...args) {
-    return new GoogleDriveManifestRepository(...args);
-  }
-};
 
 // packages/adapter/publication/google-drive-asset-repository/src/drive-bounded-stream.ts
 var DriveBoundedStream = class {
@@ -74061,538 +73640,6 @@ var DriveBoundedStream = class {
     }
   }
 };
-
-// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-binary.ts
-var DrivePdfBinary = class {
-  constructor(stream, fingerprint) {
-    this.stream = stream;
-    this.fingerprint = fingerprint;
-  }
-  stream;
-  fingerprint;
-  async read(content, mimeType) {
-    if (typeof mimeType !== "string" || mimeType.split(";", 1)[0]?.trim().toLowerCase() !== "application/pdf") {
-      content.destroy();
-      throw new PdfExportError("invalid");
-    }
-    const bytes = await this.stream.read(content, 1e7);
-    if (!/^%PDF-\d\.\d\b/.test(bytes.subarray(0, 16).toString("ascii")) || !/%%EOF\s*$/.test(bytes.subarray(-1024).toString("ascii"))) {
-      throw new PdfExportError("invalid");
-    }
-    return { bytes, fingerprint: this.fingerprint.of(bytes) };
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-lookup.ts
-var exportFields = "id,name,description,mimeType,parents,trashed,version,appProperties";
-var DrivePdfLookup = class {
-  constructor(client, metadata, folders) {
-    this.client = client;
-    this.metadata = metadata;
-    this.folders = folders;
-  }
-  client;
-  metadata;
-  folders;
-  async find(identity, kind, expectedId) {
-    this.metadata.validateIdentity(identity);
-    const publicFolderId = kind === "pdf" ? await this.folders.resolve(identity) : void 0;
-    const parents = publicFolderId ? `('${identity.folderId}' in parents or '${publicFolderId}' in parents)` : `'${identity.folderId}' in parents`;
-    const { data } = await this.client.files.list(
-      {
-        q: `${parents} and trashed=false and appProperties has { key='${this.metadata.marker(kind)}' and value='${identity.sourceId}' }`,
-        fields: `nextPageToken,incompleteSearch,files(${exportFields})`,
-        pageSize: 100,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true
-      },
-      requestOptions
-    );
-    if (data.files !== void 0 && !Array.isArray(data.files) || data.incompleteSearch || data.nextPageToken)
-      throw new Error("Google Drive PDF search is incomplete");
-    if ((data.files?.length ?? 0) > 1) throw new PdfExportError("recovery");
-    const file = data.files?.[0] ?? (expectedId ? await this.get(expectedId) : void 0);
-    if (!file) return void 0;
-    const result = this.metadata.file(file, identity, kind, publicFolderId);
-    if (expectedId && result.id !== expectedId)
-      throw new PdfExportError("recovery");
-    return result;
-  }
-  async get(fileId) {
-    if (!/^[\w-]{1,120}$/.test(fileId)) throw new PdfExportError("recovery");
-    try {
-      const { data } = await this.client.files.get(
-        { fileId, fields: exportFields, supportsAllDrives: true },
-        requestOptions
-      );
-      return data;
-    } catch (error2) {
-      if (error2 && typeof error2 === "object" && "response" in error2) {
-        const response = error2.response;
-        if (response && typeof response === "object" && "status" in response && response.status === 404)
-          return void 0;
-      }
-      throw error2;
-    }
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-metadata.ts
-var DrivePdfMetadata = class {
-  validateIdentity(identity) {
-    if (![identity.folderId, identity.sourceId, identity.templateId].every(
-      (id) => /^[\w-]{1,120}$/.test(id)
-    ) || !identity.eventId || identity.eventId.length > 512) {
-      throw new PdfExportError("recovery");
-    }
-  }
-  marker(kind) {
-    return kind === "pdf" ? "meetup_pdf_source" : "meetup_pdf_state";
-  }
-  properties(identity, kind) {
-    return {
-      [this.marker(kind)]: identity.sourceId,
-      meetup_pdf_template: identity.templateId,
-      meetup_pdf_contract: "pdf-v1"
-    };
-  }
-  file(file, identity, kind, publicFolderId) {
-    const properties = this.properties(identity, kind);
-    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name.trim() || typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version) || file.trashed || !Array.isArray(file.parents) || file.parents.length !== 1 || !(file.parents[0] === identity.folderId || kind === "pdf" && publicFolderId && file.parents[0] === publicFolderId) || file.mimeType !== (kind === "pdf" ? "application/pdf" : "application/json")) {
-      throw new PdfExportError("recovery");
-    }
-    if (file.description !== identity.eventId || file.appProperties?.template_file_id || Object.entries(properties).some(
-      ([key, value]) => file.appProperties?.[key] !== value
-    )) {
-      throw new PdfExportError("recovery");
-    }
-    return {
-      id: file.id,
-      name: file.name,
-      version: file.version,
-      folderId: file.parents[0]
-    };
-  }
-  source(file, identity) {
-    if (file.id !== identity.sourceId || file.trashed || !Array.isArray(file.parents) || !file.parents.includes(identity.folderId) || file.mimeType !== "application/vnd.google-apps.presentation" || file.appProperties?.template_file_id !== identity.templateId || file.appProperties?.template_kind !== "slides") {
-      throw new PdfExportError("source");
-    }
-    if (typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version))
-      throw new PdfExportError("invalid");
-    return file.version;
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-state-codec.ts
-var DrivePdfStateCodec = class {
-  constructor(metadata, policy) {
-    this.metadata = metadata;
-    this.policy = policy;
-  }
-  metadata;
-  policy;
-  decode(value, identity) {
-    if (!this.record(value) || value.version !== 1 || !this.record(value.identity))
-      throw new PdfExportError("recovery");
-    const storedIdentity = this.identity(value.identity);
-    this.metadata.validateIdentity(storedIdentity);
-    if (!this.policy.sameIdentity(storedIdentity, identity) || typeof value.fileId !== "string" || !/^[\w-]{1,120}$/.test(value.fileId))
-      throw new PdfExportError("recovery");
-    if ([identity.sourceId, identity.templateId, identity.folderId].includes(
-      value.fileId
-    ))
-      throw new PdfExportError("recovery");
-    const confirmed = value.confirmed === void 0 ? void 0 : this.snapshot(value.confirmed);
-    const pending = value.pending === void 0 ? void 0 : this.snapshot(value.pending);
-    if (!confirmed && !pending) throw new PdfExportError("recovery");
-    return {
-      identity: storedIdentity,
-      fileId: value.fileId,
-      confirmed,
-      pending
-    };
-  }
-  encode(state) {
-    const normalized = this.decode({ ...state, version: 1 }, state.identity);
-    return JSON.stringify({ version: 1, ...normalized });
-  }
-  identity(value) {
-    if (typeof value.eventId !== "string" || typeof value.folderId !== "string" || typeof value.sourceId !== "string" || typeof value.templateId !== "string")
-      throw new PdfExportError("recovery");
-    return {
-      eventId: value.eventId,
-      folderId: value.folderId,
-      sourceId: value.sourceId,
-      templateId: value.templateId
-    };
-  }
-  snapshot(value) {
-    if (!this.record(value) || value.contract !== "pdf-v1" || typeof value.sourceVersion !== "string" || !/^\d{1,120}$/.test(value.sourceVersion))
-      throw new PdfExportError("recovery");
-    if (typeof value.name !== "string" || !value.name.trim() || value.name.length > 204 || typeof value.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(value.fingerprint))
-      throw new PdfExportError("recovery");
-    return {
-      sourceVersion: value.sourceVersion,
-      contract: value.contract,
-      name: value.name,
-      fingerprint: value.fingerprint
-    };
-  }
-  record(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-repository.ts
-import { Readable as Readable2 } from "node:stream";
-var GoogleDrivePdfRepository = class {
-  constructor(client, lookup, metadata, binary, folders) {
-    this.client = client;
-    this.lookup = lookup;
-    this.metadata = metadata;
-    this.binary = binary;
-    this.folders = folders;
-  }
-  client;
-  lookup;
-  metadata;
-  binary;
-  folders;
-  async find(identity, expectedId) {
-    const file = await this.lookup.find(identity, "pdf", expectedId);
-    if (!file) return void 0;
-    try {
-      const response = await this.client.files.get(
-        { fileId: file.id, alt: "media", supportsAllDrives: true },
-        {
-          ...requestOptions,
-          responseType: "stream",
-          signal: AbortSignal.timeout(3e4)
-        }
-      );
-      const binary = await this.binary.read(
-        response.data,
-        response.headers["content-type"]
-      );
-      const current = await this.lookup.get(file.id);
-      if (!current || this.metadata.file(current, identity, "pdf", file.folderId).version !== file.version)
-        throw new PdfExportError("conflict");
-      return { ...file, fingerprint: binary.fingerprint };
-    } catch (error2) {
-      if (error2 instanceof PdfExportError && ["invalid", "limit"].includes(error2.code))
-        throw new PdfExportError("conflict");
-      throw error2;
-    }
-  }
-  async placeInPublicFolder(identity, expected) {
-    const folderId = await this.folders.resolve(identity);
-    const current = await this.find(identity, expected.id);
-    if (!current || current.version !== expected.version || current.fingerprint !== expected.fingerprint || current.name !== expected.name)
-      throw new PdfExportError("conflict");
-    if (current.folderId === folderId) return false;
-    await this.client.files.update(
-      {
-        fileId: expected.id,
-        addParents: folderId,
-        removeParents: identity.folderId,
-        supportsAllDrives: true
-      },
-      requestOptions
-    );
-    const moved = await this.find(identity, expected.id);
-    if (!moved || moved.folderId !== folderId || moved.name !== expected.name || moved.fingerprint !== expected.fingerprint)
-      throw new PdfExportError("invalid");
-    return true;
-  }
-  async reserveId() {
-    const { data } = await this.client.files.generateIds(
-      { count: 1, space: "drive", type: "files" },
-      requestOptions
-    );
-    const id = data.ids?.[0];
-    if (data.ids?.length !== 1 || !id || !/^[\w-]{1,120}$/.test(id))
-      throw new PdfExportError("invalid");
-    return id;
-  }
-  async write(input) {
-    const current = await this.find(input.identity, input.fileId);
-    if (current?.version !== input.previous?.version || current?.fingerprint !== input.previous?.fingerprint)
-      throw new PdfExportError("conflict");
-    const requestBody = {
-      name: input.snapshot.name,
-      description: input.identity.eventId,
-      mimeType: "application/pdf",
-      appProperties: this.metadata.properties(input.identity, "pdf")
-    };
-    const media = {
-      mimeType: "application/pdf",
-      body: Readable2.from([input.binary.bytes])
-    };
-    if (current) {
-      await this.client.files.update(
-        { fileId: input.fileId, requestBody, media, supportsAllDrives: true },
-        requestOptions
-      );
-    } else {
-      await this.client.files.create(
-        {
-          requestBody: {
-            ...requestBody,
-            id: input.fileId,
-            parents: [input.identity.folderId]
-          },
-          media,
-          supportsAllDrives: true
-        },
-        requestOptions
-      );
-    }
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-source.ts
-var GoogleDrivePdfSource = class {
-  constructor(client, lookup, metadata, binary, stream) {
-    this.client = client;
-    this.lookup = lookup;
-    this.metadata = metadata;
-    this.binary = binary;
-    this.stream = stream;
-  }
-  client;
-  lookup;
-  metadata;
-  binary;
-  stream;
-  async observe(identity) {
-    this.metadata.validateIdentity(identity);
-    const file = await this.lookup.get(identity.sourceId);
-    if (!file) throw new PdfExportError("source");
-    return this.metadata.source(file, identity);
-  }
-  async export(identity) {
-    this.metadata.validateIdentity(identity);
-    const response = await this.client.files.export(
-      { fileId: identity.sourceId, mimeType: "application/pdf" },
-      {
-        ...requestOptions,
-        responseType: "stream",
-        signal: AbortSignal.timeout(3e4),
-        // Read errors ourselves so the SDK cannot buffer an unbounded error body.
-        validateStatus: () => true
-      }
-    );
-    if (response.status !== 200) await this.rejectResponse(response.data);
-    return this.binary.read(response.data, response.headers["content-type"]);
-  }
-  async rejectResponse(content) {
-    let value;
-    try {
-      const bytes = await this.stream.read(content, 65536);
-      value = JSON.parse(bytes.toString("utf8"));
-    } catch {
-      throw new PdfExportError("invalid");
-    }
-    if (this.sizeFailure(value)) throw new PdfExportError("limit");
-    throw new Error("Google Drive PDF export request failed");
-  }
-  sizeFailure(value) {
-    if (!value || typeof value !== "object" || !("error" in value))
-      return false;
-    const details = value.error;
-    if (!details || typeof details !== "object" || !("errors" in details) || !Array.isArray(details.errors))
-      return false;
-    return details.errors.some(
-      (item) => item && typeof item === "object" && item.reason === "exportSizeLimitExceeded"
-    );
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-state-repository.ts
-import { Readable as Readable3 } from "node:stream";
-var GoogleDrivePdfStateRepository = class {
-  constructor(client, lookup, metadata, stream, codec) {
-    this.client = client;
-    this.lookup = lookup;
-    this.metadata = metadata;
-    this.stream = stream;
-    this.codec = codec;
-  }
-  client;
-  lookup;
-  metadata;
-  stream;
-  codec;
-  loaded = /* @__PURE__ */ new Map();
-  async load(identity) {
-    const file = await this.lookup.find(identity, "state");
-    this.loaded.set(identity.sourceId, file);
-    if (!file) return void 0;
-    const response = await this.client.files.get(
-      { fileId: file.id, alt: "media", supportsAllDrives: true },
-      {
-        ...requestOptions,
-        responseType: "stream",
-        signal: AbortSignal.timeout(3e4)
-      }
-    );
-    let value;
-    try {
-      const bytes = await this.stream.read(response.data, 65536);
-      value = JSON.parse(bytes.toString("utf8"));
-    } catch (error2) {
-      if (error2 instanceof SyntaxError || error2 instanceof PdfExportError)
-        throw new PdfExportError("recovery");
-      throw error2;
-    }
-    const current = await this.lookup.get(file.id);
-    if (!current || this.metadata.file(current, identity, "state").version !== file.version)
-      throw new PdfExportError("recovery");
-    return this.codec.decode(value, identity);
-  }
-  async save(state) {
-    const json = this.codec.encode(state);
-    const prior = this.loaded.get(state.identity.sourceId);
-    if (!this.loaded.has(state.identity.sourceId))
-      throw new PdfExportError("recovery");
-    const current = await this.lookup.find(state.identity, "state", prior?.id);
-    if (current?.id !== prior?.id || current?.version !== prior?.version)
-      throw new PdfExportError("recovery");
-    const media = { mimeType: "application/json", body: Readable3.from([json]) };
-    const options = {
-      supportsAllDrives: true,
-      fields: "id,name,description,parents,mimeType,trashed,version,appProperties",
-      media
-    };
-    const response = current ? await this.client.files.update(
-      { ...options, fileId: current.id },
-      requestOptions
-    ) : await this.client.files.create(
-      {
-        ...options,
-        requestBody: {
-          name: `.${state.identity.sourceId}.pdf-export.json`,
-          description: state.identity.eventId,
-          mimeType: "application/json",
-          parents: [state.identity.folderId],
-          appProperties: this.metadata.properties(state.identity, "state")
-        }
-      },
-      requestOptions
-    );
-    this.acceptWrite(response.data, state.identity, current?.id);
-  }
-  acceptWrite(file, identity, previousId) {
-    try {
-      const saved = this.metadata.file(file, identity, "state");
-      if (previousId && saved.id !== previousId)
-        throw new PdfExportError("invalid");
-      this.loaded.set(identity.sourceId, saved);
-    } catch (error2) {
-      if (error2 instanceof PdfExportError) throw new PdfExportError("invalid");
-      throw error2;
-    }
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/google-drive-public-folder.ts
-var folderFields = "id,name,mimeType,parents,trashed";
-var GoogleDrivePublicFolder = class {
-  constructor(client, metadata, folderId) {
-    this.client = client;
-    this.metadata = metadata;
-    this.folderId = folderId;
-  }
-  client;
-  metadata;
-  folderId;
-  async resolve(identity) {
-    this.metadata.validateIdentity(identity);
-    if (!/^[\w-]{1,120}$/.test(this.folderId) || [identity.folderId, identity.sourceId, identity.templateId].includes(
-      this.folderId
-    ))
-      throw new PdfExportError("recovery");
-    const { data } = await this.client.files.get(
-      {
-        fileId: this.folderId,
-        fields: folderFields,
-        supportsAllDrives: true
-      },
-      requestOptions
-    );
-    if (data.id !== this.folderId || data.name !== "public" || data.mimeType !== folderMimeType || data.trashed)
-      throw new PdfExportError("recovery");
-    return this.folderId;
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/pdf-export-composition.ts
-var GoogleDrivePdfComposition = class {
-  constructor(client, publicFolderId) {
-    this.client = client;
-    this.publicFolderId = publicFolderId;
-  }
-  client;
-  publicFolderId;
-  metadata() {
-    return new DrivePdfMetadata();
-  }
-  stream() {
-    return new DriveBoundedStream();
-  }
-  binary() {
-    return new DrivePdfBinary(
-      this.stream(),
-      new PublicationDomainComposition().contentFingerprint()
-    );
-  }
-  lookup() {
-    return new DrivePdfLookup(this.client, this.metadata(), this.folders());
-  }
-  folders() {
-    return new GoogleDrivePublicFolder(
-      this.client,
-      this.metadata(),
-      this.publicFolderId
-    );
-  }
-  codec() {
-    return new DrivePdfStateCodec(
-      this.metadata(),
-      new PublicationDomainComposition().pdfExportPolicy()
-    );
-  }
-  source() {
-    return new GoogleDrivePdfSource(
-      this.client,
-      this.lookup(),
-      this.metadata(),
-      this.binary(),
-      this.stream()
-    );
-  }
-  repository() {
-    return new GoogleDrivePdfRepository(
-      this.client,
-      this.lookup(),
-      this.metadata(),
-      this.binary(),
-      this.folders()
-    );
-  }
-  states() {
-    return new GoogleDrivePdfStateRepository(
-      this.client,
-      this.lookup(),
-      this.metadata(),
-      this.stream(),
-      this.codec()
-    );
-  }
-};
-
-// packages/adapter/publication/google-drive-asset-repository/src/content-media-composition.ts
-var import_drive3 = __toESM(require_build(), 1);
 
 // node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
 var decoder = new TextDecoder();
@@ -75549,6 +74596,936 @@ var typeHandlers = /* @__PURE__ */ new Map([
   ["webp", WEBP]
 ]);
 var types3 = Array.from(typeHandlers.keys());
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
+var import_drive = __toESM(require_build(), 1);
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
+var GoogleDriveAssetRepositoryError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GoogleDriveAssetRepositoryError";
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
+var GoogleDriveAuthentication = class {
+  create(credentialsJson) {
+    let credentials;
+    try {
+      credentials = JSON.parse(credentialsJson);
+    } catch {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    if (!credentials || typeof credentials !== "object" || Array.isArray(credentials) || !("type" in credentials) || credentials.type !== "service_account" || !("client_email" in credentials) || typeof credentials.client_email !== "string" || !credentials.client_email || !("private_key" in credentials) || typeof credentials.private_key !== "string" || !credentials.private_key) {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    return new import_drive.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ["https://www.googleapis.com/auth/drive"]
+    });
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-asset-metadata.ts
+var DriveAssetMetadata = class {
+  templateProperties(template) {
+    return { template_file_id: template.id, template_kind: template.kind };
+  }
+  container(file, eventId) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset folder"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      url: `https://drive.google.com/drive/folders/${file.id}`,
+      eventId
+    };
+  }
+  assetFile(file) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset file"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      ...file.webViewLink ? { url: file.webViewLink } : {},
+      templateId: file.appProperties?.template_file_id,
+      kind: file.appProperties?.template_kind,
+      mimeType: file.mimeType ?? void 0,
+      contentManaged: file.appProperties?.meetup_content === "v1"
+    };
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
+import { createHash as createHash3 } from "node:crypto";
+var GoogleDriveAssetRepository = class {
+  constructor(collaborators, client, options) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.options = options;
+    if (![options.parentFolderId, options.templateFolderId].every(
+      (id) => /^[\w-]+$/.test(id)
+    ) || options.parentFolderId === options.templateFolderId)
+      throw this.failure(
+        "Distinct Google Drive parent and template folder IDs are required"
+      );
+  }
+  collaborators;
+  client;
+  options;
+  async findContainer(request2) {
+    const matches = await this.list(
+      `mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${this.key(request2)}' }`,
+      "allDrives"
+    );
+    if (matches.length > 1)
+      throw this.failure(
+        "Multiple asset folders match this event; manual reconciliation is required"
+      );
+    const file = matches[0];
+    if (!file) return void 0;
+    if (file.trashed || file.mimeType !== folderMimeType || file.appProperties?.meetup_event_key !== this.key(request2)) {
+      throw this.failure("The asset folder does not match the requested event");
+    }
+    return this.collaborators.driveAssetMetadata.container(
+      file,
+      request2.eventId
+    );
+  }
+  async ensureContainer(request2) {
+    const current = await this.findContainer(request2);
+    if (current?.name === request2.title) return current;
+    const appProperties = {
+      meetup_event_key: this.key(request2)
+    };
+    const response = current ? await this.remote(
+      () => this.client.files.update(
+        {
+          fileId: current.id,
+          requestBody: { name: request2.title, appProperties },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    ) : await this.remote(
+      () => this.client.files.create(
+        {
+          requestBody: {
+            name: request2.title,
+            mimeType: folderMimeType,
+            parents: [this.options.parentFolderId],
+            appProperties
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return this.collaborators.driveAssetMetadata.container(
+      response.data,
+      request2.eventId
+    );
+  }
+  async listTemplates() {
+    return (await this.list(
+      `'${this.escapeQuery(this.options.templateFolderId)}' in parents`
+    )).map((file) => {
+      if (!file.id || !file.name || !file.appProperties?.template_kind || file.mimeType === folderMimeType)
+        throw this.failure(
+          "Every asset template must be a file with an ID, name, and template_kind"
+        );
+      return {
+        id: file.id,
+        name: file.name,
+        kind: file.appProperties.template_kind,
+        mimeType: file.mimeType ?? void 0,
+        contentContract: this.options.contentContracts?.[file.appProperties.template_kind]
+      };
+    });
+  }
+  async listFiles(containerId) {
+    return (await this.list(
+      `'${this.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
+    )).filter(
+      (file) => !file.appProperties?.meetup_binding_file && !file.appProperties?.meetup_pdf_source && !file.appProperties?.meetup_pdf_state
+    ).map(
+      this.collaborators.driveAssetMetadata.assetFile.bind(
+        this.collaborators.driveAssetMetadata
+      )
+    );
+  }
+  async copyTemplate(containerId, template, name) {
+    const { data } = await this.remote(
+      () => this.client.files.copy(
+        {
+          fileId: template.id,
+          requestBody: {
+            name,
+            parents: [containerId],
+            appProperties: {
+              ...this.collaborators.driveAssetMetadata.templateProperties(
+                template
+              ),
+              ...template.contentContract ? { meetup_content: "v1" } : {}
+            }
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return this.collaborators.driveAssetMetadata.assetFile(data);
+  }
+  async updateFile(file, template, name) {
+    const { data } = await this.remote(
+      () => this.client.files.update(
+        {
+          fileId: file.id,
+          requestBody: {
+            name,
+            appProperties: {
+              ...this.collaborators.driveAssetMetadata.templateProperties(
+                template
+              ),
+              ...file.contentManaged ? { meetup_content: "v1" } : {}
+            }
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return this.collaborators.driveAssetMetadata.assetFile(data);
+  }
+  async list(query, corpora = "user") {
+    const files = [];
+    let pageToken;
+    const tokens = /* @__PURE__ */ new Set();
+    do {
+      const { data } = await this.remote(
+        () => this.client.files.list(
+          {
+            q: `${query} and trashed=false`,
+            corpora,
+            fields: `nextPageToken,incompleteSearch,files(${fields})`,
+            pageSize: 100,
+            pageToken,
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+          },
+          requestOptions
+        )
+      );
+      if (data.incompleteSearch)
+        throw this.failure(
+          "Google Drive returned an incomplete search; reconciliation was stopped"
+        );
+      files.push(...data.files ?? []);
+      pageToken = data.nextPageToken || void 0;
+      if (pageToken && tokens.has(pageToken))
+        throw this.failure("Google Drive returned a repeated pagination token");
+      if (pageToken) tokens.add(pageToken);
+    } while (pageToken);
+    return files;
+  }
+  key(request2) {
+    return createHash3("sha256").update(request2.idempotencyKey).digest("hex");
+  }
+  escapeQuery(value) {
+    return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+  }
+  failure(message) {
+    return new GoogleDriveAssetRepositoryError(message);
+  }
+  async remote(operation) {
+    try {
+      return await operation();
+    } catch (error2) {
+      const response = error2 !== null && typeof error2 === "object" && "response" in error2 ? error2.response : void 0;
+      const status = response !== null && typeof response === "object" && "status" in response ? response.status : void 0;
+      if (status === 429)
+        throw this.failure(
+          "Google Drive rate limit reached; retry reconciliation later"
+        );
+      if (status === 401 || status === 403)
+        throw this.failure(
+          "Google Drive denied access; check credentials, folder access, and quota"
+        );
+      throw this.failure(
+        "Google Drive request failed; inspect provider state before retrying an uncertain write"
+      );
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository-factory.ts
+var import_drive3 = __toESM(require_build(), 1);
+var GoogleDriveAssetRepositoryFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  createGoogleDriveAssetRepository(credentialsJson, options) {
+    return this.collaborators.createGoogleDriveAssetRepository(
+      this.client(credentialsJson),
+      options
+    );
+  }
+  client(credentialsJson) {
+    return (0, import_drive3.drive)({
+      version: "v3",
+      auth: this.collaborators.googleDriveAuthentication.create(
+        credentialsJson
+      )
+    });
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-manifest-repository.ts
+import { Readable } from "node:stream";
+var GoogleDriveManifestRepository = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async load(folderId, fileId) {
+    const id = await this.find(folderId, fileId);
+    if (!id) return void 0;
+    const { data } = await this.client.files.get(
+      { fileId: id, alt: "media", supportsAllDrives: true },
+      { ...requestOptions, responseType: "stream" }
+    );
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of data) {
+      size += chunk.length;
+      if (size > 1e6) {
+        data.destroy();
+        throw new ContentError("recovery");
+      }
+      chunks.push(Buffer.from(chunk));
+    }
+    try {
+      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    } catch {
+      throw new ContentError("recovery");
+    }
+  }
+  async save(folderId, manifest) {
+    const id = await this.find(folderId, manifest.fileId);
+    const json = JSON.stringify(manifest);
+    if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
+    const media = { mimeType: "application/json", body: Readable.from([json]) };
+    if (id) {
+      await this.client.files.update(
+        { fileId: id, media, supportsAllDrives: true },
+        requestOptions
+      );
+    } else {
+      await this.client.files.create(
+        {
+          requestBody: {
+            name: `.${manifest.fileId}.bindings.json`,
+            mimeType: "application/json",
+            parents: [folderId],
+            appProperties: { meetup_binding_file: manifest.fileId }
+          },
+          media,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+    }
+  }
+  async find(folderId, fileId) {
+    if (![folderId, fileId].every((id) => /^[\w-]+$/.test(id)))
+      throw new ContentError("recovery");
+    const { data } = await this.client.files.list(
+      {
+        q: `'${folderId}' in parents and trashed=false and appProperties has { key='meetup_binding_file' and value='${fileId}' }`,
+        fields: "nextPageToken,incompleteSearch,files(id,mimeType,parents,appProperties)",
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.incompleteSearch || data.nextPageToken || (data.files?.length ?? 0) > 1)
+      throw new ContentError("recovery");
+    const file = data.files?.[0];
+    if (file && (!file.id || file.mimeType !== "application/json" || !file.parents?.includes(folderId) || file.appProperties?.meetup_binding_file !== fileId))
+      throw new ContentError("recovery");
+    return file?.id ?? void 0;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
+var GoogleDriveAssetRepositoryComposition = class {
+  driveAssetMetadata() {
+    return new DriveAssetMetadata();
+  }
+  googleDriveAssetRepository(...args) {
+    return new GoogleDriveAssetRepository(
+      { driveAssetMetadata: this.driveAssetMetadata() },
+      ...args
+    );
+  }
+  googleDriveAssetRepositoryFactory() {
+    return new GoogleDriveAssetRepositoryFactory({
+      googleDriveAuthentication: this.googleDriveAuthentication(),
+      createGoogleDriveAssetRepository: (...args) => this.googleDriveAssetRepository(...args)
+    });
+  }
+  googleDriveAuthentication() {
+    return new GoogleDriveAuthentication();
+  }
+  googleDriveManifestRepository(...args) {
+    return new GoogleDriveManifestRepository(...args);
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-binary.ts
+var DrivePdfBinary = class {
+  constructor(stream, fingerprint) {
+    this.stream = stream;
+    this.fingerprint = fingerprint;
+  }
+  stream;
+  fingerprint;
+  async read(content, mimeType) {
+    if (typeof mimeType !== "string" || mimeType.split(";", 1)[0]?.trim().toLowerCase() !== "application/pdf") {
+      content.destroy();
+      throw new PdfExportError("invalid");
+    }
+    const bytes = await this.stream.read(content, 1e7);
+    if (!/^%PDF-\d\.\d\b/.test(bytes.subarray(0, 16).toString("ascii")) || !/%%EOF\s*$/.test(bytes.subarray(-1024).toString("ascii"))) {
+      throw new PdfExportError("invalid");
+    }
+    return { bytes, fingerprint: this.fingerprint.of(bytes) };
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-lookup.ts
+var exportFields = "id,name,description,mimeType,parents,trashed,version,appProperties";
+var DrivePdfLookup = class {
+  constructor(client, metadata, folders) {
+    this.client = client;
+    this.metadata = metadata;
+    this.folders = folders;
+  }
+  client;
+  metadata;
+  folders;
+  async find(identity, kind, expectedId) {
+    this.metadata.validateIdentity(identity);
+    const publicFolderId = kind === "pdf" ? await this.folders.resolve(identity) : void 0;
+    const parents = publicFolderId ? `('${identity.folderId}' in parents or '${publicFolderId}' in parents)` : `'${identity.folderId}' in parents`;
+    const { data } = await this.client.files.list(
+      {
+        q: `${parents} and trashed=false and appProperties has { key='${this.metadata.marker(kind)}' and value='${identity.sourceId}' }`,
+        fields: `nextPageToken,incompleteSearch,files(${exportFields})`,
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.files !== void 0 && !Array.isArray(data.files) || data.incompleteSearch || data.nextPageToken)
+      throw new Error("Google Drive PDF search is incomplete");
+    if ((data.files?.length ?? 0) > 1) throw new PdfExportError("recovery");
+    const file = data.files?.[0] ?? (expectedId ? await this.get(expectedId) : void 0);
+    if (!file) return void 0;
+    const result = this.metadata.file(file, identity, kind, publicFolderId);
+    if (expectedId && result.id !== expectedId)
+      throw new PdfExportError("recovery");
+    return result;
+  }
+  async get(fileId) {
+    if (!/^[\w-]{1,120}$/.test(fileId)) throw new PdfExportError("recovery");
+    try {
+      const { data } = await this.client.files.get(
+        { fileId, fields: exportFields, supportsAllDrives: true },
+        requestOptions
+      );
+      return data;
+    } catch (error2) {
+      if (error2 && typeof error2 === "object" && "response" in error2) {
+        const response = error2.response;
+        if (response && typeof response === "object" && "status" in response && response.status === 404)
+          return void 0;
+      }
+      throw error2;
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-metadata.ts
+var DrivePdfMetadata = class {
+  validateIdentity(identity) {
+    if (![identity.folderId, identity.sourceId, identity.templateId].every(
+      (id) => /^[\w-]{1,120}$/.test(id)
+    ) || !identity.eventId || identity.eventId.length > 512) {
+      throw new PdfExportError("recovery");
+    }
+  }
+  marker(kind) {
+    return kind === "pdf" ? "meetup_pdf_source" : "meetup_pdf_state";
+  }
+  properties(identity, kind) {
+    return {
+      [this.marker(kind)]: identity.sourceId,
+      meetup_pdf_template: identity.templateId,
+      meetup_pdf_contract: "pdf-v1"
+    };
+  }
+  file(file, identity, kind, publicFolderId) {
+    const properties = this.properties(identity, kind);
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name.trim() || typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version) || file.trashed || !Array.isArray(file.parents) || file.parents.length !== 1 || !(file.parents[0] === identity.folderId || kind === "pdf" && publicFolderId && file.parents[0] === publicFolderId) || file.mimeType !== (kind === "pdf" ? "application/pdf" : "application/json")) {
+      throw new PdfExportError("recovery");
+    }
+    if (file.description !== identity.eventId || file.appProperties?.template_file_id || Object.entries(properties).some(
+      ([key, value]) => file.appProperties?.[key] !== value
+    )) {
+      throw new PdfExportError("recovery");
+    }
+    return {
+      id: file.id,
+      name: file.name,
+      version: file.version,
+      folderId: file.parents[0]
+    };
+  }
+  source(file, identity) {
+    if (file.id !== identity.sourceId || file.trashed || !Array.isArray(file.parents) || !file.parents.includes(identity.folderId) || file.mimeType !== "application/vnd.google-apps.presentation" || file.appProperties?.template_file_id !== identity.templateId || file.appProperties?.template_kind !== "slides") {
+      throw new PdfExportError("source");
+    }
+    if (typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version))
+      throw new PdfExportError("invalid");
+    return file.version;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-state-codec.ts
+var DrivePdfStateCodec = class {
+  constructor(metadata, policy) {
+    this.metadata = metadata;
+    this.policy = policy;
+  }
+  metadata;
+  policy;
+  decode(value, identity) {
+    if (!this.record(value) || value.version !== 1 || !this.record(value.identity))
+      throw new PdfExportError("recovery");
+    const storedIdentity = this.identity(value.identity);
+    this.metadata.validateIdentity(storedIdentity);
+    if (!this.policy.sameIdentity(storedIdentity, identity) || typeof value.fileId !== "string" || !/^[\w-]{1,120}$/.test(value.fileId))
+      throw new PdfExportError("recovery");
+    if ([identity.sourceId, identity.templateId, identity.folderId].includes(
+      value.fileId
+    ))
+      throw new PdfExportError("recovery");
+    const confirmed = value.confirmed === void 0 ? void 0 : this.snapshot(value.confirmed);
+    const pending = value.pending === void 0 ? void 0 : this.snapshot(value.pending);
+    if (!confirmed && !pending) throw new PdfExportError("recovery");
+    return {
+      identity: storedIdentity,
+      fileId: value.fileId,
+      confirmed,
+      pending
+    };
+  }
+  encode(state) {
+    const normalized = this.decode({ ...state, version: 1 }, state.identity);
+    return JSON.stringify({ version: 1, ...normalized });
+  }
+  identity(value) {
+    if (typeof value.eventId !== "string" || typeof value.folderId !== "string" || typeof value.sourceId !== "string" || typeof value.templateId !== "string")
+      throw new PdfExportError("recovery");
+    return {
+      eventId: value.eventId,
+      folderId: value.folderId,
+      sourceId: value.sourceId,
+      templateId: value.templateId
+    };
+  }
+  snapshot(value) {
+    if (!this.record(value) || value.contract !== "pdf-v1" || typeof value.sourceVersion !== "string" || !/^\d{1,120}$/.test(value.sourceVersion))
+      throw new PdfExportError("recovery");
+    if (typeof value.name !== "string" || !value.name.trim() || value.name.length > 204 || typeof value.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(value.fingerprint))
+      throw new PdfExportError("recovery");
+    return {
+      sourceVersion: value.sourceVersion,
+      contract: value.contract,
+      name: value.name,
+      fingerprint: value.fingerprint
+    };
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-repository.ts
+import { Readable as Readable2 } from "node:stream";
+var GoogleDrivePdfRepository = class {
+  constructor(client, lookup, metadata, binary, folders) {
+    this.client = client;
+    this.lookup = lookup;
+    this.metadata = metadata;
+    this.binary = binary;
+    this.folders = folders;
+  }
+  client;
+  lookup;
+  metadata;
+  binary;
+  folders;
+  async find(identity, expectedId) {
+    const file = await this.lookup.find(identity, "pdf", expectedId);
+    if (!file) return void 0;
+    try {
+      const response = await this.client.files.get(
+        { fileId: file.id, alt: "media", supportsAllDrives: true },
+        {
+          ...requestOptions,
+          responseType: "stream",
+          signal: AbortSignal.timeout(3e4)
+        }
+      );
+      const binary = await this.binary.read(
+        response.data,
+        response.headers["content-type"]
+      );
+      const current = await this.lookup.get(file.id);
+      if (!current || this.metadata.file(current, identity, "pdf", file.folderId).version !== file.version)
+        throw new PdfExportError("conflict");
+      return { ...file, fingerprint: binary.fingerprint };
+    } catch (error2) {
+      if (error2 instanceof PdfExportError && ["invalid", "limit"].includes(error2.code))
+        throw new PdfExportError("conflict");
+      throw error2;
+    }
+  }
+  async placeInPublicFolder(identity, expected) {
+    const folderId = await this.folders.resolve(identity);
+    const current = await this.find(identity, expected.id);
+    if (!current || current.version !== expected.version || current.fingerprint !== expected.fingerprint || current.name !== expected.name)
+      throw new PdfExportError("conflict");
+    if (current.folderId === folderId) return false;
+    await this.client.files.update(
+      {
+        fileId: expected.id,
+        addParents: folderId,
+        removeParents: identity.folderId,
+        supportsAllDrives: true
+      },
+      requestOptions
+    );
+    const moved = await this.find(identity, expected.id);
+    if (!moved || moved.folderId !== folderId || moved.name !== expected.name || moved.fingerprint !== expected.fingerprint)
+      throw new PdfExportError("invalid");
+    return true;
+  }
+  async reserveId() {
+    const { data } = await this.client.files.generateIds(
+      { count: 1, space: "drive", type: "files" },
+      requestOptions
+    );
+    const id = data.ids?.[0];
+    if (data.ids?.length !== 1 || !id || !/^[\w-]{1,120}$/.test(id))
+      throw new PdfExportError("invalid");
+    return id;
+  }
+  async write(input) {
+    const current = await this.find(input.identity, input.fileId);
+    if (current?.version !== input.previous?.version || current?.fingerprint !== input.previous?.fingerprint)
+      throw new PdfExportError("conflict");
+    const requestBody = {
+      name: input.snapshot.name,
+      description: input.identity.eventId,
+      mimeType: "application/pdf",
+      appProperties: this.metadata.properties(input.identity, "pdf")
+    };
+    const media = {
+      mimeType: "application/pdf",
+      body: Readable2.from([input.binary.bytes])
+    };
+    if (current) {
+      await this.client.files.update(
+        { fileId: input.fileId, requestBody, media, supportsAllDrives: true },
+        requestOptions
+      );
+    } else {
+      await this.client.files.create(
+        {
+          requestBody: {
+            ...requestBody,
+            id: input.fileId,
+            parents: [input.identity.folderId]
+          },
+          media,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-source.ts
+var GoogleDrivePdfSource = class {
+  constructor(client, lookup, metadata, binary, stream) {
+    this.client = client;
+    this.lookup = lookup;
+    this.metadata = metadata;
+    this.binary = binary;
+    this.stream = stream;
+  }
+  client;
+  lookup;
+  metadata;
+  binary;
+  stream;
+  async observe(identity) {
+    this.metadata.validateIdentity(identity);
+    const file = await this.lookup.get(identity.sourceId);
+    if (!file) throw new PdfExportError("source");
+    return this.metadata.source(file, identity);
+  }
+  async export(identity) {
+    this.metadata.validateIdentity(identity);
+    const response = await this.client.files.export(
+      { fileId: identity.sourceId, mimeType: "application/pdf" },
+      {
+        ...requestOptions,
+        responseType: "stream",
+        signal: AbortSignal.timeout(3e4),
+        // Read errors ourselves so the SDK cannot buffer an unbounded error body.
+        validateStatus: () => true
+      }
+    );
+    if (response.status !== 200) await this.rejectResponse(response.data);
+    return this.binary.read(response.data, response.headers["content-type"]);
+  }
+  async rejectResponse(content) {
+    let value;
+    try {
+      const bytes = await this.stream.read(content, 65536);
+      value = JSON.parse(bytes.toString("utf8"));
+    } catch {
+      throw new PdfExportError("invalid");
+    }
+    if (this.sizeFailure(value)) throw new PdfExportError("limit");
+    throw new Error("Google Drive PDF export request failed");
+  }
+  sizeFailure(value) {
+    if (!value || typeof value !== "object" || !("error" in value))
+      return false;
+    const details = value.error;
+    if (!details || typeof details !== "object" || !("errors" in details) || !Array.isArray(details.errors))
+      return false;
+    return details.errors.some(
+      (item) => item && typeof item === "object" && item.reason === "exportSizeLimitExceeded"
+    );
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-state-repository.ts
+import { Readable as Readable3 } from "node:stream";
+var GoogleDrivePdfStateRepository = class {
+  constructor(client, lookup, metadata, stream, codec) {
+    this.client = client;
+    this.lookup = lookup;
+    this.metadata = metadata;
+    this.stream = stream;
+    this.codec = codec;
+  }
+  client;
+  lookup;
+  metadata;
+  stream;
+  codec;
+  loaded = /* @__PURE__ */ new Map();
+  async load(identity) {
+    const file = await this.lookup.find(identity, "state");
+    this.loaded.set(identity.sourceId, file);
+    if (!file) return void 0;
+    const response = await this.client.files.get(
+      { fileId: file.id, alt: "media", supportsAllDrives: true },
+      {
+        ...requestOptions,
+        responseType: "stream",
+        signal: AbortSignal.timeout(3e4)
+      }
+    );
+    let value;
+    try {
+      const bytes = await this.stream.read(response.data, 65536);
+      value = JSON.parse(bytes.toString("utf8"));
+    } catch (error2) {
+      if (error2 instanceof SyntaxError || error2 instanceof PdfExportError)
+        throw new PdfExportError("recovery");
+      throw error2;
+    }
+    const current = await this.lookup.get(file.id);
+    if (!current || this.metadata.file(current, identity, "state").version !== file.version)
+      throw new PdfExportError("recovery");
+    return this.codec.decode(value, identity);
+  }
+  async save(state) {
+    const json = this.codec.encode(state);
+    const prior = this.loaded.get(state.identity.sourceId);
+    if (!this.loaded.has(state.identity.sourceId))
+      throw new PdfExportError("recovery");
+    const current = await this.lookup.find(state.identity, "state", prior?.id);
+    if (current?.id !== prior?.id || current?.version !== prior?.version)
+      throw new PdfExportError("recovery");
+    const media = { mimeType: "application/json", body: Readable3.from([json]) };
+    const options = {
+      supportsAllDrives: true,
+      fields: "id,name,description,parents,mimeType,trashed,version,appProperties",
+      media
+    };
+    const response = current ? await this.client.files.update(
+      { ...options, fileId: current.id },
+      requestOptions
+    ) : await this.client.files.create(
+      {
+        ...options,
+        requestBody: {
+          name: `.${state.identity.sourceId}.pdf-export.json`,
+          description: state.identity.eventId,
+          mimeType: "application/json",
+          parents: [state.identity.folderId],
+          appProperties: this.metadata.properties(state.identity, "state")
+        }
+      },
+      requestOptions
+    );
+    this.acceptWrite(response.data, state.identity, current?.id);
+  }
+  acceptWrite(file, identity, previousId) {
+    try {
+      const saved = this.metadata.file(file, identity, "state");
+      if (previousId && saved.id !== previousId)
+        throw new PdfExportError("invalid");
+      this.loaded.set(identity.sourceId, saved);
+    } catch (error2) {
+      if (error2 instanceof PdfExportError) throw new PdfExportError("invalid");
+      throw error2;
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-public-folder.ts
+var folderFields = "id,name,mimeType,parents,trashed";
+var GoogleDrivePublicFolder = class {
+  constructor(client, metadata, folderId) {
+    this.client = client;
+    this.metadata = metadata;
+    this.folderId = folderId;
+  }
+  client;
+  metadata;
+  folderId;
+  async resolve(identity) {
+    this.metadata.validateIdentity(identity);
+    if (!/^[\w-]{1,120}$/.test(this.folderId) || [identity.folderId, identity.sourceId, identity.templateId].includes(
+      this.folderId
+    ))
+      throw new PdfExportError("recovery");
+    const { data } = await this.client.files.get(
+      {
+        fileId: this.folderId,
+        fields: folderFields,
+        supportsAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.id !== this.folderId || data.name !== "public" || data.mimeType !== folderMimeType || data.trashed)
+      throw new PdfExportError("recovery");
+    return this.folderId;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/pdf-export-composition.ts
+var GoogleDrivePdfComposition = class {
+  constructor(client, publicFolderId) {
+    this.client = client;
+    this.publicFolderId = publicFolderId;
+  }
+  client;
+  publicFolderId;
+  metadata() {
+    return new DrivePdfMetadata();
+  }
+  stream() {
+    return new DriveBoundedStream();
+  }
+  binary() {
+    return new DrivePdfBinary(
+      this.stream(),
+      new PublicationDomainComposition().contentFingerprint()
+    );
+  }
+  lookup() {
+    return new DrivePdfLookup(this.client, this.metadata(), this.folders());
+  }
+  folders() {
+    return new GoogleDrivePublicFolder(
+      this.client,
+      this.metadata(),
+      this.publicFolderId
+    );
+  }
+  codec() {
+    return new DrivePdfStateCodec(
+      this.metadata(),
+      new PublicationDomainComposition().pdfExportPolicy()
+    );
+  }
+  source() {
+    return new GoogleDrivePdfSource(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.binary(),
+      this.stream()
+    );
+  }
+  repository() {
+    return new GoogleDrivePdfRepository(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.binary(),
+      this.folders()
+    );
+  }
+  states() {
+    return new GoogleDrivePdfStateRepository(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.stream(),
+      this.codec()
+    );
+  }
+};
 
 // packages/adapter/referential/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
@@ -81122,6 +81099,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
       const messages3 = this.collaborators.createAttentionMessages(locale);
       if (description === messages3.t("action.approval-pending"))
         return "email-approval";
+      if (description === messages3.t("action.community-approval-pending"))
+        return "community-approval";
       if (description === messages3.t("action.meetup-approval-pending"))
         return "meetup-approval";
       if (description === messages3.t("action.delivery-recovery"))
@@ -81190,6 +81169,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
       return this.messages.t("action.meetup-approval-pending");
     return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
@@ -81556,6 +81537,7 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
   "failure.assets": "Drive file preparation failed.",
@@ -81601,6 +81583,7 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
   "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",

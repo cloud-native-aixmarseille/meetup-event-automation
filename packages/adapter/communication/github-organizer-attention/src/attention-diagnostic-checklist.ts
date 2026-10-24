@@ -60,6 +60,8 @@ export class AttentionDiagnosticChecklist implements AttentionChecklistSource {
 			const messages = this.collaborators.createAttentionMessages(locale);
 			if (description === messages.t("action.approval-pending"))
 				return "email-approval";
+			if (description === messages.t("action.community-approval-pending"))
+				return "community-approval";
 			if (description === messages.t("action.meetup-approval-pending"))
 				return "meetup-approval";
 			if (description === messages.t("action.delivery-recovery"))

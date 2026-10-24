@@ -11,8 +11,8 @@ import {
 	GithubOrganizerApprovalComposition,
 } from "@meetup-automation/github-organizer-approval";
 import {
-	ContentFactsProjection,
 	ApplyEventCopy,
+	ContentFactsProjection,
 	ContentPlanFactory,
 	ContentProposalFactory,
 	ContentWorkspace,

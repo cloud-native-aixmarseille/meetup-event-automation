@@ -1,0 +1,12 @@
+name: Prepare event publication runtime
+description: Validate the destination collection and select its required browser authentication runtime.
+inputs:
+  locale:
+    description: Language for the preparation report (en or fr).
+    required: true
+outputs:
+  requires-challenge-solver:
+    description: Whether the configured destinations require the Python challenge-solver runtime.
+runs:
+  using: node24
+  main: dist/index.js

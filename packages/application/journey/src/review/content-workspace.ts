@@ -16,7 +16,7 @@ import type {
 } from "../proposals/promotional-content.js";
 import type { DiagnosticPolicy } from "../result/diagnostic-policy.js";
 import type { ManageMeetupEvent } from "../use-cases/manage-meetup-event.js";
-import type { MeetupPublicationSettings } from "../use-cases/meetup-publication-projection.js";
+import type { ScheduledEventSettings } from "../use-cases/scheduled-event-projection.js";
 import type {
 	ContentFactsProjection,
 	ContentSettings,
@@ -37,7 +37,7 @@ export interface ContentWorkspaceDependencies {
 		ContentFactsProjection,
 		"create" | "active" | "destination"
 	>;
-	readonly publication: MeetupPublicationSettings;
+	readonly publication: ScheduledEventSettings;
 	readonly settings: ContentSettings;
 	readonly announcement: (event: MeetupEvent) => Promise<ContentMedia | null>;
 }

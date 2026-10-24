@@ -5,6 +5,7 @@ import {
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import {
+	communityRequest,
 	createStoredApproval,
 	detailedRequest,
 	publicationRequest,
@@ -13,13 +14,14 @@ import {
 import { contentRequest, coverRequest } from "../testing/content.fixtures.js";
 import { ApprovalDecisionParser } from "./approval-decision-parser.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
+import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 
 describe("approval decision parsing", () => {
 	it.each(
 		["en", "fr"].flatMap((locale) =>
-			[detailedRequest, publicationRequest].flatMap((input) =>
+			[detailedRequest, publicationRequest, communityRequest].flatMap((input) =>
 				(["approved", "rejected"] as const).map((status) => ({
 					locale,
 					input,
@@ -55,6 +57,9 @@ describe("approval decision parsing", () => {
 					new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 						new GithubOrganizerApprovalComposition().approvalMessages("en"),
 					),
+				"community-publication": new CommunityApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
+				),
 				"meetup-publication":
 					new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
 						new ApprovalMessages(
@@ -112,6 +117,9 @@ describe("approval decision parsing", () => {
 					new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 						new GithubOrganizerApprovalComposition().approvalMessages("en"),
 					),
+				"community-publication": new CommunityApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
+				),
 				"meetup-publication":
 					new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
 						new ApprovalMessages(
@@ -175,6 +183,9 @@ describe("approval decision parsing", () => {
 						new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 							new GithubOrganizerApprovalComposition().approvalMessages("en"),
 						),
+					"community-publication": new CommunityApprovalPresenter(
+						new GithubOrganizerApprovalComposition().approvalMessages("en"),
+					),
 					"meetup-publication":
 						new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
 							new ApprovalMessages(

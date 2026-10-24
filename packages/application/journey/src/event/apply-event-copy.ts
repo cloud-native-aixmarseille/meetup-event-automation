@@ -1,7 +1,7 @@
 import type {
-	EventRepository,
 	EventDocumentCodec,
 	EventDocumentConcurrency,
+	EventRepository,
 } from "@meetup-automation/event";
 import type { ContentContext } from "../review/content-workspace.js";
 

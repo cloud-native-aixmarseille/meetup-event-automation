@@ -1,4 +1,10 @@
 export const EN_MESSAGES = {
+	"approval.community.details":
+		"### Organizer confirmation: publish CNCF community event\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing can send OCGroups notifications to group members and speakers.",
+	"approval.community.request":
+		"Repository writers: select one choice. Approval authorizes publication of this OCGroups draft and its native notifications. Changed content requires a new approval.\n\n- [{approveMark}] Approve publishing this CNCF community event\n- [{rejectMark}] Reject publishing this CNCF community event",
+	"approval.community.final":
+		"{status, select, approved {✅ **Community publication approved**} rejected {❌ **Community publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nAutomation rechecks the saved draft before publishing. CNCF Link is filled only after publication is verified. Changed content requires a new approval.",
 	"approval.content.planned":
 		"Planned publication: {time}. Recheck eligibility before posting.",
 	"approval.content.slot":

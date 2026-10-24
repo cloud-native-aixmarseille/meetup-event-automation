@@ -26,7 +26,7 @@ import type {
 	ActionMessages,
 	ActionMessagesArguments,
 } from "./i18n/action-messages.js";
-import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import { EventPublicationConfiguration } from "./event-publication-configuration.js";
 import type {
 	OrganizerFeedback,
 	OrganizerFeedbackArguments,
@@ -100,8 +100,8 @@ export class GithubActionsComposition {
 		return this.container.get(ConferenceHallInput);
 	}
 
-	meetupPublicationConfiguration(): MeetupPublicationConfiguration {
-		return this.container.get(MeetupPublicationConfiguration);
+	eventPublicationConfiguration(): EventPublicationConfiguration {
+		return this.container.get(EventPublicationConfiguration);
 	}
 
 	referentialActionReport(): ReferentialActionReport {

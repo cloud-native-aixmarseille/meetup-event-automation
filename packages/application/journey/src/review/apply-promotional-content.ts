@@ -1,6 +1,6 @@
-import type { ApplyEventCopy } from "../event/apply-event-copy.js";
 import type { SocialPostTiming } from "@meetup-automation/communication";
 import type { EventIdentity } from "@meetup-automation/event";
+import type { ApplyEventCopy } from "../event/apply-event-copy.js";
 import type {
 	ContentPlan,
 	ContentProposal,

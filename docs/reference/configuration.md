@@ -41,19 +41,22 @@ referential/form validation workflow requires no credentials.
 Pass inputs and secrets explicitly in each caller. Defining a repository secret
 does not forward it to a reusable workflow.
 
-## Meetup publication
+## Event publication
 
-The dedicated [Meetup publication workflow](../../.github/workflows/event-publication-reconcile.yml)
-uses `MEETUP_EMAIL` and `MEETUP_PASSWORD` secrets, the shared
-[AI configuration](#ai-configuration), and the existing App and Conference Hall
-settings. Its explicit schedule and public venue mappings belong in
-`.github/meetup-publication.json`.
-See [Meetup publication](../integrations/meetup-publication.md) for the schema,
-caller, prerequisites, and interrupted-run recovery.
+The [publication workflow](../../.github/workflows/event-publication-reconcile.yml)
+uses `.github/event-publication.json` for the common schedule, public venues,
+and configured destination collection. The required `publication-credentials`
+secret contains credentials keyed by enabled provider. Meetup requires email,
+password, and AI settings; OCGroups requires username and password. The workflow
+also uses the shared GitHub App, Conference Hall, and Slack settings.
+See [event publication](../integrations/event-publication.md) for the complete
+configuration, credential schema, caller, approval, and recovery procedures.
+Content review reads its schedule from the same file, including when an explicit
+empty destination collection keeps publication manual.
 
 ## AI configuration
 
-Actions that use AI require the same three inputs, without defaults:
+AI generation actions require the same three inputs, without defaults:
 
 | Action input  | Reusable workflow parameter | Purpose                               |
 | ------------- | --------------------------- | ------------------------------------- |
@@ -66,8 +69,14 @@ The preparation drafts workflow composes text and image actions. It requires
 each to the corresponding action's `ai-model`. Both are required for every call;
 unselected operations do not run. `ai-provider` and the `ai-api-key` secret are
 shared. See [draft generation](../integrations/content.md#generate-a-proposal)
-for selections and model capabilities. Promotion and publication workflows use
-the single-model parameters in the table.
+for selections and model capabilities. Promotion workflows use the single-model parameters in the table.
+
+Publication configures AI conditionally in `publication-credentials.meetup.ai`
+with required `provider`, `model`, and `apiKey` fields. It uses the same runtime
+`AiInput.validate` contract; there are no separate workflow AI inputs. Only a
+configured Meetup adapter requires AI and the Python challenge solver. An
+OCGroups-only collection requires neither. The credentials parser masks all
+decoded secret values before invoking the shared validator.
 
 The supported provider identifier is `gemini`. Meetup publication requires a
 model with image input and structured output, with API quota available to the
@@ -77,7 +86,8 @@ or model selection. Actions without AI behavior do not accept these inputs.
 The shared runtime `AiInput` parser validates these inputs and masks the API key
 before use. Runtime composition injects the validated configuration and maps it
 to the provider adapter's credentials. Provider-specific names remain inside
-that boundary; public callers use the shared names above.
+that boundary; callers use the shared inputs or the conditional adapter object
+described above.
 
 Repository variable and secret names belong to the caller. `AI_PROVIDER`,
 `AI_MODEL`, and `AI_API_KEY` are suitable storage names, but an existing secret
@@ -114,7 +124,7 @@ without a default. Event, publication, communication, and organizer-attention
 reconciliation actions check full event readiness and therefore require all three.
 The three reusable event workflows forward these inputs explicitly. Event listing
 and referential actions do not use them. Keep each setting consistent across the
-consumer's issue-update, audit, and Meetup-publication callers.
+consumer's issue-update, audit, and publication callers.
 
 `meetup-event-url-prefix` supplies the HTTPS origin and authorized Meetup group
 and ends in `/events/`. Login, account navigation, and event redirects use that

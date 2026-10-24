@@ -15,6 +15,7 @@ export type ApprovalNotificationFacts = {
 } & (
 	| { readonly kind: "email-introduction"; readonly recipientCount: number }
 	| { readonly kind: "meetup-publication" }
+	| { readonly kind: "community-publication" }
 	| { readonly kind: "content-review"; readonly target: string }
 );
 

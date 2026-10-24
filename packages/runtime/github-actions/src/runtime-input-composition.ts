@@ -3,6 +3,7 @@ import {
 	JourneyPolicyComposition,
 } from "@meetup-automation/journey";
 import {
+	CommunityEventPolicy,
 	ContentContractPolicy,
 	PublicationDomainComposition,
 	ScheduledEventPolicy,
@@ -15,7 +16,9 @@ import { AttentionStageInput } from "./attention-stage-input.js";
 import { AttentionStages } from "./attention-stages.js";
 import { CommunicationInput } from "./communication-input.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
-import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import { EventPublicationConfiguration } from "./event-publication-configuration.js";
+import { EventScheduleConfiguration } from "./event-schedule-configuration.js";
+import { OcgroupsPublicationSettings } from "./ocgroups-publication-settings.js";
 import { PublicationUrlInput } from "./publication-url-input.js";
 import { RuntimeInput } from "./runtime-input.js";
 
@@ -46,6 +49,7 @@ export class RuntimeInputComposition {
 			);
 		RuntimeInputComposition.bindAttention(container);
 		RuntimeInputComposition.bindConfiguration(container);
+		RuntimeInputComposition.bindPublication(container);
 	}
 
 	private static bindAttention(container: Container): void {
@@ -104,16 +108,44 @@ export class RuntimeInputComposition {
 				}),
 			[RuntimeInput, ContentContractPolicy, AssetRenderConfiguration],
 		);
-		container.bind(MeetupPublicationConfiguration).toResolvedValue(
+	}
+
+	private static bindPublication(container: Container): void {
+		container.bind(EventScheduleConfiguration).toResolvedValue(
 			(
 				runtimeInput: RuntimeInput,
 				scheduledEventPolicy: ScheduledEventPolicy,
 			) =>
-				new MeetupPublicationConfiguration({
+				new EventScheduleConfiguration({
 					runtimeInput,
 					scheduledEventPolicy,
 				}),
 			[RuntimeInput, ScheduledEventPolicy],
 		);
+		container
+			.bind(OcgroupsPublicationSettings)
+			.toResolvedValue(
+				(
+					runtime: RuntimeInput,
+					schedule: EventScheduleConfiguration,
+					policy: ScheduledEventPolicy,
+				) =>
+					new OcgroupsPublicationSettings(
+						runtime,
+						schedule,
+						new CommunityEventPolicy(policy),
+					),
+				[RuntimeInput, EventScheduleConfiguration, ScheduledEventPolicy],
+			);
+		container
+			.bind(EventPublicationConfiguration)
+			.toResolvedValue(
+				(
+					runtime: RuntimeInput,
+					schedule: EventScheduleConfiguration,
+					ocgroups: OcgroupsPublicationSettings,
+				) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+				[RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings],
+			);
 	}
 }

@@ -37,6 +37,38 @@ describe("actionable attention conditions", () => {
 			}),
 		]);
 	});
+	it("links pending OCGroups approval to its own request", () => {
+		// Arrange
+		const input = facts({
+			approvals: [
+				{
+					kind: "community-publication",
+					revision: "c".repeat(64),
+					status: "pending",
+					eventDate: "2099-06-08",
+					requestedAt: "2099-06-01T10:00:00Z",
+					commentId: 42,
+				},
+			],
+		});
+		const evaluate = new EvaluateAttention({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+		});
+		// Act
+		const observation = evaluate.execute(
+			input,
+			new Date("2099-06-02T10:00:00Z"),
+		);
+		// Assert
+		expect(observation.conditions).toEqual([
+			expect.objectContaining({
+				code: "approval-pending",
+				resource: `community-publication:${"c".repeat(64)}`,
+				commentId: 42,
+			}),
+		]);
+	});
 	it.each([
 		{ closed: true },
 		{ occurrence: "cancelled" },

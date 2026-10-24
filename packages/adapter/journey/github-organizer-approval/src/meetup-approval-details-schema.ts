@@ -1,4 +1,4 @@
-import type { MeetupPublicationApprovalDetails } from "@meetup-automation/journey";
+import type { EventPublicationApprovalDetails } from "@meetup-automation/journey";
 import {
 	MeetupEventUrl,
 	type ScheduledEventPolicy,
@@ -15,7 +15,7 @@ export class MeetupApprovalDetailsSchema {
 		private readonly collaborators: MeetupApprovalDetailsSchemaCollaborators,
 	) {}
 
-	validate(value: unknown): asserts value is MeetupPublicationApprovalDetails {
+	validate(value: unknown): asserts value is EventPublicationApprovalDetails {
 		if (
 			!this.collaborators.approvalSchema.object(value) ||
 			!this.text(value.url, 2048) ||

@@ -35,6 +35,7 @@ export class ApprovalRequestPolicy {
 		this.validateIdentity(request);
 		if (
 			request.kind === "meetup-publication" ||
+			request.kind === "community-publication" ||
 			request.kind === "content-review"
 		)
 			return;
@@ -94,8 +95,10 @@ export class ApprovalRequestPolicy {
 				this.fingerprints.digest(request.content)
 			);
 		if (
-			previous.kind === "meetup-publication" &&
-			request.kind === "meetup-publication"
+			(previous.kind === "meetup-publication" ||
+				previous.kind === "community-publication") &&
+			(request.kind === "meetup-publication" ||
+				request.kind === "community-publication")
 		)
 			return (
 				previous.publication.url === request.publication.url &&

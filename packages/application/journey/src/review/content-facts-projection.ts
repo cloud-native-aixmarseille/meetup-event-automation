@@ -1,7 +1,7 @@
 import type { MeetupEvent } from "@meetup-automation/event";
 import type { ContentMedia } from "@meetup-automation/publication";
 import type { ContentFacts } from "../proposals/promotional-content.js";
-import type { MeetupPublicationSettings } from "../use-cases/meetup-publication-projection.js";
+import type { ScheduledEventSettings } from "../use-cases/scheduled-event-projection.js";
 
 export interface ContentSettings {
 	readonly months: Readonly<Record<string, string>>;
@@ -12,7 +12,7 @@ export interface ContentSettings {
 export class ContentFactsProjection {
 	create(
 		event: MeetupEvent,
-		publication: MeetupPublicationSettings,
+		publication: ScheduledEventSettings,
 		settings: ContentSettings,
 		announcement: ContentMedia | null,
 	): ContentFacts {

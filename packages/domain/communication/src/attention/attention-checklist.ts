@@ -10,6 +10,7 @@ export type AttentionChecklistField =
 export type AttentionChecklistAction =
 	| "email-approval"
 	| "meetup-approval"
+	| "community-approval"
 	| "delivery-recovery";
 /** Public tasks decoded from the verified consolidated checklist. */
 export interface AttentionChecklistEntry {

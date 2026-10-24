@@ -1,20 +1,26 @@
-import { ManageMeetupPublication } from "@meetup-automation/journey";
+import { ReconcileEventPublications } from "@meetup-automation/journey";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { EventPublicationAction } from "./event-publication-action.js";
-import { MeetupPublicationComposition } from "./meetup-publication-composition.js";
+import { EventPublicationJourneyComposition } from "./event-publication-journey-composition.js";
+import { PublicationCredentialsInput } from "./publication-credentials-input.js";
 export class EventPublicationActionComposition {
 	private readonly runtime = new GithubActionsComposition();
 
 	action(): EventPublicationAction {
 		return new EventPublicationAction({
-			aiInput: this.runtime.aiInput(),
+			credentials: new PublicationCredentialsInput(
+				this.runtime.runtimeInput(),
+				this.runtime.aiInput(),
+			),
 			publicationUrlInput: this.runtime.publicationUrlInput(),
 			createJourney: (input) =>
-				MeetupPublicationComposition.create(input).get(ManageMeetupPublication),
+				EventPublicationJourneyComposition.create(input).get(
+					ReconcileEventPublications,
+				),
 			runtimeInput: this.runtime.runtimeInput(),
 			conferenceHallInput: this.runtime.conferenceHallInput(),
-			meetupPublicationConfiguration:
-				this.runtime.meetupPublicationConfiguration(),
+			eventPublicationConfiguration:
+				this.runtime.eventPublicationConfiguration(),
 		});
 	}
 }

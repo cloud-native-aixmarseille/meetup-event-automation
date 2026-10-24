@@ -1,11 +1,11 @@
 import { SocialPostTiming } from "@meetup-automation/communication";
 import { describe, expect, it, vi } from "vitest";
-import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 import {
 	event,
 	identity,
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
+import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 import { ApplyPromotionalContent } from "./apply-promotional-content.js";
 
 describe("content application", () => {

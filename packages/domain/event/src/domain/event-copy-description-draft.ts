@@ -1,5 +1,5 @@
-import type { EventCopyDescriptionFacts } from "./event-copy-facts.js";
 import type { EventCopyAgenda } from "./event-copy-agenda.js";
+import type { EventCopyDescriptionFacts } from "./event-copy-facts.js";
 
 export class EventCopyDescriptionDraft {
 	constructor(

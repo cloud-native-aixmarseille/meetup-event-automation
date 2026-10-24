@@ -1,6 +1,8 @@
-import type {
-	PublicationJournal,
-	PublicationRecord,
+import {
+	type EventPublicationIdentity,
+	MeetupEventUrl,
+	type PublicationJournal,
+	type PublicationRecord,
 } from "@meetup-automation/publication";
 import { PublicationCommentCodec } from "./publication-comment-codec.js";
 
@@ -10,7 +12,7 @@ type Comment = {
 	user?: { login: string } | null;
 };
 type Scope = { owner: string; repo: string; issue_number: number };
-interface JournalClient {
+export interface JournalClient {
 	rest: {
 		issues: {
 			listComments(input: Scope & { page: number; per_page: number }): Promise<{
@@ -49,9 +51,15 @@ export class GithubPublicationJournal implements PublicationJournal {
 	async load(): Promise<PublicationRecord | undefined> {
 		const comment = await this.find();
 		if (!comment) return undefined;
-		return this.collaborators.publicationCommentCodec.decode(
+		const record = this.collaborators.publicationCommentCodec.decode(
 			comment.body ?? "",
 		);
+		if (!record.url) return {};
+		const url = MeetupEventUrl.parse(record.url);
+		if (!url) throw new Error("Invalid Meetup journal identity");
+		return {
+			identity: { id: url.id, reviewUrl: url.value, publicUrl: url.value },
+		};
 	}
 
 	async reserve(): Promise<void> {
@@ -65,11 +73,20 @@ export class GithubPublicationJournal implements PublicationJournal {
 			throw new Error("Publication reservation was not persisted");
 	}
 
-	async record(url: string): Promise<void> {
+	async record(identity: EventPublicationIdentity): Promise<void> {
+		const parsed = MeetupEventUrl.parse(identity.reviewUrl);
+		if (
+			!parsed ||
+			parsed.id !== identity.id ||
+			parsed.value !== identity.reviewUrl ||
+			parsed.value !== identity.publicUrl
+		)
+			throw new Error("Invalid Meetup journal identity");
+		const url = parsed.value;
 		const existing = await this.load();
-		if (existing?.url && existing.url !== url)
+		if (existing?.identity?.reviewUrl && existing.identity.reviewUrl !== url)
 			throw new Error("Publication journal identity conflict");
-		if (existing?.url === url) return;
+		if (existing?.identity?.reviewUrl === url) return;
 		const comment = await this.find();
 		const body = this.collaborators.publicationCommentCodec.encode({ url });
 		if (comment) {

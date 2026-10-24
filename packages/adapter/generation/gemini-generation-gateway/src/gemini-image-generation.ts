@@ -1,12 +1,12 @@
 import type {
 	GeneratedImage,
-	ImageGenerationBrief,
 	ImageGeneration,
+	ImageGenerationBrief,
 } from "@meetup-automation/journey";
-import type { GeminiImageFormat } from "./gemini-image-format.js";
 import type { GeminiGenerationHttp } from "./gemini-generation-http.js";
-import type { GeminiGenerationResponse } from "./gemini-generation-response.js";
 import type { GeminiGenerationPrompt } from "./gemini-generation-prompt.js";
+import type { GeminiGenerationResponse } from "./gemini-generation-response.js";
+import type { GeminiImageFormat } from "./gemini-image-format.js";
 
 export class GeminiImageGeneration implements ImageGeneration {
 	readonly provider = "gemini";

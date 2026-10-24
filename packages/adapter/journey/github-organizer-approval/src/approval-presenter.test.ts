@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+	communityRequest,
 	createStoredApproval,
 	detailedRequest,
 	publicationRequest,
@@ -9,7 +10,7 @@ import { ApprovalPresenter } from "./approval-presenter.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 
 describe("approval rendering composition", () => {
-	it.each([request, detailedRequest, publicationRequest])(
+	it.each([request, detailedRequest, publicationRequest, communityRequest])(
 		"uses the injected renderer for $kind and encodes metadata once",
 		(input) => {
 			// Arrange
@@ -21,6 +22,9 @@ describe("approval rendering composition", () => {
 				},
 				"email-thanks": { issue: vi.fn().mockReturnValue("thanks") },
 				"content-review": { issue: vi.fn().mockReturnValue("content") },
+				"community-publication": {
+					issue: vi.fn().mockReturnValue("community"),
+				},
 				"meetup-publication": { issue: vi.fn().mockReturnValue("publication") },
 			};
 			const presenter = new ApprovalPresenter(codec, renderers);
@@ -29,6 +33,7 @@ describe("approval rendering composition", () => {
 				"email-introduction": "introduction",
 				"email-thanks": "thanks",
 				"meetup-publication": "publication",
+				"community-publication": "community",
 				"content-review": "content",
 			};
 

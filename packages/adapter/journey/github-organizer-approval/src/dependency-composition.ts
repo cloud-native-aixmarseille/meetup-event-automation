@@ -30,6 +30,8 @@ import {
 } from "./approval-record-factory.js";
 import { ApprovalRequestSchema } from "./approval-request-schema.js";
 import { ApprovalSchema } from "./approval-schema.js";
+import { CommunityApprovalDetailsSchema } from "./community-approval-details-schema.js";
+import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { ContentApprovalPresenter } from "./content-approval-presenter.js";
 import { ContentApprovalSchema } from "./content-approval-schema.js";
 import { ContentValueSchema } from "./content-value-schema.js";
@@ -130,6 +132,7 @@ export class GithubOrganizerApprovalComposition {
 			"email-introduction": email,
 			"email-thanks": email,
 			"meetup-publication": this.meetupApprovalPresenter(messages),
+			"community-publication": new CommunityApprovalPresenter(messages),
 			"content-review": this.contentApprovalPresenter(messages),
 		});
 	}
@@ -161,6 +164,11 @@ export class GithubOrganizerApprovalComposition {
 	}
 	approvalRequestSchema(): ApprovalRequestSchema {
 		return new ApprovalRequestSchema({
+			communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
+				approvalSchema: this.approvalSchema(),
+				scheduledEventPolicy:
+					new PublicationDomainComposition().scheduledEventPolicy(),
+			}),
 			approvalSchema: this.approvalSchema(),
 			contentApprovalSchema: new ContentApprovalSchema(
 				this.approvalSchema(),

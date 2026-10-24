@@ -1,7 +1,7 @@
 # Set up a meetup repository
 
-For browser-based creation and updates on Meetup, see
-[Meetup event publication](../integrations/meetup-publication.md).
+For browser-based creation and updates on Meetup and OCGroups, see
+[event publication](../integrations/event-publication.md).
 
 This guide configures a consumer repository to run the published automation. You
 need repository administration access, a GitHub App installation, Google Drive

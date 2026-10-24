@@ -1,9 +1,9 @@
-import type { PublicationRecord } from "@meetup-automation/publication";
+export type MeetupPublicationRecord = Readonly<{ url?: string }>;
 
 export class PublicationCommentCodec {
 	static readonly marker = "<!-- meetup-publication:v1\n";
 
-	decode(body: string): PublicationRecord {
+	decode(body: string): MeetupPublicationRecord {
 		if (
 			!body.startsWith(PublicationCommentCodec.marker) ||
 			!body.endsWith("\n-->")
@@ -26,7 +26,7 @@ export class PublicationCommentCodec {
 		throw new Error("Publication journal is corrupted");
 	}
 
-	encode(record: PublicationRecord): string {
+	encode(record: MeetupPublicationRecord): string {
 		const state =
 			record.url === undefined
 				? { state: "pending" }

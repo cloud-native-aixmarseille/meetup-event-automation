@@ -6,9 +6,9 @@ import {
 import {
 	ContentFactsProjection,
 	ContentPlanFactory,
-	EventCopyApprovalGate,
 	CoverArtworkApprovalGate,
 	DraftProposalComposition,
+	EventCopyApprovalGate,
 } from "@meetup-automation/journey";
 import { PublicAssetUrl } from "@meetup-automation/publication";
 import type { EventDocumentCompositionInput } from "./composition.js";
@@ -44,9 +44,11 @@ export class ContentGateComposition {
 			),
 			new DraftProposalComposition().policy(),
 			async () => ({
-				publication: await runtime
-					.meetupPublicationConfiguration()
-					.load(input.workspaceRoot ?? process.cwd()),
+				publication: (
+					await runtime
+						.eventPublicationConfiguration()
+						.load(input.workspaceRoot ?? process.cwd())
+				).schedule,
 				content: await new ContentConfiguration(
 					runtime.runtimeInput(),
 					new PublicAssetUrl(),

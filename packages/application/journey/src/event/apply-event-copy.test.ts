@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 import {
 	event,
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
+import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 import { ApplyEventCopy } from "./apply-event-copy.js";
 
 describe("applying reviewed event copy", () => {

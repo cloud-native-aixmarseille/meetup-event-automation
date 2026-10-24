@@ -1,7 +1,7 @@
 import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { GithubActionsComposition } from "./dependency-composition.js";
-import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import { EventScheduleConfiguration } from "./event-schedule-configuration.js";
 
 const config = {
 	version: 1,
@@ -24,7 +24,7 @@ describe("Meetup publication configuration", () => {
 		};
 
 		// Act
-		const result = new MeetupPublicationConfiguration({
+		const result = new EventScheduleConfiguration({
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			scheduledEventPolicy:
 				new PublicationDomainComposition().scheduledEventPolicy(),
@@ -54,7 +54,7 @@ describe("Meetup publication configuration", () => {
 	])("rejects incomplete or invalid configuration %j", (input) => {
 		// Arrange
 		const parse = () =>
-			new MeetupPublicationConfiguration({
+			new EventScheduleConfiguration({
 				runtimeInput: new GithubActionsComposition().runtimeInput(),
 				scheduledEventPolicy:
 					new PublicationDomainComposition().scheduledEventPolicy(),

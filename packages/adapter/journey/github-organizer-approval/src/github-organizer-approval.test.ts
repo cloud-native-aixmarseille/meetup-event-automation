@@ -6,12 +6,14 @@ import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import {
 	approvalDependencies,
+	communityRequest,
 	decision,
 	fixture,
 	publicationRequest,
 	request,
 } from "../testing/approval.fixtures.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
+import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
@@ -534,6 +536,9 @@ describe("organizer approval requests", () => {
 							new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 								new GithubOrganizerApprovalComposition().approvalMessages("en"),
 							),
+						"community-publication": new CommunityApprovalPresenter(
+							new GithubOrganizerApprovalComposition().approvalMessages("en"),
+						),
 						"meetup-publication":
 							new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
 								new ApprovalMessages(
@@ -1245,6 +1250,170 @@ describe("Meetup publication approvals", () => {
 
 		// Act
 		const result = await approvals.request(publicationRequest);
+
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(f.permission).not.toHaveBeenCalled();
+	});
+});
+
+describe("OCGroups publication approvals", () => {
+	it.each(["approved", "rejected"] as const)(
+		"records organizer %s for OCGroups publication",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			const approvals = new GithubOrganizerApproval(
+				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+			await approvals.request(communityRequest);
+			decision(f, {}, status);
+
+			// Act
+			const result = await approvals.request(communityRequest);
+			const attention = await f.attention.synchronizeApprovals();
+
+			// Assert
+			expect(result.status).toBe(status);
+			expect(attention[0]).toMatchObject({
+				kind: "community-publication",
+				status,
+			});
+			expect(f.comments[0]?.body).not.toContain("- [");
+			expect(f.dispatch).toHaveBeenCalledWith({
+				destination: "organizer-channel",
+				kind: "community-publication",
+				eventDate: communityRequest.eventDate,
+				approvalUrl:
+					"https://github.com/example/meetups/issues/42#issuecomment-100",
+			});
+			expect(f.react).toHaveBeenCalledWith(expect.anything(), status);
+		},
+	);
+
+	it("requires a new decision when the reviewed publication changes", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals = new GithubOrganizerApproval(
+			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		await approvals.request(communityRequest);
+		decision(f);
+		await approvals.request(communityRequest);
+
+		// Act
+		const result = await approvals.request({
+			...communityRequest,
+			revision: "c".repeat(64),
+			publication: {
+				...communityRequest.publication,
+				title: "Changed content",
+			},
+		});
+
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(f.create).toHaveBeenCalledOnce();
+		expect(f.comments[0]?.body).toContain(
+			"- [ ] Approve publishing this CNCF community event",
+		);
+	});
+
+	it("rejects publication approval from a user without repository write permission", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals = new GithubOrganizerApproval(
+			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		await approvals.request(communityRequest);
+		decision(f);
+		f.permission.mockResolvedValue({ data: { permission: "read" } });
+
+		// Act
+		const result = await approvals.request(communityRequest);
+
+		// Assert
+		expect(result.status).toBe("pending");
+	});
+	it("does not accept modified publication facts as organizer approval", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals = new GithubOrganizerApproval(
+			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		await approvals.request(communityRequest);
+		const record = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
+		if (record.kind !== "community-publication")
+			throw new Error("Expected publication request");
+		decision(f, {
+			body: f.presenter.issue(
+				{
+					...record,
+					publication: {
+						...record.publication,
+						url: "https://www.meetup.com/example/events/67890/",
+					},
+				},
+				{ status: "approved" },
+			),
+		});
+
+		// Act
+		const result = await approvals.request(communityRequest);
 
 		// Assert
 		expect(result.status).toBe("pending");

@@ -1,8 +1,6 @@
-import type {
-	SavedScheduledEvent,
-	ScheduledEvent,
-} from "@meetup-automation/publication";
+import type { ScheduledEvent } from "@meetup-automation/publication";
 import type { BrowserContext } from "playwright-core";
+import type { SavedMeetupEvent } from "../src/saved-meetup-event.js";
 
 export const groupUrl = "https://www.meetup.com/example-group/";
 export const eventUrl = `${groupUrl}events/12345/`;
@@ -25,7 +23,7 @@ function escapeHtml(value: string): string {
 
 function editor(
 	event: ScheduledEvent | undefined,
-	status: SavedScheduledEvent["status"],
+	status: SavedMeetupEvent["status"],
 	previewAvailable: boolean,
 ) {
 	const value = event ?? {
@@ -81,7 +79,7 @@ timeZone:'Europe/Paris', venue:{name:document.getElementById('venue-heading').in
 export async function editorFixture(
 	context: BrowserContext,
 	existing?: ScheduledEvent,
-	status: SavedScheduledEvent["status"] = "draft",
+	status: SavedMeetupEvent["status"] = "draft",
 ) {
 	const state = {
 		event: existing,
