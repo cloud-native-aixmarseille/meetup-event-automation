@@ -22,7 +22,7 @@
 
 ## Overview
 
-Create or update an event draft and publish it after verified organizer approval.
+Reconcile configured publication destinations and publish each event after its verified organizer approval.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -76,25 +76,9 @@ Create or update an event draft and publish it after verified organizer approval
     # This input is required.
     locale: ""
 
-    # Email of the authorized Meetup organizer account.
+    # JSON credentials keyed by configured provider. Meetup requires email, password, and ai (provider, model, apiKey); OCGroups requires username and password.
     # This input is required.
-    meetup-email: ""
-
-    # Password of the authorized Meetup organizer account.
-    # This input is required.
-    meetup-password: ""
-
-    # AI provider identifier (gemini).
-    # This input is required.
-    ai-provider: ""
-
-    # Model identifier for the selected AI provider.
-    # This input is required.
-    ai-model: ""
-
-    # API key for the selected AI provider.
-    # This input is required.
-    ai-api-key: ""
+    publication-credentials: ""
 ```
 
 <!-- usage:end -->
@@ -102,24 +86,20 @@ Create or update an event draft and publish it after verified organizer approval
 
 ## Inputs
 
-| **Input**                          | **Description**                                                              | **Required** | **Default** |
-| ---------------------------------- | ---------------------------------------------------------------------------- | ------------ | ----------- |
-| **`meetup-event-url-prefix`**      | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.  | **true**     | -           |
-| **`community-event-url-prefixes`** | JSON array of nonempty HTTPS prefixes accepted for community event URLs.     | **true**     | -           |
-| **`asset-folder-url-prefix`**      | HTTPS prefix accepted for event asset folder URLs.                           | **true**     | -           |
-| **`slack-token`**                  | Slack bot token for organizer approval notifications and decision reactions. | **true**     | -           |
-| **`slack-organizer-channel-id`**   | Organizer Slack channel receiving publication approval requests.             | **true**     | -           |
-| **`issue-number`**                 | Meetup source issue number.                                                  | **true**     | -           |
-| **`github-token`**                 | Consumer repository token with contents read and issues write.               | **true**     | -           |
-| **`managed-comment-author`**       | Login of the GitHub App bot that owns the publication journal.               | **true**     | -           |
-| **`conference-hall-event`**        | Conference Hall CFP slug used to resolve the current event agenda.           | **true**     | -           |
-| **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                     | **true**     | -           |
-| **`locale`**                       | Language for the publication report (en or fr).                              | **true**     | -           |
-| **`meetup-email`**                 | Email of the authorized Meetup organizer account.                            | **true**     | -           |
-| **`meetup-password`**              | Password of the authorized Meetup organizer account.                         | **true**     | -           |
-| **`ai-provider`**                  | AI provider identifier (gemini).                                             | **true**     | -           |
-| **`ai-model`**                     | Model identifier for the selected AI provider.                               | **true**     | -           |
-| **`ai-api-key`**                   | API key for the selected AI provider.                                        | **true**     | -           |
+| **Input**                          | **Description**                                                                                                                                            | **Required** | **Default** |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`meetup-event-url-prefix`**      | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                                | **true**     | -           |
+| **`community-event-url-prefixes`** | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                                   | **true**     | -           |
+| **`asset-folder-url-prefix`**      | HTTPS prefix accepted for event asset folder URLs.                                                                                                         | **true**     | -           |
+| **`slack-token`**                  | Slack bot token for organizer approval notifications and decision reactions.                                                                               | **true**     | -           |
+| **`slack-organizer-channel-id`**   | Organizer Slack channel receiving publication approval requests.                                                                                           | **true**     | -           |
+| **`issue-number`**                 | Meetup source issue number.                                                                                                                                | **true**     | -           |
+| **`github-token`**                 | Consumer repository token with contents read and issues write.                                                                                             | **true**     | -           |
+| **`managed-comment-author`**       | Login of the GitHub App bot that owns the publication journal.                                                                                             | **true**     | -           |
+| **`conference-hall-event`**        | Conference Hall CFP slug used to resolve the current event agenda.                                                                                         | **true**     | -           |
+| **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                                                                                                   | **true**     | -           |
+| **`locale`**                       | Language for the publication report (en or fr).                                                                                                            | **true**     | -           |
+| **`publication-credentials`**      | JSON credentials keyed by configured provider. Meetup requires email, password, and ai (provider, model, apiKey); OCGroups requires username and password. | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
