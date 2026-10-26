@@ -26,20 +26,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
-        with:
-          actions-path: actions
-
       - name: Validate referentials
         id: referentials
-        uses: ./../self-workflow/actions/referential/validate
+        uses: $/actions/referential/validate
         with:
           locale: ${{ inputs.locale }}
 
       - name: Check issue form projection
         id: issue-form
-        uses: ./../self-workflow/actions/issue-form/reconcile
+        uses: $/actions/issue-form/reconcile
         with:
           locale: ${{ inputs.locale }}
           mode: check

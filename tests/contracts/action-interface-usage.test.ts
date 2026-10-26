@@ -4,6 +4,34 @@ import type { Workflow } from "./support.js";
 
 describe("operational interface evidence", () => {
 	it.each([
+		[".venv/bin/python -m pip install -r requirements.txt", true],
+		["echo ready", false],
+	])("checks working-directory consumption for %s", (run, consumed) => {
+		// Arrange
+		const directory = `\${{ steps.runtime.outputs.runtime-directory }}`;
+		const job = { steps: [{ run, "working-directory": directory }] };
+
+		// Act
+		const values = ActionInterfaceUsage.operationalValues(job);
+
+		// Assert
+		expect(values.includes(directory)).toBe(consumed);
+	});
+	it.each(["./actions/event/reconcile", "$/actions/event/reconcile"])(
+		"recognizes owned action input consumers at %s",
+		(uses) => {
+			// Arrange
+			const input = `\${{ inputs.issue-number }}`;
+			const job = { steps: [{ uses, with: { "issue-number": input } }] };
+
+			// Act
+			const values = ActionInterfaceUsage.operationalValues(job);
+
+			// Assert
+			expect(values).toContain(input);
+		},
+	);
+	it.each([
 		[[], false],
 		[[null, "null", `\${{ null }}`], false],
 		[[false, "false", `\${{ false }}`], true],
@@ -117,7 +145,7 @@ describe("reusable workflow data flow", () => {
 			],
 		]);
 		const job = {
-			uses: "./.github/workflows/child.yml",
+			uses: "$/.github/workflows/child.yml",
 			strategy: { matrix: `\${{ needs.list.outputs.issues }}` },
 			with: {
 				"issue-number": `\${{ matrix.issue }}`,
@@ -151,7 +179,7 @@ describe("reusable workflow data flow", () => {
 			],
 		]);
 		const job = {
-			uses: "./.github/workflows/log.yml",
+			uses: "$/.github/workflows/log.yml",
 			with: { value: `\${{ needs.source.outputs.value }}` },
 		};
 		// Act
@@ -167,19 +195,19 @@ describe("internal workflow reachability", () => {
 		const workflows = new Map<string, Workflow>([
 			[
 				"event.yml",
-				{ jobs: { prepare: { uses: "./.github/workflows/__prepare.yml" } } },
+				{ jobs: { prepare: { uses: "$/.github/workflows/__prepare.yml" } } },
 			],
 			[
 				"__prepare.yml",
-				{ jobs: { report: { uses: "./.github/workflows/__report.yml" } } },
+				{ jobs: { report: { uses: "$/.github/workflows/__report.yml" } } },
 			],
 			[
 				"__report.yml",
-				{ jobs: { cycle: { uses: "./.github/workflows/__prepare.yml" } } },
+				{ jobs: { cycle: { uses: "$/.github/workflows/__prepare.yml" } } },
 			],
 			[
 				"__check-actions.yml",
-				{ jobs: { exercise: { uses: "./.github/workflows/__test.yml" } } },
+				{ jobs: { exercise: { uses: "$/.github/workflows/__test.yml" } } },
 			],
 			["__test.yml", { jobs: {} }],
 		]);
@@ -199,15 +227,15 @@ describe("internal workflow reachability", () => {
 			const workflows = new Map<string, Workflow>([
 				[
 					"event.yml",
-					{ jobs: { run: { uses: "./.github/workflows/__core.yml" } } },
+					{ jobs: { run: { uses: "$/.github/workflows/__core.yml" } } },
 				],
 				[
 					"__core.yml",
 					{
 						jobs: {
-							link: { uses: "./.github/workflows/day.yml" },
+							link: { uses: "$/.github/workflows/day.yml" },
 							report: {
-								uses: "./.github/workflows/__report.yml",
+								uses: "$/.github/workflows/__report.yml",
 								with: { value: `\${{ needs.link.outputs.outcome }}` },
 							},
 						},
@@ -223,7 +251,7 @@ describe("internal workflow reachability", () => {
 								},
 							},
 						},
-						jobs: { link: { uses: "./.github/workflows/__link.yml" } },
+						jobs: { link: { uses: "$/.github/workflows/__link.yml" } },
 					},
 				],
 				["__link.yml", { jobs: {} }],
@@ -253,7 +281,7 @@ describe("internal workflow reachability", () => {
 					"__check-actions.yml",
 					{
 						jobs: {
-							link: { uses: "./.github/workflows/__link.yml" },
+							link: { uses: "$/.github/workflows/__link.yml" },
 							fake: {
 								steps: [
 									{

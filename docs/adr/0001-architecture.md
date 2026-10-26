@@ -22,6 +22,12 @@ configuration, credentials, permissions, and thin trigger workflows pinned to an
 automation revision. Private workspace packages are implementation details;
 actions and workflows are the public delivery surface.
 
+Release orchestration belongs to internal workflows. Shared CI validates the
+release commit; pinned upstream actions own semantic version planning, changelog
+generation, and GitHub publication. Gemini credentials stay at that external
+action boundary. The [release guide](../development/releases.md) owns operation
+and recovery instructions.
+
 Business rules belong to event, referential, communication, and publication
 domains. Journey coordinates their public APIs. Each port has one owner, and
 vendor payloads remain inside adapters. Dependencies follow these boundaries:
@@ -90,6 +96,13 @@ automation surface; consumers choose when to adopt it. Current quality commands
 and release mechanics belong in the development guide rather than this record.
 
 ## Decision history
+
+On 2026-10-25, weekly and manual GitHub release publication was added alongside
+the existing generated-reference workflow. Both triggers require default-branch
+CI and use its exact commit. The pinned release actions support Gemini summaries,
+so no repository-specific AI client or release script was introduced. The
+existing GitHub App publishes tags so they trigger documentation updates.
+Summary failures block publication and can leave a draft for a later retry.
 
 On 2026-10-23, authored template processing became a dedicated presentation
 capability. This replaces the filename-only parser and duplicated document

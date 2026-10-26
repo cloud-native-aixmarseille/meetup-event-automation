@@ -101,7 +101,7 @@ jobs:
           NODE
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -110,17 +110,14 @@ jobs:
           permission-contents: read
           permission-issues: write
       - name: Checkout consumer repository
+        id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
-        with:
-          actions-path: actions
       - name: Generate event title
         id: title
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'title') }}
-        uses: ./../self-workflow/actions/event/generate-copy # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'title') }}
+        uses: $/actions/event/generate-copy
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -137,8 +134,8 @@ jobs:
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Generate event description
         id: description
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'description') }}
-        uses: ./../self-workflow/actions/event/generate-copy # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'description') }}
+        uses: $/actions/event/generate-copy
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -155,8 +152,8 @@ jobs:
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Generate cover artwork
         id: cover
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'cover') }}
-        uses: ./../self-workflow/actions/assets/generate-cover # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'cover') }}
+        uses: $/actions/assets/generate-cover
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -174,8 +171,8 @@ jobs:
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Review drafts
         id: review
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/organizer/review-drafts # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/organizer/review-drafts
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -191,7 +188,7 @@ jobs:
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
     outputs:
-      initialized: ${{ steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
+      initialized: ${{ steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
       title-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'title') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.title.outcome), toJSON(steps.title.outputs.diagnostics)) || '' }}
       description-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'description') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.description.outcome), toJSON(steps.description.outputs.diagnostics)) || '' }}
       cover-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'cover') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.cover.outcome), toJSON(steps.cover.outputs.diagnostics)) || '' }}
@@ -200,7 +197,7 @@ jobs:
   report:
     needs: generate
     if: ${{ always() && needs.generate.outputs.initialized == 'true' }}
-    uses: ./.github/workflows/__organizer-reconcile-reporting.yml
+    uses: $/.github/workflows/__organizer-reconcile-reporting.yml
     permissions:
       contents: read
     with:

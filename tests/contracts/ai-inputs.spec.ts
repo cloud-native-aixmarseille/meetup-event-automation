@@ -108,9 +108,7 @@ describe("shared AI action configuration", () => {
 				(job) => job.steps ?? [],
 			);
 			const aiSteps = steps.filter((step) => {
-				const action = step.uses?.match(
-					/^\.\/(?:\.\.\/self-workflow\/)?actions\/(.+)$/,
-				)?.[1];
+				const action = step.uses?.match(/^[.$]\/actions\/(.+)$/)?.[1];
 				return action !== undefined && consumers.has(action);
 			});
 			const contract = workflow.on?.workflow_call;

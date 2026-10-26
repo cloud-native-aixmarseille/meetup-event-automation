@@ -17,7 +17,7 @@ describe("organizer reporting composition", () => {
 		// Assert
 		expect(report?.if).toContain("always()");
 		expect(report?.uses).toBe(
-			"./.github/workflows/__organizer-reconcile-reporting.yml",
+			"$/.github/workflows/__organizer-reconcile-reporting.yml",
 		);
 		expect(checklist?.with?.["stage-results"]).toBe(
 			`\${{ inputs.stage-results }}`,
@@ -76,9 +76,7 @@ describe("organizer reporting composition", () => {
 			const step = steps.find((item) => item.id === id);
 			expect(step?.if).toContain("!cancelled()");
 			expect(step?.if).toContain("steps.app-token.outcome == 'success'");
-			expect(step?.if).toContain(
-				"steps.local-workflow-actions.outcome == 'success'",
-			);
+			expect(step?.if).toContain("steps.checkout.outcome == 'success'");
 		}
 	});
 });

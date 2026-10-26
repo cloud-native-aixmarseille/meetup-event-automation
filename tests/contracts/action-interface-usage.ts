@@ -1,4 +1,5 @@
 type Step = {
+	"working-directory"?: string;
 	uses?: string;
 	if?: string;
 	run?: string;
@@ -63,7 +64,7 @@ export function operationalValues(
 	workflows: ReadonlyMap<string, Workflow> = new Map(),
 	visiting: ReadonlySet<string> = new Set(),
 ): string[] {
-	const called = job.uses?.replace(/^\.\/\.github\/workflows\//, "");
+	const called = job.uses?.replace(/^\$\/\.github\/workflows\//, "");
 	const nested =
 		called && !visiting.has(called) ? workflows.get(called) : undefined;
 	const nestedValues = nested
@@ -81,10 +82,10 @@ export function operationalValues(
 		if (nestedValues.some((item) => item.includes(`inputs.${name}`)))
 			values.push(...strings(value));
 	for (const step of job.steps ?? []) {
-		const ownedAction = /^\.\/(?:\.\.\/self-workflow\/)?actions\//.test(
-			step.uses ?? "",
-		);
+		const ownedAction = /^[.$]\/actions\//.test(step.uses ?? "");
 		if (ownedAction) values.push(...strings(step.with));
+		if (operationalCommand(step.run ?? ""))
+			values.push(...strings(step["working-directory"]));
 		// Unknown third-party actions and arbitrary scripts need a reviewed rule here.
 		// Do not treat their names, logging options, or unused env bindings as evidence.
 		if (operationalStep(step)) values.push(...strings(step.if));
@@ -109,7 +110,7 @@ export function workflowOutputConsumed(
 			reachable.has(name) &&
 			Object.entries(workflow.jobs ?? {}).some(
 				([id, job]) =>
-					job.uses === `./.github/workflows/${path}` &&
+					job.uses === `$/.github/workflows/${path}` &&
 					(Object.entries(workflow.jobs ?? {}).some(
 						([otherId, other]) =>
 							otherId !== id &&
@@ -139,7 +140,7 @@ export function operationalWorkflows(
 		if (reachable.has(path)) continue;
 		reachable.add(path);
 		for (const job of Object.values(workflows.get(path)?.jobs ?? {})) {
-			const called = job.uses?.match(/^\.\/\.github\/workflows\/(.+)$/)?.[1];
+			const called = job.uses?.match(/^\$\/\.github\/workflows\/(.+)$/)?.[1];
 			if (called && workflows.has(called)) pending.push(called);
 		}
 	}
@@ -148,7 +149,7 @@ export function operationalWorkflows(
 
 function operationalStep(step: Step): boolean {
 	return (
-		/^\.\/(?:\.\.\/self-workflow\/)?actions\//.test(step.uses ?? "") ||
+		/^[.$]\/actions\//.test(step.uses ?? "") ||
 		Boolean(step.uses?.startsWith("peter-evans/create-pull-request@")) ||
 		operationalCommand(step.run ?? "")
 	);

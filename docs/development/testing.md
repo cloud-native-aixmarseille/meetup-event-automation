@@ -97,6 +97,7 @@ The focused `pnpm check:interfaces` command also runs in local and CI lint.
 | [Attention safeguards](../../tests/contracts/attention-side-effects.spec.ts) | Final execution after failure, typed outcomes, and shared concurrency                                            |
 | [Feedback safeguards](../../tests/contracts/feedback-side-effects.spec.ts)   | Feedback action credentials and workflow gating                                                                  |
 | [Internal CI](../../tests/contracts/internal-ci.spec.ts)                     | Shared CI, action checks, release documentation wiring                                                           |
+| [Release workflow](../../tests/contracts/release-workflow.spec.ts)           | Weekly and manual triggers, default-branch CI, validated commit, scoped credentials, and Gemini configuration    |
 | [Journey integration](../../tests/journey-referential-integration.spec.ts)   | Event, catalog, codec, and issue-form behavior together                                                          |
 
 [`__check-actions.yml`](../../.github/workflows/__check-actions.yml) exercises

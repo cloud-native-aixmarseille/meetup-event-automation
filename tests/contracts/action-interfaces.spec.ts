@@ -189,9 +189,7 @@ describe("minimal explicit action interfaces", () => {
 			for (const [jobId, job] of Object.entries(workflow.jobs ?? {})) {
 				const steps = job.steps ?? [];
 				for (const step of steps) {
-					const action = step.uses?.match(
-						/^\.\/(?:\.\.\/self-workflow\/)?actions\/(.+)$/,
-					)?.[1];
+					const action = step.uses?.match(/^[.$]\/actions\/(.+)$/)?.[1];
 					if (!action) continue;
 					const manifest = manifests.get(action);
 					if (!manifest) {

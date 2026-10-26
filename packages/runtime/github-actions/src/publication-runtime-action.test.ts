@@ -26,23 +26,28 @@ describe("publication runtime preparation", () => {
 					providers.includes(destination.provider),
 				),
 			});
-			const action = new PublicationRuntimeAction({ load });
+			const action = new PublicationRuntimeAction({ load }, "/automation/");
 			// Act
 			const report = await action.run();
 			// Assert
 			expect(load).toHaveBeenCalledWith(process.cwd());
-			expect(core.setOutput).toHaveBeenCalledExactlyOnceWith(
+			expect(core.setOutput).toHaveBeenCalledWith(
 				"requires-challenge-solver",
 				requiresSolver,
+			);
+			expect(core.setOutput).toHaveBeenCalledWith(
+				"runtime-directory",
+				"/automation/",
 			);
 			expect(report).toEqual({ details: [], diagnostics: [] });
 		},
 	);
 	it("does not emit runtime capabilities when configuration is invalid", async () => {
 		// Arrange
-		const action = new PublicationRuntimeAction({
-			load: vi.fn().mockRejectedValue(new Error("Invalid configuration")),
-		});
+		const action = new PublicationRuntimeAction(
+			{ load: vi.fn().mockRejectedValue(new Error("Invalid configuration")) },
+			"/automation/",
+		);
 		// Act
 		const result = action.run();
 		// Assert

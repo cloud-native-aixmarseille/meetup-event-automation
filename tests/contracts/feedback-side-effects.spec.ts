@@ -13,7 +13,7 @@ describe("feedback effect boundaries", () => {
 		const job = workflow.jobs?.["feedback-link"];
 		// Assert
 		expect(job?.uses).toBe(
-			"./.github/workflows/__feedback-reconcile-short-link.yml",
+			"$/.github/workflows/__feedback-reconcile-short-link.yml",
 		);
 		expect(job?.needs).toBe("manage");
 		expect(job?.if).toContain("!cancelled()");

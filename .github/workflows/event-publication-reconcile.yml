@@ -78,7 +78,7 @@ jobs:
     steps:
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
@@ -92,42 +92,36 @@ jobs:
         with:
           persist-credentials: false
 
-      - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
-        with:
-          # The external Playwright runtime and its CLI use this checkout's lockfile.
-          actions-path: .
-
-      - name: Install locked automation dependencies
-        uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@81a4bca8445b7b273455ff26a9a5c3c31c86b2a1 # 0.25.0
-        with:
-          working-directory: ../self-workflow
-
-      - name: Install Chromium
-        working-directory: ../self-workflow
-        run: pnpm exec playwright-core install --with-deps chromium
-
       - name: Prepare publication runtime
         id: publication-runtime
-        uses: ./../self-workflow/actions/publication/prepare-runtime
+        uses: $/actions/publication/prepare-runtime
         with:
           locale: ${{ inputs.locale }}
 
+      - name: Install locked automation dependencies
+        uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@1f81dd00d941680ab227a6eae5378790d6242e02 # 1.0.0
+        with:
+          working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
+
+      - name: Install Chromium
+        working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
+        run: pnpm exec playwright-core install --with-deps chromium
+
       - name: Set up Python
         if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
 
       - name: Install locked challenge solver dependencies
         if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
-        working-directory: ../self-workflow/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
+        working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt
 
       - name: Reconcile event publication
-        uses: ./../self-workflow/actions/publication/reconcile-event
+        uses: $/actions/publication/reconcile-event
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}

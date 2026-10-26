@@ -14,6 +14,7 @@ import { LocalizationComposition } from "../../packages/presentation/localizatio
 import { ActionMessages } from "../../packages/runtime/github-actions/src/i18n/action-messages.js";
 import type { MessageId } from "../../packages/runtime/github-actions/src/i18n/catalog.js";
 import { DIAGNOSTICS_REFERENTIAL_EN } from "../../packages/runtime/github-actions/src/i18n/diagnostics-referential.en.js";
+import { operationalWorkflows } from "./action-interface-usage.js";
 import {
 	type ActionManifest,
 	automationActionPrefix,
@@ -54,12 +55,17 @@ describe("localization contract", () => {
 		const workflows = await Promise.all(
 			paths.map((path) => readYaml<Workflow>(join(".github/workflows", path))),
 		);
-		const publicWorkflows = workflows.filter((workflow) =>
-			Object.values(workflow.jobs ?? {}).some((job) =>
-				job.steps?.some((step) =>
-					step.uses?.startsWith(automationActionPrefix),
+		const reachable = operationalWorkflows(
+			new Map(paths.map((path, index) => [path, workflows[index]])),
+		);
+		const publicWorkflows = workflows.filter(
+			(workflow, index) =>
+				reachable.has(paths[index]) &&
+				Object.values(workflow.jobs ?? {}).some((job) =>
+					job.steps?.some((step) =>
+						step.uses?.startsWith(automationActionPrefix),
+					),
 				),
-			),
 		);
 
 		// Assert

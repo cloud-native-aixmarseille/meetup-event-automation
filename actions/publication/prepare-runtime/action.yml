@@ -1,10 +1,12 @@
 name: Prepare event publication runtime
-description: Validate the destination collection and select its required browser authentication runtime.
+description: Validate the destination collection and locate its required browser authentication runtime.
 inputs:
   locale:
     description: Language for the preparation report (en or fr).
     required: true
 outputs:
+  runtime-directory:
+    description: Absolute automation directory containing the locked Node.js and Python runtime dependencies for this action revision.
   requires-challenge-solver:
     description: Whether the configured destinations require the Python challenge-solver runtime.
 runs:
