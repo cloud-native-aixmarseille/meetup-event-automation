@@ -11,7 +11,7 @@ permissions: {}
 
 jobs:
   linter:
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@44f6108cef0e9884ea7735f3d62932c2310745d4 # 0.39.1
     permissions:
       actions: read
       contents: read
@@ -29,7 +29,7 @@ jobs:
   check-nodejs:
     name: Test nodejs
     needs: linter
-    uses: ./.github/workflows/__check-nodejs.yml
+    uses: $/.github/workflows/__check-nodejs.yml
     permissions:
       contents: read
       id-token: write
@@ -40,14 +40,14 @@ jobs:
   check-dist:
     name: Check action bundles
     needs: linter
-    uses: ./.github/workflows/__check-dist.yml
+    uses: $/.github/workflows/__check-dist.yml
     permissions:
       contents: read
 
   check-actions:
     name: Integration test actions
     needs: [check-nodejs, check-dist]
-    uses: ./.github/workflows/__check-actions.yml
+    uses: $/.github/workflows/__check-actions.yml
     permissions:
       contents: read
       issues: write
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
       - name: Check solver dependency lock

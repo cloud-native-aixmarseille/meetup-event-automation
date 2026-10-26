@@ -13,6 +13,7 @@ type Inputs = Record<
 >;
 
 interface Step {
+	"working-directory"?: string;
 	"continue-on-error"?: boolean;
 	env?: Record<string, unknown>;
 	id?: string;
@@ -50,6 +51,7 @@ export interface Workflow {
 	name?: string;
 	on?: {
 		pull_request?: { branches?: string[] };
+		schedule?: { cron: string }[];
 		workflow_dispatch?: { inputs?: Inputs };
 		workflow_call?: {
 			inputs?: Inputs;
@@ -72,9 +74,7 @@ export interface ActionManifest {
 }
 
 export const root = process.cwd();
-export const automationActionPrefix = "./../self-workflow/actions/";
-export const localWorkflowActionsRef =
-	"hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22";
+export const automationActionPrefix = "$/actions/";
 export const workflowExpression = (expression: string) =>
 	`\${{ ${expression} }}`;
 export const managedAuthor = workflowExpression(

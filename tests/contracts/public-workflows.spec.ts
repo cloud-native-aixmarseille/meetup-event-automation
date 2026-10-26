@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { operationalWorkflows } from "./action-interface-usage.js";
 import {
 	automationActionPrefix,
-	localWorkflowActionsRef,
 	readWorkflow,
 	readYaml,
 	root,
@@ -72,22 +71,12 @@ describe("public reusable workflow contracts", () => {
 			}));
 			// Assert
 			for (const { expected, steps } of configured) {
-				const loader = steps.findIndex(
-					(step) =>
-						step.uses === localWorkflowActionsRef &&
-						step.with?.["actions-path"] ===
-							(["event-publication-reconcile"].includes(name)
-								? "."
-								: "actions"),
-				);
 				const actions = steps.filter((step) =>
 					step.uses?.startsWith(automationActionPrefix),
 				);
 				expect(actions.map((step) => step.uses)).toEqual(
 					expected.map((path) => automationActionPrefix + path),
 				);
-				expect(loader).toBeGreaterThanOrEqual(0);
-				expect(loader).toBeLessThan(steps.indexOf(actions[0]));
 			}
 		},
 	);
@@ -110,7 +99,7 @@ describe("public reusable workflow contracts", () => {
 		// Act
 		const calls = [...operationalWorkflows(workflows)]
 			.flatMap((file) => Object.values(workflows.get(file)?.jobs ?? {}))
-			.filter((job) => job.uses?.startsWith("./.github/workflows/"));
+			.filter((job) => job.uses?.startsWith("$/.github/workflows/"));
 		// Assert
 		expect(calls.length).toBeGreaterThan(0);
 		for (const call of calls) {
@@ -203,7 +192,8 @@ describe("public reusable workflow contracts", () => {
 				...(job.steps ?? []).map((step) => step.uses),
 			])
 			.filter(
-				(value): value is string => Boolean(value) && !value?.startsWith("./"),
+				(value): value is string =>
+					Boolean(value) && !/^[.$]\//.test(value ?? ""),
 			);
 		// Assert
 		expect(uses.length).toBeGreaterThan(0);

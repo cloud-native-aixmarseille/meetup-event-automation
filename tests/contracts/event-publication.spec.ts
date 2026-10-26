@@ -2,6 +2,42 @@ import { describe, expect, it } from "vitest";
 import { readYaml, type Workflow, workflowExpression } from "./support.js";
 
 describe("event publication workflow", () => {
+	it("installs dependencies beside the pinned action before publication", async () => {
+		// Arrange
+		const runtimeDirectory = workflowExpression(
+			"steps.publication-runtime.outputs.runtime-directory",
+		);
+		const workflow = await readYaml<Workflow>(
+			".github/workflows/event-publication-reconcile.yml",
+		);
+
+		// Act
+		const steps = workflow.jobs?.publish?.steps ?? [];
+		const prepare = steps.findIndex(
+			(step) => step.id === "publication-runtime",
+		);
+		const node = steps.findIndex((step) =>
+			step.uses?.startsWith(
+				"hoverkraft-tech/ci-github-nodejs/actions/setup-node@",
+			),
+		);
+		const browser = steps.findIndex((step) =>
+			step.run?.includes("playwright-core install"),
+		);
+		const python = steps.findIndex((step) => step.run?.includes("pip install"));
+
+		// Assert
+		expect(prepare).toBeGreaterThanOrEqual(0);
+		expect(node).toBeGreaterThan(prepare);
+		expect(browser).toBeGreaterThan(node);
+		expect(python).toBeGreaterThan(prepare);
+		expect(steps[node].with?.["working-directory"]).toBe(runtimeDirectory);
+		expect(steps[browser]["working-directory"]).toBe(runtimeDirectory);
+		expect(steps[python]["working-directory"]).toBe(
+			`${runtimeDirectory}/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python`,
+		);
+		expect(steps.at(-1)?.uses).toBe("$/actions/publication/reconcile-event");
+	});
 	it("serializes all issue writes with the existing event workflows and scopes the App token", async () => {
 		// Arrange
 		const path = ".github/workflows/event-publication-reconcile.yml";
@@ -34,14 +70,7 @@ describe("event publication workflow", () => {
 			"permission-contents": "read",
 			"permission-issues": "write",
 		});
-		expect(
-			steps.find((step) => step.id === "local-workflow-actions")?.with?.[
-				"actions-path"
-			],
-		).toBe(".");
-		expect(steps.at(-1)?.uses).toBe(
-			"./../self-workflow/actions/publication/reconcile-event",
-		);
+		expect(steps.at(-1)?.uses).toBe("$/actions/publication/reconcile-event");
 		expect(
 			steps.filter((step) =>
 				/secrets\.publication-credentials/.test(JSON.stringify(step)),
@@ -65,9 +94,7 @@ describe("event publication workflow", () => {
 		);
 		// Assert
 		expect(prepare).toBeGreaterThanOrEqual(0);
-		expect(steps[prepare].uses).toBe(
-			"./../self-workflow/actions/publication/prepare-runtime",
-		);
+		expect(steps[prepare].uses).toBe("$/actions/publication/prepare-runtime");
 		expect(solver).toHaveLength(2);
 		for (const step of solver) {
 			expect(steps.indexOf(step)).toBeGreaterThan(prepare);

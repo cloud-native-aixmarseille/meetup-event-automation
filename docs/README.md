@@ -67,6 +67,7 @@ workflow generates adjacent readme references.
 
 - [Contributing](../CONTRIBUTING.md)
 - [Development workflow](development/README.md)
+- [Publishing releases](development/releases.md)
 - [Documentation rules](development/documentation.md)
 - [Architecture](development/architecture.md)
 - [Testing](development/testing.md)
@@ -114,6 +115,7 @@ docs/
 │   └── communications.md
 ├── development/
 │   ├── README.md
+│   ├── releases.md
 │   ├── documentation.md
 │   ├── architecture.md
 │   ├── testing.md

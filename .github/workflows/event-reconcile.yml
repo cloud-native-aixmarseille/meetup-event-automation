@@ -87,7 +87,7 @@ jobs:
     steps:
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -96,16 +96,13 @@ jobs:
           permission-contents: read
           permission-issues: write
       - name: Checkout consumer repository
+        id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
-        with:
-          actions-path: actions
       - name: Reconcile event feedback
         id: feedback
-        uses: ./../self-workflow/actions/feedback/reconcile-event
+        uses: $/actions/feedback/reconcile-event
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -118,8 +115,8 @@ jobs:
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Reconcile content reviews
         id: content
-        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/organizer/review-drafts
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/organizer/review-drafts
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -136,8 +133,8 @@ jobs:
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       - name: Reconcile event assets
         id: assets
-        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/assets/reconcile-documents
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/assets/reconcile-documents
         with:
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
@@ -154,7 +151,7 @@ jobs:
       - name: Reconcile presentation PDF
         id: pdf
         if: ${{ !cancelled() && steps.assets.outputs.pdf-source != '' && steps.assets.outputs.slides-ready != '' }}
-        uses: ./../self-workflow/actions/assets/reconcile-slides-pdf
+        uses: $/actions/assets/reconcile-slides-pdf
         with:
           locale: ${{ inputs.locale }}
           issue-number: ${{ inputs.issue-number }}
@@ -165,8 +162,8 @@ jobs:
           slides-ready: ${{ steps.assets.outputs.slides-ready }}
       - name: Reconcile event
         id: event
-        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/event/reconcile
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/event/reconcile
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -179,7 +176,7 @@ jobs:
       - name: Create mailings GitHub App token
         id: mailings-token
         if: ${{ !cancelled() && steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -189,7 +186,7 @@ jobs:
       - name: Reconcile communications
         id: communications
         if: ${{ !cancelled() && steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' && steps.mailings-token.outcome == 'success' }}
-        uses: ./../self-workflow/actions/communication/reconcile-email
+        uses: $/actions/communication/reconcile-email
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -207,7 +204,7 @@ jobs:
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
     outputs:
-      initialized: ${{ steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
+      initialized: ${{ steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
       event-outcome: ${{ steps.event.outcome }}
       event-diagnostics: ${{ steps.event.outputs.diagnostics }}
       assets-outcome: ${{ steps.assets.outcome }}
@@ -224,7 +221,7 @@ jobs:
   feedback-link:
     needs: manage
     if: ${{ !cancelled() && needs.manage.outputs.initialized == 'true' }}
-    uses: ./.github/workflows/__feedback-reconcile-short-link.yml
+    uses: $/.github/workflows/__feedback-reconcile-short-link.yml
     permissions:
       contents: read
     with:
@@ -240,7 +237,7 @@ jobs:
       - manage
       - feedback-link
     if: ${{ always() && needs.manage.outputs.initialized == 'true' }}
-    uses: ./.github/workflows/__organizer-reconcile-reporting.yml
+    uses: $/.github/workflows/__organizer-reconcile-reporting.yml
     permissions:
       contents: read
     with:

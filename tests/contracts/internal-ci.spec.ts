@@ -51,12 +51,12 @@ describe("internal CI contracts", () => {
 		);
 
 		// Assert
-		expect(main.jobs?.ci.uses).toBe("./.github/workflows/__shared-ci.yml");
+		expect(main.jobs?.ci.uses).toBe("$/.github/workflows/__shared-ci.yml");
 		expect(pullRequest.jobs?.ci).toEqual(main.jobs?.ci);
 		expect(pullRequest.on?.pull_request).toEqual({});
 		expect(shared.jobs?.["check-actions"]).toMatchObject({
 			needs: ["check-nodejs", "check-dist"],
-			uses: "./.github/workflows/__check-actions.yml",
+			uses: "$/.github/workflows/__check-actions.yml",
 			permissions: {
 				contents: "read",
 				issues: "write",
@@ -183,7 +183,7 @@ describe("internal CI contracts", () => {
 		const job = workflow.jobs?.["test-communication-reconcile"];
 		const eventJob = workflow.jobs?.["test-event-reconcile"];
 		const communication = job?.steps?.find(
-			(step) => step.uses === "./actions/communication/reconcile-email",
+			(step) => step.uses === "$/actions/communication/reconcile-email",
 		);
 		const fixture = workflow.jobs?.["prepare-synthetic-issue"]?.steps?.find(
 			(step) => step.id === "create-issue",

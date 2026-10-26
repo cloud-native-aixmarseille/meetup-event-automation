@@ -56,7 +56,7 @@ jobs:
     steps:
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -68,13 +68,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
-        with:
-          actions-path: actions
       - name: Reconcile shared feedback link
         id: link
-        uses: ./../self-workflow/actions/feedback/reconcile-short-link
+        uses: $/actions/feedback/reconcile-short-link
         with:
           locale: ${{ inputs.locale }}
           github-token: ${{ steps.app-token.outputs.token }}

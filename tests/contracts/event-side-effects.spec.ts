@@ -14,7 +14,7 @@ describe("event side-effect safeguards", () => {
 		// Act
 		const job = workflow.jobs?.audit;
 		// Assert
-		expect(job?.uses).toBe("./.github/workflows/event-reconcile.yml");
+		expect(job?.uses).toBe("$/.github/workflows/event-reconcile.yml");
 		expect(job?.with?.["issue-number"]).toBe(
 			workflowExpression("matrix.issue-number"),
 		);

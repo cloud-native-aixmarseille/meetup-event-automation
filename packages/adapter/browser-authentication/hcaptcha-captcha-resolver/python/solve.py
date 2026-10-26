@@ -99,7 +99,7 @@ class HcaptchaChallenge:
             result = asyncio.run(cls(AgentV).run(request))
         except TimeoutError:
             result = "blocked"
-        except Exception:  # pylint: disable=broad-exception-caught
+        except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             # Provider errors can include prompts, credentials and response tokens.
             result = "unavailable"
         os.write(3, f"{result}\n".encode("ascii"))

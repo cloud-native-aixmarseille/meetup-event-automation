@@ -10,9 +10,12 @@ host/speaker CSV data, the issue form, workflow triggers, variables, secrets,
 and permission grants. Consumer workflows delegate behavior to a pinned
 automation revision.
 
-Reusable workflows load their owned actions from that same automation revision
-so action implementations match the calling workflow's contract. Catalogs and
-the issue form come from the consumer checkout.
+Reusable workflows use native `$/actions/...` references to load their owned
+actions from that same automation revision. Nested workflow calls use
+`$/.github/workflows/...` to preserve that revision too. This requires GitHub.com and runner
+2.336.0 or newer; the workflows use GitHub-hosted Ubuntu runners. Catalogs and
+the issue form come from the consumer checkout. Steps that continue after an
+independent failure still require successful consumer checkout and authorization.
 
 Defaults are defined by
 [`AutomationConfigFactory`](../../packages/application/journey/src/config/automation-config.ts).
@@ -37,7 +40,10 @@ business responsibilities, independently of adapter implementations. Use
 `referential-reconcile-speakers.yml` for the speaker referential and
 `publication/reconcile-event` with `event-publication-reconcile.yml` for the
 configured Meetup and OCGroups adapter collection. `publication/prepare-runtime`
-reads the shared configuration to select required runtime capabilities. Provider
+reads the shared configuration to select required runtime capabilities and emits
+the downloaded automation directory. The publication workflow installs locked
+Node.js dependencies, Chromium, and the conditional Python solver there before
+running the publication action from the same revision. Provider
 identities belong in adapter wiring, integration guides
 and provider-specific settings. An action accepts only credentials and inputs
 needed by its own operation. See the [action inventory](../README.md#action-contracts).

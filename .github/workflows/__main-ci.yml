@@ -1,6 +1,6 @@
-# Goal: Validate main and tag pushes before releasing the automation.
-# Behavior: Run shared CI, then delegate action release and generated reference
-# updates to the release workflow; tag pushes request updates for all actions.
+# Goal: Validate main and tag pushes and maintain generated references.
+# Behavior: Run shared CI, then delegate documentation updates to the reusable
+# release-actions workflow; tag pushes request updates for all actions.
 
 name: Internal - Main - Continuous Integration
 
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: ./.github/workflows/__shared-ci.yml
+    uses: $/.github/workflows/__shared-ci.yml
     permissions:
       actions: read
       contents: read
@@ -30,7 +30,7 @@ jobs:
 
   release:
     needs: ci
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@a0a9d185c51c10710a5987822e78feb2b5ce1932 # 0.29.0
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@4d906685a32df3cfab9139296d49dd914a86bafd # 1.0.2
     permissions:
       contents: write
       pull-requests: write

@@ -164,7 +164,7 @@ jobs:
 
       - name: Validate referentials
         id: validate-referentials
-        uses: ./actions/referential/validate
+        uses: $/actions/referential/validate
         with:
           locale: en
 
@@ -234,7 +234,7 @@ jobs:
 
       - name: Synchronize issue form
         id: sync-issue-form
-        uses: ./actions/issue-form/reconcile
+        uses: $/actions/issue-form/reconcile
         with:
           locale: en
           mode: fix
@@ -274,7 +274,7 @@ jobs:
 
       - name: List active meetup issues
         id: list-active
-        uses: ./actions/event/list-active
+        uses: $/actions/event/list-active
         with:
           locale: en
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -322,7 +322,7 @@ jobs:
 
       - name: Reconcile synthetic meetup event
         id: reconcile-event
-        uses: ./actions/event/reconcile
+        uses: $/actions/event/reconcile
         with:
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
@@ -374,7 +374,7 @@ jobs:
       # The synthetic issue has completed email tasks, so no delivery is due.
       - name: Reconcile synthetic meetup communications
         id: reconcile-communications
-        uses: ./actions/communication/reconcile-email
+        uses: $/actions/communication/reconcile-email
         with:
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
@@ -413,7 +413,7 @@ jobs:
       - name: Check required asset credentials
         id: assets
         continue-on-error: true
-        uses: ./actions/assets/reconcile-documents
+        uses: $/actions/assets/reconcile-documents
         with:
           managed-comment-author: synthetic-bot[bot]
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
@@ -439,7 +439,7 @@ jobs:
       - name: Reject missing PDF credentials
         id: pdf
         continue-on-error: true
-        uses: ./actions/assets/reconcile-slides-pdf
+        uses: $/actions/assets/reconcile-slides-pdf
         with:
           locale: en
           issue-number: "1"
@@ -471,7 +471,7 @@ jobs:
       - name: Reject a missing OpenFeedback API key
         id: missing-openfeedback-key
         continue-on-error: true
-        uses: ./actions/feedback/reconcile-event
+        uses: $/actions/feedback/reconcile-event
         with:
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
@@ -486,7 +486,7 @@ jobs:
       - name: Reject a missing Kutt API key
         id: missing-key
         continue-on-error: true
-        uses: ./actions/feedback/reconcile-short-link
+        uses: $/actions/feedback/reconcile-short-link
         with:
           locale: en
           github-token: ${{ github.token }}
@@ -497,7 +497,7 @@ jobs:
       - name: Reject a missing Kutt link ID
         id: missing-id
         continue-on-error: true
-        uses: ./actions/feedback/reconcile-short-link
+        uses: $/actions/feedback/reconcile-short-link
         with:
           locale: en
           github-token: ${{ github.token }}
@@ -508,7 +508,7 @@ jobs:
       - name: Reject a missing Kutt base URL
         id: missing-base-url
         continue-on-error: true
-        uses: ./actions/feedback/reconcile-short-link
+        uses: $/actions/feedback/reconcile-short-link
         with:
           locale: en
           github-token: ${{ github.token }}
@@ -570,7 +570,7 @@ jobs:
       - name: Reject a missing trusted author
         id: checklist
         continue-on-error: true
-        uses: ./actions/organizer/reconcile-checklist
+        uses: $/actions/organizer/reconcile-checklist
         with:
           locale: en
           github-token: ${{ github.token }}

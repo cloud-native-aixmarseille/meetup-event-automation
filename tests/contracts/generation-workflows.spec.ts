@@ -133,7 +133,7 @@ describe("generation and reporting effect boundaries", () => {
 			expect(steps.at(-1)?.id).toBe("review");
 			expect(steps.at(-1)?.if).toContain("!cancelled()");
 			expect(report?.uses).toBe(
-				"./.github/workflows/__organizer-reconcile-reporting.yml",
+				"$/.github/workflows/__organizer-reconcile-reporting.yml",
 			);
 			expect(report?.needs).toBe("generate");
 			expect(report?.if).toContain("always()");

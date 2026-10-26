@@ -37,7 +37,7 @@ describe("Conference Hall contracts", () => {
 		const steps = Object.values(workflow.jobs ?? {})
 			.flatMap((job) => job.steps ?? [])
 			.filter((step) =>
-				/^\.\/actions\/(event\/reconcile|feedback\/reconcile-event|assets\/reconcile-documents|communication\/reconcile-email)$/.test(
+				/^[.$]\/actions\/(event\/reconcile|feedback\/reconcile-event|assets\/reconcile-documents|communication\/reconcile-email)$/.test(
 					step.uses ?? "",
 				),
 			);

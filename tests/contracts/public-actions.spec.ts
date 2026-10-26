@@ -7,7 +7,7 @@ const actionContracts = [
 	{
 		directory: "actions/publication/prepare-runtime",
 		inputs: [],
-		outputs: ["requires-challenge-solver"],
+		outputs: ["requires-challenge-solver", "runtime-directory"],
 	},
 	{
 		directory: "actions/publication/reconcile-event",

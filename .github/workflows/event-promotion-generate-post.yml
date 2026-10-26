@@ -94,7 +94,7 @@ jobs:
           NODE
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -103,17 +103,14 @@ jobs:
           permission-contents: read
           permission-issues: write
       - name: Checkout consumer repository
+        id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
-        with:
-          actions-path: actions
       - name: Generate Slack post
         id: slack
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'slack') }}
-        uses: ./../self-workflow/actions/communication/generate-slack-post # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'slack') }}
+        uses: $/actions/communication/generate-slack-post
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -130,8 +127,8 @@ jobs:
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Generate LinkedIn post
         id: linkedin
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'linkedin') }}
-        uses: ./../self-workflow/actions/communication/generate-linkedin-post # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'linkedin') }}
+        uses: $/actions/communication/generate-linkedin-post
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -149,8 +146,8 @@ jobs:
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Review drafts
         id: review
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/organizer/review-drafts # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/organizer/review-drafts
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
@@ -166,7 +163,7 @@ jobs:
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
     outputs:
-      initialized: ${{ steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
+      initialized: ${{ steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
       slack-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'slack') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.slack.outcome), toJSON(steps.slack.outputs.diagnostics)) || '' }}
       linkedin-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'linkedin') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.linkedin.outcome), toJSON(steps.linkedin.outputs.diagnostics)) || '' }}
       review-outcome: ${{ steps.review.outcome }}
@@ -174,7 +171,7 @@ jobs:
   report:
     needs: generate
     if: ${{ always() && needs.generate.outputs.initialized == 'true' }}
-    uses: ./.github/workflows/__organizer-reconcile-reporting.yml
+    uses: $/.github/workflows/__organizer-reconcile-reporting.yml
     permissions:
       contents: read
     with:

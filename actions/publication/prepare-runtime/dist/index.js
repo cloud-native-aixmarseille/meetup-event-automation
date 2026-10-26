@@ -2888,9 +2888,9 @@ var require_dispatcher_base = __commonJS({
       }
       close(callback) {
         if (callback === void 0) {
-          return new Promise((resolve2, reject) => {
+          return new Promise((resolve3, reject) => {
             this.close((err, data) => {
-              return err ? reject(err) : resolve2(data);
+              return err ? reject(err) : resolve3(data);
             });
           });
         }
@@ -2928,12 +2928,12 @@ var require_dispatcher_base = __commonJS({
           err = null;
         }
         if (callback === void 0) {
-          return new Promise((resolve2, reject) => {
+          return new Promise((resolve3, reject) => {
             this.destroy(err, (err2, data) => {
               return err2 ? (
                 /* istanbul ignore next: should never error */
                 reject(err2)
-              ) : resolve2(data);
+              ) : resolve3(data);
             });
           });
         }
@@ -5200,8 +5200,8 @@ var require_util2 = __commonJS({
     function createDeferredPromise() {
       let res;
       let rej;
-      const promise = new Promise((resolve2, reject) => {
-        res = resolve2;
+      const promise = new Promise((resolve3, reject) => {
+        res = resolve3;
         rej = reject;
       });
       return { promise, resolve: res, reject: rej };
@@ -7452,12 +7452,12 @@ upgrade: ${upgrade}\r
           cb();
         }
       }
-      const waitForDrain = () => new Promise((resolve2, reject) => {
+      const waitForDrain = () => new Promise((resolve3, reject) => {
         assert(callback === null);
         if (socket[kError]) {
           reject(socket[kError]);
         } else {
-          callback = resolve2;
+          callback = resolve3;
         }
       });
       socket.on("close", onDrain).on("drain", onDrain);
@@ -8127,12 +8127,12 @@ var require_client_h2 = __commonJS({
           cb();
         }
       }
-      const waitForDrain = () => new Promise((resolve2, reject) => {
+      const waitForDrain = () => new Promise((resolve3, reject) => {
         assert(callback === null);
         if (socket[kError]) {
           reject(socket[kError]);
         } else {
-          callback = resolve2;
+          callback = resolve3;
         }
       });
       h2stream.on("close", onDrain).on("drain", onDrain);
@@ -8611,16 +8611,16 @@ var require_client = __commonJS({
         return this[kNeedDrain] < 2;
       }
       async [kClose]() {
-        return new Promise((resolve2) => {
+        return new Promise((resolve3) => {
           if (this[kSize]) {
-            this[kClosedResolve] = resolve2;
+            this[kClosedResolve] = resolve3;
           } else {
-            resolve2(null);
+            resolve3(null);
           }
         });
       }
       async [kDestroy](err) {
-        return new Promise((resolve2) => {
+        return new Promise((resolve3) => {
           const requests = this[kQueue].splice(this[kPendingIdx]);
           for (let i = 0; i < requests.length; i++) {
             const request = requests[i];
@@ -8631,7 +8631,7 @@ var require_client = __commonJS({
               this[kClosedResolve]();
               this[kClosedResolve] = null;
             }
-            resolve2(null);
+            resolve3(null);
           };
           if (this[kHTTPContext]) {
             this[kHTTPContext].destroy(err, callback);
@@ -8682,7 +8682,7 @@ var require_client = __commonJS({
         });
       }
       try {
-        const socket = await new Promise((resolve2, reject) => {
+        const socket = await new Promise((resolve3, reject) => {
           client[kConnector]({
             host,
             hostname,
@@ -8694,7 +8694,7 @@ var require_client = __commonJS({
             if (err) {
               reject(err);
             } else {
-              resolve2(socket2);
+              resolve3(socket2);
             }
           });
         });
@@ -9030,8 +9030,8 @@ var require_pool_base = __commonJS({
         if (this[kQueue].isEmpty()) {
           await Promise.all(this[kClients].map((c) => c.close()));
         } else {
-          await new Promise((resolve2) => {
-            this[kClosedResolve] = resolve2;
+          await new Promise((resolve3) => {
+            this[kClosedResolve] = resolve3;
           });
         }
       }
@@ -10300,7 +10300,7 @@ var require_readable = __commonJS({
         if (this._readableState.closeEmitted) {
           return null;
         }
-        return await new Promise((resolve2, reject) => {
+        return await new Promise((resolve3, reject) => {
           if (this[kContentLength] > limit) {
             this.destroy(new AbortError());
           }
@@ -10313,7 +10313,7 @@ var require_readable = __commonJS({
             if (signal?.aborted) {
               reject(signal.reason ?? new AbortError());
             } else {
-              resolve2(null);
+              resolve3(null);
             }
           }).on("error", noop).on("data", function(chunk) {
             limit -= chunk.length;
@@ -10332,7 +10332,7 @@ var require_readable = __commonJS({
     }
     async function consume(stream, type) {
       assert(!stream[kConsume]);
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         if (isUnusable(stream)) {
           const rState = stream._readableState;
           if (rState.destroyed && rState.closeEmitted === false) {
@@ -10349,7 +10349,7 @@ var require_readable = __commonJS({
             stream[kConsume] = {
               type,
               stream,
-              resolve: resolve2,
+              resolve: resolve3,
               reject,
               length: 0,
               body: []
@@ -10419,18 +10419,18 @@ var require_readable = __commonJS({
       return buffer;
     }
     function consumeEnd(consume2) {
-      const { type, body, resolve: resolve2, stream, length } = consume2;
+      const { type, body, resolve: resolve3, stream, length } = consume2;
       try {
         if (type === "text") {
-          resolve2(chunksDecode(body, length));
+          resolve3(chunksDecode(body, length));
         } else if (type === "json") {
-          resolve2(JSON.parse(chunksDecode(body, length)));
+          resolve3(JSON.parse(chunksDecode(body, length)));
         } else if (type === "arrayBuffer") {
-          resolve2(chunksConcat(body, length).buffer);
+          resolve3(chunksConcat(body, length).buffer);
         } else if (type === "blob") {
-          resolve2(new Blob(body, { type: stream[kContentType] }));
+          resolve3(new Blob(body, { type: stream[kContentType] }));
         } else if (type === "bytes") {
-          resolve2(chunksConcat(body, length));
+          resolve3(chunksConcat(body, length));
         }
         consumeFinish(consume2);
       } catch (err) {
@@ -10687,9 +10687,9 @@ var require_api_request = __commonJS({
     };
     function request(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           request.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve3(data);
           });
         });
       }
@@ -10912,9 +10912,9 @@ var require_api_stream = __commonJS({
     };
     function stream(opts, factory, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           stream.call(this, opts, factory, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve3(data);
           });
         });
       }
@@ -11199,9 +11199,9 @@ var require_api_upgrade = __commonJS({
     };
     function upgrade(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           upgrade.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve3(data);
           });
         });
       }
@@ -11293,9 +11293,9 @@ var require_api_connect = __commonJS({
     };
     function connect(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           connect.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve3(data);
           });
         });
       }
@@ -15158,7 +15158,7 @@ var require_fetch = __commonJS({
       function dispatch({ body }) {
         const url = requestCurrentURL(request);
         const agent = fetchParams.controller.dispatcher;
-        return new Promise((resolve2, reject) => agent.dispatch(
+        return new Promise((resolve3, reject) => agent.dispatch(
           {
             path: url.pathname + url.search,
             origin: url.origin,
@@ -15234,7 +15234,7 @@ var require_fetch = __commonJS({
               }
               this.body = new Readable({ read: resume });
               const onError = this.onError.bind(this);
-              resolve2({
+              resolve3({
                 status,
                 statusText,
                 headersList,
@@ -15277,7 +15277,7 @@ var require_fetch = __commonJS({
               for (let i = 0; i < rawHeaders.length; i += 2) {
                 headersList.append(bufferToLowerCasedHeaderName(rawHeaders[i]), rawHeaders[i + 1].toString("latin1"), true);
               }
-              resolve2({
+              resolve3({
                 status,
                 statusText: STATUS_CODES[status],
                 headersList,
@@ -19018,8 +19018,8 @@ var require_util8 = __commonJS({
       return true;
     }
     function delay(ms) {
-      return new Promise((resolve2) => {
-        setTimeout(resolve2, ms).unref();
+      return new Promise((resolve3) => {
+        setTimeout(resolve3, ms).unref();
       });
     }
     module.exports = {
@@ -21314,7 +21314,7 @@ function resolveBindingActivations(params, binding, value) {
 }
 
 // node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveScoped.js
-function resolveScoped(node, resolve2) {
+function resolveScoped(node, resolve3) {
   const binding = node.binding;
   switch (binding.scope) {
     case bindingScopeValues.Singleton: {
@@ -21322,7 +21322,7 @@ function resolveScoped(node, resolve2) {
         if (binding.cache.isRight) {
           return binding.cache.value;
         }
-        const resolvedValue = resolveBindingActivations(params, binding, resolve2(params, node));
+        const resolvedValue = resolveBindingActivations(params, binding, resolve3(params, node));
         return cacheResolvedValue(binding, resolvedValue);
       };
     }
@@ -21331,13 +21331,13 @@ function resolveScoped(node, resolve2) {
         if (params.requestScopeCache?.has(binding.id) === true) {
           return params.requestScopeCache.get(binding.id);
         }
-        const resolvedValue = resolveBindingActivations(params, binding, resolve2(params, node));
+        const resolvedValue = resolveBindingActivations(params, binding, resolve3(params, node));
         (params.requestScopeCache ??= /* @__PURE__ */ new Map()).set(binding.id, resolvedValue);
         return resolvedValue;
       };
     }
     case bindingScopeValues.Transient:
-      return (params) => resolveBindingActivations(params, binding, resolve2(params, node));
+      return (params) => resolveBindingActivations(params, binding, resolve3(params, node));
   }
 }
 
@@ -21352,14 +21352,14 @@ var ConstantValueBindingNode = class {
 };
 
 // node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveScopedWithNoActivations.js
-function resolveScopedWithNoActivations(binding, resolve2) {
+function resolveScopedWithNoActivations(binding, resolve3) {
   switch (binding.scope) {
     case bindingScopeValues.Singleton: {
       return (params) => {
         if (binding.cache.isRight) {
           return binding.cache.value;
         }
-        const resolvedValue = resolve2(params);
+        const resolvedValue = resolve3(params);
         return cacheResolvedValue(binding, resolvedValue);
       };
     }
@@ -21368,13 +21368,13 @@ function resolveScopedWithNoActivations(binding, resolve2) {
         if (params.requestScopeCache?.has(binding.id) === true) {
           return params.requestScopeCache.get(binding.id);
         }
-        const resolvedValue = resolve2(params);
+        const resolvedValue = resolve3(params);
         (params.requestScopeCache ??= /* @__PURE__ */ new Map()).set(binding.id, resolvedValue);
         return resolvedValue;
       };
     }
     case bindingScopeValues.Transient:
-      return resolve2;
+      return resolve3;
   }
 }
 
@@ -21631,7 +21631,7 @@ function resolveFour(value1, value2, value3, value4, build) {
     if (isPromise(value2)) {
       if (isPromise(value3)) {
         if (isPromise(value4)) {
-          return new Promise((resolve2, reject) => {
+          return new Promise((resolve3, reject) => {
             let resolvedValues = 0;
             let resolvedValue1;
             let resolvedValue2;
@@ -21639,56 +21639,56 @@ function resolveFour(value1, value2, value3, value4, build) {
             let resolvedValue4;
             void value1.then((resolvedValue) => {
               if (++resolvedValues === FOUR_PARAMS) {
-                resolve2(build(resolvedValue, resolvedValue2, resolvedValue3, resolvedValue4));
+                resolve3(build(resolvedValue, resolvedValue2, resolvedValue3, resolvedValue4));
               } else {
                 resolvedValue1 = resolvedValue;
               }
             }).catch(reject);
             void value2.then((resolvedValue) => {
               if (++resolvedValues === FOUR_PARAMS) {
-                resolve2(build(resolvedValue1, resolvedValue, resolvedValue3, resolvedValue4));
+                resolve3(build(resolvedValue1, resolvedValue, resolvedValue3, resolvedValue4));
               } else {
                 resolvedValue2 = resolvedValue;
               }
             }).catch(reject);
             void value3.then((resolvedValue) => {
               if (++resolvedValues === FOUR_PARAMS) {
-                resolve2(build(resolvedValue1, resolvedValue2, resolvedValue, resolvedValue4));
+                resolve3(build(resolvedValue1, resolvedValue2, resolvedValue, resolvedValue4));
               } else {
                 resolvedValue3 = resolvedValue;
               }
             }).catch(reject);
             void value4.then((resolvedValue) => {
               if (++resolvedValues === FOUR_PARAMS) {
-                resolve2(build(resolvedValue1, resolvedValue2, resolvedValue3, resolvedValue));
+                resolve3(build(resolvedValue1, resolvedValue2, resolvedValue3, resolvedValue));
               } else {
                 resolvedValue4 = resolvedValue;
               }
             }).catch(reject);
           });
         }
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           let resolvedValues = 0;
           let resolvedValue1;
           let resolvedValue2;
           let resolvedValue3;
           void value1.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue, resolvedValue2, resolvedValue3, value4));
+              resolve3(build(resolvedValue, resolvedValue2, resolvedValue3, value4));
             } else {
               resolvedValue1 = resolvedValue;
             }
           }).catch(reject);
           void value2.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue1, resolvedValue, resolvedValue3, value4));
+              resolve3(build(resolvedValue1, resolvedValue, resolvedValue3, value4));
             } else {
               resolvedValue2 = resolvedValue;
             }
           }).catch(reject);
           void value3.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue1, resolvedValue2, resolvedValue, value4));
+              resolve3(build(resolvedValue1, resolvedValue2, resolvedValue, value4));
             } else {
               resolvedValue3 = resolvedValue;
             }
@@ -21696,48 +21696,48 @@ function resolveFour(value1, value2, value3, value4, build) {
         });
       }
       if (isPromise(value4)) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           let resolvedValues = 0;
           let resolvedValue1;
           let resolvedValue2;
           let resolvedValue4;
           void value1.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue, resolvedValue2, value3, resolvedValue4));
+              resolve3(build(resolvedValue, resolvedValue2, value3, resolvedValue4));
             } else {
               resolvedValue1 = resolvedValue;
             }
           }).catch(reject);
           void value2.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue1, resolvedValue, value3, resolvedValue4));
+              resolve3(build(resolvedValue1, resolvedValue, value3, resolvedValue4));
             } else {
               resolvedValue2 = resolvedValue;
             }
           }).catch(reject);
           void value4.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue1, resolvedValue2, value3, resolvedValue));
+              resolve3(build(resolvedValue1, resolvedValue2, value3, resolvedValue));
             } else {
               resolvedValue4 = resolvedValue;
             }
           }).catch(reject);
         });
       }
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue1;
         let resolvedValue2;
         void value1.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(resolvedValue, resolvedValue2, value3, value4));
+            resolve3(build(resolvedValue, resolvedValue2, value3, value4));
           } else {
             resolvedValue1 = resolvedValue;
           }
         }).catch(reject);
         void value2.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(resolvedValue1, resolvedValue, value3, value4));
+            resolve3(build(resolvedValue1, resolvedValue, value3, value4));
           } else {
             resolvedValue2 = resolvedValue;
           }
@@ -21746,48 +21746,48 @@ function resolveFour(value1, value2, value3, value4, build) {
     }
     if (isPromise(value3)) {
       if (isPromise(value4)) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           let resolvedValues = 0;
           let resolvedValue1;
           let resolvedValue3;
           let resolvedValue4;
           void value1.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue, value2, resolvedValue3, resolvedValue4));
+              resolve3(build(resolvedValue, value2, resolvedValue3, resolvedValue4));
             } else {
               resolvedValue1 = resolvedValue;
             }
           }).catch(reject);
           void value3.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue1, value2, resolvedValue, resolvedValue4));
+              resolve3(build(resolvedValue1, value2, resolvedValue, resolvedValue4));
             } else {
               resolvedValue3 = resolvedValue;
             }
           }).catch(reject);
           void value4.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(resolvedValue1, value2, resolvedValue3, resolvedValue));
+              resolve3(build(resolvedValue1, value2, resolvedValue3, resolvedValue));
             } else {
               resolvedValue4 = resolvedValue;
             }
           }).catch(reject);
         });
       }
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue1;
         let resolvedValue3;
         void value1.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(resolvedValue, value2, resolvedValue3, value4));
+            resolve3(build(resolvedValue, value2, resolvedValue3, value4));
           } else {
             resolvedValue1 = resolvedValue;
           }
         }).catch(reject);
         void value3.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(resolvedValue1, value2, resolvedValue, value4));
+            resolve3(build(resolvedValue1, value2, resolvedValue, value4));
           } else {
             resolvedValue3 = resolvedValue;
           }
@@ -21795,20 +21795,20 @@ function resolveFour(value1, value2, value3, value4, build) {
       });
     }
     if (isPromise(value4)) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue1;
         let resolvedValue4;
         void value1.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(resolvedValue, value2, value3, resolvedValue4));
+            resolve3(build(resolvedValue, value2, value3, resolvedValue4));
           } else {
             resolvedValue1 = resolvedValue;
           }
         }).catch(reject);
         void value4.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(resolvedValue1, value2, value3, resolvedValue));
+            resolve3(build(resolvedValue1, value2, value3, resolvedValue));
           } else {
             resolvedValue4 = resolvedValue;
           }
@@ -21820,48 +21820,48 @@ function resolveFour(value1, value2, value3, value4, build) {
   if (isPromise(value2)) {
     if (isPromise(value3)) {
       if (isPromise(value4)) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           let resolvedValues = 0;
           let resolvedValue2;
           let resolvedValue3;
           let resolvedValue4;
           void value2.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(value1, resolvedValue, resolvedValue3, resolvedValue4));
+              resolve3(build(value1, resolvedValue, resolvedValue3, resolvedValue4));
             } else {
               resolvedValue2 = resolvedValue;
             }
           }).catch(reject);
           void value3.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(value1, resolvedValue2, resolvedValue, resolvedValue4));
+              resolve3(build(value1, resolvedValue2, resolvedValue, resolvedValue4));
             } else {
               resolvedValue3 = resolvedValue;
             }
           }).catch(reject);
           void value4.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS) {
-              resolve2(build(value1, resolvedValue2, resolvedValue3, resolvedValue));
+              resolve3(build(value1, resolvedValue2, resolvedValue3, resolvedValue));
             } else {
               resolvedValue4 = resolvedValue;
             }
           }).catch(reject);
         });
       }
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue2;
         let resolvedValue3;
         void value2.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(value1, resolvedValue, resolvedValue3, value4));
+            resolve3(build(value1, resolvedValue, resolvedValue3, value4));
           } else {
             resolvedValue2 = resolvedValue;
           }
         }).catch(reject);
         void value3.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(value1, resolvedValue2, resolvedValue, value4));
+            resolve3(build(value1, resolvedValue2, resolvedValue, value4));
           } else {
             resolvedValue3 = resolvedValue;
           }
@@ -21869,20 +21869,20 @@ function resolveFour(value1, value2, value3, value4, build) {
       });
     }
     if (isPromise(value4)) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue2;
         let resolvedValue4;
         void value2.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(value1, resolvedValue, value3, resolvedValue4));
+            resolve3(build(value1, resolvedValue, value3, resolvedValue4));
           } else {
             resolvedValue2 = resolvedValue;
           }
         }).catch(reject);
         void value4.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(value1, resolvedValue2, value3, resolvedValue));
+            resolve3(build(value1, resolvedValue2, value3, resolvedValue));
           } else {
             resolvedValue4 = resolvedValue;
           }
@@ -21893,20 +21893,20 @@ function resolveFour(value1, value2, value3, value4, build) {
   }
   if (isPromise(value3)) {
     if (isPromise(value4)) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue3;
         let resolvedValue4;
         void value3.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(value1, value2, resolvedValue, resolvedValue4));
+            resolve3(build(value1, value2, resolvedValue, resolvedValue4));
           } else {
             resolvedValue3 = resolvedValue;
           }
         }).catch(reject);
         void value4.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS) {
-            resolve2(build(value1, value2, resolvedValue3, resolvedValue));
+            resolve3(build(value1, value2, resolvedValue3, resolvedValue));
           } else {
             resolvedValue4 = resolvedValue;
           }
@@ -22032,48 +22032,48 @@ function resolveThree(value1, value2, value3, build) {
   if (isPromise(value1)) {
     if (isPromise(value2)) {
       if (isPromise(value3)) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           let resolvedValues = 0;
           let resolvedValue1;
           let resolvedValue2;
           let resolvedValue3;
           void value1.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS2) {
-              resolve2(build(resolvedValue, resolvedValue2, resolvedValue3));
+              resolve3(build(resolvedValue, resolvedValue2, resolvedValue3));
             } else {
               resolvedValue1 = resolvedValue;
             }
           }).catch(reject);
           void value2.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS2) {
-              resolve2(build(resolvedValue1, resolvedValue, resolvedValue3));
+              resolve3(build(resolvedValue1, resolvedValue, resolvedValue3));
             } else {
               resolvedValue2 = resolvedValue;
             }
           }).catch(reject);
           void value3.then((resolvedValue) => {
             if (++resolvedValues === THREE_PARAMS2) {
-              resolve2(build(resolvedValue1, resolvedValue2, resolvedValue));
+              resolve3(build(resolvedValue1, resolvedValue2, resolvedValue));
             } else {
               resolvedValue3 = resolvedValue;
             }
           }).catch(reject);
         });
       }
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue1;
         let resolvedValue2;
         void value1.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS2) {
-            resolve2(build(resolvedValue, resolvedValue2, value3));
+            resolve3(build(resolvedValue, resolvedValue2, value3));
           } else {
             resolvedValue1 = resolvedValue;
           }
         }).catch(reject);
         void value2.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS2) {
-            resolve2(build(resolvedValue1, resolvedValue, value3));
+            resolve3(build(resolvedValue1, resolvedValue, value3));
           } else {
             resolvedValue2 = resolvedValue;
           }
@@ -22081,20 +22081,20 @@ function resolveThree(value1, value2, value3, build) {
       });
     }
     if (isPromise(value3)) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue1;
         let resolvedValue3;
         void value1.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS2) {
-            resolve2(build(resolvedValue, value2, resolvedValue3));
+            resolve3(build(resolvedValue, value2, resolvedValue3));
           } else {
             resolvedValue1 = resolvedValue;
           }
         }).catch(reject);
         void value3.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS2) {
-            resolve2(build(resolvedValue1, value2, resolvedValue));
+            resolve3(build(resolvedValue1, value2, resolvedValue));
           } else {
             resolvedValue3 = resolvedValue;
           }
@@ -22105,20 +22105,20 @@ function resolveThree(value1, value2, value3, build) {
   }
   if (isPromise(value2)) {
     if (isPromise(value3)) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue2;
         let resolvedValue3;
         void value2.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS2) {
-            resolve2(build(value1, resolvedValue, resolvedValue3));
+            resolve3(build(value1, resolvedValue, resolvedValue3));
           } else {
             resolvedValue2 = resolvedValue;
           }
         }).catch(reject);
         void value3.then((resolvedValue) => {
           if (++resolvedValues === TWO_PARAMS2) {
-            resolve2(build(value1, resolvedValue2, resolvedValue));
+            resolve3(build(value1, resolvedValue2, resolvedValue));
           } else {
             resolvedValue3 = resolvedValue;
           }
@@ -22186,20 +22186,20 @@ var PARAMS = 2;
 function resolveTwo(value1, value2, build) {
   if (isPromise(value1)) {
     if (isPromise(value2)) {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         let resolvedValues = 0;
         let resolvedValue1;
         let resolvedValue2;
         void value1.then((resolvedValue) => {
           if (++resolvedValues === PARAMS) {
-            resolve2(build(resolvedValue, resolvedValue2));
+            resolve3(build(resolvedValue, resolvedValue2));
           } else {
             resolvedValue1 = resolvedValue;
           }
         }).catch(reject);
         void value2.then((resolvedValue) => {
           if (++resolvedValues === PARAMS) {
-            resolve2(build(resolvedValue1, resolvedValue));
+            resolve3(build(resolvedValue1, resolvedValue));
           } else {
             resolvedValue2 = resolvedValue;
           }
@@ -25554,11 +25554,11 @@ import { EOL as EOL3 } from "os";
 import { constants, promises } from "fs";
 var __awaiter = function(thisArg, _arguments, P, generator) {
   function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve2) {
-      resolve2(value);
+    return value instanceof P ? value : new P(function(resolve3) {
+      resolve3(value);
     });
   }
-  return new (P || (P = Promise))(function(resolve2, reject) {
+  return new (P || (P = Promise))(function(resolve3, reject) {
     function fulfilled(value) {
       try {
         step(generator.next(value));
@@ -25574,7 +25574,7 @@ var __awaiter = function(thisArg, _arguments, P, generator) {
       }
     }
     function step(result) {
-      result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
+      result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -37924,11 +37924,11 @@ var TemplateRenderer = class {
   }
   parser;
   dates;
-  render(template, resolve2) {
+  render(template, resolve3) {
     let output = "";
     let offset = 0;
     for (const expression of this.parser.parse(template)) {
-      output += template.slice(offset, expression.start) + this.value(resolve2(expression));
+      output += template.slice(offset, expression.start) + this.value(resolve3(expression));
       offset = expression.end;
     }
     return output + template.slice(offset);
@@ -38693,14 +38693,21 @@ var GithubActionsComposition = class _GithubActionsComposition {
   }
 };
 
+// packages/runtime/github-actions/src/publication-runtime-action-composition.ts
+import { resolve as resolve2 } from "node:path";
+import { fileURLToPath } from "node:url";
+
 // packages/runtime/github-actions/src/publication-runtime-action.ts
 var PublicationRuntimeAction = class {
-  constructor(configuration) {
+  constructor(configuration, runtimeDirectory) {
     this.configuration = configuration;
+    this.runtimeDirectory = runtimeDirectory;
   }
   configuration;
+  runtimeDirectory;
   async run() {
     const configuration = await this.configuration.load(process.cwd());
+    setOutput("runtime-directory", this.runtimeDirectory);
     setOutput(
       "requires-challenge-solver",
       configuration.destinations.some(
@@ -38713,16 +38720,19 @@ var PublicationRuntimeAction = class {
 
 // packages/runtime/github-actions/src/publication-runtime-action-composition.ts
 var PublicationRuntimeActionComposition = class {
-  action() {
+  action(bundleUrl) {
     return new PublicationRuntimeAction(
-      new GithubActionsComposition().eventPublicationConfiguration()
+      new GithubActionsComposition().eventPublicationConfiguration(),
+      resolve2(fileURLToPath(new URL("../../../../", bundleUrl)))
     );
   }
 };
 
 // packages/runtime/github-actions/src/entrypoints/publication-prepare-runtime.ts
 var runner = new GithubActionsComposition().actionRunner();
-var action = new PublicationRuntimeActionComposition().action();
+var action = new PublicationRuntimeActionComposition().action(
+  import.meta.url
+);
 await runner.run(
   "action.publication.prepare-runtime",
   action.run.bind(action),

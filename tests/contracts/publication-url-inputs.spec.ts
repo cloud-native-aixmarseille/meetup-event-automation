@@ -87,7 +87,7 @@ describe("explicit publication URL configuration", () => {
 
 	it("uses explicit synthetic URL configuration for bundled action exercises", async () => {
 		// Arrange
-		const localActions = actions.map((action) => `./actions/${action}`);
+		const localActions = actions.map((action) => `$/actions/${action}`);
 
 		// Act
 		const workflow = await readWorkflow("__check-actions");

@@ -111,6 +111,14 @@ updates to the pinned reusable release workflow. Keep manual documentation under
 `docs/`. See [generated references](documentation.md#generated-references) for
 ownership and regeneration. There is no local documentation generator.
 
+The release GitHub App needs Contents, Pull requests, and Workflows write
+permissions; the reusable release workflow requests those permissions explicitly.
+
+GitHub releases run weekly and manually through
+[`__release.yml`](../../.github/workflows/__release.yml), after shared CI succeeds.
+See [publishing releases](releases.md) for credentials, changelog generation, and
+recovery.
+
 ### Workflow organization
 
 Public workflow names follow the [lifecycle use cases](../usage/workflows.md).
