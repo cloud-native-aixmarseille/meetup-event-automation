@@ -22,7 +22,7 @@
 
 ## Overview
 
-Validate the destination collection and select its required browser authentication runtime.
+Validate the destination collection and locate its required browser authentication runtime.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -53,9 +53,10 @@ Validate the destination collection and select its required browser authenticati
 
 ## Outputs
 
-| **Output**                      | **Description**                                                                  |
-| ------------------------------- | -------------------------------------------------------------------------------- |
-| **`requires-challenge-solver`** | Whether the configured destinations require the Python challenge-solver runtime. |
+| **Output**                      | **Description**                                                                                                       |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **`runtime-directory`**         | Absolute automation directory containing the locked Node.js and Python runtime dependencies for this action revision. |
+| **`requires-challenge-solver`** | Whether the configured destinations require the Python challenge-solver runtime.                                      |
 
 <!-- outputs:end -->
 <!-- examples:start -->
