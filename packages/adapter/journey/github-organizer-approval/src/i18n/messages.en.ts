@@ -1,4 +1,15 @@
 export const EN_MESSAGES = {
+	"approval.social.after-approval": "after approval",
+	"approval.social.details":
+		"### Organizer confirmation: public social publication\n\n{target} · {destination}\n\nDestination: {identity}\n\nPublication: {plannedAt}; expires at {expiresAt}.\n\nReview the exact text, registration link, and media below.",
+	"approval.social.request":
+		"Repository writers: select one choice. Approval authorizes this exact post to this destination within the reviewed window. Changes require a new approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+	"approval.social.evidence":
+		"Recovery evidence: {reference}\n\nConfirmed outcome: {outcome, select, published {the post was published} not_published {the post was not published} other {unknown}}.",
+	"approval.social.recovery":
+		"Verify the provider evidence above before deciding.\n\n- [{approveMark}] {outcome, select, published {Confirm this post was published and record its remote identity} not_published {Confirm this post was not published and permit a retry after current publication approval is checked} other {Confirm recovery}}\n- [{rejectMark}] Reject recovery and keep publication blocked",
+	"approval.social.final":
+		"{status, select, approved {✅ **Publication decision approved**} rejected {❌ **Publication decision rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThe delivery record tracks provider acceptance independently. Completed posts are never resent.",
 	"approval.community.details":
 		"### Organizer confirmation: publish CNCF community event\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing can send OCGroups notifications to group members and speakers.",
 	"approval.community.request":

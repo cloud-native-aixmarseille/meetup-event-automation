@@ -1,4 +1,20 @@
 export interface MessageParameters {
+	"approval.social.after-approval": Record<string, never>;
+	"approval.social.details": {
+		target: string;
+		destination: string;
+		identity: string;
+		plannedAt: string;
+		expiresAt: string;
+	};
+	"approval.social.request": { approveMark: string; rejectMark: string };
+	"approval.social.evidence": { outcome: string; reference: string };
+	"approval.social.recovery": {
+		approveMark: string;
+		rejectMark: string;
+		outcome: string;
+	};
+	"approval.social.final": { status: string; actor: string; decidedAt: string };
 	"approval.content.planned": { time: string };
 	"approval.content.slot": { index: number; status: string };
 	"approval.content.title": {

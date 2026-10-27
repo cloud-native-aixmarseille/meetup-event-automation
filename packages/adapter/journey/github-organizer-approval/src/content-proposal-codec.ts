@@ -33,6 +33,7 @@ export class ContentProposalCodec {
 	}
 	private parse(value: unknown): ContentProposal {
 		const item = this.values.object(value, [
+			"publicationIntent",
 			"recoveryRequest",
 			"destinationBefore",
 			"version",
@@ -55,6 +56,9 @@ export class ContentProposalCodec {
 			throw new Error("Invalid content proposal identity");
 		const recovery = this.recovery(item.recoveryRequest);
 		const proposal: ContentProposal = {
+			...(item.publicationIntent === undefined
+				? {}
+				: { publicationIntent: this.values.text(item.publicationIntent, 200) }),
 			...(recovery ? { recoveryRequest: recovery } : {}),
 			version: 1,
 			promptVersion: "1",
@@ -149,6 +153,7 @@ export class ContentProposalCodec {
 			"facts",
 			"plannedAt",
 			"sourceFingerprint",
+			"destination",
 		]);
 		if (
 			!this.policy.target(item.target) ||
@@ -157,6 +162,9 @@ export class ContentProposalCodec {
 			throw new Error("Invalid content target or language");
 		const plan: Omit<ContentPlan, "sourceFingerprint"> = {
 			target: item.target,
+			...(item.destination === undefined
+				? {}
+				: { destination: this.values.destination(item.destination) }),
 			language: item.language,
 			facts: this.values.facts(item.facts),
 			plannedAt: item.plannedAt === null ? null : this.instant(item.plannedAt),

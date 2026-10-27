@@ -9,6 +9,33 @@ const identity = {
 };
 
 describe("approval notification policy", () => {
+	it("limits social publication notifications to the event date and public target", () => {
+		// Arrange
+		const request = {
+			...identity,
+			kind: "social-publication",
+			social: {
+				intentId: "delivery-one",
+				target: "slack:community:announcement",
+				destinationLabel: "Community",
+				destinationIdentity: "T123/C123",
+				text: "Public reviewed message",
+				media: [],
+				plannedAt: "2099-06-01T10:00:00Z",
+				expiresAt: "2099-06-08T17:00:00Z",
+			},
+		} satisfies OrganizerApprovalRequest;
+
+		// Act
+		const facts = new ApprovalNotificationPolicy().notificationFor(request);
+
+		// Assert
+		expect(facts).toEqual({
+			kind: "social-publication",
+			eventDate: identity.eventDate,
+			target: request.social.target,
+		});
+	});
 	it("includes only the date and recipient count for introduction approvals", () => {
 		// Arrange
 		const request = {

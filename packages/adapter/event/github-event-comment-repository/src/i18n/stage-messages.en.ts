@@ -1,4 +1,15 @@
 export const STAGE_MESSAGES_EN = {
+	"comment.social.target": "Social publication ({destination}, {purpose})",
+	"comment.guidance.social.pending":
+		"Review the announcement and approve publication for this destination.",
+	"comment.guidance.social.blocked":
+		"Check the publication review, current event details and destination access before retrying.",
+	"comment.guidance.social.uncertain":
+		"Verify the remote post and record recovery before attempting publication again.",
+	"comment.guidance.social.expired":
+		"The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
+	"comment.guidance.social.evaluation-failed":
+		"Social publication could not be evaluated. Ask a maintainer to check source access and delivery records before retrying.",
 	"comment.guidance.communication.concurrent-checklist":
 		"The issue changed after dispatch. Rerun to update completed email tasks.",
 	"comment.guidance.feedback.conflict":

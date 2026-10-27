@@ -1,9 +1,8 @@
-import {
-	CONTENT_TARGETS,
-	type ContentDraft,
-	type ContentPlan,
-	type ContentProposal,
-	type ContentTarget,
+import type {
+	ContentDraft,
+	ContentPlan,
+	ContentProposal,
+	ContentTarget,
 } from "./promotional-content.js";
 import type { ProposalDefinition } from "./proposal-definition.js";
 
@@ -11,7 +10,11 @@ import type { ProposalDefinition } from "./proposal-definition.js";
 export class PromotionalContentPolicy {
 	constructor(private readonly definitions: readonly ProposalDefinition[]) {}
 	target(value: unknown): value is ContentTarget {
-		return CONTENT_TARGETS.some((target) => target === value);
+		return (
+			typeof value === "string" &&
+			(/^(title|description|cover)$/.test(value) ||
+				/^[a-z][a-z0-9-]{0,63}:(announcement|d7|d0)$/.test(value))
+		);
 	}
 	source(plan: Omit<ContentPlan, "sourceFingerprint">): unknown {
 		return this.definition(plan.target).source(plan);

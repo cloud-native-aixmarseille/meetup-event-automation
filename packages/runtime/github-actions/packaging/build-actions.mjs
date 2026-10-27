@@ -5,6 +5,14 @@ import { build } from "esbuild";
 
 export const actionBundles = [
 	[
+		"packages/runtime/github-actions/src/entrypoints/communication-reconcile-social.ts",
+		"actions/communication/reconcile-social/dist/index.js",
+	],
+	[
+		"packages/runtime/github-actions/src/entrypoints/communication-recover-social.ts",
+		"actions/communication/recover-social/dist/index.js",
+	],
+	[
 		"packages/runtime/github-actions/src/entrypoints/publication-prepare-runtime.ts",
 		"actions/publication/prepare-runtime/dist/index.js",
 	],

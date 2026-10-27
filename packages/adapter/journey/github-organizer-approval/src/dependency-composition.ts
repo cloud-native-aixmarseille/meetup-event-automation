@@ -1,13 +1,9 @@
 import {
-	DraftProposalComposition,
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
 } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
-import {
-	PublicAssetUrl,
-	PublicationDomainComposition,
-} from "@meetup-automation/publication";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { ApprovalCommentCodec } from "./approval-comment-codec.js";
 import {
 	ApprovalDecisionParser,
@@ -28,13 +24,11 @@ import {
 	ApprovalRecordFactory,
 	type ApprovalRecordFactoryArguments,
 } from "./approval-record-factory.js";
-import { ApprovalRequestSchema } from "./approval-request-schema.js";
+import type { ApprovalRequestSchema } from "./approval-request-schema.js";
+import { ApprovalRequestSchemaComposition } from "./approval-request-schema-composition.js";
 import { ApprovalSchema } from "./approval-schema.js";
-import { CommunityApprovalDetailsSchema } from "./community-approval-details-schema.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { ContentApprovalPresenter } from "./content-approval-presenter.js";
-import { ContentApprovalSchema } from "./content-approval-schema.js";
-import { ContentValueSchema } from "./content-value-schema.js";
 import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
 import {
 	EmailApprovalPresenter,
@@ -88,6 +82,7 @@ import {
 	type ResolveApprovalDecisionArguments,
 } from "./resolve-approval-decision.js";
 import { StoredApprovalSchema } from "./stored-approval-schema.js";
+import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 import {
 	TrustedApprovalState,
 	type TrustedApprovalStateArguments,
@@ -134,6 +129,7 @@ export class GithubOrganizerApprovalComposition {
 			"meetup-publication": this.meetupApprovalPresenter(messages),
 			"community-publication": new CommunityApprovalPresenter(messages),
 			"content-review": this.contentApprovalPresenter(messages),
+			"social-publication": new SocialPublicationApprovalPresenter(messages),
 		});
 	}
 	contentApprovalPresenter(
@@ -163,21 +159,11 @@ export class GithubOrganizerApprovalComposition {
 		);
 	}
 	approvalRequestSchema(): ApprovalRequestSchema {
-		return new ApprovalRequestSchema({
-			communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
-				approvalSchema: this.approvalSchema(),
-				scheduledEventPolicy:
-					new PublicationDomainComposition().scheduledEventPolicy(),
-			}),
-			approvalSchema: this.approvalSchema(),
-			contentApprovalSchema: new ContentApprovalSchema(
-				this.approvalSchema(),
-				new DraftProposalComposition().policy(),
-				new ContentValueSchema(new PublicAssetUrl()),
-			),
-			meetupApprovalDetailsSchema: this.meetupApprovalDetailsSchema(),
-			emailApprovalDetailsSchema: this.emailApprovalDetailsSchema(),
-		});
+		return new ApprovalRequestSchemaComposition().create(
+			this.approvalSchema(),
+			this.meetupApprovalDetailsSchema(),
+			this.emailApprovalDetailsSchema(),
+		);
 	}
 	approvalSchema(): ApprovalSchema {
 		return new ApprovalSchema();
@@ -228,7 +214,11 @@ export class GithubOrganizerApprovalComposition {
 		...args: GithubApprovalRepositoryArguments
 	): GithubApprovalRepository {
 		return new GithubApprovalRepository(
-			{ storedApprovalSchema: this.storedApprovalSchema() },
+			{
+				storedApprovalSchema: this.storedApprovalSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+			},
 			...args,
 		);
 	}

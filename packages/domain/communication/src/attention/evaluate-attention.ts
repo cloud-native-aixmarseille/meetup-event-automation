@@ -13,6 +13,7 @@ export interface AttentionStage {
 		| "assets"
 		| "feedback"
 		| "communications"
+		| "social"
 		| "content";
 	readonly outcome: "success" | "failure" | "unknown";
 	readonly blocked: boolean;
@@ -145,6 +146,7 @@ export class EvaluateAttention {
 				(!postEvent &&
 					(approval.kind === "meetup-publication" ||
 						approval.kind === "community-publication" ||
+						approval.kind === "social-publication" ||
 						approval.kind === "content-review"));
 			if (
 				approval.status === "pending" &&
@@ -157,6 +159,7 @@ export class EvaluateAttention {
 						"approvals",
 						approval.kind === "meetup-publication" ||
 							approval.kind === "community-publication" ||
+							approval.kind === "social-publication" ||
 							approval.kind === "content-review"
 							? `${approval.kind}:${approval.revision}`
 							: approval.revision,

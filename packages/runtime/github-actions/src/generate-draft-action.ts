@@ -16,7 +16,7 @@ import type { ActionMessages } from "./i18n/action-messages.js";
 export class GenerateDraftAction<Input extends DraftSource> {
 	constructor(
 		private readonly readInput: (locale: Locale) => Promise<Input>,
-		private readonly readTarget: () => ContentTarget,
+		private readonly readTarget: (input: Input) => ContentTarget,
 		private readonly aiInput: Pick<AiInput, "read">,
 		private readonly policy: Pick<
 			PromotionalContentPolicy,
@@ -35,7 +35,7 @@ export class GenerateDraftAction<Input extends DraftSource> {
 	async run(messages: ActionMessages): Promise<ActionReportData> {
 		const input = await this.readInput(messages.locale);
 		const ai = this.aiInput.read();
-		const target = this.readTarget();
+		const target = this.readTarget(input);
 		if (!this.policy.target(target))
 			throw new Error("Unsupported content target");
 		const services = this.compose(input, ai);

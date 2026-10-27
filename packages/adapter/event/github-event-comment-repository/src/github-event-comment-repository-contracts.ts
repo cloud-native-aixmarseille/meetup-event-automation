@@ -56,7 +56,14 @@ export type GitHubEventCommentRepositoryOptions = Readonly<{
 	/** Retire separate stage reports only after their merged checklist is saved. */
 	retireCommunicationReports?: boolean;
 	retainedContent?: {
-		load(issueNumber: number, commentId: number, body: string): Promise<string>;
+		load(
+			issueNumber: number,
+			commentId: number,
+			body: string,
+		): Promise<{
+			readonly body: string;
+			readonly retained: string;
+		}>;
 	};
 }>;
 

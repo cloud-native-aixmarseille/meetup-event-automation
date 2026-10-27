@@ -109,6 +109,15 @@
 			],
 			"@meetup-automation/ocgroups-event-gateway": [
 				"./packages/adapter/publication/ocgroups-event-gateway/src/index.ts"
+			],
+			"@meetup-automation/slack-social-gateway": [
+				"./packages/adapter/communication/slack-social-gateway/src/index.ts"
+			],
+			"@meetup-automation/linkedin-social-gateway": [
+				"./packages/adapter/communication/linkedin-social-gateway/src/index.ts"
+			],
+			"@meetup-automation/github-social-delivery-journal": [
+				"./packages/adapter/communication/github-social-delivery-journal/src/index.ts"
 			]
 		}
 	}

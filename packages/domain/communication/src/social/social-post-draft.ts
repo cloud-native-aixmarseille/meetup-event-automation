@@ -1,4 +1,4 @@
-export type SocialPostChannel = "slack-aix" | "slack-openbar" | "linkedin";
+export type SocialPostChannel = "slack" | "linkedin";
 export type SocialPostMilestone = "announcement" | "d7" | "d0";
 export interface SocialPostFacts {
 	readonly date: string;
@@ -38,11 +38,18 @@ export class SocialPostDraft {
 			)
 		);
 	}
-	valid(facts: SocialPostFacts, text: string): boolean {
+	valid(
+		facts: SocialPostFacts,
+		text: string,
+		channel: SocialPostChannel | undefined,
+	): boolean {
 		return (
 			text.length <= 2800 &&
 			Boolean(facts.registrationUrl) &&
-			text.includes(facts.registrationUrl)
+			text.includes(facts.registrationUrl) &&
+			(channel !== "slack" ||
+				(!text.includes(String.fromCharCode(0)) && !/<[!@#]/.test(text))) &&
+			(channel !== "linkedin" || !/@\[[^\]]*\]\(urn:li:/.test(text))
 		);
 	}
 	source(facts: SocialPostFacts, channel: SocialPostChannel) {

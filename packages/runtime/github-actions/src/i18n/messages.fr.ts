@@ -1,5 +1,11 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"action.communication.recover-social": "Rétablir une publication sociale",
+	"report.social.recovery": "reprise_sociale={status}",
+	"action.communication.reconcile-social":
+		"Réconcilier les publications sociales",
+	"report.social.empty": "publications_sociales=0",
+	"report.social.result": "cible_sociale={target} statut={status}",
 	"diagnostic.publication.meetup.slides-source":
 		"Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
 	"diagnostic.publication.meetup.slides-link":

@@ -1,0 +1,25 @@
+{
+	"name": "github-social-delivery-journal",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/communication/github-social-delivery-journal/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/communication/github-social-delivery-journal/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/communication/github-social-delivery-journal"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:communication",
+		"technology:github",
+		"responsibility:social-delivery-journal"
+	]
+}

@@ -19,6 +19,9 @@ export class AttentionStageInput {
 			feedback: reports[2][1],
 			communications: reports[3][1],
 			content: reports[4][1],
+			...(input.social === undefined
+				? {}
+				: { social: this.group(input.social) }),
 		};
 	}
 	private group(value: unknown): AttentionStageReport {
@@ -92,6 +95,7 @@ export class AttentionStageInput {
 	private safeField(field: unknown): field is string {
 		if (typeof field !== "string" || field.length > 160) return false;
 		return (
+			/^social\.[a-z0-9][a-z0-9-]{0,63}\.(announcement|d7|d0)$/.test(field) ||
 			["Aperitif", "Restaurant / Bar"].includes(field) ||
 			/^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
 				field,

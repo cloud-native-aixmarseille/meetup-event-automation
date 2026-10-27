@@ -37,6 +37,9 @@
 		"@meetup-automation/hcaptcha-captcha-resolver": "workspace:*",
 		"@meetup-automation/gemini-generation-gateway": "workspace:*",
 		"@meetup-automation/templating": "workspace:*",
-		"@meetup-automation/ocgroups-event-gateway": "workspace:*"
+		"@meetup-automation/ocgroups-event-gateway": "workspace:*",
+		"@meetup-automation/slack-social-gateway": "workspace:*",
+		"@meetup-automation/linkedin-social-gateway": "workspace:*",
+		"@meetup-automation/github-social-delivery-journal": "workspace:*"
 	}
 }

@@ -31,7 +31,7 @@ inputs:
     description: GitHub App bot login owning content and approval comments.
     required: true
   target:
-    description: "Draft target: slack-aix:announcement/d7/d0 or slack-openbar:announcement/d7/d0."
+    description: "Draft target: configured Slack destination key followed by :announcement, :d7, or :d0."
     required: true
   ai-provider:
     description: AI provider identifier (gemini).

@@ -9,7 +9,10 @@ the event's occurrence status.
 | ------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Preparation   | [event-preparation-generate-drafts.yml](../../.github/workflows/event-preparation-generate-drafts.yml)   | Generate any combination of title, description and four cover candidates for review.                                                       |
 | Publication   | [event-publication-reconcile.yml](../../.github/workflows/event-publication-reconcile.yml)               | Reconcile Meetup and OCGroups destinations and publish each after approval. See [publication setup](../integrations/event-publication.md). |
-| Promotion     | [event-promotion-generate-post.yml](../../.github/workflows/event-promotion-generate-post.yml)           | Draft an announcement, D-7 reminder or D0 reminder for a selected Slack community or LinkedIn.                                             |
+| Promotion     | [event-promotion-generate-post.yml](../../.github/workflows/event-promotion-generate-post.yml)           | Draft an announcement, D-7 reminder or D0 reminder for a configured Slack channel or LinkedIn Page.                                        |
+| Promotion     | [event-promotion-reconcile.yml](../../.github/workflows/event-promotion-reconcile.yml)                   | Publish due approved social posts for one event.                                                                                           |
+| Promotion     | [event-promotion-reconcile-active.yml](../../.github/workflows/event-promotion-reconcile-active.yml)     | Scan active events for approved social announcements and reminders.                                                                        |
+| Promotion     | [event-promotion-recover.yml](../../.github/workflows/event-promotion-recover.yml)                       | Record an organizer-approved delivery recovery.                                                                                            |
 | Across phases | [event-reconcile.yml](../../.github/workflows/event-reconcile.yml)                                       | Refresh one event, review drafts, reconcile feedback and assets, evaluate due email and PDF export, then report organizer tasks.           |
 | Across phases | [event-reconcile-active.yml](../../.github/workflows/event-reconcile-active.yml)                         | List active issues and run reconciliation for each.                                                                                        |
 | Referentials  | [referential-reconcile-speakers.yml](../../.github/workflows/referential-reconcile-speakers.yml)         | Prepare a speaker catalog and issue-form review PR.                                                                                        |
@@ -34,8 +37,8 @@ Reconciliation outside that window does not force a redirect. See
 [feedback behavior](../integrations/feedback.md) for target selection and recovery.
 
 Generation is explicit. Routine reconciliation reviews existing drafts without
-regenerating them. Social drafts remain organizer-approved copy for manual
-publication; a generation workflow does not send a Slack or LinkedIn post. See
+regenerating them. Social dispatch uses a separate
+[publication approval and workflow](../integrations/social-publication.md). See
 [content generation and review](../integrations/content.md) for targets, timing,
 attachments and approvals.
 

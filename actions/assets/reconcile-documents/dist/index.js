@@ -40855,9 +40855,9 @@ var require_side_channel = __commonJS({
   }
 });
 
-// node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/formats.js
+// node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/formats.js
 var require_formats = __commonJS({
-  "node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/formats.js"(exports, module) {
+  "node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/formats.js"(exports, module) {
     "use strict";
     var replace = String.prototype.replace;
     var percentTwenties = /%20/g;
@@ -40881,9 +40881,9 @@ var require_formats = __commonJS({
   }
 });
 
-// node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js
+// node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/utils.js
 var require_utils2 = __commonJS({
-  "node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/utils.js"(exports, module) {
+  "node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/utils.js"(exports, module) {
     "use strict";
     var formats = require_formats();
     var getSideChannel = require_side_channel();
@@ -40903,6 +40903,17 @@ var require_utils2 = __commonJS({
     };
     var setMaxIndex = function setMaxIndex2(obj, maxIndex) {
       overflowChannel.set(obj, maxIndex);
+    };
+    var conflictChannel = getSideChannel();
+    var markConflict = function markConflict2(obj, maxIndex) {
+      conflictChannel.set(obj, maxIndex);
+      return obj;
+    };
+    var isConflict = function isConflict2(obj) {
+      return conflictChannel.has(obj);
+    };
+    var getConflictIndex = function getConflictIndex2(obj) {
+      return conflictChannel.get(obj);
     };
     var hexTable = (function() {
       var array = [];
@@ -40947,6 +40958,27 @@ var require_utils2 = __commonJS({
         obj[key] = value;
       }
     };
+    var maxNumericIndex = function maxNumericIndex2(obj, min) {
+      var max = min;
+      var keys = Object.keys(obj);
+      for (var i2 = 0; i2 < keys.length; ++i2) {
+        var num = parseInt(keys[i2], 10);
+        if (String(num) === keys[i2] && num > max) {
+          max = num;
+        }
+      }
+      return max;
+    };
+    var limitedPair = function limitedPair2(first, second, options) {
+      var pair = [first, second];
+      if (options && typeof options.arrayLimit === "number" && pair.length > options.arrayLimit) {
+        if (options.throwOnLimitExceeded) {
+          throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+        }
+        return markOverflow(arrayToObject(pair, options), 1);
+      }
+      return pair;
+    };
     var merge2 = function merge3(target, source, options) {
       if (!source) {
         return target;
@@ -40966,13 +40998,21 @@ var require_utils2 = __commonJS({
             var newIndex = getMaxIndex(target) + 1;
             target[newIndex] = source;
             setMaxIndex(target, newIndex);
+          } else if (options && options.strictMerge && isConflict(target)) {
+            var nextConflict = getConflictIndex(target) + 1;
+            if (options.throwOnLimitExceeded && typeof options.arrayLimit === "number" && nextConflict >= options.arrayLimit) {
+              throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
+            }
+            target[nextConflict] = source;
+            markConflict(target, nextConflict);
           } else if (options && options.strictMerge) {
-            return [target, source];
+            var conflict = limitedPair(target, source, options);
+            return isArray(conflict) ? markConflict(conflict, 1) : conflict;
           } else if (options && (options.plainObjects || options.allowPrototypes) || !has.call(Object.prototype, source)) {
             target[source] = true;
           }
         } else {
-          return [target, source];
+          return limitedPair(target, source, options);
         }
         return target;
       }
@@ -40998,6 +41038,9 @@ var require_utils2 = __commonJS({
       var mergeTarget = target;
       if (isArray(target) && !isArray(source)) {
         mergeTarget = arrayToObject(target, options);
+        if (isConflict(target)) {
+          markConflict(mergeTarget, target.length - 1);
+        }
       }
       if (isArray(target) && isArray(source)) {
         source.forEach(function(item, i2) {
@@ -41028,12 +41071,18 @@ var require_utils2 = __commonJS({
           setProperty(acc, key, value);
         }
         if (isOverflow(source) && !isOverflow(acc)) {
-          markOverflow(acc, getMaxIndex(source));
+          markOverflow(acc, maxNumericIndex(acc, getMaxIndex(source)));
         }
         if (isOverflow(acc)) {
           var keyNum = parseInt(key, 10);
           if (String(keyNum) === key && keyNum >= 0 && keyNum > getMaxIndex(acc)) {
             setMaxIndex(acc, keyNum);
+          }
+        }
+        if (isConflict(acc)) {
+          var conflictKey = parseInt(key, 10);
+          if (String(conflictKey) === key && conflictKey > getConflictIndex(acc)) {
+            markConflict(acc, conflictKey);
           }
         }
         return acc;
@@ -41046,6 +41095,9 @@ var require_utils2 = __commonJS({
       }, target);
     };
     var decode = function(str, defaultDecoder, charset) {
+      if (typeof str === "string" && str.indexOf("%") === -1) {
+        return str.indexOf("+") === -1 ? str : str.replace(/\+/g, " ");
+      }
       var strWithoutPlus = str.replace(/\+/g, " ");
       if (charset === "iso-8859-1") {
         return strWithoutPlus.replace(/%[0-9a-f]{2}/gi, unescape);
@@ -41056,6 +41108,52 @@ var require_utils2 = __commonJS({
         return strWithoutPlus;
       }
     };
+    var hasToPrimitive = typeof Symbol === "function" && typeof Symbol.toPrimitive === "symbol";
+    var arrayJoin = Array.prototype.join;
+    var arrayToString = Array.prototype.toString;
+    var objectToString = Object.prototype.toString;
+    var toCoercible = function toCoercible2(value, joining) {
+      if (!value || typeof value !== "object" && typeof value !== "function") {
+        return value;
+      }
+      if (hasToPrimitive && value[Symbol.toPrimitive] != null) {
+        return value;
+      }
+      if (isArray(value) && value.toString === arrayToString && value.join === arrayJoin) {
+        var ancestors = joining || getSideChannel();
+        if (ancestors.has(value)) {
+          return "";
+        }
+        ancestors.set(value, true);
+        var copy;
+        for (var i2 = 0; i2 < value.length; i2 += 1) {
+          var item = value[i2];
+          var coerced = toCoercible2(item, ancestors);
+          if (!copy && coerced !== item) {
+            copy = [];
+            for (var j3 = 0; j3 < i2; j3 += 1) {
+              copy[j3] = value[j3];
+            }
+          }
+          if (copy) {
+            copy[i2] = coerced;
+          }
+        }
+        ancestors["delete"](value);
+        return copy || value;
+      }
+      if (typeof value.toString === "function") {
+        return value;
+      }
+      var valueOf = value.valueOf;
+      if (typeof valueOf === "function") {
+        var primitive = valueOf.call(value);
+        if (!primitive || typeof primitive !== "object" && typeof primitive !== "function") {
+          return String(primitive);
+        }
+      }
+      return objectToString.call(value);
+    };
     var limit = 1024;
     var encode = function encode2(str, defaultEncoder, charset, kind, format) {
       if (str.length === 0) {
@@ -41065,12 +41163,12 @@ var require_utils2 = __commonJS({
       if (typeof str === "symbol") {
         string = Symbol.prototype.toString.call(str);
       } else if (typeof str !== "string") {
-        string = String(str);
+        string = String(toCoercible(str));
       }
       if (charset === "iso-8859-1") {
         return escape(string).replace(/%u[0-9a-f]{4}/gi, function($0) {
           return "%26%23" + parseInt($0.slice(2), 16) + "%3B";
-        });
+        }).replace(/\+/g, "%2B");
       }
       var out = "";
       for (var j3 = 0; j3 < string.length; j3 += limit) {
@@ -41182,14 +41280,15 @@ var require_utils2 = __commonJS({
       isRegExp,
       markOverflow,
       maybeMap,
-      merge: merge2
+      merge: merge2,
+      toCoercible
     };
   }
 });
 
-// node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js
+// node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/stringify.js
 var require_stringify2 = __commonJS({
-  "node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/stringify.js"(exports, module) {
+  "node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/stringify.js"(exports, module) {
     "use strict";
     var getSideChannel = require_side_channel();
     var utils = require_utils2();
@@ -41297,17 +41396,17 @@ var require_stringify2 = __commonJS({
       if (generateArrayPrefix === "comma" && isArray(obj)) {
         if (encodeValuesOnly && encoder) {
           obj = utils.maybeMap(obj, function(v3) {
-            return v3 == null ? v3 : encoder(v3);
+            return v3 == null ? v3 : encoder(v3, defaults2.encoder, charset, "value", format);
           });
         }
-        objKeys = [{ value: obj.length > 0 ? obj.join(",") || null : void 0 }];
+        objKeys = [{ value: obj.length > 0 ? utils.toCoercible(obj).join(",") || null : void 0 }];
       } else if (isArray(filter)) {
         objKeys = filter;
       } else {
         var keys = Object.keys(obj);
         objKeys = sort ? keys.sort(sort) : keys;
       }
-      var encodedPrefix = encodeDotInKeys ? String(prefix).replace(/\./g, "%2E") : String(prefix);
+      var encodedPrefix = String(prefix);
       var adjustedPrefix = commaRoundTrip && isArray(obj) && obj.length === 1 ? encodedPrefix + "[]" : encodedPrefix;
       if (allowEmptyArrays && isArray(obj) && obj.length === 0 && Object.keys(obj).length === 0) {
         return adjustedPrefix + "[]";
@@ -41378,7 +41477,7 @@ var require_stringify2 = __commonJS({
         filter = opts.filter;
       }
       var arrayFormat;
-      if (opts.arrayFormat in arrayPrefixGenerators) {
+      if (has.call(arrayPrefixGenerators, opts.arrayFormat)) {
         arrayFormat = opts.arrayFormat;
       } else if ("indices" in opts) {
         arrayFormat = opts.indices ? "indices" : "repeat";
@@ -41484,13 +41583,57 @@ var require_stringify2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/parse.js
+// node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/parse.js
 var require_parse3 = __commonJS({
-  "node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/parse.js"(exports, module) {
+  "node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/parse.js"(exports, module) {
     "use strict";
+    var getSideChannel = require_side_channel();
     var utils = require_utils2();
     var has = Object.prototype.hasOwnProperty;
     var isArray = Array.isArray;
+    var getPrototypeOf = Object.getPrototypeOf;
+    var isPlainContainer = function isPlainContainer2(value) {
+      if (!value || typeof value !== "object") {
+        return false;
+      }
+      if (isArray(value)) {
+        return true;
+      }
+      var proto = getPrototypeOf(value);
+      return proto === Object.prototype || proto === null;
+    };
+    var emptyCopyOf = function emptyCopyOf2(value) {
+      if (isArray(value)) {
+        var arr = [];
+        arr.length = value.length;
+        return arr;
+      }
+      return getPrototypeOf(value) === null ? { __proto__: null } : {};
+    };
+    var copyInput = function copyInput2(input) {
+      var copies = getSideChannel();
+      var result = {};
+      var queue = [{ source: input, target: result }];
+      for (var i2 = 0; i2 < queue.length; ++i2) {
+        var source = queue[i2].source;
+        var target = queue[i2].target;
+        var keys = Object.keys(source);
+        for (var j3 = 0; j3 < keys.length; ++j3) {
+          var value = source[keys[j3]];
+          if (isPlainContainer(value)) {
+            if (!copies.has(value)) {
+              var copy = emptyCopyOf(value);
+              copies.set(value, copy);
+              queue[queue.length] = { source: value, target: copy };
+            }
+            target[keys[j3]] = copies.get(value);
+          } else {
+            target[keys[j3]] = value;
+          }
+        }
+      }
+      return result;
+    };
     var defaults2 = {
       allowDots: false,
       allowEmptyArrays: false,
@@ -41577,6 +41720,7 @@ var require_parse3 = __commonJS({
         var part = parts[i2];
         var bracketEqualsPos = part.indexOf("]=");
         var pos = bracketEqualsPos === -1 ? part.indexOf("=") : bracketEqualsPos + 1;
+        var isEmptyBracketKey = pos > 1 && part.slice(pos - 2, pos) === "[]";
         var key;
         var val;
         if (pos === -1) {
@@ -41600,7 +41744,7 @@ var require_parse3 = __commonJS({
         if (val && options.interpretNumericEntities && charset === "iso-8859-1") {
           val = interpretNumericEntities(String(val));
         }
-        if (part.indexOf("[]=") > -1) {
+        if (isEmptyBracketKey) {
           val = isArray(val) ? [val] : val;
         }
         if (options.comma && isArray(val) && val.length > options.arrayLimit) {
@@ -41608,7 +41752,7 @@ var require_parse3 = __commonJS({
         }
         if (key !== null) {
           var existing = has.call(obj, key);
-          if (existing && (options.duplicates === "combine" || part.indexOf("[]=") > -1)) {
+          if (existing && (options.duplicates === "combine" || isEmptyBracketKey)) {
             obj[key] = utils.combine(
               obj[key],
               val,
@@ -41669,8 +41813,35 @@ var require_parse3 = __commonJS({
       }
       return leaf;
     };
+    var topLevelDotsToBrackets = function topLevelDotsToBrackets2(key) {
+      var result = "";
+      var depth = 0;
+      for (var i2 = 0; i2 < key.length; i2 += 1) {
+        var cu2 = key.charCodeAt(i2);
+        if (cu2 === 91) {
+          depth += 1;
+          result += "[";
+        } else if (cu2 === 93) {
+          if (depth > 0) {
+            depth -= 1;
+          }
+          result += "]";
+        } else if (cu2 === 46 && depth === 0 && i2 + 1 < key.length && key.charCodeAt(i2 + 1) !== 46 && key.charCodeAt(i2 + 1) !== 91) {
+          var start = i2 + 1;
+          var j3 = start;
+          while (j3 < key.length && key.charCodeAt(j3) !== 46 && key.charCodeAt(j3) !== 91) {
+            j3 += 1;
+          }
+          result += "[" + key.slice(start, j3) + "]";
+          i2 = j3 - 1;
+        } else {
+          result += key.charAt(i2);
+        }
+      }
+      return result;
+    };
     var splitKeyIntoSegments = function splitKeyIntoSegments2(originalKey, options) {
-      var key = options.allowDots ? originalKey.replace(/\.([^.[]+)/g, "[$1]") : originalKey;
+      var key = options.allowDots ? topLevelDotsToBrackets(originalKey) : originalKey;
       if (options.depth <= 0) {
         if (!options.plainObjects && has.call(Object.prototype, key)) {
           if (!options.allowPrototypes) {
@@ -41796,7 +41967,7 @@ var require_parse3 = __commonJS({
       if (str === "" || str === null || typeof str === "undefined") {
         return options.plainObjects ? { __proto__: null } : {};
       }
-      var tempObj = typeof str === "string" ? parseValues(str, options) : str;
+      var tempObj = typeof str === "string" ? parseValues(str, options) : copyInput(str);
       var obj = options.plainObjects ? { __proto__: null } : {};
       var keys = Object.keys(tempObj);
       for (var i2 = 0; i2 < keys.length; ++i2) {
@@ -41812,9 +41983,9 @@ var require_parse3 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/index.js
+// node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js
 var require_lib2 = __commonJS({
-  "node_modules/.pnpm/qs@6.16.0/node_modules/qs/lib/index.js"(exports, module) {
+  "node_modules/.pnpm/qs@6.16.1/node_modules/qs/lib/index.js"(exports, module) {
     "use strict";
     var stringify = require_stringify2();
     var parse5 = require_parse3();
@@ -63808,6 +63979,13 @@ var ApprovalRequestPolicy = class {
     this.fingerprints = fingerprints;
   }
   fingerprints;
+  scope(request3) {
+    if (request3.kind === "content-review")
+      return `content:${request3.content.key}`;
+    if (request3.kind === "social-publication")
+      return `social:${request3.social.intentId}:${request3.social.recovery ? "recovery" : "publication"}`;
+    return request3.kind;
+  }
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -63825,7 +64003,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request3) {
     this.validateIdentity(request3);
-    if (request3.kind === "meetup-publication" || request3.kind === "community-publication" || request3.kind === "content-review")
+    if (request3.kind === "meetup-publication" || request3.kind === "community-publication" || request3.kind === "social-publication" || request3.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request3.recipientCount) || request3.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -63845,6 +64023,8 @@ var ApprovalRequestPolicy = class {
       return false;
     if (previous.kind === "content-review" && request3.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request3.content);
+    if (previous.kind === "social-publication" && request3.kind === "social-publication")
+      return this.fingerprints.digest(previous.social) === this.fingerprints.digest(request3.social);
     if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request3.kind === "meetup-publication" || request3.kind === "community-publication"))
       return previous.publication.url === request3.publication.url && previous.publication.title === request3.publication.title && previous.publication.startTime === request3.publication.startTime && previous.publication.endTime === request3.publication.endTime && previous.publication.timeZone === request3.publication.timeZone && previous.publication.venue.name === request3.publication.venue.name && previous.publication.venue.city === request3.publication.venue.city;
     return previous.recipientCount === request3.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request3.details));
@@ -64023,25 +64203,26 @@ var SocialPostDrafts = class {
     return target.includes(":");
   }
   source(plan2) {
-    const { channel } = this.destination(plan2.target);
+    const { channel } = this.destination(plan2);
     return {
       ...this.posts.source(plan2.facts, channel),
       ...channel === "linkedin" ? { announcement: plan2.facts.announcement } : {}
     };
   }
   ready(plan2) {
-    return this.posts.ready(plan2.facts) && (this.destination(plan2.target).channel !== "linkedin" || Boolean(plan2.facts.announcement));
+    return this.posts.ready(plan2.facts) && (this.destination(plan2).channel !== "linkedin" || Boolean(plan2.facts.announcement));
   }
   valid(plan2, draft) {
-    if (!this.posts.valid(plan2.facts, draft.text)) return false;
-    if (this.destination(plan2.target).channel !== "linkedin")
+    if (!this.posts.valid(plan2.facts, draft.text, plan2.destination?.provider))
+      return false;
+    if (this.destination(plan2).channel !== "linkedin")
       return draft.media.length === 0;
     const expected = plan2.facts.announcement;
     const image = draft.media[0];
     return draft.media.length === 1 && Boolean(expected) && image?.fingerprint === expected?.fingerprint && image?.id === expected?.id && image?.url === expected?.url && image?.sourceRevision === expected?.sourceRevision && image?.source?.id === expected?.source?.id && image?.source?.revision === expected?.source?.revision;
   }
   brief(plan2, guidance) {
-    const { channel, milestone } = this.destination(plan2.target);
+    const { channel, milestone } = this.destination(plan2);
     return this.posts.brief(
       plan2.facts,
       channel,
@@ -64051,12 +64232,13 @@ var SocialPostDrafts = class {
     );
   }
   media(plan2) {
-    return this.destination(plan2.target).channel === "linkedin" && plan2.facts.announcement ? [plan2.facts.announcement] : [];
+    return this.destination(plan2).channel === "linkedin" && plan2.facts.announcement ? [plan2.facts.announcement] : [];
   }
-  destination(target) {
-    const [channel, milestone] = target.split(":");
-    if (channel !== "slack-aix" && channel !== "slack-openbar" && channel !== "linkedin" || milestone !== "announcement" && milestone !== "d7" && milestone !== "d0")
+  destination(plan2) {
+    const [key, milestone] = plan2.target.split(":");
+    if (!/^[a-z][a-z0-9-]{0,63}$/.test(key) || milestone !== "announcement" && milestone !== "d7" && milestone !== "d0" || plan2.destination && plan2.destination.key !== key)
       throw new Error("Unsupported social post destination");
+    const channel = plan2.destination?.provider ?? (key === "linkedin" ? "linkedin" : "slack");
     return { channel, milestone };
   }
 };
@@ -64194,6 +64376,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("social-publication:"))
+      return "social-approval";
     if (episode.condition.resource.startsWith("community-publication:"))
       return "community-approval";
     return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
@@ -64298,13 +64482,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -65299,8 +65483,8 @@ var SocialPostDraft = class {
       )
     );
   }
-  valid(facts, text) {
-    return text.length <= 2800 && Boolean(facts.registrationUrl) && text.includes(facts.registrationUrl);
+  valid(facts, text, channel) {
+    return text.length <= 2800 && Boolean(facts.registrationUrl) && text.includes(facts.registrationUrl) && (channel !== "slack" || !text.includes(String.fromCharCode(0)) && !/<[!@#]/.test(text)) && (channel !== "linkedin" || !/@\[[^\]]*\]\(urn:li:/.test(text));
   }
   source(facts, channel) {
     return {
@@ -65375,39 +65559,35 @@ var SocialPostTiming = class {
       throw new Error("Ambiguous or nonexistent content local time");
     return matches[0];
   }
-  expired(plan2, now2) {
+  expiresAt(plan2) {
     const start = this.instant(
       plan2.facts.date,
       plan2.facts.startTime,
       plan2.facts.timeZone
     );
-    if (!Number.isFinite(Date.parse(now2)) || Date.parse(now2) >= Date.parse(start))
-      return true;
-    if (!plan2.plannedAt) return false;
+    if (!plan2.plannedAt) return start;
     const format = new Intl.DateTimeFormat("sv-SE", {
       timeZone: plan2.facts.timeZone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
     });
-    return format.format(new Date(now2)) > format.format(new Date(plan2.plannedAt));
+    const day = /* @__PURE__ */ new Date(
+      `${format.format(new Date(plan2.plannedAt))}T12:00:00Z`
+    );
+    day.setUTCDate(day.getUTCDate() + 1);
+    const midnight = this.instant(
+      day.toISOString().slice(0, 10),
+      "00:00",
+      plan2.facts.timeZone
+    );
+    return Date.parse(midnight) < Date.parse(start) ? midnight : start;
+  }
+  expired(plan2, now2) {
+    return !Number.isFinite(Date.parse(now2)) || Date.parse(now2) >= Date.parse(this.expiresAt(plan2));
   }
   publicationEligible(plan2, now2) {
-    const start = this.instant(
-      plan2.facts.date,
-      plan2.facts.startTime,
-      plan2.facts.timeZone
-    );
-    if (!Number.isFinite(Date.parse(now2)) || Date.parse(now2) >= Date.parse(start))
-      return false;
-    if (!plan2.plannedAt) return true;
-    const format = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: plan2.facts.timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    });
-    return Date.parse(now2) >= Date.parse(plan2.plannedAt) && format.format(new Date(now2)) === format.format(new Date(plan2.plannedAt));
+    return !this.expired(plan2, now2) && (!plan2.plannedAt || Date.parse(now2) >= Date.parse(plan2.plannedAt));
   }
 };
 
@@ -68488,7 +68668,7 @@ var AttentionStageEvaluation = class {
   collaborators;
   evaluate(input) {
     const eventDiagnostics = input.event.diagnostics;
-    return ATTENTION_STAGE_OWNERS.map((owner) => {
+    return this.owners(input).map((owner) => {
       const { outcome, diagnostics } = input[owner];
       const blocked = diagnostics.some(
         (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) && !this.eventPrerequisite(item.code, owner, eventDiagnostics)
@@ -68506,8 +68686,8 @@ var AttentionStageEvaluation = class {
   }
   diagnostics(input) {
     const diagnostics = /* @__PURE__ */ new Map();
-    for (const owner of ATTENTION_STAGE_OWNERS)
-      for (const item of input[owner].diagnostics)
+    for (const owner of this.owners(input))
+      for (const item of input[owner]?.diagnostics ?? [])
         diagnostics.set(
           `${item.code}:${item.field ?? ""}:${item.severity}`,
           item
@@ -68520,18 +68700,30 @@ var AttentionStageEvaluation = class {
     );
   }
   complete(input) {
-    return ATTENTION_STAGE_OWNERS.every((owner) => {
-      const stage = input[owner];
-      return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
-        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
-      );
-    });
+    return ATTENTION_STAGE_OWNERS.every(
+      (owner) => this.stageComplete(input[owner])
+    );
+  }
+  socialComplete(input) {
+    return Boolean(input.social && this.stageComplete(input.social));
+  }
+  stageComplete(stage) {
+    return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
+      (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
+    );
+  }
+  owners(input) {
+    return input.social ? [...ATTENTION_STAGE_OWNERS, "social"] : ATTENTION_STAGE_OWNERS;
   }
   organizerPrerequisite(item) {
     if (item.code === "event.concurrently-modified") return true;
     return this.collaborators.diagnosticPolicy.classify(item) === "organizer" && ![
       "communication.approval-pending",
-      "communication.approval-rejected"
+      "communication.approval-rejected",
+      "communication.social.pending",
+      "communication.social.blocked",
+      "communication.social.uncertain",
+      "communication.social.expired"
     ].includes(item.code);
   }
   eventPrerequisite(code, owner, eventDiagnostics) {
@@ -68546,6 +68738,10 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "communication.social.pending",
+  "communication.social.blocked",
+  "communication.social.uncertain",
+  "communication.social.expired",
   "publication.meetup.slides-pdf-pending",
   "publication.meetup.slides-delivery-recovery",
   "publication.meetup.slides-link",
@@ -70163,20 +70359,26 @@ var ReconcileOrganizerFeedback = class {
   comments;
   meetupLabel;
   async execute(identity, stageResults) {
-    const diagnostics = this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
-    if (!this.collaborators.attentionStageEvaluation.complete(stageResults))
-      return { updated: false };
+    const baseComplete = this.collaborators.attentionStageEvaluation.complete(stageResults);
+    const socialComplete = this.collaborators.attentionStageEvaluation.socialComplete(stageResults);
+    if (!baseComplete && !socialComplete) return { updated: false };
     const source = await this.events.find(identity);
     if (!source) throw new Error("Organizer feedback issue is unavailable");
     if (!source.labels.includes(this.meetupLabel)) return { updated: false };
-    await this.comments.reconcileDiagnostics(
-      identity,
-      diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
-        ...item,
-        category: item.severity === "error" ? "invalid" : "incomplete"
-      }))
-    );
+    if (baseComplete)
+      await this.reconcile(identity, { ...stageResults, social: void 0 });
+    if (socialComplete) await this.reconcile(identity, stageResults, "social");
     return { updated: true };
+  }
+  async reconcile(identity, stageResults, scope) {
+    const diagnostics = scope === "social" ? stageResults.social?.diagnostics ?? [] : this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
+    const actionable = diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
+      ...item,
+      category: item.severity === "error" ? "invalid" : "incomplete"
+    }));
+    if (scope)
+      await this.comments.reconcileDiagnostics(identity, actionable, scope);
+    else await this.comments.reconcileDiagnostics(identity, actionable);
   }
 };
 
@@ -70515,6 +70717,7 @@ var PromotionalContentFingerprint = class {
     return this.digest({
       version: 1,
       target: plan2.target,
+      ...plan2.destination ? { destination: plan2.destination } : {},
       language: plan2.language,
       plannedAt: plan2.plannedAt,
       facts: this.definitions.source(plan2)
@@ -70535,22 +70738,6 @@ var PromotionalContentFingerprint = class {
   }
 };
 
-// packages/application/journey/src/proposals/promotional-content.ts
-var CONTENT_TARGETS = [
-  "title",
-  "description",
-  "cover",
-  "slack-aix:announcement",
-  "slack-openbar:announcement",
-  "linkedin:announcement",
-  "slack-aix:d7",
-  "slack-openbar:d7",
-  "linkedin:d7",
-  "slack-aix:d0",
-  "slack-openbar:d0",
-  "linkedin:d0"
-];
-
 // packages/application/journey/src/proposals/promotional-content-policy.ts
 var PromotionalContentPolicy = class {
   constructor(definitions) {
@@ -70558,7 +70745,7 @@ var PromotionalContentPolicy = class {
   }
   definitions;
   target(value) {
-    return CONTENT_TARGETS.some((target) => target === value);
+    return typeof value === "string" && (/^(title|description|cover)$/.test(value) || /^[a-z][a-z0-9-]{0,63}:(announcement|d7|d0)$/.test(value));
   }
   source(plan2) {
     return this.definition(plan2.target).source(plan2);
@@ -70671,9 +70858,10 @@ var ContentPlanFactory = class {
   }
   fingerprints;
   timing;
-  create(target, language, facts, reminderTime) {
+  create(target, language, facts, reminderTime, destination) {
     const plan2 = {
       target,
+      ...destination ? { destination } : {},
       language,
       facts,
       plannedAt: this.timing.plannedAt(
@@ -70695,6 +70883,10 @@ var ContentProposalTransition = class {
   }
   fingerprints;
   validate(previous, next) {
+    if (previous.publicationIntent !== void 0 && previous.publicationIntent !== next.publicationIntent)
+      throw new Error(
+        "Social publication identity cannot be removed or replaced"
+      );
     for (const key of [
       "recoveryRequest",
       "destinationBefore",
@@ -70775,7 +70967,8 @@ var AttentionStageInput = class {
       assets: reports[1][1],
       feedback: reports[2][1],
       communications: reports[3][1],
-      content: reports[4][1]
+      content: reports[4][1],
+      ...input.social === void 0 ? {} : { social: this.group(input.social) }
     };
   }
   group(value) {
@@ -70833,7 +71026,7 @@ var AttentionStageInput = class {
   }
   safeField(field) {
     if (typeof field !== "string" || field.length > 160) return false;
-    return ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
+    return /^social\.[a-z0-9][a-z0-9-]{0,63}\.(announcement|d7|d0)$/.test(field) || ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
       field
     );
   }
@@ -75003,6 +75196,11 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.communication.recover-social": "Recover social publication",
+  "report.social.recovery": "social_recovery={status}",
+  "action.communication.reconcile-social": "Reconcile social publication",
+  "report.social.empty": "social_publications=0",
+  "report.social.result": "social_target={target} status={status}",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
@@ -75152,6 +75350,11 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.communication.recover-social": "R\xE9tablir une publication sociale",
+  "report.social.recovery": "reprise_sociale={status}",
+  "action.communication.reconcile-social": "R\xE9concilier les publications sociales",
+  "report.social.empty": "publications_sociales=0",
+  "report.social.result": "cible_sociale={target} statut={status}",
   "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
@@ -84565,8 +84768,71 @@ ${messages3.t("comment.resolved")}`;
   }
 };
 
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-sections.ts
+var SOCIAL_DIAGNOSTIC_START = "<!-- meetup-automation:social-diagnostics:v1 -->";
+var SOCIAL_DIAGNOSTIC_END = "<!-- /meetup-automation:social-diagnostics:v1 -->";
+var DiagnosticCommentSections = class {
+  merge(previous, rendered, scope) {
+    const current = this.read(previous);
+    if (!scope && !current.social) return rendered;
+    const base = this.tasks(scope === "social" ? current.base : rendered);
+    const social = this.tasks(
+      scope === "social" ? rendered : current.social
+    ).filter((line) => !base.includes(line));
+    if (!base.length && !social.length) return rendered;
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      ...base,
+      ...social.length ? [SOCIAL_DIAGNOSTIC_START, ...social, SOCIAL_DIAGNOSTIC_END] : []
+    ].join("\n");
+  }
+  hasSocial(body) {
+    return Boolean(this.read(body).social);
+  }
+  read(body) {
+    if (!body.includes("meetup-automation:social-diagnostics:"))
+      return { base: body, social: "" };
+    const start = body.indexOf(SOCIAL_DIAGNOSTIC_START);
+    const end = body.indexOf(SOCIAL_DIAGNOSTIC_END);
+    if (start < 0 || end < start || body.split(SOCIAL_DIAGNOSTIC_START).length !== 2 || body.split(SOCIAL_DIAGNOSTIC_END).length !== 2)
+      throw new Error("Invalid social diagnostic section");
+    return {
+      base: body.slice(0, start) + body.slice(end + SOCIAL_DIAGNOSTIC_END.length),
+      social: body.slice(start + SOCIAL_DIAGNOSTIC_START.length, end)
+    };
+  }
+  tasks(body) {
+    return [
+      ...new Set(
+        body.split("\n").filter((line) => /^- \[[ x]\] \*\*.+?\*\*: .+$/.test(line))
+      )
+    ];
+  }
+};
+
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
+  [
+    "communication.social.evaluation-failed",
+    ["Communication", "comment.guidance.social.evaluation-failed"]
+  ],
+  [
+    "communication.social.pending",
+    ["Communication", "comment.guidance.social.pending"]
+  ],
+  [
+    "communication.social.blocked",
+    ["Communication", "comment.guidance.social.blocked"]
+  ],
+  [
+    "communication.social.uncertain",
+    ["Communication", "comment.guidance.social.uncertain"]
+  ],
+  [
+    "communication.social.expired",
+    ["Communication", "comment.guidance.social.expired"]
+  ],
   [
     "publication.meetup.slides-source",
     ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
@@ -85161,6 +85427,17 @@ var DiagnosticPresenter = class {
   }
   /** Only known issue headings and numeric agenda positions can reach Markdown. */
   publicField(field, fallback, messages3) {
+    const social = field?.match(
+      /^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/
+    );
+    if (social)
+      return [
+        messages3.t("comment.social.target", {
+          destination: social[1],
+          purpose: social[2]
+        }),
+        "Communication"
+      ];
     const known = this.FIELD_ALIASES.get(field ?? "");
     if (known) return [known, known];
     const agenda = field?.match(
@@ -85240,7 +85517,7 @@ var GitHubEventCommentRepository = class {
   repo;
   repositoryName;
   authorLogin;
-  async reconcileDiagnostics(identity, diagnostics) {
+  async reconcileDiagnostics(identity, diagnostics, scope) {
     this.assertScope(identity.repository);
     const managedComments = await this.listManagedComments(
       identity.issueNumber
@@ -85252,22 +85529,14 @@ var GitHubEventCommentRepository = class {
       (comment) => !retired.includes(comment)
     );
     let changed = await this.retireComments(identity.issueNumber, duplicates);
-    let body = this.collaborators.diagnosticCommentPresenter.render(
+    const body = await this.body(
+      identity.issueNumber,
+      canonical,
       diagnostics,
-      this.messages
+      scope
     );
-    if (canonical && this.options.retainedContent) {
-      const retained = await this.options.retainedContent.load(
-        identity.issueNumber,
-        canonical.id,
-        canonical.body
-      );
-      if (retained) body += `
-
-${retained}`;
-    }
     if (!canonical) {
-      if (!retired.length && !diagnostics.some((item) => item.severity !== "info")) {
+      if ((!retired.length || scope === "social") && !diagnostics.some((item) => item.severity !== "info")) {
         return { changed };
       }
       await this.client.rest.issues.createComment({
@@ -85276,19 +85545,40 @@ ${retained}`;
         issue_number: identity.issueNumber,
         body
       });
-      await this.retireComments(identity.issueNumber, retired, true);
+      if (!scope)
+        await this.retireComments(identity.issueNumber, retired, true);
       return { changed: true };
     }
     if (canonical.body !== body) {
       await this.updateComment(canonical.id, body);
       changed = true;
     }
+    if (scope) return { changed };
     const retiredChanged = await this.retireComments(
       identity.issueNumber,
       retired,
       true
     );
     return { changed: changed || retiredChanged };
+  }
+  async body(issueNumber, canonical, diagnostics, scope) {
+    const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
+      issueNumber,
+      canonical.id,
+      canonical.body
+    ) : { body: canonical?.body ?? "", retained: "" };
+    const rendered = this.collaborators.diagnosticCommentPresenter.render(
+      diagnostics,
+      this.messages
+    );
+    const body = this.collaborators.diagnosticCommentSections.merge(
+      previous.body,
+      rendered,
+      scope
+    );
+    return previous.retained ? `${body}
+
+${previous.retained}` : body;
   }
   async listManagedComments(issueNumber) {
     const comments = [];
@@ -85327,10 +85617,13 @@ ${retained}`;
   }
   async retireComments(issueNumber, duplicates, deleteReports = false) {
     for (const duplicate of duplicates) {
-      if (this.options.retainedContent && await this.options.retainedContent.load(
+      const previous = this.options.retainedContent ? await this.options.retainedContent.load(
         issueNumber,
         duplicate.id,
         duplicate.body
+      ) : void 0;
+      if (previous?.retained || this.collaborators.diagnosticCommentSections.hasSocial(
+        previous?.body ?? duplicate.body
       ))
         throw new Error("Duplicate diagnostic comment contains managed state");
       if (deleteReports && this.client.rest.issues.deleteComment) {
@@ -85571,6 +85864,12 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.social.target": "Social publication ({destination}, {purpose})",
+  "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
+  "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
+  "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
+  "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
+  "comment.guidance.social.evaluation-failed": "Social publication could not be evaluated. Ask a maintainer to check source access and delivery records before retrying.",
   "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
   "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
@@ -85613,6 +85912,12 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.social.target": "Publication sociale ({destination}, {purpose})",
+  "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
+  "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
+  "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
+  "comment.guidance.social.evaluation-failed": "La publication sociale n'a pas pu \xEAtre \xE9valu\xE9e. Demandez \xE0 un responsable de v\xE9rifier les acc\xE8s aux sources et le registre des envois avant de r\xE9essayer.",
   "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
   "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
@@ -85668,6 +85973,9 @@ var EventCommentMessages = class extends MessageLocalizer {
 
 // packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
 var GithubEventCommentRepositoryComposition = class {
+  diagnosticCommentSections() {
+    return new DiagnosticCommentSections();
+  }
   diagnosticCommentPresenter() {
     return new DiagnosticCommentPresenter({
       organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
@@ -85686,6 +85994,7 @@ var GithubEventCommentRepositoryComposition = class {
   gitHubEventCommentRepository(...args) {
     return new GitHubEventCommentRepository(
       {
+        diagnosticCommentSections: this.diagnosticCommentSections(),
         diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
         createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
       },
@@ -87700,6 +88009,7 @@ var AttentionRecord = class {
         "assets",
         "feedback",
         "communications",
+        "social",
         "content",
         "approvals",
         "delivery"
@@ -87796,9 +88106,12 @@ var AttentionCommentRetention = class {
       throw new Error("Diagnostic comment changed before persistence");
     const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
     const offset = body.indexOf(ATTENTION_MARKER);
-    if (offset < 0) return "";
+    if (offset < 0) return { body, retained: "" };
     this.collaborators.attentionRecord.read(body);
-    return body.slice(offset);
+    return {
+      body: body.slice(0, offset).trimEnd(),
+      retained: body.slice(offset)
+    };
   }
 };
 
@@ -87839,6 +88152,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   action(description) {
     for (const locale of ["en", "fr"]) {
       const messages3 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages3.t("action.social-approval-pending"))
+        return "social-approval";
       if (description === messages3.t("action.approval-pending"))
         return "email-approval";
       if (description === messages3.t("action.community-approval-pending"))
@@ -87911,6 +88226,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
+      return this.messages.t("action.social-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
       return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
@@ -88279,6 +88596,9 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
+  "failure.social": "Public social publication failed.",
+  "task.social": "public social publication",
   "action.community-approval-pending": "Approve or reject OCGroups publication.",
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
@@ -88325,6 +88645,9 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "failure.social": "La publication sociale a \xE9chou\xE9.",
+  "task.social": "publication sociale",
   "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
@@ -96372,6 +96695,12 @@ var ApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES5 = {
+  "approval.social.after-approval": "after approval",
+  "approval.social.details": "### Organizer confirmation: public social publication\n\n{target} \xB7 {destination}\n\nDestination: {identity}\n\nPublication: {plannedAt}; expires at {expiresAt}.\n\nReview the exact text, registration link, and media below.",
+  "approval.social.request": "Repository writers: select one choice. Approval authorizes this exact post to this destination within the reviewed window. Changes require a new approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.social.evidence": "Recovery evidence: {reference}\n\nConfirmed outcome: {outcome, select, published {the post was published} not_published {the post was not published} other {unknown}}.",
+  "approval.social.recovery": "Verify the provider evidence above before deciding.\n\n- [{approveMark}] {outcome, select, published {Confirm this post was published and record its remote identity} not_published {Confirm this post was not published and permit a retry after current publication approval is checked} other {Confirm recovery}}\n- [{rejectMark}] Reject recovery and keep publication blocked",
+  "approval.social.final": "{status, select, approved {\u2705 **Publication decision approved**} rejected {\u274C **Publication decision rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThe delivery record tracks provider acceptance independently. Completed posts are never resent.",
   "approval.community.details": "### Organizer confirmation: publish CNCF community event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing can send OCGroups notifications to group members and speakers.",
   "approval.community.request": "Repository writers: select one choice. Approval authorizes publication of this OCGroups draft and its native notifications. Changed content requires a new approval.\n\n- [{approveMark}] Approve publishing this CNCF community event\n- [{rejectMark}] Reject publishing this CNCF community event",
   "approval.community.final": "{status, select, approved {\u2705 **Community publication approved**} rejected {\u274C **Community publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nAutomation rechecks the saved draft before publishing. CNCF Link is filled only after publication is verified. Changed content requires a new approval.",
@@ -96404,6 +96733,12 @@ var EN_MESSAGES5 = {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES5 = {
+  "approval.social.after-approval": "apr\xE8s approbation",
+  "approval.social.details": "### Confirmation des organisateurs : publication sur les r\xE9seaux\n\n{target} \xB7 {destination}\n\nDestination : {identity}\n\nPublication : {plannedAt} ; expiration le {expiresAt}.\n\nV\xE9rifiez le texte exact, le lien d'inscription et les m\xE9dias ci-dessous.",
+  "approval.social.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. L'approbation autorise ce message exact vers cette destination dans la p\xE9riode indiqu\xE9e. Toute modification n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.social.evidence": "Preuve de r\xE9cup\xE9ration : {reference}\n\nR\xE9sultat confirm\xE9 : {outcome, select, published {le message a \xE9t\xE9 publi\xE9} not_published {le message n'a pas \xE9t\xE9 publi\xE9} other {inconnu}}.",
+  "approval.social.recovery": "V\xE9rifiez la preuve du fournisseur ci-dessus avant de d\xE9cider.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identit\xE9 distante} not_published {Confirmer l'absence de publication et autoriser un nouvel essai apr\xE8s v\xE9rification de l'approbation actuelle} other {Confirmer la r\xE9cup\xE9ration}}\n- [{rejectMark}] Refuser la r\xE9cup\xE9ration et maintenir le blocage",
+  "approval.social.final": "{status, select, approved {\u2705 **D\xE9cision de publication approuv\xE9e**} rejected {\u274C **D\xE9cision de publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nLe registre de livraison suit s\xE9par\xE9ment l'acceptation du fournisseur. Un message publi\xE9 n'est jamais renvoy\xE9.",
   "approval.community.details": "### Confirmation organisateur : publier l'\xE9v\xE9nement CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut envoyer les notifications OCGroups aux membres du groupe et aux speakers.",
   "approval.community.request": "Membres avec droit d'\xE9criture : s\xE9lectionner un choix. L'approbation autorise la publication de ce brouillon OCGroups et ses notifications natives. Un changement de contenu n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de cet \xE9v\xE9nement CNCF\n- [{rejectMark}] Refuser la publication de cet \xE9v\xE9nement CNCF",
   "approval.community.final": "{status, select, approved {\u2705 **Publication CNCF approuv\xE9e**} rejected {\u274C **Publication CNCF refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nL'automatisation v\xE9rifie le brouillon avant publication. CNCF Link est rempli apr\xE8s v\xE9rification de la publication. Un changement de contenu n\xE9cessite une nouvelle approbation.",
@@ -96507,6 +96842,7 @@ var ContentProposalCodec = class {
   }
   parse(value) {
     const item = this.values.object(value, [
+      "publicationIntent",
       "recoveryRequest",
       "destinationBefore",
       "version",
@@ -96529,6 +96865,7 @@ var ContentProposalCodec = class {
       throw new Error("Invalid content proposal identity");
     const recovery = this.recovery(item.recoveryRequest);
     const proposal = {
+      ...item.publicationIntent === void 0 ? {} : { publicationIntent: this.values.text(item.publicationIntent, 200) },
       ...recovery ? { recoveryRequest: recovery } : {},
       version: 1,
       promptVersion: "1",
@@ -96591,12 +96928,14 @@ var ContentProposalCodec = class {
       "language",
       "facts",
       "plannedAt",
-      "sourceFingerprint"
+      "sourceFingerprint",
+      "destination"
     ]);
     if (!this.policy.target(item.target) || item.language !== "en" && item.language !== "fr")
       throw new Error("Invalid content target or language");
     const plan2 = {
       target: item.target,
+      ...item.destination === void 0 ? {} : { destination: this.values.destination(item.destination) },
       language: item.language,
       facts: this.values.facts(item.facts),
       plannedAt: item.plannedAt === null ? null : this.instant(item.plannedAt)
@@ -96725,6 +97064,39 @@ var ContentValueSchema = class {
       width: Number(item.width),
       height: Number(item.height)
     };
+  }
+  destination(value) {
+    const item = this.object(value, [
+      "key",
+      "provider",
+      "label",
+      "workspaceId",
+      "channelId",
+      "organizationUrn"
+    ]);
+    const key = this.text(item.key, 64);
+    const label = this.text(item.label, 100);
+    if (!/^[a-z][a-z0-9-]{0,63}$/.test(key) || !label.trim() || /[<>\r\n]/.test(label))
+      throw new Error("Invalid content destination identity");
+    if (item.provider === "slack") {
+      this.object(value, [
+        "key",
+        "provider",
+        "label",
+        "workspaceId",
+        "channelId"
+      ]);
+      const workspaceId = this.text(item.workspaceId, 100);
+      const channelId = this.text(item.channelId, 100);
+      if (!/^T[A-Z0-9]{2,}$/.test(workspaceId) || !/^[CG][A-Z0-9]{2,}$/.test(channelId))
+        throw new Error("Invalid content Slack destination");
+      return { key, label, provider: "slack", workspaceId, channelId };
+    }
+    this.object(value, ["key", "provider", "label", "organizationUrn"]);
+    const organizationUrn = this.text(item.organizationUrn, 100);
+    if (item.provider !== "linkedin" || !/^urn:li:organization:[1-9]\d*$/.test(organizationUrn))
+      throw new Error("Invalid content LinkedIn destination");
+    return { key, label, provider: "linkedin", organizationUrn };
   }
   draft(value) {
     const item = this.object(value, ["text", "media"]);
@@ -96904,6 +97276,12 @@ var ApprovalRequestSchema = class {
   validate(value) {
     if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
       throw new Error("Invalid approval request");
+    if (value.kind === "social-publication") {
+      this.social(value);
+      return;
+    }
+    if (value.social !== void 0)
+      throw new Error("Invalid social publication approval kind");
     if (value.kind === "content-review") {
       if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
         throw new Error("Invalid content approval fields");
@@ -96920,6 +97298,11 @@ var ApprovalRequestSchema = class {
       throw new Error("Invalid approval request");
     this.collaborators.emailApprovalDetailsSchema.validate(value.details);
   }
+  social(value) {
+    if (value.content !== void 0 || value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
+      throw new Error("Invalid social publication approval fields");
+    this.collaborators.socialPublicationApprovalSchema.validate(value.social);
+  }
   publication(value) {
     if (value.recipientCount !== void 0 || value.details !== void 0)
       throw new Error("Invalid publication approval fields");
@@ -96931,19 +97314,6 @@ var ApprovalRequestSchema = class {
       this.collaborators.meetupApprovalDetailsSchema.validate(
         value.publication
       );
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
-var ApprovalSchema = class {
-  object(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  count(value) {
-    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
-  }
-  text(value, maximum) {
-    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
   }
 };
 
@@ -96969,6 +97339,127 @@ var CommunityApprovalDetailsSchema = class {
   }
   text(value, maximum) {
     return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-approval-schema.ts
+var ContentApprovalSchema = class {
+  constructor(schema, policy, values) {
+    this.schema = schema;
+    this.policy = policy;
+    this.values = values;
+  }
+  schema;
+  policy;
+  values;
+  validate(value) {
+    if (!this.schema.object(value) || typeof value.key !== "string" || !/^content-[a-f0-9-]{36}$/.test(value.key) || !this.policy.target(value.target) || !["en", "fr"].includes(String(value.language)) || typeof value.origin !== "string" || !value.origin || value.origin.length > 200)
+      throw new Error("Invalid content approval");
+    this.values.object(value, [
+      "key",
+      "target",
+      "language",
+      "origin",
+      "draft",
+      "plannedAt",
+      "attempts"
+    ]);
+    const draft = this.values.draft(value.draft);
+    if (value.target === "cover" && (!draft.media.length || draft.text))
+      throw new Error("Invalid cover preview");
+    if (value.target !== "cover" && !draft.text.trim())
+      throw new Error("Missing content preview");
+    this.schedule(value);
+  }
+  schedule(value) {
+    if (value.plannedAt !== void 0 && (typeof value.plannedAt !== "string" || !Number.isFinite(Date.parse(value.plannedAt))))
+      throw new Error("Invalid planned publication time");
+    if (value.attempts !== void 0 && (!Array.isArray(value.attempts) || value.attempts.length !== 4 || value.attempts.some(
+      (phase) => !["not-started", "reserved", "complete", "failed"].includes(phase)
+    )))
+      throw new Error("Invalid cover attempt summary");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/social-publication-approval-schema.ts
+var SocialPublicationApprovalSchema = class {
+  constructor(values) {
+    this.values = values;
+  }
+  values;
+  validate(value) {
+    const item = this.values.object(value, [
+      "intentId",
+      "target",
+      "destinationLabel",
+      "destinationIdentity",
+      "text",
+      "media",
+      "plannedAt",
+      "expiresAt",
+      "recovery"
+    ]);
+    for (const field of [
+      "intentId",
+      "target",
+      "destinationLabel",
+      "destinationIdentity"
+    ])
+      if (!this.values.text(item[field], 200).trim() || /[\r\n]/.test(String(item[field])))
+        throw new Error("Invalid social publication identity");
+    if (!this.values.text(item.text, 2800).trim())
+      throw new Error("Missing social publication text");
+    for (const media of this.values.list(item.media, 1))
+      this.values.media(media);
+    const plannedAt = this.values.text(item.plannedAt, 40);
+    const expiresAt = this.values.text(item.expiresAt, 40);
+    if (plannedAt !== "after-approval" && !Number.isFinite(Date.parse(plannedAt)) || !Number.isFinite(Date.parse(expiresAt)) || plannedAt !== "after-approval" && Date.parse(plannedAt) >= Date.parse(expiresAt))
+      throw new Error("Invalid social publication window");
+    if (item.recovery !== void 0) this.recovery(item.recovery);
+  }
+  recovery(value) {
+    const item = this.values.object(value, ["outcome", "reference"]);
+    if (item.outcome !== "published" && item.outcome !== "not-published")
+      throw new Error("Invalid social publication recovery outcome");
+    if (!this.values.text(item.reference, 2e3).trim())
+      throw new Error("Missing social publication recovery evidence");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-request-schema-composition.ts
+var ApprovalRequestSchemaComposition = class {
+  create(approvalSchema, meetupApprovalDetailsSchema, emailApprovalDetailsSchema) {
+    const values = new ContentValueSchema(new PublicAssetUrl());
+    return new ApprovalRequestSchema({
+      approvalSchema,
+      meetupApprovalDetailsSchema,
+      emailApprovalDetailsSchema,
+      socialPublicationApprovalSchema: new SocialPublicationApprovalSchema(
+        values
+      ),
+      contentApprovalSchema: new ContentApprovalSchema(
+        approvalSchema,
+        new DraftProposalComposition().policy(),
+        values
+      ),
+      communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
+        approvalSchema,
+        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+      })
+    });
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
+var ApprovalSchema = class {
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  count(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  }
+  text(value, maximum) {
+    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
   }
 };
 
@@ -97061,45 +97552,6 @@ var ContentApprovalPresenter = class {
   }
   escape(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-approval-schema.ts
-var ContentApprovalSchema = class {
-  constructor(schema, policy, values) {
-    this.schema = schema;
-    this.policy = policy;
-    this.values = values;
-  }
-  schema;
-  policy;
-  values;
-  validate(value) {
-    if (!this.schema.object(value) || typeof value.key !== "string" || !/^content-[a-f0-9-]{36}$/.test(value.key) || !this.policy.target(value.target) || !["en", "fr"].includes(String(value.language)) || typeof value.origin !== "string" || !value.origin || value.origin.length > 200)
-      throw new Error("Invalid content approval");
-    this.values.object(value, [
-      "key",
-      "target",
-      "language",
-      "origin",
-      "draft",
-      "plannedAt",
-      "attempts"
-    ]);
-    const draft = this.values.draft(value.draft);
-    if (value.target === "cover" && (!draft.media.length || draft.text))
-      throw new Error("Invalid cover preview");
-    if (value.target !== "cover" && !draft.text.trim())
-      throw new Error("Missing content preview");
-    this.schedule(value);
-  }
-  schedule(value) {
-    if (value.plannedAt !== void 0 && (typeof value.plannedAt !== "string" || !Number.isFinite(Date.parse(value.plannedAt))))
-      throw new Error("Invalid planned publication time");
-    if (value.attempts !== void 0 && (!Array.isArray(value.attempts) || value.attempts.length !== 4 || value.attempts.some(
-      (phase) => !["not-started", "reserved", "complete", "failed"].includes(phase)
-    )))
-      throw new Error("Invalid cover attempt summary");
   }
 };
 
@@ -97426,7 +97878,7 @@ var GithubApprovalRepository = class {
       const record = await this.trusted.read(comment);
       if (!record) continue;
       if (states.some(
-        (state) => state.record.kind === record.kind && (record.kind !== "content-review" || state.record.content?.key === record.content.key)
+        (state) => this.collaborators.approvalRequestPolicy.scope(state.record) === this.collaborators.approvalRequestPolicy.scope(record)
       ))
         throw new Error("Ambiguous approval state");
       states.push({ record, comment });
@@ -97437,7 +97889,7 @@ var GithubApprovalRepository = class {
     const active = /* @__PURE__ */ new Map();
     for (const state of await this.states()) {
       const record = state.record;
-      const key = record.kind === "content-review" ? `content:${record.content.target}` : record.kind;
+      const key = record.kind === "content-review" ? `content:${record.content.target}` : this.collaborators.approvalRequestPolicy.scope(record);
       active.set(key, state);
     }
     return [...active.values()];
@@ -97576,7 +98028,7 @@ var GithubOrganizerApproval = class {
     this.collaborators.approvalRequestSchema.validate(input);
     this.collaborators.approvalRequestPolicy.validate(input);
     const existing = (await this.repository.states()).find(
-      ({ record: record2 }) => record2.kind === input.kind && (input.kind !== "content-review" || record2.content?.key === input.content.key)
+      ({ record: record2 }) => this.collaborators.approvalRequestPolicy.scope(record2) === this.collaborators.approvalRequestPolicy.scope(input)
     );
     if (existing && this.collaborators.approvalRequestPolicy.matches(
       existing.record,
@@ -97816,6 +98268,57 @@ var StoredApprovalSchema = class {
   }
 };
 
+// packages/adapter/journey/github-organizer-approval/src/social-publication-approval-presenter.ts
+var SocialPublicationApprovalPresenter = class {
+  constructor(messages3) {
+    this.messages = messages3;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.social;
+    return [
+      this.messages.t("approval.social.details", {
+        target: this.escape(details.target),
+        destination: this.escape(details.destinationLabel),
+        identity: this.escape(details.destinationIdentity),
+        plannedAt: details.plannedAt === "after-approval" ? this.messages.t("approval.social.after-approval", {}) : details.plannedAt,
+        expiresAt: details.expiresAt
+      }),
+      `<pre>${this.escape(details.text)}</pre>`,
+      ...details.media.map(
+        (media) => [
+          `![${this.escape(media.description)}](<${media.url}>)`,
+          `${this.escape(media.id)} \xB7 ${media.width}\xD7${media.height} \xB7 ${media.mimeType} \xB7 ${media.fingerprint}`
+        ].join("\n\n")
+      ),
+      details.recovery ? this.messages.t("approval.social.evidence", {
+        outcome: details.recovery.outcome.replaceAll("-", "_"),
+        reference: this.escape(details.recovery.reference)
+      }) : "",
+      this.controls(record, decision)
+    ].filter(Boolean).join("\n\n");
+  }
+  controls(record, decision) {
+    if (record.decision)
+      return this.messages.t("approval.social.final", {
+        status: record.decision.status,
+        actor: record.decision.actor,
+        decidedAt: record.decision.decidedAt
+      });
+    const marks = {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    };
+    return record.social.recovery ? this.messages.t("approval.social.recovery", {
+      ...marks,
+      outcome: record.social.recovery.outcome.replaceAll("-", "_")
+    }) : this.messages.t("approval.social.request", marks);
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;").replaceAll("@", "&#64;");
+  }
+};
+
 // packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
 var TrustedApprovalState = class {
   constructor(collaborators, client, authorLogin) {
@@ -97884,7 +98387,8 @@ var GithubOrganizerApprovalComposition = class {
       "email-thanks": email,
       "meetup-publication": this.meetupApprovalPresenter(messages3),
       "community-publication": new CommunityApprovalPresenter(messages3),
-      "content-review": this.contentApprovalPresenter(messages3)
+      "content-review": this.contentApprovalPresenter(messages3),
+      "social-publication": new SocialPublicationApprovalPresenter(messages3)
     });
   }
   contentApprovalPresenter(messages3) {
@@ -97908,20 +98412,11 @@ var GithubOrganizerApprovalComposition = class {
     );
   }
   approvalRequestSchema() {
-    return new ApprovalRequestSchema({
-      communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
-        approvalSchema: this.approvalSchema(),
-        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
-      }),
-      approvalSchema: this.approvalSchema(),
-      contentApprovalSchema: new ContentApprovalSchema(
-        this.approvalSchema(),
-        new DraftProposalComposition().policy(),
-        new ContentValueSchema(new PublicAssetUrl())
-      ),
-      meetupApprovalDetailsSchema: this.meetupApprovalDetailsSchema(),
-      emailApprovalDetailsSchema: this.emailApprovalDetailsSchema()
-    });
+    return new ApprovalRequestSchemaComposition().create(
+      this.approvalSchema(),
+      this.meetupApprovalDetailsSchema(),
+      this.emailApprovalDetailsSchema()
+    );
   }
   approvalSchema() {
     return new ApprovalSchema();
@@ -97961,7 +98456,10 @@ var GithubOrganizerApprovalComposition = class {
   }
   githubApprovalRepository(...args) {
     return new GithubApprovalRepository(
-      { storedApprovalSchema: this.storedApprovalSchema() },
+      {
+        storedApprovalSchema: this.storedApprovalSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+      },
       ...args
     );
   }

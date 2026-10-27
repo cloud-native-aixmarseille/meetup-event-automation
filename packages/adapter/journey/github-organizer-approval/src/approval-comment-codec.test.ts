@@ -10,9 +10,15 @@ import {
 	ApprovalCommentCodec,
 } from "./approval-comment-codec.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
+import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 
 describe("versioned approval comment metadata", () => {
-	it.each([request, detailedRequest, publicationRequest])(
+	it.each([
+		request,
+		detailedRequest,
+		publicationRequest,
+		socialPublicationRequest,
+	])(
 		"round-trips supported $kind state without changing marker bytes",
 		(input) => {
 			// Arrange

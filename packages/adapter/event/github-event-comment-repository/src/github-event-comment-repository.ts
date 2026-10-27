@@ -5,6 +5,7 @@ import type {
 	EventIdentity,
 } from "@meetup-automation/event";
 import type { DiagnosticCommentPresenter } from "./diagnostic-comment-presenter.js";
+import type { DiagnosticCommentSections } from "./diagnostic-comment-sections.js";
 import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 import {
 	COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER,
@@ -22,6 +23,10 @@ import type {
 } from "./i18n/event-comment-messages.js";
 
 export interface GitHubEventCommentRepositoryCollaborators {
+	readonly diagnosticCommentSections: Pick<
+		DiagnosticCommentSections,
+		"merge" | "hasSocial"
+	>;
 	readonly diagnosticCommentPresenter: Pick<
 		DiagnosticCommentPresenter,
 		"render"
@@ -59,6 +64,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 	async reconcileDiagnostics(
 		identity: EventIdentity,
 		diagnostics: readonly EventDiagnostic[],
+		scope?: "social",
 	): Promise<EventCommentReconciliation> {
 		this.assertScope(identity.repository);
 		const managedComments = await this.listManagedComments(
@@ -71,22 +77,16 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			(comment) => !retired.includes(comment),
 		);
 		let changed = await this.retireComments(identity.issueNumber, duplicates);
-		let body = this.collaborators.diagnosticCommentPresenter.render(
+		const body = await this.body(
+			identity.issueNumber,
+			canonical,
 			diagnostics,
-			this.messages,
+			scope,
 		);
-		if (canonical && this.options.retainedContent) {
-			const retained = await this.options.retainedContent.load(
-				identity.issueNumber,
-				canonical.id,
-				canonical.body,
-			);
-			if (retained) body += `\n\n${retained}`;
-		}
 
 		if (!canonical) {
 			if (
-				!retired.length &&
+				(!retired.length || scope === "social") &&
 				!diagnostics.some((item) => item.severity !== "info")
 			) {
 				return { changed };
@@ -97,7 +97,8 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 				issue_number: identity.issueNumber,
 				body,
 			});
-			await this.retireComments(identity.issueNumber, retired, true);
+			if (!scope)
+				await this.retireComments(identity.issueNumber, retired, true);
 			return { changed: true };
 		}
 
@@ -106,12 +107,38 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			changed = true;
 		}
 
+		if (scope) return { changed };
 		const retiredChanged = await this.retireComments(
 			identity.issueNumber,
 			retired,
 			true,
 		);
 		return { changed: changed || retiredChanged };
+	}
+	private async body(
+		issueNumber: number,
+		canonical: ManagedComment | undefined,
+		diagnostics: readonly EventDiagnostic[],
+		scope?: "social",
+	): Promise<string> {
+		const previous =
+			canonical && this.options.retainedContent
+				? await this.options.retainedContent.load(
+						issueNumber,
+						canonical.id,
+						canonical.body,
+					)
+				: { body: canonical?.body ?? "", retained: "" };
+		const rendered = this.collaborators.diagnosticCommentPresenter.render(
+			diagnostics,
+			this.messages,
+		);
+		const body = this.collaborators.diagnosticCommentSections.merge(
+			previous.body,
+			rendered,
+			scope,
+		);
+		return previous.retained ? `${body}\n\n${previous.retained}` : body;
 	}
 
 	private async listManagedComments(
@@ -176,13 +203,18 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		deleteReports = false,
 	): Promise<boolean> {
 		for (const duplicate of duplicates) {
+			const previous = this.options.retainedContent
+				? await this.options.retainedContent.load(
+						issueNumber,
+						duplicate.id,
+						duplicate.body,
+					)
+				: undefined;
 			if (
-				this.options.retainedContent &&
-				(await this.options.retainedContent.load(
-					issueNumber,
-					duplicate.id,
-					duplicate.body,
-				))
+				previous?.retained ||
+				this.collaborators.diagnosticCommentSections.hasSocial(
+					previous?.body ?? duplicate.body,
+				)
 			)
 				throw new Error("Duplicate diagnostic comment contains managed state");
 			if (deleteReports && this.client.rest.issues.deleteComment) {

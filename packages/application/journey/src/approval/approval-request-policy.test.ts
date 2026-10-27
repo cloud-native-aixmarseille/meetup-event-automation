@@ -66,6 +66,38 @@ describe("approval review eligibility", () => {
 });
 
 describe("approval request identity", () => {
+	it("invalidates social publication authority when a destination changes without a revision update", () => {
+		// Arrange
+		const request = {
+			kind: "social-publication",
+			revision: "d".repeat(64),
+			eventDate: "2099-06-08",
+			requestedAt: "2099-06-01T10:00:00Z",
+			social: {
+				intentId: "delivery-one",
+				target: "announcement",
+				destinationLabel: "Community",
+				destinationIdentity: "T123/C123",
+				text: "Public reviewed message",
+				media: [],
+				plannedAt: "2099-06-01T10:00:00Z",
+				expiresAt: "2099-06-08T17:00:00Z",
+			},
+		} satisfies OrganizerApprovalRequest;
+		const changed = {
+			...request,
+			social: { ...request.social, destinationIdentity: "T123/C999" },
+		};
+		const policy = new ApprovalRequestPolicy(
+			new DraftProposalComposition().fingerprints(),
+		);
+
+		// Act
+		const same = policy.matches(request, changed, "approved");
+
+		// Assert
+		expect(same).toBe(false);
+	});
 	it("compares reviewed facts independently of object property order and request time", () => {
 		// Arrange
 		const reordered = {

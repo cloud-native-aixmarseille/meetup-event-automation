@@ -63,4 +63,28 @@ describe("content revision identity", () => {
 			expect(fingerprint).toBe(expected);
 		},
 	);
+	it.each([
+		{ channelId: "COTHER" },
+		{ workspaceId: "TOTHER" },
+		{ label: "Another channel" },
+	])(
+		"invalidates approval when the configured destination changes %j",
+		(change) => {
+			// Arrange
+			const f = contentFixture("slack-engineering:announcement");
+			const destination = f.plan.destination;
+			if (destination?.provider !== "slack")
+				throw new Error("Missing Slack fixture");
+			// Act
+			const changed = f.plans.create(
+				f.plan.target,
+				"fr",
+				f.plan.facts,
+				"09:00",
+				{ ...destination, ...change },
+			);
+			// Assert
+			expect(changed.sourceFingerprint).not.toBe(f.plan.sourceFingerprint);
+		},
+	);
 });

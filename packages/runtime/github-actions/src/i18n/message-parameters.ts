@@ -1,4 +1,6 @@
 export interface MessageParameters {
+	"report.social.recovery": { status: string };
+	"report.social.result": { target: string; status: string };
 	"report.feedback.link": { updated: string };
 	"report.assets.pdf": { status: string; updated: string };
 	"report.publication.review": { provider: string; url: string };

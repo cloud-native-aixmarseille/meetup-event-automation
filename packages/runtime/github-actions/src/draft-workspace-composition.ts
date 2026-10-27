@@ -56,9 +56,12 @@ export class DraftWorkspaceComposition {
 			projection: new ContentFactsProjection(),
 			publication: input.publication,
 			settings: input.settings,
+			destinations: input.destinations,
 			announcement,
 		});
 		return {
+			repository: container.get<EventRepository>(SERVICES.eventRepository),
+			codec: container.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 			eventCopy: new ApplyEventCopy(
 				container.get<EventRepository>(SERVICES.eventRepository),
 				container.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),

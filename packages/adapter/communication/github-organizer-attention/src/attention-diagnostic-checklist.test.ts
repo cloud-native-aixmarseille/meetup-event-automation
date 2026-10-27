@@ -6,6 +6,25 @@ import {
 import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 
 describe("diagnostic checklist decoding", () => {
+	it("reads base and scoped social tasks from the same checklist without exposing markers", () => {
+		// Arrange
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
+		const body = `${DIAGNOSTIC_MARKER}\n\n- [ ] **Event Date**: Set the event date.\n<!-- meetup-automation:social-diagnostics:v1 -->\n- [ ] **Social publication (community, d7)**: Verify the remote post.\n<!-- /meetup-automation:social-diagnostics:v1 -->`;
+
+		// Act
+		checklist.set(100, body);
+		const decoded = checklist.read();
+
+		// Assert
+		expect(decoded.entries.map((entry) => entry.label)).toEqual([
+			"Event Date",
+			"Social publication (community, d7)",
+		]);
+		expect(JSON.stringify(decoded)).not.toContain("<!--");
+	});
 	it("decodes public headings and removes duplicate lines", () => {
 		// Arrange
 		const checklist = new AttentionDiagnosticChecklist({

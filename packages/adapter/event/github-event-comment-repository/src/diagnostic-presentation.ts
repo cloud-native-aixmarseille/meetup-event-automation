@@ -60,6 +60,17 @@ export class DiagnosticPresenter {
 		fallback: string,
 		messages: EventCommentMessages,
 	): readonly [string, string] {
+		const social = field?.match(
+			/^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/,
+		);
+		if (social)
+			return [
+				messages.t("comment.social.target", {
+					destination: social[1],
+					purpose: social[2],
+				}),
+				"Communication",
+			];
 		const known = this.FIELD_ALIASES.get(field ?? "");
 		if (known) return [known, known];
 		const agenda = field?.match(

@@ -17,7 +17,7 @@ const facts = {
 	aperitif: false,
 };
 describe("social post brief", () => {
-	it.each(["slack-aix", "slack-openbar", "linkedin"] as const)(
+	it.each(["slack", "linkedin"] as const)(
 		"uses the %s channel format and canonical registration link",
 		(channel) => {
 			// Arrange
@@ -65,6 +65,52 @@ describe("social post brief", () => {
 			);
 			expect(brief.facts.date).toBe(source.date);
 			expect(brief.facts.startTime).toBe(source.startTime);
+		},
+	);
+	it.each([
+		["slack", "<!channel>"],
+		["slack", "<@U123>"],
+		["slack", "<#C123>"],
+		["slack", String.fromCharCode(0)],
+		["linkedin", "@[Example](urn:li:person:123)"],
+	] as const)(
+		"rejects unsupported %s text before review",
+		(channel, markup) => {
+			// Arrange
+			const posts = new SocialPostDraft();
+			const source = {
+				...facts,
+				registrationUrl: "https://www.meetup.com/example/events/123/",
+				mentions: [],
+			};
+			// Act
+			const valid = posts.valid(
+				source,
+				`${markup} ${source.registrationUrl}`,
+				channel,
+			);
+			// Assert
+			expect(valid).toBe(false);
+		},
+	);
+	it.each(["slack", "linkedin"] as const)(
+		"accepts plain %s text with ordinary names and emoji",
+		(channel) => {
+			// Arrange
+			const posts = new SocialPostDraft();
+			const source = {
+				...facts,
+				registrationUrl: "https://www.meetup.com/example/events/123/",
+				mentions: [],
+			};
+			// Act
+			const valid = posts.valid(
+				source,
+				`:rocket: Meet Example Speaker 🚀 ${source.registrationUrl}`,
+				channel,
+			);
+			// Assert
+			expect(valid).toBe(true);
 		},
 	);
 });

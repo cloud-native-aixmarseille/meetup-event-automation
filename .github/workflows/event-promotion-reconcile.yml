@@ -1,0 +1,123 @@
+# Goal: Publish approved announcements and reminders to configured destinations.
+# Behavior: Recheck exact publication authority, due times and durable delivery
+# records, then report each destination under the event lock.
+
+name: Event / Promotion / Reconcile
+on:
+  workflow_call:
+    inputs:
+      meetup-event-url-prefix:
+        description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+        required: true
+        type: string
+      community-event-url-prefixes:
+        description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+        required: true
+        type: string
+      asset-folder-url-prefix:
+        description: HTTPS prefix accepted for event asset folder URLs.
+        required: true
+        type: string
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: true
+        type: string
+      issue-number:
+        description: Meetup issue number.
+        required: true
+        type: number
+      conference-hall-event:
+        description: Conference Hall CFP slug for live linked profiles and selected proposals.
+        required: true
+        type: string
+      slack-organizer-channel-id:
+        description: Internal organizer channel receiving content reviews.
+        required: true
+        type: string
+      github-app-client-id:
+        description: GitHub App client ID for the consumer repository.
+        required: true
+        type: string
+    secrets:
+      conference-hall-api-key:
+        description: Read-only Conference Hall event API key.
+        required: true
+      slack-token:
+        description: Slack bot token for organizer review requests and decision reactions.
+        required: true
+      social-credentials:
+        description: JSON tokens keyed by configured Slack workspace, plus LinkedIn access and Google media credentials when enabled.
+        required: true
+      github-app-private-key:
+        description: GitHub App private key.
+        required: true
+permissions: {}
+jobs:
+  publish:
+    if: >-
+      ${{ github.event_name != 'issue_comment' ||
+          (!github.event.issue.pull_request && github.event.issue.state == 'open' &&
+           github.event.action == 'edited' && github.event.sender.type == 'User' &&
+           github.event.comment.user.type == 'Bot' &&
+           startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ') &&
+           contains(github.event.comment.body, '"kind":"social-publication"')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Create narrowly scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-issues: write
+      - name: Checkout consumer repository
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Reconcile social publication
+        id: social
+        uses: $/actions/communication/reconcile-social
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          social-credentials: ${{ secrets.social-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+    outputs:
+      initialized: ${{ steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+      social-outcome: ${{ steps.social.outcome }}
+      social-diagnostics: ${{ steps.social.outputs.diagnostics }}
+  report:
+    needs: publish
+    if: ${{ always() && needs.publish.outputs.initialized == 'true' }}
+    uses: $/.github/workflows/__organizer-reconcile-reporting.yml
+    permissions:
+      contents: read
+    with:
+      meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+      community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+      asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+      locale: ${{ inputs.locale }}
+      github-app-client-id: ${{ inputs.github-app-client-id }}
+      slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+      issue-number: ${{ inputs.issue-number }}
+      stage-results: '{"social":[{"outcome":${{ toJSON(needs.publish.outputs.social-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.social-diagnostics) }}}]}'
+    secrets:
+      github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+concurrency:
+  group: ${{ format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number) }}
+  cancel-in-progress: false

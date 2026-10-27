@@ -17,6 +17,7 @@ export type AttentionOwner =
 	| "assets"
 	| "feedback"
 	| "communications"
+	| "social"
 	| "content"
 	| "approvals"
 	| "delivery";
@@ -98,6 +99,7 @@ export interface AttentionApproval {
 		| "email-thanks"
 		| "meetup-publication"
 		| "community-publication"
+		| "social-publication"
 		| "content-review";
 	readonly eventDate: string;
 	readonly status: "pending" | "approved" | "rejected" | "iteration-requested";

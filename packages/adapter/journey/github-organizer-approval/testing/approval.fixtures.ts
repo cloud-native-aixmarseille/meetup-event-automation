@@ -1,3 +1,4 @@
+import { SocialPublicationApprovalPresenter } from "../src/social-publication-approval-presenter.js";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import {
 	ApprovalNotificationPolicy,
@@ -55,6 +56,9 @@ export function fixture(locale = "en") {
 						locale,
 					),
 				),
+			"social-publication": new SocialPublicationApprovalPresenter(
+				new GithubOrganizerApprovalComposition().approvalMessages("en"),
+			),
 			"content-review":
 				new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 					new GithubOrganizerApprovalComposition().approvalMessages("en"),
@@ -289,6 +293,8 @@ export function approvalDependencies(
 	);
 	const repository = new GithubApprovalRepository(
 		{
+			approvalRequestPolicy:
+				new JourneyPolicyComposition().approvalRequestPolicy(),
 			storedApprovalSchema:
 				new GithubOrganizerApprovalComposition().storedApprovalSchema(),
 		},

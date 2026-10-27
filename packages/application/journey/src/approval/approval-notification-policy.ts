@@ -25,6 +25,12 @@ export class ApprovalNotificationPolicy {
 					eventDate: request.eventDate,
 					target: request.content.target,
 				};
+			case "social-publication":
+				return {
+					kind: request.kind,
+					eventDate: request.eventDate,
+					target: request.social.target,
+				};
 		}
 	}
 }

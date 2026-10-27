@@ -25,6 +25,13 @@ Provide the public venue and event hours in
 }
 ```
 
+Also commit the explicit destination list in
+[`.github/meetup-social.json`](social-publication.md#configure-destinations),
+including an empty list when no social channels are enabled. Generation and
+review accept social targets only from that configuration. A target uses the
+configured stable key; changing its provider or remote identity requires new
+content review. Removing it prevents further review or publication.
+
 These are synthetic examples. Supply the exact month spelling to appear in the
 cover, public organizer names intended for LinkedIn, and the local reminder
 publication hour. The reminder hour must precede the event start on D0. The
@@ -46,16 +53,17 @@ organizer channel.
 
 Choose the workflow for the output you need:
 
-| Workflow                                                                                     | Selection input                                                                                                 |
-| -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| [Generate preparation drafts](../../.github/workflows/event-preparation-generate-drafts.yml) | `targets`: a nonempty JSON array of distinct `title`, `description`, and/or `cover` values.                     |
-| [Generate promotion post](../../.github/workflows/event-promotion-generate-post.yml)         | `target`: `slack-aix:announcement/d7/d0`, `slack-openbar:announcement/d7/d0`, or `linkedin:announcement/d7/d0`. |
+| Workflow                                                                                     | Selection input                                                                             |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [Generate preparation drafts](../../.github/workflows/event-preparation-generate-drafts.yml) | `targets`: a nonempty JSON array of distinct `title`, `description`, and/or `cover` values. |
+| [Generate promotion post](../../.github/workflows/event-promotion-generate-post.yml)         | `target`: a configured destination key followed by `:announcement`, `:d7`, or `:d0`.        |
 
 For all preparation outputs, pass `targets: '["title","description","cover"]'`.
 To run only one output, pass a singleton such as `targets: '["cover"]'`.
-Unknown or duplicate targets fail validation before credentials or effects.
-
-The slash notation lists separate target choices, for example `linkedin:d7`.
+Unknown or duplicate preparation targets fail validation before credentials or effects.
+Promotion resolves the destination provider from the checked-out configuration
+and rejects unlisted keys. For example, the configured key `engineering` uses
+`engineering:d7` for its seven-day reminder.
 Forward all inputs and secrets declared by the selected workflow: issue number,
 locale, public URL prefixes, Conference Hall settings, organizer channel,
 GitHub App credentials, Drive settings for review, and explicit AI configuration.
@@ -71,16 +79,18 @@ generation needs Google credentials to verify its announcement image, and cover
 generation also needs the public media folder. The shared review action needs
 both for manual image imports and media verification; it accepts no AI inputs.
 
-| Target                                            | Proposal                                                                  |
-| ------------------------------------------------- | ------------------------------------------------------------------------- |
-| `title`                                           | One thematic headline, at most 80 characters.                             |
-| `description`                                     | Welcoming prose, practical details, ordered talk teasers, and invitation. |
-| `cover`                                           | Four separate image candidates, generated sequentially.                   |
-| `slack-aix:announcement`                          | AixMarseille.Tech announcement using Slack emoji aliases.                 |
-| `slack-openbar:announcement`                      | OpenBaR announcement using the same editorial format.                     |
-| `linkedin:announcement`                           | Unicode emoji, hashtags, public mention footer, and announcement image.   |
-| `slack-aix:d7`, `slack-openbar:d7`, `linkedin:d7` | Separate reminders seven calendar days before the event.                  |
-| `slack-aix:d0`, `slack-openbar:d0`, `linkedin:d0` | Separate reminders on the event day.                                      |
+| Target                           | Proposal                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `title`                          | One thematic headline, at most 80 characters.                             |
+| `description`                    | Welcoming prose, practical details, ordered talk teasers, and invitation. |
+| `cover`                          | Four separate image candidates, generated sequentially.                   |
+| `<destination-key>:announcement` | One announcement using the configured provider's format.                  |
+| `<destination-key>:d7`           | One reminder seven calendar days before the event.                        |
+| `<destination-key>:d0`           | One reminder on the event day.                                            |
+
+Slack uses emoji aliases. LinkedIn uses Unicode emoji, hashtags, a public mention
+footer, and the verified announcement image. Each configured Slack channel has
+its own proposal and stable target key; there is no fixed destination count.
 
 Each target has its own proposal and approval. Titles and descriptions can be
 generated before those fields exist. Each operation supplies only its relevant public facts: topics for titles and
@@ -213,10 +223,10 @@ does not upload a cover to the Meetup browser editor.
 
 Reminders use calendar dates in the event's time zone, including daylight-saving
 changes. D-7 and D0 each require approval for every destination. The planned hour
-is shown in review. Before copying a social post for manual publication, run
-reconciliation to recheck its sources, media, decision, and timing. A later day,
-event start, cancellation, or postponement makes the reminder ineligible.
-There is no automatic social dispatch, scheduling, or catch-up posting.
+is shown in review. [Social publication](social-publication.md) requires a
+separate publication approval and rechecks sources, media, destinations, and
+timing before sending. A later day, event start, cancellation, or postponement
+makes the reminder ineligible. Missed reminders are not posted on a later day.
 
 ## Recover uncertain work
 

@@ -1,4 +1,8 @@
 export const messages = {
+	"action.social-approval-pending":
+		"Vérifiez l'annonce et approuvez sa publication pour cette destination.",
+	"failure.social": "La publication sociale a échoué.",
+	"task.social": "publication sociale",
 	"action.community-approval-pending":
 		"Approuvez ou refusez la publication OCGroups.",
 	"failure.communications": "La préparation ou l'envoi des courriels a échoué.",

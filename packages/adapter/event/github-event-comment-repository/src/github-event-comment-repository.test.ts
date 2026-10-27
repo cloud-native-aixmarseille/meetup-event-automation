@@ -43,6 +43,8 @@ function adapter(
 ) {
 	return new GitHubEventCommentRepository(
 		{
+			diagnosticCommentSections:
+				new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 			diagnosticCommentPresenter:
 				new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 			createEventCommentMessages: (...args) =>
@@ -64,6 +66,84 @@ function comment(id: number, body: string, login = "meetup-bot") {
 }
 
 describe("GitHubEventCommentRepository", () => {
+	it("preserves base tasks and trusted attention state while refreshing only social work", async () => {
+		// Arrange
+		const github = client();
+		const base = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}\n\n- [ ] **Event Date**: Set the event date.`;
+		const forged = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}\n\n- [ ] **Secret**: private@example.test`;
+		github.listComments.mockResolvedValue({ data: [comment(12, forged)] });
+		const repository =
+			new GithubEventCommentRepositoryComposition().gitHubEventCommentRepository(
+				github.value,
+				{
+					owner: "example",
+					repo: "meetups",
+					authorLogin: "meetup-bot",
+					retainedContent: {
+						load: vi.fn().mockResolvedValue({
+							body: base,
+							retained: "<!-- trusted-attention-state -->",
+						}),
+					},
+				},
+			);
+
+		// Act
+		await repository.reconcileDiagnostics(
+			identity,
+			[
+				{
+					...errorDiagnostic,
+					code: "communication.social.pending",
+					field: "social.community.announcement",
+				},
+			],
+			"social",
+		);
+
+		// Assert
+		const body = github.updateComment.mock.calls[0][0].body;
+		expect(body).toContain("Set the event date.");
+		expect(body).toContain("Social publication (community, announcement)");
+		expect(body).toContain("<!-- trusted-attention-state -->");
+		expect(body).not.toContain("private@example.test");
+		expect(github.createComment).not.toHaveBeenCalled();
+	});
+	it("retains social tasks through a normal reconciliation and resolves them independently", async () => {
+		// Arrange
+		const github = client();
+		let body = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}\n\n- [ ] **Event Date**: Set the event date.`;
+		github.listComments.mockImplementation(async () => ({
+			data: [comment(12, body)],
+		}));
+		github.updateComment.mockImplementation(async (input: { body: string }) => {
+			body = input.body;
+		});
+		const repository = adapter(github.value);
+
+		// Act
+		await repository.reconcileDiagnostics(
+			identity,
+			[
+				{
+					...errorDiagnostic,
+					code: "communication.social.uncertain",
+					field: "social.community.d7",
+				},
+			],
+			"social",
+		);
+		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+		const unresolved = body;
+		await repository.reconcileDiagnostics(identity, [], "social");
+
+		// Assert
+		expect(unresolved).toContain("Social publication (community, d7)");
+		expect(unresolved).toContain("Verify the remote post");
+		expect(body).toContain("Event Date");
+		expect(body).not.toContain("Social publication");
+		expect(github.createComment).not.toHaveBeenCalled();
+	});
 	it("deletes a trusted state-free stage report after the merged checklist is saved", async () => {
 		// Arrange
 		const github = client();
@@ -77,9 +157,11 @@ describe("GitHubEventCommentRepository", () => {
 				comment(12, `${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nOld errors`),
 			],
 		});
-		const load = vi.fn().mockResolvedValue("");
+		const load = vi.fn().mockResolvedValue({ body: "", retained: "" });
 		const repository = new GitHubEventCommentRepository(
 			{
+				diagnosticCommentSections:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 				diagnosticCommentPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 				createEventCommentMessages: (...args) =>
@@ -131,6 +213,8 @@ describe("GitHubEventCommentRepository", () => {
 		});
 		const repository = new GitHubEventCommentRepository(
 			{
+				diagnosticCommentSections:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 				diagnosticCommentPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 				createEventCommentMessages: (...args) =>
@@ -145,7 +229,10 @@ describe("GitHubEventCommentRepository", () => {
 				authorLogin: "meetup-bot",
 				retireCommunicationReports: true,
 				retainedContent: {
-					load: vi.fn().mockResolvedValue("Reserved delivery state"),
+					load: vi.fn().mockResolvedValue({
+						body: "",
+						retained: "Reserved delivery state",
+					}),
 				},
 			},
 		);
@@ -177,6 +264,8 @@ describe("GitHubEventCommentRepository", () => {
 		});
 		const repository = new GitHubEventCommentRepository(
 			{
+				diagnosticCommentSections:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 				diagnosticCommentPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 				createEventCommentMessages: (...args) =>
@@ -236,6 +325,8 @@ describe("GitHubEventCommentRepository", () => {
 		github.createComment.mockRejectedValue(new Error("Write failed"));
 		const repository = new GitHubEventCommentRepository(
 			{
+				diagnosticCommentSections:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 				diagnosticCommentPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 				createEventCommentMessages: (...args) =>
@@ -517,6 +608,8 @@ describe("GitHubEventCommentRepository", () => {
 		const construct = () =>
 			new GitHubEventCommentRepository(
 				{
+					diagnosticCommentSections:
+						new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 					diagnosticCommentPresenter:
 						new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 					createEventCommentMessages: (...args) =>

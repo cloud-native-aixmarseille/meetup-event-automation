@@ -60,11 +60,12 @@ describe("generation selection at the workflow boundary", () => {
 		},
 	);
 	it.each(
-		["slack-aix", "slack-openbar", "linkedin"].flatMap((destination) =>
-			["announcement", "d7", "d0"].map((purpose) => [
-				`${destination}:${purpose}`,
-				destination === "linkedin" ? "linkedin" : "slack",
-			]),
+		["slack-engineering", "slack-community", "linkedin"].flatMap(
+			(destination) =>
+				["announcement", "d7", "d0"].map((purpose) => [
+					`${destination}:${purpose}`,
+					destination === "linkedin" ? "linkedin" : "slack",
+				]),
 		),
 	)("routes %s to its focused %s generator", async (target, operation) => {
 		// Arrange
@@ -80,7 +81,7 @@ describe("generation selection at the workflow boundary", () => {
 	});
 	it.each([
 		"",
-		"slack-aix",
+		"slack-engineering",
 		"linkedin:d1",
 		"slack-other:d7",
 		"linkedin:announcement,d7",
@@ -110,10 +111,12 @@ describe("generation and reporting effect boundaries", () => {
 			const steps = workflow.jobs?.generate?.steps ?? [];
 			const report = workflow.jobs?.report;
 			// Assert
-			expect(steps[0].id).toBe("selection");
+			expect(steps.findIndex((step) => step.id === "selection")).toBeLessThan(
+				steps.findIndex((step) => step.id === operations[0]),
+			);
 			expect(
 				steps.findIndex((step) => step.id === "app-token"),
-			).toBeGreaterThan(0);
+			).toBeGreaterThanOrEqual(0);
 			for (const id of operations) {
 				const step = steps.find((item) => item.id === id);
 				expect(step?.if).toContain("!cancelled()");
@@ -211,7 +214,18 @@ function runSelection(
 			process: { env: { ...env, GITHUB_OUTPUT: "/synthetic/output" } },
 			require: (name: string) => {
 				if (name !== "node:fs") throw new Error("Unexpected script dependency");
-				return { appendFileSync: write };
+				return {
+					appendFileSync: write,
+					readFileSync: () =>
+						JSON.stringify({
+							version: 1,
+							destinations: [
+								{ key: "slack-engineering", provider: "slack" },
+								{ key: "slack-community", provider: "slack" },
+								{ key: "linkedin", provider: "linkedin" },
+							],
+						}),
+				};
 			},
 		},
 	);

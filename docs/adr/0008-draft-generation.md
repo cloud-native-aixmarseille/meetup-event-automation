@@ -1,6 +1,7 @@
 # Event copy, cover artwork, and social draft generation
 
 Status: Accepted decisions consolidated on 2026-10-23.
+Slack channel-list refinement accepted and implemented on 2026-10-27.
 
 Scope: editorial formats, business ownership, generation ports, durable proposals,
 and organizer review. Configuration, supported actions, and recovery live in the
@@ -113,8 +114,11 @@ replacement requests or report a partial batch as four successful candidates.
 
 ### Social announcements
 
-Support Slack - AixMarseille.Tech, Slack - OpenBaR, and LinkedIn. Both Slack
-communities use the same editorial structure, with separate destination proposals.
+Support LinkedIn and a consumer-configured list of Slack channels. Generate Slack
+proposals only for channels in that list, with no built-in community names or
+fixed destination count. Slack channels share the same editorial structure, with
+separate destination proposals. An empty list produces no Slack proposals.
+
 Each post contains an opening, date and start time, host and city, a programme
 list with one topic/speaker bullet and short teaser per talk, a grounded closing
 invitation, and a verified registration link. Keep paragraphs short and separated
@@ -135,9 +139,10 @@ to immutable media content. Source or media changes require fresh approval.
 
 ### Pre-event reminders
 
-Prepare one reminder per destination at D-7 and D0: six separate proposals for
-the two Slack communities and LinkedIn. An approved announcement does not approve
-its reminders. These public posts are separate from internal organizer attention.
+Prepare one reminder per configured destination at D-7 and D0. The proposal count
+follows the configured Slack channel list and LinkedIn destination. An approved
+announcement does not approve its reminders. These public posts are separate from
+internal organizer attention.
 
 Record the event occurrence, destination, milestone, explicit planned local
 publication time, and timezone. D0 must precede event start. The shorter body uses
@@ -183,6 +188,8 @@ content through typed stage evidence, preserving state on incomplete evaluation.
 This decision adds no social scheduling, dispatch, automatic checklist completion,
 browser cover upload, or automatic announcement-image export. Those effects need
 their own implemented contracts and authorization.
+[ADR 0010](0010-social-publication.md) subsequently adds social dispatch, scheduling,
+and delivery completion while preserving separate content and publication approval.
 
 ## Alternatives and consequences
 
@@ -200,6 +207,15 @@ authorizing changed content.
 
 ## Decision history
 
+On 2026-10-27, the consumer-configured Slack channel list replaced the fixed
+destination set in the social announcement and reminder decisions. Channel
+identities and display names come from configuration; proposal counts follow
+the configured destinations.
+This refinement is accepted and implemented with the social publication work. The earlier decision
+defined a fixed destination set and six reminder proposals. The
+[social publication decision](0010-social-publication.md#ownership-and-destination-configuration)
+applies the same channel list to dispatch, with no publication outside it.
+
 On 2026-10-23, announcement filename validation was aligned with asset
 reconciliation. The organizer's `YYYY-MM-DD - Annonce` example describes one <!-- codespell:ignore annonce -->
 template, not a required global filename.
@@ -212,11 +228,11 @@ separates entity/property resolution from localized date formatting. The runtime
 injects the same locale-aware renderer into reconciliation and announcement
 validation; the Drive adapter does not interpret formatting patterns.
 
-| Original record                                                                                    | Retained decision or later refinement                                                                                                                                           |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [0020: Generated content and review](archive/0020-ai-generated-content-with-organizer-approval.md) | Established human/AI proposals, exact approval, requested editorial formats, and six pre-event reminders. Its dated examples and detailed templates remain historical evidence. |
-| [0025: Business ownership](archive/0025-draft-generation-by-business-owner.md)                     | Assigned briefs and policies to event, publication, and communication; retained journey coordination. Clarified event-copy naming on 2026-10-23.                                |
-| [0026: Generation gateway](archive/0026-generation-gateway-boundaries.md)                          | Established the generation adapter scope, neutral image result, domain-owned output requirements, and provider-only validation.                                                 |
+| Original record                                                                                    | Retained decision or later refinement                                                                                                                             |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [0020: Generated content and review](archive/0020-ai-generated-content-with-organizer-approval.md) | Established human/AI proposals, exact approval, editorial formats, and reminders for a fixed destination set, replaced by the 2026-10-27 channel-list refinement. |
+| [0025: Business ownership](archive/0025-draft-generation-by-business-owner.md)                     | Assigned briefs and policies to event, publication, and communication; retained journey coordination. Clarified event-copy naming on 2026-10-23.                  |
+| [0026: Generation gateway](archive/0026-generation-gateway-boundaries.md)                          | Established the generation adapter scope, neutral image result, domain-owned output requirements, and provider-only validation.                                   |
 
 The [format evidence](archive/0020-ai-generated-content-with-organizer-approval.md#expected-content-formats)
 records issue #209 and organizer examples inspected on 2026-10-22. Reminder

@@ -33,6 +33,8 @@ describe("single organizer checklist across event and attention runs", () => {
 		const f = fixture();
 		const comments = new GitHubEventCommentRepository(
 			{
+				diagnosticCommentSections:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 				diagnosticCommentPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 				createEventCommentMessages: (...args) =>
@@ -137,6 +139,8 @@ describe("single organizer checklist across event and attention runs", () => {
 		const f = fixture();
 		const comments = new GitHubEventCommentRepository(
 			{
+				diagnosticCommentSections:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentSections(),
 				diagnosticCommentPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
 				createEventCommentMessages: (...args) =>

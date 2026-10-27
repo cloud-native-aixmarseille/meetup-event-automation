@@ -101,7 +101,8 @@ consecutive events and conflicting dates.
 
 Meetup **organizers** manage preparation and approvals. The organizer Slack
 channel receives approval requests and actionable organizer reminders. Post public Slack
-event announcements manually and check their separate Communication tasks.
+event announcements through the configured [social publication workflow](../integrations/social-publication.md)
+or record their manual completion in the separate Communication tasks.
 See [channel separation](../integrations/communications.md#organizer-and-public-channels).
 
 Once the event is ready, automation requests approval for host and speaker
@@ -174,4 +175,4 @@ synchronization, selected proposals and consumer workflow triggers.
 Use [content generation and review](../integrations/content.md) for titles,
 descriptions, cover candidates, social announcements, and D-7/D0 reminders.
 Each revision needs content approval before use; email and initial Meetup
-publication keep their separate approvals. Social posting remains manual.
+publication keep their separate approvals. Social posting has its own [publication approval](../integrations/social-publication.md).

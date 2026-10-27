@@ -2,6 +2,26 @@ import type { MessageId } from "./i18n/catalog.js";
 
 export const STAGE_GUIDANCE = [
 	[
+		"communication.social.evaluation-failed",
+		["Communication", "comment.guidance.social.evaluation-failed"],
+	],
+	[
+		"communication.social.pending",
+		["Communication", "comment.guidance.social.pending"],
+	],
+	[
+		"communication.social.blocked",
+		["Communication", "comment.guidance.social.blocked"],
+	],
+	[
+		"communication.social.uncertain",
+		["Communication", "comment.guidance.social.uncertain"],
+	],
+	[
+		"communication.social.expired",
+		["Communication", "comment.guidance.social.expired"],
+	],
+	[
 		"publication.meetup.slides-source",
 		["Automated slide sharing", "comment.guidance.meetup.slides-source"],
 	],

@@ -270,6 +270,9 @@ describe("event lifecycle entry points", () => {
 		expect(publicFiles.sort()).toEqual([
 			"event-preparation-generate-drafts.yml",
 			"event-promotion-generate-post.yml",
+			"event-promotion-reconcile-active.yml",
+			"event-promotion-reconcile.yml",
+			"event-promotion-recover.yml",
 			"event-publication-reconcile.yml",
 			"event-reconcile-active.yml",
 			"event-reconcile.yml",

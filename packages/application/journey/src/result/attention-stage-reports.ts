@@ -14,4 +14,4 @@ export interface AttentionStageReport {
 }
 export type AttentionStageReports = Readonly<
 	Record<(typeof ATTENTION_STAGE_OWNERS)[number], AttentionStageReport>
->;
+> & { readonly social?: AttentionStageReport };

@@ -56,6 +56,8 @@ export class AttentionTaskSelection {
 		if (episode.condition.code === "delivery-recovery")
 			return "delivery-recovery";
 		if (episode.condition.code !== "approval-pending") return undefined;
+		if (episode.condition.resource.startsWith("social-publication:"))
+			return "social-approval";
 		if (episode.condition.resource.startsWith("community-publication:"))
 			return "community-approval";
 		return episode.condition.resource.startsWith("meetup-publication:")

@@ -117,7 +117,7 @@ export class SubmitPromotionalContent {
 		return this.policy.validDraft(plan, {
 			text: submission.text,
 			media:
-				plan.target.startsWith("linkedin:") && plan.facts.announcement
+				plan.destination?.provider === "linkedin" && plan.facts.announcement
 					? [plan.facts.announcement]
 					: [],
 		});
@@ -173,7 +173,7 @@ export class SubmitPromotionalContent {
 			text: submission.text,
 			media: image
 				? [image]
-				: plan.target.startsWith("linkedin:") && plan.facts.announcement
+				: plan.destination?.provider === "linkedin" && plan.facts.announcement
 					? [plan.facts.announcement]
 					: [],
 		};

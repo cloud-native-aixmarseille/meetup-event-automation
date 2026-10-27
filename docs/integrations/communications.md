@@ -17,15 +17,15 @@ use the same approval and delivery identities.
 An **organizer** manages the meetup, approves email batches, and resolves
 preparation issues. Approval requires repository write access or higher.
 
-| Audience           | Channel selection                                                        | Behavior                                                                       |
-| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id`     | The automation posts approval requests and grouped organizer attention.        |
-| Public communities | The destination channels for the issue's public Slack announcement tasks | Organizers post event announcements manually and check those tasks themselves. |
+| Audience           | Channel selection                                                    | Behavior                                                                     |
+| ------------------ | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id` | The automation posts approval requests and grouped organizer attention.      |
+| Public communities | The allowlist in `.github/meetup-social.json`                        | Separate social workflows publish reviewed posts after publication approval. |
 
 Use a dedicated organizer channel, separate from public event announcement
-channels. The `Slack - AixMarseille.Tech` and `Slack - OpenBaR` tasks
-are manual. They neither route organizer messages nor enable automatic
-public posting. The automation accepts no public announcement channel input.
+channels. Public announcement checkboxes do not route organizer messages or
+authorize sending. Configure public destinations and delivery through the
+[social publication guide](social-publication.md).
 
 ## Configure delivery
 
@@ -343,8 +343,9 @@ the updated message.
 Resolution updates the current message without posting an all-clear. Post-event
 notifications link to the shared follow-up comment and include thank-you approval;
 they do not send a separate thank-you approval alert or decision reaction.
-Introduction approval messages and their decision reactions remain separate. Public Slack
-announcement checkboxes remain manual and use separate destinations.
+Introduction approval messages and their decision reactions remain separate.
+Public Slack announcements use the configured social destinations and separate
+publication approvals.
 
 The reporting job runs even after failed dependencies. Skipped or cancelled stages
 are unknown and cannot resolve previous conditions. Expected organizer corrections keep CI successful; unexpected technical

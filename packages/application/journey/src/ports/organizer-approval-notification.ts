@@ -17,6 +17,7 @@ export type ApprovalNotificationFacts = {
 	| { readonly kind: "meetup-publication" }
 	| { readonly kind: "community-publication" }
 	| { readonly kind: "content-review"; readonly target: string }
+	| { readonly kind: "social-publication"; readonly target: string }
 );
 
 export type ApprovalNotificationRequest = ApprovalNotificationFacts & {

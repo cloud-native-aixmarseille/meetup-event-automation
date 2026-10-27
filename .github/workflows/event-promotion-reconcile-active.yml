@@ -1,0 +1,93 @@
+# Goal: Evaluate due social announcements and reminders for all active events.
+# Behavior: List open meetup issues and reconcile up to four issues concurrently;
+# the per-event workflow holds the shared event lock and evaluates timing.
+name: Event / Promotion / Reconcile active events
+on:
+  workflow_call:
+    inputs:
+      meetup-event-url-prefix:
+        description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+        required: true
+        type: string
+      community-event-url-prefixes:
+        description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+        required: true
+        type: string
+      asset-folder-url-prefix:
+        description: HTTPS prefix accepted for event asset folder URLs.
+        required: true
+        type: string
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: true
+        type: string
+      conference-hall-event:
+        description: Conference Hall CFP slug for live linked profiles and selected proposals.
+        required: true
+        type: string
+      slack-organizer-channel-id:
+        description: Internal organizer channel receiving content reviews.
+        required: true
+        type: string
+      github-app-client-id:
+        description: GitHub App client ID for the consumer repository.
+        required: true
+        type: string
+    secrets:
+      conference-hall-api-key:
+        description: Read-only Conference Hall event API key.
+        required: true
+      slack-token:
+        description: Slack bot token for organizer review requests and decision reactions.
+        required: true
+      social-credentials:
+        description: JSON tokens keyed by configured Slack workspace, plus LinkedIn access and Google media credentials when enabled.
+        required: true
+      github-app-private-key:
+        description: GitHub App private key.
+        required: true
+permissions: {}
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      issue-numbers: ${{ steps.list.outputs.issue-numbers }}
+    steps:
+      - name: Checkout consumer repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: List active events
+        id: list
+        uses: $/actions/event/list-active
+        with:
+          locale: ${{ inputs.locale }}
+          github-token: ${{ github.token }}
+  audit:
+    needs: list
+    if: needs.list.outputs.issue-numbers != '' && needs.list.outputs.issue-numbers != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        issue-number: ${{ fromJSON(needs.list.outputs.issue-numbers) }}
+    uses: $/.github/workflows/event-promotion-reconcile.yml
+    permissions:
+      contents: read
+    with:
+      meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+      community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+      asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+      locale: ${{ inputs.locale }}
+      github-app-client-id: ${{ inputs.github-app-client-id }}
+      slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+      conference-hall-event: ${{ inputs.conference-hall-event }}
+      issue-number: ${{ matrix.issue-number }}
+    secrets:
+      github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      social-credentials: ${{ secrets.social-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials

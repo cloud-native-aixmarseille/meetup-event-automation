@@ -1,0 +1,47 @@
+name: Reconcile social publication
+description: Publish exact approved social announcements and reminders to configured destinations.
+inputs:
+  meetup-event-url-prefix:
+    description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+    required: true
+  community-event-url-prefixes:
+    description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+    required: true
+  asset-folder-url-prefix:
+    description: HTTPS prefix accepted for event asset folder URLs.
+    required: true
+  locale:
+    description:
+      Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales
+      fall back to English.
+    required: true
+  github-token:
+    description: GitHub token with issue read and write permissions.
+    required: true
+  issue-number:
+    description: Meetup issue number.
+    required: true
+  conference-hall-event:
+    description: Conference Hall CFP slug for live linked profiles and selected proposals.
+    required: true
+  conference-hall-api-key:
+    description: Read-only Conference Hall event API key.
+    required: true
+  managed-comment-author:
+    description: GitHub App bot login owning content and approval comments.
+    required: true
+  social-credentials:
+    description: JSON credentials for configured Slack workspaces and optional LinkedIn access token with Google service account for announcement media.
+    required: true
+  slack-token:
+    description: Slack bot token for organizer review requests and decision reactions.
+    required: true
+  slack-organizer-channel-id:
+    description: Internal organizer channel receiving content reviews.
+    required: true
+outputs:
+  diagnostics:
+    description: Redacted social-publication diagnostics.
+runs:
+  using: node24
+  main: dist/index.js

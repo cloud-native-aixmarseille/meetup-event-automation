@@ -32,7 +32,7 @@ export class AttentionCommentRetention {
 		issueNumber: number,
 		commentId: number,
 		before: string,
-	): Promise<string> {
+	): Promise<{ readonly body: string; readonly retained: string }> {
 		const client = this.collaborators.createGithubAttentionClient(
 			this.api,
 			this.owner,
@@ -46,9 +46,12 @@ export class AttentionCommentRetention {
 			.createTrustedAttentionState(client, this.author)
 			.body(comment);
 		const offset = body.indexOf(ATTENTION_MARKER);
-		if (offset < 0) return "";
+		if (offset < 0) return { body, retained: "" };
 		this.collaborators.attentionRecord.read(body);
-		return body.slice(offset);
+		return {
+			body: body.slice(0, offset).trimEnd(),
+			retained: body.slice(offset),
+		};
 	}
 }
 export type AttentionCommentRetentionArguments =

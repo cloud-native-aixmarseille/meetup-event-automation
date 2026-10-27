@@ -34,7 +34,7 @@ inputs:
     description: Google service-account JSON for immutable public content media.
     required: true
   target:
-    description: "Draft target: linkedin:announcement/d7/d0."
+    description: "Draft target: configured LinkedIn destination key followed by :announcement, :d7, or :d0."
     required: true
   ai-provider:
     description: AI provider identifier (gemini).
