@@ -72,7 +72,7 @@ Generate one durable proposal without applying it.
     # This input is required.
     google-credentials: ""
 
-    # Draft target: linkedin:announcement/d7/d0.
+    # Draft target: configured LinkedIn destination key followed by :announcement, :d7, or :d0.
     # This input is required.
     target: ""
 
@@ -106,7 +106,7 @@ Generate one durable proposal without applying it.
 | **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 | **`managed-comment-author`**       | GitHub App bot login owning content and approval comments.                                                                         | **true**     | -           |
 | **`google-credentials`**           | Google service-account JSON for immutable public content media.                                                                    | **true**     | -           |
-| **`target`**                       | Draft target: linkedin:announcement/d7/d0.                                                                                         | **true**     | -           |
+| **`target`**                       | Draft target: configured LinkedIn destination key followed by :announcement, :d7, or :d0.                                          | **true**     | -           |
 | **`ai-provider`**                  | AI provider identifier (gemini).                                                                                                   | **true**     | -           |
 | **`ai-model`**                     | Supported structured-text model.                                                                                                   | **true**     | -           |
 | **`ai-api-key`**                   | API key for the selected AI provider.                                                                                              | **true**     | -           |
