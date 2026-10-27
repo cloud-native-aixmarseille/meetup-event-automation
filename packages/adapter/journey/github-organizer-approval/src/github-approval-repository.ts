@@ -4,8 +4,9 @@ import type { GithubApprovalClient } from "./github-approval-client.js";
 import type { StoredApprovalSchema } from "./stored-approval-schema.js";
 import type { TrustedApprovalState } from "./trusted-approval-state.js";
 
-/** Persist one trusted request per kind with snapshot-checked comment writes. */
+/** Persist trusted requests per independent approval scope with checked writes. */
 export interface GithubApprovalRepositoryCollaborators {
+	readonly approvalRequestPolicy: Pick<ApprovalRequestPolicy, "scope">;
 	readonly storedApprovalSchema: Pick<StoredApprovalSchema, "validate">;
 }
 
@@ -27,9 +28,8 @@ export class GithubApprovalRepository {
 			if (
 				states.some(
 					(state) =>
-						state.record.kind === record.kind &&
-						(record.kind !== "content-review" ||
-							state.record.content?.key === record.content.key),
+						this.collaborators.approvalRequestPolicy.scope(state.record) ===
+						this.collaborators.approvalRequestPolicy.scope(record),
 				)
 			)
 				throw new Error("Ambiguous approval state");
@@ -44,7 +44,7 @@ export class GithubApprovalRepository {
 			const key =
 				record.kind === "content-review"
 					? `content:${record.content.target}`
-					: record.kind;
+					: this.collaborators.approvalRequestPolicy.scope(record);
 			active.set(key, state);
 		}
 		return [...active.values()];
@@ -78,3 +78,4 @@ export type GithubApprovalRepositoryArguments =
 	]
 		? Args
 		: never;
+import type { ApprovalRequestPolicy } from "@meetup-automation/journey";

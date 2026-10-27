@@ -54,50 +54,41 @@ export class SocialPostTiming {
 			throw new Error("Ambiguous or nonexistent content local time");
 		return matches[0];
 	}
-	expired(plan: SocialPostSchedule, now: string): boolean {
+	expiresAt(plan: SocialPostSchedule): string {
 		const start = this.instant(
 			plan.facts.date,
 			plan.facts.startTime,
 			plan.facts.timeZone,
 		);
-		if (
-			!Number.isFinite(Date.parse(now)) ||
-			Date.parse(now) >= Date.parse(start)
-		)
-			return true;
-		if (!plan.plannedAt) return false;
+		if (!plan.plannedAt) return start;
 		const format = new Intl.DateTimeFormat("sv-SE", {
 			timeZone: plan.facts.timeZone,
 			year: "numeric",
 			month: "2-digit",
 			day: "2-digit",
 		});
+		const day = new Date(
+			`${format.format(new Date(plan.plannedAt))}T12:00:00Z`,
+		);
+		day.setUTCDate(day.getUTCDate() + 1);
+		const midnight = this.instant(
+			day.toISOString().slice(0, 10),
+			"00:00",
+			plan.facts.timeZone,
+		);
+		return Date.parse(midnight) < Date.parse(start) ? midnight : start;
+	}
+	expired(plan: SocialPostSchedule, now: string): boolean {
 		return (
-			format.format(new Date(now)) > format.format(new Date(plan.plannedAt))
+			!Number.isFinite(Date.parse(now)) ||
+			Date.parse(now) >= Date.parse(this.expiresAt(plan))
 		);
 	}
 
 	publicationEligible(plan: SocialPostSchedule, now: string): boolean {
-		const start = this.instant(
-			plan.facts.date,
-			plan.facts.startTime,
-			plan.facts.timeZone,
-		);
-		if (
-			!Number.isFinite(Date.parse(now)) ||
-			Date.parse(now) >= Date.parse(start)
-		)
-			return false;
-		if (!plan.plannedAt) return true;
-		const format = new Intl.DateTimeFormat("sv-SE", {
-			timeZone: plan.facts.timeZone,
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-		});
 		return (
-			Date.parse(now) >= Date.parse(plan.plannedAt) &&
-			format.format(new Date(now)) === format.format(new Date(plan.plannedAt))
+			!this.expired(plan, now) &&
+			(!plan.plannedAt || Date.parse(now) >= Date.parse(plan.plannedAt))
 		);
 	}
 }

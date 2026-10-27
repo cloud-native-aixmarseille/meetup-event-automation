@@ -9,6 +9,13 @@ export class ContentProposalTransition {
 		>,
 	) {}
 	validate(previous: ContentProposal, next: ContentProposal): void {
+		if (
+			previous.publicationIntent !== undefined &&
+			previous.publicationIntent !== next.publicationIntent
+		)
+			throw new Error(
+				"Social publication identity cannot be removed or replaced",
+			);
 		for (const key of [
 			"recoveryRequest",
 			"destinationBefore",

@@ -1,4 +1,8 @@
 export const messages = {
+	"action.social-approval-pending":
+		"Review the announcement and approve publication for this destination.",
+	"failure.social": "Public social publication failed.",
+	"task.social": "public social publication",
 	"action.community-approval-pending":
 		"Approve or reject OCGroups publication.",
 	"failure.communications": "Email preparation or delivery failed.",

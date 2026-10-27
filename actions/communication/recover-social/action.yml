@@ -1,0 +1,33 @@
+name: Recover social publication
+description: Request a verified organizer decision about an uncertain recorded social delivery.
+inputs:
+  github-token:
+    description: GitHub token with issue read and write permissions.
+    required: true
+  issue-number:
+    description: Meetup source issue number.
+    required: true
+  managed-comment-author:
+    description: GitHub App bot login owning content and delivery records.
+    required: true
+  intent-id:
+    description: Recorded social delivery intent SHA-256 identity.
+    required: true
+  outcome:
+    description: Verified outcome, published or not-published.
+    required: true
+  reference:
+    description: Provider post URL for published, or GitHub organizer evidence comment URL for not-published.
+    required: true
+  slack-token:
+    description: Slack bot token for organizer recovery review notifications.
+    required: true
+  slack-organizer-channel-id:
+    description: Internal organizer channel receiving recovery requests.
+    required: true
+  locale:
+    description: Language for the recovery report (en or fr).
+    required: true
+runs:
+  using: node24
+  main: dist/index.js

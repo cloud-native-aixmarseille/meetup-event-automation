@@ -4,6 +4,10 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"comment.social.target": {
+		destination: "community",
+		purpose: "announcement",
+	},
 	"comment.agenda.item": {
 		item: 1,
 		speaker: ", speaker 2",

@@ -135,3 +135,19 @@ export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referent
 export { ReconcileMeetupSlidesDelivery } from "./use-cases/reconcile-meetup-slides-delivery.js";
 
 export { EventPublicationResults } from "./use-cases/event-publication-results.js";
+
+export type { SocialPublicationApprovalDetails } from "./ports/organizer-approval.js";
+export { SocialPublicationComposition } from "./social-publication-composition.js";
+export {
+	RecoverSocialPublication,
+	type SocialRecoveryInput,
+} from "./communication/recover-social-publication.js";
+export { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
+export { SocialPublicationCompletion } from "./communication/social-publication-completion.js";
+export type {
+	SocialPublicationDependencies,
+	SocialPublicationResult,
+	SocialPublicationStatus,
+} from "./communication/social-publication-contracts.js";
+
+export { SocialPublicationApprovalRequest } from "./communication/social-publication-approval-request.js";

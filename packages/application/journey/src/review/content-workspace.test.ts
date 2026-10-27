@@ -1,3 +1,4 @@
+import type { SocialDestination } from "@meetup-automation/communication";
 import type { MeetupEvent } from "@meetup-automation/event";
 import { ContentMediaChangedError } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
@@ -6,13 +7,17 @@ import { publicationFixture } from "../../testing/meetup-publication.fixtures.js
 import {
 	contentFixture,
 	media,
+	socialDestinations,
 } from "../../testing/promotional-content.fixtures.js";
 import type { ContentTarget } from "../proposals/promotional-content.js";
 import { DiagnosticPolicy } from "../result/diagnostic-policy.js";
 import { ContentFactsProjection } from "./content-facts-projection.js";
 import { ContentWorkspace } from "./content-workspace.js";
 
-function fixture(overrides: Partial<MeetupEvent> = {}) {
+function fixture(
+	overrides: Partial<MeetupEvent> = {},
+	destinations: readonly SocialDestination[] = socialDestinations,
+) {
 	const f = publicationFixture(overrides);
 	const announcement = vi.fn(async () => media);
 	const workspace = new ContentWorkspace({
@@ -29,6 +34,7 @@ function fixture(overrides: Partial<MeetupEvent> = {}) {
 			guidance: "",
 		},
 		announcement,
+		destinations,
 	});
 	return { ...f, announcement, workspace };
 }
@@ -187,7 +193,7 @@ describe("content workspace", () => {
 		expect(result?.plan.facts.talks).toHaveLength(1);
 	});
 
-	it.each(["slack-aix:announcement", "linkedin:d7"] as const)(
+	it.each(["slack-engineering:announcement", "linkedin:d7"] as const)(
 		"blocks %s when the registration link is invalid",
 		async (target) => {
 			// Arrange
@@ -272,5 +278,42 @@ describe("content workspace", () => {
 
 		// Assert
 		await expect(result).rejects.toBe(error);
+	});
+	it.each([{ destinations: [] }, { destinations: socialDestinations }])(
+		"rejects an unlisted Slack channel without reading source or media",
+		async ({ destinations }) => {
+			// Arrange
+			const f = fixture({}, destinations);
+			// Act
+			const result = await f.workspace.read(
+				identity,
+				"unlisted:announcement",
+				"en",
+			);
+			// Assert
+			expect(result).toBeUndefined();
+			expect(f.deps.repository.find).not.toHaveBeenCalled();
+			expect(f.announcement).not.toHaveBeenCalled();
+		},
+	);
+	it("resolves provider formatting and media from configuration instead of the destination key", async () => {
+		// Arrange
+		const destination = {
+			key: "community-page",
+			provider: "linkedin" as const,
+			label: "Community",
+			organizationUrn: "urn:li:organization:123",
+		};
+		const f = fixture({}, [destination]);
+		// Act
+		const result = await f.workspace.read(
+			identity,
+			"community-page:announcement",
+			"en",
+		);
+		// Assert
+		expect(result?.plan.destination).toEqual(destination);
+		expect(result?.plan.facts.announcement).toEqual(media);
+		expect(f.announcement).toHaveBeenCalledExactlyOnceWith(f.currentEvent);
 	});
 });

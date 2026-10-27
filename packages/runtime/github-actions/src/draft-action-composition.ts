@@ -1,33 +1,19 @@
-import {
-	CONTENT_TARGETS,
-	DraftProposalComposition,
-} from "@meetup-automation/journey";
-import { PublicAssetUrl } from "@meetup-automation/publication";
-import { ContentConfiguration } from "./content-configuration.js";
+import { DraftProposalComposition } from "@meetup-automation/journey";
 import { CoverArtworkComposition } from "./cover-artwork-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { DraftMediaInputReader } from "./draft-media-input.js";
 import { DraftReviewComposition } from "./draft-review-composition.js";
-import { DraftSourceInput } from "./draft-source-input.js";
+import { DraftSourceComposition } from "./draft-source-composition.js";
 import { DraftTargetInput } from "./draft-target-input.js";
 import { EventCopyComposition } from "./event-copy-composition.js";
 import { GenerateDraftAction } from "./generate-draft-action.js";
 import { ReviewDraftsAction } from "./review-drafts-action.js";
+import { SocialDraftTargetInput } from "./social-draft-target-input.js";
 import { SocialPostComposition } from "./social-post-composition.js";
 
 export class DraftActionComposition {
-	input(): DraftSourceInput {
-		const runtime = new GithubActionsComposition();
-		return new DraftSourceInput(
-			runtime.runtimeInput(),
-			runtime.publicationUrlInput(),
-			runtime.conferenceHallInput(),
-			new ContentConfiguration(runtime.runtimeInput(), new PublicAssetUrl()),
-			runtime.eventPublicationConfiguration(),
-		);
-	}
 	eventCopy() {
-		const input = this.input();
+		const input = new DraftSourceComposition().create();
 		const target = new DraftTargetInput(["title", "description"]);
 		const composition = new EventCopyComposition();
 		return new GenerateDraftAction(
@@ -39,7 +25,7 @@ export class DraftActionComposition {
 		);
 	}
 	coverArtwork() {
-		const input = this.input();
+		const input = new DraftSourceComposition().create();
 		const media = new DraftMediaInputReader(input);
 		const composition = new CoverArtworkComposition();
 		return new GenerateDraftAction(
@@ -51,10 +37,8 @@ export class DraftActionComposition {
 		);
 	}
 	slackPost() {
-		const input = this.input();
-		const target = new DraftTargetInput(
-			CONTENT_TARGETS.filter((item) => item.startsWith("slack-")),
-		);
+		const input = new DraftSourceComposition().create();
+		const target = new SocialDraftTargetInput("slack");
 		const composition = new SocialPostComposition();
 		return new GenerateDraftAction(
 			input.read.bind(input),
@@ -65,11 +49,9 @@ export class DraftActionComposition {
 		);
 	}
 	linkedinPost() {
-		const input = this.input();
+		const input = new DraftSourceComposition().create();
 		const media = new DraftMediaInputReader(input);
-		const target = new DraftTargetInput(
-			CONTENT_TARGETS.filter((item) => item.startsWith("linkedin:")),
-		);
+		const target = new SocialDraftTargetInput("linkedin");
 		const composition = new SocialPostComposition();
 		return new GenerateDraftAction(
 			async (locale) => ({
@@ -83,7 +65,7 @@ export class DraftActionComposition {
 		);
 	}
 	review(): ReviewDraftsAction {
-		const input = this.input();
+		const input = new DraftSourceComposition().create();
 		const composition = new DraftReviewComposition();
 		return new ReviewDraftsAction(
 			input,

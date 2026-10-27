@@ -1,3 +1,4 @@
+import type { SocialDestination } from "@meetup-automation/communication";
 import { SocialPostTiming } from "@meetup-automation/communication";
 import { DraftProposalComposition } from "@meetup-automation/journey";
 import type {
@@ -13,6 +14,21 @@ import type {
 	ContentTarget,
 	PromotionalContentSnapshot,
 } from "../src/proposals/promotional-content.js";
+export const socialDestinations: readonly SocialDestination[] = [
+	{
+		key: "slack-engineering",
+		provider: "slack",
+		label: "Engineering",
+		workspaceId: "TEXAMPLE",
+		channelId: "CEXAMPLE",
+	},
+	{
+		key: "linkedin",
+		provider: "linkedin",
+		label: "Community Page",
+		organizationUrn: "urn:li:organization:123",
+	},
+];
 export const facts: ContentFacts = {
 	date: "2026-10-28",
 	startTime: "18:45",
@@ -46,7 +62,13 @@ export const media: ContentMedia = {
 export function contentFixture(target: ContentTarget = "title") {
 	const fingerprints = new DraftProposalComposition().fingerprints();
 	const plans = new ContentPlanFactory(fingerprints, new SocialPostTiming());
-	const plan = plans.create(target, "fr", facts, "09:00");
+	const plan = plans.create(
+		target,
+		"fr",
+		facts,
+		"09:00",
+		socialDestinations.find((item) => target.startsWith(`${item.key}:`)),
+	);
 	const factory = new ContentProposalFactory(
 		() => "00000000-0000-4000-8000-000000000001",
 		() => "2026-09-20T12:00:00Z",

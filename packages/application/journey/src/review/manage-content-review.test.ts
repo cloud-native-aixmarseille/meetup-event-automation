@@ -102,7 +102,7 @@ describe("content review coordination", () => {
 	it.each([
 		["title", "pending", "title"],
 		["description", "rejected", "description"],
-		["slack-aix:announcement", "stale", "assets"],
+		["slack-engineering:announcement", "stale", "assets"],
 		["cover", "iteration-requested", "assets"],
 	] as const)(
 		"reports %s review status %s without applying content",

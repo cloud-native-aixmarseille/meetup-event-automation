@@ -7,6 +7,13 @@ export class ApprovalRequestPolicy {
 	constructor(
 		private readonly fingerprints: Pick<ApprovalValueFingerprint, "digest">,
 	) {}
+	scope(request: OrganizerApprovalRequest): string {
+		if (request.kind === "content-review")
+			return `content:${request.content.key}`;
+		if (request.kind === "social-publication")
+			return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
+		return request.kind;
+	}
 	reviewPhase(facts: {
 		readonly recipientCount?: number;
 		readonly followUpActive?: boolean;
@@ -36,6 +43,7 @@ export class ApprovalRequestPolicy {
 		if (
 			request.kind === "meetup-publication" ||
 			request.kind === "community-publication" ||
+			request.kind === "social-publication" ||
 			request.kind === "content-review"
 		)
 			return;
@@ -93,6 +101,14 @@ export class ApprovalRequestPolicy {
 			return (
 				this.fingerprints.digest(previous.content) ===
 				this.fingerprints.digest(request.content)
+			);
+		if (
+			previous.kind === "social-publication" &&
+			request.kind === "social-publication"
+		)
+			return (
+				this.fingerprints.digest(previous.social) ===
+				this.fingerprints.digest(request.social)
 			);
 		if (
 			(previous.kind === "meetup-publication" ||

@@ -2,6 +2,46 @@ import { describe, expect, it } from "vitest";
 import { AttentionStageInput } from "./attention-stage-input.js";
 
 describe("workflow attention input decoding", () => {
+	it("accepts an independent social report and retains only allowlisted target fields", () => {
+		// Arrange
+		const encoded = JSON.stringify({
+			social: {
+				outcome: "success",
+				diagnostics: [
+					{
+						code: "communication.social.pending",
+						severity: "warning",
+						field: "social.community.announcement",
+						message: "private@example.test",
+					},
+					{
+						code: "communication.social.blocked",
+						severity: "warning",
+						field: "social.private@example.test.d7",
+						message: "private@example.test",
+					},
+				],
+			},
+		});
+
+		// Act
+		const result = new AttentionStageInput().parse(encoded);
+
+		// Assert
+		expect(result.social).toMatchObject({
+			outcome: "success",
+			reported: true,
+			diagnostics: [
+				{
+					code: "communication.social.pending",
+					field: "social.community.announcement",
+				},
+				{ code: "communication.social.blocked" },
+			],
+		});
+		expect(JSON.stringify(result)).not.toContain("private@example.test");
+		expect(result.event.outcome).toBe("unknown");
+	});
 	it.each([
 		null,
 		[],

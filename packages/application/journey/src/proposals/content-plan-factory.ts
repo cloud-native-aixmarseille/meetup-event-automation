@@ -1,4 +1,7 @@
-import type { SocialPostTiming } from "@meetup-automation/communication";
+import type {
+	SocialDestination,
+	SocialPostTiming,
+} from "@meetup-automation/communication";
 import type {
 	ContentFacts,
 	ContentLanguage,
@@ -20,9 +23,11 @@ export class ContentPlanFactory {
 		language: ContentLanguage,
 		facts: ContentFacts,
 		reminderTime: string,
+		destination?: SocialDestination,
 	): ContentPlan {
 		const plan = {
 			target,
+			...(destination ? { destination } : {}),
 			language,
 			facts,
 			plannedAt: this.timing.plannedAt(

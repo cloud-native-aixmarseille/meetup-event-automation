@@ -27,6 +27,7 @@ page for each topic below.
 - [OpenFeedback and Kutt](integrations/feedback.md)
 - [Email and Slack](integrations/communications.md)
 - [Content generation and review](integrations/content.md)
+- [LinkedIn and Slack publication](integrations/social-publication.md)
 - [Event publication to Meetup and OCGroups](integrations/event-publication.md)
 
 ## Workflow contracts
@@ -47,6 +48,8 @@ workflow generates adjacent readme references.
 | [assets/generate-cover](../actions/assets/generate-cover/action.yml)                               | Generate cover artwork candidates.                                    |
 | [communication/generate-slack-post](../actions/communication/generate-slack-post/action.yml)       | Generate Slack post proposals.                                        |
 | [communication/generate-linkedin-post](../actions/communication/generate-linkedin-post/action.yml) | Generate LinkedIn post proposals.                                     |
+| [communication/reconcile-social](../actions/communication/reconcile-social/action.yml)             | Publish approved social posts to configured destinations.             |
+| [communication/recover-social](../actions/communication/recover-social/action.yml)                 | Record an approved delivery recovery without publishing.              |
 | [organizer/review-drafts](../actions/organizer/review-drafts/action.yml)                           | Import, review and apply current drafts.                              |
 | [event/list-active](../actions/event/list-active/action.yml)                                       | Select open meetup issues for an audit.                               |
 | [event/reconcile](../actions/event/reconcile/action.yml)                                           | Validate and normalize one meetup issue.                              |
@@ -92,6 +95,7 @@ Use the current guides above for setup and supported operational behavior.
 | [Managed assets](adr/0007-assets.md)                                      | Template bindings, public fields, images, and presentation PDFs.                  |
 | [Draft generation and review](adr/0008-draft-generation.md)               | Event copy, cover artwork, social formats, reminders, and provider boundaries.    |
 | [Event publication destinations](adr/0009-community-event-publication.md) | Shared lifecycle, Meetup and OCGroups adapters, approval, and recovery.           |
+| [LinkedIn Page and Slack publication](adr/0010-social-publication.md)     | Social dispatch, publication approval, scheduling, and recovery.                  |
 
 ## Directory layout
 
@@ -109,6 +113,7 @@ docs/
 ├── integrations/
 │   ├── conference-hall.md
 │   ├── content.md
+│   ├── social-publication.md
 │   ├── assets.md
 │   ├── event-publication.md
 │   ├── feedback.md
@@ -130,7 +135,8 @@ docs/
     ├── 0006-feedback.md
     ├── 0007-assets.md
     ├── 0008-draft-generation.md
-    └── 0009-community-event-publication.md
+    ├── 0009-community-event-publication.md
+    └── 0010-social-publication.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

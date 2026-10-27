@@ -28345,6 +28345,13 @@ var ApprovalRequestPolicy = class {
     this.fingerprints = fingerprints;
   }
   fingerprints;
+  scope(request2) {
+    if (request2.kind === "content-review")
+      return `content:${request2.content.key}`;
+    if (request2.kind === "social-publication")
+      return `social:${request2.social.intentId}:${request2.social.recovery ? "recovery" : "publication"}`;
+    return request2.kind;
+  }
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -28362,7 +28369,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "content-review")
+    if (request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "social-publication" || request2.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -28382,6 +28389,8 @@ var ApprovalRequestPolicy = class {
       return false;
     if (previous.kind === "content-review" && request2.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
+    if (previous.kind === "social-publication" && request2.kind === "social-publication")
+      return this.fingerprints.digest(previous.social) === this.fingerprints.digest(request2.social);
     if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request2.kind === "meetup-publication" || request2.kind === "community-publication"))
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
     return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
@@ -28592,6 +28601,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("social-publication:"))
+      return "social-approval";
     if (episode.condition.resource.startsWith("community-publication:"))
       return "community-approval";
     return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
@@ -28696,13 +28707,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -32700,7 +32711,7 @@ var AttentionStageEvaluation = class {
   collaborators;
   evaluate(input) {
     const eventDiagnostics = input.event.diagnostics;
-    return ATTENTION_STAGE_OWNERS.map((owner) => {
+    return this.owners(input).map((owner) => {
       const { outcome, diagnostics } = input[owner];
       const blocked = diagnostics.some(
         (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) && !this.eventPrerequisite(item.code, owner, eventDiagnostics)
@@ -32718,8 +32729,8 @@ var AttentionStageEvaluation = class {
   }
   diagnostics(input) {
     const diagnostics = /* @__PURE__ */ new Map();
-    for (const owner of ATTENTION_STAGE_OWNERS)
-      for (const item of input[owner].diagnostics)
+    for (const owner of this.owners(input))
+      for (const item of input[owner]?.diagnostics ?? [])
         diagnostics.set(
           `${item.code}:${item.field ?? ""}:${item.severity}`,
           item
@@ -32732,18 +32743,30 @@ var AttentionStageEvaluation = class {
     );
   }
   complete(input) {
-    return ATTENTION_STAGE_OWNERS.every((owner) => {
-      const stage = input[owner];
-      return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
-        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
-      );
-    });
+    return ATTENTION_STAGE_OWNERS.every(
+      (owner) => this.stageComplete(input[owner])
+    );
+  }
+  socialComplete(input) {
+    return Boolean(input.social && this.stageComplete(input.social));
+  }
+  stageComplete(stage) {
+    return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
+      (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
+    );
+  }
+  owners(input) {
+    return input.social ? [...ATTENTION_STAGE_OWNERS, "social"] : ATTENTION_STAGE_OWNERS;
   }
   organizerPrerequisite(item) {
     if (item.code === "event.concurrently-modified") return true;
     return this.collaborators.diagnosticPolicy.classify(item) === "organizer" && ![
       "communication.approval-pending",
-      "communication.approval-rejected"
+      "communication.approval-rejected",
+      "communication.social.pending",
+      "communication.social.blocked",
+      "communication.social.uncertain",
+      "communication.social.expired"
     ].includes(item.code);
   }
   eventPrerequisite(code, owner, eventDiagnostics) {
@@ -32758,6 +32781,10 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "communication.social.pending",
+  "communication.social.blocked",
+  "communication.social.uncertain",
+  "communication.social.expired",
   "publication.meetup.slides-pdf-pending",
   "publication.meetup.slides-delivery-recovery",
   "publication.meetup.slides-link",
@@ -34375,20 +34402,26 @@ var ReconcileOrganizerFeedback = class {
   comments;
   meetupLabel;
   async execute(identity, stageResults) {
-    const diagnostics = this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
-    if (!this.collaborators.attentionStageEvaluation.complete(stageResults))
-      return { updated: false };
+    const baseComplete = this.collaborators.attentionStageEvaluation.complete(stageResults);
+    const socialComplete = this.collaborators.attentionStageEvaluation.socialComplete(stageResults);
+    if (!baseComplete && !socialComplete) return { updated: false };
     const source = await this.events.find(identity);
     if (!source) throw new Error("Organizer feedback issue is unavailable");
     if (!source.labels.includes(this.meetupLabel)) return { updated: false };
-    await this.comments.reconcileDiagnostics(
-      identity,
-      diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
-        ...item,
-        category: item.severity === "error" ? "invalid" : "incomplete"
-      }))
-    );
+    if (baseComplete)
+      await this.reconcile(identity, { ...stageResults, social: void 0 });
+    if (socialComplete) await this.reconcile(identity, stageResults, "social");
     return { updated: true };
+  }
+  async reconcile(identity, stageResults, scope) {
+    const diagnostics = scope === "social" ? stageResults.social?.diagnostics ?? [] : this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
+    const actionable = diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
+      ...item,
+      category: item.severity === "error" ? "invalid" : "incomplete"
+    }));
+    if (scope)
+      await this.comments.reconcileDiagnostics(identity, actionable, scope);
+    else await this.comments.reconcileDiagnostics(identity, actionable);
   }
 };
 
@@ -34696,7 +34729,8 @@ var AttentionStageInput = class {
       assets: reports[1][1],
       feedback: reports[2][1],
       communications: reports[3][1],
-      content: reports[4][1]
+      content: reports[4][1],
+      ...input.social === void 0 ? {} : { social: this.group(input.social) }
     };
   }
   group(value) {
@@ -34754,7 +34788,7 @@ var AttentionStageInput = class {
   }
   safeField(field) {
     if (typeof field !== "string" || field.length > 160) return false;
-    return ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
+    return /^social\.[a-z0-9][a-z0-9-]{0,63}\.(announcement|d7|d0)$/.test(field) || ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
       field
     );
   }
@@ -38924,6 +38958,11 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.communication.recover-social": "Recover social publication",
+  "report.social.recovery": "social_recovery={status}",
+  "action.communication.reconcile-social": "Reconcile social publication",
+  "report.social.empty": "social_publications=0",
+  "report.social.result": "social_target={target} status={status}",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
@@ -39073,6 +39112,11 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.communication.recover-social": "R\xE9tablir une publication sociale",
+  "report.social.recovery": "reprise_sociale={status}",
+  "action.communication.reconcile-social": "R\xE9concilier les publications sociales",
+  "report.social.empty": "publications_sociales=0",
+  "report.social.result": "cible_sociale={target} statut={status}",
   "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",

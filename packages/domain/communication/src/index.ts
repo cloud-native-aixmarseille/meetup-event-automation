@@ -79,9 +79,29 @@ export type {
 export { PostEventPolicy } from "./post-event-policy.js";
 export type { ReconcileCommunicationsDependencies } from "./reconcile-communications.js";
 export { ReconcileCommunications } from "./reconcile-communications.js";
+export type {
+	LinkedInSocialDestination,
+	SlackSocialDestination,
+	SocialDestination,
+} from "./social/social-destination.js";
 export {
 	type SocialPostChannel,
 	SocialPostDraft,
 	type SocialPostMilestone,
 } from "./social/social-post-draft.js";
 export { SocialPostTiming } from "./social/social-post-timing.js";
+export { SocialRecoveryReference } from "./social/social-recovery-reference.js";
+export type {
+	SocialPostReceipt,
+	SocialPreparedMedia,
+	SocialDispatchResult,
+	SocialPostInput,
+	SocialPublicationGateway,
+	SocialImageInput,
+	SocialMediaResult,
+	SocialImageGateway,
+	SocialDeliveryRecovery,
+	SocialDeliveryAttempt,
+	SocialDeliveryRecord,
+	SocialDeliveryJournal,
+} from "./social/social-publication-ports.js";

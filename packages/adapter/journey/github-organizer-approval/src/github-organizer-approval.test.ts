@@ -1,3 +1,4 @@
+import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 import {
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
@@ -17,8 +18,58 @@ import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
+import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 
 describe("organizer approval requests", () => {
+	it("keeps destination publication and recovery approvals independent", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+		const first = socialPublicationRequest;
+		const second = {
+			...first,
+			revision: "e".repeat(64),
+			social: {
+				...first.social,
+				intentId: "event-announcement-channel-two",
+				destinationIdentity: "T123/C456",
+			},
+		};
+		const recovery = {
+			...first,
+			revision: "f".repeat(64),
+			social: {
+				...first.social,
+				recovery: {
+					outcome: "not-published" as const,
+					reference: "Verified provider history",
+				},
+			},
+		};
+
+		// Act
+		await approvals.request(first);
+		decision(f);
+		const accepted = await approvals.request(first);
+		await approvals.request(second);
+		await approvals.request(recovery);
+		const retained = await approvals.request(first);
+		const active = await f.repository.activeStates();
+
+		// Assert
+		expect(approvals).toBeInstanceOf(GithubOrganizerApproval);
+		expect(accepted.status).toBe("approved");
+		expect(retained.status).toBe("approved");
+		expect(active).toHaveLength(3);
+		expect(f.create).toHaveBeenCalledTimes(3);
+	});
 	it("cannot finalize a decision until the GitHub write succeeds", async () => {
 		// Arrange
 		const f = fixture();
@@ -532,6 +583,9 @@ describe("organizer approval requests", () => {
 									locale === "en" ? "fr" : "en",
 								),
 							),
+						"social-publication": new SocialPublicationApprovalPresenter(
+							new GithubOrganizerApprovalComposition().approvalMessages("en"),
+						),
 						"content-review":
 							new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 								new GithubOrganizerApprovalComposition().approvalMessages("en"),

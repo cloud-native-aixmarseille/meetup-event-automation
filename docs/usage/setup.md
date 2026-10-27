@@ -82,7 +82,8 @@ Drive and Slack settings:
 
 Set `SLACK_ORGANIZER_CHANNEL_ID` to the channel used by meetup organizers for
 approvals and preparation reminders. Keep public event announcement destinations
-separate; their issue checklist tasks remain manual. See
+separate; configure their allowlist and publication workflows through the
+[social publication guide](../integrations/social-publication.md). See
 [Slack audiences](../integrations/communications.md#organizer-and-public-channels).
 
 Prepare [Conference Hall](../integrations/conference-hall.md),

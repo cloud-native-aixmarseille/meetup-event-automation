@@ -4,6 +4,11 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"report.social.recovery": { status: "pending" },
+	"report.social.result": {
+		target: "engineering:announcement",
+		status: "published",
+	},
 	"report.publication.review": {
 		provider: "ocgroups",
 		url: "https://www.meetup.com/example/events/12345/",

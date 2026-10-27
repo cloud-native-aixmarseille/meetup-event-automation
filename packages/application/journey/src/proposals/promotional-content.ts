@@ -1,19 +1,13 @@
+import type {
+	SocialDestination,
+	SocialPostMilestone,
+} from "@meetup-automation/communication";
 import type { ContentMedia } from "@meetup-automation/publication";
-export const CONTENT_TARGETS = [
-	"title",
-	"description",
-	"cover",
-	"slack-aix:announcement",
-	"slack-openbar:announcement",
-	"linkedin:announcement",
-	"slack-aix:d7",
-	"slack-openbar:d7",
-	"linkedin:d7",
-	"slack-aix:d0",
-	"slack-openbar:d0",
-	"linkedin:d0",
-] as const;
-export type ContentTarget = (typeof CONTENT_TARGETS)[number];
+export type ContentTarget =
+	| "title"
+	| "description"
+	| "cover"
+	| `${string}:${SocialPostMilestone}`;
 export type ContentLanguage = "en" | "fr";
 export interface ContentFacts {
 	readonly date: string;
@@ -35,6 +29,7 @@ export interface ContentFacts {
 }
 export interface ContentPlan {
 	readonly target: ContentTarget;
+	readonly destination?: SocialDestination;
 	readonly language: ContentLanguage;
 	readonly facts: ContentFacts;
 	readonly plannedAt: string | null;
@@ -65,6 +60,7 @@ export interface ContentRecoveryRequest {
 	readonly guidance: string;
 }
 export interface ContentProposal {
+	readonly publicationIntent?: string;
 	readonly recoveryRequest?: ContentRecoveryRequest;
 	readonly version: 1;
 	readonly promptVersion: "1";

@@ -1,4 +1,15 @@
 export const FR_MESSAGES = {
+	"approval.social.after-approval": "après approbation",
+	"approval.social.details":
+		"### Confirmation des organisateurs : publication sur les réseaux\n\n{target} · {destination}\n\nDestination : {identity}\n\nPublication : {plannedAt} ; expiration le {expiresAt}.\n\nVérifiez le texte exact, le lien d'inscription et les médias ci-dessous.",
+	"approval.social.request":
+		"Organisateurs avec accès en écriture : cochez un seul choix. L'approbation autorise ce message exact vers cette destination dans la période indiquée. Toute modification nécessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+	"approval.social.evidence":
+		"Preuve de récupération : {reference}\n\nRésultat confirmé : {outcome, select, published {le message a été publié} not_published {le message n'a pas été publié} other {inconnu}}.",
+	"approval.social.recovery":
+		"Vérifiez la preuve du fournisseur ci-dessus avant de décider.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identité distante} not_published {Confirmer l'absence de publication et autoriser un nouvel essai après vérification de l'approbation actuelle} other {Confirmer la récupération}}\n- [{rejectMark}] Refuser la récupération et maintenir le blocage",
+	"approval.social.final":
+		"{status, select, approved {✅ **Décision de publication approuvée**} rejected {❌ **Décision de publication refusée**} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\nLe registre de livraison suit séparément l'acceptation du fournisseur. Un message publié n'est jamais renvoyé.",
 	"approval.community.details":
 		"### Confirmation organisateur : publier l'événement CNCF\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Vérifier le brouillon OCGroups]({url}). La publication peut envoyer les notifications OCGroups aux membres du groupe et aux speakers.",
 	"approval.community.request":

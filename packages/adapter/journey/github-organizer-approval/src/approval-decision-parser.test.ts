@@ -1,3 +1,4 @@
+import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 import {
 	ApprovalRequestPolicy,
 	DraftProposalComposition,
@@ -12,6 +13,7 @@ import {
 	request,
 } from "../testing/approval.fixtures.js";
 import { contentRequest, coverRequest } from "../testing/content.fixtures.js";
+import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 import { ApprovalDecisionParser } from "./approval-decision-parser.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
@@ -19,6 +21,35 @@ import { GithubOrganizerApprovalComposition } from "./dependency-composition.js"
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 
 describe("approval decision parsing", () => {
+	it.each(["en", "fr"])(
+		"verifies exact social publication checkbox decisions in %s",
+		(locale) => {
+			// Arrange
+			const composition = new GithubOrganizerApprovalComposition();
+			const record = createStoredApproval(socialPublicationRequest);
+			const presenter = composition.approvalPresenter(
+				composition.approvalMessages(locale),
+			);
+			const parser = new ApprovalDecisionParser(
+				new ApprovalRequestPolicy(
+					new DraftProposalComposition().fingerprints(),
+				),
+				composition.approvalPresenterFactory().supportedLocales(),
+			);
+			const body = presenter.issue(record, { status: "approved" });
+
+			// Act
+			const result = parser.parse(record, body);
+			const changed = parser.parse(
+				record,
+				body.replaceAll("T123/C123", "T123/C999"),
+			);
+
+			// Assert
+			expect(result).toEqual({ status: "approved" });
+			expect(changed).toEqual({ status: "pending" });
+		},
+	);
 	it.each(
 		["en", "fr"].flatMap((locale) =>
 			[detailedRequest, publicationRequest, communityRequest].flatMap((input) =>
@@ -53,6 +84,9 @@ describe("approval decision parsing", () => {
 							locale,
 						),
 					),
+				"social-publication": new SocialPublicationApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
+				),
 				"content-review":
 					new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 						new GithubOrganizerApprovalComposition().approvalMessages("en"),
@@ -113,6 +147,9 @@ describe("approval decision parsing", () => {
 							"en",
 						),
 					),
+				"social-publication": new SocialPublicationApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
+				),
 				"content-review":
 					new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 						new GithubOrganizerApprovalComposition().approvalMessages("en"),
@@ -179,6 +216,9 @@ describe("approval decision parsing", () => {
 								"en",
 							),
 						),
+					"social-publication": new SocialPublicationApprovalPresenter(
+						new GithubOrganizerApprovalComposition().approvalMessages("en"),
+					),
 					"content-review":
 						new GithubOrganizerApprovalComposition().contentApprovalPresenter(
 							new GithubOrganizerApprovalComposition().approvalMessages("en"),

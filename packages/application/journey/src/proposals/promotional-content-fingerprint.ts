@@ -19,6 +19,7 @@ export class PromotionalContentFingerprint {
 		return this.digest({
 			version: 1,
 			target: plan.target,
+			...(plan.destination ? { destination: plan.destination } : {}),
 			language: plan.language,
 			plannedAt: plan.plannedAt,
 			facts: this.definitions.source(plan),

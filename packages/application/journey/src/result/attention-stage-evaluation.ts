@@ -1,6 +1,7 @@
 import type { AttentionStage } from "@meetup-automation/communication";
 import {
 	ATTENTION_STAGE_OWNERS,
+	type AttentionStageReport,
 	type AttentionStageReports,
 } from "./attention-stage-reports.js";
 import type { DiagnosticPolicy } from "./diagnostic-policy.js";
@@ -25,8 +26,8 @@ export class AttentionStageEvaluation {
 
 	evaluate(input: AttentionStageReports): readonly AttentionStage[] {
 		const eventDiagnostics = input.event.diagnostics;
-		return ATTENTION_STAGE_OWNERS.map((owner) => {
-			const { outcome, diagnostics } = input[owner];
+		return this.owners(input).map((owner) => {
+			const { outcome, diagnostics } = input[owner] as AttentionStageReport;
 			const blocked = diagnostics.some(
 				(item) =>
 					this.collaborators.diagnosticPolicy.isTechnicalFailure(item) &&
@@ -50,8 +51,8 @@ export class AttentionStageEvaluation {
 	}
 	diagnostics(input: AttentionStageReports): readonly PublicDiagnostic[] {
 		const diagnostics = new Map<string, PublicDiagnostic>();
-		for (const owner of ATTENTION_STAGE_OWNERS)
-			for (const item of input[owner].diagnostics)
+		for (const owner of this.owners(input))
+			for (const item of input[owner]?.diagnostics ?? [])
 				diagnostics.set(
 					`${item.code}:${item.field ?? ""}:${item.severity}`,
 					item,
@@ -66,18 +67,30 @@ export class AttentionStageEvaluation {
 		);
 	}
 	complete(input: AttentionStageReports): boolean {
-		return ATTENTION_STAGE_OWNERS.every((owner) => {
-			const stage = input[owner];
-			return (
-				stage.outcome === "success" &&
-				stage.reported &&
-				!stage.diagnostics.some(
-					(item) =>
-						this.collaborators.diagnosticPolicy.isTechnicalFailure(item) ||
-						item.code === "event.concurrently-modified",
-				)
-			);
-		});
+		return ATTENTION_STAGE_OWNERS.every((owner) =>
+			this.stageComplete(input[owner]),
+		);
+	}
+	socialComplete(input: AttentionStageReports): boolean {
+		return Boolean(input.social && this.stageComplete(input.social));
+	}
+	private stageComplete(stage: AttentionStageReport): boolean {
+		return (
+			stage.outcome === "success" &&
+			stage.reported &&
+			!stage.diagnostics.some(
+				(item) =>
+					this.collaborators.diagnosticPolicy.isTechnicalFailure(item) ||
+					item.code === "event.concurrently-modified",
+			)
+		);
+	}
+	private owners(
+		input: AttentionStageReports,
+	): readonly AttentionStage["owner"][] {
+		return input.social
+			? [...ATTENTION_STAGE_OWNERS, "social"]
+			: ATTENTION_STAGE_OWNERS;
 	}
 	private organizerPrerequisite(item: PublicDiagnostic): boolean {
 		if (item.code === "event.concurrently-modified") return true;
@@ -86,6 +99,10 @@ export class AttentionStageEvaluation {
 			![
 				"communication.approval-pending",
 				"communication.approval-rejected",
+				"communication.social.pending",
+				"communication.social.blocked",
+				"communication.social.uncertain",
+				"communication.social.expired",
 			].includes(item.code)
 		);
 	}

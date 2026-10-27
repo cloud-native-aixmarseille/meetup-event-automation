@@ -1,4 +1,9 @@
 export const EN_MESSAGES = {
+	"action.communication.recover-social": "Recover social publication",
+	"report.social.recovery": "social_recovery={status}",
+	"action.communication.reconcile-social": "Reconcile social publication",
+	"report.social.empty": "social_publications=0",
+	"report.social.result": "social_target={target} status={status}",
 	"diagnostic.publication.meetup.slides-source":
 		"Fix the issue errors before sending slides to Meetup attendees.",
 	"diagnostic.publication.meetup.slides-link":

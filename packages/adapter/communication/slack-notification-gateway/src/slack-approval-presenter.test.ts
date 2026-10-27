@@ -1,5 +1,6 @@
 import type { ApprovalNotificationRequest } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
+import { SlackSocialPublicationApprovalPresenter } from "./slack-social-publication-approval-presenter.js";
 import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 import { SlackCommunityApprovalPresenter } from "./slack-community-approval-presenter.js";
@@ -22,6 +23,11 @@ describe("Slack approval presentation", () => {
 		(locale, emailHeading, meetupHeading) => {
 			// Arrange
 			const presenter = new SlackApprovalPresenter({
+				"social-publication": new SlackSocialPublicationApprovalPresenter(
+					new SlackNotificationGatewayComposition().slackApprovalMessages(
+						locale,
+					),
+				),
 				"email-introduction": new SlackEmailApprovalPresenter(
 					new SlackNotificationGatewayComposition().slackApprovalMessages(
 						locale,

@@ -6,6 +6,7 @@ import type { ContentConfiguration } from "./content-configuration.js";
 import type { EventPublicationConfiguration } from "./event-publication-configuration.js";
 import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
+import type { SocialPublicationConfiguration } from "./social-publication-configuration.js";
 
 export class DraftSourceInput {
 	constructor(
@@ -19,6 +20,7 @@ export class DraftSourceInput {
 		private readonly conference: Pick<ConferenceHallInput, "read">,
 		private readonly configuration: Pick<ContentConfiguration, "load">,
 		private readonly publication: Pick<EventPublicationConfiguration, "load">,
+		private readonly social: Pick<SocialPublicationConfiguration, "load">,
 	) {}
 	async read(locale: Locale) {
 		return {
@@ -37,6 +39,7 @@ export class DraftSourceInput {
 				required: true,
 			}),
 			settings: await this.configuration.load(process.cwd()),
+			destinations: (await this.social.load(process.cwd())).destinations,
 			publication: (await this.publication.load(process.cwd())).schedule,
 		};
 	}

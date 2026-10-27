@@ -1,4 +1,15 @@
 export const STAGE_MESSAGES_FR = {
+	"comment.social.target": "Publication sociale ({destination}, {purpose})",
+	"comment.guidance.social.pending":
+		"Vérifiez l'annonce et approuvez sa publication pour cette destination.",
+	"comment.guidance.social.blocked":
+		"Vérifiez la revue, les informations du meetup et les accès à la destination avant de réessayer.",
+	"comment.guidance.social.uncertain":
+		"Vérifiez la publication distante et consignez la reprise avant de publier à nouveau.",
+	"comment.guidance.social.expired":
+		"Le créneau de publication approuvé a expiré. Vérifiez la date du meetup et préparez une nouvelle publication si nécessaire.",
+	"comment.guidance.social.evaluation-failed":
+		"La publication sociale n'a pas pu être évaluée. Demandez à un responsable de vérifier les accès aux sources et le registre des envois avant de réessayer.",
 	"comment.guidance.communication.concurrent-checklist":
 		"Le ticket a changé après les envois. Relancez pour actualiser les tâches terminées.",
 	"comment.guidance.feedback.conflict":

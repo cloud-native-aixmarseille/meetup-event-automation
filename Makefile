@@ -61,8 +61,9 @@ check-dist: ## Check that the dist folder is up to date
 	$(PNPM) check:dist
 
 ci: setup ## Execute all CI quality gates without repairing source or dependencies
+	$(MAKE) audit-fix
+	$(MAKE) lint-fix
 	$(MAKE) quality
-	$(call run_linter)
 
 # Biome runs through pnpm with the version in the lockfile.
 # Keep container linters isolated from host-installed dependencies, as in CI.

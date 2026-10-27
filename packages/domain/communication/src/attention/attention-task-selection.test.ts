@@ -80,6 +80,7 @@ describe("organizer attention task selection", () => {
 	it.each([
 		["approval-pending", "revision", "email-approval"],
 		["approval-pending", "meetup-publication:revision", "meetup-approval"],
+		["approval-pending", "social-publication:revision", "social-approval"],
 		[
 			"approval-pending",
 			"community-publication:revision",

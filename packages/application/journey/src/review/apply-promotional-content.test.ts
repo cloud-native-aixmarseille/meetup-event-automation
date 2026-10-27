@@ -11,7 +11,7 @@ import { ApplyPromotionalContent } from "./apply-promotional-content.js";
 describe("content application", () => {
 	it("rechecks the event-start cutoff after slow approval reads", async () => {
 		// Arrange
-		const f = contentFixture("slack-aix:d0");
+		const f = contentFixture("slack-engineering:d0");
 		const draft = {
 			text: `Reminder ${f.plan.facts.registrationUrl}`,
 			media: [],
@@ -111,7 +111,7 @@ describe("content application", () => {
 	);
 	it("does not expose a delayed reminder as scheduled or available", async () => {
 		// Arrange
-		const f = contentFixture("slack-aix:d7");
+		const f = contentFixture("slack-engineering:d7");
 		const draft = { text: "Reviewed reminder", media: [] };
 		const proposal = {
 			...f.proposal,

@@ -18,5 +18,8 @@ export function attentionReports(
 		feedback: { ...complete, ...overrides.feedback },
 		communications: { ...complete, ...overrides.communications },
 		content: { ...complete, ...overrides.content },
+		...(overrides.social
+			? { social: { ...complete, ...overrides.social } }
+			: {}),
 	};
 }

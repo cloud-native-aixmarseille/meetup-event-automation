@@ -58,7 +58,7 @@ Mailing token creation and communications skip when completed asset outputs are 
 ## Organizer feedback
 
 The `organizer/reconcile-checklist` action is the sole diagnostic checklist writer. It merges
-event, asset, feedback and communication reports through the journey's
+event, asset, feedback, communication and content reports through the journey's
 `ReconcileOrganizerFeedback`. `OrganizerFeedback` decodes runtime inputs and
 invokes that use case.
 It removes duplicates,
@@ -66,12 +66,18 @@ fixed items and derivative prerequisite messages. The comment presenter owns
 concise localized guidance; raw diagnostic messages never become organizer text.
 Slack reuses this checklist alongside verified approvals and recovery tasks.
 
-The checklist is replaced only after all four stages report completed evaluation.
+The base checklist is replaced only after all five stages report completed evaluation.
 Document/PDF operations form the assets stage, and event-feedback/shared-link
 operations form the feedback stage. Every member must report success before its
 group is complete. A missing, failed or concurrently invalidated stage preserves previous tasks;
 new diagnostic tasks wait for a complete run. Technical attention still reports
 the failed stage. This avoids treating an unevaluated task as resolved.
+Social publication has an optional independent stage in the same canonical
+comment. A complete social evaluation replaces only its marked section; base
+reconciliation preserves that section. Social reconciliation preserves the base
+checklist and trusted attention state. Failed, skipped, technically invalid or
+concurrently changed social evaluation retains its previous unresolved tasks.
+
 Successful consolidated persistence precedes retirement of an obsolete separate
 communication report. Existing bot-state verification, pending delivery
 reservations and post-event approval controls remain authoritative. Failed

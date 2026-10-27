@@ -57,7 +57,7 @@ describe("trusted attention metadata retention", () => {
 		const retained = await retention.load(42, 100, forged);
 		const retainedAttention = new GithubOrganizerAttentionComposition()
 			.attentionRecord()
-			.read(retained);
+			.read(retained.retained);
 
 		// Assert
 		expect(retainedAttention.post?.status).toBe("pending");

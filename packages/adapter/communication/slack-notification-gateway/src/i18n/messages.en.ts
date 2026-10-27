@@ -1,4 +1,6 @@
 export const EN_MESSAGES = {
+	"request.social-publication":
+		"Social publication · {date} · {target}\nReview the exact destination, text, media, and timing, then approve or reject publication in GitHub: {url}",
 	"request.community-publication":
 		"CNCF community event for {date}: review the OCGroups draft and approve publication, including native notifications, in GitHub: {url}",
 	"request.content":

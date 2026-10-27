@@ -1,0 +1,11 @@
+{
+	"name": "@meetup-automation/linkedin-social-gateway",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": "./src/index.ts",
+	"dependencies": {
+		"@meetup-automation/communication": "workspace:*",
+		"image-size": "^2.0.4"
+	}
+}

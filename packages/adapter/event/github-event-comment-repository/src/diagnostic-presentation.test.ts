@@ -15,6 +15,18 @@ describe("organizer diagnostic presentation", () => {
 	it.each([
 		[
 			"en",
+			"communication.social.evaluation-failed",
+			"Communication",
+			"check source access and delivery records",
+		],
+		[
+			"fr",
+			"communication.social.evaluation-failed",
+			"Communication",
+			"vérifier les accès aux sources et le registre", // codespell:ignore registre
+		],
+		[
+			"en",
 			"publication.assets.pdf.conflict",
 			"Event materials",
 			"shared public folder",

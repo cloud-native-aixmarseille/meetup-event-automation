@@ -198,8 +198,8 @@ Email tasks use completion checkboxes. See
 and duplicate protection.
 
 `SLACK_ORGANIZER_CHANNEL_ID` selects the dedicated meetup organizer channel for
-approval requests and actionable organizer reminders. Public Slack announcements remain
-manual checklist tasks and have no automation channel input. See
+approval requests and actionable organizer reminders. Public Slack destinations
+come from `.github/meetup-social.json`. See
 [channel selection](../integrations/communications.md#organizer-and-public-channels).
 
 ## Conference Hall
@@ -223,3 +223,12 @@ The [content guide](../integrations/content.md) owns `.github/meetup-content.jso
 text/image model capabilities, public media prerequisites, and recovery.
 Content generation uses the shared AI inputs. Review and manual submission do
 not require AI credentials.
+
+## Social publication
+
+The [social publication guide](../integrations/social-publication.md) owns the
+required `.github/meetup-social.json` allowlist, conditional `social-credentials`
+secret, scheduled and event-triggered callers, publication approval, and recovery.
+Draft generation and review also read this file. Use `{"version":1,"destinations":[]}`
+when no social destinations are enabled. Missing configuration never falls back
+to predefined channels.

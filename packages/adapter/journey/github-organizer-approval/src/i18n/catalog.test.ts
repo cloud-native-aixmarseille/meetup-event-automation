@@ -4,6 +4,29 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.social.after-approval": {},
+	"approval.social.details": {
+		target: "announcement",
+		destination: "Community",
+		identity: "T123/C123",
+		plannedAt: "2099-06-01T10:00:00Z",
+		expiresAt: "2099-06-08T17:00:00Z",
+	},
+	"approval.social.request": { approveMark: " ", rejectMark: " " },
+	"approval.social.evidence": {
+		outcome: "not_published",
+		reference: "Verified provider history",
+	},
+	"approval.social.recovery": {
+		approveMark: " ",
+		rejectMark: " ",
+		outcome: "not_published",
+	},
+	"approval.social.final": {
+		status: "approved",
+		actor: "organizer",
+		decidedAt: "2099-06-01T10:00:00Z",
+	},
 	"approval.community.details": {
 		title: "Example",
 		date: "2099-06-08",

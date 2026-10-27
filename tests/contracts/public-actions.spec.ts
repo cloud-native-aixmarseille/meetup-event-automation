@@ -5,6 +5,37 @@ import { type ActionManifest, readYaml, root, sortedKeys } from "./support.js";
 
 const actionContracts = [
 	{
+		directory: "actions/communication/reconcile-social",
+		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
+			"conference-hall-api-key",
+			"conference-hall-event",
+			"github-token",
+			"issue-number",
+			"managed-comment-author",
+			"social-credentials",
+			"slack-token",
+			"slack-organizer-channel-id",
+		],
+		outputs: ["diagnostics"],
+	},
+	{
+		directory: "actions/communication/recover-social",
+		inputs: [
+			"github-token",
+			"issue-number",
+			"managed-comment-author",
+			"intent-id",
+			"outcome",
+			"reference",
+			"slack-token",
+			"slack-organizer-channel-id",
+		],
+		outputs: [],
+	},
+	{
 		directory: "actions/publication/prepare-runtime",
 		inputs: [],
 		outputs: ["requires-challenge-solver", "runtime-directory"],

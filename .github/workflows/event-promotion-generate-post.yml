@@ -39,7 +39,7 @@ on:
         required: true
         type: string
       target:
-        description: "Draft target: slack-aix:announcement/d7/d0, slack-openbar:announcement/d7/d0, or linkedin:announcement/d7/d0. Select one destination and purpose."
+        description: "Draft target: configured destination key followed by :announcement, :d7, or :d0."
         required: true
         type: string
       ai-provider:
@@ -77,21 +77,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Validate requested promotion draft
-        id: selection
-        env:
-          REQUESTED_TARGET: ${{ inputs.target }}
-        run: |
-          node <<'NODE'
-          const { appendFileSync } = require('node:fs');
-          const target = process.env.REQUESTED_TARGET;
-          const destinations = ['slack-aix', 'slack-openbar', 'linkedin'];
-          const purposes = ['announcement', 'd7', 'd0'];
-          const allowed = destinations.flatMap(destination => purposes.map(purpose => destination + ':' + purpose));
-          if (!allowed.includes(target)) throw new Error('Unsupported promotion draft target');
-          const operation = target.startsWith('linkedin:') ? 'linkedin' : 'slack';
-          appendFileSync(process.env.GITHUB_OUTPUT, 'operations=' + JSON.stringify([operation]) + '\n');
-          NODE
       - name: Create narrowly scoped GitHub App token
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -107,6 +92,25 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Validate requested promotion draft
+        id: selection
+        env:
+          REQUESTED_TARGET: ${{ inputs.target }}
+        run: |
+          node <<'NODE'
+          const { appendFileSync, readFileSync } = require('node:fs');
+          const target = process.env.REQUESTED_TARGET;
+          if (!/^[a-z][a-z0-9-]{0,63}:(announcement|d7|d0)$/.test(target)) throw new Error('Unsupported promotion draft target');
+          let configuration;
+          try { configuration = JSON.parse(readFileSync('.github/meetup-social.json', 'utf8')); }
+          catch { throw new Error('Invalid social publication configuration'); }
+          const destinations = configuration.destinations;
+          if (configuration.version !== 1 || !Array.isArray(destinations)) throw new Error('Invalid social publication configuration');
+          const selected = destinations.filter(destination => destination.key === target.split(':')[0]);
+          if (selected.length !== 1 || !['slack', 'linkedin'].includes(selected[0].provider)) throw new Error('Unsupported promotion draft target');
+          const operation = selected[0].provider;
+          appendFileSync(process.env.GITHUB_OUTPUT, 'operations=' + JSON.stringify([operation]) + '\n');
+          NODE
       - name: Generate Slack post
         id: slack
         if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'slack') }}

@@ -34908,6 +34908,13 @@ var ApprovalRequestPolicy = class {
     this.fingerprints = fingerprints;
   }
   fingerprints;
+  scope(request) {
+    if (request.kind === "content-review")
+      return `content:${request.content.key}`;
+    if (request.kind === "social-publication")
+      return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
+    return request.kind;
+  }
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -34925,7 +34932,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request) {
     this.validateIdentity(request);
-    if (request.kind === "meetup-publication" || request.kind === "community-publication" || request.kind === "content-review")
+    if (request.kind === "meetup-publication" || request.kind === "community-publication" || request.kind === "social-publication" || request.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request.recipientCount) || request.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -34945,6 +34952,8 @@ var ApprovalRequestPolicy = class {
       return false;
     if (previous.kind === "content-review" && request.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request.content);
+    if (previous.kind === "social-publication" && request.kind === "social-publication")
+      return this.fingerprints.digest(previous.social) === this.fingerprints.digest(request.social);
     if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request.kind === "meetup-publication" || request.kind === "community-publication"))
       return previous.publication.url === request.publication.url && previous.publication.title === request.publication.title && previous.publication.startTime === request.publication.startTime && previous.publication.endTime === request.publication.endTime && previous.publication.timeZone === request.publication.timeZone && previous.publication.venue.name === request.publication.venue.name && previous.publication.venue.city === request.publication.venue.city;
     return previous.recipientCount === request.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request.details));
@@ -35155,6 +35164,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("social-publication:"))
+      return "social-approval";
     if (episode.condition.resource.startsWith("community-publication:"))
       return "community-approval";
     return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
@@ -35259,13 +35270,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -39278,7 +39289,7 @@ var AttentionStageEvaluation = class {
   collaborators;
   evaluate(input) {
     const eventDiagnostics = input.event.diagnostics;
-    return ATTENTION_STAGE_OWNERS.map((owner) => {
+    return this.owners(input).map((owner) => {
       const { outcome, diagnostics } = input[owner];
       const blocked = diagnostics.some(
         (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) && !this.eventPrerequisite(item.code, owner, eventDiagnostics)
@@ -39296,8 +39307,8 @@ var AttentionStageEvaluation = class {
   }
   diagnostics(input) {
     const diagnostics = /* @__PURE__ */ new Map();
-    for (const owner of ATTENTION_STAGE_OWNERS)
-      for (const item of input[owner].diagnostics)
+    for (const owner of this.owners(input))
+      for (const item of input[owner]?.diagnostics ?? [])
         diagnostics.set(
           `${item.code}:${item.field ?? ""}:${item.severity}`,
           item
@@ -39310,18 +39321,30 @@ var AttentionStageEvaluation = class {
     );
   }
   complete(input) {
-    return ATTENTION_STAGE_OWNERS.every((owner) => {
-      const stage = input[owner];
-      return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
-        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
-      );
-    });
+    return ATTENTION_STAGE_OWNERS.every(
+      (owner) => this.stageComplete(input[owner])
+    );
+  }
+  socialComplete(input) {
+    return Boolean(input.social && this.stageComplete(input.social));
+  }
+  stageComplete(stage) {
+    return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
+      (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
+    );
+  }
+  owners(input) {
+    return input.social ? [...ATTENTION_STAGE_OWNERS, "social"] : ATTENTION_STAGE_OWNERS;
   }
   organizerPrerequisite(item) {
     if (item.code === "event.concurrently-modified") return true;
     return this.collaborators.diagnosticPolicy.classify(item) === "organizer" && ![
       "communication.approval-pending",
-      "communication.approval-rejected"
+      "communication.approval-rejected",
+      "communication.social.pending",
+      "communication.social.blocked",
+      "communication.social.uncertain",
+      "communication.social.expired"
     ].includes(item.code);
   }
   eventPrerequisite(code, owner, eventDiagnostics) {
@@ -39336,6 +39359,10 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "communication.social.pending",
+  "communication.social.blocked",
+  "communication.social.uncertain",
+  "communication.social.expired",
   "publication.meetup.slides-pdf-pending",
   "publication.meetup.slides-delivery-recovery",
   "publication.meetup.slides-link",
@@ -40953,20 +40980,26 @@ var ReconcileOrganizerFeedback = class {
   comments;
   meetupLabel;
   async execute(identity, stageResults) {
-    const diagnostics = this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
-    if (!this.collaborators.attentionStageEvaluation.complete(stageResults))
-      return { updated: false };
+    const baseComplete = this.collaborators.attentionStageEvaluation.complete(stageResults);
+    const socialComplete = this.collaborators.attentionStageEvaluation.socialComplete(stageResults);
+    if (!baseComplete && !socialComplete) return { updated: false };
     const source = await this.events.find(identity);
     if (!source) throw new Error("Organizer feedback issue is unavailable");
     if (!source.labels.includes(this.meetupLabel)) return { updated: false };
-    await this.comments.reconcileDiagnostics(
-      identity,
-      diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
-        ...item,
-        category: item.severity === "error" ? "invalid" : "incomplete"
-      }))
-    );
+    if (baseComplete)
+      await this.reconcile(identity, { ...stageResults, social: void 0 });
+    if (socialComplete) await this.reconcile(identity, stageResults, "social");
     return { updated: true };
+  }
+  async reconcile(identity, stageResults, scope) {
+    const diagnostics = scope === "social" ? stageResults.social?.diagnostics ?? [] : this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
+    const actionable = diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
+      ...item,
+      category: item.severity === "error" ? "invalid" : "incomplete"
+    }));
+    if (scope)
+      await this.comments.reconcileDiagnostics(identity, actionable, scope);
+    else await this.comments.reconcileDiagnostics(identity, actionable);
   }
 };
 
@@ -41274,7 +41307,8 @@ var AttentionStageInput = class {
       assets: reports[1][1],
       feedback: reports[2][1],
       communications: reports[3][1],
-      content: reports[4][1]
+      content: reports[4][1],
+      ...input.social === void 0 ? {} : { social: this.group(input.social) }
     };
   }
   group(value) {
@@ -41332,7 +41366,7 @@ var AttentionStageInput = class {
   }
   safeField(field) {
     if (typeof field !== "string" || field.length > 160) return false;
-    return ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
+    return /^social\.[a-z0-9][a-z0-9-]{0,63}\.(announcement|d7|d0)$/.test(field) || ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
       field
     );
   }
@@ -45502,6 +45536,11 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.communication.recover-social": "Recover social publication",
+  "report.social.recovery": "social_recovery={status}",
+  "action.communication.reconcile-social": "Reconcile social publication",
+  "report.social.empty": "social_publications=0",
+  "report.social.result": "social_target={target} status={status}",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
@@ -45651,6 +45690,11 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.communication.recover-social": "R\xE9tablir une publication sociale",
+  "report.social.recovery": "reprise_sociale={status}",
+  "action.communication.reconcile-social": "R\xE9concilier les publications sociales",
+  "report.social.empty": "publications_sociales=0",
+  "report.social.result": "cible_sociale={target} statut={status}",
   "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
@@ -48484,8 +48528,71 @@ ${messages3.t("comment.resolved")}`;
   }
 };
 
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-sections.ts
+var SOCIAL_DIAGNOSTIC_START = "<!-- meetup-automation:social-diagnostics:v1 -->";
+var SOCIAL_DIAGNOSTIC_END = "<!-- /meetup-automation:social-diagnostics:v1 -->";
+var DiagnosticCommentSections = class {
+  merge(previous, rendered, scope) {
+    const current = this.read(previous);
+    if (!scope && !current.social) return rendered;
+    const base = this.tasks(scope === "social" ? current.base : rendered);
+    const social = this.tasks(
+      scope === "social" ? rendered : current.social
+    ).filter((line) => !base.includes(line));
+    if (!base.length && !social.length) return rendered;
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      ...base,
+      ...social.length ? [SOCIAL_DIAGNOSTIC_START, ...social, SOCIAL_DIAGNOSTIC_END] : []
+    ].join("\n");
+  }
+  hasSocial(body) {
+    return Boolean(this.read(body).social);
+  }
+  read(body) {
+    if (!body.includes("meetup-automation:social-diagnostics:"))
+      return { base: body, social: "" };
+    const start = body.indexOf(SOCIAL_DIAGNOSTIC_START);
+    const end = body.indexOf(SOCIAL_DIAGNOSTIC_END);
+    if (start < 0 || end < start || body.split(SOCIAL_DIAGNOSTIC_START).length !== 2 || body.split(SOCIAL_DIAGNOSTIC_END).length !== 2)
+      throw new Error("Invalid social diagnostic section");
+    return {
+      base: body.slice(0, start) + body.slice(end + SOCIAL_DIAGNOSTIC_END.length),
+      social: body.slice(start + SOCIAL_DIAGNOSTIC_START.length, end)
+    };
+  }
+  tasks(body) {
+    return [
+      ...new Set(
+        body.split("\n").filter((line) => /^- \[[ x]\] \*\*.+?\*\*: .+$/.test(line))
+      )
+    ];
+  }
+};
+
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
+  [
+    "communication.social.evaluation-failed",
+    ["Communication", "comment.guidance.social.evaluation-failed"]
+  ],
+  [
+    "communication.social.pending",
+    ["Communication", "comment.guidance.social.pending"]
+  ],
+  [
+    "communication.social.blocked",
+    ["Communication", "comment.guidance.social.blocked"]
+  ],
+  [
+    "communication.social.uncertain",
+    ["Communication", "comment.guidance.social.uncertain"]
+  ],
+  [
+    "communication.social.expired",
+    ["Communication", "comment.guidance.social.expired"]
+  ],
   [
     "publication.meetup.slides-source",
     ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
@@ -49080,6 +49187,17 @@ var DiagnosticPresenter = class {
   }
   /** Only known issue headings and numeric agenda positions can reach Markdown. */
   publicField(field, fallback, messages3) {
+    const social = field?.match(
+      /^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/
+    );
+    if (social)
+      return [
+        messages3.t("comment.social.target", {
+          destination: social[1],
+          purpose: social[2]
+        }),
+        "Communication"
+      ];
     const known = this.FIELD_ALIASES.get(field ?? "");
     if (known) return [known, known];
     const agenda = field?.match(
@@ -49159,7 +49277,7 @@ var GitHubEventCommentRepository = class {
   repo;
   repositoryName;
   authorLogin;
-  async reconcileDiagnostics(identity, diagnostics) {
+  async reconcileDiagnostics(identity, diagnostics, scope) {
     this.assertScope(identity.repository);
     const managedComments = await this.listManagedComments(
       identity.issueNumber
@@ -49171,22 +49289,14 @@ var GitHubEventCommentRepository = class {
       (comment) => !retired.includes(comment)
     );
     let changed = await this.retireComments(identity.issueNumber, duplicates);
-    let body = this.collaborators.diagnosticCommentPresenter.render(
+    const body = await this.body(
+      identity.issueNumber,
+      canonical,
       diagnostics,
-      this.messages
+      scope
     );
-    if (canonical && this.options.retainedContent) {
-      const retained = await this.options.retainedContent.load(
-        identity.issueNumber,
-        canonical.id,
-        canonical.body
-      );
-      if (retained) body += `
-
-${retained}`;
-    }
     if (!canonical) {
-      if (!retired.length && !diagnostics.some((item) => item.severity !== "info")) {
+      if ((!retired.length || scope === "social") && !diagnostics.some((item) => item.severity !== "info")) {
         return { changed };
       }
       await this.client.rest.issues.createComment({
@@ -49195,19 +49305,40 @@ ${retained}`;
         issue_number: identity.issueNumber,
         body
       });
-      await this.retireComments(identity.issueNumber, retired, true);
+      if (!scope)
+        await this.retireComments(identity.issueNumber, retired, true);
       return { changed: true };
     }
     if (canonical.body !== body) {
       await this.updateComment(canonical.id, body);
       changed = true;
     }
+    if (scope) return { changed };
     const retiredChanged = await this.retireComments(
       identity.issueNumber,
       retired,
       true
     );
     return { changed: changed || retiredChanged };
+  }
+  async body(issueNumber, canonical, diagnostics, scope) {
+    const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
+      issueNumber,
+      canonical.id,
+      canonical.body
+    ) : { body: canonical?.body ?? "", retained: "" };
+    const rendered = this.collaborators.diagnosticCommentPresenter.render(
+      diagnostics,
+      this.messages
+    );
+    const body = this.collaborators.diagnosticCommentSections.merge(
+      previous.body,
+      rendered,
+      scope
+    );
+    return previous.retained ? `${body}
+
+${previous.retained}` : body;
   }
   async listManagedComments(issueNumber) {
     const comments = [];
@@ -49246,10 +49377,13 @@ ${retained}`;
   }
   async retireComments(issueNumber, duplicates, deleteReports = false) {
     for (const duplicate of duplicates) {
-      if (this.options.retainedContent && await this.options.retainedContent.load(
+      const previous = this.options.retainedContent ? await this.options.retainedContent.load(
         issueNumber,
         duplicate.id,
         duplicate.body
+      ) : void 0;
+      if (previous?.retained || this.collaborators.diagnosticCommentSections.hasSocial(
+        previous?.body ?? duplicate.body
       ))
         throw new Error("Duplicate diagnostic comment contains managed state");
       if (deleteReports && this.client.rest.issues.deleteComment) {
@@ -49490,6 +49624,12 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.social.target": "Social publication ({destination}, {purpose})",
+  "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
+  "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
+  "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
+  "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
+  "comment.guidance.social.evaluation-failed": "Social publication could not be evaluated. Ask a maintainer to check source access and delivery records before retrying.",
   "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
   "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
@@ -49532,6 +49672,12 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.social.target": "Publication sociale ({destination}, {purpose})",
+  "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
+  "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
+  "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
+  "comment.guidance.social.evaluation-failed": "La publication sociale n'a pas pu \xEAtre \xE9valu\xE9e. Demandez \xE0 un responsable de v\xE9rifier les acc\xE8s aux sources et le registre des envois avant de r\xE9essayer.",
   "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
   "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
@@ -49587,6 +49733,9 @@ var EventCommentMessages = class extends MessageLocalizer {
 
 // packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
 var GithubEventCommentRepositoryComposition = class {
+  diagnosticCommentSections() {
+    return new DiagnosticCommentSections();
+  }
   diagnosticCommentPresenter() {
     return new DiagnosticCommentPresenter({
       organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
@@ -49605,6 +49754,7 @@ var GithubEventCommentRepositoryComposition = class {
   gitHubEventCommentRepository(...args) {
     return new GitHubEventCommentRepository(
       {
+        diagnosticCommentSections: this.diagnosticCommentSections(),
         diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
         createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
       },
@@ -51619,6 +51769,7 @@ var AttentionRecord = class {
         "assets",
         "feedback",
         "communications",
+        "social",
         "content",
         "approvals",
         "delivery"
@@ -51715,9 +51866,12 @@ var AttentionCommentRetention = class {
       throw new Error("Diagnostic comment changed before persistence");
     const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
     const offset = body.indexOf(ATTENTION_MARKER);
-    if (offset < 0) return "";
+    if (offset < 0) return { body, retained: "" };
     this.collaborators.attentionRecord.read(body);
-    return body.slice(offset);
+    return {
+      body: body.slice(0, offset).trimEnd(),
+      retained: body.slice(offset)
+    };
   }
 };
 
@@ -51758,6 +51912,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   action(description) {
     for (const locale of ["en", "fr"]) {
       const messages3 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages3.t("action.social-approval-pending"))
+        return "social-approval";
       if (description === messages3.t("action.approval-pending"))
         return "email-approval";
       if (description === messages3.t("action.community-approval-pending"))
@@ -51830,6 +51986,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
+      return this.messages.t("action.social-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
       return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
@@ -52198,6 +52356,9 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
+  "failure.social": "Public social publication failed.",
+  "task.social": "public social publication",
   "action.community-approval-pending": "Approve or reject OCGroups publication.",
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
@@ -52244,6 +52405,9 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "failure.social": "La publication sociale a \xE9chou\xE9.",
+  "task.social": "publication sociale",
   "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",

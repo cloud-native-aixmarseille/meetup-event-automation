@@ -3,7 +3,23 @@ export type OrganizerApprovalKind =
 	| "email-thanks"
 	| "meetup-publication"
 	| "community-publication"
+	| "social-publication"
 	| "content-review";
+
+export interface SocialPublicationApprovalDetails {
+	readonly intentId: string;
+	readonly target: string;
+	readonly destinationLabel: string;
+	readonly destinationIdentity: string;
+	readonly text: string;
+	readonly media: readonly import("@meetup-automation/publication").ContentMedia[];
+	readonly plannedAt: string;
+	readonly expiresAt: string;
+	readonly recovery?: Readonly<{
+		outcome: "published" | "not-published";
+		reference: string;
+	}>;
+}
 
 export interface ContentApprovalDetails {
 	readonly plannedAt?: string;
@@ -40,6 +56,7 @@ export type OrganizerApprovalRequest = {
 			readonly details?: OrganizerApprovalDetails;
 			readonly publication?: never;
 			readonly content?: never;
+			readonly social?: never;
 	  }
 	| {
 			readonly kind: "meetup-publication";
@@ -47,6 +64,7 @@ export type OrganizerApprovalRequest = {
 			readonly recipientCount?: never;
 			readonly details?: never;
 			readonly content?: never;
+			readonly social?: never;
 	  }
 	| {
 			readonly kind: "community-publication";
@@ -54,10 +72,20 @@ export type OrganizerApprovalRequest = {
 			readonly recipientCount?: never;
 			readonly details?: never;
 			readonly content?: never;
+			readonly social?: never;
 	  }
 	| {
 			readonly kind: "content-review";
 			readonly content: ContentApprovalDetails;
+			readonly publication?: never;
+			readonly recipientCount?: never;
+			readonly details?: never;
+			readonly social?: never;
+	  }
+	| {
+			readonly kind: "social-publication";
+			readonly social: SocialPublicationApprovalDetails;
+			readonly content?: never;
 			readonly publication?: never;
 			readonly recipientCount?: never;
 			readonly details?: never;

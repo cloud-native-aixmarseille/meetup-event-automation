@@ -4,6 +4,11 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"request.social-publication": {
+		date: "2099-06-08",
+		target: "announcement",
+		url: "https://github.com/example/events/issues/1",
+	},
 	"request.community-publication": {
 		date: "2099-06-08",
 		url: "https://github.com/example/meetups/issues/42#issuecomment-100",

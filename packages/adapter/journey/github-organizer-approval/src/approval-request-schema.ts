@@ -4,9 +4,14 @@ import type { CommunityApprovalDetailsSchema } from "./community-approval-detail
 import type { ContentApprovalSchema } from "./content-approval-schema.js";
 import type { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
 import type { MeetupApprovalDetailsSchema } from "./meetup-approval-details-schema.js";
+import type { SocialPublicationApprovalSchema } from "./social-publication-approval-schema.js";
 
 /** Narrow the request part of external metadata without trusting asserted types. */
 export interface ApprovalRequestSchemaCollaborators {
+	readonly socialPublicationApprovalSchema: Pick<
+		SocialPublicationApprovalSchema,
+		"validate"
+	>;
 	readonly communityApprovalDetailsSchema: Pick<
 		CommunityApprovalDetailsSchema,
 		"validate"
@@ -36,6 +41,12 @@ export class ApprovalRequestSchema {
 			typeof value.requestedAt !== "string"
 		)
 			throw new Error("Invalid approval request");
+		if (value.kind === "social-publication") {
+			this.social(value);
+			return;
+		}
+		if (value.social !== undefined)
+			throw new Error("Invalid social publication approval kind");
 		if (value.kind === "content-review") {
 			if (
 				value.publication !== undefined ||
@@ -62,6 +73,16 @@ export class ApprovalRequestSchema {
 		)
 			throw new Error("Invalid approval request");
 		this.collaborators.emailApprovalDetailsSchema.validate(value.details);
+	}
+	private social(value: Record<string, unknown>): void {
+		if (
+			value.content !== undefined ||
+			value.publication !== undefined ||
+			value.recipientCount !== undefined ||
+			value.details !== undefined
+		)
+			throw new Error("Invalid social publication approval fields");
+		this.collaborators.socialPublicationApprovalSchema.validate(value.social);
 	}
 	private publication(value: Record<string, unknown>): void {
 		if (value.recipientCount !== undefined || value.details !== undefined)

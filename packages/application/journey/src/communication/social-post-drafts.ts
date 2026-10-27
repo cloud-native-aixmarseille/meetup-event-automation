@@ -16,7 +16,7 @@ export class SocialPostDrafts implements ProposalDefinition {
 		return target.includes(":");
 	}
 	source(plan: Omit<ContentPlan, "sourceFingerprint">): unknown {
-		const { channel } = this.destination(plan.target);
+		const { channel } = this.destination(plan);
 		return {
 			...this.posts.source(plan.facts, channel),
 			...(channel === "linkedin"
@@ -27,13 +27,15 @@ export class SocialPostDrafts implements ProposalDefinition {
 	ready(plan: ContentPlan): boolean {
 		return (
 			this.posts.ready(plan.facts) &&
-			(this.destination(plan.target).channel !== "linkedin" ||
+			(this.destination(plan).channel !== "linkedin" ||
 				Boolean(plan.facts.announcement))
 		);
 	}
 	valid(plan: ContentPlan, draft: ContentDraft): boolean {
-		if (!this.posts.valid(plan.facts, draft.text)) return false;
-		if (this.destination(plan.target).channel !== "linkedin")
+		// Unbound stored draft history retains its original validation contract.
+		if (!this.posts.valid(plan.facts, draft.text, plan.destination?.provider))
+			return false;
+		if (this.destination(plan).channel !== "linkedin")
 			return draft.media.length === 0;
 		const expected = plan.facts.announcement;
 		const image = draft.media[0];
@@ -49,7 +51,7 @@ export class SocialPostDrafts implements ProposalDefinition {
 		);
 	}
 	brief(plan: ContentPlan, guidance: string) {
-		const { channel, milestone } = this.destination(plan.target);
+		const { channel, milestone } = this.destination(plan);
 		return this.posts.brief(
 			plan.facts,
 			channel,
@@ -59,23 +61,27 @@ export class SocialPostDrafts implements ProposalDefinition {
 		);
 	}
 	media(plan: ContentPlan): ContentDraft["media"] {
-		return this.destination(plan.target).channel === "linkedin" &&
+		return this.destination(plan).channel === "linkedin" &&
 			plan.facts.announcement
 			? [plan.facts.announcement]
 			: [];
 	}
-	private destination(target: ContentTarget): {
+	private destination(plan: Pick<ContentPlan, "target" | "destination">): {
 		channel: SocialPostChannel;
 		milestone: SocialPostMilestone;
 	} {
-		const [channel, milestone] = target.split(":");
+		const [key, milestone] = plan.target.split(":");
 		if (
-			(channel !== "slack-aix" &&
-				channel !== "slack-openbar" &&
-				channel !== "linkedin") ||
-			(milestone !== "announcement" && milestone !== "d7" && milestone !== "d0")
+			!/^[a-z][a-z0-9-]{0,63}$/.test(key) ||
+			(milestone !== "announcement" &&
+				milestone !== "d7" &&
+				milestone !== "d0") ||
+			(plan.destination && plan.destination.key !== key)
 		)
 			throw new Error("Unsupported social post destination");
+		// Stored proposals without a destination remain readable, but cannot authorize dispatch.
+		const channel =
+			plan.destination?.provider ?? (key === "linkedin" ? "linkedin" : "slack");
 		return { channel, milestone };
 	}
 }

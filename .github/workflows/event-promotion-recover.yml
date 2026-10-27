@@ -1,0 +1,74 @@
+# Goal: Resolve an uncertain social delivery without sending another post.
+# Behavior: Create or finalize a separate organizer recovery decision and preserve
+# the delivery history under the same event lock as publication.
+name: Event / Promotion / Recover
+on:
+  workflow_call:
+    inputs:
+      github-app-client-id:
+        description: GitHub App client ID for the consumer repository.
+        required: true
+        type: string
+      issue-number:
+        description: Meetup source issue number.
+        required: true
+        type: number
+      intent-id:
+        description: SHA-256 intent identity in the recorded social delivery journal.
+        required: true
+        type: string
+      outcome:
+        description: Verified outcome, published or not-published.
+        required: true
+        type: string
+      reference:
+        description: Provider post URL for published, or GitHub organizer evidence comment URL for not-published.
+        required: true
+        type: string
+      slack-organizer-channel-id:
+        description: Internal organizer channel receiving recovery approval requests.
+        required: true
+        type: string
+      locale:
+        description: Language for the recovery report (en or fr).
+        required: true
+        type: string
+    secrets:
+      github-app-private-key:
+        description: GitHub App private key.
+        required: true
+      slack-token:
+        description: Slack token for organizer recovery notifications and decision reactions.
+        required: true
+permissions: {}
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Create narrowly scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-issues: write
+      - name: Recover recorded social publication
+        uses: $/actions/communication/recover-social
+        with:
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          intent-id: ${{ inputs.intent-id }}
+          outcome: ${{ inputs.outcome }}
+          reference: ${{ inputs.reference }}
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+concurrency:
+  group: ${{ format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number) }}
+  cancel-in-progress: false

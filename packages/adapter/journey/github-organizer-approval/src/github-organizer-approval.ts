@@ -19,7 +19,7 @@ export interface GithubOrganizerApprovalCollaborators {
 	readonly approvalRequestSchema: Pick<ApprovalRequestSchema, "validate">;
 	readonly approvalRequestPolicy: Pick<
 		ApprovalRequestPolicy,
-		"validate" | "matches"
+		"validate" | "matches" | "scope"
 	>;
 	readonly approvalDetailsPreview: Pick<ApprovalDetailsPreview, "create">;
 }
@@ -41,9 +41,8 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 		this.collaborators.approvalRequestPolicy.validate(input);
 		const existing = (await this.repository.states()).find(
 			({ record }) =>
-				record.kind === input.kind &&
-				(input.kind !== "content-review" ||
-					record.content?.key === input.content.key),
+				this.collaborators.approvalRequestPolicy.scope(record) ===
+				this.collaborators.approvalRequestPolicy.scope(input),
 		);
 		if (
 			existing &&

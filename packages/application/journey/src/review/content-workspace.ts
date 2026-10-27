@@ -1,3 +1,4 @@
+import type { SocialDestination } from "@meetup-automation/communication";
 import type {
 	EventDocument,
 	EventIdentity,
@@ -39,6 +40,7 @@ export interface ContentWorkspaceDependencies {
 	>;
 	readonly publication: ScheduledEventSettings;
 	readonly settings: ContentSettings;
+	readonly destinations: readonly SocialDestination[];
 	readonly announcement: (event: MeetupEvent) => Promise<ContentMedia | null>;
 }
 export class ContentWorkspace {
@@ -48,6 +50,8 @@ export class ContentWorkspace {
 		target: ContentTarget,
 		language: ContentLanguage,
 	): Promise<ContentContext | undefined> {
+		const destination = this.destination(target);
+		if (target.includes(":") && !destination) return undefined;
 		const document = await this.dependencies.repository.find(identity);
 		if (!document) throw new Error("Content source issue is unavailable");
 		const result = await this.dependencies.manageEvent.execute({
@@ -85,9 +89,10 @@ export class ContentWorkspace {
 				!Number.isFinite(Date.parse(event.date)))
 		)
 			return undefined;
-		const announcement = target.startsWith("linkedin:")
-			? await this.announcement(event)
-			: null;
+		const announcement =
+			destination?.provider === "linkedin"
+				? await this.announcement(event)
+				: null;
 		const facts = this.dependencies.projection.create(
 			source,
 			this.dependencies.publication,
@@ -102,10 +107,17 @@ export class ContentWorkspace {
 				language,
 				facts,
 				this.dependencies.settings.reminderTime,
+				destination,
 			),
 			destination: this.dependencies.projection.destination(event, target),
 		};
 	}
+	private destination(target: ContentTarget): SocialDestination | undefined {
+		return this.dependencies.destinations.find((item) =>
+			target.startsWith(`${item.key}:`),
+		);
+	}
+
 	private async announcement(event: MeetupEvent): Promise<ContentMedia | null> {
 		try {
 			return await this.dependencies.announcement(event);
