@@ -223,11 +223,11 @@ describe("renderDiagnosticComment", () => {
 		// Assert
 		expect(body).toBe(`${EVENT_DIAGNOSTIC_COMMENT_MARKER}
 
-- [ ] **Event Title**: Add a title for the event.
-- [ ] **Event Description**: Add a short description of the event.
-- [ ] **Meetup Link**: Add the link to the Meetup event page.
-- [ ] **CNCF Link**: Add the link to the CNCF / OCGroups event page.
-- [ ] **Drive Link**: Add the link to the event's Google Drive folder.
+- [ ] **Event Title**: Generate or submit the event title, then approve it for automatic application.
+- [ ] **Event Description**: Generate or submit the event description, then approve it for automatic application.
+- [ ] **Meetup Link**: Run event publication synchronization to populate the verified Meetup link.
+- [ ] **CNCF Link**: Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.
+- [ ] **Drive Link**: Run asset reconciliation to create the event folder and populate its Google Drive link.
 - [ ] **Speaker confirmation**: Confirm the speakers, then add the \`speakers:confirmed\` label.`);
 		expect(actual).toBe(body);
 	});

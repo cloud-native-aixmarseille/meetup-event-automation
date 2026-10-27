@@ -6,6 +6,7 @@ import type {
 import type {
 	EventPublicationsResult,
 	PublicationDestination,
+	PublicationFollowUp,
 } from "./event-publication-contracts.js";
 import type { EventPublicationSource } from "./event-publication-source.js";
 
@@ -16,6 +17,7 @@ export class ReconcileEventPublications {
 			document: EventDocument,
 		) => EventPublicationSource,
 		private readonly destinations: readonly PublicationDestination[],
+		private readonly followUps: readonly PublicationFollowUp[],
 	) {
 		const keys = destinations.map(({ key }) =>
 			JSON.stringify([key.provider, key.target]),
@@ -43,6 +45,10 @@ export class ReconcileEventPublications {
 				: await destination.reconcile(source);
 			publications.push({ ...result, destination: destination.key });
 			if (!reason) await source.ensureCurrent();
+		}
+		for (const followUp of this.followUps) {
+			const result = await followUp.execute(identity);
+			publications.push({ ...result, destination: followUp.key });
 		}
 		return {
 			publications,

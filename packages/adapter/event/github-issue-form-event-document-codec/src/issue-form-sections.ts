@@ -2,7 +2,10 @@ import type {
 	EventDiagnostic,
 	EventDiagnostics,
 } from "@meetup-automation/event";
-import type { Section } from "./github-issue-form-event-document-codec-contracts.js";
+import {
+	HEADINGS,
+	type Section,
+} from "./github-issue-form-event-document-codec-contracts.js";
 import type { MarkdownLines } from "./markdown-lines.js";
 
 export interface IssueFormSectionsCollaborators {
@@ -77,8 +80,12 @@ export class IssueFormSections {
 	}
 
 	appendSection(sections: Map<string, Section[]>, section: Section): void {
-		const existing = sections.get(section.heading) ?? [];
-		sections.set(section.heading, [...existing, section]);
+		const heading =
+			section.heading === "Slides & Content"
+				? HEADINGS.slides
+				: section.heading;
+		const existing = sections.get(heading) ?? [];
+		sections.set(heading, [...existing, section]);
 	}
 
 	cleanResponse(value: string): string {

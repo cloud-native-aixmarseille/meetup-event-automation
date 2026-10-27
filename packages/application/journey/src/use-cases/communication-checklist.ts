@@ -29,7 +29,7 @@ const TASKS = {
 	},
 } as const;
 
-/** Map email tasks to delivery groups; a checked task records completed work. */
+/** Email groups are pending until completed; form checkboxes do not enable delivery. */
 export class CommunicationChecklist {
 	pendingRecipients(
 		event: MeetupEvent,
@@ -51,16 +51,12 @@ export class CommunicationChecklist {
 	status(
 		event: MeetupEvent,
 		kind: MailCommunicationKind,
-	): "missing" | "pending" | "completed" {
+	): "pending" | "completed" {
 		const task = TASKS[kind];
 		const matches = event.operationalChecklists[task.section].filter((item) =>
 			this.matches(item, task.names),
 		);
-		return matches.some((item) => item.completed)
-			? "completed"
-			: matches.length
-				? "pending"
-				: "missing";
+		return matches.some((item) => item.completed) ? "completed" : "pending";
 	}
 
 	complete(
@@ -81,13 +77,19 @@ export class CommunicationChecklist {
 				item.completed ||
 				this.accepted(item, "postEvent", completed, checklists),
 		}));
-		// A combined legacy task also includes manual report sharing. Record only its email portion.
-		if (
-			completed.has("speaker-thanks") &&
-			postEvent.some((item) => item.name === LEGACY_SPEAKER_THANKS) &&
-			!postEvent.some((item) => item.name === "Mail thanks speakers")
-		) {
-			postEvent.push({ name: "Mail thanks speakers", completed: true });
+		for (const kind of completed) {
+			const task = TASKS[kind];
+			const items =
+				task.section === "communication" ? communication : postEvent;
+			// Record email completion separately from a combined manual report-sharing task.
+			if (
+				!items.some(
+					(item) =>
+						item.name !== LEGACY_SPEAKER_THANKS &&
+						this.matches(item, task.names),
+				)
+			)
+				items.push({ name: task.names[0], completed: true });
 		}
 		return { ...checklists, communication, postEvent };
 	}

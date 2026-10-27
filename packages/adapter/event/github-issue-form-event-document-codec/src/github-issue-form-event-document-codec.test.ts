@@ -733,13 +733,43 @@ finished
 		expect(patch.body).toContain("### Event Date\n\n2026-11-05");
 		expect(patch.body).not.toContain("### Event Status");
 		expect(patch.body).toContain(
-			"### Slides & Content\n\n- [x] Basic Slides\n- [ ] Slides hoster",
+			"### Event materials\n\n- [x] Basic Slides\n- [ ] Slides hoster",
 		);
 		expect(patch.body).toContain("### Communication\n\n- [x] Announcement");
 		expect(patch.body).toContain("### Aperitif\n\nYes");
 		expect(patch.body).toContain("### Restaurant / Bar\n\nNo");
-		expect(patch.body).toContain("### Post event\n\n- [x] Mail thanks hoster");
+		expect(patch.body).toContain(
+			"### Automated thank-you emails\n\n- [x] Send host thank-you email",
+		);
 		expect(patch.body).not.toContain("### Drive Link");
+	});
+
+	it("preserves conflicting material sections and reports their duplicate meaning", () => {
+		// Arrange
+		const source = document({
+			body: `${LEGACY_BODY}\n### Event materials\n\n- [ ] Review the cover image\n`,
+		});
+		const codec =
+			new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec();
+
+		// Act
+		const result = codec.decode(source);
+		const patch = codec.createPatch(source, result.event);
+
+		// Assert
+		expect(result.diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "event.document.heading.duplicate",
+				field: "Event materials",
+				severity: "error",
+			}),
+		);
+		expect(patch.body).toContain(
+			"### Slides & Content\n\n- [x] Basic Slides\n- [ ] Slides hoster",
+		);
+		expect(patch.body).toContain(
+			"### Event materials\n\n- [ ] Review the cover image",
+		);
 	});
 
 	it("reports an invalid logistics intent without discarding other facts", () => {

@@ -80,6 +80,12 @@ identities automatically. Preserve explicit talk order and reject ambiguity.
 Selecting a host resolves the host-needed condition; attendance confirmation
 remains a separate organizer decision. See [referential ownership](0005-referentials.md).
 
+Keep automated email tasks out of the creation form. Missing completion means
+pending work; readiness, timing and explicit batch approval govern sending.
+Journey records accepted host and speaker groups, and the issue codec renders
+their completion in separate automated sections. Preserve existing completed
+items and the delivery ledger so removing a status never resends accepted mail.
+
 ## Alternatives and consequences
 
 Workflow-failure alerts miss ordinary unfinished work. Posting every diagnostic
@@ -93,6 +99,11 @@ The system cannot detect a schedule that never runs; external monitoring remains
 an operational responsibility.
 
 ## Decision history
+
+On 2026-10-27, email scheduling stopped requiring an unchecked form task.
+Previously, removing an email task disabled its scheduling. The form now contains
+organizer work only, while explicit approval still controls sending. Completed
+items remain valid records of automated or manually completed work.
 
 | Original record                                                                       | Retained decision or later refinement                                                                                                                                     |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

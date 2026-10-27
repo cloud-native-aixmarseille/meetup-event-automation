@@ -64,7 +64,10 @@ export function pdfDependencies(
 	const files = {
 		placeInPublicFolder: vi
 			.fn<PdfExportRepository["placeInPublicFolder"]>()
-			.mockResolvedValue(false),
+			.mockResolvedValue({
+				updated: false,
+				url: "https://drive.google.com/file/d/pdf/view",
+			}),
 		find: vi.fn<PdfExportRepository["find"]>(async () => file),
 		reserveId: vi
 			.fn<PdfExportRepository["reserveId"]>()

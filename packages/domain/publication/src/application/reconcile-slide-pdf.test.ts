@@ -15,7 +15,10 @@ describe("ReconcileSlidePdf", () => {
 	it("moves verified unchanged content without exporting again", async () => {
 		// Arrange
 		const subject = pdfSubject(confirmedPdf, pdfObservation);
-		subject.files.placeInPublicFolder.mockResolvedValue(true);
+		subject.files.placeInPublicFolder.mockResolvedValue({
+			updated: true,
+			url: "https://drive.google.com/file/d/pdf/view",
+		});
 
 		// Act
 		const result = await subject.useCase.execute(pdfInput);
@@ -79,7 +82,12 @@ describe("ReconcileSlidePdf", () => {
 		const result = await subject.useCase.execute(pdfInput);
 
 		// Assert
-		expect(result).toEqual({ status: "ready", updated: true, diagnostics: [] });
+		expect(result).toEqual({
+			status: "ready",
+			updated: true,
+			url: "https://drive.google.com/file/d/pdf/view",
+			diagnostics: [],
+		});
 		expect(subject.operations).toEqual(["pending", "upload", "confirmed"]);
 		expect(subject.getState()).toEqual(confirmedPdf);
 		expect(subject.files.write).toHaveBeenCalledWith(

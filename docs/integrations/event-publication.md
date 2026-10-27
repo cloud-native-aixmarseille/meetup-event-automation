@@ -162,7 +162,8 @@ callers must supply the same runtimes, permissions, and lock.
 
 The issue must be open, scheduled in the future, have confirmed host and
 speakers, approved event copy, a resolved agenda, and a configured public venue.
-Closed, cancelled, postponed, and held events are skipped. Incomplete or stale
+Closed, cancelled, postponed, and held events are skipped by event editing.
+Post-event attendee messaging follows the separate policy below. Incomplete or stale
 source data blocks synchronization before browser access.
 
 The workflow processes destinations in configuration order. Pending approval or
@@ -242,6 +243,47 @@ replacing the UUID. Never recover a draft through **CNCF Link**. If a supplied
 link resolves to a draft, automation records its identity and clears the link
 before approval. Use the dashboard's Events list if opening the editor URL shows
 only part of the editor.
+
+## Send slides to attendees
+
+With Meetup configured, publication reconciliation also sends the public
+presentation PDF through **Organizer tools > Contact attendees**. It selects
+**Members based on RSVP status > Members who went to this event**. Attendance
+must be recorded in Meetup; the automation does not change attendance or widen
+the audience to all members or everyone who RSVP'd.
+
+Keep the issue open. Delivery is eligible when the event is marked `held`, or
+when a scheduled event's local date has ended. Cancelled, postponed and unknown
+occurrences are skipped. [PDF export](assets.md#export-the-presentation-pdf)
+verifies public placement and adds **Slides PDF** to the issue. That issue edit
+triggers the publication caller above. No manual sharing checkbox is required.
+
+For `locale: fr`, the message is:
+
+- Subject: `Présentation du meetup`
+- Message: `Bonjour, voici le lien vers les slides du meetup: <public PDF URL>`
+
+The existing Meetup credentials and browser login are reused. Automation opens
+the group's `messages/send/?eventId=<event ID>` page, clears every other RSVP
+checkbox and selects **Members who went to this event**. It fills the subject and
+rich-text message, then waits for **Email has been successfully sent!** after
+submission. No attendees or email addresses are copied into GitHub.
+
+Before sending, automation reserves one delivery per issue and Meetup event in
+the communication ledger. Confirmed sending adds a completed task under
+**Automated slide sharing**. A rerun restores a missing checkmark from the accepted
+record without sending again. Updating the PDF, changing locale or unchecking the
+task does not resend an accepted message.
+
+An unconfirmed send keeps the record pending or uncertain and blocks automatic
+retries. Check Meetup before resolving the record using
+[delivery recovery](communications.md#diagnose-and-recover). Form failures
+before reservation can be retried. A previously checked sharing task is respected
+as work already done manually.
+
+Browser tests use synthetic controls matching a saved Meetup page and its
+confirmation. Selectors are also checked against that saved HTML. A live send
+has not been tested.
 
 ## Browser runtime and validation
 

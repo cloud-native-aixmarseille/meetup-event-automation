@@ -33,17 +33,19 @@ function fixture(configuredGroup = groupUrl) {
 		status: "draft",
 	});
 	const createLogin = vi.fn((...args: MeetupLoginPageArguments) =>
-		new MeetupEventGatewayComposition().meetupLoginPage(...args),
+		new MeetupEventGatewayComposition("en").meetupLoginPage(...args),
 	);
 	const captcha: CaptchaResolver = { inspect: vi.fn(), resolve: vi.fn() };
 	const createCaptchaResolver = vi.fn().mockReturnValue(captcha);
+	const send = vi.fn().mockResolvedValue(undefined);
 	const gateway = new MeetupEventGateway(
 		{
 			createMeetupEventEditor: (...args) =>
-				new MeetupEventGatewayComposition().meetupEventEditor(...args),
+				new MeetupEventGatewayComposition("en").meetupEventEditor(...args),
 			createMeetupEventPublisher: (...args) =>
-				new MeetupEventGatewayComposition().meetupEventPublisher(...args),
+				new MeetupEventGatewayComposition("en").meetupEventPublisher(...args),
 			createMeetupLoginPage: createLogin,
+			createAttendeeMessage: () => ({ send }),
 		},
 		{ launch } as unknown as BrowserType,
 		{ email: "organizer@example.test", password: " synthetic-password " },
@@ -56,6 +58,7 @@ function fixture(configuredGroup = groupUrl) {
 		launch,
 		login,
 		save,
+		send,
 		createLogin,
 		page,
 		captcha,
@@ -64,6 +67,24 @@ function fixture(configuredGroup = groupUrl) {
 }
 
 describe("Meetup event browser session", () => {
+	it("sends attendee slides through an authenticated session and closes it", async () => {
+		// Arrange
+		const { gateway, browser, login, send } = fixture();
+		const guard = vi.fn();
+		const pdfUrl = "https://drive.google.com/file/d/public-pdf/view";
+
+		// Act
+		await gateway.sendSlides(eventUrl, pdfUrl, guard);
+
+		// Assert
+		expect(login).toHaveBeenCalledOnce();
+		expect(send).toHaveBeenCalledWith(eventUrl, pdfUrl, guard);
+		expect(login.mock.invocationCallOrder[0]).toBeLessThan(
+			send.mock.invocationCallOrder[0],
+		);
+		expect(browser.close).toHaveBeenCalledOnce();
+	});
+
 	it.each([groupUrl, "https://events.example.test:8443/example-group/"])(
 		"uses the configured origin for authentication and disposes the browser: %s",
 		async (configuredGroup) => {

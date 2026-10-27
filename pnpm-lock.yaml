@@ -240,6 +240,9 @@ importers:
       '@meetup-automation/browser-authentication':
         specifier: workspace:*
         version: link:../../../application/browser-authentication
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../../presentation/localization
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../../domain/publication

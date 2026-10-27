@@ -30,7 +30,7 @@ export const EN_MESSAGES = {
 	"follow-up.instructions":
 		"Update manual tasks in the issue's Post event checklist.",
 	"follow-up.task":
-		"{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+		"{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
 	"follow-up.stopped": "Follow-up paused.",
 	"follow-up.waiting": "Thank-you emails are not ready for approval.",
 	"follow-up.emails-complete": "No thank-you emails pending.",

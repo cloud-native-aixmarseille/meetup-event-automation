@@ -69,8 +69,7 @@ export class AttentionEventFacts {
 				...tasks
 					.filter(
 						(task) =>
-							task.status === "pending" &&
-							!["publish-slides", "import-attendance"].includes(task.kind),
+							task.status === "pending" && task.kind !== "import-attendance",
 					)
 					.map((task) => task.kind),
 				...this.announcements(event.operationalChecklists.communication),
@@ -80,6 +79,7 @@ export class AttentionEventFacts {
 	}
 	private followUp(event: MeetupEvent): string[] {
 		return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
+			if (name === "Share slides to meetup") return [];
 			const completed =
 				index < 2
 					? this.collaborators.communicationChecklist.status(
@@ -99,12 +99,17 @@ export class AttentionEventFacts {
 		const tasks = [
 			["Slack - AixMarseille.Tech", "public-slack-local"],
 			["Slack - OpenBaR", "public-slack-community"],
+			["LinkedIn", "public-social"],
 			["Social networks", "public-social"],
 		] as const;
-		return tasks
-			.filter(([name]) =>
-				items.some((item) => item.name === name && !item.completed),
-			)
-			.map(([, resource]) => resource);
+		return [
+			...new Set(
+				tasks
+					.filter(([name]) =>
+						items.some((item) => item.name === name && !item.completed),
+					)
+					.map(([, resource]) => resource),
+			),
+		];
 	}
 }

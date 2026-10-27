@@ -93,6 +93,13 @@ export class IssueFormReader {
 		);
 		const event: MeetupEvent = {
 			...migrated.event,
+			slidesPdfUrl:
+				this.collaborators.issueFormSections.readSection(
+					sections,
+					HEADINGS.slidesPdf,
+					false,
+					diagnostics,
+				) || undefined,
 			...operations,
 			...this.collaborators.proposalSelectionCodec.read(
 				document.body,
@@ -130,10 +137,10 @@ export class IssueFormReader {
 				diagnostics,
 			);
 		return {
-			event_title: read(HEADINGS.eventTitle, true),
+			event_title: read(HEADINGS.eventTitle),
 			event_date: read(HEADINGS.date, true),
 			hoster: [read(HEADINGS.host, true)].filter(Boolean),
-			event_description: read(HEADINGS.description, true),
+			event_description: read(HEADINGS.description),
 			agenda: read(HEADINGS.agenda, !sections.has(HEADINGS.proposals)),
 			meetup_link: read(HEADINGS.meetupLink),
 			cncf_link: read(HEADINGS.communityLink),
@@ -149,18 +156,27 @@ export class IssueFormReader {
 		MeetupEvent,
 		"logistics" | "operationalChecklists" | "followUpComplete"
 	> {
-		const read = (heading: string) =>
+		const read = (headings: readonly string[]) =>
 			this.collaborators.issueFormChecklists.toOperationalChecklist(
-				this.collaborators.issueFormChecklists.readCheckboxes(
-					sections,
-					heading,
-					diagnostics,
+				headings.flatMap((heading) =>
+					this.collaborators.issueFormChecklists.readCheckboxes(
+						sections,
+						heading,
+						diagnostics,
+					),
 				),
 			);
-		const slidesAndContent = read(HEADINGS.slides);
-		const communication = read(HEADINGS.communication);
+		const slidesAndContent = read([HEADINGS.slides]);
+		const communication = read([
+			HEADINGS.communication,
+			HEADINGS.introductionEmails,
+		]);
 		const diagnosticOffset = diagnostics.length;
-		const postEvent = read(HEADINGS.postEvent);
+		const postEvent = read([
+			HEADINGS.postEvent,
+			HEADINGS.thankYouEmails,
+			HEADINGS.slidesDelivery,
+		]);
 		const followUpComplete =
 			diagnostics.length === diagnosticOffset &&
 			this.collaborators.meetupEventOperations.postEventChecklistIsComplete(

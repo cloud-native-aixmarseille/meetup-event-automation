@@ -106,6 +106,8 @@ export type MeetupEvent = Readonly<{
 	proposalReferences?: readonly string[];
 	proposalStatus?: "current" | "stale";
 	publicationLinks: EventPublicationLinks;
+	/** Public PDF prepared by asset automation for attendee delivery. */
+	slidesPdfUrl?: string;
 	occurrenceStatus?: OccurrenceStatus;
 	timeZone: string;
 	confirmations: EventConfirmations;

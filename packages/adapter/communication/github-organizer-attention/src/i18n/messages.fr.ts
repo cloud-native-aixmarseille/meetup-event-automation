@@ -27,9 +27,11 @@ export const messages = {
 
 	"task.approvals": "approbation des courriels",
 	"task.delivery": "reprise des envois",
-	"task.public-slack-local": "Publiez l'annonce sur le Slack local",
-	"task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
-	"task.public-social": "Publiez sur les réseaux sociaux",
+	"task.public-slack-local":
+		"Publiez l'annonce du meetup sur Slack - AixMarseille.Tech",
+	"task.public-slack-community":
+		"Publiez l'annonce du meetup sur Slack - OpenBaR",
+	"task.public-social": "Publiez l'annonce du meetup sur LinkedIn",
 
 	"attention.clear": "Aucune tâche en attente.",
 	"attention.pending":
@@ -41,7 +43,8 @@ export const messages = {
 	"task.thank-speakers": "Envoyez les remerciements aux intervenants",
 	"task.share-slides": "Partagez les présentations",
 	"task.import-attendance": "Importez les présences",
-	"task.share-social": "Partagez sur les réseaux sociaux",
+	"task.share-social":
+		"Publiez un récapitulatif du meetup avec des photos et des liens sur LinkedIn",
 	"task.event": "validation du meetup",
 	"task.assets": "ressources",
 	"task.feedback": "évaluations",

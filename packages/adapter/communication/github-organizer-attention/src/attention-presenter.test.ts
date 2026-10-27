@@ -112,7 +112,9 @@ describe("GitHub attention presentation", () => {
 		// Assert
 		expect(body.startsWith(prefix)).toBe(true);
 		expect(body.match(/Confirmez/g)).toHaveLength(1);
-		expect(body).toContain("Publiez l'annonce sur le Slack local");
+		expect(body).toContain(
+			"Publiez l'annonce du meetup sur Slack - AixMarseille.Tech",
+		);
 	});
 	it("shows pending notification recovery without claiming the event is clear", () => {
 		// Arrange

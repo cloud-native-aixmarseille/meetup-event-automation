@@ -38,9 +38,7 @@ export interface IssueFormWriterCollaborators {
 	>;
 	readonly issueFormChecklists: Pick<
 		IssueFormChecklists,
-		| "replaceOrAppendOperationalChecklist"
-		| "renderOperationalChecklist"
-		| "replaceOrAppendLogisticsIntent"
+		"replaceOrAppendChecklistSections" | "replaceOrAppendLogisticsIntent"
 	>;
 }
 
@@ -102,6 +100,7 @@ export class IssueFormWriter {
 			[HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
 			[HEADINGS.communityLink, event.publicationLinks.community ?? ""],
 			[HEADINGS.assetsLink, event.publicationLinks.assets ?? ""],
+			[HEADINGS.slidesPdf, event.slidesPdfUrl ?? ""],
 		] as const;
 		let body = document.body;
 		for (const [heading, value] of fields) {
@@ -126,17 +125,18 @@ export class IssueFormWriter {
 	}
 	private renderOperations(source: string, event: MeetupEvent): string {
 		let body = source;
-		for (const [heading, items] of [
-			[HEADINGS.slides, event.operationalChecklists.slidesAndContent],
-			[HEADINGS.communication, event.operationalChecklists.communication],
+		for (const [headings, items] of [
+			[[HEADINGS.slides], event.operationalChecklists.slidesAndContent],
+			[
+				[HEADINGS.communication, HEADINGS.introductionEmails],
+				event.operationalChecklists.communication,
+			],
 		] as const)
 			body =
-				this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+				this.collaborators.issueFormChecklists.replaceOrAppendChecklistSections(
 					body,
-					heading,
-					this.collaborators.issueFormChecklists.renderOperationalChecklist(
-						items,
-					),
+					headings,
+					items,
 				);
 		body =
 			this.collaborators.issueFormChecklists.replaceOrAppendLogisticsIntent(
@@ -150,12 +150,10 @@ export class IssueFormWriter {
 				HEADINGS.restaurant,
 				event.logistics.postEventVenue,
 			);
-		return this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+		return this.collaborators.issueFormChecklists.replaceOrAppendChecklistSections(
 			body,
-			HEADINGS.postEvent,
-			this.collaborators.issueFormChecklists.renderOperationalChecklist(
-				event.operationalChecklists.postEvent,
-			),
+			[HEADINGS.postEvent, HEADINGS.thankYouEmails, HEADINGS.slidesDelivery],
+			event.operationalChecklists.postEvent,
 		);
 	}
 	private renderParticipant(

@@ -57,7 +57,12 @@ describe("publication adapter composition", () => {
 			.mockReturnValue(resolver);
 		const gateway = vi
 			.spyOn(MeetupEventGatewayFactory.prototype, "create")
-			.mockReturnValue({ inspect: vi.fn(), save: vi.fn(), publish: vi.fn() });
+			.mockReturnValue({
+				inspect: vi.fn(),
+				save: vi.fn(),
+				publish: vi.fn(),
+				sendSlides: vi.fn(),
+			});
 		const credentials = publicationCredentialsFixture().meetup;
 		// Act
 		const destination = new PublicationAdapterComposition().create(

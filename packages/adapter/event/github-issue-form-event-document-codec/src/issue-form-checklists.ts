@@ -4,9 +4,11 @@ import type {
 	EventLogisticsIntent,
 	OperationalChecklistItem,
 } from "@meetup-automation/event";
-import type {
-	Checkbox,
-	Section,
+import {
+	CHECKLIST_LABELS,
+	AUTOMATED_TASK_HEADINGS,
+	type Checkbox,
+	type Section,
 } from "./github-issue-form-event-document-codec-contracts.js";
 import type { IssueFormSections } from "./issue-form-sections.js";
 import type { MarkdownLines } from "./markdown-lines.js";
@@ -76,30 +78,47 @@ export class IssueFormChecklists {
 		checkboxes: readonly Checkbox[],
 	): readonly OperationalChecklistItem[] {
 		return checkboxes.map(({ checked, label }) => ({
-			name: label,
+			name: this.taskName(label),
 			completed: checked,
 		}));
 	}
 
-	replaceOrAppendOperationalChecklist(
+	replaceOrAppendChecklistSections(
 		body: string,
-		heading: string,
-		value: string,
+		headings: readonly [string, ...string[]],
+		items: readonly OperationalChecklistItem[],
 	): string {
-		const sections =
-			this.collaborators.issueFormSections.parseSections(body).get(heading) ??
-			[];
-		if (
-			sections.length > 1 ||
-			(sections[0] && !this.operationalChecklistIsWellFormed(sections[0].value))
-		) {
-			return body;
+		const sections = this.collaborators.issueFormSections.parseSections(body);
+		const originalSections: [string, string][] = [];
+		for (const heading of headings) {
+			const matches = sections.get(heading) ?? [];
+			if (
+				matches.length > 1 ||
+				matches.some(
+					(section) => !this.operationalChecklistIsWellFormed(section.value),
+				)
+			)
+				return body;
+			for (const { label } of this.readCheckboxes(sections, heading, [])) {
+				originalSections.push([this.taskName(label), heading]);
+			}
 		}
-		return this.collaborators.issueFormSections.replaceOrAppendSection(
-			body,
-			heading,
-			value,
-		);
+		const sectionByTask = new Map(originalSections);
+		if (sectionByTask.size !== originalSections.length) return body;
+		let result = body;
+		for (const heading of headings) {
+			const selected = items.filter(
+				({ name }) =>
+					(sectionByTask.get(name) ?? this.defaultHeading(name, headings)) ===
+					heading,
+			);
+			result = this.collaborators.issueFormSections.replaceOrAppendSection(
+				result,
+				heading,
+				this.renderOperationalChecklist(selected, body, heading),
+			);
+		}
+		return result;
 	}
 
 	operationalChecklistIsWellFormed(value: string): boolean {
@@ -119,10 +138,37 @@ export class IssueFormChecklists {
 
 	renderOperationalChecklist(
 		items: readonly OperationalChecklistItem[],
+		body: string,
+		heading: string,
 	): string {
+		const sections = this.collaborators.issueFormSections.parseSections(body);
+		const labels = new Map(
+			this.readCheckboxes(sections, heading, []).map(({ label }) => [
+				this.taskName(label),
+				label,
+			]),
+		);
 		return items
-			.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`)
+			.map(
+				({ name, completed }) =>
+					`- [${completed ? "x" : " "}] ${labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : undefined) ?? name}`,
+			)
 			.join("\n");
+	}
+
+	private taskName(label: string): string {
+		for (const [name, publicLabel] of CHECKLIST_LABELS) {
+			if (label === publicLabel) return name;
+		}
+		return label;
+	}
+
+	private defaultHeading(
+		name: string,
+		headings: readonly [string, ...string[]],
+	): string {
+		const preferred = AUTOMATED_TASK_HEADINGS.get(name);
+		return preferred && headings.includes(preferred) ? preferred : headings[0];
 	}
 
 	readLogisticsIntent(

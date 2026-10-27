@@ -29,7 +29,7 @@ describe("Meetup browser event editor", () => {
 		async (status) => {
 			// Arrange
 			const state = await editorFixture(context, desiredEvent, status);
-			const editor = new MeetupEventGatewayComposition().meetupEventEditor(
+			const editor = new MeetupEventGatewayComposition("en").meetupEventEditor(
 				await context.newPage(),
 				groupUrl,
 			);
@@ -47,14 +47,17 @@ describe("Meetup browser event editor", () => {
 		const state = await editorFixture(context);
 		const editor = new MeetupEventEditor(
 			{
-				meetupBrowserRoutes:
-					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupEventGatewayComposition(
+					"en",
+				).meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+					new MeetupEventGatewayComposition("en").meetupEventVerification(
+						...args,
+					),
 				createMeetupCalendar: (...args) =>
-					new MeetupEventGatewayComposition().meetupCalendar(...args),
+					new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 				createMeetupVenue: (...args) =>
-					new MeetupEventGatewayComposition().meetupVenue(...args),
+					new MeetupEventGatewayComposition("en").meetupVenue(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -93,16 +96,17 @@ describe("Meetup browser event editor", () => {
 			);
 			const editor = new MeetupEventEditor(
 				{
-					meetupBrowserRoutes:
-						new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+					meetupBrowserRoutes: new MeetupEventGatewayComposition(
+						"en",
+					).meetupBrowserRoutes(),
 					createMeetupEventVerification: (...args) =>
-						new MeetupEventGatewayComposition().meetupEventVerification(
+						new MeetupEventGatewayComposition("en").meetupEventVerification(
 							...args,
 						),
 					createMeetupCalendar: (...args) =>
-						new MeetupEventGatewayComposition().meetupCalendar(...args),
+						new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 					createMeetupVenue: (...args) =>
-						new MeetupEventGatewayComposition().meetupVenue(...args),
+						new MeetupEventGatewayComposition("en").meetupVenue(...args),
 				},
 				await context.newPage(),
 				groupUrl,
@@ -126,14 +130,17 @@ describe("Meetup browser event editor", () => {
 		const state = await editorFixture(context, desiredEvent);
 		const editor = new MeetupEventEditor(
 			{
-				meetupBrowserRoutes:
-					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupEventGatewayComposition(
+					"en",
+				).meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+					new MeetupEventGatewayComposition("en").meetupEventVerification(
+						...args,
+					),
 				createMeetupCalendar: (...args) =>
-					new MeetupEventGatewayComposition().meetupCalendar(...args),
+					new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 				createMeetupVenue: (...args) =>
-					new MeetupEventGatewayComposition().meetupVenue(...args),
+					new MeetupEventGatewayComposition("en").meetupVenue(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -155,14 +162,17 @@ describe("Meetup browser event editor", () => {
 		const state = await editorFixture(context);
 		const editor = new MeetupEventEditor(
 			{
-				meetupBrowserRoutes:
-					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupEventGatewayComposition(
+					"en",
+				).meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+					new MeetupEventGatewayComposition("en").meetupEventVerification(
+						...args,
+					),
 				createMeetupCalendar: (...args) =>
-					new MeetupEventGatewayComposition().meetupCalendar(...args),
+					new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 				createMeetupVenue: (...args) =>
-					new MeetupEventGatewayComposition().meetupVenue(...args),
+					new MeetupEventGatewayComposition("en").meetupVenue(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -197,16 +207,17 @@ describe("Meetup browser event editor", () => {
 			state.corruptSaved = corruption;
 			const editor = new MeetupEventEditor(
 				{
-					meetupBrowserRoutes:
-						new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+					meetupBrowserRoutes: new MeetupEventGatewayComposition(
+						"en",
+					).meetupBrowserRoutes(),
 					createMeetupEventVerification: (...args) =>
-						new MeetupEventGatewayComposition().meetupEventVerification(
+						new MeetupEventGatewayComposition("en").meetupEventVerification(
 							...args,
 						),
 					createMeetupCalendar: (...args) =>
-						new MeetupEventGatewayComposition().meetupCalendar(...args),
+						new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 					createMeetupVenue: (...args) =>
-						new MeetupEventGatewayComposition().meetupVenue(...args),
+						new MeetupEventGatewayComposition("en").meetupVenue(...args),
 				},
 				await context.newPage(),
 				groupUrl,
@@ -232,14 +243,17 @@ describe("Meetup browser event editor", () => {
 		const page = await context.newPage();
 		const editor = new MeetupEventEditor(
 			{
-				meetupBrowserRoutes:
-					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupEventGatewayComposition(
+					"en",
+				).meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+					new MeetupEventGatewayComposition("en").meetupEventVerification(
+						...args,
+					),
 				createMeetupCalendar: (...args) =>
-					new MeetupEventGatewayComposition().meetupCalendar(...args),
+					new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 				createMeetupVenue: (...args) =>
-					new MeetupEventGatewayComposition().meetupVenue(...args),
+					new MeetupEventGatewayComposition("en").meetupVenue(...args),
 			},
 			page,
 			groupUrl,
@@ -265,14 +279,17 @@ describe("Meetup browser event editor", () => {
 		const state = await editorFixture(context);
 		const editor = new MeetupEventEditor(
 			{
-				meetupBrowserRoutes:
-					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupEventGatewayComposition(
+					"en",
+				).meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+					new MeetupEventGatewayComposition("en").meetupEventVerification(
+						...args,
+					),
 				createMeetupCalendar: (...args) =>
-					new MeetupEventGatewayComposition().meetupCalendar(...args),
+					new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 				createMeetupVenue: (...args) =>
-					new MeetupEventGatewayComposition().meetupVenue(...args),
+					new MeetupEventGatewayComposition("en").meetupVenue(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -307,14 +324,17 @@ describe("Meetup browser event editor", () => {
 		const page = await context.newPage();
 		const editor = new MeetupEventEditor(
 			{
-				meetupBrowserRoutes:
-					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupEventGatewayComposition(
+					"en",
+				).meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+					new MeetupEventGatewayComposition("en").meetupEventVerification(
+						...args,
+					),
 				createMeetupCalendar: (...args) =>
-					new MeetupEventGatewayComposition().meetupCalendar(...args),
+					new MeetupEventGatewayComposition("en").meetupCalendar(...args),
 				createMeetupVenue: (...args) =>
-					new MeetupEventGatewayComposition().meetupVenue(...args),
+					new MeetupEventGatewayComposition("en").meetupVenue(...args),
 			},
 			page,
 			groupUrl,

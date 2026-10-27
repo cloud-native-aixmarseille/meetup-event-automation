@@ -12,7 +12,6 @@ function event(overrides: Partial<PublicationEvent> = {}): PublicationEvent {
 		occurrenceStatus: "scheduled",
 		references: {},
 		meetupPublished: false,
-		slidesPublished: false,
 		attendanceImported: false,
 		...overrides,
 	};
@@ -40,7 +39,7 @@ describe("manual publication tasks", () => {
 					status: "pending",
 				}),
 				expect.objectContaining({
-					kind: "publish-slides",
+					kind: "import-attendance",
 					status: "not-applicable",
 				}),
 			]),
@@ -63,15 +62,11 @@ describe("manual publication tasks", () => {
 					assets: "https://drive.google.com/drive/folders/folder",
 				},
 				meetupPublished: false,
-				slidesPublished: false,
 				attendanceImported: true,
 			}),
 		);
 
 		// Assert
-		expect(tasks).toContainEqual(
-			expect.objectContaining({ kind: "publish-slides", status: "pending" }),
-		);
 		expect(tasks).toContainEqual(
 			expect.objectContaining({
 				kind: "import-attendance",
@@ -91,7 +86,7 @@ describe("manual publication tasks", () => {
 		const actual = tasks.every((task) => task.status === "not-applicable");
 
 		// Assert
-		expect(tasks).toHaveLength(5);
+		expect(tasks).toHaveLength(4);
 		expect(actual).toBe(true);
 	});
 	it.each([

@@ -30,6 +30,12 @@ export type PublicationDestinationKey = Readonly<{
 	provider: string;
 	target: string;
 }>;
+export interface PublicationFollowUp {
+	readonly key: PublicationDestinationKey;
+	execute(
+		identity: import("@meetup-automation/event").EventIdentity,
+	): Promise<EventPublicationResult>;
+}
 export interface PublicationDestination {
 	readonly key: PublicationDestinationKey;
 	readonly field: "meetup" | "community";

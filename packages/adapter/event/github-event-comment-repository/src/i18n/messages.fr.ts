@@ -1,5 +1,17 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"comment.guidance.meetup.slides-source":
+		"Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+	"comment.guidance.meetup.slides-link":
+		"Renseignez le lien Meetup publié avant d'envoyer les slides.",
+	"comment.guidance.meetup.slides-pdf-pending":
+		"Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+	"comment.guidance.meetup.slides-delivery-recovery":
+		"Vérifiez le message aux participants Meetup avant de réessayer ; l'envoi est incertain.",
+	"comment.guidance.meetup.slides-form-unavailable":
+		"Le formulaire de message aux participants Meetup n'a pas pu être vérifié. Vérifiez les droits organisateur et le parcours du navigateur.",
+	"comment.guidance.meetup.slides-source-changed":
+		"L'événement a changé avant l'envoi des slides. Relancez la synchronisation des publications.",
 	"comment.guidance.content.review":
 		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
 
@@ -30,13 +42,14 @@ export const FR_MESSAGES = {
 	"comment.agenda.item": "Programme (élément {item}{speaker})",
 	"comment.agenda.speaker-suffix": ", intervenant {speaker}",
 	"comment.agenda.speaker": "Programme (intervenant {speaker})",
-	"comment.guidance.event.title.missing": "Ajoutez un titre à l'événement.",
+	"comment.guidance.event.title.missing":
+		"Générez ou proposez le titre de l'événement, puis approuvez-le pour qu'il soit appliqué automatiquement.",
 	"comment.guidance.event.date.missing":
 		"Ajoutez la date de l'événement au format AAAA-MM-JJ.",
 	"comment.guidance.event.date.invalid":
 		"Saisissez une date valide au format AAAA-MM-JJ.",
 	"comment.guidance.event.description.missing":
-		"Ajoutez une courte description de l'événement.",
+		"Générez ou proposez la description de l'événement, puis approuvez-la pour qu'elle soit appliquée automatiquement.",
 	"comment.guidance.event.hoster.missing":
 		"Sélectionnez un hôte dans la liste.",
 	"comment.guidance.event.hoster.invalid":
@@ -56,11 +69,11 @@ export const FR_MESSAGES = {
 	"comment.guidance.publication.meetup.unpublished":
 		"Approuvez ou refusez la publication Meetup.",
 	"comment.guidance.publication.meetup.missing":
-		"Ajoutez le lien vers la page Meetup de l'événement.",
+		"Lancez la synchronisation des publications pour renseigner le lien Meetup vérifié.",
 	"comment.guidance.publication.community.missing":
-		"Ajoutez le lien vers la page CNCF / OCGroups de l'événement.",
+		"Lancez la synchronisation des publications et approuvez la publication CNCF / OCGroups ; l'automatisation ajoute le lien public vérifié.",
 	"comment.guidance.publication.assets.missing":
-		"Ajoutez le lien vers le dossier Google Drive de l'événement.",
+		"Lancez la synchronisation des ressources pour créer le dossier de l'événement et renseigner son lien Google Drive.",
 	"comment.guidance.event.link.meetup.invalid":
 		"Saisissez un lien HTTPS valide vers la page Meetup de l'événement.",
 	"comment.guidance.event.link.community.invalid":

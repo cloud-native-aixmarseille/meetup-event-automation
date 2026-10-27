@@ -38799,8 +38799,11 @@ var ReconcileSlidePdf = class {
     if (observed && this.policy.current(confirmed, sourceVersion, name)) {
       if (state?.pending && confirmed !== state.pending)
         await this.states.save({ identity, fileId: state.fileId, confirmed });
-      const updated = await this.files.placeInPublicFolder(identity, observed);
-      return { status: "ready", updated, diagnostics: [] };
+      const published2 = await this.files.placeInPublicFolder(
+        identity,
+        observed
+      );
+      return { status: "ready", ...published2, diagnostics: [] };
     }
     const binary = await this.source.export(identity);
     if (await this.source.observe(identity) !== sourceVersion)
@@ -38829,8 +38832,13 @@ var ReconcileSlidePdf = class {
       next,
       await this.files.find(identity, next.fileId)
     );
-    await this.files.placeInPublicFolder(identity, uploaded);
-    return { status: "ready", updated: true, diagnostics: [] };
+    const published = await this.files.placeInPublicFolder(identity, uploaded);
+    return {
+      status: "ready",
+      url: published.url,
+      updated: true,
+      diagnostics: []
+    };
   }
   async confirm(state, observed) {
     if (observed?.id !== state.fileId || !this.policy.matches(state.pending, observed)) {
@@ -39796,14 +39804,6 @@ var ManualPublicationPolicy = class {
         "Create the event asset folder"
       ),
       occurrenceConfirmed ? this.task(
-        "publish-slides",
-        event.slidesPublished,
-        "Publish post-event slides"
-      ) : this.notApplicable(
-        "publish-slides",
-        "Slides are published only after occurrence is explicitly confirmed"
-      ),
-      occurrenceConfirmed ? this.task(
         "import-attendance",
         event.attendanceImported,
         "Import post-event attendance"
@@ -39828,7 +39828,6 @@ var ManualPublicationPolicy = class {
       "publish-meetup-event",
       "publish-community-event",
       "create-asset-folder",
-      "publish-slides",
       "import-attendance"
     ];
   }
@@ -40609,6 +40608,10 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.meetup.slides-pdf-pending",
+  "publication.meetup.slides-delivery-recovery",
+  "publication.meetup.slides-link",
+  "publication.meetup.slides-source-changed",
   "publication.community.content-review",
   "publication.community.authentication",
   "publication.community.prerequisites",
@@ -40916,7 +40919,7 @@ var AttentionEventFacts = class {
       speakersConfirmed: event.confirmations.speakers,
       publicationPending: [
         ...tasks.filter(
-          (task) => task.status === "pending" && !["publish-slides", "import-attendance"].includes(task.kind)
+          (task) => task.status === "pending" && task.kind !== "import-attendance"
         ).map((task) => task.kind),
         ...this.announcements(event.operationalChecklists.communication)
       ],
@@ -40925,6 +40928,7 @@ var AttentionEventFacts = class {
   }
   followUp(event) {
     return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
+      if (name === "Share slides to meetup") return [];
       const completed = index < 2 ? this.collaborators.communicationChecklist.status(
         event,
         index === 0 ? "host-thanks" : "speaker-thanks"
@@ -40939,11 +40943,16 @@ var AttentionEventFacts = class {
     const tasks = [
       ["Slack - AixMarseille.Tech", "public-slack-local"],
       ["Slack - OpenBaR", "public-slack-community"],
+      ["LinkedIn", "public-social"],
       ["Social networks", "public-social"]
     ];
-    return tasks.filter(
-      ([name]) => items.some((item) => item.name === name && !item.completed)
-    ).map(([, resource]) => resource);
+    return [
+      ...new Set(
+        tasks.filter(
+          ([name]) => items.some((item) => item.name === name && !item.completed)
+        ).map(([, resource]) => resource)
+      )
+    ];
   }
 };
 
@@ -41022,7 +41031,7 @@ var CommunicationChecklist = class {
     const matches = event.operationalChecklists[task.section].filter(
       (item) => this.matches(item, task.names)
     );
-    return matches.some((item) => item.completed) ? "completed" : matches.length ? "pending" : "missing";
+    return matches.some((item) => item.completed) ? "completed" : "pending";
   }
   complete(event, accepted) {
     const completed = new Set(accepted);
@@ -41035,8 +41044,13 @@ var CommunicationChecklist = class {
       ...item,
       completed: item.completed || this.accepted(item, "postEvent", completed, checklists)
     }));
-    if (completed.has("speaker-thanks") && postEvent.some((item) => item.name === LEGACY_SPEAKER_THANKS) && !postEvent.some((item) => item.name === "Mail thanks speakers")) {
-      postEvent.push({ name: "Mail thanks speakers", completed: true });
+    for (const kind of completed) {
+      const task = TASKS[kind];
+      const items = task.section === "communication" ? communication : postEvent;
+      if (!items.some(
+        (item) => item.name !== LEGACY_SPEAKER_THANKS && this.matches(item, task.names)
+      ))
+        items.push({ name: task.names[0], completed: true });
     }
     return { ...checklists, communication, postEvent };
   }
@@ -41309,10 +41323,6 @@ var EventPublicationEvaluation = class {
         occurrenceStatus: event.occurrenceStatus,
         references: event.publicationLinks,
         meetupPublished: this.collaborators.meetupPublicationChecklist.isPublished(event),
-        slidesPublished: this.checklistTaskIsCompleted(
-          event.operationalChecklists.postEvent,
-          POST_EVENT_TASK_NAMES.shareSlides
-        ),
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
           POST_EVENT_TASK_NAMES.importAttendance
@@ -42999,10 +43009,11 @@ var ReconcileEventPublication = class {
 
 // packages/application/journey/src/use-cases/reconcile-event-publications.ts
 var ReconcileEventPublications = class {
-  constructor(repository, createSource, destinations) {
+  constructor(repository, createSource, destinations, followUps) {
     this.repository = repository;
     this.createSource = createSource;
     this.destinations = destinations;
+    this.followUps = followUps;
     const keys = destinations.map(
       ({ key }) => JSON.stringify([key.provider, key.target])
     );
@@ -43016,6 +43027,7 @@ var ReconcileEventPublications = class {
   repository;
   createSource;
   destinations;
+  followUps;
   async execute(identity) {
     const document = await this.repository.find(identity);
     if (!document) throw new Error("Event source issue was not found");
@@ -43027,6 +43039,10 @@ var ReconcileEventPublications = class {
       const result = reason ? destination.blocked(reason) : await destination.reconcile(source);
       publications.push({ ...result, destination: destination.key });
       if (!reason) await source.ensureCurrent();
+    }
+    for (const followUp of this.followUps) {
+      const result = await followUp.execute(identity);
+      publications.push({ ...result, destination: followUp.key });
     }
     return {
       publications,
@@ -43051,7 +43067,7 @@ var EventPublicationComposition = class {
       new EventPublicationResults(configuration.field, configuration.label)
     );
   }
-  collection(dependencies, destinations) {
+  collection(dependencies, destinations, followUps) {
     return new ReconcileEventPublications(
       dependencies.repository,
       (document) => new EventPublicationSource(
@@ -43063,7 +43079,8 @@ var EventPublicationComposition = class {
         dependencies,
         document
       ),
-      destinations
+      destinations,
+      followUps
     );
   }
 };
@@ -43301,6 +43318,120 @@ var ContentFactsProjection = class {
     if (target === "title") return event.eventTitle;
     if (target === "description") return event.description;
     return null;
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-meetup-slides-delivery.ts
+var ReconcileMeetupSlidesDelivery = class {
+  constructor(dependencies, key) {
+    this.dependencies = dependencies;
+    this.key = key;
+  }
+  dependencies;
+  key;
+  async execute(identity) {
+    const document = await this.dependencies.repository.find(identity);
+    if (!document) throw new Error("Event source issue was not found");
+    const decoded = this.dependencies.codec.decode(document);
+    const event = decoded.event;
+    if (event.issueState !== "open" || !this.dependencies.postEvent.isDue({
+      eventDate: event.date,
+      timeZone: event.timeZone,
+      occurrenceStatus: event.occurrenceStatus ?? "unknown",
+      now: new Date(this.dependencies.clock.now())
+    }))
+      return { status: "skipped", diagnostics: [] };
+    const tasks = event.operationalChecklists.postEvent.filter(
+      (item) => item.name === POST_EVENT_TASK_NAMES.shareSlides
+    );
+    if (tasks.length > 1 || decoded.diagnostics.some(
+      (item) => item.severity === "error" || item.code === "event.document.checkbox.invalid"
+    ))
+      return this.blocked("source");
+    if (tasks[0]?.completed) return { status: "skipped", diagnostics: [] };
+    const publication = this.dependencies.identity.fromUrl(
+      event.publicationLinks.meetup
+    );
+    if (!publication) return this.blocked("link");
+    const eventUrl = publication.reviewUrl;
+    const deliveryKey = `${identity.repository}#${identity.issueNumber}:attendee-slides:${eventUrl}`;
+    const recorded = await this.dependencies.ledger.find(deliveryKey);
+    if (recorded?.status === "accepted") return this.complete(document, event);
+    if (recorded) return this.blocked("delivery-recovery");
+    const pdfUrl = this.dependencies.presentationUrl.normalize(
+      event.slidesPdfUrl
+    );
+    if (!pdfUrl?.startsWith("https://drive.google.com/file/d/"))
+      return this.blocked("pdf-pending");
+    return this.send(document, event, eventUrl, pdfUrl, deliveryKey);
+  }
+  async send(document, event, eventUrl, pdfUrl, deliveryKey) {
+    let reserved = false;
+    try {
+      await this.dependencies.gateway.sendSlides(eventUrl, pdfUrl, async () => {
+        await this.ensureCurrent(document);
+        const reservation = await this.dependencies.ledger.reservePending({
+          idempotencyKey: deliveryKey,
+          intentId: deliveryKey,
+          repositoryId: document.identity.repository,
+          eventId: String(document.identity.issueNumber),
+          kind: "attendee-slides",
+          recipientId: eventUrl,
+          policyVersion: "attendee-slides-v1",
+          reservedAt: this.dependencies.clock.now()
+        });
+        if (!reservation.reserved) throw new Error("Delivery already reserved");
+        reserved = true;
+        try {
+          await this.ensureCurrent(document);
+        } catch (error2) {
+          await this.dependencies.ledger.releasePending(deliveryKey);
+          reserved = false;
+          throw error2;
+        }
+      });
+    } catch (error2) {
+      if (reserved)
+        await this.dependencies.ledger.markUncertain(
+          deliveryKey,
+          this.dependencies.clock.now(),
+          "meetup-slides-unconfirmed"
+        );
+      return this.blocked(
+        reserved ? "delivery-recovery" : error2 instanceof EventConcurrentModificationError ? "source-changed" : "form-unavailable"
+      );
+    }
+    if (!reserved) return this.blocked("form-unavailable");
+    await this.dependencies.ledger.markAccepted(
+      deliveryKey,
+      this.dependencies.clock.now()
+    );
+    return this.complete(document, event);
+  }
+  async complete(document, event) {
+    const items = event.operationalChecklists.postEvent;
+    const name = POST_EVENT_TASK_NAMES.shareSlides;
+    const postEvent = items.some((item) => item.name === name) ? items.map(
+      (item) => item.name === name ? { ...item, completed: true } : item
+    ) : [...items, { name, completed: true }];
+    await this.ensureCurrent(document);
+    const patch = this.dependencies.codec.createPatch(document, {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, postEvent }
+    });
+    if (patch.body !== void 0 || patch.labels !== void 0 || patch.issueTitle !== void 0)
+      await this.dependencies.repository.applyPatch(document.identity, patch);
+    return { status: "updated", diagnostics: [] };
+  }
+  ensureCurrent(document) {
+    return this.dependencies.concurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.repository,
+      document.identity,
+      document
+    );
+  }
+  blocked(reason) {
+    return this.dependencies.results.result("blocked", `slides-${reason}`);
   }
 };
 
@@ -47546,6 +47677,12 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "diagnostic.publication.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "diagnostic.publication.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
   "action.publication.prepare-runtime": "Prepare event publication runtime",
   "report.publication.draft": "publication_provider={provider} event=draft approval=required",
   "report.publication.updated": "publication_provider={provider} event=synchronized",
@@ -47689,6 +47826,12 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "diagnostic.publication.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "diagnostic.publication.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
   "action.publication.prepare-runtime": "Pr\xE9parer le runtime de publication",
   "report.publication.draft": "fournisseur_publication={provider} evenement=brouillon approbation=requise",
   "report.publication.updated": "fournisseur_publication={provider} evenement=synchronise",
@@ -54754,72 +54897,105 @@ ${messages5.t("comment.resolved")}`;
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.meetup.slides-source",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
+  ],
+  [
+    "publication.meetup.slides-link",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-link"]
+  ],
+  [
+    "publication.meetup.slides-pdf-pending",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"]
+  ],
+  [
+    "publication.meetup.slides-delivery-recovery",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-delivery-recovery"
+    ]
+  ],
+  [
+    "publication.meetup.slides-form-unavailable",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.slides-source-changed",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-source-changed"
+    ]
+  ],
+  [
     "publication.content.prerequisites",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.pending",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.rejected",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.iteration-requested",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.recovery",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.stale",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.title-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.description-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.meetup.content-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "communication.content-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.assets.pdf.source",
-    ["Slides & Content", "comment.guidance.pdf.source"]
+    ["Event materials", "comment.guidance.pdf.source"]
   ],
   [
     "publication.assets.pdf.source-pending",
-    ["Slides & Content", "comment.guidance.pdf.source-pending"]
+    ["Event materials", "comment.guidance.pdf.source-pending"]
   ],
   [
     "publication.assets.pdf.revision",
-    ["Slides & Content", "comment.guidance.pdf.revision"]
+    ["Event materials", "comment.guidance.pdf.revision"]
   ],
   [
     "publication.assets.pdf.conflict",
-    ["Slides & Content", "comment.guidance.pdf.recovery"]
+    ["Event materials", "comment.guidance.pdf.recovery"]
   ],
   [
     "publication.assets.pdf.recovery",
-    ["Slides & Content", "comment.guidance.pdf.recovery"]
+    ["Event materials", "comment.guidance.pdf.recovery"]
   ],
   [
     "publication.assets.pdf.limit",
-    ["Slides & Content", "comment.guidance.pdf.limit"]
+    ["Event materials", "comment.guidance.pdf.limit"]
   ],
   [
     "publication.assets.pdf.invalid",
-    ["Slides & Content", "comment.guidance.pdf.invalid"]
+    ["Event materials", "comment.guidance.pdf.invalid"]
   ],
   [
     "communication.checklist-concurrently-modified",
@@ -54839,7 +55015,7 @@ var STAGE_GUIDANCE = [
   ],
   [
     "communication.slides-unavailable",
-    ["Slides & Content", "comment.guidance.assets.slides"]
+    ["Event materials", "comment.guidance.assets.slides"]
   ],
   [
     "communication.approval-pending",
@@ -54939,39 +55115,39 @@ var STAGE_GUIDANCE = [
   ],
   [
     "publication.assets.file.drift",
-    ["Slides & Content", "comment.guidance.assets.drift"]
+    ["Event materials", "comment.guidance.assets.drift"]
   ],
   [
     "publication.assets.content.contract",
-    ["Slides & Content", "comment.guidance.assets.template"]
+    ["Event materials", "comment.guidance.assets.template"]
   ],
   [
     "publication.assets.content.location",
-    ["Slides & Content", "comment.guidance.assets.template"]
+    ["Event materials", "comment.guidance.assets.template"]
   ],
   [
     "publication.assets.content.missing",
-    ["Slides & Content", "comment.guidance.assets.missing"]
+    ["Event materials", "comment.guidance.assets.missing"]
   ],
   [
     "publication.assets.content.conflict",
-    ["Slides & Content", "comment.guidance.assets.recovery"]
+    ["Event materials", "comment.guidance.assets.recovery"]
   ],
   [
     "publication.assets.content.recovery",
-    ["Slides & Content", "comment.guidance.assets.recovery"]
+    ["Event materials", "comment.guidance.assets.recovery"]
   ],
   [
     "publication.assets.content.revision",
-    ["Slides & Content", "comment.guidance.assets.revision"]
+    ["Event materials", "comment.guidance.assets.revision"]
   ],
   [
     "publication.assets.content.image",
-    ["Slides & Content", "comment.guidance.assets.image"]
+    ["Event materials", "comment.guidance.assets.image"]
   ],
   [
     "publication.assets.content.fallback",
-    ["Slides & Content", "comment.guidance.assets.fallback"]
+    ["Event materials", "comment.guidance.assets.fallback"]
   ],
   [
     "communication.invalid-event-date",
@@ -54994,11 +55170,13 @@ var FIELD_ORDER = [
   "CNCF Link",
   "Drive Link",
   "OpenFeedback Link",
-  "Slides & Content",
+  "Event materials",
   "Communication",
+  "Automated introduction emails",
   "Aperitif",
   "Restaurant / Bar",
   "Post event",
+  "Automated thank-you emails",
   "Host confirmation",
   "Speaker confirmation",
   "Event Status",
@@ -55275,6 +55453,7 @@ var GUIDANCE = new Map([
 var DiagnosticPresenter = class {
   FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
+    ["Slides & Content", "Event materials"],
     ["eventTitle", "Event Title"],
     ["event_title", "Event Title"],
     ["date", "Event Date"],
@@ -55569,6 +55748,12 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
+  "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
   "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
@@ -55586,10 +55771,10 @@ var EN_MESSAGES3 = {
   "comment.agenda.item": "Agenda (item {item}{speaker})",
   "comment.agenda.speaker-suffix": ", speaker {speaker}",
   "comment.agenda.speaker": "Agenda (speaker {speaker})",
-  "comment.guidance.event.title.missing": "Add a title for the event.",
+  "comment.guidance.event.title.missing": "Generate or submit the event title, then approve it for automatic application.",
   "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
   "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
-  "comment.guidance.event.description.missing": "Add a short description of the event.",
+  "comment.guidance.event.description.missing": "Generate or submit the event description, then approve it for automatic application.",
   "comment.guidance.event.hoster.missing": "Select a host from the host list.",
   "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
   "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
@@ -55599,9 +55784,9 @@ var EN_MESSAGES3 = {
   "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
   "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
   "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
-  "comment.guidance.publication.meetup.missing": "Add the link to the Meetup event page.",
-  "comment.guidance.publication.community.missing": "Add the link to the CNCF / OCGroups event page.",
-  "comment.guidance.publication.assets.missing": "Add the link to the event's Google Drive folder.",
+  "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
+  "comment.guidance.publication.community.missing": "Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.",
+  "comment.guidance.publication.assets.missing": "Run asset reconciliation to create the event folder and populate its Google Drive link.",
   "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
   "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
   "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
@@ -55639,6 +55824,12 @@ var EN_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
+  "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
   "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
@@ -55656,10 +55847,10 @@ var FR_MESSAGES3 = {
   "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
   "comment.agenda.speaker-suffix": ", intervenant {speaker}",
   "comment.agenda.speaker": "Programme (intervenant {speaker})",
-  "comment.guidance.event.title.missing": "Ajoutez un titre \xE0 l'\xE9v\xE9nement.",
+  "comment.guidance.event.title.missing": "G\xE9n\xE9rez ou proposez le titre de l'\xE9v\xE9nement, puis approuvez-le pour qu'il soit appliqu\xE9 automatiquement.",
   "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
   "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
-  "comment.guidance.event.description.missing": "Ajoutez une courte description de l'\xE9v\xE9nement.",
+  "comment.guidance.event.description.missing": "G\xE9n\xE9rez ou proposez la description de l'\xE9v\xE9nement, puis approuvez-la pour qu'elle soit appliqu\xE9e automatiquement.",
   "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
   "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
   "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
@@ -55669,9 +55860,9 @@ var FR_MESSAGES3 = {
   "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
   "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
   "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
-  "comment.guidance.publication.meetup.missing": "Ajoutez le lien vers la page Meetup de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.community.missing": "Ajoutez le lien vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.assets.missing": "Ajoutez le lien vers le dossier Google Drive de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
+  "comment.guidance.publication.community.missing": "Lancez la synchronisation des publications et approuvez la publication CNCF / OCGroups ; l'automatisation ajoute le lien public v\xE9rifi\xE9.",
+  "comment.guidance.publication.assets.missing": "Lancez la synchronisation des ressources pour cr\xE9er le dossier de l'\xE9v\xE9nement et renseigner son lien Google Drive.",
   "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
@@ -56105,13 +56296,36 @@ var HEADINGS = Object.freeze({
   communityLink: "CNCF Link",
   assetsLink: "Drive Link",
   feedbackLink: "OpenFeedback Link",
-  slides: "Slides & Content",
+  slidesPdf: "Slides PDF",
+  slides: "Event materials",
   communication: "Communication",
+  introductionEmails: "Automated introduction emails",
   aperitif: "Aperitif",
   restaurant: "Restaurant / Bar",
   postEvent: "Post event",
+  thankYouEmails: "Automated thank-you emails",
+  slidesDelivery: "Automated slide sharing",
   occurrenceStatus: "Event Status"
 });
+var CHECKLIST_LABELS = /* @__PURE__ */ new Map([
+  ["Mail introduction speakers", "Send speaker introduction emails"],
+  ["Mail introduction hoster", "Send host introduction email"],
+  ["Slack - AixMarseille.Tech", "Announce on Slack - AixMarseille.Tech"],
+  ["Slack - OpenBaR", "Announce on Slack - OpenBaR"],
+  ["LinkedIn", "Announce on LinkedIn"],
+  ["Mail thanks hoster", "Send host thank-you email"],
+  ["Mail thanks speakers", "Send speaker thank-you emails"],
+  ["Share slides to meetup", "Send slides to Meetup attendees"],
+  ["Sync attendees from tally sheet to CNCF", "Import attendees into CNCF"],
+  ["Social networks", "Share recap on LinkedIn"]
+]);
+var AUTOMATED_TASK_HEADINGS = /* @__PURE__ */ new Map([
+  ["Mail introduction speakers", HEADINGS.introductionEmails],
+  ["Mail introduction hoster", HEADINGS.introductionEmails],
+  ["Mail thanks hoster", HEADINGS.thankYouEmails],
+  ["Mail thanks speakers", HEADINGS.thankYouEmails],
+  ["Share slides to meetup", HEADINGS.slidesDelivery]
+]);
 
 // packages/adapter/event/github-issue-form-event-document-codec/src/event-reference-metadata.ts
 var EventReferenceMetadata = class {
@@ -56306,20 +56520,37 @@ var IssueFormChecklists = class {
   }
   toOperationalChecklist(checkboxes) {
     return checkboxes.map(({ checked, label }) => ({
-      name: label,
+      name: this.taskName(label),
       completed: checked
     }));
   }
-  replaceOrAppendOperationalChecklist(body, heading, value) {
-    const sections = this.collaborators.issueFormSections.parseSections(body).get(heading) ?? [];
-    if (sections.length > 1 || sections[0] && !this.operationalChecklistIsWellFormed(sections[0].value)) {
-      return body;
+  replaceOrAppendChecklistSections(body, headings, items) {
+    const sections = this.collaborators.issueFormSections.parseSections(body);
+    const originalSections = [];
+    for (const heading of headings) {
+      const matches = sections.get(heading) ?? [];
+      if (matches.length > 1 || matches.some(
+        (section) => !this.operationalChecklistIsWellFormed(section.value)
+      ))
+        return body;
+      for (const { label } of this.readCheckboxes(sections, heading, [])) {
+        originalSections.push([this.taskName(label), heading]);
+      }
     }
-    return this.collaborators.issueFormSections.replaceOrAppendSection(
-      body,
-      heading,
-      value
-    );
+    const sectionByTask = new Map(originalSections);
+    if (sectionByTask.size !== originalSections.length) return body;
+    let result = body;
+    for (const heading of headings) {
+      const selected = items.filter(
+        ({ name }) => (sectionByTask.get(name) ?? this.defaultHeading(name, headings)) === heading
+      );
+      result = this.collaborators.issueFormSections.replaceOrAppendSection(
+        result,
+        heading,
+        this.renderOperationalChecklist(selected, body, heading)
+      );
+    }
+    return result;
   }
   operationalChecklistIsWellFormed(value) {
     const cleaned = this.collaborators.issueFormSections.cleanResponse(value);
@@ -56327,8 +56558,27 @@ var IssueFormChecklists = class {
       (line) => this.collaborators.markdownLines.parseCheckboxLine(line) !== void 0
     );
   }
-  renderOperationalChecklist(items) {
-    return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
+  renderOperationalChecklist(items, body, heading) {
+    const sections = this.collaborators.issueFormSections.parseSections(body);
+    const labels = new Map(
+      this.readCheckboxes(sections, heading, []).map(({ label }) => [
+        this.taskName(label),
+        label
+      ])
+    );
+    return items.map(
+      ({ name, completed }) => `- [${completed ? "x" : " "}] ${labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : void 0) ?? name}`
+    ).join("\n");
+  }
+  taskName(label) {
+    for (const [name, publicLabel] of CHECKLIST_LABELS) {
+      if (label === publicLabel) return name;
+    }
+    return label;
+  }
+  defaultHeading(name, headings) {
+    const preferred = AUTOMATED_TASK_HEADINGS.get(name);
+    return preferred && headings.includes(preferred) ? preferred : headings[0];
   }
   readLogisticsIntent(sections, heading, diagnostics) {
     const value = this.collaborators.issueFormSections.readSection(
@@ -56673,6 +56923,12 @@ var IssueFormReader = class {
     );
     const event = {
       ...migrated.event,
+      slidesPdfUrl: this.collaborators.issueFormSections.readSection(
+        sections,
+        HEADINGS.slidesPdf,
+        false,
+        diagnostics
+      ) || void 0,
       ...operations,
       ...this.collaborators.proposalSelectionCodec.read(
         document.body,
@@ -56706,10 +56962,10 @@ var IssueFormReader = class {
       diagnostics
     );
     return {
-      event_title: read(HEADINGS.eventTitle, true),
+      event_title: read(HEADINGS.eventTitle),
       event_date: read(HEADINGS.date, true),
       hoster: [read(HEADINGS.host, true)].filter(Boolean),
-      event_description: read(HEADINGS.description, true),
+      event_description: read(HEADINGS.description),
       agenda: read(HEADINGS.agenda, !sections.has(HEADINGS.proposals)),
       meetup_link: read(HEADINGS.meetupLink),
       cncf_link: read(HEADINGS.communityLink),
@@ -56719,17 +56975,26 @@ var IssueFormReader = class {
     };
   }
   readOperations(sections, diagnostics) {
-    const read = (heading) => this.collaborators.issueFormChecklists.toOperationalChecklist(
-      this.collaborators.issueFormChecklists.readCheckboxes(
-        sections,
-        heading,
-        diagnostics
+    const read = (headings) => this.collaborators.issueFormChecklists.toOperationalChecklist(
+      headings.flatMap(
+        (heading) => this.collaborators.issueFormChecklists.readCheckboxes(
+          sections,
+          heading,
+          diagnostics
+        )
       )
     );
-    const slidesAndContent = read(HEADINGS.slides);
-    const communication = read(HEADINGS.communication);
+    const slidesAndContent = read([HEADINGS.slides]);
+    const communication = read([
+      HEADINGS.communication,
+      HEADINGS.introductionEmails
+    ]);
     const diagnosticOffset = diagnostics.length;
-    const postEvent = read(HEADINGS.postEvent);
+    const postEvent = read([
+      HEADINGS.postEvent,
+      HEADINGS.thankYouEmails,
+      HEADINGS.slidesDelivery
+    ]);
     const followUpComplete = diagnostics.length === diagnosticOffset && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
       postEvent
     );
@@ -56852,8 +57117,9 @@ var IssueFormSections = class {
     return sections;
   }
   appendSection(sections, section) {
-    const existing = sections.get(section.heading) ?? [];
-    sections.set(section.heading, [...existing, section]);
+    const heading = section.heading === "Slides & Content" ? HEADINGS.slides : section.heading;
+    const existing = sections.get(heading) ?? [];
+    sections.set(heading, [...existing, section]);
   }
   cleanResponse(value) {
     const trimmed = value.trim();
@@ -56979,7 +57245,8 @@ var IssueFormWriter = class {
       ],
       [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
       [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
-      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
+      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""],
+      [HEADINGS.slidesPdf, event.slidesPdfUrl ?? ""]
     ];
     let body = document.body;
     for (const [heading, value] of fields) {
@@ -57004,16 +57271,17 @@ var IssueFormWriter = class {
   }
   renderOperations(source, event) {
     let body = source;
-    for (const [heading, items] of [
-      [HEADINGS.slides, event.operationalChecklists.slidesAndContent],
-      [HEADINGS.communication, event.operationalChecklists.communication]
+    for (const [headings, items] of [
+      [[HEADINGS.slides], event.operationalChecklists.slidesAndContent],
+      [
+        [HEADINGS.communication, HEADINGS.introductionEmails],
+        event.operationalChecklists.communication
+      ]
     ])
-      body = this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+      body = this.collaborators.issueFormChecklists.replaceOrAppendChecklistSections(
         body,
-        heading,
-        this.collaborators.issueFormChecklists.renderOperationalChecklist(
-          items
-        )
+        headings,
+        items
       );
     body = this.collaborators.issueFormChecklists.replaceOrAppendLogisticsIntent(
       body,
@@ -57025,12 +57293,10 @@ var IssueFormWriter = class {
       HEADINGS.restaurant,
       event.logistics.postEventVenue
     );
-    return this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+    return this.collaborators.issueFormChecklists.replaceOrAppendChecklistSections(
       body,
-      HEADINGS.postEvent,
-      this.collaborators.issueFormChecklists.renderOperationalChecklist(
-        event.operationalChecklists.postEvent
-      )
+      [HEADINGS.postEvent, HEADINGS.thankYouEmails, HEADINGS.slidesDelivery],
+      event.operationalChecklists.postEvent
     );
   }
   renderParticipant(participant, repository) {
@@ -58365,9 +58631,9 @@ var messages = {
   "action.stage-unknown": "Check the incomplete stage: {task}.",
   "task.approvals": "email approvals",
   "task.delivery": "delivery recovery",
-  "task.public-slack-local": "Post the local community Slack announcement",
-  "task.public-slack-community": "Post the community Slack announcement",
-  "task.public-social": "Publish on social networks",
+  "task.public-slack-local": "Publish the event announcement on Slack - AixMarseille.Tech",
+  "task.public-slack-community": "Publish the event announcement on Slack - OpenBaR",
+  "task.public-social": "Publish the event announcement on LinkedIn",
   "attention.clear": "No pending tasks.",
   "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
   "task.publish-meetup-event": "Approve Meetup publication",
@@ -58377,7 +58643,7 @@ var messages = {
   "task.thank-speakers": "Send speaker thanks",
   "task.share-slides": "Share slides",
   "task.import-attendance": "Import attendance",
-  "task.share-social": "Share on social networks",
+  "task.share-social": "Publish an event recap with photos and links on LinkedIn",
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
@@ -58411,9 +58677,9 @@ var messages2 = {
   "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
   "task.approvals": "approbation des courriels",
   "task.delivery": "reprise des envois",
-  "task.public-slack-local": "Publiez l'annonce sur le Slack local",
-  "task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
-  "task.public-social": "Publiez sur les r\xE9seaux sociaux",
+  "task.public-slack-local": "Publiez l'annonce du meetup sur Slack - AixMarseille.Tech",
+  "task.public-slack-community": "Publiez l'annonce du meetup sur Slack - OpenBaR",
+  "task.public-social": "Publiez l'annonce du meetup sur LinkedIn",
   "attention.clear": "Aucune t\xE2che en attente.",
   "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
   "task.publish-meetup-event": "Approuver la publication Meetup",
@@ -58423,7 +58689,7 @@ var messages2 = {
   "task.thank-speakers": "Envoyez les remerciements aux intervenants",
   "task.share-slides": "Partagez les pr\xE9sentations",
   "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Partagez sur les r\xE9seaux sociaux",
+  "task.share-social": "Publiez un r\xE9capitulatif du meetup avec des photos et des liens sur LinkedIn",
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
@@ -66450,7 +66716,7 @@ var EN_MESSAGES5 = {
   "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
   "follow-up.title": "## Post-event follow-up \xB7 {date}",
   "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
   "follow-up.stopped": "Follow-up paused.",
   "follow-up.waiting": "Thank-you emails are not ready for approval.",
   "follow-up.emails-complete": "No thank-you emails pending.",
@@ -66482,7 +66748,7 @@ var FR_MESSAGES5 = {
   "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
   "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
   "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
   "follow-up.stopped": "Suivi suspendu.",
   "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
   "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
@@ -68478,7 +68744,7 @@ var messages3 = {
   "task.delivery": "delivery recovery",
   "task.public-slack-local": "Post the local community Slack announcement",
   "task.public-slack-community": "Post the community Slack announcement",
-  "task.public-social": "Publish on social networks",
+  "task.public-social": "Publish the event announcement on LinkedIn",
   "attention.clear": "No pending tasks.",
   "task.publish-meetup-event": "Approve Meetup publication",
   "task.publish-community-event": "Publish on the CNCF platform",
@@ -68487,7 +68753,7 @@ var messages3 = {
   "task.thank-speakers": "Send speaker thanks",
   "task.share-slides": "Share slides",
   "task.import-attendance": "Import attendance",
-  "task.share-social": "Share on social networks",
+  "task.share-social": "Share the event recap on LinkedIn",
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
@@ -68524,7 +68790,7 @@ var messages4 = {
   "task.delivery": "reprise des envois",
   "task.public-slack-local": "Publiez l'annonce sur le Slack local",
   "task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
-  "task.public-social": "Publiez sur les r\xE9seaux sociaux",
+  "task.public-social": "Publiez l'annonce du meetup sur LinkedIn",
   "attention.clear": "Aucune t\xE2che en attente.",
   "task.publish-meetup-event": "Approuver la publication Meetup",
   "task.publish-community-event": "Publiez sur la plateforme CNCF",
@@ -68533,7 +68799,7 @@ var messages4 = {
   "task.thank-speakers": "Envoyez les remerciements aux intervenants",
   "task.share-slides": "Partagez les pr\xE9sentations",
   "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Partagez sur les r\xE9seaux sociaux",
+  "task.share-social": "Partagez le r\xE9capitulatif du meetup sur LinkedIn",
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
@@ -69121,6 +69387,443 @@ var EventPublicationApprovalComposition = class {
 // packages/runtime/github-actions/src/publication-adapter-composition.ts
 import { fileURLToPath } from "node:url";
 
+// packages/adapter/communication/github-delivery-ledger/src/github-delivery-ledger-contracts.ts
+var DELIVERY_LEDGER_MARKER = "<!-- meetup-automation-delivery-ledger:v1 -->";
+
+// packages/adapter/communication/github-delivery-ledger/src/github-delivery-ledger.ts
+var GithubDeliveryLedger = class {
+  constructor(collaborators, comments, options, presenter) {
+    this.collaborators = collaborators;
+    this.comments = comments;
+    this.options = options;
+    this.presenter = presenter;
+    this.#authorLogin = options.authorLogin.trim().toLowerCase();
+    if (!this.#authorLogin) {
+      throw new Error("Delivery ledger author login is required");
+    }
+  }
+  collaborators;
+  comments;
+  options;
+  presenter;
+  #authorLogin;
+  async readAttention() {
+    const { ledger, commentId } = await this.#load();
+    return ledger.entries.map((entry) => ({
+      key: entry.idempotencyKey,
+      uncertain: entry.status === "pending" || entry.status === "uncertain",
+      resolved: entry.status === "accepted",
+      commentId
+    }));
+  }
+  async find(idempotencyKey) {
+    const { ledger } = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
+    const entry = ledger.entries.find(
+      (candidate) => candidate.idempotencyKey === protectedKey
+    );
+    return entry ? this.collaborators.ledgerEntryMapping.publicEntry(entry) : void 0;
+  }
+  async reservePending(reservation) {
+    this.#assertDispatchAuthorized();
+    const state = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(
+      reservation.idempotencyKey
+    );
+    const existing = state.ledger.entries.find(
+      (entry2) => entry2.idempotencyKey === protectedKey
+    );
+    if (existing) {
+      return {
+        reserved: false,
+        entry: this.collaborators.ledgerEntryMapping.publicEntry(existing)
+      };
+    }
+    const entry = {
+      idempotencyKey: protectedKey,
+      intentId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.intentId
+      ),
+      repositoryId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.repositoryId
+      ),
+      eventId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.eventId
+      ),
+      kind: reservation.kind,
+      recipientId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.recipientId
+      ),
+      policyVersion: reservation.policyVersion,
+      status: "pending",
+      updatedAt: reservation.reservedAt
+    };
+    state.ledger.entries.push(entry);
+    await this.#save(state.commentId, state.ledger);
+    return {
+      reserved: true,
+      entry: {
+        ...this.collaborators.ledgerEntryMapping.publicEntry(entry),
+        status: "pending"
+      }
+    };
+  }
+  async markAccepted(idempotencyKey, acceptedAt) {
+    await this.#transition(idempotencyKey, "accepted", acceptedAt);
+  }
+  async markUncertain(idempotencyKey, uncertainAt, diagnosticCode) {
+    await this.#transition(
+      idempotencyKey,
+      "uncertain",
+      uncertainAt,
+      diagnosticCode
+    );
+  }
+  async markRejected(idempotencyKey, rejectedAt, diagnosticCode) {
+    await this.#transition(
+      idempotencyKey,
+      "rejected",
+      rejectedAt,
+      diagnosticCode
+    );
+  }
+  async releasePending(idempotencyKey) {
+    this.#assertDispatchAuthorized();
+    const state = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
+    const index = state.ledger.entries.findIndex(
+      (entry) => entry.idempotencyKey === protectedKey
+    );
+    if (index < 0 || state.ledger.entries[index]?.status !== "pending") {
+      throw new Error("Cannot release a delivery that is not pending");
+    }
+    state.ledger.entries.splice(index, 1);
+    await this.#save(state.commentId, state.ledger);
+  }
+  async #transition(idempotencyKey, status, updatedAt, diagnosticCode) {
+    this.#assertDispatchAuthorized();
+    const state = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
+    const index = state.ledger.entries.findIndex(
+      (entry) => entry.idempotencyKey === protectedKey
+    );
+    if (index < 0) {
+      throw new Error("Cannot transition a delivery that was not reserved");
+    }
+    const current = state.ledger.entries[index];
+    if (!current) {
+      throw new Error("Delivery ledger index is invalid");
+    }
+    state.ledger.entries[index] = {
+      ...current,
+      status,
+      updatedAt,
+      ...diagnosticCode ? {
+        diagnosticCode: this.collaborators.ledgerEntryMapping.safeCode(diagnosticCode)
+      } : {}
+    };
+    await this.#save(state.commentId, state.ledger);
+  }
+  async #load() {
+    const matching = (await this.comments.listComments()).filter(
+      (comment2) => comment2.body.startsWith(DELIVERY_LEDGER_MARKER) && comment2.authorLogin?.trim().toLowerCase() === this.#authorLogin
+    );
+    if (matching.length > 1) {
+      throw new Error("Multiple managed delivery ledger comments found");
+    }
+    const comment = matching[0];
+    if (!comment) {
+      return { ledger: { schemaVersion: 2, entries: [] } };
+    }
+    return {
+      commentId: comment.id,
+      ledger: this.collaborators.ledgerCommentCodec.decode(comment.body)
+    };
+  }
+  async #save(commentId, ledger) {
+    ledger.entries.sort(
+      (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
+    );
+    const body = this.presenter.render(ledger);
+    if (commentId === void 0) {
+      await this.comments.createComment(body);
+      return;
+    }
+    await this.comments.updateComment(commentId, body);
+  }
+  #assertDispatchAuthorized() {
+    if (!this.options.dispatchAuthorized) {
+      throw new Error(
+        "Delivery ledger writes require the reusable workflow concurrency lock"
+      );
+    }
+  }
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/i18n/messages.en.ts
+var EN_MESSAGES7 = {
+  "ledger.title": "### Communication status",
+  "ledger.empty": "No deliveries recorded.",
+  "ledger.row": "- {kind}: {status} ({count, number})",
+  "ledger.kind": "{kind, select, host_introduction {Host introduction email} speaker_introduction {Speaker introduction email} host_thanks {Host thank-you email} speaker_thanks {Speaker thank-you email} attendee_slides {Slides email to Meetup attendees} readiness_reminder {Organizer Slack reminder} other {Message}}",
+  "ledger.status": "{status, select, accepted {Request accepted} pending {Delivery in progress or awaiting verification} rejected {Request rejected} uncertain {Delivery needs verification} other {Unknown status}}",
+  "ledger.explanation": "Accepted by the mail service; inbox delivery is unverified.",
+  "ledger.attention": "Check the provider before retrying unverified or rejected deliveries."
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/i18n/messages.fr.ts
+var FR_MESSAGES7 = {
+  "ledger.title": "### \xC9tat des communications",
+  "ledger.empty": "Aucun envoi enregistr\xE9.",
+  "ledger.row": "- {kind} : {status} ({count, number})",
+  "ledger.kind": "{kind, select, host_introduction {Courriel de pr\xE9sentation au lieu d'accueil} speaker_introduction {Courriel de pr\xE9sentation aux intervenants} host_thanks {Courriel de remerciement au lieu d'accueil} speaker_thanks {Courriel de remerciement aux intervenants} attendee_slides {Courriel des slides aux participants Meetup} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
+  "ledger.status": "{status, select, accepted {Demande accept\xE9e} pending {Envoi en cours ou \xE0 v\xE9rifier} rejected {Demande refus\xE9e} uncertain {Envoi \xE0 v\xE9rifier} other {\xC9tat inconnu}}",
+  "ledger.explanation": "Accept\xE9 par le service d'envoi ; r\xE9ception non v\xE9rifi\xE9e.",
+  "ledger.attention": "V\xE9rifiez les envois refus\xE9s ou incertains aupr\xE8s du fournisseur avant de r\xE9essayer."
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/i18n/catalog.ts
+var CATALOGS9 = { en: EN_MESSAGES7, fr: FR_MESSAGES7 };
+
+// packages/adapter/communication/github-delivery-ledger/src/i18n/ledger-messages.ts
+var LedgerMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS9, locale);
+  }
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/ledger-comment-codec.ts
+var LedgerCommentCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  decode(body) {
+    const openingFence = "```json";
+    const start = body.indexOf(openingFence);
+    const end = body.indexOf("```", start + openingFence.length);
+    if (start < 0 || end < 0)
+      throw new Error("Managed delivery ledger comment is corrupted");
+    let value;
+    try {
+      value = JSON.parse(body.slice(start + openingFence.length, end).trim());
+    } catch {
+      throw new Error("Managed delivery ledger comment is corrupted");
+    }
+    if (!this.object(value) || value.schemaVersion !== 1 && value.schemaVersion !== 2 || !Array.isArray(value.entries))
+      throw new Error("Managed delivery ledger schema is unsupported");
+    const entries = value.entries.map((entry) => {
+      if (!this.isEntry(entry))
+        throw new Error("Managed delivery ledger entry is corrupted");
+      return this.collaborators.ledgerEntryMapping.protect(entry);
+    });
+    if (new Set(entries.map((entry) => entry.idempotencyKey)).size !== entries.length)
+      throw new Error("Managed delivery ledger contains duplicate identities");
+    return { schemaVersion: 2, entries };
+  }
+  encode(ledger) {
+    const json = JSON.stringify(ledger, null, 2).replace(
+      /[<>&`-]/g,
+      (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`
+    );
+    return `<!--
+\`\`\`json
+${json}
+\`\`\`
+-->`;
+  }
+  isEntry(value) {
+    if (!this.object(value)) return false;
+    return typeof value.idempotencyKey === "string" && typeof value.intentId === "string" && (value.status === "pending" || value.status === "accepted" || value.status === "uncertain" || value.status === "rejected") && typeof value.updatedAt === "string" && typeof value.repositoryId === "string" && typeof value.eventId === "string" && this.isKind(value.kind) && typeof value.recipientId === "string" && typeof value.policyVersion === "string" && (value.diagnosticCode === void 0 || typeof value.diagnosticCode === "string");
+  }
+  isKind(value) {
+    return value === "host-introduction" || value === "speaker-introduction" || value === "host-thanks" || value === "speaker-thanks" || value === "attendee-slides" || value === "readiness-reminder";
+  }
+  object(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/ledger-comment-presenter.ts
+var LedgerCommentPresenter = class {
+  constructor(collaborators, messages5) {
+    this.collaborators = collaborators;
+    this.messages = messages5;
+  }
+  collaborators;
+  messages;
+  render(ledger) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const entry of ledger.entries) {
+      const kind = this.messages.t("ledger.kind", {
+        kind: entry.kind.replaceAll("-", "_")
+      });
+      const status = this.messages.t("ledger.status", { status: entry.status });
+      const key = JSON.stringify([kind, status]);
+      const group = groups.get(key) ?? { kind, status, count: 0 };
+      group.count += 1;
+      groups.set(key, group);
+    }
+    const lines = [DELIVERY_LEDGER_MARKER, this.messages.t("ledger.title")];
+    lines.push(
+      groups.size === 0 ? this.messages.t("ledger.empty") : [...groups.values()].map((group) => this.messages.t("ledger.row", group)).join("\n")
+    );
+    if (ledger.entries.some(
+      (entry) => entry.kind !== "readiness-reminder" && entry.status === "accepted"
+    )) {
+      lines.push(this.messages.t("ledger.explanation"));
+    }
+    if (ledger.entries.some((entry) => entry.status !== "accepted")) {
+      lines.push(this.messages.t("ledger.attention"));
+    }
+    lines.push(this.collaborators.ledgerCommentCodec.encode(ledger));
+    return lines.join("\n\n");
+  }
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/ledger-entry-mapping.ts
+import { createHash as createHash5 } from "node:crypto";
+var LedgerEntryMapping = class {
+  publicEntry(entry) {
+    return {
+      idempotencyKey: entry.idempotencyKey,
+      intentId: entry.intentId,
+      status: entry.status,
+      updatedAt: entry.updatedAt
+    };
+  }
+  protect(entry) {
+    return {
+      idempotencyKey: this.protectIdentifier(entry.idempotencyKey),
+      intentId: this.protectIdentifier(entry.intentId),
+      repositoryId: this.protectIdentifier(entry.repositoryId),
+      eventId: this.protectIdentifier(entry.eventId),
+      recipientId: this.protectIdentifier(entry.recipientId),
+      kind: entry.kind,
+      status: entry.status,
+      updatedAt: entry.updatedAt,
+      policyVersion: entry.policyVersion,
+      ...entry.diagnosticCode ? { diagnosticCode: this.safeCode(entry.diagnosticCode) } : {}
+    };
+  }
+  safeCode(code) {
+    return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(code) ? code : "unsafe-diagnostic-code-redacted";
+  }
+  protectIdentifier(value) {
+    if (/^sha256:[0-9a-f]{64}$/.test(value)) return value;
+    return `sha256:${createHash5("sha256").update(value).digest("hex")}`;
+  }
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/scoped-github-ledger-comment-client.ts
+var ScopedGithubLedgerCommentClient = class {
+  constructor(client, owner, repo, issueNumber) {
+    this.client = client;
+    this.owner = owner;
+    this.repo = repo;
+    this.issueNumber = issueNumber;
+  }
+  client;
+  owner;
+  repo;
+  issueNumber;
+  async listComments() {
+    const comments = [];
+    for (let page = 1; page <= 100; page++) {
+      const response = await this.client.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issueNumber,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data)) {
+        throw new Error("GitHub delivery ledger comment response is invalid");
+      }
+      this.appendComments(response.data, comments);
+      const link = response.headers.link;
+      const hasNext = typeof link === "string" ? /<[^>]+>;\s*rel="next"/.test(link) : response.data.length === 100;
+      if (!hasNext) {
+        return comments;
+      }
+    }
+    throw new Error("GitHub delivery ledger pagination exceeded its bound");
+  }
+  async createComment(body) {
+    await this.client.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issueNumber,
+      body
+    });
+  }
+  async updateComment(commentId, body) {
+    await this.client.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  appendComments(values, comments) {
+    for (const value of values) {
+      if (!this.object(value) || typeof value.id !== "number" || !Number.isSafeInteger(value.id) || value.id <= 0 || value.body != null && typeof value.body !== "string")
+        throw new Error("GitHub delivery ledger comment response is invalid");
+      const author = value.user;
+      if (author != null && (!this.object(author) || typeof author.login !== "string"))
+        throw new Error("GitHub delivery ledger comment author is invalid");
+      if (typeof value.body === "string") {
+        comments.push({
+          id: value.id,
+          body: value.body,
+          ...this.object(author) && typeof author.login === "string" ? { authorLogin: author.login } : {}
+        });
+      }
+    }
+  }
+  object(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/communication/github-delivery-ledger/src/dependency-composition.ts
+var GithubDeliveryLedgerComposition = class {
+  githubDeliveryLedger(...args) {
+    return new GithubDeliveryLedger(
+      {
+        ledgerEntryMapping: this.ledgerEntryMapping(),
+        ledgerCommentCodec: this.ledgerCommentCodec()
+      },
+      ...args
+    );
+  }
+  ledgerCommentCodec() {
+    return new LedgerCommentCodec({
+      ledgerEntryMapping: this.ledgerEntryMapping()
+    });
+  }
+  ledgerCommentPresenter(...args) {
+    return new LedgerCommentPresenter(
+      {
+        ledgerCommentCodec: this.ledgerCommentCodec()
+      },
+      ...args
+    );
+  }
+  ledgerEntryMapping() {
+    return new LedgerEntryMapping();
+  }
+  ledgerMessages(...args) {
+    return new LedgerMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  scopedGithubLedgerCommentClient(...args) {
+    return new ScopedGithubLedgerCommentClient(...args);
+  }
+};
+
 // packages/adapter/publication/github-publication-journal/src/community-publication-comment-codec.ts
 var CommunityPublicationCommentCodec = class _CommunityPublicationCommentCodec {
   constructor(identities, target) {
@@ -69599,6 +70302,77 @@ var HcaptchaCaptchaResolverComposition = class {
   }
 };
 
+// packages/adapter/publication/meetup-event-gateway/src/i18n/messages.en.ts
+var EN_MESSAGES8 = {
+  "slides.subject": "Meetup presentation",
+  "slides.body": "Hello, here is the link to the meetup slides: {url}"
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/i18n/messages.fr.ts
+var FR_MESSAGES8 = {
+  "slides.subject": "Pr\xE9sentation du meetup",
+  "slides.body": "Bonjour, voici le lien vers les slides du meetup: {url}"
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/i18n/catalog.ts
+var CATALOGS10 = { en: EN_MESSAGES8, fr: FR_MESSAGES8 };
+
+// packages/adapter/publication/meetup-event-gateway/src/i18n/attendee-messages.ts
+var AttendeeMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS10, locale);
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-attendee-message.ts
+var MeetupAttendeeMessage = class {
+  constructor(messages5, page, group) {
+    this.messages = messages5;
+    this.page = page;
+    this.group = group;
+  }
+  messages;
+  page;
+  group;
+  async send(eventUrl, pdfUrl, beforeSend) {
+    const event = MeetupEventUrl.parse(eventUrl, this.group);
+    if (!event) throw new ScheduledEventError("link");
+    const destination = new URL("messages/send/", this.group.value);
+    destination.searchParams.set("eventId", event.id);
+    this.page.setDefaultTimeout(15e3);
+    this.page.setDefaultNavigationTimeout(3e4);
+    await this.page.goto(destination.href, { waitUntil: "domcontentloaded" });
+    if (this.page.url() !== destination.href)
+      throw new ScheduledEventError("verification");
+    await this.selectAudience();
+    await this.page.locator("input#subject").fill(this.messages.t("slides.subject"));
+    await this.page.locator('.toastui-editor .ProseMirror[contenteditable="true"]:visible').fill(this.messages.t("slides.body", { url: pdfUrl }));
+    await beforeSend();
+    await this.page.getByRole("button", { name: "Send message", exact: true }).click();
+    await this.page.getByText("Email has been successfully sent!", { exact: true }).waitFor();
+  }
+  async selectAudience() {
+    await this.page.getByRole("radio", {
+      name: /^Members based on RSVP status to a given event/
+    }).check();
+    const attended = this.page.getByRole("checkbox", {
+      name: "Members who went to this event",
+      exact: true
+    });
+    await attended.waitFor();
+    const options = this.page.locator(
+      '[role="checkbox"][id^="selection-option-"]'
+    );
+    for (const option of await options.all()) {
+      await option.setChecked(
+        await option.getAttribute("id") === "selection-option-ATTENDED"
+      );
+    }
+    if (!await attended.isChecked() || await options.and(this.page.locator('[aria-checked="true"]')).count() !== 1)
+      throw new ScheduledEventError("verification");
+  }
+};
+
 // packages/adapter/publication/meetup-event-gateway/src/meetup-browser-routes.ts
 var MeetupBrowserRoutes = class {
   login(origin) {
@@ -69805,14 +70579,20 @@ var MeetupEventGateway = class {
   createCaptchaResolver;
   group;
   async inspect(reference) {
-    return this.withSession(
+    return this.withPublication(
       "UTC",
       (page) => this.collaborators.createMeetupEventEditor(page, this.group.value).inspect(reference)
     );
   }
+  async sendSlides(eventUrl, pdfUrl, beforeSend) {
+    await this.withSession(
+      "UTC",
+      (page) => this.collaborators.createAttendeeMessage(page, this.group).send(eventUrl, pdfUrl, beforeSend)
+    );
+  }
   async save(event, identity, beforeSubmit, onSaved) {
     if (identity) this.verifyIdentity(identity);
-    return this.withSession(
+    return this.withPublication(
       event.timeZone,
       (page) => this.collaborators.createMeetupEventEditor(page, this.group.value).save(
         event,
@@ -69824,7 +70604,7 @@ var MeetupEventGateway = class {
   }
   async publish(event, identity, beforePublish) {
     this.verifyIdentity(identity);
-    return this.withSession(
+    return this.withPublication(
       event.timeZone,
       (page) => this.collaborators.createMeetupEventPublisher(page, this.group.value).publish(event, identity.reviewUrl, beforePublish)
     );
@@ -69838,6 +70618,10 @@ var MeetupEventGateway = class {
     const expected = this.identity(value.reviewUrl);
     if (value.id !== expected.id || value.reviewUrl !== expected.reviewUrl || value.publicUrl !== expected.publicUrl)
       throw new ScheduledEventError("verification");
+  }
+  async withPublication(timezoneId, operation) {
+    const saved = await this.withSession(timezoneId, operation);
+    return { identity: this.identity(saved.url), status: saved.status };
   }
   async withSession(timezoneId, operation) {
     if (!this.credentials.email.trim() || !this.credentials.password)
@@ -69868,8 +70652,7 @@ var MeetupEventGateway = class {
         throw new ScheduledEventError(
           ["unavailable", "unexpected-page"].includes(status) ? "unavailable" : "authentication"
         );
-      const saved = await operation(page);
-      return { identity: this.identity(saved.url), status: saved.status };
+      return await operation(page);
     } finally {
       await browser.close().catch(() => void 0);
     }
@@ -70125,6 +70908,10 @@ var MeetupVenue = class {
 
 // packages/adapter/publication/meetup-event-gateway/src/dependency-composition.ts
 var MeetupEventGatewayComposition = class {
+  constructor(locale) {
+    this.locale = locale;
+  }
+  locale;
   meetupBrowserRoutes() {
     return new MeetupBrowserRoutes();
   }
@@ -70145,6 +70932,16 @@ var MeetupEventGatewayComposition = class {
   meetupEventGateway(...args) {
     return new MeetupEventGateway(
       {
+        createAttendeeMessage: (page, group) => new MeetupAttendeeMessage(
+          new AttendeeMessages(
+            {
+              localeResolver: new LocalizationComposition().localeResolver()
+            },
+            this.locale
+          ),
+          page,
+          group
+        ),
         createMeetupEventEditor: (...args2) => this.meetupEventEditor(...args2),
         createMeetupEventPublisher: (...args2) => this.meetupEventPublisher(...args2),
         createMeetupLoginPage: (...args2) => this.meetupLoginPage(...args2)
@@ -70719,17 +71516,6 @@ var PublicationAdapterComposition = class {
   meetup(input, adapter) {
     const group = MeetupGroupUrl.fromEventUrlPrefix(input.meetupEventUrlPrefix);
     if (!group) throw new Error("Invalid Meetup event URL prefix");
-    const { ai: ai3, email, password } = adapter.credentials;
-    const resolver = new HcaptchaCaptchaResolverComposition().captchaResolverFactory(
-      fileURLToPath(
-        new URL(
-          "../../../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/",
-          import.meta.url
-        )
-      ),
-      ai3.apiKey,
-      ai3.model
-    );
     return new PublicationDestinationComposition().meetup(
       {
         settings: adapter.settings,
@@ -70744,10 +71530,52 @@ var PublicationAdapterComposition = class {
           },
           input.commentAuthorLogin
         ),
-        gateway: new MeetupEventGatewayComposition().meetupEventGatewayFactory().create({ email, password }, resolver, group.value)
+        gateway: this.meetupGateway(input, adapter, group)
       },
       group
     );
+  }
+  slides(input, adapter, source) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(input.meetupEventUrlPrefix);
+    if (!group) throw new Error("Invalid Meetup event URL prefix");
+    const ledger = new GithubDeliveryLedgerComposition();
+    return new ReconcileMeetupSlidesDelivery(
+      {
+        ...source,
+        clock: input.clock,
+        concurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        postEvent: new CommunicationDomainComposition().postEventPolicy(),
+        ledger: ledger.githubDeliveryLedger(
+          ledger.scopedGithubLedgerCommentClient(
+            input.client,
+            input.owner,
+            input.repo,
+            input.issueNumber
+          ),
+          { dispatchAuthorized: true, authorLogin: input.commentAuthorLogin },
+          ledger.ledgerCommentPresenter(ledger.ledgerMessages(input.locale))
+        ),
+        gateway: this.meetupGateway(input, adapter, group),
+        identity: new MeetupEventIdentityPolicy(group),
+        presentationUrl: new PresentationFileUrl(),
+        results: new EventPublicationResults("meetup", "Meetup")
+      },
+      { provider: "meetup", target: group.eventUrlPrefix }
+    );
+  }
+  meetupGateway(input, adapter, group) {
+    const { ai: ai3, email, password } = adapter.credentials;
+    const resolver = new HcaptchaCaptchaResolverComposition().captchaResolverFactory(
+      fileURLToPath(
+        new URL(
+          "../../../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/",
+          import.meta.url
+        )
+      ),
+      ai3.apiKey,
+      ai3.model
+    );
+    return new MeetupEventGatewayComposition(input.locale).meetupEventGatewayFactory().create({ email, password }, resolver, group.value);
   }
   ocgroups(input, adapter) {
     const settings = adapter.settings;
@@ -70808,6 +71636,16 @@ var EventPublicationJourneyComposition = class {
         },
         input.adapters.map(
           (adapter) => adapters.create({ ...input, clock, approval }, adapter)
+        ),
+        input.adapters.filter((adapter) => adapter.provider === "meetup").map(
+          (adapter) => adapters.slides({ ...input, clock, approval }, adapter, {
+            repository: context3.get(
+              SERVICES.eventRepository
+            ),
+            codec: context3.get(
+              SERVICES.eventDocumentCodec
+            )
+          })
         )
       );
     });

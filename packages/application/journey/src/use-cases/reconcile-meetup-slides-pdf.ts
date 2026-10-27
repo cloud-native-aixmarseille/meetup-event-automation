@@ -65,7 +65,7 @@ export class ReconcileMeetupSlidesPdf {
 			identity,
 			document,
 		);
-		return this.dependencies.pdf.execute({
+		const result = await this.dependencies.pdf.execute({
 			eligible: this.dependencies.postEvent.isDue({
 				eventDate: event.date,
 				timeZone: event.timeZone,
@@ -77,5 +77,21 @@ export class ReconcileMeetupSlidesPdf {
 			container: source.container,
 			source: source.presentation,
 		});
+		const slidesPdfUrl = result.status === "ready" ? result.url : undefined;
+		if (event.slidesPdfUrl !== slidesPdfUrl) {
+			await this.dependencies.concurrency.ensureEventDocumentIsCurrent(
+				this.dependencies.events,
+				identity,
+				document,
+			);
+			await this.dependencies.events.applyPatch(
+				identity,
+				this.dependencies.codec.createPatch(document, {
+					...event,
+					slidesPdfUrl,
+				}),
+			);
+		}
+		return result;
 	}
 }

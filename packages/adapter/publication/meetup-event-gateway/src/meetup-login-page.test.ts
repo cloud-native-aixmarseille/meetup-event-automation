@@ -53,8 +53,9 @@ function fixture() {
 	return {
 		login: new MeetupLoginPage(
 			{
-				meetupBrowserRoutes:
-					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupEventGatewayComposition(
+					"en",
+				).meetupBrowserRoutes(),
 			},
 			page,
 			solver,

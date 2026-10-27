@@ -16,13 +16,13 @@ describe("organizer diagnostic presentation", () => {
 		[
 			"en",
 			"publication.assets.pdf.conflict",
-			"Slides & Content",
+			"Event materials",
 			"shared public folder",
 		],
 		[
 			"fr",
 			"publication.assets.pdf.conflict",
-			"Slides & Content",
+			"Event materials",
 			"dossier public partagé",
 		],
 		[
@@ -46,7 +46,7 @@ describe("organizer diagnostic presentation", () => {
 		[
 			"en",
 			"publication.assets.content.conflict",
-			"Slides & Content",
+			"Event materials",
 			"Review manual edits",
 		],
 	])(

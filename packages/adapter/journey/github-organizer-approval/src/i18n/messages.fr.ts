@@ -30,7 +30,7 @@ export const FR_MESSAGES = {
 	"follow-up.instructions":
 		"Cochez les tâches manuelles dans la liste Post event du ticket.",
 	"follow-up.task":
-		"{task, select, thank_host {Remercier l'hôte} thank_speakers {Remercier les intervenants} share_slides {Partager la présentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les réseaux sociaux} other {Tâche après le meetup}}",
+		"{task, select, thank_host {Remercier l'hôte} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un récapitulatif du meetup sur LinkedIn} other {Tâche après le meetup}}",
 	"follow-up.stopped": "Suivi suspendu.",
 	"follow-up.waiting": "Les remerciements ne sont pas prêts pour approbation.",
 	"follow-up.emails-complete": "Aucun courriel de remerciement en attente.",

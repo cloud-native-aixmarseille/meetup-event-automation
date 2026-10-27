@@ -81,6 +81,7 @@ export class LedgerCommentCodec {
 			value === "speaker-introduction" ||
 			value === "host-thanks" ||
 			value === "speaker-thanks" ||
+			value === "attendee-slides" ||
 			value === "readiness-reminder"
 		);
 	}

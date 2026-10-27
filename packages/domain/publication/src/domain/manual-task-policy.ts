@@ -4,7 +4,6 @@ export type ManualPublicationTaskKind =
 	| "publish-meetup-event"
 	| "publish-community-event"
 	| "create-asset-folder"
-	| "publish-slides"
 	| "import-attendance";
 
 export type ManualPublicationTaskStatus =
@@ -52,16 +51,6 @@ export class ManualPublicationPolicy {
 			),
 			occurrenceConfirmed
 				? this.task(
-						"publish-slides",
-						event.slidesPublished,
-						"Publish post-event slides",
-					)
-				: this.notApplicable(
-						"publish-slides",
-						"Slides are published only after occurrence is explicitly confirmed",
-					),
-			occurrenceConfirmed
-				? this.task(
 						"import-attendance",
 						event.attendanceImported,
 						"Import post-event attendance",
@@ -97,7 +86,6 @@ export class ManualPublicationPolicy {
 			"publish-meetup-event",
 			"publish-community-event",
 			"create-asset-folder",
-			"publish-slides",
 			"import-attendance",
 		];
 	}

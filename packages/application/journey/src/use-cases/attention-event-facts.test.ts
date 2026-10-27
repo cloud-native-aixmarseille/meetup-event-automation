@@ -74,7 +74,6 @@ describe("public attention event facts", () => {
 
 		// Assert
 		expect(result.followUpPending).toEqual([
-			"share-slides",
 			"import-attendance",
 			"share-social",
 		]);
@@ -87,6 +86,9 @@ describe("public attention event facts", () => {
 				slidesAndContent: [],
 				communication: [
 					{ name: "Slack - OpenBaR", completed: false },
+					{ name: "LinkedIn", completed: false },
+					{ name: "Social networks", completed: false },
+					{ name: "Slack - AixMarseille.Tech", completed: true },
 					{ name: "private@example.test", completed: false },
 				],
 				postEvent: [],
@@ -109,6 +111,10 @@ describe("public attention event facts", () => {
 
 		// Assert
 		expect(result.publicationPending).toContain("public-slack-community");
+		expect(
+			result.publicationPending.filter((task) => task === "public-social"),
+		).toHaveLength(1);
+		expect(result.publicationPending).not.toContain("public-slack-local");
 		expect(result.followUpPending).toContain("thank-host");
 		expect(JSON.stringify(result)).not.toContain("private@example.test");
 	});

@@ -32,7 +32,7 @@ export const messages = {
 	"task.delivery": "reprise des envois",
 	"task.public-slack-local": "Publiez l'annonce sur le Slack local",
 	"task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
-	"task.public-social": "Publiez sur les réseaux sociaux",
+	"task.public-social": "Publiez l'annonce du meetup sur LinkedIn",
 
 	"attention.clear": "Aucune tâche en attente.",
 	"task.publish-meetup-event": "Approuver la publication Meetup",
@@ -42,7 +42,7 @@ export const messages = {
 	"task.thank-speakers": "Envoyez les remerciements aux intervenants",
 	"task.share-slides": "Partagez les présentations",
 	"task.import-attendance": "Importez les présences",
-	"task.share-social": "Partagez sur les réseaux sociaux",
+	"task.share-social": "Partagez le récapitulatif du meetup sur LinkedIn",
 	"task.event": "validation du meetup",
 	"task.assets": "ressources",
 	"task.feedback": "évaluations",

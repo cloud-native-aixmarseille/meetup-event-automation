@@ -194,7 +194,7 @@ describe("post-event attention composition", () => {
 			state.episodes.filter(
 				(episode) => episode.condition.code === "follow-up",
 			),
-		).toHaveLength(5);
+		).toHaveLength(4);
 		expect(state.commentId).toBe(100);
 		expect(f.dispatch).not.toHaveBeenCalled();
 		expect(

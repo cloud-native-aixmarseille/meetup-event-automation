@@ -1,100 +1,69 @@
 "name": "Meetup"
-"description": "Gather meetup event organization data"
+"description": "Plan a meetup event"
 "title": "[Meetup]"
 "labels":
   - "meetup"
 "body":
-  - "type": "input"
-    "id": "event_title"
-    "attributes":
-      "label": "Event Title"
-      "description": "Provide the title of the event"
-      "placeholder": "Enter the event title"
+  - type: markdown
+    attributes:
+      value: |
+        Complete the checklists as you prepare the event.
   - "type": "input"
     "id": "event_date"
     "attributes":
       "label": "Event Date"
-      "description": "Specify the proposed date for the event.
-
-        Format: YYYY-MM-DD\n"
+      "description": "Proposed date (YYYY-MM-DD)."
       "placeholder": "YYYY-MM-DD"
   - "type": "dropdown"
     "id": "hoster"
     "attributes":
       "label": "Hoster"
-      "description": "Pick a hoster"
+      "description": "Select the event host."
       "options":
         - "Hoster 1"
         - "Hoster 2"
   - "type": "textarea"
-    "id": "event_description"
-    "attributes":
-      "label": "Event Description"
-      "description": "Short describe the event"
-  - "type": "textarea"
     "id": "conference_hall_proposals"
     "attributes":
       "label": "Conference Hall proposals"
-      "description": "Enter one accepted proposal number per line, in presentation order (e.g. 42 for .../proposals/42). The agenda is generated automatically."
+      "description": "Accepted proposal IDs, one per line, in talk order."
     "validations":
       "required": false
-  - "type": "input"
-    "id": "meetup_link"
-    "attributes":
-      "label": "Meetup Link"
-      "description": "Provide the link to the Meetup event page"
-      "placeholder": "https://www.meetup.com/cloud-native-aix-marseille/events/xxxxxxxxx"
-  - "type": "input"
-    "id": "cncf_link"
-    "attributes":
-      "label": "CNCF Link"
-      "description": "Provide the link to the CNCF event page"
-      "placeholder":
-        "https://community.cncf.io/events/details/cncf-cloud-native-aix-\
-        marseille-presents-xxx"
-  - "type": "input"
-    "id": "drive_link"
-    "attributes":
-      "label": "Drive Link"
-      "description": "Provide the link to the Google Drive folder"
-      "placeholder": "https://drive.google.com/drive/folders/xxxxxxxxxxxxxxxxxxxx"
-  - type: input
-    id: openfeedback_link
+  - type: markdown
     attributes:
-      label: OpenFeedback Link
-      description: Provide an existing OpenFeedback event URL, or leave blank for automatic creation when configured.
-      placeholder: https://openfeedback.io/event-id
+      value: |
+        Automation manages event details, emails and slide sharing. Review approval requests in the comments.
   - "type": "checkboxes"
     "id": "slides"
     "attributes":
-      "label": "Slides & Content"
-      "description": "Check items for slides and event content"
+      "label": "Event materials"
+      "description": "Prepare community content and collect slides."
       "options":
-        - "label": "Basic Slides"
-        - "label": "Attendance sheet"
-        - "label": "Announcements / surveys / news etc..."
-        - "label": "Slides hoster"
-        - "label": "Slides speaker(s)"
-        - "label": "Game"
-        - "label": "Goodies"
+        - "label": "Add community news and surveys"
+        - "label": "Collect host slides"
+        - "label": "Collect speaker slides"
   - "type": "checkboxes"
     "id": "communication"
     "attributes":
       "label": "Communication"
-      "description": "Select communication items to be prepared"
+      "description": "Post the approved announcement with the registration link."
       "options":
-        - "label": "Mail introduction speakers"
-        - "label": "Mail introduction hoster"
-        - "label": "Cover image"
-        - "label": "Announcement"
-        - "label": "Slack - AixMarseille.Tech"
-        - "label": "Slack - OpenBaR"
-        - "label": "LinkedIn"
+        - "label": "Announce on Slack - AixMarseille.Tech"
+        - "label": "Announce on Slack - OpenBaR"
+        - "label": "Announce on LinkedIn"
+  - type: checkboxes
+    id: event_logistics
+    attributes:
+      label: Event logistics
+      description: Check when arranged or unnecessary.
+      options:
+        - label: "Arrange the game"
+        - label: "Arrange goodies"
   - "type": "dropdown"
     "id": "aperitif"
     "attributes":
       "label": "Aperitif"
-      "description": "To be provided?"
+      "description": "Provide food and drinks?"
       "options":
         - "Yes"
         - "No"
@@ -102,7 +71,7 @@
     "id": "restaurant"
     "attributes":
       "label": "Restaurant / Bar"
-      "description": "Afterwards?"
+      "description": "Meet at a restaurant or bar afterwards?"
       "options":
         - "Yes"
         - "No"
@@ -110,10 +79,7 @@
     "id": "post-event"
     "attributes":
       "label": "Post event"
-      "description": "Select Post event items to be done"
+      "description": "Complete after the event. Include photos and links in the recap."
       "options":
-        - "label": "Thanks hoster"
-        - "label": "Thanks speakers and share openfeedback reports"
-        - "label": "Share slides to meetup"
-        - "label": "Sync attendees from tally sheet to CNCF"
-        - "label": "Social networks"
+        - "label": "Import attendees into CNCF"
+        - "label": "Share recap on LinkedIn"

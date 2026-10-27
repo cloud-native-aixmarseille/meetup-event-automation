@@ -1,3 +1,6 @@
+import { LocalizationComposition } from "@meetup-automation/localization";
+import { AttendeeMessages } from "./i18n/attendee-messages.js";
+import { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
 import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 import {
 	MeetupCalendar,
@@ -27,6 +30,7 @@ import {
 import { MeetupVenue, type MeetupVenueArguments } from "./meetup-venue.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class MeetupEventGatewayComposition {
+	constructor(private readonly locale: string) {}
 	meetupBrowserRoutes(): MeetupBrowserRoutes {
 		return new MeetupBrowserRoutes();
 	}
@@ -48,6 +52,17 @@ export class MeetupEventGatewayComposition {
 	meetupEventGateway(...args: MeetupEventGatewayArguments): MeetupEventGateway {
 		return new MeetupEventGateway(
 			{
+				createAttendeeMessage: (page, group) =>
+					new MeetupAttendeeMessage(
+						new AttendeeMessages(
+							{
+								localeResolver: new LocalizationComposition().localeResolver(),
+							},
+							this.locale,
+						),
+						page,
+						group,
+					),
 				createMeetupEventEditor: (...args) => this.meetupEventEditor(...args),
 				createMeetupEventPublisher: (...args) =>
 					this.meetupEventPublisher(...args),

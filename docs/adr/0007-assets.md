@@ -107,6 +107,16 @@ editable presentation link; PDF export readiness does not gate an otherwise read
 email batch. A PDF failure remains visible through its own stage evidence without
 invalidating independent work.
 
+### Meetup attendee delivery
+
+Expose the verified public PDF URL in the issue. The publication workflow uses
+Meetup's Contact attendees form with the attended-only RSVP filter to send that
+link after the event. The communication ledger reserves delivery before submission
+and records acceptance before updating the issue checklist. Uncertain sends
+require verification; PDF refreshes and issue retries never resend accepted work.
+The browser adapter owns recipient selection and confirmation; journey owns
+eligibility, concurrency, delivery state and issue completion.
+
 ## Alternatives and consequences
 
 One-time text substitution cannot track later edits safely. Replacing entire
@@ -126,6 +136,15 @@ Provider limits and supported object types remain constraints documented in the
 integration guide.
 
 ## Decision history
+
+On 2026-10-26, manual Meetup slide sharing was replaced by automatic attendee
+messaging. The organizer supplied the Contact attendees flow and French message.
+The supplied saved page and browser assets established the contact URL, RSVP
+checkboxes, rich-text editor and successful-send notification. Synthetic browser
+tests exercise those controls without contacting real attendees.
+The editable presentation remains the target of host and speaker emails; only
+attendee delivery requires the public PDF. This extends the PDF decision without
+changing existing artifact identities or host/speaker delivery policies.
 
 Later on 2026-10-23, the filename-only parser and runtime date formatter were
 replaced by `packages/presentation/templating`. Separate filename, Slides, and
