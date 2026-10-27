@@ -99,7 +99,7 @@ jobs:
       # This input is required.
       slack-organizer-channel-id: ""
 
-      # Draft target: slack-aix:announcement/d7/d0, slack-openbar:announcement/d7/d0, or linkedin:announcement/d7/d0. Select one destination and purpose.
+      # Draft target: configured destination key followed by :announcement, :d7, or :d0.
       # This input is required.
       target: ""
 
@@ -123,20 +123,20 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**                           | **Description**                                                                                                                                   | **Required** | **Type**   | **Default** |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`meetup-event-url-prefix`**       | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                       | **true**     | **string** | -           |
-| **`community-event-url-prefixes`**  | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                          | **true**     | **string** | -           |
-| **`asset-folder-url-prefix`**       | HTTPS prefix accepted for event asset folder URLs.                                                                                                | **true**     | **string** | -           |
-| **`locale`**                        | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                | **true**     | **string** | -           |
-| **`issue-number`**                  | Meetup issue number.                                                                                                                              | **true**     | **number** | -           |
-| **`conference-hall-event`**         | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                         | **true**     | **string** | -           |
-| **`google-drive-public-folder-id`** | Public Drive folder for content images, shared with anyone as reader.                                                                             | **true**     | **string** | -           |
-| **`slack-organizer-channel-id`**    | Internal organizer channel receiving content reviews.                                                                                             | **true**     | **string** | -           |
-| **`target`**                        | Draft target: slack-aix:announcement/d7/d0, slack-openbar:announcement/d7/d0, or linkedin:announcement/d7/d0. Select one destination and purpose. | **true**     | **string** | -           |
-| **`ai-provider`**                   | AI provider identifier (gemini).                                                                                                                  | **true**     | **string** | -           |
-| **`ai-model`**                      | Supported structured-text model.                                                                                                                  | **true**     | **string** | -           |
-| **`github-app-client-id`**          | GitHub App client ID for the consumer repository.                                                                                                 | **true**     | **string** | -           |
+| **Input**                           | **Description**                                                                                                                    | **Required** | **Type**   | **Default** |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`meetup-event-url-prefix`**       | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | **string** | -           |
+| **`community-event-url-prefixes`**  | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | **string** | -           |
+| **`asset-folder-url-prefix`**       | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | **string** | -           |
+| **`locale`**                        | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | **string** | -           |
+| **`issue-number`**                  | Meetup issue number.                                                                                                               | **true**     | **number** | -           |
+| **`conference-hall-event`**         | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | **string** | -           |
+| **`google-drive-public-folder-id`** | Public Drive folder for content images, shared with anyone as reader.                                                              | **true**     | **string** | -           |
+| **`slack-organizer-channel-id`**    | Internal organizer channel receiving content reviews.                                                                              | **true**     | **string** | -           |
+| **`target`**                        | Draft target: configured destination key followed by :announcement, :d7, or :d0.                                                   | **true**     | **string** | -           |
+| **`ai-provider`**                   | AI provider identifier (gemini).                                                                                                   | **true**     | **string** | -           |
+| **`ai-model`**                      | Supported structured-text model.                                                                                                   | **true**     | **string** | -           |
+| **`github-app-client-id`**          | GitHub App client ID for the consumer repository.                                                                                  | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
