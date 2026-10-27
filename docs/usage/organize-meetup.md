@@ -6,9 +6,8 @@ This guide assumes the [repository setup](setup.md) is complete.
 
 Open a new issue with the **Meetup** form. Fill in:
 
-- **Event Title** and **Event Date** (`YYYY-MM-DD`).
+- **Event Date** (`YYYY-MM-DD`).
 - **Hoster**, using the generated choices.
-- **Event Description**, with the public event summary.
 - **Conference Hall proposals**, with one accepted proposal number per line, in
   presentation order. You can leave this blank while planning the event.
 
@@ -17,12 +16,36 @@ Edit talk content and speaker profiles in Conference Hall; source changes appear
 on the next successful issue update or scheduled audit. See
 [select talks](../integrations/conference-hall.md#select-talks).
 
+Automation maintains **Event Title**, **Event Description**, **Meetup Link**,
+**CNCF Link**, **Drive Link** and **OpenFeedback Link**. The configured workflows
+add them to the issue as their steps complete. Generate and approve the title and
+description through [content review](../integrations/content.md); automation
+applies the approved text. The issue starts with the title `[Meetup]`. After title
+approval, automation updates both **Event Title** in the body and the issue title.
+
 For manually managed issues without proposal selections, maintain **Agenda** with
 speaker references and descriptions using the
 [referential guide](../reference/referentials.md#use-references-in-issues).
 
-Select the aperitif and restaurant/bar options and use the checklists to track
-preparation. Keep email addresses, phone numbers, and other contact details in
+Select the aperitif and restaurant/bar options. The form checklists contain
+organizer tasks. Automation adds email completion to the issue after approval
+and accepted delivery.
+
+- **Event materials** covers adding community news and surveys, and collecting
+  host and speaker slides. Approve covers and announcement drafts
+  through [content review](../integrations/content.md#decide-and-apply).
+- **Communication** tracks publication of the event announcement and registration
+  link on Slack - AixMarseille.Tech, Slack - OpenBaR and LinkedIn.
+- **Event logistics** covers games and goodies. Check each task once arranged or
+  confirmed unnecessary.
+- **Post event** tracks attendee import into CNCF and the event recap with photos
+  and useful links on LinkedIn.
+
+Automation exports the presentation PDF and sends its link through Meetup to
+members marked as having attended. It adds **Slides PDF** and records completion
+under **Automated slide sharing**. See [attendee slide delivery](../integrations/event-publication.md#send-slides-to-attendees).
+
+Keep email addresses, phone numbers, and other contact details in
 the private [referentials](../reference/referentials.md).
 
 ## Resolve diagnostics and confirm participation
@@ -42,15 +65,16 @@ Selecting a host removes `hoster:needed`; it does not confirm participation.
 Speaker `needed` labels follow their confirmation state. A ready event has
 valid required fields, resolved host and speaker references, both confirmations,
 Meetup/CNCF/Drive links, a checked **Meetup event published** task in
-**Communication**, and no blocking diagnostics. The **OpenFeedback Link**
-field may stay empty until the automation creates the feedback event.
+**Communication**, and no blocking diagnostics. **OpenFeedback Link** appears
+when automation creates the feedback event.
 
-Use [Meetup synchronization](../integrations/event-publication.md) to create a
-draft and fill **Meetup Link**. Once the required information is complete,
-review the draft through the approval comment or its Slack link, then check
-**Approve publishing this Meetup event**. Automation publishes it and checks
-**Meetup event published** under **Communication** after verification.
-Rejecting the request leaves it in draft. Publish on the CNCF community platform and fill **CNCF Link** manually.
+Use [event publication synchronization](../integrations/event-publication.md) for
+Meetup and CNCF / OCGroups. Review each destination's draft through its approval
+comment or Slack link, then approve publication. Each destination requires its
+own approval. Automation fills **Meetup Link** with the verified draft or
+published URL and **CNCF Link** with the verified published URL. It also checks
+**Meetup event published** under **Communication** after verified publication.
+Rejecting a request leaves that destination's event in draft.
 
 ## Prepare assets and feedback
 
@@ -58,12 +82,12 @@ The workflow creates the [Drive event folder](../integrations/assets.md), copies
 the configured templates, and fills **Drive Link**. Follow the organizer checklist
 for content corrections and the linked Actions run for technical failures.
 
-Leave **OpenFeedback Link** empty to have the event created automatically using
-the required [organization API key](../integrations/feedback.md). A valid existing
-feedback URL is reused. Once talk subjects and speaker references are complete,
-the automation creates the poll and synchronizes its title, talks and public
-speaker names. Manage photos and schedules in OpenFeedback, and review obsolete
-talks there; automation preserves existing votes and does not delete records.
+Automation creates the OpenFeedback event using the required
+[organization API key](../integrations/feedback.md) and adds **OpenFeedback Link**
+to the issue. A valid existing feedback URL is reused. Once talk subjects and
+speaker references are complete, automation synchronizes the poll's title, talks
+and public speaker names. Manage photos and schedules in OpenFeedback, and review
+obsolete talks there; automation preserves existing votes and does not delete records.
 See [agenda synchronization](../integrations/feedback.md#prepare-the-event) for
 identity matching and concurrent-edit handling.
 
@@ -80,16 +104,12 @@ channel receives approval requests and actionable organizer reminders. Post publ
 event announcements manually and check their separate Communication tasks.
 See [channel separation](../integrations/communications.md#organizer-and-public-channels).
 
-Leave these two items unchecked in **Communication**:
-
-- [ ] Mail introduction speakers
-- [ ] Mail introduction hoster
-
-Once the event is ready, review the approval request in the issue or follow its
+Once the event is ready, automation requests approval for host and speaker
+introduction emails. Review the request in the issue or follow its
 Slack link. A repository writer can check **Approve sending this batch** in
-the bot comment. The automation sends the emails and checks each item
-independently after all requests for that group are accepted. Check an item
-yourself only when that group's work was completed manually.
+the bot comment. Automation sends the emails and adds each completed item under
+**Automated introduction emails** after all requests for that group are accepted.
+No email checkbox is needed in the form.
 
 Check **Reject sending this batch** to refuse sending. Once processed, either
 choice is final: the same comment shows the decision and organizer, with no
@@ -97,10 +117,10 @@ checkboxes. The original Slack message receives ✅ for approval or ❌ for
 rejection. See [batch confirmation](../integrations/communications.md#confirm-an-email-batch)
 for permissions, changed batches and notification recovery.
 
-Keep `Mail thanks hoster` and `Mail thanks speakers` in **Post event** for the
-corresponding follow-up emails. Missing tasks are not sent automatically. See
-[communications](../integrations/communications.md) for supported task names,
-message timing and recovery after partial failures.
+Thank-you emails follow the same approval process after the event. Automation
+adds completion under **Automated thank-you emails**. See
+[communications](../integrations/communications.md#track-email-completion) for
+manually sent emails, message timing and recovery after partial failures.
 
 ## Postpone or cancel
 
@@ -121,9 +141,10 @@ for follow-up, and the calendar alone does not change the recorded occurrence.
 Use the single **Post-event follow-up** comment to review all five task statuses
 and approve or reject the thank-you email batch. Leave both choices unchecked to
 wait; checking both keeps the request pending. Approval sends only the unfinished
-emails, with completion recorded after accepted dispatch. Publish slides, share
-OpenFeedback reports, import attendance into CNCF, and complete social posts
-manually in the issue checklist. The mailings workflow reports the email result.
+emails, with completion recorded after accepted dispatch. Speaker emails include
+OpenFeedback report links. Slide sharing on Meetup is automatic. Import attendance
+into CNCF and post the event recap, then check the corresponding organizer tasks.
+The mailings workflow reports the email result.
 
 Keep the issue open while follow-up or delivery checks remain unfinished.
 Closing it archives the event and excludes it from automatic audits and issue

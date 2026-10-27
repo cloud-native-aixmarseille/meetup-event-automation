@@ -21,6 +21,7 @@ import { PublicationDestinationComposition } from "../publication-destination-co
 import type {
 	EventPublicationSourceDependencies,
 	PublicationDestination,
+	PublicationFollowUp,
 } from "./event-publication-contracts.js";
 import { EventPublicationSource } from "./event-publication-source.js";
 import { ReconcileEventPublications } from "./reconcile-event-publications.js";
@@ -28,6 +29,7 @@ import { ReconcileEventPublications } from "./reconcile-event-publications.js";
 function collection(
 	dependencies: EventPublicationSourceDependencies,
 	destinations: readonly PublicationDestination[],
+	followUps: readonly PublicationFollowUp[] = [],
 ) {
 	return new ReconcileEventPublications(
 		dependencies.repository,
@@ -42,6 +44,7 @@ function collection(
 				document,
 			),
 		destinations,
+		followUps,
 	);
 }
 function publicationFixture(...args: Parameters<typeof setupPublication>) {
@@ -89,6 +92,38 @@ function communityPublicationFixture(
 	};
 }
 describe("Meetup event publication", () => {
+	it("runs post-event delivery when event editing is inactive", async () => {
+		// Arrange
+		const f = setupPublication({ occurrenceStatus: "held" });
+		const group = MeetupGroupUrl.fromEventUrlPrefix(
+			f.dependencies.meetupUrlPrefix,
+		);
+		if (!group) throw new Error("Invalid fixture group");
+		const destination = new PublicationDestinationComposition().meetup(
+			f.dependencies,
+			group,
+		);
+		const followUp = {
+			key: destination.key,
+			execute: vi.fn<PublicationFollowUp["execute"]>().mockResolvedValue({
+				status: "updated",
+				diagnostics: [],
+			}),
+		};
+		const useCase = collection(f.dependencies, [destination], [followUp]);
+
+		// Act
+		const result = await useCase.execute(identity);
+
+		// Assert
+		expect(f.gateway.save).not.toHaveBeenCalled();
+		expect(followUp.execute).toHaveBeenCalledWith(identity);
+		expect(result.publications.map((item) => item.status)).toEqual([
+			"skipped",
+			"updated",
+		]);
+	});
+
 	it("records a draft and requests approval using the configured origin", async () => {
 		// Arrange
 		const { useCase, dependencies, gateway, journal, approval } =

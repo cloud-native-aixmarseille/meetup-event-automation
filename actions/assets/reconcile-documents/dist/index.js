@@ -66796,8 +66796,11 @@ var ReconcileSlidePdf = class {
     if (observed && this.policy.current(confirmed, sourceVersion, name)) {
       if (state?.pending && confirmed !== state.pending)
         await this.states.save({ identity, fileId: state.fileId, confirmed });
-      const updated = await this.files.placeInPublicFolder(identity, observed);
-      return { status: "ready", updated, diagnostics: [] };
+      const published2 = await this.files.placeInPublicFolder(
+        identity,
+        observed
+      );
+      return { status: "ready", ...published2, diagnostics: [] };
     }
     const binary = await this.source.export(identity);
     if (await this.source.observe(identity) !== sourceVersion)
@@ -66826,8 +66829,13 @@ var ReconcileSlidePdf = class {
       next,
       await this.files.find(identity, next.fileId)
     );
-    await this.files.placeInPublicFolder(identity, uploaded);
-    return { status: "ready", updated: true, diagnostics: [] };
+    const published = await this.files.placeInPublicFolder(identity, uploaded);
+    return {
+      status: "ready",
+      url: published.url,
+      updated: true,
+      diagnostics: []
+    };
   }
   async confirm(state, observed) {
     if (observed?.id !== state.fileId || !this.policy.matches(state.pending, observed)) {
@@ -67793,14 +67801,6 @@ var ManualPublicationPolicy = class {
         "Create the event asset folder"
       ),
       occurrenceConfirmed ? this.task(
-        "publish-slides",
-        event.slidesPublished,
-        "Publish post-event slides"
-      ) : this.notApplicable(
-        "publish-slides",
-        "Slides are published only after occurrence is explicitly confirmed"
-      ),
-      occurrenceConfirmed ? this.task(
         "import-attendance",
         event.attendanceImported,
         "Import post-event attendance"
@@ -67825,7 +67825,6 @@ var ManualPublicationPolicy = class {
       "publish-meetup-event",
       "publish-community-event",
       "create-asset-folder",
-      "publish-slides",
       "import-attendance"
     ];
   }
@@ -68547,6 +68546,10 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.meetup.slides-pdf-pending",
+  "publication.meetup.slides-delivery-recovery",
+  "publication.meetup.slides-link",
+  "publication.meetup.slides-source-changed",
   "publication.community.content-review",
   "publication.community.authentication",
   "publication.community.prerequisites",
@@ -68854,7 +68857,7 @@ var AttentionEventFacts = class {
       speakersConfirmed: event.confirmations.speakers,
       publicationPending: [
         ...tasks.filter(
-          (task) => task.status === "pending" && !["publish-slides", "import-attendance"].includes(task.kind)
+          (task) => task.status === "pending" && task.kind !== "import-attendance"
         ).map((task) => task.kind),
         ...this.announcements(event.operationalChecklists.communication)
       ],
@@ -68863,6 +68866,7 @@ var AttentionEventFacts = class {
   }
   followUp(event) {
     return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
+      if (name === "Share slides to meetup") return [];
       const completed = index < 2 ? this.collaborators.communicationChecklist.status(
         event,
         index === 0 ? "host-thanks" : "speaker-thanks"
@@ -68877,11 +68881,16 @@ var AttentionEventFacts = class {
     const tasks = [
       ["Slack - AixMarseille.Tech", "public-slack-local"],
       ["Slack - OpenBaR", "public-slack-community"],
+      ["LinkedIn", "public-social"],
       ["Social networks", "public-social"]
     ];
-    return tasks.filter(
-      ([name]) => items.some((item) => item.name === name && !item.completed)
-    ).map(([, resource]) => resource);
+    return [
+      ...new Set(
+        tasks.filter(
+          ([name]) => items.some((item) => item.name === name && !item.completed)
+        ).map(([, resource]) => resource)
+      )
+    ];
   }
 };
 
@@ -68960,7 +68969,7 @@ var CommunicationChecklist = class {
     const matches = event.operationalChecklists[task.section].filter(
       (item) => this.matches(item, task.names)
     );
-    return matches.some((item) => item.completed) ? "completed" : matches.length ? "pending" : "missing";
+    return matches.some((item) => item.completed) ? "completed" : "pending";
   }
   complete(event, accepted) {
     const completed = new Set(accepted);
@@ -68973,8 +68982,13 @@ var CommunicationChecklist = class {
       ...item,
       completed: item.completed || this.accepted(item, "postEvent", completed, checklists)
     }));
-    if (completed.has("speaker-thanks") && postEvent.some((item) => item.name === LEGACY_SPEAKER_THANKS) && !postEvent.some((item) => item.name === "Mail thanks speakers")) {
-      postEvent.push({ name: "Mail thanks speakers", completed: true });
+    for (const kind of completed) {
+      const task = TASKS[kind];
+      const items = task.section === "communication" ? communication : postEvent;
+      if (!items.some(
+        (item) => item.name !== LEGACY_SPEAKER_THANKS && this.matches(item, task.names)
+      ))
+        items.push({ name: task.names[0], completed: true });
     }
     return { ...checklists, communication, postEvent };
   }
@@ -69247,10 +69261,6 @@ var EventPublicationEvaluation = class {
         occurrenceStatus: event.occurrenceStatus,
         references: event.publicationLinks,
         meetupPublished: this.collaborators.meetupPublicationChecklist.isPublished(event),
-        slidesPublished: this.checklistTaskIsCompleted(
-          event.operationalChecklists.postEvent,
-          POST_EVENT_TASK_NAMES.shareSlides
-        ),
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
           POST_EVENT_TASK_NAMES.importAttendance
@@ -74993,6 +75003,12 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "diagnostic.publication.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "diagnostic.publication.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
   "action.publication.prepare-runtime": "Prepare event publication runtime",
   "report.publication.draft": "publication_provider={provider} event=draft approval=required",
   "report.publication.updated": "publication_provider={provider} event=synchronized",
@@ -75136,6 +75152,12 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "diagnostic.publication.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "diagnostic.publication.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
   "action.publication.prepare-runtime": "Pr\xE9parer le runtime de publication",
   "report.publication.draft": "fournisseur_publication={provider} evenement=brouillon approbation=requise",
   "report.publication.updated": "fournisseur_publication={provider} evenement=synchronise",
@@ -84546,72 +84568,105 @@ ${messages3.t("comment.resolved")}`;
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.meetup.slides-source",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
+  ],
+  [
+    "publication.meetup.slides-link",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-link"]
+  ],
+  [
+    "publication.meetup.slides-pdf-pending",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"]
+  ],
+  [
+    "publication.meetup.slides-delivery-recovery",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-delivery-recovery"
+    ]
+  ],
+  [
+    "publication.meetup.slides-form-unavailable",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.slides-source-changed",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-source-changed"
+    ]
+  ],
+  [
     "publication.content.prerequisites",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.pending",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.rejected",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.iteration-requested",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.recovery",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.stale",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.title-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.content.description-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.meetup.content-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "communication.content-review",
-    ["Slides & Content", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.review"]
   ],
   [
     "publication.assets.pdf.source",
-    ["Slides & Content", "comment.guidance.pdf.source"]
+    ["Event materials", "comment.guidance.pdf.source"]
   ],
   [
     "publication.assets.pdf.source-pending",
-    ["Slides & Content", "comment.guidance.pdf.source-pending"]
+    ["Event materials", "comment.guidance.pdf.source-pending"]
   ],
   [
     "publication.assets.pdf.revision",
-    ["Slides & Content", "comment.guidance.pdf.revision"]
+    ["Event materials", "comment.guidance.pdf.revision"]
   ],
   [
     "publication.assets.pdf.conflict",
-    ["Slides & Content", "comment.guidance.pdf.recovery"]
+    ["Event materials", "comment.guidance.pdf.recovery"]
   ],
   [
     "publication.assets.pdf.recovery",
-    ["Slides & Content", "comment.guidance.pdf.recovery"]
+    ["Event materials", "comment.guidance.pdf.recovery"]
   ],
   [
     "publication.assets.pdf.limit",
-    ["Slides & Content", "comment.guidance.pdf.limit"]
+    ["Event materials", "comment.guidance.pdf.limit"]
   ],
   [
     "publication.assets.pdf.invalid",
-    ["Slides & Content", "comment.guidance.pdf.invalid"]
+    ["Event materials", "comment.guidance.pdf.invalid"]
   ],
   [
     "communication.checklist-concurrently-modified",
@@ -84631,7 +84686,7 @@ var STAGE_GUIDANCE = [
   ],
   [
     "communication.slides-unavailable",
-    ["Slides & Content", "comment.guidance.assets.slides"]
+    ["Event materials", "comment.guidance.assets.slides"]
   ],
   [
     "communication.approval-pending",
@@ -84731,39 +84786,39 @@ var STAGE_GUIDANCE = [
   ],
   [
     "publication.assets.file.drift",
-    ["Slides & Content", "comment.guidance.assets.drift"]
+    ["Event materials", "comment.guidance.assets.drift"]
   ],
   [
     "publication.assets.content.contract",
-    ["Slides & Content", "comment.guidance.assets.template"]
+    ["Event materials", "comment.guidance.assets.template"]
   ],
   [
     "publication.assets.content.location",
-    ["Slides & Content", "comment.guidance.assets.template"]
+    ["Event materials", "comment.guidance.assets.template"]
   ],
   [
     "publication.assets.content.missing",
-    ["Slides & Content", "comment.guidance.assets.missing"]
+    ["Event materials", "comment.guidance.assets.missing"]
   ],
   [
     "publication.assets.content.conflict",
-    ["Slides & Content", "comment.guidance.assets.recovery"]
+    ["Event materials", "comment.guidance.assets.recovery"]
   ],
   [
     "publication.assets.content.recovery",
-    ["Slides & Content", "comment.guidance.assets.recovery"]
+    ["Event materials", "comment.guidance.assets.recovery"]
   ],
   [
     "publication.assets.content.revision",
-    ["Slides & Content", "comment.guidance.assets.revision"]
+    ["Event materials", "comment.guidance.assets.revision"]
   ],
   [
     "publication.assets.content.image",
-    ["Slides & Content", "comment.guidance.assets.image"]
+    ["Event materials", "comment.guidance.assets.image"]
   ],
   [
     "publication.assets.content.fallback",
-    ["Slides & Content", "comment.guidance.assets.fallback"]
+    ["Event materials", "comment.guidance.assets.fallback"]
   ],
   [
     "communication.invalid-event-date",
@@ -84786,11 +84841,13 @@ var FIELD_ORDER = [
   "CNCF Link",
   "Drive Link",
   "OpenFeedback Link",
-  "Slides & Content",
+  "Event materials",
   "Communication",
+  "Automated introduction emails",
   "Aperitif",
   "Restaurant / Bar",
   "Post event",
+  "Automated thank-you emails",
   "Host confirmation",
   "Speaker confirmation",
   "Event Status",
@@ -85067,6 +85124,7 @@ var GUIDANCE = new Map([
 var DiagnosticPresenter = class {
   FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
+    ["Slides & Content", "Event materials"],
     ["eventTitle", "Event Title"],
     ["event_title", "Event Title"],
     ["date", "Event Date"],
@@ -85361,6 +85419,12 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
+  "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
   "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
@@ -85378,10 +85442,10 @@ var EN_MESSAGES3 = {
   "comment.agenda.item": "Agenda (item {item}{speaker})",
   "comment.agenda.speaker-suffix": ", speaker {speaker}",
   "comment.agenda.speaker": "Agenda (speaker {speaker})",
-  "comment.guidance.event.title.missing": "Add a title for the event.",
+  "comment.guidance.event.title.missing": "Generate or submit the event title, then approve it for automatic application.",
   "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
   "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
-  "comment.guidance.event.description.missing": "Add a short description of the event.",
+  "comment.guidance.event.description.missing": "Generate or submit the event description, then approve it for automatic application.",
   "comment.guidance.event.hoster.missing": "Select a host from the host list.",
   "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
   "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
@@ -85391,9 +85455,9 @@ var EN_MESSAGES3 = {
   "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
   "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
   "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
-  "comment.guidance.publication.meetup.missing": "Add the link to the Meetup event page.",
-  "comment.guidance.publication.community.missing": "Add the link to the CNCF / OCGroups event page.",
-  "comment.guidance.publication.assets.missing": "Add the link to the event's Google Drive folder.",
+  "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
+  "comment.guidance.publication.community.missing": "Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.",
+  "comment.guidance.publication.assets.missing": "Run asset reconciliation to create the event folder and populate its Google Drive link.",
   "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
   "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
   "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
@@ -85431,6 +85495,12 @@ var EN_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
+  "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
   "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
@@ -85448,10 +85518,10 @@ var FR_MESSAGES3 = {
   "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
   "comment.agenda.speaker-suffix": ", intervenant {speaker}",
   "comment.agenda.speaker": "Programme (intervenant {speaker})",
-  "comment.guidance.event.title.missing": "Ajoutez un titre \xE0 l'\xE9v\xE9nement.",
+  "comment.guidance.event.title.missing": "G\xE9n\xE9rez ou proposez le titre de l'\xE9v\xE9nement, puis approuvez-le pour qu'il soit appliqu\xE9 automatiquement.",
   "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
   "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
-  "comment.guidance.event.description.missing": "Ajoutez une courte description de l'\xE9v\xE9nement.",
+  "comment.guidance.event.description.missing": "G\xE9n\xE9rez ou proposez la description de l'\xE9v\xE9nement, puis approuvez-la pour qu'elle soit appliqu\xE9e automatiquement.",
   "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
   "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
   "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
@@ -85461,9 +85531,9 @@ var FR_MESSAGES3 = {
   "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
   "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
   "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
-  "comment.guidance.publication.meetup.missing": "Ajoutez le lien vers la page Meetup de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.community.missing": "Ajoutez le lien vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.assets.missing": "Ajoutez le lien vers le dossier Google Drive de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
+  "comment.guidance.publication.community.missing": "Lancez la synchronisation des publications et approuvez la publication CNCF / OCGroups ; l'automatisation ajoute le lien public v\xE9rifi\xE9.",
+  "comment.guidance.publication.assets.missing": "Lancez la synchronisation des ressources pour cr\xE9er le dossier de l'\xE9v\xE9nement et renseigner son lien Google Drive.",
   "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
@@ -85897,13 +85967,36 @@ var HEADINGS = Object.freeze({
   communityLink: "CNCF Link",
   assetsLink: "Drive Link",
   feedbackLink: "OpenFeedback Link",
-  slides: "Slides & Content",
+  slidesPdf: "Slides PDF",
+  slides: "Event materials",
   communication: "Communication",
+  introductionEmails: "Automated introduction emails",
   aperitif: "Aperitif",
   restaurant: "Restaurant / Bar",
   postEvent: "Post event",
+  thankYouEmails: "Automated thank-you emails",
+  slidesDelivery: "Automated slide sharing",
   occurrenceStatus: "Event Status"
 });
+var CHECKLIST_LABELS = /* @__PURE__ */ new Map([
+  ["Mail introduction speakers", "Send speaker introduction emails"],
+  ["Mail introduction hoster", "Send host introduction email"],
+  ["Slack - AixMarseille.Tech", "Announce on Slack - AixMarseille.Tech"],
+  ["Slack - OpenBaR", "Announce on Slack - OpenBaR"],
+  ["LinkedIn", "Announce on LinkedIn"],
+  ["Mail thanks hoster", "Send host thank-you email"],
+  ["Mail thanks speakers", "Send speaker thank-you emails"],
+  ["Share slides to meetup", "Send slides to Meetup attendees"],
+  ["Sync attendees from tally sheet to CNCF", "Import attendees into CNCF"],
+  ["Social networks", "Share recap on LinkedIn"]
+]);
+var AUTOMATED_TASK_HEADINGS = /* @__PURE__ */ new Map([
+  ["Mail introduction speakers", HEADINGS.introductionEmails],
+  ["Mail introduction hoster", HEADINGS.introductionEmails],
+  ["Mail thanks hoster", HEADINGS.thankYouEmails],
+  ["Mail thanks speakers", HEADINGS.thankYouEmails],
+  ["Share slides to meetup", HEADINGS.slidesDelivery]
+]);
 
 // packages/adapter/event/github-issue-form-event-document-codec/src/event-reference-metadata.ts
 var EventReferenceMetadata = class {
@@ -86098,20 +86191,37 @@ var IssueFormChecklists = class {
   }
   toOperationalChecklist(checkboxes) {
     return checkboxes.map(({ checked, label }) => ({
-      name: label,
+      name: this.taskName(label),
       completed: checked
     }));
   }
-  replaceOrAppendOperationalChecklist(body, heading, value) {
-    const sections = this.collaborators.issueFormSections.parseSections(body).get(heading) ?? [];
-    if (sections.length > 1 || sections[0] && !this.operationalChecklistIsWellFormed(sections[0].value)) {
-      return body;
+  replaceOrAppendChecklistSections(body, headings, items) {
+    const sections = this.collaborators.issueFormSections.parseSections(body);
+    const originalSections = [];
+    for (const heading of headings) {
+      const matches = sections.get(heading) ?? [];
+      if (matches.length > 1 || matches.some(
+        (section) => !this.operationalChecklistIsWellFormed(section.value)
+      ))
+        return body;
+      for (const { label } of this.readCheckboxes(sections, heading, [])) {
+        originalSections.push([this.taskName(label), heading]);
+      }
     }
-    return this.collaborators.issueFormSections.replaceOrAppendSection(
-      body,
-      heading,
-      value
-    );
+    const sectionByTask = new Map(originalSections);
+    if (sectionByTask.size !== originalSections.length) return body;
+    let result = body;
+    for (const heading of headings) {
+      const selected = items.filter(
+        ({ name }) => (sectionByTask.get(name) ?? this.defaultHeading(name, headings)) === heading
+      );
+      result = this.collaborators.issueFormSections.replaceOrAppendSection(
+        result,
+        heading,
+        this.renderOperationalChecklist(selected, body, heading)
+      );
+    }
+    return result;
   }
   operationalChecklistIsWellFormed(value) {
     const cleaned = this.collaborators.issueFormSections.cleanResponse(value);
@@ -86119,8 +86229,27 @@ var IssueFormChecklists = class {
       (line) => this.collaborators.markdownLines.parseCheckboxLine(line) !== void 0
     );
   }
-  renderOperationalChecklist(items) {
-    return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
+  renderOperationalChecklist(items, body, heading) {
+    const sections = this.collaborators.issueFormSections.parseSections(body);
+    const labels = new Map(
+      this.readCheckboxes(sections, heading, []).map(({ label }) => [
+        this.taskName(label),
+        label
+      ])
+    );
+    return items.map(
+      ({ name, completed }) => `- [${completed ? "x" : " "}] ${labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : void 0) ?? name}`
+    ).join("\n");
+  }
+  taskName(label) {
+    for (const [name, publicLabel] of CHECKLIST_LABELS) {
+      if (label === publicLabel) return name;
+    }
+    return label;
+  }
+  defaultHeading(name, headings) {
+    const preferred = AUTOMATED_TASK_HEADINGS.get(name);
+    return preferred && headings.includes(preferred) ? preferred : headings[0];
   }
   readLogisticsIntent(sections, heading, diagnostics) {
     const value = this.collaborators.issueFormSections.readSection(
@@ -86465,6 +86594,12 @@ var IssueFormReader = class {
     );
     const event = {
       ...migrated.event,
+      slidesPdfUrl: this.collaborators.issueFormSections.readSection(
+        sections,
+        HEADINGS.slidesPdf,
+        false,
+        diagnostics
+      ) || void 0,
       ...operations,
       ...this.collaborators.proposalSelectionCodec.read(
         document2.body,
@@ -86498,10 +86633,10 @@ var IssueFormReader = class {
       diagnostics
     );
     return {
-      event_title: read(HEADINGS.eventTitle, true),
+      event_title: read(HEADINGS.eventTitle),
       event_date: read(HEADINGS.date, true),
       hoster: [read(HEADINGS.host, true)].filter(Boolean),
-      event_description: read(HEADINGS.description, true),
+      event_description: read(HEADINGS.description),
       agenda: read(HEADINGS.agenda, !sections.has(HEADINGS.proposals)),
       meetup_link: read(HEADINGS.meetupLink),
       cncf_link: read(HEADINGS.communityLink),
@@ -86511,17 +86646,26 @@ var IssueFormReader = class {
     };
   }
   readOperations(sections, diagnostics) {
-    const read = (heading) => this.collaborators.issueFormChecklists.toOperationalChecklist(
-      this.collaborators.issueFormChecklists.readCheckboxes(
-        sections,
-        heading,
-        diagnostics
+    const read = (headings) => this.collaborators.issueFormChecklists.toOperationalChecklist(
+      headings.flatMap(
+        (heading) => this.collaborators.issueFormChecklists.readCheckboxes(
+          sections,
+          heading,
+          diagnostics
+        )
       )
     );
-    const slidesAndContent = read(HEADINGS.slides);
-    const communication = read(HEADINGS.communication);
+    const slidesAndContent = read([HEADINGS.slides]);
+    const communication = read([
+      HEADINGS.communication,
+      HEADINGS.introductionEmails
+    ]);
     const diagnosticOffset = diagnostics.length;
-    const postEvent = read(HEADINGS.postEvent);
+    const postEvent = read([
+      HEADINGS.postEvent,
+      HEADINGS.thankYouEmails,
+      HEADINGS.slidesDelivery
+    ]);
     const followUpComplete = diagnostics.length === diagnosticOffset && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
       postEvent
     );
@@ -86644,8 +86788,9 @@ var IssueFormSections = class {
     return sections;
   }
   appendSection(sections, section) {
-    const existing = sections.get(section.heading) ?? [];
-    sections.set(section.heading, [...existing, section]);
+    const heading = section.heading === "Slides & Content" ? HEADINGS.slides : section.heading;
+    const existing = sections.get(heading) ?? [];
+    sections.set(heading, [...existing, section]);
   }
   cleanResponse(value) {
     const trimmed = value.trim();
@@ -86771,7 +86916,8 @@ var IssueFormWriter = class {
       ],
       [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
       [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
-      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
+      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""],
+      [HEADINGS.slidesPdf, event.slidesPdfUrl ?? ""]
     ];
     let body = document2.body;
     for (const [heading, value] of fields2) {
@@ -86796,16 +86942,17 @@ var IssueFormWriter = class {
   }
   renderOperations(source, event) {
     let body = source;
-    for (const [heading, items] of [
-      [HEADINGS.slides, event.operationalChecklists.slidesAndContent],
-      [HEADINGS.communication, event.operationalChecklists.communication]
+    for (const [headings, items] of [
+      [[HEADINGS.slides], event.operationalChecklists.slidesAndContent],
+      [
+        [HEADINGS.communication, HEADINGS.introductionEmails],
+        event.operationalChecklists.communication
+      ]
     ])
-      body = this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+      body = this.collaborators.issueFormChecklists.replaceOrAppendChecklistSections(
         body,
-        heading,
-        this.collaborators.issueFormChecklists.renderOperationalChecklist(
-          items
-        )
+        headings,
+        items
       );
     body = this.collaborators.issueFormChecklists.replaceOrAppendLogisticsIntent(
       body,
@@ -86817,12 +86964,10 @@ var IssueFormWriter = class {
       HEADINGS.restaurant,
       event.logistics.postEventVenue
     );
-    return this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+    return this.collaborators.issueFormChecklists.replaceOrAppendChecklistSections(
       body,
-      HEADINGS.postEvent,
-      this.collaborators.issueFormChecklists.renderOperationalChecklist(
-        event.operationalChecklists.postEvent
-      )
+      [HEADINGS.postEvent, HEADINGS.thankYouEmails, HEADINGS.slidesDelivery],
+      event.operationalChecklists.postEvent
     );
   }
   renderParticipant(participant, repository) {
@@ -88157,9 +88302,9 @@ var messages = {
   "action.stage-unknown": "Check the incomplete stage: {task}.",
   "task.approvals": "email approvals",
   "task.delivery": "delivery recovery",
-  "task.public-slack-local": "Post the local community Slack announcement",
-  "task.public-slack-community": "Post the community Slack announcement",
-  "task.public-social": "Publish on social networks",
+  "task.public-slack-local": "Publish the event announcement on Slack - AixMarseille.Tech",
+  "task.public-slack-community": "Publish the event announcement on Slack - OpenBaR",
+  "task.public-social": "Publish the event announcement on LinkedIn",
   "attention.clear": "No pending tasks.",
   "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
   "task.publish-meetup-event": "Approve Meetup publication",
@@ -88169,7 +88314,7 @@ var messages = {
   "task.thank-speakers": "Send speaker thanks",
   "task.share-slides": "Share slides",
   "task.import-attendance": "Import attendance",
-  "task.share-social": "Share on social networks",
+  "task.share-social": "Publish an event recap with photos and links on LinkedIn",
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
@@ -88203,9 +88348,9 @@ var messages2 = {
   "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
   "task.approvals": "approbation des courriels",
   "task.delivery": "reprise des envois",
-  "task.public-slack-local": "Publiez l'annonce sur le Slack local",
-  "task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
-  "task.public-social": "Publiez sur les r\xE9seaux sociaux",
+  "task.public-slack-local": "Publiez l'annonce du meetup sur Slack - AixMarseille.Tech",
+  "task.public-slack-community": "Publiez l'annonce du meetup sur Slack - OpenBaR",
+  "task.public-social": "Publiez l'annonce du meetup sur LinkedIn",
   "attention.clear": "Aucune t\xE2che en attente.",
   "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
   "task.publish-meetup-event": "Approuver la publication Meetup",
@@ -88215,7 +88360,7 @@ var messages2 = {
   "task.thank-speakers": "Envoyez les remerciements aux intervenants",
   "task.share-slides": "Partagez les pr\xE9sentations",
   "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Partagez sur les r\xE9seaux sociaux",
+  "task.share-social": "Publiez un r\xE9capitulatif du meetup avec des photos et des liens sur LinkedIn",
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
@@ -96242,7 +96387,7 @@ var EN_MESSAGES5 = {
   "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
   "follow-up.title": "## Post-event follow-up \xB7 {date}",
   "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
   "follow-up.stopped": "Follow-up paused.",
   "follow-up.waiting": "Thank-you emails are not ready for approval.",
   "follow-up.emails-complete": "No thank-you emails pending.",
@@ -96274,7 +96419,7 @@ var FR_MESSAGES5 = {
   "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
   "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
   "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
   "follow-up.stopped": "Suivi suspendu.",
   "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
   "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",

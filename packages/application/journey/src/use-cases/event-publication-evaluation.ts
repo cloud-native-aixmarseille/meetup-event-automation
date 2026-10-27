@@ -97,10 +97,6 @@ export class EventPublicationEvaluation {
 				references: event.publicationLinks,
 				meetupPublished:
 					this.collaborators.meetupPublicationChecklist.isPublished(event),
-				slidesPublished: this.checklistTaskIsCompleted(
-					event.operationalChecklists.postEvent,
-					POST_EVENT_TASK_NAMES.shareSlides,
-				),
 				attendanceImported: this.checklistTaskIsCompleted(
 					event.operationalChecklists.postEvent,
 					POST_EVENT_TASK_NAMES.importAttendance,

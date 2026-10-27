@@ -1,4 +1,16 @@
 export const EN_MESSAGES = {
+	"comment.guidance.meetup.slides-source":
+		"Fix the issue errors before sending slides to Meetup attendees.",
+	"comment.guidance.meetup.slides-link":
+		"Provide the published Meetup event link before sending slides.",
+	"comment.guidance.meetup.slides-pdf-pending":
+		"Run document and PDF reconciliation before sending slides to Meetup attendees.",
+	"comment.guidance.meetup.slides-delivery-recovery":
+		"Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+	"comment.guidance.meetup.slides-form-unavailable":
+		"The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+	"comment.guidance.meetup.slides-source-changed":
+		"The event changed before sending slides. Run publication reconciliation again.",
 	"comment.guidance.content.review":
 		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
 
@@ -28,13 +40,14 @@ export const EN_MESSAGES = {
 	"comment.agenda.item": "Agenda (item {item}{speaker})",
 	"comment.agenda.speaker-suffix": ", speaker {speaker}",
 	"comment.agenda.speaker": "Agenda (speaker {speaker})",
-	"comment.guidance.event.title.missing": "Add a title for the event.",
+	"comment.guidance.event.title.missing":
+		"Generate or submit the event title, then approve it for automatic application.",
 	"comment.guidance.event.date.missing":
 		"Add the event date in YYYY-MM-DD format.",
 	"comment.guidance.event.date.invalid":
 		"Enter a valid calendar date in YYYY-MM-DD format.",
 	"comment.guidance.event.description.missing":
-		"Add a short description of the event.",
+		"Generate or submit the event description, then approve it for automatic application.",
 	"comment.guidance.event.hoster.missing": "Select a host from the host list.",
 	"comment.guidance.event.hoster.invalid":
 		"Use a host name or stable ID from the host list.",
@@ -53,11 +66,11 @@ export const EN_MESSAGES = {
 	"comment.guidance.publication.meetup.unpublished":
 		"Approve or reject Meetup publication.",
 	"comment.guidance.publication.meetup.missing":
-		"Add the link to the Meetup event page.",
+		"Run event publication synchronization to populate the verified Meetup link.",
 	"comment.guidance.publication.community.missing":
-		"Add the link to the CNCF / OCGroups event page.",
+		"Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.",
 	"comment.guidance.publication.assets.missing":
-		"Add the link to the event's Google Drive folder.",
+		"Run asset reconciliation to create the event folder and populate its Google Drive link.",
 	"comment.guidance.event.link.meetup.invalid":
 		"Enter a valid HTTPS link to the Meetup event page.",
 	"comment.guidance.event.link.community.invalid":

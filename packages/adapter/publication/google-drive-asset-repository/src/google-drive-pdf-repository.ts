@@ -65,7 +65,7 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 	async placeInPublicFolder(
 		identity: PdfExportIdentity,
 		expected: PdfExportObservation,
-	): Promise<boolean> {
+	): Promise<{ updated: boolean; url: string }> {
 		const folderId = await this.folders.resolve(identity);
 		const current = await this.find(identity, expected.id);
 		if (
@@ -75,7 +75,8 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 			current.name !== expected.name
 		)
 			throw new PdfExportError("conflict");
-		if (current.folderId === folderId) return false;
+		const url = `https://drive.google.com/file/d/${expected.id}/view`;
+		if (current.folderId === folderId) return { updated: false, url };
 		await this.client.files.update(
 			{
 				fileId: expected.id,
@@ -93,7 +94,7 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 			moved.fingerprint !== expected.fingerprint
 		)
 			throw new PdfExportError("invalid");
-		return true;
+		return { updated: true, url };
 	}
 
 	async reserveId(): Promise<string> {

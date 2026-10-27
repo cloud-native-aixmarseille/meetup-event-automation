@@ -11,6 +11,7 @@ export type DiagnosticPresentation = Readonly<{
 export class DiagnosticPresenter {
 	private readonly FIELD_ALIASES = new Map([
 		...FIELD_ORDER.map((field): [string, string] => [field, field]),
+		["Slides & Content", "Event materials"],
 		["eventTitle", "Event Title"],
 		["event_title", "Event Title"],
 		["date", "Event Date"],

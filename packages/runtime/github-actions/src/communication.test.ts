@@ -59,6 +59,56 @@ describe("automatic communication completion after approval", () => {
 			notificationFailed: false,
 		});
 	});
+	it.each([
+		["scheduled", "Automated introduction emails"],
+		["held", "Automated thank-you emails"],
+	])(
+		"records %s email completion without form tasks and recovers deleted status without resending",
+		async (status, heading) => {
+			// Arrange
+			const f = await setup({
+				labels: [
+					"meetup",
+					"hoster:confirmed",
+					"speakers:confirmed",
+					`event:${status}`,
+				],
+				body: eventBody("2099-06-08").replace(
+					/^- \[ \] Mail (?:introduction|thanks (?:hoster|speakers))\n/gm,
+					"",
+				),
+			});
+			const runtime = new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			});
+
+			// Act
+			const first = await runtime.runCommunicationReconcile(f.input);
+			const recordedBody = f.issue.body;
+			f.issue.body = f.issue.body.replace(
+				new RegExp(`### ${heading}\\n[\\s\\S]*?(?=\\n### |$)`),
+				"",
+			);
+			const second = await runtime.runCommunicationReconcile(f.input);
+
+			// Assert
+			expect(first.counts.accepted).toBe(2);
+			expect(first.runtimeDiagnostics).toEqual([]);
+			expect(recordedBody).toContain(`### ${heading}`);
+			expect(second.counts.alreadyRecorded).toBe(2);
+			expect(second.counts.dispatched).toBe(0);
+			expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
+			expect(f.issue.body).toContain(`### ${heading}`);
+			expect(f.issue.body).toContain("- [ ] Social networks");
+		},
+	);
 	it.each(["scheduled", "held"])(
 		"dispatches %s emails with the presentation file URL",
 		async (status) => {
@@ -270,34 +320,31 @@ describe("automatic communication completion after approval", () => {
 		},
 	);
 
-	it.each(["checked", "absent"])(
-		"skips an introduction task that is %s",
-		async (state) => {
-			// Arrange
-			const body = eventBody("2099-06-08").replace(
-				"- [ ] Mail introduction",
-				state === "checked" ? "- [x] Mail introduction" : "",
-			);
-			const f = await setup({ body });
+	it("skips completed introductions", async () => {
+		// Arrange
+		const body = eventBody("2099-06-08").replace(
+			"- [ ] Mail introduction",
+			"- [x] Mail introduction",
+		);
+		const f = await setup({ body });
 
-			// Act
-			const result = await new CommunicationRuntime({
-				createJourney: (input) =>
-					CommunicationComposition.createCommunicationContainer(input).get(
-						ManageMeetupCommunications,
-					),
-				communicationInput: new GithubActionsComposition().communicationInput(),
-				automationConfigFactory:
-					new JourneyPolicyComposition().automationConfigFactory(),
-				localeResolver: new LocalizationComposition().localeResolver(),
-			}).runCommunicationReconcile(f.input);
+		// Act
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
-			// Assert
-			expect(result.counts.planned).toBe(0);
-			expect(f.createDispatchEvent).not.toHaveBeenCalled();
-			expect(f.updateIssue).not.toHaveBeenCalled();
-		},
-	);
+		// Assert
+		expect(result.counts.planned).toBe(0);
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+		expect(f.updateIssue).not.toHaveBeenCalled();
+	});
 
 	it("sends only unchecked thank-you tasks for a held event", async () => {
 		// Arrange
@@ -716,7 +763,10 @@ describe("automatic communication completion after approval", () => {
 		// Arrange
 		const f = await setup({
 			body: eventBody("2099-06-08")
-				.replace("- [ ] Mail introduction", "- [ ] Mail introduction speakers")
+				.replace(
+					"- [ ] Mail introduction",
+					"- [ ] Mail introduction speakers\n- [x] Mail introduction hoster",
+				)
 				.replace(
 					"- Ada Speaker: A public talk",
 					"- Ada Speaker: A public talk\n- Sam Example [speaker-0002]: Another talk",
@@ -1211,93 +1261,103 @@ describe("organizer approval for email batches", () => {
 		expect(f.issue.body).toContain("- [x] Mail thanks hoster");
 		expect(f.issue.body).toContain("- [x] Mail thanks speakers");
 	});
-	it("requests approval in the issue and Slack, then sends and completes only after approval", async () => {
-		// Arrange
-		const f = await setup();
+	it.each([true, false])(
+		"requests approval and sends only after approval (form email task: %s)",
+		async (withTask) => {
+			// Arrange
+			const body = eventBody("2099-06-08");
+			const f = await setup({
+				body: withTask ? body : body.replace("- [ ] Mail introduction\n", ""),
+			});
 
-		// Act
-		const pending = await new CommunicationRuntime({
-			createJourney: (input) =>
-				CommunicationComposition.createCommunicationContainer(input).get(
-					ManageMeetupCommunications,
-				),
-			communicationInput: new GithubActionsComposition().communicationInput(),
-			automationConfigFactory:
-				new JourneyPolicyComposition().automationConfigFactory(),
-			localeResolver: new LocalizationComposition().localeResolver(),
-		}).runCommunicationReconcile(f.input);
-		const pendingBody = f.issue.body;
-		const callsBeforeApproval = f.createDispatchEvent.mock.calls.length;
-		await new CommunicationRuntime({
-			createJourney: (input) =>
-				CommunicationComposition.createCommunicationContainer(input).get(
-					ManageMeetupCommunications,
-				),
-			communicationInput: new GithubActionsComposition().communicationInput(),
-			automationConfigFactory:
-				new JourneyPolicyComposition().automationConfigFactory(),
-			localeResolver: new LocalizationComposition().localeResolver(),
-		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
-		const approved = await new CommunicationRuntime({
-			createJourney: (input) =>
-				CommunicationComposition.createCommunicationContainer(input).get(
-					ManageMeetupCommunications,
-				),
-			communicationInput: new GithubActionsComposition().communicationInput(),
-			automationConfigFactory:
-				new JourneyPolicyComposition().automationConfigFactory(),
-			localeResolver: new LocalizationComposition().localeResolver(),
-		}).runCommunicationReconcile(f.input);
-		await new CommunicationRuntime({
-			createJourney: (input) =>
-				CommunicationComposition.createCommunicationContainer(input).get(
-					ManageMeetupCommunications,
-				),
-			communicationInput: new GithubActionsComposition().communicationInput(),
-			automationConfigFactory:
-				new JourneyPolicyComposition().automationConfigFactory(),
-			localeResolver: new LocalizationComposition().localeResolver(),
-		}).runCommunicationReconcile(f.input);
+			// Act
+			const pending = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
+			const pendingBody = f.issue.body;
+			const callsBeforeApproval = f.createDispatchEvent.mock.calls.length;
+			await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
+			approveBatch(f);
+			const approved = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
+			await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
 
-		// Assert
-		expect(pending.runtimeDiagnostics).toContainEqual({
-			code: "communication.approval-pending",
-			severity: "warning",
-		});
-		expect(callsBeforeApproval).toBe(0);
-		expect(pendingBody).toContain("- [ ] Mail introduction");
-		expect(approved.counts.accepted).toBe(2);
-		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
-		expect(f.issue.body).toContain("- [x] Mail introduction");
-		expect(fetch).toHaveBeenCalledTimes(2);
-		const notification = JSON.parse(
-			vi.mocked(fetch).mock.calls[0]?.[1]?.body as string,
-		);
-		expect(notification.channel).toBe("C12345");
-		expect(f.issue.body).toContain("- [ ] Slack - Public Community");
-		expect(notification.text).toContain(
-			"https://github.com/organization/meetups/issues/42#issuecomment-",
-		);
-		expect(f.comments[0]?.body).toContain("✅ **Approved** by @organizer");
-		expect(f.comments[0]?.body).not.toContain("- [");
-		expect(fetch).toHaveBeenCalledWith(
-			"https://slack.com/api/reactions.add",
-			expect.objectContaining({
-				body: JSON.stringify({
-					channel: "C12345",
-					timestamp: "100.001",
-					name: "white_check_mark",
+			// Assert
+			expect(pending.runtimeDiagnostics).toContainEqual({
+				code: "communication.approval-pending",
+				severity: "warning",
+			});
+			expect(callsBeforeApproval).toBe(0);
+			expect(pendingBody.includes("- [ ] Mail introduction")).toBe(withTask);
+			expect(approved.counts.accepted).toBe(2);
+			expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
+			expect(f.issue.body).toContain(
+				withTask
+					? "- [x] Mail introduction"
+					: "- [x] Send host introduction email",
+			);
+			expect(fetch).toHaveBeenCalledTimes(2);
+			const notification = JSON.parse(
+				vi.mocked(fetch).mock.calls[0]?.[1]?.body as string,
+			);
+			expect(notification.channel).toBe("C12345");
+			expect(f.issue.body).toContain("- [ ] Slack - Public Community");
+			expect(notification.text).toContain(
+				"https://github.com/organization/meetups/issues/42#issuecomment-",
+			);
+			expect(f.comments[0]?.body).toContain("✅ **Approved** by @organizer");
+			expect(f.comments[0]?.body).not.toContain("- [");
+			expect(fetch).toHaveBeenCalledWith(
+				"https://slack.com/api/reactions.add",
+				expect.objectContaining({
+					body: JSON.stringify({
+						channel: "C12345",
+						timestamp: "100.001",
+						name: "white_check_mark",
+					}),
 				}),
-			}),
-		);
-		expect(f.permission).toHaveBeenCalledWith({
-			owner: "organization",
-			repo: "meetups",
-			username: "organizer",
-		});
-		expect(JSON.stringify(f.comments)).not.toContain("@example.invalid");
-	});
+			);
+			expect(f.permission).toHaveBeenCalledWith({
+				owner: "organization",
+				repo: "meetups",
+				username: "organizer",
+			});
+			expect(JSON.stringify(f.comments)).not.toContain("@example.invalid");
+		},
+	);
 	it("requires a new confirmation after a private recipient address changes", async () => {
 		// Arrange
 		const f = await setup();

@@ -20,7 +20,7 @@ export interface PdfExportRepository {
 	placeInPublicFolder(
 		identity: PdfExportIdentity,
 		expected: PdfExportObservation,
-	): Promise<boolean>;
+	): Promise<{ readonly updated: boolean; readonly url: string }>;
 	write(input: {
 		identity: PdfExportIdentity;
 		fileId: string;

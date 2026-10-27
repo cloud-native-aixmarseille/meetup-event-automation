@@ -1,5 +1,17 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"diagnostic.publication.meetup.slides-source":
+		"Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+	"diagnostic.publication.meetup.slides-link":
+		"Renseignez le lien Meetup publié avant d'envoyer les slides.",
+	"diagnostic.publication.meetup.slides-pdf-pending":
+		"Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+	"diagnostic.publication.meetup.slides-delivery-recovery":
+		"Vérifiez le message aux participants Meetup avant de réessayer ; l'envoi est incertain.",
+	"diagnostic.publication.meetup.slides-form-unavailable":
+		"Le formulaire de message aux participants Meetup n'a pas pu être vérifié. Vérifiez les droits organisateur et le parcours du navigateur.",
+	"diagnostic.publication.meetup.slides-source-changed":
+		"L'événement a changé avant l'envoi des slides. Relancez la synchronisation des publications.",
 	"action.publication.prepare-runtime": "Préparer le runtime de publication",
 	"report.publication.draft":
 		"fournisseur_publication={provider} evenement=brouillon approbation=requise",

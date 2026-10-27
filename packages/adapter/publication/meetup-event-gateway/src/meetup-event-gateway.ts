@@ -22,8 +22,13 @@ import type {
 	MeetupLoginPageArguments,
 } from "./meetup-login-page.js";
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
+import type { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
 
 export interface MeetupEventGatewayCollaborators {
+	readonly createAttendeeMessage: (
+		page: Page,
+		group: MeetupGroupUrl,
+	) => Pick<MeetupAttendeeMessage, "send">;
 	readonly createMeetupEventEditor: (
 		...args: MeetupEventEditorArguments
 	) => MeetupEventEditor;
@@ -51,10 +56,21 @@ export class MeetupEventGateway implements EventPublicationGateway {
 	}
 
 	async inspect(reference: string): Promise<SavedEventPublication> {
-		return this.withSession("UTC", (page) =>
+		return this.withPublication("UTC", (page) =>
 			this.collaborators
 				.createMeetupEventEditor(page, this.group.value)
 				.inspect(reference),
+		);
+	}
+	async sendSlides(
+		eventUrl: string,
+		pdfUrl: string,
+		beforeSend: () => Promise<void>,
+	): Promise<void> {
+		await this.withSession("UTC", (page) =>
+			this.collaborators
+				.createAttendeeMessage(page, this.group)
+				.send(eventUrl, pdfUrl, beforeSend),
 		);
 	}
 
@@ -65,7 +81,7 @@ export class MeetupEventGateway implements EventPublicationGateway {
 		onSaved: (identity: EventPublicationIdentity) => Promise<void>,
 	): Promise<SavedEventPublication> {
 		if (identity) this.verifyIdentity(identity);
-		return this.withSession(event.timeZone, (page) =>
+		return this.withPublication(event.timeZone, (page) =>
 			this.collaborators
 				.createMeetupEventEditor(page, this.group.value)
 				.save(event, identity?.reviewUrl, beforeSubmit, (url) =>
@@ -80,7 +96,7 @@ export class MeetupEventGateway implements EventPublicationGateway {
 		beforePublish: () => Promise<void>,
 	): Promise<SavedEventPublication> {
 		this.verifyIdentity(identity);
-		return this.withSession(event.timeZone, (page) =>
+		return this.withPublication(event.timeZone, (page) =>
 			this.collaborators
 				.createMeetupEventPublisher(page, this.group.value)
 				.publish(event, identity.reviewUrl, beforePublish),
@@ -103,10 +119,18 @@ export class MeetupEventGateway implements EventPublicationGateway {
 			throw new ScheduledEventError("verification");
 	}
 
-	private async withSession(
+	private async withPublication(
 		timezoneId: string,
 		operation: (page: Page) => Promise<SavedMeetupEvent>,
 	): Promise<SavedEventPublication> {
+		const saved = await this.withSession(timezoneId, operation);
+		return { identity: this.identity(saved.url), status: saved.status };
+	}
+
+	private async withSession<Result>(
+		timezoneId: string,
+		operation: (page: Page) => Promise<Result>,
+	): Promise<Result> {
 		if (!this.credentials.email.trim() || !this.credentials.password)
 			throw new ScheduledEventError("authentication");
 		const browser = await this.browserType
@@ -142,8 +166,7 @@ export class MeetupEventGateway implements EventPublicationGateway {
 						? "unavailable"
 						: "authentication",
 				);
-			const saved = await operation(page);
-			return { identity: this.identity(saved.url), status: saved.status };
+			return await operation(page);
 		} finally {
 			// Do not let cleanup replace a publication result or its recovery state.
 			await browser.close().catch(() => undefined);

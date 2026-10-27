@@ -87,3 +87,4 @@ export {
 export { ScheduledEventError } from "./domain/scheduled-event-error.js";
 export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 export type { PublicationUrlPolicy } from "./domain/url-policy-contracts.js";
+export type { AttendeeSlidesGateway } from "./application/attendee-slides-gateway.js";

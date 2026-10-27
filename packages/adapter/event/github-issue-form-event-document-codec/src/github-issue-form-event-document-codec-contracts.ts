@@ -17,13 +17,39 @@ export const HEADINGS = Object.freeze({
 	communityLink: "CNCF Link",
 	assetsLink: "Drive Link",
 	feedbackLink: "OpenFeedback Link",
-	slides: "Slides & Content",
+	slidesPdf: "Slides PDF",
+	slides: "Event materials",
 	communication: "Communication",
+	introductionEmails: "Automated introduction emails",
 	aperitif: "Aperitif",
 	restaurant: "Restaurant / Bar",
 	postEvent: "Post event",
+	thankYouEmails: "Automated thank-you emails",
+	slidesDelivery: "Automated slide sharing",
 	occurrenceStatus: "Event Status",
 });
+
+/** Public form labels mapped to stable operational task names at the codec boundary. */
+export const CHECKLIST_LABELS = new Map([
+	["Mail introduction speakers", "Send speaker introduction emails"],
+	["Mail introduction hoster", "Send host introduction email"],
+	["Slack - AixMarseille.Tech", "Announce on Slack - AixMarseille.Tech"],
+	["Slack - OpenBaR", "Announce on Slack - OpenBaR"],
+	["LinkedIn", "Announce on LinkedIn"],
+	["Mail thanks hoster", "Send host thank-you email"],
+	["Mail thanks speakers", "Send speaker thank-you emails"],
+	["Share slides to meetup", "Send slides to Meetup attendees"],
+	["Sync attendees from tally sheet to CNCF", "Import attendees into CNCF"],
+	["Social networks", "Share recap on LinkedIn"],
+]);
+
+export const AUTOMATED_TASK_HEADINGS = new Map([
+	["Mail introduction speakers", HEADINGS.introductionEmails],
+	["Mail introduction hoster", HEADINGS.introductionEmails],
+	["Mail thanks hoster", HEADINGS.thankYouEmails],
+	["Mail thanks speakers", HEADINGS.thankYouEmails],
+	["Share slides to meetup", HEADINGS.slidesDelivery],
+]);
 
 export interface GitHubIssueFormEventDocumentCodecOptions {
 	/** Consumer checkout revision used for catalog navigation links. */

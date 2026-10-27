@@ -70,8 +70,11 @@ export class ReconcileSlidePdf {
 		if (observed && this.policy.current(confirmed, sourceVersion, name)) {
 			if (state?.pending && confirmed !== state.pending)
 				await this.states.save({ identity, fileId: state.fileId, confirmed });
-			const updated = await this.files.placeInPublicFolder(identity, observed);
-			return { status: "ready", updated, diagnostics: [] };
+			const published = await this.files.placeInPublicFolder(
+				identity,
+				observed,
+			);
+			return { status: "ready", ...published, diagnostics: [] };
 		}
 		const binary = await this.source.export(identity);
 		if ((await this.source.observe(identity)) !== sourceVersion)
@@ -100,8 +103,13 @@ export class ReconcileSlidePdf {
 			next,
 			await this.files.find(identity, next.fileId),
 		);
-		await this.files.placeInPublicFolder(identity, uploaded);
-		return { status: "ready", updated: true, diagnostics: [] };
+		const published = await this.files.placeInPublicFolder(identity, uploaded);
+		return {
+			status: "ready",
+			url: published.url,
+			updated: true,
+			diagnostics: [],
+		};
 	}
 
 	private async confirm(

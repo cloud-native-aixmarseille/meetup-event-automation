@@ -21,6 +21,7 @@ import type { ConfiguredPublicationAdapter } from "./publication-credentials-inp
 export class EventPublicationJourneyComposition {
 	static create(
 		input: EventCompositionInput & {
+			locale: string;
 			issueNumber: number;
 			commentAuthorLogin: string;
 			adapters: readonly ConfiguredPublicationAdapter[];
@@ -48,6 +49,18 @@ export class EventPublicationJourneyComposition {
 				input.adapters.map((adapter) =>
 					adapters.create({ ...input, clock, approval }, adapter),
 				),
+				input.adapters
+					.filter((adapter) => adapter.provider === "meetup")
+					.map((adapter) =>
+						adapters.slides({ ...input, clock, approval }, adapter, {
+							repository: context.get<EventRepository>(
+								SERVICES.eventRepository,
+							),
+							codec: context.get<EventDocumentCodec>(
+								SERVICES.eventDocumentCodec,
+							),
+						}),
+					),
 			);
 		});
 		return container;

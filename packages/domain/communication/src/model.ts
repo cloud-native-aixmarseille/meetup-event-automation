@@ -12,12 +12,13 @@ export type CommunicationKind =
 	| "host-introduction"
 	| "speaker-introduction"
 	| "readiness-reminder"
+	| "attendee-slides"
 	| "host-thanks"
 	| "speaker-thanks";
 
 export type MailCommunicationKind = Exclude<
 	CommunicationKind,
-	"readiness-reminder"
+	"readiness-reminder" | "attendee-slides"
 >;
 
 export type EventReadiness = "ready" | "not-ready";

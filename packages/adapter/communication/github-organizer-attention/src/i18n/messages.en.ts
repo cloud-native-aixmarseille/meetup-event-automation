@@ -25,9 +25,11 @@ export const messages = {
 
 	"task.approvals": "email approvals",
 	"task.delivery": "delivery recovery",
-	"task.public-slack-local": "Post the local community Slack announcement",
-	"task.public-slack-community": "Post the community Slack announcement",
-	"task.public-social": "Publish on social networks",
+	"task.public-slack-local":
+		"Publish the event announcement on Slack - AixMarseille.Tech",
+	"task.public-slack-community":
+		"Publish the event announcement on Slack - OpenBaR",
+	"task.public-social": "Publish the event announcement on LinkedIn",
 
 	"attention.clear": "No pending tasks.",
 	"attention.pending":
@@ -39,7 +41,8 @@ export const messages = {
 	"task.thank-speakers": "Send speaker thanks",
 	"task.share-slides": "Share slides",
 	"task.import-attendance": "Import attendance",
-	"task.share-social": "Share on social networks",
+	"task.share-social":
+		"Publish an event recap with photos and links on LinkedIn",
 	"task.event": "event validation",
 	"task.assets": "assets",
 	"task.feedback": "feedback",

@@ -2,73 +2,106 @@ import type { MessageId } from "./i18n/catalog.js";
 
 export const STAGE_GUIDANCE = [
 	[
+		"publication.meetup.slides-source",
+		["Automated slide sharing", "comment.guidance.meetup.slides-source"],
+	],
+	[
+		"publication.meetup.slides-link",
+		["Automated slide sharing", "comment.guidance.meetup.slides-link"],
+	],
+	[
+		"publication.meetup.slides-pdf-pending",
+		["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"],
+	],
+	[
+		"publication.meetup.slides-delivery-recovery",
+		[
+			"Automated slide sharing",
+			"comment.guidance.meetup.slides-delivery-recovery",
+		],
+	],
+	[
+		"publication.meetup.slides-form-unavailable",
+		[
+			"Automated slide sharing",
+			"comment.guidance.meetup.slides-form-unavailable",
+		],
+	],
+	[
+		"publication.meetup.slides-source-changed",
+		[
+			"Automated slide sharing",
+			"comment.guidance.meetup.slides-source-changed",
+		],
+	],
+	[
 		"publication.content.prerequisites",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.content.pending",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.content.rejected",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.content.iteration-requested",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.content.recovery",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.content.stale",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.content.title-review",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.content.description-review",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"publication.meetup.content-review",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 	[
 		"communication.content-review",
-		["Slides & Content", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.review"],
 	],
 
 	[
 		"publication.assets.pdf.source",
-		["Slides & Content", "comment.guidance.pdf.source"],
+		["Event materials", "comment.guidance.pdf.source"],
 	],
 	[
 		"publication.assets.pdf.source-pending",
-		["Slides & Content", "comment.guidance.pdf.source-pending"],
+		["Event materials", "comment.guidance.pdf.source-pending"],
 	],
 	[
 		"publication.assets.pdf.revision",
-		["Slides & Content", "comment.guidance.pdf.revision"],
+		["Event materials", "comment.guidance.pdf.revision"],
 	],
 	[
 		"publication.assets.pdf.conflict",
-		["Slides & Content", "comment.guidance.pdf.recovery"],
+		["Event materials", "comment.guidance.pdf.recovery"],
 	],
 	[
 		"publication.assets.pdf.recovery",
-		["Slides & Content", "comment.guidance.pdf.recovery"],
+		["Event materials", "comment.guidance.pdf.recovery"],
 	],
 	[
 		"publication.assets.pdf.limit",
-		["Slides & Content", "comment.guidance.pdf.limit"],
+		["Event materials", "comment.guidance.pdf.limit"],
 	],
 	[
 		"publication.assets.pdf.invalid",
-		["Slides & Content", "comment.guidance.pdf.invalid"],
+		["Event materials", "comment.guidance.pdf.invalid"],
 	],
 	[
 		"communication.checklist-concurrently-modified",
@@ -88,7 +121,7 @@ export const STAGE_GUIDANCE = [
 	],
 	[
 		"communication.slides-unavailable",
-		["Slides & Content", "comment.guidance.assets.slides"],
+		["Event materials", "comment.guidance.assets.slides"],
 	],
 	[
 		"communication.approval-pending",
@@ -191,39 +224,39 @@ export const STAGE_GUIDANCE = [
 	],
 	[
 		"publication.assets.file.drift",
-		["Slides & Content", "comment.guidance.assets.drift"],
+		["Event materials", "comment.guidance.assets.drift"],
 	],
 	[
 		"publication.assets.content.contract",
-		["Slides & Content", "comment.guidance.assets.template"],
+		["Event materials", "comment.guidance.assets.template"],
 	],
 	[
 		"publication.assets.content.location",
-		["Slides & Content", "comment.guidance.assets.template"],
+		["Event materials", "comment.guidance.assets.template"],
 	],
 	[
 		"publication.assets.content.missing",
-		["Slides & Content", "comment.guidance.assets.missing"],
+		["Event materials", "comment.guidance.assets.missing"],
 	],
 	[
 		"publication.assets.content.conflict",
-		["Slides & Content", "comment.guidance.assets.recovery"],
+		["Event materials", "comment.guidance.assets.recovery"],
 	],
 	[
 		"publication.assets.content.recovery",
-		["Slides & Content", "comment.guidance.assets.recovery"],
+		["Event materials", "comment.guidance.assets.recovery"],
 	],
 	[
 		"publication.assets.content.revision",
-		["Slides & Content", "comment.guidance.assets.revision"],
+		["Event materials", "comment.guidance.assets.revision"],
 	],
 	[
 		"publication.assets.content.image",
-		["Slides & Content", "comment.guidance.assets.image"],
+		["Event materials", "comment.guidance.assets.image"],
 	],
 	[
 		"publication.assets.content.fallback",
-		["Slides & Content", "comment.guidance.assets.fallback"],
+		["Event materials", "comment.guidance.assets.fallback"],
 	],
 	[
 		"communication.invalid-event-date",

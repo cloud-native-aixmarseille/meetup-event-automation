@@ -195,46 +195,50 @@ and integration errors before sending.
 
 ## Track email completion
 
-Keep these items in the meetup issue:
+The form does not ask for email tasks. Automation schedules due emails for
+approval and adds completion to the issue after accepted delivery:
 
 ```markdown
-### Communication
+### Automated introduction emails
 
-- [ ] Mail introduction speakers
-- [ ] Mail introduction hoster
+- [x] Send speaker introduction emails
+- [x] Send host introduction email
 
-### Post event
+### Automated thank-you emails
 
-- [ ] Mail thanks hoster
-- [ ] Mail thanks speakers
+- [x] Send host thank-you email
+- [x] Send speaker thank-you emails
 ```
 
-Leave a task unchecked for the automation to perform it when due and approved.
-A checked item records completed work, including emails sent manually. Missing email
-items are not scheduled; add them unchecked to enable their automation.
-Other checklist items remain manual.
+A missing or unchecked email item means the group is pending. Approval is required
+before sending. If you sent a group's emails manually, add its checked item before
+approving the batch. Existing checked items remain completed work.
 
-`Mail introduction speakers` tracks all speaker introduction emails, and
-`Mail introduction hoster` tracks the host contact's introduction email. Each
+The speaker introduction task tracks all speaker introduction emails; the host
+introduction task tracks the host contact's introduction email. Each
 item is completed independently after its recipients' dispatches are accepted.
 The automation also supports these task names:
 
 | Task                                             | Behavior                                                                                                      |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `Mail introduction speakers`                     | Tracks all speaker introduction emails.                                                                       |
+| `Mail introduction hoster`                       | Tracks the host contact's introduction email.                                                                 |
+| `Mail thanks hoster`                             | Tracks the host contact's thank-you email.                                                                    |
+| `Mail thanks speakers`                           | Tracks speaker thank-you emails with OpenFeedback report links.                                               |
 | `Mail introduction`                              | Tracks host and speaker introductions together; completes after both groups.                                  |
 | `Thanks hoster`                                  | Tracks the host contact's thank-you email.                                                                    |
 | `Thanks speakers`                                | Tracks speaker thank-you emails.                                                                              |
 | `Thanks speakers and share openfeedback reports` | Sends speaker thank-you emails and adds a completed `Mail thanks speakers` item; report sharing stays manual. |
 
-The automation checks a task only after all its recipient requests have been
-accepted and recorded in the delivery ledger. Partial failures leave that task
-unchecked. A later run retries definitively deferred requests and restores
+The automation adds or checks a task only after all its recipient requests have
+been accepted and recorded in the delivery ledger. Partial failures leave that
+group incomplete. A later run retries definitively deferred requests and restores
 missing completion checkmarks from accepted records without sending again.
 Unchecking an already dispatched task does not resend its recorded messages.
 
 ## When messages are due
 
-Dates use `Europe/Paris`. Email rows require a present, unchecked task and batch approval.
+Dates use `Europe/Paris`. Emails require an unfinished delivery group and batch approval.
 
 | Event condition                                  | Message                                             |
 | ------------------------------------------------ | --------------------------------------------------- |
@@ -285,13 +289,15 @@ remaining integration or delivery actions. Field corrections stay in the merged
 diagnostic checklist. Follow-up tasks cover:
 
 - Thank the host and speakers, with one approval for the complete email batch.
-- Share slides on Meetup.
+- Send the PDF to Meetup attendees automatically.
 - Import attendance into CNCF.
-- Share on social networks.
+- Share the event recap on LinkedIn.
 
 The task overview exists even if email preparation is blocked or emails are
 already complete. Complete manual tasks in the issue's **Post event** checklist;
-approval authorizes only the emails. Progress updates the shared comment without
+approval authorizes the host and speaker emails. Meetup slide delivery runs
+separately through [Contact attendees](event-publication.md#send-slides-to-attendees).
+Progress updates the shared comment without
 invalidating a reviewed email batch. Email details, final decisions and delivery
 reservations retain their existing verification rules. Earlier attention comments
 link to this shared view, and their notification reservations are preserved.

@@ -4,6 +4,10 @@ type Diagnostic = Pick<PublicDiagnostic, "code" | "severity" | "fixApplied">;
 type DiagnosticCategory = "technical" | "organizer" | "informational";
 
 const ORGANIZER_CODES = new Set([
+	"publication.meetup.slides-pdf-pending",
+	"publication.meetup.slides-delivery-recovery",
+	"publication.meetup.slides-link",
+	"publication.meetup.slides-source-changed",
 	"publication.community.content-review",
 	"publication.community.authentication",
 	"publication.community.prerequisites",

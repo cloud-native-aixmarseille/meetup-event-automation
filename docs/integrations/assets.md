@@ -400,8 +400,10 @@ The source must have a stable managed template identity and `ready` or
 uses the presentation's name, adds the event date if needed, and ends in `.pdf`.
 Names are bounded to 204 characters. The existing editable Slides file remains
 the email target. Download the PDF from the configured shared `public` folder.
-**Drive Link** continues to identify the event folder. The action does not emit
-a PDF URL or complete any manual sharing task.
+**Drive Link** continues to identify the event folder. After verifying public
+placement, the action writes **Slides PDF** to the issue. A pending or conflicted
+export clears that link. [Meetup attendee delivery](event-publication.md#send-slides-to-attendees)
+uses it to send the PDF to members marked as having attended.
 
 Set `GOOGLE_DRIVE_PUBLIC_FOLDER_ID` to the existing `public` folder's ID
 and forward it as `google-drive-public-folder-id`. The same destination

@@ -4,7 +4,7 @@ export const FR_MESSAGES = {
 	"ledger.empty": "Aucun envoi enregistré.",
 	"ledger.row": "- {kind} : {status} ({count, number})",
 	"ledger.kind":
-		"{kind, select, host_introduction {Courriel de présentation au lieu d'accueil} speaker_introduction {Courriel de présentation aux intervenants} host_thanks {Courriel de remerciement au lieu d'accueil} speaker_thanks {Courriel de remerciement aux intervenants} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
+		"{kind, select, host_introduction {Courriel de présentation au lieu d'accueil} speaker_introduction {Courriel de présentation aux intervenants} host_thanks {Courriel de remerciement au lieu d'accueil} speaker_thanks {Courriel de remerciement aux intervenants} attendee_slides {Courriel des slides aux participants Meetup} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
 	"ledger.status":
 		"{status, select, accepted {Demande acceptée} pending {Envoi en cours ou à vérifier} rejected {Demande refusée} uncertain {Envoi à vérifier} other {État inconnu}}",
 	"ledger.explanation":

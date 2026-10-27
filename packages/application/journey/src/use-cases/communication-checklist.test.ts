@@ -24,6 +24,58 @@ const recipients: readonly MailRecipient[] = [
 ];
 
 describe("communication checklist", () => {
+	it.each([false, true])(
+		"plans emails without form tasks (post-event: %s)",
+		(thanks) => {
+			// Arrange
+			const input = {
+				...event,
+				operationalChecklists: {
+					...event.operationalChecklists,
+					communication: [],
+					postEvent: [],
+				},
+			};
+
+			// Act
+			const pending = new CommunicationChecklist().pendingRecipients(
+				input,
+				recipients,
+				thanks,
+			);
+
+			// Assert
+			expect(pending).toEqual(recipients);
+		},
+	);
+
+	it("adds completion for accepted emails and preserves it on a rerun", () => {
+		// Arrange
+		const input = {
+			...event,
+			operationalChecklists: {
+				...event.operationalChecklists,
+				communication: [{ name: "LinkedIn", completed: false }],
+				postEvent: [],
+			},
+		};
+		const checklist = new CommunicationChecklist();
+
+		// Act
+		const completed = checklist.complete(input, ["host-introduction"]);
+		const updated = { ...input, operationalChecklists: completed };
+		const pending = checklist.pendingRecipients(updated, recipients, false);
+		const repeated = checklist.complete(updated, ["host-introduction"]);
+
+		// Assert
+		expect(completed.communication).toEqual([
+			{ name: "LinkedIn", completed: false },
+			{ name: "Mail introduction hoster", completed: true },
+		]);
+		expect(pending).toEqual([recipients[1]]);
+		expect(repeated).toEqual(completed);
+		expect(input.operationalChecklists.communication).toHaveLength(1);
+	});
 	it.each(["Mail thanks hoster", "Thanks hoster"])(
 		"uses the existing %s item independently of speaker thanks",
 		(name) => {
@@ -122,7 +174,7 @@ describe("communication checklist", () => {
 			combined,
 			{ name: "Mail thanks speakers", completed: true },
 		]);
-		expect(pending).toEqual([]);
+		expect(pending).toEqual([recipients[0]]);
 	});
 
 	it("counts a manually completed host task when finishing a combined introduction", () => {

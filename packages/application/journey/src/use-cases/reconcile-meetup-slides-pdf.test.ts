@@ -134,4 +134,69 @@ describe("ReconcileMeetupSlidesPdf", () => {
 		await expect(result).rejects.toThrow("Export transport failed");
 		expect(dependencies.repository.applyPatch).not.toHaveBeenCalled();
 	});
+	it("persists the verified public PDF link for attendee delivery", async () => {
+		// Arrange
+		const { dependencies, source, operation, pdf } = fixture();
+		const url = "https://drive.google.com/file/d/public-pdf/view";
+		pdf.execute.mockResolvedValue({
+			status: "ready",
+			updated: true,
+			diagnostics: [],
+			url,
+		});
+		// Act
+		await operation.execute(identity, source, true);
+		// Assert
+		expect(dependencies.documentCodec.createPatch).toHaveBeenCalledWith(
+			sourceDocument,
+			{ ...event, slidesPdfUrl: url },
+		);
+		expect(dependencies.repository.applyPatch).toHaveBeenCalledOnce();
+	});
+	it("clears a prepared link when export is blocked", async () => {
+		// Arrange
+		const { dependencies, source, operation, pdf } = fixture();
+		vi.mocked(dependencies.documentCodec.decode).mockReturnValue({
+			event: {
+				...event,
+				slidesPdfUrl: "https://drive.google.com/file/d/pdf/view",
+			},
+			diagnostics: [],
+		});
+		pdf.execute.mockResolvedValue({
+			status: "pending",
+			updated: false,
+			diagnostics: [],
+		});
+		// Act
+		await operation.execute(identity, source, false);
+		// Assert
+		expect(dependencies.documentCodec.createPatch).toHaveBeenCalledWith(
+			sourceDocument,
+			{ ...event, slidesPdfUrl: undefined },
+		);
+	});
+	it("does not persist a PDF link after a concurrent issue edit", async () => {
+		// Arrange
+		const { dependencies, source, operation, pdf } = fixture();
+		pdf.execute.mockImplementation(async () => {
+			vi.mocked(dependencies.repository.find).mockResolvedValue({
+				...sourceDocument,
+				body: "human edit",
+			});
+			return {
+				status: "ready",
+				updated: true,
+				diagnostics: [],
+				url: "https://drive.google.com/file/d/pdf/view",
+			};
+		});
+		// Act
+		const result = operation.execute(identity, source, true);
+		// Assert
+		await expect(result).rejects.toMatchObject({
+			name: "EventConcurrentModificationError",
+		});
+		expect(dependencies.repository.applyPatch).not.toHaveBeenCalled();
+	});
 });

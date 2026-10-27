@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": "./src/index.ts",
 	"dependencies": {
+		"@meetup-automation/localization": "workspace:*",
 		"@meetup-automation/publication": "workspace:*",
 		"playwright-core": "1.64.1",
 		"@meetup-automation/browser-authentication": "workspace:*"

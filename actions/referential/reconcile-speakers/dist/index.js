@@ -31056,8 +31056,11 @@ var ReconcileSlidePdf = class {
     if (observed && this.policy.current(confirmed, sourceVersion, name)) {
       if (state?.pending && confirmed !== state.pending)
         await this.states.save({ identity, fileId: state.fileId, confirmed });
-      const updated = await this.files.placeInPublicFolder(identity, observed);
-      return { status: "ready", updated, diagnostics: [] };
+      const published2 = await this.files.placeInPublicFolder(
+        identity,
+        observed
+      );
+      return { status: "ready", ...published2, diagnostics: [] };
     }
     const binary = await this.source.export(identity);
     if (await this.source.observe(identity) !== sourceVersion)
@@ -31086,8 +31089,13 @@ var ReconcileSlidePdf = class {
       next,
       await this.files.find(identity, next.fileId)
     );
-    await this.files.placeInPublicFolder(identity, uploaded);
-    return { status: "ready", updated: true, diagnostics: [] };
+    const published = await this.files.placeInPublicFolder(identity, uploaded);
+    return {
+      status: "ready",
+      url: published.url,
+      updated: true,
+      diagnostics: []
+    };
   }
   async confirm(state, observed) {
     if (observed?.id !== state.fileId || !this.policy.matches(state.pending, observed)) {
@@ -32053,14 +32061,6 @@ var ManualPublicationPolicy = class {
         "Create the event asset folder"
       ),
       occurrenceConfirmed ? this.task(
-        "publish-slides",
-        event.slidesPublished,
-        "Publish post-event slides"
-      ) : this.notApplicable(
-        "publish-slides",
-        "Slides are published only after occurrence is explicitly confirmed"
-      ),
-      occurrenceConfirmed ? this.task(
         "import-attendance",
         event.attendanceImported,
         "Import post-event attendance"
@@ -32085,7 +32085,6 @@ var ManualPublicationPolicy = class {
       "publish-meetup-event",
       "publish-community-event",
       "create-asset-folder",
-      "publish-slides",
       "import-attendance"
     ];
   }
@@ -32759,6 +32758,10 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.meetup.slides-pdf-pending",
+  "publication.meetup.slides-delivery-recovery",
+  "publication.meetup.slides-link",
+  "publication.meetup.slides-source-changed",
   "publication.community.content-review",
   "publication.community.authentication",
   "publication.community.prerequisites",
@@ -33066,7 +33069,7 @@ var AttentionEventFacts = class {
       speakersConfirmed: event.confirmations.speakers,
       publicationPending: [
         ...tasks.filter(
-          (task) => task.status === "pending" && !["publish-slides", "import-attendance"].includes(task.kind)
+          (task) => task.status === "pending" && task.kind !== "import-attendance"
         ).map((task) => task.kind),
         ...this.announcements(event.operationalChecklists.communication)
       ],
@@ -33075,6 +33078,7 @@ var AttentionEventFacts = class {
   }
   followUp(event) {
     return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
+      if (name === "Share slides to meetup") return [];
       const completed = index < 2 ? this.collaborators.communicationChecklist.status(
         event,
         index === 0 ? "host-thanks" : "speaker-thanks"
@@ -33089,11 +33093,16 @@ var AttentionEventFacts = class {
     const tasks = [
       ["Slack - AixMarseille.Tech", "public-slack-local"],
       ["Slack - OpenBaR", "public-slack-community"],
+      ["LinkedIn", "public-social"],
       ["Social networks", "public-social"]
     ];
-    return tasks.filter(
-      ([name]) => items.some((item) => item.name === name && !item.completed)
-    ).map(([, resource]) => resource);
+    return [
+      ...new Set(
+        tasks.filter(
+          ([name]) => items.some((item) => item.name === name && !item.completed)
+        ).map(([, resource]) => resource)
+      )
+    ];
   }
 };
 
@@ -33172,7 +33181,7 @@ var CommunicationChecklist = class {
     const matches = event.operationalChecklists[task.section].filter(
       (item) => this.matches(item, task.names)
     );
-    return matches.some((item) => item.completed) ? "completed" : matches.length ? "pending" : "missing";
+    return matches.some((item) => item.completed) ? "completed" : "pending";
   }
   complete(event, accepted) {
     const completed = new Set(accepted);
@@ -33185,8 +33194,13 @@ var CommunicationChecklist = class {
       ...item,
       completed: item.completed || this.accepted(item, "postEvent", completed, checklists)
     }));
-    if (completed.has("speaker-thanks") && postEvent.some((item) => item.name === LEGACY_SPEAKER_THANKS) && !postEvent.some((item) => item.name === "Mail thanks speakers")) {
-      postEvent.push({ name: "Mail thanks speakers", completed: true });
+    for (const kind of completed) {
+      const task = TASKS[kind];
+      const items = task.section === "communication" ? communication : postEvent;
+      if (!items.some(
+        (item) => item.name !== LEGACY_SPEAKER_THANKS && this.matches(item, task.names)
+      ))
+        items.push({ name: task.names[0], completed: true });
     }
     return { ...checklists, communication, postEvent };
   }
@@ -33459,10 +33473,6 @@ var EventPublicationEvaluation = class {
         occurrenceStatus: event.occurrenceStatus,
         references: event.publicationLinks,
         meetupPublished: this.collaborators.meetupPublicationChecklist.isPublished(event),
-        slidesPublished: this.checklistTaskIsCompleted(
-          event.operationalChecklists.postEvent,
-          POST_EVENT_TASK_NAMES.shareSlides
-        ),
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
           POST_EVENT_TASK_NAMES.importAttendance
@@ -38914,6 +38924,12 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "diagnostic.publication.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "diagnostic.publication.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
   "action.publication.prepare-runtime": "Prepare event publication runtime",
   "report.publication.draft": "publication_provider={provider} event=draft approval=required",
   "report.publication.updated": "publication_provider={provider} event=synchronized",
@@ -39057,6 +39073,12 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "diagnostic.publication.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "diagnostic.publication.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
   "action.publication.prepare-runtime": "Pr\xE9parer le runtime de publication",
   "report.publication.draft": "fournisseur_publication={provider} evenement=brouillon approbation=requise",
   "report.publication.updated": "fournisseur_publication={provider} evenement=synchronise",

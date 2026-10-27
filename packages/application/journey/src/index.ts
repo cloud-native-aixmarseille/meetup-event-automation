@@ -132,3 +132,6 @@ export type {
 	ValidateMeetupReferentialsResult,
 } from "./use-cases/validate-meetup-referentials.js";
 export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referentials.js";
+export { ReconcileMeetupSlidesDelivery } from "./use-cases/reconcile-meetup-slides-delivery.js";
+
+export { EventPublicationResults } from "./use-cases/event-publication-results.js";

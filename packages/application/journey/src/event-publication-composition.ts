@@ -6,6 +6,7 @@ import type {
 	EventPublicationConfiguration,
 	EventPublicationSourceDependencies,
 	PublicationDestination,
+	PublicationFollowUp,
 } from "./use-cases/event-publication-contracts.js";
 import { EventPublicationResults } from "./use-cases/event-publication-results.js";
 import { EventPublicationSource } from "./use-cases/event-publication-source.js";
@@ -33,6 +34,7 @@ export class EventPublicationComposition {
 	collection(
 		dependencies: EventPublicationSourceDependencies,
 		destinations: readonly PublicationDestination[],
+		followUps: readonly PublicationFollowUp[],
 	): ReconcileEventPublications {
 		return new ReconcileEventPublications(
 			dependencies.repository,
@@ -48,6 +50,7 @@ export class EventPublicationComposition {
 					document,
 				),
 			destinations,
+			followUps,
 		);
 	}
 }

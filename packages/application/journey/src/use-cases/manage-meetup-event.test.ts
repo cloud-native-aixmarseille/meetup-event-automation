@@ -293,10 +293,6 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 				status: "completed",
 			}),
 			expect.objectContaining({
-				kind: "publish-slides",
-				status: "completed",
-			}),
-			expect.objectContaining({
 				kind: "import-attendance",
 				status: "pending",
 			}),

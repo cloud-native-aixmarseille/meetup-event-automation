@@ -1,4 +1,16 @@
 export const EN_MESSAGES = {
+	"diagnostic.publication.meetup.slides-source":
+		"Fix the issue errors before sending slides to Meetup attendees.",
+	"diagnostic.publication.meetup.slides-link":
+		"Provide the published Meetup event link before sending slides.",
+	"diagnostic.publication.meetup.slides-pdf-pending":
+		"Run document and PDF reconciliation before sending slides to Meetup attendees.",
+	"diagnostic.publication.meetup.slides-delivery-recovery":
+		"Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+	"diagnostic.publication.meetup.slides-form-unavailable":
+		"The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+	"diagnostic.publication.meetup.slides-source-changed":
+		"The event changed before sending slides. Run publication reconciliation again.",
 	"action.publication.prepare-runtime": "Prepare event publication runtime",
 	"report.publication.draft":
 		"publication_provider={provider} event=draft approval=required",

@@ -34,6 +34,7 @@ export interface PdfExportBinary {
 }
 
 export interface PdfExportResult {
+	readonly url?: string;
 	readonly status:
 		| "not-applicable"
 		| "pending"

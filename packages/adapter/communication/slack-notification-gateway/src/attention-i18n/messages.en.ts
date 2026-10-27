@@ -30,7 +30,7 @@ export const messages = {
 	"task.delivery": "delivery recovery",
 	"task.public-slack-local": "Post the local community Slack announcement",
 	"task.public-slack-community": "Post the community Slack announcement",
-	"task.public-social": "Publish on social networks",
+	"task.public-social": "Publish the event announcement on LinkedIn",
 
 	"attention.clear": "No pending tasks.",
 	"task.publish-meetup-event": "Approve Meetup publication",
@@ -40,7 +40,7 @@ export const messages = {
 	"task.thank-speakers": "Send speaker thanks",
 	"task.share-slides": "Share slides",
 	"task.import-attendance": "Import attendance",
-	"task.share-social": "Share on social networks",
+	"task.share-social": "Share the event recap on LinkedIn",
 	"task.event": "event validation",
 	"task.assets": "assets",
 	"task.feedback": "feedback",

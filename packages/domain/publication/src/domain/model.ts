@@ -14,7 +14,6 @@ export type PublicationEvent = Readonly<{
 	occurrenceStatus?: "scheduled" | "postponed" | "held" | "cancelled";
 	references: PublicationReferences;
 	meetupPublished: boolean;
-	slidesPublished: boolean;
 	attendanceImported: boolean;
 }>;
 

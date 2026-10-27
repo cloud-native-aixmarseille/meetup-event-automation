@@ -19,6 +19,10 @@ describe("diagnostic policy", () => {
 		"communication.approval-pending",
 		"communication.approval-rejected",
 		"publication.meetup.unpublished",
+		"publication.meetup.slides-pdf-pending",
+		"publication.meetup.slides-delivery-recovery",
+		"publication.meetup.slides-link",
+		"publication.meetup.slides-source-changed",
 		"publication.assets.content.conflict",
 		"publication.assets.pdf.source",
 		"publication.assets.pdf.source-pending",
@@ -66,6 +70,8 @@ describe("diagnostic policy", () => {
 		"action.execution.failed",
 		"event.unclassified-failure",
 		"publication.unclassified-failure",
+		"publication.meetup.slides-source",
+		"publication.meetup.slides-form-unavailable",
 	])("fails for technical fault %s", (code) => {
 		// Arrange
 		const diagnostic = { code, severity: "error" as const };
