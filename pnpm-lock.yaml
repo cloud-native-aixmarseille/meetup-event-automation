@@ -267,6 +267,9 @@ importers:
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../../domain/publication
+      image-size:
+        specifier: ^2.0.4
+        version: 2.0.4
       playwright-core:
         specifier: 1.64.1
         version: 1.64.1

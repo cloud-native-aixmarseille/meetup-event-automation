@@ -92,6 +92,31 @@ function communityPublicationFixture(
 	};
 }
 describe("Meetup event publication", () => {
+	it("blocks browser access when the approved cover is absent", async () => {
+		// Arrange
+		const f = publicationFixture();
+		f.dependencies.artwork.cover.mockResolvedValue(undefined);
+		// Act
+		const result = await f.useCase.execute(identity);
+		// Assert
+		expect(result.status).toBe("blocked");
+		expect(f.gateway.save).not.toHaveBeenCalled();
+		expect(f.approval.request).not.toHaveBeenCalled();
+	});
+	it("rechecks artwork authorization before reserving the draft", async () => {
+		// Arrange
+		const f = publicationFixture();
+		const cover = await f.dependencies.artwork.cover();
+		f.dependencies.artwork.cover
+			.mockResolvedValue(undefined)
+			.mockResolvedValueOnce(cover);
+		// Act
+		const result = await f.useCase.execute(identity);
+		// Assert
+		expect(result.status).toBe("blocked");
+		expect(f.journal.reserve).not.toHaveBeenCalled();
+		expect(f.approval.request).not.toHaveBeenCalled();
+	});
 	it("runs post-event delivery when event editing is inactive", async () => {
 		// Arrange
 		const f = setupPublication({ occurrenceStatus: "held" });

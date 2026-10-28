@@ -4,11 +4,12 @@ import {
 	type EventPublicationIdentity,
 	MeetupEventUrl,
 	MeetupGroupUrl,
+	type MeetupPublicationEvent,
 	type SavedEventPublication,
-	type ScheduledEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
 import type { BrowserType, Page } from "playwright-core";
+import type { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
 import type {
 	MeetupEventEditor,
 	MeetupEventEditorArguments,
@@ -22,7 +23,6 @@ import type {
 	MeetupLoginPageArguments,
 } from "./meetup-login-page.js";
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
-import type { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
 
 export interface MeetupEventGatewayCollaborators {
 	readonly createAttendeeMessage: (
@@ -40,7 +40,9 @@ export interface MeetupEventGatewayCollaborators {
 	) => MeetupLoginPage;
 }
 
-export class MeetupEventGateway implements EventPublicationGateway {
+export class MeetupEventGateway
+	implements EventPublicationGateway<MeetupPublicationEvent>
+{
 	private readonly group: MeetupGroupUrl;
 
 	constructor(
@@ -75,7 +77,7 @@ export class MeetupEventGateway implements EventPublicationGateway {
 	}
 
 	async save(
-		event: ScheduledEvent,
+		event: MeetupPublicationEvent,
 		identity: EventPublicationIdentity | undefined,
 		beforeSubmit: () => Promise<void>,
 		onSaved: (identity: EventPublicationIdentity) => Promise<void>,
@@ -91,7 +93,7 @@ export class MeetupEventGateway implements EventPublicationGateway {
 	}
 
 	async publish(
-		event: ScheduledEvent,
+		event: MeetupPublicationEvent,
 		identity: EventPublicationIdentity,
 		beforePublish: () => Promise<void>,
 	): Promise<SavedEventPublication> {

@@ -1,6 +1,7 @@
-import type { ScheduledEvent } from "@meetup-automation/publication";
+import type { MeetupPublicationEvent } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import {
+	publicationCover,
 	publicationFixture,
 	publicationIdentity,
 	publicationUrl,
@@ -11,21 +12,23 @@ import { EventPublicationApproval } from "./event-publication-approval.js";
 describe("Meetup publication approval revision", () => {
 	it.each([
 		{ title: "Changed title" },
+		{ cover: { ...publicationCover, fingerprint: "b".repeat(64) } },
 		{ description: "Changed agenda" },
 		{ date: "2026-10-03" },
 		{ startTime: "19:00" },
 		{ endTime: "21:00" },
 		{ timeZone: "UTC" },
 		{ venue: { name: "Changed venue", city: "Other City" } },
-	] satisfies Partial<ScheduledEvent>[])(
+	] satisfies Partial<MeetupPublicationEvent>[])(
 		"requires a distinct approval for changed content: %j",
 		async (change) => {
 			// Arrange
 			const f = publicationFixture();
-			const event = new JourneyPolicyComposition()
+			const scheduled = new JourneyPolicyComposition()
 				.scheduledEventProjection()
 				.create(f.currentEvent, f.dependencies.settings);
-			if (!event) throw new Error("Expected event fixture");
+			if (!scheduled) throw new Error("Expected event fixture");
+			const event = { ...scheduled, cover: publicationCover };
 			const approval = new EventPublicationApproval(
 				new JourneyPolicyComposition().meetupPublicationRevision(),
 				f.approval,
@@ -47,10 +50,11 @@ describe("Meetup publication approval revision", () => {
 	it("binds approval to the remote draft identity", async () => {
 		// Arrange
 		const f = publicationFixture();
-		const event = new JourneyPolicyComposition()
+		const scheduled = new JourneyPolicyComposition()
 			.scheduledEventProjection()
 			.create(f.currentEvent, f.dependencies.settings);
-		if (!event) throw new Error("Expected event fixture");
+		if (!scheduled) throw new Error("Expected event fixture");
+		const event = { ...scheduled, cover: publicationCover };
 		const approval = new EventPublicationApproval(
 			new JourneyPolicyComposition().meetupPublicationRevision(),
 			f.approval,

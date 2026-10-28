@@ -68290,17 +68290,30 @@ var MeetupPublicationRevision = class {
     return this.collaborators.contentFingerprint.of(
       JSON.stringify({
         url: identity.reviewUrl,
-        event: {
-          title: event.title,
-          description: event.description,
-          date: event.date,
-          startTime: event.startTime,
-          endTime: event.endTime,
-          timeZone: event.timeZone,
-          venue: { name: event.venue.name, city: event.venue.city }
-        }
+        event: this.fields(event)
       })
     );
+  }
+  content(event) {
+    return this.collaborators.contentFingerprint.of(
+      JSON.stringify(this.fields(event))
+    );
+  }
+  fields(event) {
+    return {
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      timeZone: event.timeZone,
+      venue: { name: event.venue.name, city: event.venue.city },
+      cover: {
+        id: event.cover.id,
+        fingerprint: event.cover.fingerprint,
+        sourceRevision: event.cover.sourceRevision
+      }
+    };
   }
 };
 
@@ -75586,7 +75599,7 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.content.stale": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "diagnostic.publication.content.title-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "diagnostic.publication.content.description-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.meetup.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.meetup.content-review": "Approve the current title, description, and cover artwork through content review. Replace invalid or changed artwork before synchronizing; changed content needs fresh approval.",
   "diagnostic.communication.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "report.content.generated": "Content generation evaluated.",
   "report.content.reviewed": "Content reviews reconciled.",
@@ -75607,7 +75620,7 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
   "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
-  "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
+  "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check the event and cover photo library before retrying. Restore the verified event URL in Meetup Link and recover any pending or detached cover photo in the trusted journal. Leave Meetup event published unchecked until publication is confirmed. Preserve event and photo identities; clear uncertain state only after checking what Meetup accepted.",
   "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and AI configuration; complete any unsupported challenge interactively.",
   "diagnostic.publication.meetup.editor": "The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
   "diagnostic.publication.meetup.verification": "Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
@@ -75740,7 +75753,7 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.content.stale": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "diagnostic.publication.content.title-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "diagnostic.publication.content.description-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.meetup.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.meetup.content-review": "Validez le titre, la description et l'illustration de couverture actuels dans la revue de contenu. Remplacez une illustration invalide ou modifi\xE9e avant de synchroniser ; un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "diagnostic.communication.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "report.content.generated": "G\xE9n\xE9ration du contenu \xE9valu\xE9e.",
   "report.content.reviewed": "Validations du contenu synchronis\xE9es.",
@@ -75761,7 +75774,7 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
   "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
-  "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez Meetup et inscrivez le lien v\xE9rifi\xE9 du brouillon ou de l'\xE9v\xE9nement publi\xE9 dans Meetup Link avant de relancer. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Ne supprimez le journal qu'apr\xE8s avoir v\xE9rifi\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
+  "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez l'\xE9v\xE9nement et la phototh\xE8que avant de relancer. R\xE9tablissez l'URL v\xE9rifi\xE9e dans Meetup Link et r\xE9cup\xE9rez toute photo de couverture en attente ou d\xE9tach\xE9e dans le journal de confiance. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Pr\xE9servez les identifiants de l'\xE9v\xE9nement et de la photo ; ne supprimez un \xE9tat incertain qu'apr\xE8s avoir v\xE9rifi\xE9 ce que Meetup a accept\xE9.",
   "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et la configuration IA ; terminez manuellement toute v\xE9rification non prise en charge.",
   "diagnostic.publication.meetup.editor": "Impossible de pr\xE9parer l'\xE9diteur Meetup. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
   "diagnostic.publication.meetup.verification": "Les champs enregistr\xE9s sur Meetup ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",

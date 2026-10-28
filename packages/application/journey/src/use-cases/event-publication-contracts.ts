@@ -68,7 +68,10 @@ export type EventPublicationConfiguration<
 	>;
 	settings: Settings;
 	projection: {
-		create(event: MeetupEvent, settings: Settings): Event | undefined;
+		create(
+			event: MeetupEvent,
+			settings: Settings,
+		): Event | undefined | Promise<Event | undefined>;
 	};
 	policy: { valid(event: Event, now: string): boolean };
 	identityPolicy: EventPublicationIdentityPolicy;
@@ -77,6 +80,7 @@ export type EventPublicationConfiguration<
 		apply(event: MeetupEvent, saved: SavedEventPublication): MeetupEvent;
 	};
 	revision: {
+		content(event: Event): string;
 		of(
 			event: Event,
 			identity: EventPublicationIdentity,

@@ -1,4 +1,9 @@
 import { LocalizationComposition } from "@meetup-automation/localization";
+import type {
+	ContentImageLoader,
+	MeetupCoverJournal,
+} from "@meetup-automation/publication";
+import type { Page } from "playwright-core";
 import { AttendeeMessages } from "./i18n/attendee-messages.js";
 import { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
 import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
@@ -6,6 +11,9 @@ import {
 	MeetupCalendar,
 	type MeetupCalendarArguments,
 } from "./meetup-calendar.js";
+import { MeetupCover } from "./meetup-cover.js";
+import { MeetupCoverImage } from "./meetup-cover-image.js";
+import { MeetupCoverPhoto } from "./meetup-cover-photo.js";
 import {
 	MeetupEventEditor,
 	type MeetupEventEditorArguments,
@@ -30,7 +38,19 @@ import {
 import { MeetupVenue, type MeetupVenueArguments } from "./meetup-venue.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class MeetupEventGatewayComposition {
-	constructor(private readonly locale: string) {}
+	constructor(
+		private readonly locale: string,
+		private readonly images: ContentImageLoader,
+		private readonly covers: MeetupCoverJournal,
+	) {}
+	meetupCover(page: Page): MeetupCover {
+		return new MeetupCover(
+			this.images,
+			new MeetupCoverImage(),
+			this.covers,
+			new MeetupCoverPhoto(page),
+		);
+	}
 	meetupBrowserRoutes(): MeetupBrowserRoutes {
 		return new MeetupBrowserRoutes();
 	}
@@ -40,6 +60,7 @@ export class MeetupEventGatewayComposition {
 	meetupEventEditor(...args: MeetupEventEditorArguments): MeetupEventEditor {
 		return new MeetupEventEditor(
 			{
+				createCover: (page) => this.meetupCover(page),
 				meetupBrowserRoutes: this.meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
 					this.meetupEventVerification(...args),
@@ -93,6 +114,7 @@ export class MeetupEventGatewayComposition {
 	): MeetupEventVerification {
 		return new MeetupEventVerification(
 			{
+				createCover: (page) => this.meetupCover(page),
 				meetupBrowserRoutes: this.meetupBrowserRoutes(),
 				createMeetupVenue: (...args) => this.meetupVenue(...args),
 				createMeetupCalendar: (...args) => this.meetupCalendar(...args),

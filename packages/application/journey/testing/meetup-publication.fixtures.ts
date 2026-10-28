@@ -1,5 +1,6 @@
 import type { EventDocument, MeetupEvent } from "@meetup-automation/event";
 import type {
+	ContentMedia,
 	EventPublicationGateway,
 	EventPublicationIdentity,
 	PublicationRecord,
@@ -13,6 +14,16 @@ import {
 	sourceDocument,
 } from "./meetup-journey.fixtures.js";
 
+export const publicationCover: ContentMedia = {
+	id: "approved-cover",
+	url: "https://images.example.test/cover.png",
+	fingerprint: "a".repeat(64),
+	description: "Reviewed artwork",
+	mimeType: "image/png",
+	width: 1600,
+	height: 900,
+	sourceRevision: "reviewed-source",
+};
 export const publicationUrl =
 	"https://www.meetup.com/example-group/events/12345/";
 export function publicationIdentity(
@@ -115,6 +126,11 @@ export function publicationFixture(
 		Object.assign(currentEvent, projected);
 	});
 	const dependencies = {
+		artwork: {
+			cover: vi
+				.fn<() => Promise<ContentMedia | undefined>>()
+				.mockResolvedValue(publicationCover),
+		},
 		contentGate: { blocked: vi.fn().mockResolvedValue([]) },
 		repository: deps.repository,
 		codec: deps.documentCodec,

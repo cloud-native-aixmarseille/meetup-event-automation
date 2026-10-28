@@ -1,7 +1,7 @@
 import {
 	MeetupEventUrl,
 	MeetupGroupUrl,
-	type ScheduledEvent,
+	type MeetupPublicationEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
@@ -29,7 +29,7 @@ export class MeetupEventPublisher {
 		page.setDefaultNavigationTimeout(30_000);
 	}
 	async publish(
-		event: ScheduledEvent,
+		event: MeetupPublicationEvent,
 		url: string,
 		beforePublish: () => Promise<void>,
 	): Promise<SavedMeetupEvent> {

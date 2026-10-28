@@ -2,6 +2,7 @@ import type { CaptchaResolver } from "@meetup-automation/browser-authentication"
 import type {
 	AttendeeSlidesGateway,
 	EventPublicationGateway,
+	MeetupPublicationEvent,
 } from "@meetup-automation/publication";
 import { chromium, type Page } from "playwright-core";
 import type {
@@ -24,7 +25,7 @@ export class MeetupEventGatewayFactory {
 		credentials: { email: string; password: string },
 		createCaptchaResolver: (page: Page) => CaptchaResolver,
 		groupUrl: string,
-	): EventPublicationGateway & AttendeeSlidesGateway {
+	): EventPublicationGateway<MeetupPublicationEvent> & AttendeeSlidesGateway {
 		return this.collaborators.createMeetupEventGateway(
 			chromium,
 			credentials,

@@ -1,6 +1,7 @@
 import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import type { Browser, BrowserType, Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { coverImage, coverJournal } from "../testing/cover-fixture.js";
 import { desiredEvent, eventUrl, groupUrl } from "../testing/editor-fixture.js";
 import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { MeetupEventEditor } from "./meetup-event-editor.js";
@@ -14,6 +15,11 @@ import {
 afterEach(() => vi.restoreAllMocks());
 
 function fixture(configuredGroup = groupUrl) {
+	const composition = new MeetupEventGatewayComposition(
+		"en",
+		{ load: async () => coverImage },
+		coverJournal(),
+	);
 	const page = {
 		setDefaultTimeout: vi.fn(),
 		setDefaultNavigationTimeout: vi.fn(),
@@ -33,7 +39,7 @@ function fixture(configuredGroup = groupUrl) {
 		status: "draft",
 	});
 	const createLogin = vi.fn((...args: MeetupLoginPageArguments) =>
-		new MeetupEventGatewayComposition("en").meetupLoginPage(...args),
+		composition.meetupLoginPage(...args),
 	);
 	const captcha: CaptchaResolver = { inspect: vi.fn(), resolve: vi.fn() };
 	const createCaptchaResolver = vi.fn().mockReturnValue(captcha);
@@ -41,9 +47,9 @@ function fixture(configuredGroup = groupUrl) {
 	const gateway = new MeetupEventGateway(
 		{
 			createMeetupEventEditor: (...args) =>
-				new MeetupEventGatewayComposition("en").meetupEventEditor(...args),
+				composition.meetupEventEditor(...args),
 			createMeetupEventPublisher: (...args) =>
-				new MeetupEventGatewayComposition("en").meetupEventPublisher(...args),
+				composition.meetupEventPublisher(...args),
 			createMeetupLoginPage: createLogin,
 			createAttendeeMessage: () => ({ send }),
 		},

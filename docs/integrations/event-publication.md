@@ -195,9 +195,18 @@ series remain manual operations.
 Meetup's checkbox controls readiness and outgoing Meetup email links. Unrelated
 checklist tasks are preserved. Its English desktop editor uses **Preview** to
 save drafts while retaining their identity URL; published updates use **Save
-changes**. The adapter verifies all managed fields by reopening the editor.
+changes**. The adapter waits for the saved event values to load before comparing
+or editing them, and verifies all managed fields by reopening the editor.
 For new drafts, it selects **Start from scratch** when the template dialog is
 shown and dismisses organizer announcements before filling fields.
+
+Meetup also requires current approved cover artwork from
+[content review](content.md). It uploads the reviewed PNG or JPEG, confirms the
+default crop, and verifies the saved photo identity when reopening the event.
+Images must be smaller than 15 MB and at most 24 megapixels. The downloaded bytes,
+format, and dimensions must match the approved media. A changed draft cover
+requires a new publication approval even when the text and schedule are unchanged.
+OCGroups does not manage cover artwork.
 
 For OCGroups, approval also binds target, category, and registration choices.
 Publishing can send native notifications to group members and speakers; published
@@ -226,6 +235,18 @@ For Meetup, enter the verified draft or published URL in **Meetup Link** to
 recover an uncertain creation. Leave **Meetup event published** unchecked until
 publication is verified. Existing journal formats and approval revisions remain
 readable.
+
+Meetup's journal also retains the cover fingerprint, target group, and uploaded
+photo ID. Unchanged reruns reuse the attached photo. Uploads are reserved before
+the browser submits the photo, and confirmed photo IDs are recorded before the
+event is saved. Meetup can create another photo when confirming a crop, so a
+pending upload or a recorded photo missing from the event blocks automatic retries.
+Inspect the organizer's event and photo library. If the recorded photo exists,
+restore it on that same event and confirm its ID; if Meetup creates another ID
+while restoring it, verify the artwork before updating the trusted journal's
+`cover.photoId`. Remove only the journal's `cover` entry after confirming that no
+upload was accepted or that a replacement upload is needed. Preserve its event
+URL and other state. Never clear uncertain photo state merely to retry.
 
 For OCGroups, recover the verified UUID and editor URL into the bot's
 `community-publication:v1` journal. A maintainer can set `state` to `"saved"` and

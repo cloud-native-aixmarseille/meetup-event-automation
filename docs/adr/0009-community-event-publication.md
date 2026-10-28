@@ -69,10 +69,13 @@ and allows the other destination to proceed. Successful remote operations remain
 durable if another destination fails; there is no cross-provider transaction.
 
 Each destination owns its journal and approval scope. Preserve existing Meetup
-journal JSON and approval fingerprints, normalizing its URL into a numeric ID
+journal identities and decode existing records, normalizing its URL into a numeric ID
 and review/public URLs at the adapter boundary. OCGroups retains its UUID and
 editor URL independently of the public slug. Shared approval mechanics never
 allow one provider's approval to authorize another provider.
+Meetup's publication revision also binds the approved cover identity, byte
+fingerprint, and source revision. Extending the managed content requires fresh
+approval; an approval for text and schedule alone does not authorize artwork.
 Recovery policies also retain their boundaries: Meetup can recover a pending
 creation through a verified organizer-supplied link; OCGroups requires the saved
 identity in its journal before resuming an uncertain creation.
@@ -241,6 +244,32 @@ retain their URL semantics; draft URLs are kept outside CNCF Link.
 Before enabling a consumer caller, an authorized organizer run must establish
 login, draft persistence, review access, publication, and notification behavior
 on the deployed instance. No live organizer run has been performed.
+
+## Decision history
+
+### 2026-10-28: include approved Meetup cover artwork
+
+The event gateway previously managed title, description, schedule, and venue,
+while cover approval only fed generated assets. The organizer's draft check
+identified the missing event photo. Extend the Meetup-specific event projection
+with the current authorized cover and recheck that projection before writes.
+OCGroups retains its existing managed fields.
+
+Reuse the trusted Meetup publication journal for a group-scoped image fingerprint
+and remote photo ID. Preserve the event reservation and identity while writing
+photo state. Validate the exact reviewed bytes before uploading, reserve before
+the effect, and record the observed photo ID before saving the event. Verification
+compares the persisted photo ID against this mapping because Meetup transforms
+uploaded images and their bytes cannot be compared directly with the source.
+
+The earlier decision to retain unchanged Meetup approval fingerprints applies
+only to unchanged managed content. Cover-aware revisions supersede text-only
+approvals. Existing journals without photo metadata remain readable.
+
+The live picker created a new photo identity when an existing group photo was
+selected and its crop confirmed. Blindly selecting it again after an interrupted
+save could create duplicates. Stop on pending or detached photo identities and
+require recovery. Normal saved-event reruns reuse the confirmed attached photo.
 
 ## Supporting evidence
 

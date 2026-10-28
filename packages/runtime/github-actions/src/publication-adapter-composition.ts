@@ -1,29 +1,31 @@
 import { fileURLToPath } from "node:url";
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import {
-	EventDomainComposition,
 	type EventClock,
 	type EventDocumentCodec,
+	EventDomainComposition,
 	type EventRepository,
 } from "@meetup-automation/event";
-import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { GithubDeliveryLedgerComposition } from "@meetup-automation/github-delivery-ledger";
 import { GithubPublicationJournalComposition } from "@meetup-automation/github-publication-journal";
 import { HcaptchaCaptchaResolverComposition } from "@meetup-automation/hcaptcha-captcha-resolver";
+import { HttpsAssetImageRepositoryComposition } from "@meetup-automation/https-asset-image-repository";
 import {
+	EventPublicationResults,
 	type OrganizerApproval,
 	PublicationDestinationComposition,
 	ReconcileMeetupSlidesDelivery,
-	EventPublicationResults,
 } from "@meetup-automation/journey";
 import { MeetupEventGatewayComposition } from "@meetup-automation/meetup-event-gateway";
 import { OcgroupsEventGatewayComposition } from "@meetup-automation/ocgroups-event-gateway";
 import {
 	CommunityGroupUrl,
-	MeetupGroupUrl,
 	MeetupEventIdentityPolicy,
+	MeetupGroupUrl,
 	PresentationFileUrl,
 } from "@meetup-automation/publication";
 import type { EventCompositionInput } from "./composition.js";
+import { ContentGateComposition } from "./content-gate-composition.js";
 import type { ConfiguredPublicationAdapter } from "./publication-credentials-input.js";
 
 type PublicationAdapterInput = EventCompositionInput & {
@@ -55,16 +57,12 @@ export class PublicationAdapterComposition {
 				settings: adapter.settings,
 				clock: input.clock,
 				approval: input.approval,
-				journal:
-					new GithubPublicationJournalComposition().githubPublicationJournal(
-						input.client,
-						{
-							owner: input.owner,
-							repo: input.repo,
-							issue_number: input.issueNumber,
-						},
-						input.commentAuthorLogin,
-					),
+				artwork: new ContentGateComposition().create(
+					input,
+					input.issueNumber,
+					input.commentAuthorLogin,
+				),
+				journal: this.journal(input),
 				gateway: this.meetupGateway(input, adapter, group),
 			},
 			group,
@@ -121,10 +119,22 @@ export class PublicationAdapterComposition {
 				ai.model,
 			);
 
-		return new MeetupEventGatewayComposition(input.locale)
+		return new MeetupEventGatewayComposition(
+			input.locale,
+			new HttpsAssetImageRepositoryComposition().contentImageLoader(),
+			this.journal(input),
+		)
 			.meetupEventGatewayFactory()
 			.create({ email, password }, resolver, group.value);
 	}
+	private journal(input: PublicationAdapterInput) {
+		return new GithubPublicationJournalComposition().githubPublicationJournal(
+			input.client,
+			{ owner: input.owner, repo: input.repo, issue_number: input.issueNumber },
+			input.commentAuthorLogin,
+		);
+	}
+
 	private ocgroups(
 		input: PublicationAdapterInput,
 		adapter: Extract<ConfiguredPublicationAdapter, { provider: "ocgroups" }>,

@@ -1,11 +1,14 @@
-import type { ScheduledEvent } from "@meetup-automation/publication";
+import type { MeetupPublicationEvent } from "@meetup-automation/publication";
 import type { BrowserContext } from "playwright-core";
+import { MeetupEventGatewayComposition } from "../src/dependency-composition.js";
 import type { SavedMeetupEvent } from "../src/saved-meetup-event.js";
+import { cover, coverForm, coverImage, coverJournal } from "./cover-fixture.js";
 
 export const groupUrl = "https://www.meetup.com/example-group/";
 export const eventUrl = `${groupUrl}events/12345/`;
-export const desiredEvent: ScheduledEvent = {
+export const desiredEvent: MeetupPublicationEvent = {
 	title: "Example evening",
+	cover,
 	description: "A public description\n\nExample Speaker\nA useful talk",
 	date: "2026-11-20",
 	startTime: "18:45",
@@ -22,11 +25,13 @@ function escapeHtml(value: string): string {
 }
 
 function editor(
-	event: ScheduledEvent | undefined,
+	event: MeetupPublicationEvent | undefined,
 	status: SavedMeetupEvent["status"],
 	previewAvailable: boolean,
 	startFromDialog: boolean,
 	announcementCount: number,
+	photoId: string | undefined,
+	hydrationDelay: number,
 ) {
 	const value = event ?? {
 		...desiredEvent,
@@ -36,7 +41,8 @@ function editor(
 	};
 	return `<!doctype html><html lang="en"><body>
 <main id="editor" ${startFromDialog ? 'aria-hidden="true"' : ""}>
-<input data-testid="event-name-input" value="${escapeHtml(value.title)}">
+${coverForm(photoId, hydrationDelay * 2)}
+<input data-testid="event-name-input" value="${hydrationDelay ? "" : escapeHtml(value.title)}">
 <button aria-label="Open date picker" aria-haspopup="dialog" onclick="openCalendar('start')">Date</button>
 <input type="time" aria-label="Edit start time" value="${value.startTime}">
 <div id="duration"><button onclick="document.querySelector('[role=menuitem]').hidden=false">2 hours</button></div>
@@ -61,13 +67,14 @@ ${previewAvailable ? '<button data-testid="event-preview-btn" onclick="save(&quo
 ${startFromDialog ? `<div role="dialog" aria-label="Start from"><button data-testid="event-start-from-scratch-btn" onclick="${announcementCount ? "showAnnouncement(0)" : "document.getElementById('editor').removeAttribute('aria-hidden')"};this.parentElement.remove()">Start from scratch</button></div>` : ""}
 
 <script>
+if (${hydrationDelay}) setTimeout(() => {document.querySelector('[data-testid="event-name-input"]').value=${JSON.stringify(value.title)};},${hydrationDelay});
 function showAnnouncement(index) {
 const dialog=document.createElement('div'); dialog.setAttribute('role','dialog');
 const close=document.createElement('button'); close.dataset.testid='announcement-close-btn'; close.textContent='Close announcement';
 close.onclick=()=>{dialog.remove(); if(index+1<${announcementCount}) showAnnouncement(index+1); else document.getElementById('editor').removeAttribute('aria-hidden');};
 dialog.append(close); document.body.append(dialog);
 }
-let selectedDate=${JSON.stringify(value.date)}, endDate=${JSON.stringify((value as ScheduledEvent & { endDate?: string }).endDate ?? value.date)}, month=selectedDate.slice(0,7), mode='start';
+let selectedDate=${JSON.stringify(value.date)}, endDate=${JSON.stringify((value as MeetupPublicationEvent & { endDate?: string }).endDate ?? value.date)}, month=selectedDate.slice(0,7), mode='start';
 function openCalendar(next) { mode=next; document.getElementById('calendar').hidden=false; renderCalendar(); }
 function renderCalendar() {
 document.getElementById('calendar').innerHTML='<button aria-label="Go to the Previous Month" onclick="month=\\'2026-10\\';renderCalendar()">Previous</button><button aria-label="Go to the Next Month" onclick="month=\\'2026-11\\';renderCalendar()">Next</button>' +
@@ -77,7 +84,7 @@ function selectDate(date) { if(mode==='start') selectedDate=date; else endDate=d
 document.addEventListener('keydown', event => { if(event.key==='Escape') document.getElementById('calendar').hidden=true; });
 async function save(status) {
 await fetch('/__synthetic-save', {method:'POST',body:JSON.stringify({
-status, title:document.querySelector('[data-testid=event-name-input]').value,
+status, photoId, title:document.querySelector('[data-testid=event-name-input]').value,
 description:document.querySelector('[contenteditable=true]').innerText,
 date:selectedDate, endDate,
 startTime:document.querySelector('[aria-label="Edit start time"]').value,
@@ -90,28 +97,41 @@ timeZone:'Europe/Paris', venue:{name:document.getElementById('venue-heading').in
 
 export async function editorFixture(
 	context: BrowserContext,
-	existing?: ScheduledEvent,
+	existing?: MeetupPublicationEvent,
 	status: SavedMeetupEvent["status"] = "draft",
 ) {
 	const state = {
 		event: existing,
+		photoId: existing ? "101" : (undefined as string | undefined),
+		uploads: 0,
+		corruptCover: false,
+		hydrationDelay: 0,
 		status,
 		writes: 0,
 		publishClicks: 0,
-		corruptSaved: undefined as Partial<ScheduledEvent> | undefined,
+		corruptSaved: undefined as Partial<MeetupPublicationEvent> | undefined,
 		previewAvailable: true,
 		startFromDialog: false,
 		announcementCount: 0,
 	};
 	await context.route("**/*", async (route) => {
 		const url = new URL(route.request().url());
+		if (url.pathname === "/__synthetic-cover-upload") {
+			state.uploads++;
+			await route.fulfill({
+				contentType: "application/json",
+				body: JSON.stringify({ photoId: String(101 + state.uploads) }),
+			});
+			return;
+		}
 		if (url.pathname === "/__synthetic-save") {
 			state.writes++;
 			const saved = JSON.parse(route.request().postData() ?? "{}");
 			if (saved.status === "published" && state.status === "draft")
 				state.publishClicks++;
 			state.status = saved.status;
-			state.event = saved;
+			state.event = { ...saved, cover };
+			state.photoId = state.corruptCover ? "999" : saved.photoId;
 			if (state.corruptSaved && state.event)
 				state.event = { ...state.event, ...state.corruptSaved };
 			await route.fulfill({ status: 200, body: "{}" });
@@ -129,6 +149,8 @@ export async function editorFixture(
 					state.previewAvailable,
 					state.startFromDialog && url.pathname.endsWith("/schedule/"),
 					state.announcementCount,
+					state.photoId,
+					state.hydrationDelay,
 				),
 			});
 			return;
@@ -153,5 +175,15 @@ export async function editorFixture(
 			body: `<script type="application/ld+json">${JSON.stringify(json).replaceAll("<", "\\u003c")}</script>`,
 		});
 	});
-	return state;
+	const journal = coverJournal(
+		existing
+			? { groupUrl, fingerprint: existing.cover.fingerprint, photoId: "101" }
+			: undefined,
+	);
+	const composition = new MeetupEventGatewayComposition(
+		"en",
+		{ load: async () => coverImage },
+		journal,
+	);
+	return Object.assign(state, { composition, journal });
 }
