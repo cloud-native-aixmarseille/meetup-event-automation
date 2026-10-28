@@ -304,9 +304,8 @@ retries. Check Meetup before resolving the record using
 before reservation can be retried. A previously checked sharing task is respected
 as work already done manually.
 
-Browser tests use synthetic controls matching a saved Meetup page and its
-confirmation. Selectors are also checked against that saved HTML. A live send
-has not been tested.
+Browser tests cover attendee selection, localized content, source guards and
+confirmation using synthetic controls matching the Meetup form.
 
 ## Browser runtime and validation
 
