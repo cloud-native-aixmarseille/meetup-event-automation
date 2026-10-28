@@ -42,7 +42,7 @@ business responsibilities, independently of adapter implementations. Use
 configured Meetup and OCGroups adapter collection. `publication/prepare-runtime`
 reads the shared configuration to select required runtime capabilities and emits
 the downloaded automation directory. The publication workflow installs locked
-Node.js dependencies, Chromium, and the conditional Python solver there before
+Node.js dependencies and Chromium, plus Chrome and the Python solver for Meetup, before
 running the publication action from the same revision. Provider
 identities belong in adapter wiring, integration guides
 and provider-specific settings. An action accepts only credentials and inputs

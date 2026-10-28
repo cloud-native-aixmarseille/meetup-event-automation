@@ -1,6 +1,5 @@
 import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import type { Page } from "playwright-core";
-import { ChromiumEndpoint } from "./chromium-endpoint.js";
 import { HcaptchaCaptchaResolver } from "./hcaptcha-captcha-resolver.js";
 import {
 	HcaptchaChallenge,
@@ -19,24 +18,23 @@ export class HcaptchaCaptchaResolverComposition {
 		directory: string,
 		apiKey: string,
 		model: string,
-	): (page: Page) => CaptchaResolver {
+	): (page: Page, endpoint: string) => CaptchaResolver {
 		const challenge = this.hcaptchaChallengeFactory().create(
 			directory,
 			apiKey,
 			model,
 		);
-		return (page) => new HcaptchaCaptchaResolver(challenge, page);
+		return (page, endpoint) =>
+			new HcaptchaCaptchaResolver(
+				{ solve: (page) => challenge.solve(page, endpoint) },
+				page,
+			);
 	}
 
-	chromiumEndpoint(): ChromiumEndpoint {
-		return new ChromiumEndpoint();
-	}
 	hcaptchaChallenge(...args: HcaptchaChallengeArguments): HcaptchaChallenge {
-		return new HcaptchaChallenge(
-			{ chromiumEndpoint: this.chromiumEndpoint() },
-			...args,
-		);
+		return new HcaptchaChallenge(...args);
 	}
+
 	hcaptchaChallengeFactory(): HcaptchaChallengeFactory {
 		return new HcaptchaChallengeFactory({
 			hcaptchaProcessFactory: this.hcaptchaProcessFactory(),

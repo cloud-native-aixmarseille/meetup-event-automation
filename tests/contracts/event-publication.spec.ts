@@ -78,7 +78,7 @@ describe("event publication workflow", () => {
 		).toEqual([steps.at(-1)]);
 		expect(JSON.stringify(steps)).not.toMatch(/upload-artifact|save-cache/);
 	});
-	it("installs the challenge solver only when required by the configured adapter collection", async () => {
+	it("installs Chrome and the challenge solver only for Meetup", async () => {
 		// Arrange
 		const path = ".github/workflows/event-publication-reconcile.yml";
 		// Act
@@ -90,12 +90,13 @@ describe("event publication workflow", () => {
 		const solver = steps.filter(
 			(step) =>
 				step.uses?.startsWith("actions/setup-python@") ||
-				step.run?.includes("pip install"),
+				step.run?.includes("pip install") ||
+				step.run?.includes("playwright-core install --with-deps chrome"),
 		);
 		// Assert
 		expect(prepare).toBeGreaterThanOrEqual(0);
 		expect(steps[prepare].uses).toBe("$/actions/publication/prepare-runtime");
-		expect(solver).toHaveLength(2);
+		expect(solver).toHaveLength(3);
 		for (const step of solver) {
 			expect(steps.indexOf(step)).toBeGreaterThan(prepare);
 			expect(step.if).toBe(

@@ -107,6 +107,11 @@ jobs:
         working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
         run: pnpm exec playwright-core install --with-deps chromium
 
+      - name: Install Chrome for Meetup
+        if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
+        working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
+        run: pnpm exec playwright-core install --with-deps chrome
+
       - name: Set up Python
         if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0

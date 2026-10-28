@@ -1,5 +1,5 @@
 import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
-import type { Browser, BrowserType, Page } from "playwright-core";
+import type { Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { coverImage, coverJournal } from "../testing/cover-fixture.js";
 import { desiredEvent, eventUrl, groupUrl } from "../testing/editor-fixture.js";
@@ -25,12 +25,12 @@ function fixture(configuredGroup = groupUrl) {
 		setDefaultNavigationTimeout: vi.fn(),
 	} as unknown as Page;
 	const browser = {
-		newContext: vi
-			.fn()
-			.mockResolvedValue({ newPage: vi.fn().mockResolvedValue(page) }),
+		open: vi.fn().mockResolvedValue({
+			page,
+			endpoint: "ws://127.0.0.1:1234/devtools/browser/abc",
+		}),
 		close: vi.fn().mockResolvedValue(undefined),
 	};
-	const launch = vi.fn().mockResolvedValue(browser as unknown as Browser);
 	const login = vi
 		.spyOn(MeetupLoginPage.prototype, "login")
 		.mockResolvedValue("verified");
@@ -46,6 +46,7 @@ function fixture(configuredGroup = groupUrl) {
 	const send = vi.fn().mockResolvedValue(undefined);
 	const gateway = new MeetupEventGateway(
 		{
+			createBrowserSession: () => browser,
 			createMeetupEventEditor: (...args) =>
 				composition.meetupEventEditor(...args),
 			createMeetupEventPublisher: (...args) =>
@@ -53,7 +54,6 @@ function fixture(configuredGroup = groupUrl) {
 			createMeetupLoginPage: createLogin,
 			createAttendeeMessage: () => ({ send }),
 		},
-		{ launch } as unknown as BrowserType,
 		{ email: "organizer@example.test", password: " synthetic-password " },
 		createCaptchaResolver,
 		configuredGroup,
@@ -61,7 +61,6 @@ function fixture(configuredGroup = groupUrl) {
 	return {
 		gateway,
 		browser,
-		launch,
 		login,
 		save,
 		send,
@@ -73,6 +72,23 @@ function fixture(configuredGroup = groupUrl) {
 }
 
 describe("Meetup event browser session", () => {
+	it("stops before authentication when the browser session cannot open", async () => {
+		// Arrange
+		const { gateway, browser, login, save } = fixture();
+		browser.open.mockRejectedValue(new Error("private startup details"));
+
+		// Act
+		const result = gateway.save(desiredEvent, undefined, vi.fn(), vi.fn());
+
+		// Assert
+		await expect(result).rejects.toThrow(
+			"Event publication failed: unavailable",
+		);
+		expect(login).not.toHaveBeenCalled();
+		expect(save).not.toHaveBeenCalled();
+		expect(browser.close).toHaveBeenCalledOnce();
+	});
+
 	it("sends attendee slides through an authenticated session and closes it", async () => {
 		// Arrange
 		const { gateway, browser, login, send } = fixture();
@@ -98,7 +114,6 @@ describe("Meetup event browser session", () => {
 			const {
 				gateway,
 				browser,
-				launch,
 				login,
 				save,
 				createLogin,
@@ -121,21 +136,7 @@ describe("Meetup event browser session", () => {
 				},
 				status: "draft",
 			});
-			expect(launch).toHaveBeenCalledWith(
-				expect.objectContaining({
-					args: [
-						"--enable-automation",
-						"--remote-debugging-address=127.0.0.1",
-						"--remote-debugging-port=0",
-					],
-				}),
-			);
-			expect(browser.newContext).toHaveBeenCalledWith(
-				expect.objectContaining({
-					locale: "en-US",
-					timezoneId: "Europe/Paris",
-				}),
-			);
+			expect(browser.open).toHaveBeenCalledExactlyOnceWith("Europe/Paris");
 			expect(login).toHaveBeenCalledWith(
 				"organizer@example.test",
 				" synthetic-password ",
@@ -147,7 +148,10 @@ describe("Meetup event browser session", () => {
 				expect.any(Function),
 			);
 			expect(browser.close).toHaveBeenCalledOnce();
-			expect(createCaptchaResolver).toHaveBeenCalledExactlyOnceWith(page);
+			expect(createCaptchaResolver).toHaveBeenCalledExactlyOnceWith(
+				page,
+				"ws://127.0.0.1:1234/devtools/browser/abc",
+			);
 			expect(createLogin).toHaveBeenCalledExactlyOnceWith(
 				page,
 				captcha,
