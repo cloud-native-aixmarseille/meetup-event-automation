@@ -12,6 +12,7 @@ import {
 	type GoogleDriveClient,
 	requestOptions,
 } from "./google-drive-asset-repository-contracts.js";
+import type { GoogleDrivePdfSharing } from "./google-drive-pdf-sharing.js";
 import type { GoogleDrivePublicFolder } from "./google-drive-public-folder.js";
 
 export class GoogleDrivePdfRepository implements PdfExportRepository {
@@ -21,6 +22,7 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 		private readonly metadata: Pick<DrivePdfMetadata, "file" | "properties">,
 		private readonly binary: Pick<DrivePdfBinary, "read">,
 		private readonly folders: Pick<GoogleDrivePublicFolder, "resolve">,
+		private readonly sharing: Pick<GoogleDrivePdfSharing, "ensure">,
 	) {}
 
 	async find(
@@ -76,16 +78,29 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 		)
 			throw new PdfExportError("conflict");
 		const url = `https://drive.google.com/file/d/${expected.id}/view`;
-		if (current.folderId === folderId) return { updated: false, url };
-		await this.client.files.update(
-			{
-				fileId: expected.id,
-				addParents: folderId,
-				removeParents: identity.folderId,
-				supportsAllDrives: true,
-			},
-			requestOptions,
-		);
+		const moved = current.folderId !== folderId;
+		if (moved) {
+			await this.client.files.update(
+				{
+					fileId: expected.id,
+					addParents: folderId,
+					removeParents: identity.folderId,
+					supportsAllDrives: true,
+				},
+				requestOptions,
+			);
+			await this.verifyPlacement(identity, expected, folderId);
+		}
+		const shared = await this.sharing.ensure(expected.id);
+		if (shared) await this.verifyPlacement(identity, expected, folderId);
+		return { updated: moved || shared, url };
+	}
+
+	private async verifyPlacement(
+		identity: PdfExportIdentity,
+		expected: PdfExportObservation,
+		folderId: string,
+	): Promise<void> {
 		const moved = await this.find(identity, expected.id);
 		if (
 			!moved ||
@@ -94,7 +109,6 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 			moved.fingerprint !== expected.fingerprint
 		)
 			throw new PdfExportError("invalid");
-		return { updated: true, url };
 	}
 
 	async reserveId(): Promise<string> {

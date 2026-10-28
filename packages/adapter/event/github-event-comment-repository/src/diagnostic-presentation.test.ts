@@ -39,6 +39,18 @@ describe("organizer diagnostic presentation", () => {
 		],
 		[
 			"en",
+			"publication.assets.pdf.sharing",
+			"Event materials",
+			"Keep the folder restricted",
+		],
+		[
+			"fr",
+			"publication.assets.pdf.sharing",
+			"Event materials",
+			"Gardez le dossier restreint",
+		],
+		[
+			"en",
 			"communication.missing-mail-destination",
 			"Communication",
 			"Add an email address",

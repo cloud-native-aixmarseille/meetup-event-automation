@@ -31,6 +31,7 @@ describe("diagnostic policy", () => {
 		"publication.assets.pdf.conflict",
 		"publication.assets.pdf.recovery",
 		"publication.assets.pdf.limit",
+		"publication.assets.pdf.sharing",
 		"publication.assets.content.recovery",
 		"publication.feedback.agenda",
 		"publication.feedback.conflict",

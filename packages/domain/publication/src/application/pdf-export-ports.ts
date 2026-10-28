@@ -17,6 +17,7 @@ export interface PdfExportRepository {
 		expectedId?: string,
 	): Promise<PdfExportObservation | undefined>;
 	reserveId(): Promise<string>;
+	/** Verify destination and anonymous reader access before returning a public URL. */
 	placeInPublicFolder(
 		identity: PdfExportIdentity,
 		expected: PdfExportObservation,

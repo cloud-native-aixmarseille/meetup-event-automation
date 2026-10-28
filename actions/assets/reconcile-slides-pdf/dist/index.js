@@ -67181,6 +67181,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.assets.pdf.conflict",
   "publication.assets.pdf.recovery",
   "publication.assets.pdf.limit",
+  "publication.assets.pdf.sharing",
   "publication.meetup.authentication",
   "publication.meetup.prerequisites",
   "publication.meetup.link",
@@ -75520,18 +75521,20 @@ var DrivePdfStateCodec = class {
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-repository.ts
 import { Readable as Readable2 } from "node:stream";
 var GoogleDrivePdfRepository = class {
-  constructor(client, lookup, metadata, binary, folders) {
+  constructor(client, lookup, metadata, binary, folders, sharing) {
     this.client = client;
     this.lookup = lookup;
     this.metadata = metadata;
     this.binary = binary;
     this.folders = folders;
+    this.sharing = sharing;
   }
   client;
   lookup;
   metadata;
   binary;
   folders;
+  sharing;
   async find(identity, expectedId) {
     const file = await this.lookup.find(identity, "pdf", expectedId);
     if (!file) return void 0;
@@ -75564,20 +75567,27 @@ var GoogleDrivePdfRepository = class {
     if (!current || current.version !== expected.version || current.fingerprint !== expected.fingerprint || current.name !== expected.name)
       throw new PdfExportError("conflict");
     const url = `https://drive.google.com/file/d/${expected.id}/view`;
-    if (current.folderId === folderId) return { updated: false, url };
-    await this.client.files.update(
-      {
-        fileId: expected.id,
-        addParents: folderId,
-        removeParents: identity.folderId,
-        supportsAllDrives: true
-      },
-      requestOptions
-    );
+    const moved = current.folderId !== folderId;
+    if (moved) {
+      await this.client.files.update(
+        {
+          fileId: expected.id,
+          addParents: folderId,
+          removeParents: identity.folderId,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+      await this.verifyPlacement(identity, expected, folderId);
+    }
+    const shared = await this.sharing.ensure(expected.id);
+    if (shared) await this.verifyPlacement(identity, expected, folderId);
+    return { updated: moved || shared, url };
+  }
+  async verifyPlacement(identity, expected, folderId) {
     const moved = await this.find(identity, expected.id);
     if (!moved || moved.folderId !== folderId || moved.name !== expected.name || moved.fingerprint !== expected.fingerprint)
       throw new PdfExportError("invalid");
-    return { updated: true, url };
   }
   async reserveId() {
     const { data } = await this.client.files.generateIds(
@@ -75622,6 +75632,75 @@ var GoogleDrivePdfRepository = class {
         requestOptions
       );
     }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-sharing.ts
+var GoogleDrivePdfSharing = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async ensure(fileId) {
+    if (!/^[\w-]{1,120}$/.test(fileId)) throw new PdfExportError("invalid");
+    try {
+      return await this.grant(fileId);
+    } catch (error2) {
+      if (error2 && typeof error2 === "object" && "response" in error2 && error2.response && typeof error2.response === "object" && "status" in error2.response && error2.response.status === 403)
+        throw new PdfExportError("sharing");
+      throw error2;
+    }
+  }
+  async grant(fileId) {
+    if (await this.readable(fileId)) return false;
+    await this.client.permissions.create(
+      {
+        fileId,
+        supportsAllDrives: true,
+        requestBody: {
+          type: "anyone",
+          role: "reader",
+          allowFileDiscovery: false
+        },
+        fields: "id"
+      },
+      requestOptions
+    );
+    if (!await this.readable(fileId)) throw new PdfExportError("sharing");
+    return true;
+  }
+  async readable(fileId) {
+    let pageToken;
+    const seen = /* @__PURE__ */ new Set();
+    const publicPermissions = [];
+    for (let page = 0; page < 10; page++) {
+      const { data } = await this.client.permissions.list(
+        {
+          fileId,
+          supportsAllDrives: true,
+          pageSize: 100,
+          pageToken,
+          fields: "nextPageToken,permissions(type,role,allowFileDiscovery,view)"
+        },
+        requestOptions
+      );
+      if (!Array.isArray(data.permissions)) throw new PdfExportError("invalid");
+      publicPermissions.push(
+        ...data.permissions.filter((p) => p.type === "anyone")
+      );
+      pageToken = data.nextPageToken ?? void 0;
+      if (!pageToken) return this.verified(publicPermissions);
+      if (seen.has(pageToken)) throw new PdfExportError("invalid");
+      seen.add(pageToken);
+    }
+    throw new PdfExportError("invalid");
+  }
+  verified(permissions) {
+    if (permissions.length === 0) return false;
+    const permission = permissions[0];
+    if (permissions.length !== 1 || permission?.role !== "reader" || permission.allowFileDiscovery === true || permission.view)
+      throw new PdfExportError("sharing");
+    return true;
   }
 };
 
@@ -75852,8 +75931,12 @@ var GoogleDrivePdfComposition = class {
       this.lookup(),
       this.metadata(),
       this.binary(),
-      this.folders()
+      this.folders(),
+      this.sharing()
     );
+  }
+  sharing() {
+    return new GoogleDrivePdfSharing(this.client);
   }
   states() {
     return new GoogleDrivePdfStateRepository(
@@ -78448,6 +78531,10 @@ var STAGE_GUIDANCE = [
     ["Event materials", "comment.guidance.pdf.limit"]
   ],
   [
+    "publication.assets.pdf.sharing",
+    ["Event materials", "comment.guidance.pdf.sharing"]
+  ],
+  [
     "publication.assets.pdf.invalid",
     ["Event materials", "comment.guidance.pdf.invalid"]
   ],
@@ -79424,7 +79511,8 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
   "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
   "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
-  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying."
+  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
+  "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
@@ -79472,7 +79560,8 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
   "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
   "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 10 Mo.",
-  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer."
+  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
+  "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts

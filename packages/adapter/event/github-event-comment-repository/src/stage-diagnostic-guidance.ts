@@ -120,6 +120,10 @@ export const STAGE_GUIDANCE = [
 		["Event materials", "comment.guidance.pdf.limit"],
 	],
 	[
+		"publication.assets.pdf.sharing",
+		["Event materials", "comment.guidance.pdf.sharing"],
+	],
+	[
 		"publication.assets.pdf.invalid",
 		["Event materials", "comment.guidance.pdf.invalid"],
 	],

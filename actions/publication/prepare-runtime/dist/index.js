@@ -32044,6 +32044,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.assets.pdf.conflict",
   "publication.assets.pdf.recovery",
   "publication.assets.pdf.limit",
+  "publication.assets.pdf.sharing",
   "publication.meetup.authentication",
   "publication.meetup.prerequisites",
   "publication.meetup.link",
