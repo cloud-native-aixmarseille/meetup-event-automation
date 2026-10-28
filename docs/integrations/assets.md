@@ -6,10 +6,11 @@ templates, and save the folder URL in **Drive Link** on the issue.
 ## Configure
 
 Create three distinct Drive folders: a parent for event folders, a folder
-containing the template files, and one shared folder named `public` for all
-events' generated PDFs. Give the service account read access to the
+containing the template files, and one shared destination for all
+events' generated PDFs. Folder IDs are authoritative; folder names are unrestricted.
+Give the service account read access to the
 templates and permission to create folders, copy files and update files in the
-parent and move/update/share permission for generated PDFs in `public`. Shared
+parent and move/update/share permission for generated PDFs in the destination. Shared
 drives are supported. The folder can remain restricted: the automation grants
 unlisted reader access to each verified PDF. Configure access to editable
 documents for speakers and organizers separately.
@@ -401,16 +402,16 @@ The source must have a stable managed template identity and `ready` or
 `copy-only` content. Pending or conflicted source content blocks export. The PDF
 uses the presentation's name, adds the event date if needed, and ends in `.pdf`.
 Names are bounded to 204 characters. The existing editable Slides file remains
-the email target. Download the PDF from the configured shared `public` folder.
+the email target. Download the PDF from the configured shared destination.
 **Drive Link** continues to identify the event folder. After verifying placement
 and file-level reader access, the action writes **Slides PDF** to the issue. A pending or conflicted
 export clears that link. [Meetup attendee delivery](event-publication.md#send-slides-to-attendees)
 uses it to send the PDF to members marked as having attended.
 
-Set `GOOGLE_DRIVE_PUBLIC_FOLDER_ID` to the existing `public` folder's ID
+Set `GOOGLE_DRIVE_PUBLIC_FOLDER_ID` to the existing destination folder's ID
 and forward it as `google-drive-public-folder-id`. The same destination
 is used for every event, regardless of where its event folder is archived.
-The automation validates the destination by ID, name and folder type. It does
+The automation validates the destination by ID, folder type and non-trashed status. It does
 not create per-event public folders or search for a shared folder by name.
 
 The service account needs permission to export the source and create/update
@@ -475,8 +476,8 @@ reports readiness only after checking the destination, PDF bytes, and public-rea
 permission. An uncertain grant is inspected on the next run before any retry;
 an existing grant is reused without another export or PDF upload. Missing reader
 access is repaired on the same managed PDF. If the
-configured folder is unavailable or renamed, restore its access and `public`
-name before retrying; do not switch destinations for existing managed PDFs.
+configured folder is unavailable, restore access before retrying. Renaming it
+does not affect reconciliation. Keep its configured ID stable for existing PDFs.
 
 If sharing is denied, allow the service account to share individual files and
 check the shared drive's external-sharing policy. For a permission conflict,

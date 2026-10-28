@@ -4,13 +4,14 @@ import {
 	createPdfDrive,
 	exportIdentity,
 	pdfBytes,
+	publicFolderId,
 } from "../../packages/adapter/publication/google-drive-asset-repository/testing/pdf-drive.fixtures.js";
 import { PublicationDomainComposition } from "../../packages/domain/publication/src/dependency-composition.js";
 
 function exportJourney(drive: ReturnType<typeof createPdfDrive>) {
 	const adapter = new GoogleDrivePdfComposition(
 		drive.client,
-		"public-folder",
+		publicFolderId,
 		drive.download,
 	);
 	return new PublicationDomainComposition().reconcileSlidePdf(
@@ -116,15 +117,13 @@ describe("presentation PDF export", () => {
 		).toEqual([exportIdentity.folderId]);
 	});
 
-	it("moves the verified PDF into shared public while keeping source and state in the event folder", async () => {
+	it("moves the verified PDF into the configured destination while keeping source and state in the event folder", async () => {
 		// Arrange
 		const drive = createPdfDrive();
 
 		// Act
 		const result = await exportJourney(drive).execute(input);
-		const folder = [...drive.records.values()].find(
-			(file) => file.metadata.name === "public",
-		);
+		const folder = drive.records.get(publicFolderId);
 		const state = [...drive.records.values()].find(
 			(file) => file.metadata.mimeType === "application/json",
 		);
@@ -165,9 +164,7 @@ describe("presentation PDF export", () => {
 				.catch((error) => error);
 			drive.files.update.mockImplementation(update);
 			const recovered = await exportJourney(drive).execute(input);
-			const folder = [...drive.records.values()].find(
-				(file) => file.metadata.name === "public",
-			);
+			const folder = drive.records.get(publicFolderId);
 
 			// Assert
 			expect(failed).toBeInstanceOf(Error);
