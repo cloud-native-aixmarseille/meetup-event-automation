@@ -85,4 +85,6 @@ export const STAGE_MESSAGES_EN = {
 		"Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
 	"comment.guidance.pdf.invalid":
 		"PDF verification failed. Ask a maintainer to inspect the export before retrying.",
+	"comment.guidance.pdf.sharing":
+		"Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access.",
 } as const;

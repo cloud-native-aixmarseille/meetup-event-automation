@@ -6,13 +6,15 @@ import { DrivePdfMetadata } from "./drive-pdf-metadata.js";
 import { DrivePdfStateCodec } from "./drive-pdf-state-codec.js";
 import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
 import { GoogleDrivePdfRepository } from "./google-drive-pdf-repository.js";
+import { GoogleDrivePdfSharing } from "./google-drive-pdf-sharing.js";
 import { GoogleDrivePdfSource } from "./google-drive-pdf-source.js";
 import { GoogleDrivePdfStateRepository } from "./google-drive-pdf-state-repository.js";
 import { GoogleDrivePublicFolder } from "./google-drive-public-folder.js";
 
 export class GoogleDrivePdfComposition {
 	constructor(
-		private readonly client: GoogleDriveClient,
+		private readonly client: GoogleDriveClient &
+			Pick<drive_v3.Drive, "permissions">,
 		private readonly publicFolderId: string,
 	) {}
 
@@ -60,7 +62,11 @@ export class GoogleDrivePdfComposition {
 			this.metadata(),
 			this.binary(),
 			this.folders(),
+			this.sharing(),
 		);
+	}
+	sharing(): GoogleDrivePdfSharing {
+		return new GoogleDrivePdfSharing(this.client);
 	}
 	states(): GoogleDrivePdfStateRepository {
 		return new GoogleDrivePdfStateRepository(
@@ -72,3 +78,5 @@ export class GoogleDrivePdfComposition {
 		);
 	}
 }
+
+import type { drive_v3 } from "@googleapis/drive";

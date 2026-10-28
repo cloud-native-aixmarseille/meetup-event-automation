@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { Readable } from "node:stream";
+import type { drive_v3 } from "@googleapis/drive";
 import type {
 	PdfExportIdentity,
 	PdfExportSnapshot,
@@ -158,5 +159,38 @@ export function createPdfDrive() {
 		create: vi.fn(write),
 		update: vi.fn(write),
 	};
-	return { client: { files } as unknown as GoogleDriveClient, files, records };
+	const permissions = {
+		list: vi.fn(
+			async (input: {
+				fileId: string;
+			}): Promise<{ data: drive_v3.Schema$PermissionList }> => ({
+				data: {
+					permissions: records.get(input.fileId)?.metadata.permissions ?? [],
+				},
+			}),
+		),
+		create: vi.fn(
+			async (input: {
+				fileId: string;
+				requestBody: drive_v3.Schema$Permission;
+			}) => {
+				const file = records.get(input.fileId);
+				if (!file) throw new Error("Synthetic file missing");
+				const permission = { ...input.requestBody, id: "anyoneWithLink" };
+				file.metadata.permissions = [
+					...(file.metadata.permissions ?? []),
+					permission,
+				];
+				file.metadata.version = String(Number(file.metadata.version ?? 0) + 1);
+				return { data: permission };
+			},
+		),
+	};
+	return {
+		client: { files, permissions } as unknown as GoogleDriveClient &
+			Pick<drive_v3.Drive, "permissions">,
+		files,
+		permissions,
+		records,
+	};
 }

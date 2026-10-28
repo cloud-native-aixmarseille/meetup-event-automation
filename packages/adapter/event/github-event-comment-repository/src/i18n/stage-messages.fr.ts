@@ -86,4 +86,6 @@ export const STAGE_MESSAGES_FR = {
 		"Réduisez la présentation pour que le PDF exporté respecte la limite de 10 Mo.",
 	"comment.guidance.pdf.invalid":
 		"La vérification du PDF a échoué. Demandez à un responsable de vérifier l'export avant de réessayer.",
+	"comment.guidance.pdf.sharing":
+		"Autorisez le compte de service à partager le PDF géré. Vérifiez l'accès en lecture pour toute personne disposant du lien, sans référencement dans les recherches. Gardez le dossier restreint et réessayez après avoir corrigé l'accès au fichier.",
 } as const;

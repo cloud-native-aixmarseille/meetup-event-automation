@@ -167,7 +167,8 @@ describe("presentation PDF export", () => {
 
 			// Assert
 			expect(failed).toBeInstanceOf(Error);
-			expect(recovered).toMatchObject({ status: "ready", updated: !applied });
+			expect(recovered).toMatchObject({ status: "ready", updated: true });
+			expect(drive.permissions.create).toHaveBeenCalledOnce();
 			expect(drive.files.export).toHaveBeenCalledOnce();
 			expect(drive.files.create).toHaveBeenCalledTimes(2);
 			expect(drive.records.get("reserved-pdf")?.metadata.parents).toEqual([

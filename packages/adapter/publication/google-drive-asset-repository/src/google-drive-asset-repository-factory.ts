@@ -1,12 +1,9 @@
-import { drive } from "@googleapis/drive";
+import { drive, type drive_v3 } from "@googleapis/drive";
 import type {
 	GoogleDriveAssetRepository,
 	GoogleDriveAssetRepositoryArguments,
 } from "./google-drive-asset-repository.js";
-import type {
-	GoogleDriveAssetOptions,
-	GoogleDriveClient,
-} from "./google-drive-asset-repository-contracts.js";
+import type { GoogleDriveAssetOptions } from "./google-drive-asset-repository-contracts.js";
 import type { GoogleDriveAuthentication } from "./google-drive-authentication.js";
 
 export interface GoogleDriveAssetRepositoryFactoryCollaborators {
@@ -30,7 +27,9 @@ export class GoogleDriveAssetRepositoryFactory {
 			options,
 		);
 	}
-	client(credentialsJson: string): GoogleDriveClient {
+	client(
+		credentialsJson: string,
+	): Pick<drive_v3.Drive, "files" | "permissions"> {
 		return drive({
 			version: "v3",
 			auth: this.collaborators.googleDriveAuthentication.create(

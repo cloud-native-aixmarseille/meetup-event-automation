@@ -9,9 +9,10 @@ Create three distinct Drive folders: a parent for event folders, a folder
 containing the template files, and one shared folder named `public` for all
 events' generated PDFs. Give the service account read access to the
 templates and permission to create folders, copy files and update files in the
-parent and move/update permission in `public`. Shared drives are supported.
-Configure sharing for attendees and speakers yourself; the automation does not
-grant permissions.
+parent and move/update/share permission for generated PDFs in `public`. Shared
+drives are supported. The folder can remain restricted: the automation grants
+unlisted reader access to each verified PDF. Configure access to editable
+documents for speakers and organizers separately.
 
 Follow [repository setup](../usage/setup.md), then pass these settings to both
 `event-reconcile.yml` and `event-reconcile-active.yml`:
@@ -52,8 +53,9 @@ Google Docs support managed text, speaker portraits, and host logos. Sheets,
 uploaded Office files, PDFs and standalone images remain copy-only. Enable the Drive,
 Slides and Docs APIs in the service-account project for the formats used. The
 existing Drive OAuth scope authorizes these file operations; access still depends
-on the service account's file permissions. The automation never grants sharing
-permissions; moved PDFs inherit their destination folder's access policy.
+on the service account's file permissions. Automatic permission grants apply
+only to the verified presentation PDF; copied templates retain their existing
+sharing policy.
 
 ## Author managed content
 
@@ -400,8 +402,8 @@ The source must have a stable managed template identity and `ready` or
 uses the presentation's name, adds the event date if needed, and ends in `.pdf`.
 Names are bounded to 204 characters. The existing editable Slides file remains
 the email target. Download the PDF from the configured shared `public` folder.
-**Drive Link** continues to identify the event folder. After verifying public
-placement, the action writes **Slides PDF** to the issue. A pending or conflicted
+**Drive Link** continues to identify the event folder. After verifying placement
+and file-level reader access, the action writes **Slides PDF** to the issue. A pending or conflicted
 export clears that link. [Meetup attendee delivery](event-publication.md#send-slides-to-attendees)
 uses it to send the PDF to members marked as having attended.
 
@@ -412,14 +414,17 @@ The automation validates the destination by ID, name and folder type. It does
 not create per-event public folders or search for a shared folder by name.
 
 The service account needs permission to export the source and create/update
-binary files in the event folder, move PDFs into the shared folder, and update
-them there. New exports are uploaded and verified in the event folder before
+binary files in the event folder, move PDFs into the shared folder, update them,
+and grant permissions on the PDF itself. Shared-drive policy must permit
+anyone-with-the-link sharing. New exports are uploaded and verified in the event folder before
 being moved; existing exports are refreshed in place. The Drive API must be
 enabled. Exported bytes are limited to 10,000,000 bytes and checked for PDF
 media type, signature and
 end marker before upload. Each request has a 30-second timeout; downloads also
 have a 30-second abort signal. Oversized exports need a smaller presentation.
 Access, transport and persistence failures remain technical action failures.
+Denied PDF permission access or incompatible public grants remain pending with
+organizer guidance to correct sharing before retrying.
 
 One managed PDF is refreshed in place when the observed Drive source version or
 export filename changes. Its URL stays stable. An unchanged source and unchanged
@@ -431,10 +436,14 @@ record of what was shown on the event date.
 The PDF has separate `meetup_pdf_source` identity metadata and no template-copy
 marker. Its description is the public event identifier. Source/template
 provenance and the export contract are stored in Drive metadata; embedded PDF
-document properties are not controlled. The automation makes no permission
-grants; a moved PDF inherits access from the shared `public` folder. Configure
-that folder's audience manually. Editable sources and export sidecars stay in
-the event folder and are never moved with the PDF.
+document properties are not controlled. Once the PDF is verified in the destination,
+the automation grants `type=anyone`, `role=reader`, `allowFileDiscovery=false`
+on that file and reads its permissions back before reporting readiness.
+Anyone with its link can view the PDF. The destination folder can stay restricted;
+its permissions, editable sources, and export sidecars are not changed.
+Existing unlisted reader access is reused. Broader, searchable, or ambiguous
+public permissions require organizer review rather than being overwritten.
+Editable sources and export sidecars stay in the event folder and are never moved with the PDF.
 A dedicated `.SOURCE_FILE_ID.pdf-export.json` sidecar holds the reserved PDF ID,
 source version, filename and SHA-256 fingerprints of pending and confirmed
 exports. Its schema is separate from content bindings and its size is bounded
@@ -454,9 +463,19 @@ PDF. Failed or incomplete searches stop the run; duplicate managed identities
 require manual reconciliation. A verified PDF still in its event folder is moved
 with the same file ID, even when no new export is needed. A failed or uncertain
 move is retried or verified on the next run without another upload. The action
-reports readiness only after checking the destination and PDF bytes. If the
+reports readiness only after checking the destination, PDF bytes, and public-reader
+permission. An uncertain grant is inspected on the next run before any retry;
+an existing grant is reused without another export or PDF upload. Missing reader
+access is repaired on the same managed PDF. If the
 configured folder is unavailable or renamed, restore its access and `public`
 name before retrying; do not switch destinations for existing managed PDFs.
+
+If sharing is denied, allow the service account to share individual files and
+check the shared drive's external-sharing policy. For a permission conflict,
+review the managed PDF's General access setting: it must be "Anyone with the link"
+and "Viewer", without search discovery. Do not broaden the folder's access or
+recreate files to retry. Generated cover media have a separate
+[public-access requirement](content.md#configure-the-repository).
 
 For a conflict, stop editing and inspect the PDF and its export sidecar together.
 Preserve any manual work in a separate unmanaged file. Restore the verified PDF

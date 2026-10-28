@@ -89,7 +89,10 @@ Export the presentation as a managed static PDF in the public shared event folde
 It is a distinct artifact with its own stable file ID and provenance metadata,
 not another template copy or a document binding. Refresh that same managed file
 when the editable source changes; this does not create an immutable revision
-archive. Do not change sharing permissions automatically.
+archive. Grant unlisted reader access only to the verified managed PDF, after
+placing it in its configured destination. Keep folder, editable-source, and
+sidecar permissions unchanged. Read back permissions before reporting readiness;
+reuse existing grants and stop for incompatible public access.
 
 Journey determines post-event eligibility using the shared
 [lifecycle policy](0004-organizer-workflow.md#lifecycle-and-follow-up). Reconcile only
@@ -137,6 +140,16 @@ integration guide.
 
 ## Decision history
 
+On 2026-10-28, automatic file-level PDF sharing replaced the decision to rely
+solely on manually configured destination-folder sharing. The organizer requested
+that anyone with a PDF link can view it while the containing folder stays
+restricted. This partially supersedes the sharing constraint in the
+[original PDF record](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0023-export-pdf-final-asset.md); export eligibility,
+stable identities, private sidecars, and delivery records remain unchanged.
+Permission readback and retry inspection prevent readiness from being reported
+before public-reader access is verified. Generated cover media keep their
+separate access contract.
+
 On 2026-10-26, manual Meetup slide sharing was replaced by automatic attendee
 messaging. The organizer supplied the Contact attendees flow and French message.
 The supplied saved page and browser assets established the contact URL, RSVP
@@ -160,10 +173,10 @@ field resolution, and localized formatting allows template-authored formats
 without moving locale policy into the Drive adapter or adding a second naming
 configuration. The original ISO-style expression retains its output.
 
-| Original record                                                                     | Retained decision or later refinement                                                                                                       |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [0014: Managed placeholders](archive/0014-reconcile-drive-template-placeholders.md) | Established opt-in contracts, durable bindings, edit ownership, and recovery.                                                               |
-| [0015: Render fields](archive/0015-extend-asset-render-fields.md)                   | Extended aggregate fields with explicit participants, venue, and next-meetup data. Later failure classification rejects incomplete lookups. |
-| [0016: Host logos](archive/0016-render-host-logos.md)                               | Added public host logo rendering without changing contact-field ownership.                                                                  |
-| [0023: Presentation PDF](archive/0023-export-pdf-final-asset.md)                    | Added a separate stable PDF snapshot with provenance and recovery.                                                                          |
-| [0024: Action scopes](archive/0024-scoped-actions-and-workflow-composition.md)      | Separated document and PDF actions and superseded PDF readiness as an email prerequisite.                                                   |
+| Original record                                                                                                                                                                                         | Retained decision or later refinement                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [0014: Managed placeholders](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0014-reconcile-drive-template-placeholders.md) | Established opt-in contracts, durable bindings, edit ownership, and recovery.                                                               |
+| [0015: Render fields](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0015-extend-asset-render-fields.md)                   | Extended aggregate fields with explicit participants, venue, and next-meetup data. Later failure classification rejects incomplete lookups. |
+| [0016: Host logos](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0016-render-host-logos.md)                               | Added public host logo rendering without changing contact-field ownership.                                                                  |
+| [0023: Presentation PDF](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0023-export-pdf-final-asset.md)                    | Added a separate stable PDF snapshot with provenance and recovery.                                                                          |
+| [0024: Action scopes](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0024-scoped-actions-and-workflow-composition.md)      | Separated document and PDF actions and superseded PDF readiness as an email prerequisite.                                                   |

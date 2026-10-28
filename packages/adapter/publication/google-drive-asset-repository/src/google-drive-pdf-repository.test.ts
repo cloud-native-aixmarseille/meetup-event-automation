@@ -28,6 +28,7 @@ describe("GoogleDrivePdfRepository", () => {
 			adapter.metadata(),
 			adapter.binary(),
 			adapter.folders(),
+			adapter.sharing(),
 		);
 		const expected = await repository.find(exportIdentity, "reserved-pdf");
 		if (!expected) throw new Error("Synthetic PDF missing");
@@ -64,6 +65,7 @@ describe("GoogleDrivePdfRepository", () => {
 			adapter.metadata(),
 			adapter.binary(),
 			adapter.folders(),
+			adapter.sharing(),
 		);
 		const expected = await repository.find(exportIdentity, "reserved-pdf");
 		if (!expected) throw new Error("Synthetic PDF missing");
@@ -89,6 +91,7 @@ describe("GoogleDrivePdfRepository", () => {
 			adapter.metadata(),
 			adapter.binary(),
 			adapter.folders(),
+			adapter.sharing(),
 		);
 
 		// Act
@@ -141,6 +144,7 @@ describe("GoogleDrivePdfRepository", () => {
 			adapter.metadata(),
 			adapter.binary(),
 			adapter.folders(),
+			adapter.sharing(),
 		);
 		const previous = await repository.find(exportIdentity, "reserved-pdf");
 
@@ -175,6 +179,7 @@ describe("GoogleDrivePdfRepository", () => {
 			adapter.metadata(),
 			adapter.binary(),
 			adapter.folders(),
+			adapter.sharing(),
 		);
 		const previous = await repository.find(exportIdentity, "reserved-pdf");
 		drive.records.set("reserved-pdf", {
@@ -213,6 +218,7 @@ describe("GoogleDrivePdfRepository", () => {
 			adapter.metadata(),
 			adapter.binary(),
 			adapter.folders(),
+			adapter.sharing(),
 		);
 
 		// Act
@@ -250,6 +256,7 @@ describe("GoogleDrivePdfRepository", () => {
 			adapter.metadata(),
 			adapter.binary(),
 			adapter.folders(),
+			adapter.sharing(),
 		);
 
 		// Act

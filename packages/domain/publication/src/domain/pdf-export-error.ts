@@ -5,6 +5,7 @@ export type PdfExportFailure =
 	| "conflict"
 	| "recovery"
 	| "limit"
+	| "sharing"
 	| "invalid";
 
 export class PdfExportError extends Error {

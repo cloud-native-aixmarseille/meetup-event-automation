@@ -68773,6 +68773,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.assets.pdf.conflict",
   "publication.assets.pdf.recovery",
   "publication.assets.pdf.limit",
+  "publication.assets.pdf.sharing",
   "publication.meetup.authentication",
   "publication.meetup.prerequisites",
   "publication.meetup.link",
@@ -84931,6 +84932,10 @@ var STAGE_GUIDANCE = [
     ["Event materials", "comment.guidance.pdf.limit"]
   ],
   [
+    "publication.assets.pdf.sharing",
+    ["Event materials", "comment.guidance.pdf.sharing"]
+  ],
+  [
     "publication.assets.pdf.invalid",
     ["Event materials", "comment.guidance.pdf.invalid"]
   ],
@@ -85907,7 +85912,8 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
   "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
   "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
-  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying."
+  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
+  "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
@@ -85955,7 +85961,8 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
   "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
   "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 10 Mo.",
-  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer."
+  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
+  "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
