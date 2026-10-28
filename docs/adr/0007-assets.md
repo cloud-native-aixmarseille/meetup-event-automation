@@ -165,6 +165,22 @@ to the destination, but `canMoveItemWithinDrive` was false. Both folders were in
 the same shared drive. Placement and attendee delivery therefore required a
 manual move of the existing PDF or a Content manager grant before continuing.
 
+After the organizer moved that PDF and corrected the destination ID, the
+[public-file validation](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40738938193)
+verified unlisted file-level reader access and anonymously downloaded all
+10,512,371 bytes with the managed fingerprint. The source and folder permissions
+were unchanged. A second reconciliation retained the same PDF ID without updates.
+This validates recovery and sharing after manual placement; automatic movement
+still requires effective service-account move permission.
+
+The organizer then authenticated a local browser for the production attendee
+message adapter. Meetup confirmed one message to recorded attendees, and the
+existing ledger recorded it as accepted while preserving all six earlier
+entries. The [completion recovery](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40743001921)
+marked the issue task complete and verified a skipped rerun with zero send
+attempts. This send used interactive authentication; the fresh-login limitation
+remains documented in the [publication decision](0009-community-event-publication.md).
+
 On 2026-10-28, automatic file-level PDF sharing replaced the decision to rely
 solely on manually configured destination-folder sharing. The organizer requested
 that anyone with a PDF link can view it while the containing folder stays

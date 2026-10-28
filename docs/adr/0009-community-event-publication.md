@@ -338,3 +338,12 @@ passed using the committed browser process, browser session, CAPTCHA resolver,
 and login page. It verified fresh authentication, the `Europe/Paris` timezone
 after login, and organizer editor access. No event was created, edited, or
 published.
+
+Later on 2026-10-28, a fresh hosted attendee-delivery run stopped at login with
+`challenge-required`. The [Paris-timezone comparison](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40741035203)
+also failed: the solver did not complete the pre-credential challenge, so no
+credentials or message were submitted. The earlier successful login therefore
+does not establish reliable unattended delivery. The organizer then signed in
+locally, and the production attendee-message adapter sent the public PDF using
+that interactive session and the existing delivery ledger. That successful
+message validates the form and delivery guards, not unattended authentication.
