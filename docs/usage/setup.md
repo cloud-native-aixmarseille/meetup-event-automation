@@ -75,7 +75,7 @@ Drive and Slack settings:
 | -------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
 | Secret   | `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS` | Service-account JSON with access to the Drive folders.                                      |
 | Variable | `GOOGLE_DRIVE_FOLDER_ID`             | Parent folder ID for event assets.                                                          |
-| Variable | `GOOGLE_DRIVE_PUBLIC_FOLDER_ID`      | Existing shared folder named `public` for generated PDFs.                                   |
+| Variable | `GOOGLE_DRIVE_PUBLIC_FOLDER_ID`      | Existing shared destination folder ID for generated PDFs; its name is unrestricted.         |
 | Variable | `GOOGLE_DRIVE_TEMPLATE_FOLDER_ID`    | Distinct folder ID containing templates.                                                    |
 | Secret   | `SLACK_BOT_TOKEN`                    | Bot token with `chat:write` and `reactions:write`; invite the bot to the organizer channel. |
 | Variable | `SLACK_ORGANIZER_CHANNEL_ID`         | Meetup organizer channel ID for approval requests and reminders.                            |

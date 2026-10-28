@@ -8,31 +8,40 @@ import { DrivePdfMetadata } from "./drive-pdf-metadata.js";
 import { GoogleDrivePublicFolder } from "./google-drive-public-folder.js";
 
 describe("GoogleDrivePublicFolder", () => {
-	it("resolves the configured shared folder without creating folders", async () => {
-		// Arrange
-		const drive = createPdfDrive();
-		const folder = new GoogleDrivePublicFolder(
-			drive.client,
-			new DrivePdfMetadata(),
-			publicFolderId,
-		);
+	it.each(["public", "Shared presentations", "Renamed destination"])(
+		"resolves the configured folder by ID regardless of its name: %s",
+		async (name) => {
+			// Arrange
+			const drive = createPdfDrive();
+			const record = drive.records.get(publicFolderId);
+			if (!record) throw new Error("Synthetic folder missing");
+			drive.records.set(publicFolderId, {
+				...record,
+				metadata: { ...record.metadata, name },
+			});
+			const folder = new GoogleDrivePublicFolder(
+				drive.client,
+				new DrivePdfMetadata(),
+				publicFolderId,
+			);
 
-		// Act
-		const id = await folder.resolve(exportIdentity);
+			// Act
+			const id = await folder.resolve(exportIdentity);
 
-		// Assert
-		expect(id).toBe(publicFolderId);
-		expect(drive.files.get).toHaveBeenCalledWith(
-			expect.objectContaining({
-				fileId: publicFolderId,
-				supportsAllDrives: true,
-			}),
-			{ retry: false, timeout: 30_000 },
-		);
-		expect(drive.files.list).not.toHaveBeenCalled();
-		expect(drive.files.create).not.toHaveBeenCalled();
-		expect(drive.files.update).not.toHaveBeenCalled();
-	});
+			// Assert
+			expect(id).toBe(publicFolderId);
+			expect(drive.files.get).toHaveBeenCalledWith(
+				expect.objectContaining({
+					fileId: publicFolderId,
+					supportsAllDrives: true,
+				}),
+				{ retry: false, timeout: 30_000 },
+			);
+			expect(drive.files.list).not.toHaveBeenCalled();
+			expect(drive.files.create).not.toHaveBeenCalled();
+			expect(drive.files.update).not.toHaveBeenCalled();
+		},
+	);
 
 	it.each([
 		"",
@@ -58,7 +67,6 @@ describe("GoogleDrivePublicFolder", () => {
 	});
 
 	it.each([
-		{ name: "private" },
 		{ mimeType: "application/pdf" },
 		{ trashed: true },
 		{ id: "other" },
