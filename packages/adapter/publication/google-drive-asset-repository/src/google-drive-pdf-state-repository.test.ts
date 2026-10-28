@@ -16,6 +16,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
 			"public-folder",
+			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
 			drive.client,
@@ -39,6 +40,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
 			"public-folder",
+			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
 			drive.client,
@@ -98,6 +100,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
 			"public-folder",
+			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
 			drive.client,
@@ -120,6 +123,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
 			"public-folder",
+			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
 			drive.client,
@@ -148,6 +152,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 			const adapter = new GoogleDrivePdfComposition(
 				drive.client,
 				"public-folder",
+				drive.download,
 			);
 			const repository = new GoogleDrivePdfStateRepository(
 				drive.client,
@@ -186,6 +191,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
 			"public-folder",
+			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
 			drive.client,

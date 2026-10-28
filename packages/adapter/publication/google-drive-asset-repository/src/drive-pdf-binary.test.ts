@@ -48,7 +48,7 @@ describe("DrivePdfBinary", () => {
 			new DriveBoundedStream(),
 			new ContentFingerprint(),
 		);
-		const stream = Readable.from([Buffer.alloc(10 * 1024 * 1024 + 1)]);
+		const stream = Readable.from([Buffer.alloc(50_000_001)]);
 
 		// Act
 		const operation = reader.read(stream, "application/pdf");

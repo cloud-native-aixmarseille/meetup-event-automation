@@ -5,10 +5,7 @@ import {
 	EventDomainComposition,
 	type EventRepository,
 } from "@meetup-automation/event";
-import {
-	GoogleDriveAssetRepositoryComposition,
-	GoogleDrivePdfComposition,
-} from "@meetup-automation/google-drive-asset-repository";
+import { GoogleDriveAssetRepositoryComposition } from "@meetup-automation/google-drive-asset-repository";
 import { ReconcileMeetupSlidesPdf } from "@meetup-automation/journey";
 import { PublicationDomainComposition } from "@meetup-automation/publication";
 import {
@@ -29,10 +26,8 @@ export class SlidesPdfActionComposition {
 		},
 	) {
 		const container = EventComposition.createDocumentContainer(input);
-		const adapter = new GoogleDrivePdfComposition(
-			new GoogleDriveAssetRepositoryComposition()
-				.googleDriveAssetRepositoryFactory()
-				.client(input.credentials),
+		const adapter = new GoogleDriveAssetRepositoryComposition().googleDrivePdf(
+			input.credentials,
 			input.publicFolderId,
 		);
 		return new ReconcileMeetupSlidesPdf({

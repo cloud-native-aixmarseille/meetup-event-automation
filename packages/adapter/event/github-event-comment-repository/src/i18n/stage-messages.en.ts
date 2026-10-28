@@ -82,7 +82,7 @@ export const STAGE_MESSAGES_EN = {
 	"comment.guidance.pdf.recovery":
 		"Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
 	"comment.guidance.pdf.limit":
-		"Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
+		"Reduce the presentation size so its exported PDF fits within the 50 MB limit.",
 	"comment.guidance.pdf.invalid":
 		"PDF verification failed. Ask a maintainer to inspect the export before retrying.",
 	"comment.guidance.pdf.sharing":
