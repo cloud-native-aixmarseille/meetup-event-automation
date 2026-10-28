@@ -243,8 +243,9 @@ retain their URL semantics; draft URLs are kept outside CNCF Link.
 
 Before enabling a consumer caller, an authorized organizer run must establish
 login, draft persistence, review access, publication, and notification behavior
-on the deployed instance. The live checks recorded below do not establish
-unattended login, publication, or notification behavior.
+on the deployed instance. The live checks recorded below establish fresh
+unattended Meetup login and draft editing. Publication and native notifications
+remain unverified.
 
 ## Decision history
 
@@ -332,4 +333,8 @@ and [repeated fresh-session](https://github.com/cloud-native-aixmarseille/meetup
 checks verified the account and organizer editor without event writes. The
 [managed Chrome comparison](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40718248691)
 still rejected the CAPTCHA token. These diagnostics motivated the browser
-startup decision above; production-runtime validation is recorded separately.
+startup decision above. The [production-runtime check](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40723611288)
+passed using the committed browser process, browser session, CAPTCHA resolver,
+and login page. It verified fresh authentication, the `Europe/Paris` timezone
+after login, and organizer editor access. No event was created, edited, or
+published.
