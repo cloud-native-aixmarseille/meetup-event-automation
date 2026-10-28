@@ -1,6 +1,6 @@
-import { spawn } from "node:child_process";
 import { type Browser, chromium } from "playwright-core";
 import { describe, expect, it, vi } from "vitest";
+import { spawnTestChromium } from "../testing/chromium-process.js";
 import { MeetupBrowserSession } from "./meetup-browser-session.js";
 import { MeetupChromeProcess } from "./meetup-chrome-process.js";
 
@@ -9,11 +9,11 @@ describe("Meetup browser session", () => {
 		// Arrange
 		const first = new MeetupBrowserSession(
 			chromium,
-			new MeetupChromeProcess(spawn, chromium.executablePath()),
+			new MeetupChromeProcess(spawnTestChromium, chromium.executablePath()),
 		);
 		const second = new MeetupBrowserSession(
 			chromium,
-			new MeetupChromeProcess(spawn, chromium.executablePath()),
+			new MeetupChromeProcess(spawnTestChromium, chromium.executablePath()),
 		);
 		let timezone = "";
 		let viewport = null;

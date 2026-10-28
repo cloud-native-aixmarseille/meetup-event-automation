@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { access } from "node:fs/promises";
 import { chromium } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { spawnTestChromium } from "../testing/chromium-process.js";
 import { MeetupChromeProcess } from "./meetup-chrome-process.js";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -10,7 +11,7 @@ describe("Meetup Chrome process", () => {
 	it("starts a private loopback browser without forwarding secrets and removes its profile", async () => {
 		// Arrange
 		vi.stubEnv("MEETUP_PASSWORD", "synthetic-secret");
-		const launch = vi.fn(spawn);
+		const launch = vi.fn(spawnTestChromium);
 		const process = new MeetupChromeProcess(launch, chromium.executablePath());
 
 		// Act
