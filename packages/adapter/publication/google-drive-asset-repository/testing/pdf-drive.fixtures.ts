@@ -64,7 +64,7 @@ export function createPdfDrive() {
 	records.set(publicFolderId, {
 		metadata: {
 			id: publicFolderId,
-			name: "public",
+			name: "Shared presentations",
 			mimeType: "application/vnd.google-apps.folder",
 			parents: ["shared-assets"],
 		},

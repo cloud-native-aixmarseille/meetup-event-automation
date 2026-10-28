@@ -90,7 +90,8 @@ It is a distinct artifact with its own stable file ID and provenance metadata,
 not another template copy or a document binding. Refresh that same managed file
 when the editable source changes; this does not create an immutable revision
 archive. Grant unlisted reader access only to the verified managed PDF, after
-placing it in its configured destination. Keep folder, editable-source, and
+placing it in its configured destination. Identify that folder only by its
+configured ID; its display name does not affect export or sharing. Keep folder, editable-source, and
 sidecar permissions unchanged. Read back permissions before reporting readiness;
 reuse existing grants and stop for incompatible public access.
 
@@ -139,6 +140,12 @@ Provider limits and supported object types remain constraints documented in the
 integration guide.
 
 ## Decision history
+
+On 2026-10-28, destination identity became independent of the folder name at the
+organizer's request. This supersedes the adapter's requirement for the literal
+name `public`: a valid configured folder ID is authoritative, while folder type,
+non-trashed status, protected IDs and access checks remain enforced. A renamed
+destination must not interrupt export or require a replacement folder.
 
 On 2026-10-28, PDF export moved to Drive's supported long-running download API.
 The [read-only validation](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40727827298)

@@ -82402,7 +82402,7 @@ var GoogleDrivePdfStateRepository = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-public-folder.ts
-var folderFields = "id,name,mimeType,parents,trashed";
+var folderFields = "id,mimeType,trashed";
 var GoogleDrivePublicFolder = class {
   constructor(client, metadata, folderId) {
     this.client = client;
@@ -82426,7 +82426,7 @@ var GoogleDrivePublicFolder = class {
       },
       requestOptions
     );
-    if (data.id !== this.folderId || data.name !== "public" || data.mimeType !== folderMimeType || data.trashed)
+    if (data.id !== this.folderId || data.mimeType !== folderMimeType || data.trashed)
       throw new PdfExportError("recovery");
     return this.folderId;
   }

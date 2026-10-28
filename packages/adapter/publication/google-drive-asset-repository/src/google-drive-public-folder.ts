@@ -9,7 +9,7 @@ import {
 	requestOptions,
 } from "./google-drive-asset-repository-contracts.js";
 
-const folderFields = "id,name,mimeType,parents,trashed";
+const folderFields = "id,mimeType,trashed";
 
 export class GoogleDrivePublicFolder {
 	constructor(
@@ -37,7 +37,6 @@ export class GoogleDrivePublicFolder {
 		);
 		if (
 			data.id !== this.folderId ||
-			data.name !== "public" ||
 			data.mimeType !== folderMimeType ||
 			data.trashed
 		)
