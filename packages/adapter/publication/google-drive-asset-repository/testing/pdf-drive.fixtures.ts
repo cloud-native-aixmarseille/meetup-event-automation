@@ -152,11 +152,6 @@ export function createPdfDrive() {
 				}),
 			};
 		}),
-		export: vi.fn(async () => ({
-			data: Readable.from([pdfBytes]),
-			status: 200,
-			headers: new Headers({ "content-type": "application/pdf" }),
-		})),
 		generateIds: vi.fn(async () => ({ data: { ids: ["reserved-pdf"] } })),
 		create: vi.fn(write),
 		update: vi.fn(write),

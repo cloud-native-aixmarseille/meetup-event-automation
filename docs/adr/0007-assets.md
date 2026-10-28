@@ -151,6 +151,13 @@ below. Stable PDF identities, recovery, placement and permission policy remain
 unchanged. Google document redirects cannot forward the service-account token
 to content hosts.
 
+The subsequent [stored-file check](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40731701503)
+verified the complete PDF against its confirmed recovery fingerprint. It remained
+in the event folder: the service account could edit/share the PDF and add children
+to the destination, but `canMoveItemWithinDrive` was false. Both folders were in
+the same shared drive. Placement and attendee delivery therefore required a
+manual move of the existing PDF or a Content manager grant before continuing.
+
 On 2026-10-28, automatic file-level PDF sharing replaced the decision to rely
 solely on manually configured destination-folder sharing. The organizer requested
 that anyone with a PDF link can view it while the containing folder stays
