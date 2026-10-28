@@ -326,8 +326,10 @@ and requires a CAPTCHA response after solving. The Gemini key travels through
 stdin; logs are discarded and private temporary files removed. The deadline is
 two minutes. Unsupported challenges, including reCAPTCHA, one-time codes, and
 post-credential challenges, stop login. There are no automatic login retries.
-Complete unsupported verification interactively before rerunning. Gemini quota,
-billing, and data-use terms apply separately from a Workspace subscription.
+Every rerun starts a fresh session. Verification completed in a separate browser
+does not authenticate the workflow. A completed CAPTCHA must still be accepted
+by Meetup; rejected tokens leave login blocked. Gemini quota, billing, and
+data-use terms apply separately from a Workspace subscription.
 
 Synthetic journey and Chromium tests cover lifecycle, provider isolation,
 approval/source guards, recovery, no-op reruns, and saved-field verification.

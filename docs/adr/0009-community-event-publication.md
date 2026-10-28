@@ -243,7 +243,8 @@ retain their URL semantics; draft URLs are kept outside CNCF Link.
 
 Before enabling a consumer caller, an authorized organizer run must establish
 login, draft persistence, review access, publication, and notification behavior
-on the deployed instance. No live organizer run has been performed.
+on the deployed instance. The live checks recorded below do not establish
+unattended login, publication, or notification behavior.
 
 ## Decision history
 
@@ -283,3 +284,27 @@ native publication/reschedule notifications. This is upstream source evidence,
 not a live CNCF deployment check. The
 [read-only API request](https://github.com/cncf/open-community-groups/issues/449)
 does not establish a deployed event-write API.
+
+### 2026-10-28: Meetup authentication checks
+
+The earlier validation relied on synthetic tests. An organizer-authorized
+interactive login subsequently allowed the production adapter to save and
+verify an unpublished synthetic draft, including its cover. An unchanged rerun
+made no event submissions. This validates draft editing in that authenticated
+session, not fresh unattended login.
+
+The [hosted authentication-only check](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40711508843)
+completed the pre-credential CAPTCHA, but Meetup rejected the submitted token
+with `invalid_captcha_error`. The submitted token matched the solver's result.
+One diagnostic retry with a fresh challenge produced the same rejection; this
+retry is not part of production behavior.
+
+The [one-use local runner check](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40714552034)
+stopped earlier: the solver did not complete the CAPTCHA, and no credentials
+were submitted. It does not isolate the hosted runner's network as the cause.
+Neither authentication check changed an event. The temporary runner unregistered
+after its one job, and its local credentials and workspace were removed.
+
+Unattended authentication remains unverified. Preserve the fresh-session and
+credential-isolation policy; interactive verification in another browser cannot
+make a subsequent workflow authenticated.
