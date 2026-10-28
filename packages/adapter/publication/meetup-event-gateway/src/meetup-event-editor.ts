@@ -96,10 +96,9 @@ export class MeetupEventEditor {
 		if (status !== (existing?.status ?? "draft"))
 			throw new ScheduledEventError("editor");
 		// Keep concurrency and durable-reservation failures separate from browser errors.
-		await beforeSubmit();
 		await this.collaborators
 			.createCover(this.page)
-			.apply(event.cover, this.group);
+			.apply(event.cover, this.group, beforeSubmit);
 		const savedUrl = await this.submit(identity, status);
 		await onSaved(savedUrl.value);
 		const saved = await verification

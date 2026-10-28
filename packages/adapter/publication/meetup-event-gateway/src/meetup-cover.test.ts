@@ -29,8 +29,8 @@ describe("Meetup cover synchronization", () => {
 			photo,
 		);
 		// Act
-		await first.apply(cover, group);
-		await second.apply(cover, group);
+		await first.apply(cover, group, vi.fn());
+		await second.apply(cover, group, vi.fn());
 		const matches = await second.matches(cover, group);
 		// Assert
 		expect(matches).toBe(true);
@@ -66,7 +66,7 @@ describe("Meetup cover synchronization", () => {
 				photo,
 			);
 			// Act
-			const result = subject.apply(cover, group);
+			const result = subject.apply(cover, group, vi.fn());
 			// Assert
 			await expect(result).rejects.toMatchObject({ kind: "uncertain" });
 			expect(photo.upload).not.toHaveBeenCalled();
@@ -88,6 +88,7 @@ describe("Meetup cover synchronization", () => {
 		const result = subject.apply(
 			{ ...cover, fingerprint: "f".repeat(64) },
 			group,
+			vi.fn(),
 		);
 		// Assert
 		await expect(result).rejects.toMatchObject({ kind: "content-review" });
@@ -109,7 +110,7 @@ describe("Meetup cover synchronization", () => {
 			photo,
 		);
 		// Act
-		const result = subject.apply(cover, group);
+		const result = subject.apply(cover, group, vi.fn());
 		// Assert
 		await expect(result).rejects.toMatchObject({ kind: "uncertain" });
 		expect(await journal.readCover()).toEqual({
