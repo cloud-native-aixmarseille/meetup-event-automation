@@ -416,10 +416,14 @@ not create per-event public folders or search for a shared folder by name.
 The service account needs permission to export the source and create/update
 binary files in the event folder, move PDFs into the shared folder, update them,
 and grant permissions on the PDF itself. Shared-drive policy must permit
-anyone-with-the-link sharing. New exports are uploaded and verified in the event folder before
+anyone-with-the-link sharing. Moving between folders within one shared drive
+requires Content manager (`fileOrganizer`) or Manager access; Contributor can
+create and edit files but cannot perform this move. See Google's
+[shared-drive roles](https://developers.google.com/workspace/drive/api/guides/about-shareddrives#roles_for_shared_drives).
+New exports are uploaded and verified in the event folder before
 being moved; existing exports are refreshed in place. The Drive API must be
 enabled. PDFs use Drive's long-running `files.download` API, including presentations
-above the synchronous export API's 10 MB limit. Preparation is polled every 10
+above the 10 MB limit of synchronous exports. Preparation is polled every 10
 seconds for up to two minutes. Media downloads have a two-minute abort signal;
 other requests have a 30-second timeout. Downloads are bounded to 50,000,000 bytes
 and checked for PDF media type, signature and end marker before upload.

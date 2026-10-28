@@ -42,6 +42,8 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 					signal: AbortSignal.timeout(30_000),
 				},
 			);
+			// The SDK stream overload exposes HTTP/2 header types; the configured
+			// HTTP/1 fetch transport returns Headers at runtime.
 			const binary = await this.binary.read(
 				response.data,
 				(response.headers as unknown as Headers).get("content-type"),
