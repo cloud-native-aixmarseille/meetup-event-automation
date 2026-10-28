@@ -10185,7 +10185,7 @@ var require_readable = __commonJS({
   "node_modules/.pnpm/undici@6.29.1/node_modules/undici/lib/api/readable.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable: Readable2 } = __require("node:stream");
+    var { Readable: Readable5 } = __require("node:stream");
     var { RequestAbortedError, NotSupportedError, InvalidArgumentError, AbortError: AbortError2 } = require_errors();
     var util = require_util();
     var { ReadableStreamFrom } = require_util();
@@ -10197,7 +10197,7 @@ var require_readable = __commonJS({
     var kContentLength = /* @__PURE__ */ Symbol("kContentLength");
     var noop4 = () => {
     };
-    var BodyReadable = class extends Readable2 {
+    var BodyReadable = class extends Readable5 {
       constructor({
         resume,
         abort,
@@ -10539,7 +10539,7 @@ var require_api_request = __commonJS({
   "node_modules/.pnpm/undici@6.29.1/node_modules/undici/lib/api/api-request.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable: Readable2 } = require_readable();
+    var { Readable: Readable5 } = require_readable();
     var { InvalidArgumentError, RequestAbortedError } = require_errors();
     var util = require_util();
     var { getResolveErrorBodyCallback } = require_util3();
@@ -10634,7 +10634,7 @@ var require_api_request = __commonJS({
         const parsedHeaders = responseHeaders === "raw" ? util.parseHeaders(rawHeaders) : headers;
         const contentType = parsedHeaders["content-type"];
         const contentLength = parsedHeaders["content-length"];
-        const res = new Readable2({
+        const res = new Readable5({
           resume,
           abort,
           contentType,
@@ -10949,7 +10949,7 @@ var require_api_pipeline = __commonJS({
   "node_modules/.pnpm/undici@6.29.1/node_modules/undici/lib/api/api-pipeline.js"(exports, module) {
     "use strict";
     var {
-      Readable: Readable2,
+      Readable: Readable5,
       Duplex,
       PassThrough: PassThrough3
     } = __require("node:stream");
@@ -10963,7 +10963,7 @@ var require_api_pipeline = __commonJS({
     var { addSignal, removeSignal } = require_abort_signal();
     var assert = __require("node:assert");
     var kResume = /* @__PURE__ */ Symbol("resume");
-    var PipelineRequest = class extends Readable2 {
+    var PipelineRequest = class extends Readable5 {
       constructor() {
         super({ autoDestroy: true });
         this[kResume] = null;
@@ -10980,7 +10980,7 @@ var require_api_pipeline = __commonJS({
         callback(err);
       }
     };
-    var PipelineResponse = class extends Readable2 {
+    var PipelineResponse = class extends Readable5 {
       constructor(resume) {
         super({ autoDestroy: true });
         this[kResume] = resume;
@@ -14305,7 +14305,7 @@ var require_fetch = __commonJS({
       subresourceSet
     } = require_constants3();
     var EE = __require("node:events");
-    var { Readable: Readable2, pipeline: pipeline2, finished } = __require("node:stream");
+    var { Readable: Readable5, pipeline: pipeline2, finished } = __require("node:stream");
     var { addAbortListener, isErrored, isReadable, bufferToLowerCasedHeaderName } = require_util();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
     var { getGlobalDispatcher } = require_global2();
@@ -15244,7 +15244,7 @@ var require_fetch = __commonJS({
                   }
                 }
               }
-              this.body = new Readable2({ read: resume });
+              this.body = new Readable5({ read: resume });
               const onError = this.onError.bind(this);
               resolve4({
                 status,
@@ -47791,7 +47791,7 @@ var require_build2 = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AuthPlus = exports.drive_v3 = exports.drive_v2 = exports.auth = exports.VERSIONS = void 0;
-    exports.drive = drive3;
+    exports.drive = drive4;
     var googleapis_common_1 = require_src6();
     var v2_1 = require_v2();
     Object.defineProperty(exports, "drive_v2", { enumerable: true, get: function() {
@@ -47805,7 +47805,7 @@ var require_build2 = __commonJS({
       v2: v2_1.drive_v2.Drive,
       v3: v3_1.drive_v3.Drive
     };
-    function drive3(versionOrOptions) {
+    function drive4(versionOrOptions) {
       return (0, googleapis_common_1.getAPI)("drive", versionOrOptions, exports.VERSIONS, this);
     }
     var auth3 = new googleapis_common_1.AuthPlus();
@@ -80430,6 +80430,25 @@ var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
 
+// packages/adapter/publication/google-drive-asset-repository/src/drive-bounded-stream.ts
+var DriveBoundedStream = class {
+  async read(stream, limit) {
+    const chunks = [];
+    let size = 0;
+    try {
+      for await (const chunk of stream) {
+        if (!(chunk instanceof Uint8Array)) throw new PdfExportError("invalid");
+        size += chunk.byteLength;
+        if (size > limit) throw new PdfExportError("limit");
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } finally {
+      stream.destroy();
+    }
+  }
+};
+
 // node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
 var decoder = new TextDecoder();
 var toUTF8String = (input, start = 0, end = input.length) => decoder.decode(input.slice(start, end));
@@ -81470,6 +81489,10 @@ var GoogleDriveAuthentication = class {
   }
 };
 
+// packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
+var import_drive4 = __toESM(require_build2(), 1);
+import { setTimeout as setTimeout2 } from "node:timers/promises";
+
 // packages/adapter/publication/google-drive-asset-repository/src/drive-asset-metadata.ts
 var DriveAssetMetadata = class {
   templateProperties(template) {
@@ -81501,6 +81524,27 @@ var DriveAssetMetadata = class {
       mimeType: file.mimeType ?? void 0,
       contentManaged: file.appProperties?.meetup_content === "v1"
     };
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-binary.ts
+var DrivePdfBinary = class {
+  constructor(stream, fingerprint) {
+    this.stream = stream;
+    this.fingerprint = fingerprint;
+  }
+  stream;
+  fingerprint;
+  async read(content, mimeType) {
+    if (typeof mimeType !== "string" || mimeType.split(";", 1)[0]?.trim().toLowerCase() !== "application/pdf") {
+      content.destroy();
+      throw new PdfExportError("invalid");
+    }
+    const bytes = await this.stream.read(content, 5e7);
+    if (!/^%PDF-\d\.\d\b/.test(bytes.subarray(0, 16).toString("ascii")) || !/%%EOF\s*$/.test(bytes.subarray(-1024).toString("ascii"))) {
+      throw new PdfExportError("invalid");
+    }
+    return { bytes, fingerprint: this.fingerprint.of(bytes) };
   }
 };
 
@@ -81811,8 +81855,670 @@ var GoogleDriveManifestRepository = class {
   }
 };
 
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-download.ts
+import { Readable as Readable2 } from "node:stream";
+var GoogleDrivePdfDownload = class {
+  constructor(client, accessToken, request3, wait, now2, binary) {
+    this.client = client;
+    this.accessToken = accessToken;
+    this.request = request3;
+    this.wait = wait;
+    this.now = now2;
+    this.binary = binary;
+  }
+  client;
+  accessToken;
+  request;
+  wait;
+  now;
+  binary;
+  async export(fileId) {
+    const operation = await this.operation(fileId);
+    const destination = this.destination(operation.response?.downloadUri);
+    if (destination.hostname !== "docs.google.com")
+      throw new Error("Unexpected Slides download host");
+    const token = await this.accessToken();
+    if (!token) throw new Error("Google Drive authentication unavailable");
+    const resourceKey = operation.metadata?.resourceKey;
+    if (resourceKey && !/^[\w-]{1,200}$/.test(resourceKey))
+      throw new Error("Invalid Drive resource key");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      ...resourceKey ? { "X-Goog-Drive-Resource-Keys": `${fileId}/${resourceKey}` } : {}
+    };
+    const response = await this.download(destination, headers);
+    if (response.status !== 200 || !response.body) {
+      await response.body?.cancel();
+      throw new Error("Google Drive PDF download failed");
+    }
+    return this.binary.read(
+      Readable2.fromWeb(response.body),
+      response.headers.get("content-type")
+    );
+  }
+  async operation(fileId) {
+    let operation = (await this.client.files.download(
+      { fileId, mimeType: "application/pdf" },
+      requestOptions
+    )).data;
+    const deadline = this.now() + 12e4;
+    while (!operation.done) {
+      if (!operation.name || this.now() + 1e4 >= deadline)
+        throw new Error("Google Drive PDF preparation timed out");
+      await this.wait(1e4);
+      operation = (await this.client.operations.get(
+        { name: operation.name },
+        requestOptions
+      )).data;
+    }
+    if (operation.error) throw new Error("Google Drive PDF preparation failed");
+    return operation;
+  }
+  async download(destination, headers) {
+    let current = destination;
+    const signal = AbortSignal.timeout(12e4);
+    for (let redirects = 0; redirects <= 5; redirects++) {
+      const response = await this.request(current, {
+        headers: current.origin === destination.origin ? headers : {},
+        redirect: "manual",
+        signal
+      });
+      if (![301, 302, 303, 307, 308].includes(response.status)) return response;
+      await response.body?.cancel();
+      const location = response.headers.get("location");
+      if (!location) throw new Error("Missing Google Drive download redirect");
+      current = this.destination(new URL(location, current).href);
+    }
+    throw new Error("Too many Google Drive download redirects");
+  }
+  destination(value) {
+    if (typeof value !== "string")
+      throw new Error("Missing Google Drive download URL");
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      throw new Error("Invalid Google Drive download URL");
+    }
+    if (url.protocol !== "https:" || url.port || url.username || url.password || url.hash || !(url.hostname === "docs.google.com" || url.hostname.endsWith(".googleusercontent.com")))
+      throw new Error("Untrusted Google Drive download URL");
+    return url;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-lookup.ts
+var exportFields = "id,name,description,mimeType,parents,trashed,version,appProperties";
+var DrivePdfLookup = class {
+  constructor(client, metadata, folders) {
+    this.client = client;
+    this.metadata = metadata;
+    this.folders = folders;
+  }
+  client;
+  metadata;
+  folders;
+  async find(identity, kind, expectedId) {
+    this.metadata.validateIdentity(identity);
+    const publicFolderId = kind === "pdf" ? await this.folders.resolve(identity) : void 0;
+    const parents = publicFolderId ? `('${identity.folderId}' in parents or '${publicFolderId}' in parents)` : `'${identity.folderId}' in parents`;
+    const { data } = await this.client.files.list(
+      {
+        q: `${parents} and trashed=false and appProperties has { key='${this.metadata.marker(kind)}' and value='${identity.sourceId}' }`,
+        fields: `nextPageToken,incompleteSearch,files(${exportFields})`,
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.files !== void 0 && !Array.isArray(data.files) || data.incompleteSearch || data.nextPageToken)
+      throw new Error("Google Drive PDF search is incomplete");
+    if ((data.files?.length ?? 0) > 1) throw new PdfExportError("recovery");
+    const file = data.files?.[0] ?? (expectedId ? await this.get(expectedId) : void 0);
+    if (!file) return void 0;
+    const result = this.metadata.file(file, identity, kind, publicFolderId);
+    if (expectedId && result.id !== expectedId)
+      throw new PdfExportError("recovery");
+    return result;
+  }
+  async get(fileId) {
+    if (!/^[\w-]{1,120}$/.test(fileId)) throw new PdfExportError("recovery");
+    try {
+      const { data } = await this.client.files.get(
+        { fileId, fields: exportFields, supportsAllDrives: true },
+        requestOptions
+      );
+      return data;
+    } catch (error2) {
+      if (error2 && typeof error2 === "object" && "response" in error2) {
+        const response = error2.response;
+        if (response && typeof response === "object" && "status" in response && response.status === 404)
+          return void 0;
+      }
+      throw error2;
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-metadata.ts
+var DrivePdfMetadata = class {
+  validateIdentity(identity) {
+    if (![identity.folderId, identity.sourceId, identity.templateId].every(
+      (id) => /^[\w-]{1,120}$/.test(id)
+    ) || !identity.eventId || identity.eventId.length > 512) {
+      throw new PdfExportError("recovery");
+    }
+  }
+  marker(kind) {
+    return kind === "pdf" ? "meetup_pdf_source" : "meetup_pdf_state";
+  }
+  properties(identity, kind) {
+    return {
+      [this.marker(kind)]: identity.sourceId,
+      meetup_pdf_template: identity.templateId,
+      meetup_pdf_contract: "pdf-v1"
+    };
+  }
+  file(file, identity, kind, publicFolderId) {
+    const properties = this.properties(identity, kind);
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name.trim() || typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version) || file.trashed || !Array.isArray(file.parents) || file.parents.length !== 1 || !(file.parents[0] === identity.folderId || kind === "pdf" && publicFolderId && file.parents[0] === publicFolderId) || file.mimeType !== (kind === "pdf" ? "application/pdf" : "application/json")) {
+      throw new PdfExportError("recovery");
+    }
+    if (file.description !== identity.eventId || file.appProperties?.template_file_id || Object.entries(properties).some(
+      ([key, value]) => file.appProperties?.[key] !== value
+    )) {
+      throw new PdfExportError("recovery");
+    }
+    return {
+      id: file.id,
+      name: file.name,
+      version: file.version,
+      folderId: file.parents[0]
+    };
+  }
+  source(file, identity) {
+    if (file.id !== identity.sourceId || file.trashed || !Array.isArray(file.parents) || !file.parents.includes(identity.folderId) || file.mimeType !== "application/vnd.google-apps.presentation" || file.appProperties?.template_file_id !== identity.templateId || file.appProperties?.template_kind !== "slides") {
+      throw new PdfExportError("source");
+    }
+    if (typeof file.version !== "string" || !/^\d{1,120}$/.test(file.version))
+      throw new PdfExportError("invalid");
+    return file.version;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-pdf-state-codec.ts
+var DrivePdfStateCodec = class {
+  constructor(metadata, policy) {
+    this.metadata = metadata;
+    this.policy = policy;
+  }
+  metadata;
+  policy;
+  decode(value, identity) {
+    if (!this.record(value) || value.version !== 1 || !this.record(value.identity))
+      throw new PdfExportError("recovery");
+    const storedIdentity = this.identity(value.identity);
+    this.metadata.validateIdentity(storedIdentity);
+    if (!this.policy.sameIdentity(storedIdentity, identity) || typeof value.fileId !== "string" || !/^[\w-]{1,120}$/.test(value.fileId))
+      throw new PdfExportError("recovery");
+    if ([identity.sourceId, identity.templateId, identity.folderId].includes(
+      value.fileId
+    ))
+      throw new PdfExportError("recovery");
+    const confirmed = value.confirmed === void 0 ? void 0 : this.snapshot(value.confirmed);
+    const pending = value.pending === void 0 ? void 0 : this.snapshot(value.pending);
+    if (!confirmed && !pending) throw new PdfExportError("recovery");
+    return {
+      identity: storedIdentity,
+      fileId: value.fileId,
+      confirmed,
+      pending
+    };
+  }
+  encode(state) {
+    const normalized = this.decode({ ...state, version: 1 }, state.identity);
+    return JSON.stringify({ version: 1, ...normalized });
+  }
+  identity(value) {
+    if (typeof value.eventId !== "string" || typeof value.folderId !== "string" || typeof value.sourceId !== "string" || typeof value.templateId !== "string")
+      throw new PdfExportError("recovery");
+    return {
+      eventId: value.eventId,
+      folderId: value.folderId,
+      sourceId: value.sourceId,
+      templateId: value.templateId
+    };
+  }
+  snapshot(value) {
+    if (!this.record(value) || value.contract !== "pdf-v1" || typeof value.sourceVersion !== "string" || !/^\d{1,120}$/.test(value.sourceVersion))
+      throw new PdfExportError("recovery");
+    if (typeof value.name !== "string" || !value.name.trim() || value.name.length > 204 || typeof value.fingerprint !== "string" || !/^[a-f0-9]{64}$/.test(value.fingerprint))
+      throw new PdfExportError("recovery");
+    return {
+      sourceVersion: value.sourceVersion,
+      contract: value.contract,
+      name: value.name,
+      fingerprint: value.fingerprint
+    };
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-repository.ts
+import { Readable as Readable3 } from "node:stream";
+var GoogleDrivePdfRepository = class {
+  constructor(client, lookup2, metadata, binary, folders, sharing) {
+    this.client = client;
+    this.lookup = lookup2;
+    this.metadata = metadata;
+    this.binary = binary;
+    this.folders = folders;
+    this.sharing = sharing;
+  }
+  client;
+  lookup;
+  metadata;
+  binary;
+  folders;
+  sharing;
+  async find(identity, expectedId) {
+    const file = await this.lookup.find(identity, "pdf", expectedId);
+    if (!file) return void 0;
+    try {
+      const response = await this.client.files.get(
+        { fileId: file.id, alt: "media", supportsAllDrives: true },
+        {
+          ...requestOptions,
+          responseType: "stream",
+          signal: AbortSignal.timeout(3e4)
+        }
+      );
+      const binary = await this.binary.read(
+        response.data,
+        response.headers.get("content-type")
+      );
+      const current = await this.lookup.get(file.id);
+      if (!current || this.metadata.file(current, identity, "pdf", file.folderId).version !== file.version)
+        throw new PdfExportError("conflict");
+      return { ...file, fingerprint: binary.fingerprint };
+    } catch (error2) {
+      if (error2 instanceof PdfExportError && ["invalid", "limit"].includes(error2.code))
+        throw new PdfExportError("conflict");
+      throw error2;
+    }
+  }
+  async placeInPublicFolder(identity, expected) {
+    const folderId = await this.folders.resolve(identity);
+    const current = await this.find(identity, expected.id);
+    if (!current || current.version !== expected.version || current.fingerprint !== expected.fingerprint || current.name !== expected.name)
+      throw new PdfExportError("conflict");
+    const url = `https://drive.google.com/file/d/${expected.id}/view`;
+    const moved = current.folderId !== folderId;
+    if (moved) {
+      await this.client.files.update(
+        {
+          fileId: expected.id,
+          addParents: folderId,
+          removeParents: identity.folderId,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+      await this.verifyPlacement(identity, expected, folderId);
+    }
+    const shared = await this.sharing.ensure(expected.id);
+    if (shared) await this.verifyPlacement(identity, expected, folderId);
+    return { updated: moved || shared, url };
+  }
+  async verifyPlacement(identity, expected, folderId) {
+    const moved = await this.find(identity, expected.id);
+    if (!moved || moved.folderId !== folderId || moved.name !== expected.name || moved.fingerprint !== expected.fingerprint)
+      throw new PdfExportError("invalid");
+  }
+  async reserveId() {
+    const { data } = await this.client.files.generateIds(
+      { count: 1, space: "drive", type: "files" },
+      requestOptions
+    );
+    const id = data.ids?.[0];
+    if (data.ids?.length !== 1 || !id || !/^[\w-]{1,120}$/.test(id))
+      throw new PdfExportError("invalid");
+    return id;
+  }
+  async write(input) {
+    const current = await this.find(input.identity, input.fileId);
+    if (current?.version !== input.previous?.version || current?.fingerprint !== input.previous?.fingerprint)
+      throw new PdfExportError("conflict");
+    const requestBody = {
+      name: input.snapshot.name,
+      description: input.identity.eventId,
+      mimeType: "application/pdf",
+      appProperties: this.metadata.properties(input.identity, "pdf")
+    };
+    const media = {
+      mimeType: "application/pdf",
+      body: Readable3.from([input.binary.bytes])
+    };
+    if (current) {
+      await this.client.files.update(
+        { fileId: input.fileId, requestBody, media, supportsAllDrives: true },
+        requestOptions
+      );
+    } else {
+      await this.client.files.create(
+        {
+          requestBody: {
+            ...requestBody,
+            id: input.fileId,
+            parents: [input.identity.folderId]
+          },
+          media,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-sharing.ts
+var GoogleDrivePdfSharing = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async ensure(fileId) {
+    if (!/^[\w-]{1,120}$/.test(fileId)) throw new PdfExportError("invalid");
+    try {
+      return await this.grant(fileId);
+    } catch (error2) {
+      if (error2 && typeof error2 === "object" && "response" in error2 && error2.response && typeof error2.response === "object" && "status" in error2.response && error2.response.status === 403)
+        throw new PdfExportError("sharing");
+      throw error2;
+    }
+  }
+  async grant(fileId) {
+    if (await this.readable(fileId)) return false;
+    await this.client.permissions.create(
+      {
+        fileId,
+        supportsAllDrives: true,
+        requestBody: {
+          type: "anyone",
+          role: "reader",
+          allowFileDiscovery: false
+        },
+        fields: "id"
+      },
+      requestOptions
+    );
+    if (!await this.readable(fileId)) throw new PdfExportError("sharing");
+    return true;
+  }
+  async readable(fileId) {
+    let pageToken;
+    const seen = /* @__PURE__ */ new Set();
+    const publicPermissions = [];
+    for (let page = 0; page < 10; page++) {
+      const { data } = await this.client.permissions.list(
+        {
+          fileId,
+          supportsAllDrives: true,
+          pageSize: 100,
+          pageToken,
+          fields: "nextPageToken,permissions(type,role,allowFileDiscovery,view)"
+        },
+        requestOptions
+      );
+      if (!Array.isArray(data.permissions)) throw new PdfExportError("invalid");
+      publicPermissions.push(
+        ...data.permissions.filter((p) => p.type === "anyone")
+      );
+      pageToken = data.nextPageToken ?? void 0;
+      if (!pageToken) return this.verified(publicPermissions);
+      if (seen.has(pageToken)) throw new PdfExportError("invalid");
+      seen.add(pageToken);
+    }
+    throw new PdfExportError("invalid");
+  }
+  verified(permissions) {
+    if (permissions.length === 0) return false;
+    const permission = permissions[0];
+    if (permissions.length !== 1 || permission?.role !== "reader" || permission.allowFileDiscovery === true || permission.view)
+      throw new PdfExportError("sharing");
+    return true;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-source.ts
+var GoogleDrivePdfSource = class {
+  constructor(lookup2, metadata, download) {
+    this.lookup = lookup2;
+    this.metadata = metadata;
+    this.download = download;
+  }
+  lookup;
+  metadata;
+  download;
+  async observe(identity) {
+    this.metadata.validateIdentity(identity);
+    const file = await this.lookup.get(identity.sourceId);
+    if (!file) throw new PdfExportError("source");
+    return this.metadata.source(file, identity);
+  }
+  async export(identity) {
+    this.metadata.validateIdentity(identity);
+    return this.download.export(identity.sourceId);
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-state-repository.ts
+import { Readable as Readable4 } from "node:stream";
+var GoogleDrivePdfStateRepository = class {
+  constructor(client, lookup2, metadata, stream, codec) {
+    this.client = client;
+    this.lookup = lookup2;
+    this.metadata = metadata;
+    this.stream = stream;
+    this.codec = codec;
+  }
+  client;
+  lookup;
+  metadata;
+  stream;
+  codec;
+  loaded = /* @__PURE__ */ new Map();
+  async load(identity) {
+    const file = await this.lookup.find(identity, "state");
+    this.loaded.set(identity.sourceId, file);
+    if (!file) return void 0;
+    const response = await this.client.files.get(
+      { fileId: file.id, alt: "media", supportsAllDrives: true },
+      {
+        ...requestOptions,
+        responseType: "stream",
+        signal: AbortSignal.timeout(3e4)
+      }
+    );
+    let value;
+    try {
+      const bytes = await this.stream.read(response.data, 65536);
+      value = JSON.parse(bytes.toString("utf8"));
+    } catch (error2) {
+      if (error2 instanceof SyntaxError || error2 instanceof PdfExportError)
+        throw new PdfExportError("recovery");
+      throw error2;
+    }
+    const current = await this.lookup.get(file.id);
+    if (!current || this.metadata.file(current, identity, "state").version !== file.version)
+      throw new PdfExportError("recovery");
+    return this.codec.decode(value, identity);
+  }
+  async save(state) {
+    const json = this.codec.encode(state);
+    const prior = this.loaded.get(state.identity.sourceId);
+    if (!this.loaded.has(state.identity.sourceId))
+      throw new PdfExportError("recovery");
+    const current = await this.lookup.find(state.identity, "state", prior?.id);
+    if (current?.id !== prior?.id || current?.version !== prior?.version)
+      throw new PdfExportError("recovery");
+    const media = { mimeType: "application/json", body: Readable4.from([json]) };
+    const options = {
+      supportsAllDrives: true,
+      fields: "id,name,description,parents,mimeType,trashed,version,appProperties",
+      media
+    };
+    const response = current ? await this.client.files.update(
+      { ...options, fileId: current.id },
+      requestOptions
+    ) : await this.client.files.create(
+      {
+        ...options,
+        requestBody: {
+          name: `.${state.identity.sourceId}.pdf-export.json`,
+          description: state.identity.eventId,
+          mimeType: "application/json",
+          parents: [state.identity.folderId],
+          appProperties: this.metadata.properties(state.identity, "state")
+        }
+      },
+      requestOptions
+    );
+    this.acceptWrite(response.data, state.identity, current?.id);
+  }
+  acceptWrite(file, identity, previousId) {
+    try {
+      const saved = this.metadata.file(file, identity, "state");
+      if (previousId && saved.id !== previousId)
+        throw new PdfExportError("invalid");
+      this.loaded.set(identity.sourceId, saved);
+    } catch (error2) {
+      if (error2 instanceof PdfExportError) throw new PdfExportError("invalid");
+      throw error2;
+    }
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-public-folder.ts
+var folderFields = "id,name,mimeType,parents,trashed";
+var GoogleDrivePublicFolder = class {
+  constructor(client, metadata, folderId) {
+    this.client = client;
+    this.metadata = metadata;
+    this.folderId = folderId;
+  }
+  client;
+  metadata;
+  folderId;
+  async resolve(identity) {
+    this.metadata.validateIdentity(identity);
+    if (!/^[\w-]{1,120}$/.test(this.folderId) || [identity.folderId, identity.sourceId, identity.templateId].includes(
+      this.folderId
+    ))
+      throw new PdfExportError("recovery");
+    const { data } = await this.client.files.get(
+      {
+        fileId: this.folderId,
+        fields: folderFields,
+        supportsAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.id !== this.folderId || data.name !== "public" || data.mimeType !== folderMimeType || data.trashed)
+      throw new PdfExportError("recovery");
+    return this.folderId;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/pdf-export-composition.ts
+var GoogleDrivePdfComposition = class {
+  constructor(client, publicFolderId, download) {
+    this.client = client;
+    this.publicFolderId = publicFolderId;
+    this.download = download;
+  }
+  client;
+  publicFolderId;
+  download;
+  metadata() {
+    return new DrivePdfMetadata();
+  }
+  stream() {
+    return new DriveBoundedStream();
+  }
+  binary() {
+    return new DrivePdfBinary(
+      this.stream(),
+      new PublicationDomainComposition().contentFingerprint()
+    );
+  }
+  lookup() {
+    return new DrivePdfLookup(this.client, this.metadata(), this.folders());
+  }
+  folders() {
+    return new GoogleDrivePublicFolder(
+      this.client,
+      this.metadata(),
+      this.publicFolderId
+    );
+  }
+  codec() {
+    return new DrivePdfStateCodec(
+      this.metadata(),
+      new PublicationDomainComposition().pdfExportPolicy()
+    );
+  }
+  source() {
+    return new GoogleDrivePdfSource(
+      this.lookup(),
+      this.metadata(),
+      this.download
+    );
+  }
+  repository() {
+    return new GoogleDrivePdfRepository(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.binary(),
+      this.folders(),
+      this.sharing()
+    );
+  }
+  sharing() {
+    return new GoogleDrivePdfSharing(this.client);
+  }
+  states() {
+    return new GoogleDrivePdfStateRepository(
+      this.client,
+      this.lookup(),
+      this.metadata(),
+      this.stream(),
+      this.codec()
+    );
+  }
+};
+
 // packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
 var GoogleDriveAssetRepositoryComposition = class {
+  googleDrivePdf(credentialsJson, publicFolderId) {
+    const authentication = this.googleDriveAuthentication().create(credentialsJson);
+    const client = (0, import_drive4.drive)({ version: "v3", auth: authentication });
+    return new GoogleDrivePdfComposition(
+      client,
+      publicFolderId,
+      new GoogleDrivePdfDownload(
+        client,
+        async () => (await authentication.getAccessToken()).token,
+        fetch,
+        setTimeout2,
+        Date.now,
+        new DrivePdfBinary(new DriveBoundedStream(), new ContentFingerprint())
+      )
+    );
+  }
   driveAssetMetadata() {
     return new DriveAssetMetadata();
   }
@@ -85924,7 +86630,7 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
   "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
   "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
-  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 10 MB limit.",
+  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 50 MB limit.",
   "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
   "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
 };
@@ -85973,7 +86679,7 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
   "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
   "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
-  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 10 Mo.",
+  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 50 Mo.",
   "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
   "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
 };

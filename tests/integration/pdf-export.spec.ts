@@ -8,7 +8,11 @@ import {
 import { PublicationDomainComposition } from "../../packages/domain/publication/src/dependency-composition.js";
 
 function exportJourney(drive: ReturnType<typeof createPdfDrive>) {
-	const adapter = new GoogleDrivePdfComposition(drive.client, "public-folder");
+	const adapter = new GoogleDrivePdfComposition(
+		drive.client,
+		"public-folder",
+		drive.download,
+	);
 	return new PublicationDomainComposition().reconcileSlidePdf(
 		adapter.source(),
 		adapter.repository(),
@@ -169,7 +173,7 @@ describe("presentation PDF export", () => {
 			expect(failed).toBeInstanceOf(Error);
 			expect(recovered).toMatchObject({ status: "ready", updated: true });
 			expect(drive.permissions.create).toHaveBeenCalledOnce();
-			expect(drive.files.export).toHaveBeenCalledOnce();
+			expect(drive.download.export).toHaveBeenCalledOnce();
 			expect(drive.files.create).toHaveBeenCalledTimes(2);
 			expect(drive.records.get("reserved-pdf")?.metadata.parents).toEqual([
 				folder?.metadata.id,
@@ -227,7 +231,7 @@ describe("presentation PDF export", () => {
 		// Assert
 		expect(failed).toBeInstanceOf(Error);
 		expect(recovered).toMatchObject({ status: "ready", updated: true });
-		expect(drive.files.export).toHaveBeenCalledOnce();
+		expect(drive.download.export).toHaveBeenCalledOnce();
 		expect(drive.files.create).toHaveBeenCalledTimes(2);
 	});
 	it("creates once, verifies unchanged reruns and refreshes the same file", async () => {
@@ -250,7 +254,7 @@ describe("presentation PDF export", () => {
 		expect(unchanged.updated).toBe(false);
 		expect(refreshed.updated).toBe(true);
 		expect(drive.files.generateIds).toHaveBeenCalledOnce();
-		expect(drive.files.export).toHaveBeenCalledTimes(2);
+		expect(drive.download.export).toHaveBeenCalledTimes(2);
 		expect(
 			[...drive.records.values()].filter(
 				(file) => file.metadata.mimeType === "application/pdf",
@@ -280,7 +284,7 @@ describe("presentation PDF export", () => {
 		// Assert
 		expect(failed).toBeInstanceOf(Error);
 		expect(recovered).toMatchObject({ status: "ready", updated: true });
-		expect(drive.files.export).toHaveBeenCalledOnce();
+		expect(drive.download.export).toHaveBeenCalledOnce();
 		expect(drive.files.create).toHaveBeenCalledTimes(2);
 		expect(drive.files.generateIds).toHaveBeenCalledOnce();
 	});

@@ -147,13 +147,15 @@ export function createPdfDrive() {
 					input.alt === "media"
 						? Readable.from([record.bytes])
 						: record.metadata,
-				headers: { "content-type": record.metadata.mimeType },
+				headers: new Headers({
+					"content-type": record.metadata.mimeType ?? "",
+				}),
 			};
 		}),
 		export: vi.fn(async () => ({
 			data: Readable.from([pdfBytes]),
 			status: 200,
-			headers: { "content-type": "application/pdf" },
+			headers: new Headers({ "content-type": "application/pdf" }),
 		})),
 		generateIds: vi.fn(async () => ({ data: { ids: ["reserved-pdf"] } })),
 		create: vi.fn(write),
@@ -187,6 +189,12 @@ export function createPdfDrive() {
 		),
 	};
 	return {
+		download: {
+			export: vi.fn(async () => ({
+				bytes: pdfBytes,
+				fingerprint: pdfFingerprint,
+			})),
+		},
 		client: { files, permissions } as unknown as GoogleDriveClient &
 			Pick<drive_v3.Drive, "permissions">,
 		files,

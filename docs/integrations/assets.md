@@ -418,10 +418,14 @@ binary files in the event folder, move PDFs into the shared folder, update them,
 and grant permissions on the PDF itself. Shared-drive policy must permit
 anyone-with-the-link sharing. New exports are uploaded and verified in the event folder before
 being moved; existing exports are refreshed in place. The Drive API must be
-enabled. Exported bytes are limited to 10,000,000 bytes and checked for PDF
-media type, signature and
-end marker before upload. Each request has a 30-second timeout; downloads also
-have a 30-second abort signal. Oversized exports need a smaller presentation.
+enabled. PDFs use Drive's long-running `files.download` API, including presentations
+above the synchronous export API's 10 MB limit. Preparation is polled every 10
+seconds for up to two minutes. Media downloads have a two-minute abort signal;
+other requests have a 30-second timeout. Downloads are bounded to 50,000,000 bytes
+and checked for PDF media type, signature and end marker before upload.
+Larger exports need a smaller presentation. Download URLs and redirects are
+restricted to Google's document and content hosts. Authorization is sent only
+to the original document host.
 Access, transport and persistence failures remain technical action failures.
 Denied PDF permission access or incompatible public grants remain pending with
 organizer guidance to correct sharing before retrying.

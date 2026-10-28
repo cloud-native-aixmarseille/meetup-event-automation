@@ -83,7 +83,7 @@ export const STAGE_MESSAGES_FR = {
 	"comment.guidance.pdf.recovery":
 		"Vérifiez le dossier public partagé et le PDF géré, puis l'état d'export dans le dossier du meetup. Restaurez un état vérifié avant de réessayer.",
 	"comment.guidance.pdf.limit":
-		"Réduisez la présentation pour que le PDF exporté respecte la limite de 10 Mo.",
+		"Réduisez la présentation pour que le PDF exporté respecte la limite de 50 Mo.",
 	"comment.guidance.pdf.invalid":
 		"La vérification du PDF a échoué. Demandez à un responsable de vérifier l'export avant de réessayer.",
 	"comment.guidance.pdf.sharing":

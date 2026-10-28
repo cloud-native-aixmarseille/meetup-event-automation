@@ -140,6 +140,17 @@ integration guide.
 
 ## Decision history
 
+On 2026-10-28, PDF export moved to Drive's supported long-running download API.
+The [read-only validation](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40727827298)
+downloaded the complete 10,512,371-byte event presentation without changing its
+source. Synchronous export had exceeded its 30-second deadline; an earlier
+preflight had returned `exportSizeLimitExceeded`. The new path polls preparation,
+authenticates the returned Google document URL, and bounds PDF media to 50 MB.
+It partially supersedes the synchronous export limit in the original PDF record
+below. Stable PDF identities, recovery, placement and permission policy remain
+unchanged. Google document redirects cannot forward the service-account token
+to content hosts.
+
 On 2026-10-28, automatic file-level PDF sharing replaced the decision to rely
 solely on manually configured destination-folder sharing. The organizer requested
 that anyone with a PDF link can view it while the containing folder stays
