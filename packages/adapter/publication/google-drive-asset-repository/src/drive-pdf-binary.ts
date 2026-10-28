@@ -20,7 +20,7 @@ export class DrivePdfBinary {
 			content.destroy();
 			throw new PdfExportError("invalid");
 		}
-		const bytes = await this.stream.read(content, 10_000_000);
+		const bytes = await this.stream.read(content, 50_000_000);
 		if (
 			!/^%PDF-\d\.\d\b/.test(bytes.subarray(0, 16).toString("ascii")) ||
 			!/%%EOF\s*$/.test(bytes.subarray(-1024).toString("ascii"))

@@ -5,6 +5,7 @@ import { DrivePdfLookup } from "./drive-pdf-lookup.js";
 import { DrivePdfMetadata } from "./drive-pdf-metadata.js";
 import { DrivePdfStateCodec } from "./drive-pdf-state-codec.js";
 import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
+import type { GoogleDrivePdfDownload } from "./google-drive-pdf-download.js";
 import { GoogleDrivePdfRepository } from "./google-drive-pdf-repository.js";
 import { GoogleDrivePdfSharing } from "./google-drive-pdf-sharing.js";
 import { GoogleDrivePdfSource } from "./google-drive-pdf-source.js";
@@ -16,6 +17,7 @@ export class GoogleDrivePdfComposition {
 		private readonly client: GoogleDriveClient &
 			Pick<drive_v3.Drive, "permissions">,
 		private readonly publicFolderId: string,
+		private readonly download: Pick<GoogleDrivePdfDownload, "export">,
 	) {}
 
 	metadata(): DrivePdfMetadata {
@@ -48,11 +50,9 @@ export class GoogleDrivePdfComposition {
 	}
 	source(): GoogleDrivePdfSource {
 		return new GoogleDrivePdfSource(
-			this.client,
 			this.lookup(),
 			this.metadata(),
-			this.binary(),
-			this.stream(),
+			this.download,
 		);
 	}
 	repository(): GoogleDrivePdfRepository {

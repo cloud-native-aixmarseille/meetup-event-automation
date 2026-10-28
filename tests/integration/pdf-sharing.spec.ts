@@ -7,7 +7,11 @@ import {
 import { PublicationDomainComposition } from "../../packages/domain/publication/src/dependency-composition.js";
 
 function journey(drive: ReturnType<typeof createPdfDrive>) {
-	const adapter = new GoogleDrivePdfComposition(drive.client, "public-folder");
+	const adapter = new GoogleDrivePdfComposition(
+		drive.client,
+		"public-folder",
+		drive.download,
+	);
 	return new PublicationDomainComposition().reconcileSlidePdf(
 		adapter.source(),
 		adapter.repository(),
@@ -60,7 +64,7 @@ describe("PDF file sharing", () => {
 			if (id !== "reserved-pdf")
 				expect(file.metadata.permissions ?? []).toEqual([]);
 		}
-		expect(drive.files.export).toHaveBeenCalledOnce();
+		expect(drive.download.export).toHaveBeenCalledOnce();
 	});
 
 	it.each([false, true])(
@@ -85,7 +89,7 @@ describe("PDF file sharing", () => {
 			expect(failed).toBeInstanceOf(Error);
 			expect(recovered).toMatchObject({ status: "ready", updated: !applied });
 			expect(drive.permissions.create).toHaveBeenCalledTimes(applied ? 1 : 2);
-			expect(drive.files.export).toHaveBeenCalledOnce();
+			expect(drive.download.export).toHaveBeenCalledOnce();
 			expect(drive.files.generateIds).toHaveBeenCalledOnce();
 			expect(
 				[...drive.records.values()].filter(
@@ -126,7 +130,7 @@ describe("PDF file sharing", () => {
 		// Assert
 		expect(result).toMatchObject({ status: "ready", updated: true });
 		expect(drive.permissions.create).toHaveBeenCalledTimes(2);
-		expect(drive.files.export).toHaveBeenCalledOnce();
+		expect(drive.download.export).toHaveBeenCalledOnce();
 		expect(drive.files.generateIds).toHaveBeenCalledOnce();
 	});
 
@@ -150,7 +154,7 @@ describe("PDF file sharing", () => {
 		});
 		expect(denied).not.toHaveProperty("url");
 		expect(recovered.status).toBe("ready");
-		expect(drive.files.export).toHaveBeenCalledOnce();
+		expect(drive.download.export).toHaveBeenCalledOnce();
 		expect(drive.files.generateIds).toHaveBeenCalledOnce();
 	});
 });

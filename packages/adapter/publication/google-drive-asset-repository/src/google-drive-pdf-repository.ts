@@ -44,7 +44,7 @@ export class GoogleDrivePdfRepository implements PdfExportRepository {
 			);
 			const binary = await this.binary.read(
 				response.data,
-				response.headers["content-type"],
+				(response.headers as unknown as Headers).get("content-type"),
 			);
 			const current = await this.lookup.get(file.id);
 			if (
