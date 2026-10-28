@@ -39,7 +39,7 @@ function editor(
 		description: "",
 		date: "2026-10-20",
 	};
-	return `<!doctype html><html lang="en"><body>
+	return `<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body>
 <main id="editor" ${startFromDialog ? 'aria-hidden="true"' : ""}>
 ${coverForm(photoId, hydrationDelay * 2)}
 <input data-testid="event-name-input" value="${hydrationDelay ? "" : escapeHtml(value.title)}">
@@ -67,14 +67,14 @@ ${previewAvailable ? '<button data-testid="event-preview-btn" onclick="save(&quo
 ${startFromDialog ? `<div role="dialog" aria-label="Start from"><button data-testid="event-start-from-scratch-btn" onclick="${announcementCount ? "showAnnouncement(0)" : "document.getElementById('editor').removeAttribute('aria-hidden')"};this.parentElement.remove()">Start from scratch</button></div>` : ""}
 
 <script>
-if (${hydrationDelay}) setTimeout(() => {document.querySelector('[data-testid="event-name-input"]').value=${JSON.stringify(value.title)};},${hydrationDelay});
+if (${hydrationDelay}) setTimeout(() => {document.querySelector('[data-testid="event-name-input"]').value=${JSON.stringify(value.title).replaceAll("<", "\\u003c")};},${hydrationDelay});
 function showAnnouncement(index) {
 const dialog=document.createElement('div'); dialog.setAttribute('role','dialog');
 const close=document.createElement('button'); close.dataset.testid='announcement-close-btn'; close.textContent='Close announcement';
 close.onclick=()=>{dialog.remove(); if(index+1<${announcementCount}) showAnnouncement(index+1); else document.getElementById('editor').removeAttribute('aria-hidden');};
 dialog.append(close); document.body.append(dialog);
 }
-let selectedDate=${JSON.stringify(value.date)}, endDate=${JSON.stringify((value as MeetupPublicationEvent & { endDate?: string }).endDate ?? value.date)}, month=selectedDate.slice(0,7), mode='start';
+let selectedDate=${JSON.stringify(value.date).replaceAll("<", "\\u003c")}, endDate=${JSON.stringify((value as MeetupPublicationEvent & { endDate?: string }).endDate ?? value.date).replaceAll("<", "\\u003c")}, month=selectedDate.slice(0,7), mode='start';
 function openCalendar(next) { mode=next; document.getElementById('calendar').hidden=false; renderCalendar(); }
 function renderCalendar() {
 document.getElementById('calendar').innerHTML='<button aria-label="Go to the Previous Month" onclick="month=\\'2026-10\\';renderCalendar()">Previous</button><button aria-label="Go to the Next Month" onclick="month=\\'2026-11\\';renderCalendar()">Next</button>' +
