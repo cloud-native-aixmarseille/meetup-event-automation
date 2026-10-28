@@ -23,6 +23,27 @@ afterEach(async () => {
 });
 
 describe("Meetup browser event editor", () => {
+	it("rejects changed image bytes before reserving event creation", async () => {
+		// Arrange
+		const state = await editorFixture(context);
+		const editor = state.composition.meetupEventEditor(
+			await context.newPage(),
+			groupUrl,
+		);
+		const reserve = vi.fn();
+		const event = {
+			...desiredEvent,
+			cover: { ...desiredEvent.cover, fingerprint: "f".repeat(64) },
+		};
+		// Act
+		const result = editor.save(event, undefined, reserve, vi.fn());
+		// Assert
+		await expect(result).rejects.toMatchObject({ kind: "content-review" });
+		expect(reserve).not.toHaveBeenCalled();
+		expect(state.uploads).toBe(0);
+		expect(state.writes).toBe(0);
+		expect(state.journal.reserveCover).not.toHaveBeenCalled();
+	});
 	it("waits for saved form values before deciding whether an update is needed", async () => {
 		// Arrange
 		const state = await editorFixture(context, desiredEvent);

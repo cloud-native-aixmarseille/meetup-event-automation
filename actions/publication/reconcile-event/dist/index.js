@@ -72966,18 +72966,20 @@ var MeetupCover = class {
       record?.photoId && record.groupUrl === group.value && record.fingerprint === cover.fingerprint && await this.photo.persisted() === record.photoId
     );
   }
-  async apply(cover, group) {
+  async apply(cover, group, beforeSubmit) {
     const record = await this.journal.readCover();
     if (record && (!record.photoId || record.groupUrl !== group.value))
       throw new ScheduledEventError("uncertain");
     if (record?.fingerprint === cover.fingerprint) {
       if (await this.photo.persisted() !== record.photoId)
         throw new ScheduledEventError("uncertain");
+      await beforeSubmit();
       return;
     }
     const image = await this.images.load(cover.url);
     if (!this.validation.valid(image, cover))
       throw new ScheduledEventError("content-review");
+    await beforeSubmit();
     const pending = { groupUrl: group.value, fingerprint: cover.fingerprint };
     await this.journal.reserveCover(pending);
     try {
@@ -73121,8 +73123,7 @@ var MeetupEventEditor = class {
     });
     if (status !== (existing?.status ?? "draft"))
       throw new ScheduledEventError("editor");
-    await beforeSubmit();
-    await this.collaborators.createCover(this.page).apply(event.cover, this.group);
+    await this.collaborators.createCover(this.page).apply(event.cover, this.group, beforeSubmit);
     const savedUrl = await this.submit(identity, status);
     await onSaved(savedUrl.value);
     const saved = await verification.verify(event, savedUrl).catch(() => void 0);

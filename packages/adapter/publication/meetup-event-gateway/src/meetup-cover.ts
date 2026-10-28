@@ -27,18 +27,25 @@ export class MeetupCover {
 		);
 	}
 
-	async apply(cover: ContentMedia, group: MeetupGroupUrl): Promise<void> {
+	async apply(
+		cover: ContentMedia,
+		group: MeetupGroupUrl,
+		beforeSubmit: () => Promise<void>,
+	): Promise<void> {
 		const record = await this.journal.readCover();
 		if (record && (!record.photoId || record.groupUrl !== group.value))
 			throw new ScheduledEventError("uncertain");
 		if (record?.fingerprint === cover.fingerprint) {
 			if ((await this.photo.persisted()) !== record.photoId)
 				throw new ScheduledEventError("uncertain");
+			await beforeSubmit();
 			return;
 		}
 		const image = await this.images.load(cover.url);
 		if (!this.validation.valid(image, cover))
 			throw new ScheduledEventError("content-review");
+		// Validate first so a rejected image cannot strand an event reservation.
+		await beforeSubmit();
 		const pending = { groupUrl: group.value, fingerprint: cover.fingerprint };
 		await this.journal.reserveCover(pending);
 		try {
