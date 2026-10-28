@@ -10,11 +10,13 @@ import {
 	type EventPublicationGateway,
 	MeetupEventIdentityPolicy,
 	type MeetupGroupUrl,
+	type MeetupPublicationEvent,
 	PublicationDomainComposition,
 	type PublicationJournal,
 	type ScheduledEvent,
 } from "@meetup-automation/publication";
 import { CommunityPublicationRevision } from "./approval/community-publication-revision.js";
+import type { CoverArtworkApprovalGate } from "./assets/cover-artwork-approval-gate.js";
 import { EventPublicationComposition } from "./event-publication-composition.js";
 import { JourneyPolicyComposition } from "./policy-composition.js";
 import type { OrganizerApproval } from "./ports/organizer-approval.js";
@@ -24,6 +26,7 @@ import {
 	type CommunityPublicationSettings,
 } from "./use-cases/community-publication-projection.js";
 import { MeetupPublicationIssueProjection } from "./use-cases/meetup-publication-issue-projection.js";
+import { MeetupPublicationProjection } from "./use-cases/meetup-publication-projection.js";
 import type { ScheduledEventSettings } from "./use-cases/scheduled-event-projection.js";
 
 type DestinationInput<Event extends ScheduledEvent, Settings> = {
@@ -36,7 +39,9 @@ type DestinationInput<Event extends ScheduledEvent, Settings> = {
 
 export class PublicationDestinationComposition {
 	meetup(
-		input: DestinationInput<ScheduledEvent, ScheduledEventSettings>,
+		input: DestinationInput<MeetupPublicationEvent, ScheduledEventSettings> & {
+			artwork: Pick<CoverArtworkApprovalGate, "cover">;
+		},
 		group: MeetupGroupUrl,
 	) {
 		return new EventPublicationComposition().destination(
@@ -46,7 +51,10 @@ export class PublicationDestinationComposition {
 				field: "meetup",
 				label: "Meetup",
 				approvalKind: "meetup-publication",
-				projection: new JourneyPolicyComposition().scheduledEventProjection(),
+				projection: new MeetupPublicationProjection(
+					new JourneyPolicyComposition().scheduledEventProjection(),
+					input.artwork,
+				),
 				policy: new PublicationDomainComposition().scheduledEventPolicy(),
 				identityPolicy: new MeetupEventIdentityPolicy(group),
 				pendingRecovery: "verified-link",

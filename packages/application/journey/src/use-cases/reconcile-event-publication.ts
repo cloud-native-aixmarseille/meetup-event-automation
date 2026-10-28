@@ -50,21 +50,21 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 	async reconcile(
 		source: EventPublicationSource,
 	): Promise<EventPublicationResult> {
-		const event = this.configuration.projection.create(
-			source.event,
-			this.configuration.settings,
-		);
-		if (!event || !this.configuration.policy.valid(event, this.clock.now()))
-			return this.blocked("prerequisites");
 		try {
+			const event = await this.configuration.projection.create(
+				source.event,
+				this.configuration.settings,
+			);
+			if (!event || !this.configuration.policy.valid(event, this.clock.now()))
+				return this.blocked("prerequisites");
 			const remote = await this.resolveIdentity(source);
 			const saved = await this.configuration.gateway.save(
 				event,
 				remote,
 				async () => {
-					await source.ensureCurrent();
+					await this.ensureCurrent(source, event);
 					if (!remote) await this.configuration.journal.reserve();
-					await source.ensureCurrent();
+					await this.ensureCurrent(source, event);
 				},
 				async (identity) => {
 					this.verifyIdentity(identity, remote);
@@ -86,6 +86,23 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 				error instanceof ScheduledEventError ? error.kind : "unavailable",
 			);
 		}
+	}
+
+	private async ensureCurrent(
+		source: EventPublicationSource,
+		expected: Event,
+	): Promise<void> {
+		await source.ensureCurrent();
+		const current = await this.configuration.projection.create(
+			source.event,
+			this.configuration.settings,
+		);
+		if (
+			!current ||
+			this.configuration.revision.content(current) !==
+				this.configuration.revision.content(expected)
+		)
+			throw new ScheduledEventError("content-review");
 	}
 
 	private async resolveIdentity(
@@ -163,7 +180,7 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 		await this.persist(source, saved);
 		if (saved.status === "published")
 			return { status: "updated", diagnostics: [] };
-		await source.ensureCurrent();
+		await this.ensureCurrent(source, event);
 		const decision = await this.approval.request(event, saved.identity);
 		const diagnostics = decision.notificationFailed
 			? this.blocked("approval-notification-failed").diagnostics
@@ -181,11 +198,11 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 			event,
 			saved.identity,
 			async () => {
-				await source.ensureCurrent();
+				await this.ensureCurrent(source, event);
 				if (!this.configuration.policy.valid(event, this.clock.now()))
 					throw new ScheduledEventError("verification");
 				await this.approval.requireApproved(event, saved.identity);
-				await source.ensureCurrent();
+				await this.ensureCurrent(source, event);
 			},
 		);
 		this.verifyIdentity(published.identity, saved.identity);

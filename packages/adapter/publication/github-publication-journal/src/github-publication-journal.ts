@@ -1,5 +1,7 @@
 import {
 	type EventPublicationIdentity,
+	type MeetupCoverJournal,
+	type MeetupCoverRecord,
 	MeetupEventUrl,
 	type PublicationJournal,
 	type PublicationRecord,
@@ -37,7 +39,9 @@ export interface GithubPublicationJournalCollaborators {
 	>;
 }
 
-export class GithubPublicationJournal implements PublicationJournal {
+export class GithubPublicationJournal
+	implements PublicationJournal, MeetupCoverJournal
+{
 	constructor(
 		private readonly collaborators: GithubPublicationJournalCollaborators,
 		private readonly client: JournalClient,
@@ -88,7 +92,13 @@ export class GithubPublicationJournal implements PublicationJournal {
 			throw new Error("Publication journal identity conflict");
 		if (existing?.identity?.reviewUrl === url) return;
 		const comment = await this.find();
-		const body = this.collaborators.publicationCommentCodec.encode({ url });
+		const previous = comment
+			? this.collaborators.publicationCommentCodec.decode(comment.body ?? "")
+			: {};
+		const body = this.collaborators.publicationCommentCodec.encode({
+			...previous,
+			url,
+		});
 		if (comment) {
 			await this.client.rest.issues.updateComment({
 				owner: this.scope.owner,
@@ -97,6 +107,70 @@ export class GithubPublicationJournal implements PublicationJournal {
 				body,
 			});
 		} else await this.client.rest.issues.createComment({ ...this.scope, body });
+	}
+
+	async readCover(): Promise<MeetupCoverRecord | undefined> {
+		const comment = await this.find();
+		return comment
+			? this.collaborators.publicationCommentCodec.decode(comment.body ?? "")
+					.cover
+			: undefined;
+	}
+
+	async reserveCover(
+		record: Omit<MeetupCoverRecord, "photoId">,
+	): Promise<void> {
+		const previous = await this.readCover();
+		if (
+			previous &&
+			(!previous.photoId ||
+				previous.groupUrl !== record.groupUrl ||
+				previous.fingerprint === record.fingerprint)
+		)
+			throw new Error(
+				"Meetup cover upload already reserved or conflicts with its target",
+			);
+		await this.writeCover(record);
+	}
+
+	async recordCover(
+		record: MeetupCoverRecord & { photoId: string },
+	): Promise<void> {
+		const previous = await this.readCover();
+		if (
+			!previous ||
+			previous.groupUrl !== record.groupUrl ||
+			previous.fingerprint !== record.fingerprint ||
+			(previous.photoId !== undefined && previous.photoId !== record.photoId)
+		)
+			throw new Error("Meetup cover upload identity conflict");
+		await this.writeCover(record);
+	}
+
+	private async writeCover(cover: MeetupCoverRecord): Promise<void> {
+		const comment = await this.find();
+		if (!comment)
+			throw new Error("Reserve the event identity before uploading artwork");
+		const previous = this.collaborators.publicationCommentCodec.decode(
+			comment.body ?? "",
+		);
+		await this.client.rest.issues.updateComment({
+			owner: this.scope.owner,
+			repo: this.scope.repo,
+			comment_id: comment.id,
+			body: this.collaborators.publicationCommentCodec.encode({
+				...previous,
+				cover,
+			}),
+		});
+		const persisted = await this.readCover();
+		if (
+			!persisted ||
+			persisted.groupUrl !== cover.groupUrl ||
+			persisted.fingerprint !== cover.fingerprint ||
+			persisted.photoId !== cover.photoId
+		)
+			throw new Error("Meetup cover journal was not persisted");
 	}
 
 	private async find(): Promise<Comment | undefined> {

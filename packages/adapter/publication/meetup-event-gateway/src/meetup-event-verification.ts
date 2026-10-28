@@ -1,6 +1,6 @@
 import type {
 	MeetupEventUrl,
-	ScheduledEvent,
+	MeetupPublicationEvent,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
 import type { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
@@ -8,10 +8,12 @@ import type {
 	MeetupCalendar,
 	MeetupCalendarArguments,
 } from "./meetup-calendar.js";
+import type { MeetupCover } from "./meetup-cover.js";
 import type { MeetupVenue, MeetupVenueArguments } from "./meetup-venue.js";
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventVerificationCollaborators {
+	readonly createCover: (page: Page) => Pick<MeetupCover, "matches">;
 	readonly meetupBrowserRoutes: Pick<
 		MeetupBrowserRoutes,
 		"edit" | "matchesEditor"
@@ -29,7 +31,7 @@ export class MeetupEventVerification {
 	) {}
 
 	async verify(
-		event: ScheduledEvent,
+		event: MeetupPublicationEvent,
 		url: MeetupEventUrl,
 	): Promise<{
 		matches: boolean;
@@ -47,6 +49,7 @@ export class MeetupEventVerification {
 		const status = await this.status();
 		const announcement = this.page.getByTestId("announcement-close-btn");
 		if (await announcement.isVisible()) await announcement.click();
+		await this.ready();
 		const title = await this.page.getByTestId("event-name-input").inputValue();
 		const description = await this.page
 			.getByTestId("event-description-editor")
@@ -62,8 +65,23 @@ export class MeetupEventVerification {
 				.matches(event.venue)) &&
 			(await this.collaborators
 				.createMeetupCalendar(this.page)
-				.matches(event.date, event.startTime, event.endTime));
+				.matches(event.date, event.startTime, event.endTime)) &&
+			(await this.collaborators
+				.createCover(this.page)
+				.matches(event.cover, url.group));
 		return { matches, status };
+	}
+
+	async ready(): Promise<void> {
+		// The saved editor renders enabled, empty controls before loading event data.
+		// Persisted Meetup events require a title; visibility alone is not readiness.
+		await this.page.waitForFunction(() =>
+			Boolean(
+				document
+					.querySelector<HTMLInputElement>('[data-testid="event-name-input"]')
+					?.value.trim(),
+			),
+		);
 	}
 
 	async status(): Promise<SavedMeetupEvent["status"]> {

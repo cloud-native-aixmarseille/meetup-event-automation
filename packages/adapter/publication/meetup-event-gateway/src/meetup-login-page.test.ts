@@ -1,7 +1,7 @@
 import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import type { Page } from "playwright-core";
 import { describe, expect, it, vi } from "vitest";
-import { MeetupEventGatewayComposition } from "./dependency-composition.js";
+import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 import { MeetupLoginPage } from "./meetup-login-page.js";
 
 function fixture() {
@@ -53,9 +53,7 @@ function fixture() {
 	return {
 		login: new MeetupLoginPage(
 			{
-				meetupBrowserRoutes: new MeetupEventGatewayComposition(
-					"en",
-				).meetupBrowserRoutes(),
+				meetupBrowserRoutes: new MeetupBrowserRoutes(),
 			},
 			page,
 			solver,

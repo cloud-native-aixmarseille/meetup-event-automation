@@ -84,7 +84,7 @@ export const FR_MESSAGES = {
 	"diagnostic.publication.content.description-review":
 		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
 	"diagnostic.publication.meetup.content-review":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Validez le titre, la description et l'illustration de couverture actuels dans la revue de contenu. Remplacez une illustration invalide ou modifiée avant de synchroniser ; un contenu modifié nécessite une nouvelle validation.",
 	"diagnostic.communication.content-review":
 		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
 
@@ -125,7 +125,7 @@ export const FR_MESSAGES = {
 	"diagnostic.publication.meetup.conflict":
 		"Le lien de l'issue diffère de l'événement enregistré. Rétablissez le lien enregistré avant de relancer.",
 	"diagnostic.publication.meetup.uncertain":
-		"Synchronisation interrompue. Vérifiez Meetup et inscrivez le lien vérifié du brouillon ou de l'événement publié dans Meetup Link avant de relancer. Laissez Meetup event published décoché tant que la publication n'est pas confirmée. Ne supprimez le journal qu'après avoir vérifié qu'aucun événement n'a été créé.",
+		"Synchronisation interrompue. Vérifiez l'événement et la photothèque avant de relancer. Rétablissez l'URL vérifiée dans Meetup Link et récupérez toute photo de couverture en attente ou détachée dans le journal de confiance. Laissez Meetup event published décoché tant que la publication n'est pas confirmée. Préservez les identifiants de l'événement et de la photo ; ne supprimez un état incertain qu'après avoir vérifié ce que Meetup a accepté.",
 	"diagnostic.publication.meetup.authentication":
 		"Connexion organisateur non vérifiée. Vérifiez le compte, les identifiants et la configuration IA ; terminez manuellement toute vérification non prise en charge.",
 	"diagnostic.publication.meetup.editor":

@@ -1,7 +1,7 @@
 import {
 	MeetupEventUrl,
 	MeetupGroupUrl,
-	type ScheduledEvent,
+	type MeetupPublicationEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
@@ -10,6 +10,7 @@ import type {
 	MeetupCalendar,
 	MeetupCalendarArguments,
 } from "./meetup-calendar.js";
+import type { MeetupCover } from "./meetup-cover.js";
 import type {
 	MeetupEventVerification,
 	MeetupEventVerificationArguments,
@@ -18,6 +19,7 @@ import type { MeetupVenue, MeetupVenueArguments } from "./meetup-venue.js";
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventEditorCollaborators {
+	readonly createCover: (page: Page) => Pick<MeetupCover, "apply">;
 	readonly meetupBrowserRoutes: Pick<
 		MeetupBrowserRoutes,
 		"eventLocation" | "edit" | "schedule" | "matchesEditor"
@@ -69,7 +71,7 @@ export class MeetupEventEditor {
 	}
 
 	async save(
-		event: ScheduledEvent,
+		event: MeetupPublicationEvent,
 		url: string | undefined,
 		beforeSubmit: () => Promise<void>,
 		onSaved: (url: string) => Promise<void>,
@@ -95,6 +97,9 @@ export class MeetupEventEditor {
 			throw new ScheduledEventError("editor");
 		// Keep concurrency and durable-reservation failures separate from browser errors.
 		await beforeSubmit();
+		await this.collaborators
+			.createCover(this.page)
+			.apply(event.cover, this.group);
 		const savedUrl = await this.submit(identity, status);
 		await onSaved(savedUrl.value);
 		const saved = await verification
@@ -141,7 +146,7 @@ export class MeetupEventEditor {
 	}
 
 	private async prepare(
-		event: ScheduledEvent,
+		event: MeetupPublicationEvent,
 		url: MeetupEventUrl | undefined,
 	): Promise<SavedMeetupEvent["status"]> {
 		const editorUrl = url
@@ -155,9 +160,11 @@ export class MeetupEventEditor {
 			)
 		)
 			throw new Error("The organizer editor is unavailable");
-		const status = await this.collaborators
-			.createMeetupEventVerification(this.page)
-			.status();
+		const verification = this.collaborators.createMeetupEventVerification(
+			this.page,
+		);
+		const status = await verification.status();
+		if (url) await verification.ready();
 		const announcement = this.page.getByTestId("announcement-close-btn");
 		if (await announcement.isVisible()) await announcement.click();
 		if (!url) await this.startNewDraft();

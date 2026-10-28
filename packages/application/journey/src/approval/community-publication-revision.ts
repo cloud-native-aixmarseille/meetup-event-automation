@@ -20,29 +20,37 @@ export class CommunityPublicationRevision {
 				id: identity.id,
 				reviewUrl: identity.reviewUrl,
 				publicUrl: identity.publicUrl,
-				title: event.title,
-				description: event.description,
-				date: event.date,
-				startTime: event.startTime,
-				endTime: event.endTime,
-				timeZone: event.timeZone,
-				categoryId: event.categoryId,
-				venue: {
-					name: event.venue.name,
-					address: event.venue.address,
-					city: event.venue.city,
-					zipCode: event.venue.zipCode,
-					state: event.venue.state,
-					country: event.venue.country,
-					countryCode: event.venue.countryCode,
-				},
-				registration: {
-					capacity: event.registration.capacity,
-					waitlist: event.registration.waitlist,
-					approvalRequired: event.registration.approvalRequired,
-					reminder: event.registration.reminder,
-				},
+				...this.fields(event),
 			}),
 		);
+	}
+	content(event: CommunityEvent): string {
+		return this.fingerprint.of(JSON.stringify(this.fields(event)));
+	}
+	private fields(event: CommunityEvent) {
+		return {
+			title: event.title,
+			description: event.description,
+			date: event.date,
+			startTime: event.startTime,
+			endTime: event.endTime,
+			timeZone: event.timeZone,
+			categoryId: event.categoryId,
+			venue: {
+				name: event.venue.name,
+				address: event.venue.address,
+				city: event.venue.city,
+				zipCode: event.venue.zipCode,
+				state: event.venue.state,
+				country: event.venue.country,
+				countryCode: event.venue.countryCode,
+			},
+			registration: {
+				capacity: event.registration.capacity,
+				waitlist: event.registration.waitlist,
+				approvalRequired: event.registration.approvalRequired,
+				reminder: event.registration.reminder,
+			},
+		};
 	}
 }

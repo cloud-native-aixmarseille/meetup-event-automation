@@ -81,7 +81,7 @@ export const EN_MESSAGES = {
 	"diagnostic.publication.content.description-review":
 		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
 	"diagnostic.publication.meetup.content-review":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Approve the current title, description, and cover artwork through content review. Replace invalid or changed artwork before synchronizing; changed content needs fresh approval.",
 	"diagnostic.communication.content-review":
 		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
 
@@ -119,7 +119,7 @@ export const EN_MESSAGES = {
 	"diagnostic.publication.meetup.conflict":
 		"The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
 	"diagnostic.publication.meetup.uncertain":
-		"Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
+		"Synchronization was interrupted. Check the event and cover photo library before retrying. Restore the verified event URL in Meetup Link and recover any pending or detached cover photo in the trusted journal. Leave Meetup event published unchecked until publication is confirmed. Preserve event and photo identities; clear uncertain state only after checking what Meetup accepted.",
 	"diagnostic.publication.meetup.authentication":
 		"Organizer login could not be verified. Check the account, credentials, and AI configuration; complete any unsupported challenge interactively.",
 	"diagnostic.publication.meetup.editor":

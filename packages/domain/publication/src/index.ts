@@ -1,3 +1,4 @@
+export type { AttendeeSlidesGateway } from "./application/attendee-slides-gateway.js";
 export type {
 	CommunityEvent,
 	CommunityRegistration,
@@ -18,6 +19,7 @@ export type {
 	FeedbackTalkResult,
 	FeedbackTalkResultsGateway,
 } from "./application/feedback-talk-results.js";
+export type * from "./application/meetup-cover-ports.js";
 export type * from "./application/pdf-export-ports.js";
 export type {
 	AssetContainer,
@@ -87,4 +89,3 @@ export {
 export { ScheduledEventError } from "./domain/scheduled-event-error.js";
 export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 export type { PublicationUrlPolicy } from "./domain/url-policy-contracts.js";
-export type { AttendeeSlidesGateway } from "./application/attendee-slides-gateway.js";

@@ -6,7 +6,6 @@ import {
 	eventUrl,
 	groupUrl,
 } from "../testing/editor-fixture.js";
-import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { MeetupEventPublisher } from "./meetup-event-publisher.js";
 
 let browser: Browser;
@@ -29,13 +28,9 @@ describe("approved Meetup publication", () => {
 		const state = await editorFixture(context, desiredEvent);
 		const publisher = new MeetupEventPublisher(
 			{
-				meetupBrowserRoutes: new MeetupEventGatewayComposition(
-					"en",
-				).meetupBrowserRoutes(),
+				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition("en").meetupEventVerification(
-						...args,
-					),
+					state.composition.meetupEventVerification(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -59,13 +54,9 @@ describe("approved Meetup publication", () => {
 		const state = await editorFixture(context, desiredEvent);
 		const publisher = new MeetupEventPublisher(
 			{
-				meetupBrowserRoutes: new MeetupEventGatewayComposition(
-					"en",
-				).meetupBrowserRoutes(),
+				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition("en").meetupEventVerification(
-						...args,
-					),
+					state.composition.meetupEventVerification(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -87,13 +78,9 @@ describe("approved Meetup publication", () => {
 		});
 		const publisher = new MeetupEventPublisher(
 			{
-				meetupBrowserRoutes: new MeetupEventGatewayComposition(
-					"en",
-				).meetupBrowserRoutes(),
+				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition("en").meetupEventVerification(
-						...args,
-					),
+					state.composition.meetupEventVerification(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -114,13 +101,9 @@ describe("approved Meetup publication", () => {
 		state.corruptSaved = { title: "Unexpected saved title" };
 		const publisher = new MeetupEventPublisher(
 			{
-				meetupBrowserRoutes: new MeetupEventGatewayComposition(
-					"en",
-				).meetupBrowserRoutes(),
+				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
 				createMeetupEventVerification: (...args) =>
-					new MeetupEventGatewayComposition("en").meetupEventVerification(
-						...args,
-					),
+					state.composition.meetupEventVerification(...args),
 			},
 			await context.newPage(),
 			groupUrl,
@@ -141,16 +124,13 @@ describe("approved Meetup publication", () => {
 		"rejects identities outside the canonical approval contract: %s",
 		async (url) => {
 			// Arrange
+			const state = await editorFixture(context, desiredEvent);
 			const page = await context.newPage();
 			const publisher = new MeetupEventPublisher(
 				{
-					meetupBrowserRoutes: new MeetupEventGatewayComposition(
-						"en",
-					).meetupBrowserRoutes(),
+					meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
 					createMeetupEventVerification: (...args) =>
-						new MeetupEventGatewayComposition("en").meetupEventVerification(
-							...args,
-						),
+						state.composition.meetupEventVerification(...args),
 				},
 				page,
 				groupUrl,

@@ -1,11 +1,13 @@
 import {
+	type MeetupPublicationEvent,
 	PublicationDomainComposition,
-	type ScheduledEvent,
 } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
+import { publicationCover } from "../../testing/meetup-publication.fixtures.js";
 import { MeetupPublicationRevision } from "./meetup-publication-revision.js";
 
-const event: ScheduledEvent = {
+const event: MeetupPublicationEvent = {
+	cover: publicationCover,
 	title: "Cloud Native Evening",
 	description: "Public agenda",
 	date: "2099-06-08",
@@ -23,7 +25,7 @@ describe("reviewed publication revision", () => {
 		const expected = new PublicationDomainComposition()
 			.contentFingerprint()
 			.of(
-				'{"url":"https://www.meetup.com/example/events/123/","event":{"title":"Cloud Native Evening","description":"Public agenda","date":"2099-06-08","startTime":"18:30","endTime":"20:30","timeZone":"Europe/Paris","venue":{"name":"Example Venue","city":"Marseille"}}}',
+				'{"url":"https://www.meetup.com/example/events/123/","event":{"title":"Cloud Native Evening","description":"Public agenda","date":"2099-06-08","startTime":"18:30","endTime":"20:30","timeZone":"Europe/Paris","venue":{"name":"Example Venue","city":"Marseille"},"cover":{"id":"approved-cover","fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","sourceRevision":"reviewed-source"}}}',
 			);
 
 		// Act
@@ -39,6 +41,7 @@ describe("reviewed publication revision", () => {
 	it("ignores caller property order and unrelated extra properties", () => {
 		// Arrange
 		const reordered = {
+			cover: { ...event.cover },
 			venue: {
 				city: event.venue.city,
 				name: event.venue.name,
