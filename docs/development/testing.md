@@ -176,6 +176,8 @@ A live organizer publication run is separate from these synthetic tests.
 
 Install Chromium with `pnpm exec playwright-core install chromium` before running
 the TypeScript test suite. CI uses `playwright-core install --with-deps chromium`
-to install browser system dependencies as well. The editor tests run real
+to install browser system dependencies, including Xvfb, as well. Browser-process
+tests use `xvfb-run` to verify fresh profiles, cleanup, secret isolation, and
+timezone persistence across navigation and another CDP connection. The editor tests run real
 Chromium against intercepted synthetic pages; every request is fulfilled locally.
 No organizer credentials, Gemini requests, or live Meetup writes are used.

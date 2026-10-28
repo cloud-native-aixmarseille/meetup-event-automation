@@ -8,8 +8,9 @@ import {
 	type SavedEventPublication,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
-import type { BrowserType, Page } from "playwright-core";
+import type { Page } from "playwright-core";
 import type { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
+import type { MeetupBrowserSession } from "./meetup-browser-session.js";
 import type {
 	MeetupEventEditor,
 	MeetupEventEditorArguments,
@@ -25,6 +26,10 @@ import type {
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventGatewayCollaborators {
+	readonly createBrowserSession: () => Pick<
+		MeetupBrowserSession,
+		"open" | "close"
+	>;
 	readonly createAttendeeMessage: (
 		page: Page,
 		group: MeetupGroupUrl,
@@ -47,9 +52,11 @@ export class MeetupEventGateway
 
 	constructor(
 		private readonly collaborators: MeetupEventGatewayCollaborators,
-		private readonly browserType: Pick<BrowserType, "launch">,
 		private readonly credentials: { email: string; password: string },
-		private readonly createCaptchaResolver: (page: Page) => CaptchaResolver,
+		private readonly createCaptchaResolver: (
+			page: Page,
+			endpoint: string,
+		) => CaptchaResolver,
 		groupUrl: string,
 	) {
 		const group = MeetupGroupUrl.parse(groupUrl);
@@ -135,29 +142,15 @@ export class MeetupEventGateway
 	): Promise<Result> {
 		if (!this.credentials.email.trim() || !this.credentials.password)
 			throw new ScheduledEventError("authentication");
-		const browser = await this.browserType
-			.launch({
-				headless: true,
-				args: [
-					"--enable-automation",
-					"--remote-debugging-address=127.0.0.1",
-					"--remote-debugging-port=0",
-				],
-			})
-			.catch(() => {
+		const session = this.collaborators.createBrowserSession();
+		try {
+			const { page, endpoint } = await session.open(timezoneId).catch(() => {
 				throw new ScheduledEventError("unavailable");
 			});
-		try {
-			const context = await browser.newContext({
-				locale: "en-US",
-				timezoneId,
-				viewport: { width: 1440, height: 1000 },
-			});
-			const page = await context.newPage();
 			const status = await this.collaborators
 				.createMeetupLoginPage(
 					page,
-					this.createCaptchaResolver(page),
+					this.createCaptchaResolver(page, endpoint),
 					this.group.origin,
 				)
 				.login(this.credentials.email, this.credentials.password)
@@ -171,7 +164,7 @@ export class MeetupEventGateway
 			return await operation(page);
 		} finally {
 			// Do not let cleanup replace a publication result or its recovery state.
-			await browser.close().catch(() => undefined);
+			await session.close().catch(() => undefined);
 		}
 	}
 }

@@ -100,8 +100,8 @@ Mask the bundle and its decoded values before validation. Bind credentials and
 provider selection in `PublicationAdapterComposition`; the application receives
 owned ports. A small `publication/prepare-runtime` action derives whether the
 workflow needs Python and the challenge solver from the same configuration.
-The workflow installs Chromium once and forwards credentials only to the
-reconciliation action. OCGroups-only callers need no AI configuration.
+The workflow installs Chromium and adds Google Chrome for Meetup. It forwards
+credentials only to the reconciliation action. OCGroups-only callers need no AI configuration.
 
 ### Draft, approval, and publication
 
@@ -272,6 +272,27 @@ selected and its crop confirmed. Blindly selecting it again after an interrupted
 save could create duplicates. Stop on pending or detached photo identities and
 require recovery. Normal saved-event reruns reuse the confirmed attached photo.
 
+### 2026-10-28: start Meetup Chrome independently of Playwright
+
+Replace the Meetup adapter's Playwright-managed headless Chromium launch with
+stock Google Chrome in a private Xvfb display. Attach over a loopback-only CDP
+endpoint, preserving browser defaults. Two fresh hosted checks authenticated
+without human intervention; a stock Chrome comparison using Playwright's normal
+launch still received `invalid_captcha_error`. This supports changing browser
+startup; it does not isolate one launch flag as the cause.
+
+The Meetup adapter owns process, display, profile, and page lifetimes. It passes
+the session endpoint into the existing CAPTCHA resolver through runtime
+composition. The resolver keeps its single-attempt and pre-credential boundary.
+The browser subprocess receives only its required environment, excluding account
+and AI credentials. Stop its process group and delete its private workspace on
+both successful use and failed startup. Sessions are never reused across actions.
+
+Set the event timezone in the browser process environment. A detached CDP
+emulation override did not survive navigation in the diagnostic. Regression
+coverage verifies navigation, a second CDP connection, and fresh cookie state.
+OCGroups retains its existing browser runtime. No public inputs or secrets change.
+
 ## Supporting evidence
 
 Source review on 2026-10-23: OCG revision
@@ -305,6 +326,10 @@ were submitted. It does not isolate the hosted runner's network as the cause.
 Neither authentication check changed an event. The temporary runner unregistered
 after its one job, and its local credentials and workspace were removed.
 
-Unattended authentication remains unverified. Preserve the fresh-session and
-credential-isolation policy; interactive verification in another browser cannot
-make a subsequent workflow authenticated.
+Those initial checks did not establish unattended authentication. Later
+[stock Chrome](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40717660387)
+and [repeated fresh-session](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40719011109)
+checks verified the account and organizer editor without event writes. The
+[managed Chrome comparison](https://github.com/cloud-native-aixmarseille/meetups/actions/runs/40718248691)
+still rejected the CAPTCHA token. These diagnostics motivated the browser
+startup decision above; production-runtime validation is recorded separately.

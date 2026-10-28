@@ -3,12 +3,11 @@ import type {
 	CaptchaStatus,
 } from "@meetup-automation/browser-authentication";
 import type { Page } from "playwright-core";
-import type { HcaptchaChallenge } from "./hcaptcha-challenge.js";
 
 /** Owns hCaptcha detection and response verification for one browser page. */
 export class HcaptchaCaptchaResolver implements CaptchaResolver {
 	constructor(
-		private readonly challenge: Pick<HcaptchaChallenge, "solve">,
+		private readonly challenge: { solve(page: Page): Promise<boolean> },
 		private readonly page: Page,
 	) {}
 

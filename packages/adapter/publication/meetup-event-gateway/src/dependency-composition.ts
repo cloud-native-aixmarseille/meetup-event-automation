@@ -1,16 +1,19 @@
+import { spawn } from "node:child_process";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import type {
 	ContentImageLoader,
 	MeetupCoverJournal,
 } from "@meetup-automation/publication";
-import type { Page } from "playwright-core";
+import { chromium, type Page } from "playwright-core";
 import { AttendeeMessages } from "./i18n/attendee-messages.js";
 import { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
 import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import { MeetupBrowserSession } from "./meetup-browser-session.js";
 import {
 	MeetupCalendar,
 	type MeetupCalendarArguments,
 } from "./meetup-calendar.js";
+import { MeetupChromeProcess } from "./meetup-chrome-process.js";
 import { MeetupCover } from "./meetup-cover.js";
 import { MeetupCoverImage } from "./meetup-cover-image.js";
 import { MeetupCoverPhoto } from "./meetup-cover-photo.js";
@@ -43,6 +46,12 @@ export class MeetupEventGatewayComposition {
 		private readonly images: ContentImageLoader,
 		private readonly covers: MeetupCoverJournal,
 	) {}
+	meetupBrowserSession(): MeetupBrowserSession {
+		return new MeetupBrowserSession(
+			chromium,
+			new MeetupChromeProcess(spawn, "google-chrome"),
+		);
+	}
 	meetupCover(page: Page): MeetupCover {
 		return new MeetupCover(
 			this.images,
@@ -73,6 +82,7 @@ export class MeetupEventGatewayComposition {
 	meetupEventGateway(...args: MeetupEventGatewayArguments): MeetupEventGateway {
 		return new MeetupEventGateway(
 			{
+				createBrowserSession: () => this.meetupBrowserSession(),
 				createAttendeeMessage: (page, group) =>
 					new MeetupAttendeeMessage(
 						new AttendeeMessages(

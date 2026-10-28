@@ -3112,9 +3112,9 @@ var require_timers = __commonJS({
        * before the specified function or code is executed.
        * @param {*} arg
        */
-      constructor(callback, delay, arg) {
+      constructor(callback, delay2, arg) {
         this._onTimeout = callback;
-        this._idleTimeout = delay;
+        this._idleTimeout = delay2;
         this._timerArg = arg;
         this.refresh();
       }
@@ -3159,8 +3159,8 @@ var require_timers = __commonJS({
        * when the timer expires.
        * @returns {NodeJS.Timeout|FastTimer}
        */
-      setTimeout(callback, delay, arg) {
-        return delay <= RESOLUTION_MS ? setTimeout(callback, delay, arg) : new FastTimer(callback, delay, arg);
+      setTimeout(callback, delay2, arg) {
+        return delay2 <= RESOLUTION_MS ? setTimeout(callback, delay2, arg) : new FastTimer(callback, delay2, arg);
       },
       /**
        * The clearTimeout method cancels an instantiated Timer previously created
@@ -3186,8 +3186,8 @@ var require_timers = __commonJS({
        * when the timer expires.
        * @returns {FastTimer}
        */
-      setFastTimeout(callback, delay, arg) {
-        return new FastTimer(callback, delay, arg);
+      setFastTimeout(callback, delay2, arg) {
+        return new FastTimer(callback, delay2, arg);
       },
       /**
        * The clearTimeout method cancels an instantiated FastTimer previously
@@ -3213,8 +3213,8 @@ var require_timers = __commonJS({
        * @deprecated
        * @param {number} [delay=0] The delay in milliseconds to add to the now value.
        */
-      tick(delay = 0) {
-        fastNow += delay - RESOLUTION_MS + 1;
+      tick(delay2 = 0) {
+        fastNow += delay2 - RESOLUTION_MS + 1;
         onTick();
         onTick();
       },
@@ -6613,21 +6613,21 @@ var require_client_h1 = __commonJS({
         this.connection = "";
         this.maxResponseSize = client[kMaxResponseSize];
       }
-      setTimeout(delay, type) {
-        if (delay !== this.timeoutValue || type & USE_FAST_TIMER ^ this.timeoutType & USE_FAST_TIMER) {
+      setTimeout(delay2, type) {
+        if (delay2 !== this.timeoutValue || type & USE_FAST_TIMER ^ this.timeoutType & USE_FAST_TIMER) {
           if (this.timeout) {
             timers.clearTimeout(this.timeout);
             this.timeout = null;
           }
-          if (delay) {
+          if (delay2) {
             if (type & USE_FAST_TIMER) {
-              this.timeout = timers.setFastTimeout(onParserTimeout, delay, new WeakRef(this));
+              this.timeout = timers.setFastTimeout(onParserTimeout, delay2, new WeakRef(this));
             } else {
-              this.timeout = setTimeout(onParserTimeout, delay, new WeakRef(this));
+              this.timeout = setTimeout(onParserTimeout, delay2, new WeakRef(this));
               this.timeout.unref();
             }
           }
-          this.timeoutValue = delay;
+          this.timeoutValue = delay2;
         } else if (this.timeout) {
           if (this.timeout.refresh) {
             this.timeout.refresh();
@@ -11580,7 +11580,7 @@ var require_mock_utils = __commonJS({
       if (mockDispatch2.data.callback) {
         mockDispatch2.data = { ...mockDispatch2.data, ...mockDispatch2.data.callback(opts) };
       }
-      const { data: { statusCode, data, headers, trailers, error: error2 }, delay, persist } = mockDispatch2;
+      const { data: { statusCode, data, headers, trailers, error: error2 }, delay: delay2, persist } = mockDispatch2;
       const { timesInvoked, times } = mockDispatch2;
       mockDispatch2.consumed = !persist && timesInvoked >= times;
       mockDispatch2.pending = timesInvoked < times;
@@ -11589,10 +11589,10 @@ var require_mock_utils = __commonJS({
         handler2.onError(error2);
         return true;
       }
-      if (typeof delay === "number" && delay > 0) {
+      if (typeof delay2 === "number" && delay2 > 0) {
         setTimeout(() => {
           handleReply(this[kDispatches]);
-        }, delay);
+        }, delay2);
       } else {
         handleReply(this[kDispatches]);
       }
@@ -19021,7 +19021,7 @@ var require_util8 = __commonJS({
       }
       return true;
     }
-    function delay(ms2) {
+    function delay2(ms2) {
       return new Promise((resolve4) => {
         setTimeout(resolve4, ms2).unref();
       });
@@ -19029,7 +19029,7 @@ var require_util8 = __commonJS({
     module.exports = {
       isValidLastEventId,
       isASCIINumber,
-      delay
+      delay: delay2
     };
   }
 });
@@ -19451,7 +19451,7 @@ var require_eventsource = __commonJS({
     var { parseMIMEType } = require_data_url();
     var { createFastMessageEvent } = require_events();
     var { isNetworkError } = require_response();
-    var { delay } = require_util8();
+    var { delay: delay2 } = require_util8();
     var { kEnumerableProperty } = require_util();
     var { environmentSettingsObject } = require_util2();
     var { getGlobalDispatcher } = require_global2();
@@ -19624,7 +19624,7 @@ var require_eventsource = __commonJS({
         if (this.#readyState === CLOSED) return;
         this.#readyState = CONNECTING;
         this.dispatchEvent(new Event("error"));
-        await delay(this.#state.reconnectionTime);
+        await delay2(this.#state.reconnectionTime);
         if (this.#readyState !== CONNECTING) return;
         if (this.#state.lastEventId.length) {
           this.#request.headersList.set("last-event-id", this.#state.lastEventId, true);
@@ -37276,8 +37276,8 @@ var ReconcileAttention = class {
       this.collaborators.attentionEpisodes.acknowledge(state, now2);
     } else if (result.outcome === "retry") {
       state.post.status = "retry";
-      const delay = Math.max(300, result.retryAfterSeconds ?? 300);
-      state.post.retryAt = new Date(now2.getTime() + delay * 1e3).toISOString();
+      const delay2 = Math.max(300, result.retryAfterSeconds ?? 300);
+      state.post.retryAt = new Date(now2.getTime() + delay2 * 1e3).toISOString();
     }
     await this.repository.save(state);
     return {
@@ -71356,26 +71356,6 @@ var GithubPublicationJournalComposition = class {
   }
 };
 
-// packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/chromium-endpoint.ts
-import { readFile as readFile7 } from "node:fs/promises";
-import { join as join5 } from "node:path";
-var ChromiumEndpoint = class {
-  async read(browser) {
-    const session = await browser.newBrowserCDPSession();
-    try {
-      const command = await session.send("Browser.getBrowserCommandLine");
-      const profile = command.arguments.find((argument) => argument.startsWith("--user-data-dir="))?.slice("--user-data-dir=".length);
-      if (!profile) throw new Error("Browser profile unavailable.");
-      const [port, path] = (await readFile7(join5(profile, "DevToolsActivePort"), "utf8")).trim().split("\n");
-      if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535 || !/^\/devtools\/browser\/[a-f0-9-]+$/.test(path))
-        throw new Error("Browser endpoint unavailable.");
-      return `ws://127.0.0.1:${port}${path}`;
-    } finally {
-      await session.detach();
-    }
-  }
-};
-
 // packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-captcha-resolver.ts
 var HcaptchaCaptchaResolver = class {
   constructor(challenge, page) {
@@ -71413,26 +71393,21 @@ var HcaptchaCaptchaResolver = class {
 
 // packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-challenge.ts
 var HcaptchaChallenge = class {
-  constructor(collaborators, process2, apiKey, model) {
-    this.collaborators = collaborators;
+  constructor(process2, apiKey, model) {
     this.process = process2;
     this.apiKey = apiKey;
     this.model = model;
     if (!apiKey.trim() || !model.trim())
       throw new Error("Gemini credentials and model are required.");
   }
-  collaborators;
   process;
   apiKey;
   model;
   attempted = false;
-  async solve(page) {
+  async solve(page, endpoint2) {
     if (this.attempted) return false;
     this.attempted = true;
     const targetUrl = page.url();
-    const browser = page.context().browser();
-    if (!browser) throw new Error("Browser unavailable.");
-    const endpoint2 = await this.collaborators.chromiumEndpoint.read(browser);
     const result = await this.process.run({
       endpoint: endpoint2,
       targetUrl,
@@ -71463,7 +71438,7 @@ var HcaptchaChallengeFactory = class {
 // packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/hcaptcha-process.ts
 import { mkdtemp, rm as rm2 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join as join6 } from "node:path";
+import { join as join5 } from "node:path";
 var HcaptchaProcess = class {
   constructor(directory, launch) {
     this.directory = directory;
@@ -71472,7 +71447,7 @@ var HcaptchaProcess = class {
   directory;
   launch;
   async run(request3) {
-    const scratch = await mkdtemp(join6(tmpdir(), "hcaptcha-"));
+    const scratch = await mkdtemp(join5(tmpdir(), "hcaptcha-"));
     try {
       return await this.execute(scratch, request3);
     } catch {
@@ -71484,8 +71459,8 @@ var HcaptchaProcess = class {
   execute(scratch, request3) {
     return new Promise((resolve4) => {
       const child = this.launch(
-        join6(this.directory, ".venv/bin/python"),
-        [join6(this.directory, "solve.py")],
+        join5(this.directory, ".venv/bin/python"),
+        [join5(this.directory, "solve.py")],
         {
           cwd: scratch,
           detached: true,
@@ -71494,7 +71469,7 @@ var HcaptchaProcess = class {
             PATH: process.env.PATH,
             LANG: "C.UTF-8",
             TMPDIR: scratch,
-            MPLCONFIGDIR: join6(scratch, "matplotlib"),
+            MPLCONFIGDIR: join5(scratch, "matplotlib"),
             DEBUG: "",
             PWDEBUG: ""
           }
@@ -71559,16 +71534,13 @@ var HcaptchaCaptchaResolverComposition = class {
       apiKey,
       model
     );
-    return (page) => new HcaptchaCaptchaResolver(challenge, page);
-  }
-  chromiumEndpoint() {
-    return new ChromiumEndpoint();
+    return (page, endpoint2) => new HcaptchaCaptchaResolver(
+      { solve: (page2) => challenge.solve(page2, endpoint2) },
+      page
+    );
   }
   hcaptchaChallenge(...args) {
-    return new HcaptchaChallenge(
-      { chromiumEndpoint: this.chromiumEndpoint() },
-      ...args
-    );
+    return new HcaptchaChallenge(...args);
   }
   hcaptchaChallengeFactory() {
     return new HcaptchaChallengeFactory({
@@ -72783,6 +72755,10 @@ var HttpsAssetImageRepositoryComposition = class {
   }
 };
 
+// packages/adapter/publication/meetup-event-gateway/src/dependency-composition.ts
+import { spawn as spawn2 } from "node:child_process";
+import { chromium } from "playwright-core";
+
 // packages/adapter/publication/meetup-event-gateway/src/i18n/messages.en.ts
 var EN_MESSAGES8 = {
   "slides.subject": "Meetup presentation",
@@ -72886,6 +72862,41 @@ var MeetupBrowserRoutes = class {
   }
 };
 
+// packages/adapter/publication/meetup-event-gateway/src/meetup-browser-session.ts
+var MeetupBrowserSession = class {
+  constructor(browserType, process2) {
+    this.browserType = browserType;
+    this.process = process2;
+  }
+  browserType;
+  process;
+  browser;
+  async open(timezoneId) {
+    try {
+      const endpoint2 = await this.process.start(timezoneId);
+      this.browser = await this.browserType.connectOverCDP(endpoint2, {
+        noDefaults: true,
+        timeout: 15e3
+      });
+      const pages = this.browser.contexts().flatMap((context3) => context3.pages());
+      if (pages.length !== 1) throw new Error("Unexpected browser pages.");
+      const page = pages[0];
+      await page.setViewportSize({ width: 1440, height: 1e3 });
+      return { page, endpoint: endpoint2 };
+    } catch {
+      await this.close();
+      throw new Error("Browser session unavailable.");
+    }
+  }
+  async close() {
+    try {
+      await this.browser?.close();
+    } finally {
+      await this.process.close();
+    }
+  }
+};
+
 // packages/adapter/publication/meetup-event-gateway/src/meetup-calendar.ts
 var MeetupCalendar = class {
   constructor(page) {
@@ -72945,6 +72956,130 @@ var MeetupCalendar = class {
       await this.page.locator("#duration").getByRole("button").click();
       await this.page.getByRole("menuitem", { name: "Set an end time...", exact: true }).click();
     }
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-chrome-process.ts
+import { mkdtemp as mkdtemp2, rm as rm3 } from "node:fs/promises";
+import { createServer } from "node:net";
+import { tmpdir as tmpdir2 } from "node:os";
+import { join as join6 } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
+var MeetupChromeProcess = class {
+  constructor(launch, executable) {
+    this.launch = launch;
+    this.executable = executable;
+  }
+  launch;
+  executable;
+  directory = "";
+  child;
+  exited = Promise.resolve();
+  async start(timezoneId) {
+    if (this.directory) throw new Error("Browser session already started.");
+    this.directory = await mkdtemp2(join6(tmpdir2(), "meetup-chrome-"));
+    try {
+      const port = await this.availablePort();
+      this.child = this.launch(
+        "xvfb-run",
+        [
+          "--auto-servernum",
+          this.executable,
+          `--user-data-dir=${this.directory}`,
+          `--remote-debugging-port=${port}`,
+          "--remote-debugging-address=127.0.0.1",
+          "--no-first-run",
+          "--no-default-browser-check",
+          "--incognito",
+          "about:blank"
+        ],
+        {
+          detached: true,
+          stdio: "ignore",
+          env: {
+            PATH: process.env.PATH,
+            TMPDIR: this.directory,
+            DISPLAY: process.env.DISPLAY,
+            XAUTHORITY: process.env.XAUTHORITY,
+            LANG: "en_US.UTF-8",
+            TZ: timezoneId
+          }
+        }
+      );
+      this.exited = new Promise((resolve4) => {
+        this.child?.once("exit", () => resolve4());
+        this.child?.once("error", () => resolve4());
+      });
+      return await this.endpoint(port);
+    } catch {
+      await this.close();
+      throw new Error("Browser unavailable.");
+    }
+  }
+  async close() {
+    const child = this.child;
+    this.child = void 0;
+    if (child?.pid) {
+      this.signal(child.pid, "SIGTERM");
+      for (let attempt = 0; attempt < 25 && this.signal(child.pid, 0); attempt++)
+        await delay(100);
+      this.signal(child.pid, "SIGKILL");
+    }
+    await this.exited;
+    if (this.directory)
+      await rm3(this.directory, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 100
+      });
+  }
+  signal(pid, signal) {
+    try {
+      process.kill(-pid, signal);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  async endpoint(port) {
+    const deadline = AbortSignal.timeout(3e4);
+    while (!deadline.aborted) {
+      if (this.child?.exitCode !== null || this.child?.signalCode !== null)
+        throw new Error("Browser stopped.");
+      try {
+        const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
+          signal: AbortSignal.any([deadline, AbortSignal.timeout(1e3)]),
+          redirect: "error"
+        });
+        return this.validateEndpoint(await response.json(), port);
+      } catch {
+        await delay(200);
+      }
+    }
+    throw new Error("Browser endpoint unavailable.");
+  }
+  validateEndpoint(value, port) {
+    if (!value || typeof value !== "object" || !("webSocketDebuggerUrl" in value) || typeof value.webSocketDebuggerUrl !== "string")
+      throw new Error("Browser endpoint unavailable.");
+    const url = new URL(value.webSocketDebuggerUrl);
+    if (url.protocol !== "ws:" || url.hostname !== "127.0.0.1" || url.port !== String(port) || url.username || url.password || url.search || url.hash || !/^\/devtools\/browser\/[a-f0-9-]+$/.test(url.pathname))
+      throw new Error("Unexpected browser endpoint.");
+    return url.href;
+  }
+  async availablePort() {
+    const server = createServer();
+    await new Promise((resolve4, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve4);
+    });
+    const address = server.address();
+    await new Promise(
+      (resolve4, reject) => server.close((error2) => error2 ? reject(error2) : resolve4())
+    );
+    if (!address || typeof address === "string")
+      throw new Error("Port unavailable.");
+    return address.port;
   }
 };
 
@@ -73200,9 +73335,8 @@ var MeetupEventEditor = class {
 
 // packages/adapter/publication/meetup-event-gateway/src/meetup-event-gateway.ts
 var MeetupEventGateway = class {
-  constructor(collaborators, browserType, credentials, createCaptchaResolver, groupUrl) {
+  constructor(collaborators, credentials, createCaptchaResolver, groupUrl) {
     this.collaborators = collaborators;
-    this.browserType = browserType;
     this.credentials = credentials;
     this.createCaptchaResolver = createCaptchaResolver;
     const group = MeetupGroupUrl.parse(groupUrl);
@@ -73210,7 +73344,6 @@ var MeetupEventGateway = class {
     this.group = group;
   }
   collaborators;
-  browserType;
   credentials;
   createCaptchaResolver;
   group;
@@ -73262,26 +73395,14 @@ var MeetupEventGateway = class {
   async withSession(timezoneId, operation) {
     if (!this.credentials.email.trim() || !this.credentials.password)
       throw new ScheduledEventError("authentication");
-    const browser = await this.browserType.launch({
-      headless: true,
-      args: [
-        "--enable-automation",
-        "--remote-debugging-address=127.0.0.1",
-        "--remote-debugging-port=0"
-      ]
-    }).catch(() => {
-      throw new ScheduledEventError("unavailable");
-    });
+    const session = this.collaborators.createBrowserSession();
     try {
-      const context3 = await browser.newContext({
-        locale: "en-US",
-        timezoneId,
-        viewport: { width: 1440, height: 1e3 }
+      const { page, endpoint: endpoint2 } = await session.open(timezoneId).catch(() => {
+        throw new ScheduledEventError("unavailable");
       });
-      const page = await context3.newPage();
       const status = await this.collaborators.createMeetupLoginPage(
         page,
-        this.createCaptchaResolver(page),
+        this.createCaptchaResolver(page, endpoint2),
         this.group.origin
       ).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
       if (status !== "verified")
@@ -73290,13 +73411,12 @@ var MeetupEventGateway = class {
         );
       return await operation(page);
     } finally {
-      await browser.close().catch(() => void 0);
+      await session.close().catch(() => void 0);
     }
   }
 };
 
 // packages/adapter/publication/meetup-event-gateway/src/meetup-event-gateway-factory.ts
-import { chromium } from "playwright-core";
 var MeetupEventGatewayFactory = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -73304,7 +73424,6 @@ var MeetupEventGatewayFactory = class {
   collaborators;
   create(credentials, createCaptchaResolver, groupUrl) {
     return this.collaborators.createMeetupEventGateway(
-      chromium,
       credentials,
       createCaptchaResolver,
       groupUrl
@@ -73560,6 +73679,12 @@ var MeetupEventGatewayComposition = class {
   locale;
   images;
   covers;
+  meetupBrowserSession() {
+    return new MeetupBrowserSession(
+      chromium,
+      new MeetupChromeProcess(spawn2, "google-chrome")
+    );
+  }
   meetupCover(page) {
     return new MeetupCover(
       this.images,
@@ -73589,6 +73714,7 @@ var MeetupEventGatewayComposition = class {
   meetupEventGateway(...args) {
     return new MeetupEventGateway(
       {
+        createBrowserSession: () => this.meetupBrowserSession(),
         createAttendeeMessage: (page, group) => new MeetupAttendeeMessage(
           new AttendeeMessages(
             {

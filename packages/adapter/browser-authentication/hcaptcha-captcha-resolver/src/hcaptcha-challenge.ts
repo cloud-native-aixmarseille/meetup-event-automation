@@ -1,16 +1,10 @@
 import type { Page } from "playwright-core";
-import type { ChromiumEndpoint } from "./chromium-endpoint.js";
 import type { HcaptchaProcess } from "./hcaptcha-process.js";
-
-export interface HcaptchaChallengeCollaborators {
-	readonly chromiumEndpoint: Pick<ChromiumEndpoint, "read">;
-}
 
 export class HcaptchaChallenge {
 	private attempted = false;
 
 	constructor(
-		private readonly collaborators: HcaptchaChallengeCollaborators,
 		private readonly process: Pick<HcaptchaProcess, "run">,
 		private readonly apiKey: string,
 		private readonly model: string,
@@ -19,13 +13,10 @@ export class HcaptchaChallenge {
 			throw new Error("Gemini credentials and model are required.");
 	}
 
-	async solve(page: Page): Promise<boolean> {
+	async solve(page: Page, endpoint: string): Promise<boolean> {
 		if (this.attempted) return false;
 		this.attempted = true;
 		const targetUrl = page.url();
-		const browser = page.context().browser();
-		if (!browser) throw new Error("Browser unavailable.");
-		const endpoint = await this.collaborators.chromiumEndpoint.read(browser);
 		const result = await this.process.run({
 			endpoint,
 			targetUrl,
@@ -37,10 +28,6 @@ export class HcaptchaChallenge {
 		return result === "solved";
 	}
 }
-export type HcaptchaChallengeArguments =
-	ConstructorParameters<typeof HcaptchaChallenge> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;
+export type HcaptchaChallengeArguments = ConstructorParameters<
+	typeof HcaptchaChallenge
+>;

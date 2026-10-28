@@ -10,11 +10,6 @@ describe("hCaptcha resolver lifetime", () => {
 		const second = captchaPageFixture();
 		const run = vi.fn().mockResolvedValue("blocked");
 		const challenge = new HcaptchaChallenge(
-			{
-				chromiumEndpoint: {
-					read: async () => "ws://127.0.0.1:1234/devtools/browser/abc",
-				},
-			},
 			{ run },
 			"synthetic-key",
 			"synthetic-model",
@@ -26,8 +21,14 @@ describe("hCaptcha resolver lifetime", () => {
 			"synthetic-key",
 			"synthetic-model",
 		);
-		const firstResolver = factory(first.page);
-		const secondResolver = factory(second.page);
+		const firstResolver = factory(
+			first.page,
+			"ws://127.0.0.1:1234/devtools/browser/abc",
+		);
+		const secondResolver = factory(
+			second.page,
+			"ws://127.0.0.1:2345/devtools/browser/def",
+		);
 
 		// Act
 		const results = [
@@ -43,6 +44,10 @@ describe("hCaptcha resolver lifetime", () => {
 		// Assert
 		expect(results).toEqual(["required", "required"]);
 		expect(states).toEqual(["required", "clear"]);
-		expect(run).toHaveBeenCalledOnce();
+		expect(run).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({
+				endpoint: "ws://127.0.0.1:1234/devtools/browser/abc",
+			}),
+		);
 	});
 });

@@ -1,6 +1,5 @@
 import type { Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HcaptchaCaptchaResolverComposition } from "./dependency-composition.js";
 import { HcaptchaChallenge } from "./hcaptcha-challenge.js";
 
 function fixture() {
@@ -10,13 +9,7 @@ function fixture() {
 		url: () => "https://events.example.test/sign-in",
 	} as unknown as Page;
 	const run = vi.fn().mockResolvedValue("solved");
-	const endpoint = {
-		read: vi.fn().mockResolvedValue("ws://127.0.0.1:1234/devtools/browser/abc"),
-	};
 	const challenge = new HcaptchaChallenge(
-		{
-			chromiumEndpoint: endpoint,
-		},
 		{ run },
 		"synthetic-key",
 		"synthetic-model",
@@ -32,8 +25,14 @@ describe("hCaptcha challenge", () => {
 		const { challenge, page, run } = fixture();
 
 		// Act
-		const first = await challenge.solve(page);
-		const second = await challenge.solve(page);
+		const first = await challenge.solve(
+			page,
+			"ws://127.0.0.1:1234/devtools/browser/abc",
+		);
+		const second = await challenge.solve(
+			page,
+			"ws://127.0.0.1:1234/devtools/browser/abc",
+		);
 
 		// Assert
 		expect(first).toBe(true);
@@ -52,7 +51,10 @@ describe("hCaptcha challenge", () => {
 		run.mockResolvedValue("blocked");
 
 		// Act
-		const result = await challenge.solve(page);
+		const result = await challenge.solve(
+			page,
+			"ws://127.0.0.1:1234/devtools/browser/abc",
+		);
 
 		// Assert
 		expect(result).toBe(false);
@@ -64,7 +66,10 @@ describe("hCaptcha challenge", () => {
 		run.mockResolvedValue("unavailable");
 
 		// Act
-		const result = challenge.solve(page);
+		const result = challenge.solve(
+			page,
+			"ws://127.0.0.1:1234/devtools/browser/abc",
+		);
 
 		// Assert
 		await expect(result).rejects.toThrow("Challenge solver unavailable.");
@@ -78,16 +83,7 @@ describe("hCaptcha challenge", () => {
 		const run = vi.fn();
 
 		// Act
-		const construct = () =>
-			new HcaptchaChallenge(
-				{
-					chromiumEndpoint:
-						new HcaptchaCaptchaResolverComposition().chromiumEndpoint(),
-				},
-				{ run },
-				key,
-				model,
-			);
+		const construct = () => new HcaptchaChallenge({ run }, key, model);
 
 		// Assert
 		expect(construct).toThrow("Gemini credentials and model are required.");
