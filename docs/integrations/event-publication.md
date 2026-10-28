@@ -196,6 +196,8 @@ Meetup's checkbox controls readiness and outgoing Meetup email links. Unrelated
 checklist tasks are preserved. Its English desktop editor uses **Preview** to
 save drafts while retaining their identity URL; published updates use **Save
 changes**. The adapter verifies all managed fields by reopening the editor.
+For new drafts, it selects **Start from scratch** when the template dialog is
+shown and dismisses organizer announcements before filling fields.
 
 For OCGroups, approval also binds target, category, and registration choices.
 Publishing can send native notifications to group members and speakers; published
@@ -310,5 +312,6 @@ Synthetic journey and Chromium tests cover lifecycle, provider isolation,
 approval/source guards, recovery, no-op reruns, and saved-field verification.
 Before enabling a consumer caller, an authorized organizer must validate login,
 draft persistence, review access, publication, and native notifications on the
-deployed instance. No live organizer run has been performed. See the
+deployed instance. Testing the editor with an interactive login does not validate
+unattended authentication or publication. See the
 [decision record](../adr/0009-community-event-publication.md) for source evidence.
