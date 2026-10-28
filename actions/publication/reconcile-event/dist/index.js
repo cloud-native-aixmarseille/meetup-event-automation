@@ -70780,7 +70780,7 @@ var MeetupCalendar = class {
   }
   page;
   async select(label, date) {
-    await this.page.getByRole("button", { name: label, exact: true }).click();
+    await this.dateTrigger(label).click();
     const target = this.page.locator(`[data-day="${date}"] button`);
     for (let month = 0; month < 25; month++) {
       if (await target.isVisible()) {
@@ -70813,7 +70813,7 @@ var MeetupCalendar = class {
     return await this.matchesDate("Open end date picker", date) && await this.page.getByLabel("Edit start time", { exact: true }).inputValue() === startTime && await this.page.getByLabel("Edit end time", { exact: true }).inputValue() === endTime;
   }
   async matchesDate(label, date) {
-    const trigger = this.page.getByRole("button", { name: label, exact: true });
+    const trigger = this.dateTrigger(label);
     await trigger.click();
     await this.page.locator("[data-day]:visible").first().waitFor();
     const selected = this.page.locator(
@@ -70822,6 +70822,9 @@ var MeetupCalendar = class {
     const matches = await selected.isVisible();
     await this.page.keyboard.press("Escape");
     return matches;
+  }
+  dateTrigger(label) {
+    return this.page.getByRole("button", { name: label, exact: true }).and(this.page.locator('[aria-haspopup="dialog"]'));
   }
   async showEndTime() {
     const end = this.page.getByLabel("Edit end time", { exact: true });
@@ -70922,11 +70925,33 @@ var MeetupEventEditor = class {
     const status = await this.collaborators.createMeetupEventVerification(this.page).status();
     const announcement = this.page.getByTestId("announcement-close-btn");
     if (await announcement.isVisible()) await announcement.click();
+    if (!url) await this.startNewDraft();
     await this.page.getByTestId("event-name-input").fill(event.title);
     await this.collaborators.createMeetupCalendar(this.page).fill(event.date, event.startTime, event.endTime);
     await this.page.getByTestId("event-description-editor").locator('[contenteditable="true"]:visible').fill(event.description);
     await this.collaborators.createMeetupVenue(this.page).select(event.venue);
     return status;
+  }
+  async startNewDraft() {
+    const scratch = this.page.getByTestId("event-start-from-scratch-btn").filter({ visible: true });
+    const calendar = this.page.getByRole("button", {
+      name: "Open date picker",
+      exact: true
+    });
+    await scratch.or(calendar).first().waitFor();
+    if (await scratch.isVisible()) {
+      await scratch.click();
+      await scratch.waitFor({ state: "hidden" });
+    }
+    const announcement = this.page.getByTestId("announcement-close-btn").filter({ visible: true });
+    for (let notice = 0; notice < 5; notice++) {
+      await announcement.or(calendar).first().waitFor();
+      if (!await announcement.isVisible()) break;
+      const current = await announcement.elementHandle();
+      await announcement.click();
+      await current?.waitForElementState("hidden");
+    }
+    await calendar.waitFor();
   }
 };
 

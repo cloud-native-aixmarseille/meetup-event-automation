@@ -4,7 +4,7 @@ export class MeetupCalendar {
 	constructor(private readonly page: Page) {}
 
 	async select(label: string, date: string): Promise<void> {
-		await this.page.getByRole("button", { name: label, exact: true }).click();
+		await this.dateTrigger(label).click();
 		// React DayPicker exposes date cells even though the date input is read-only.
 		const target = this.page.locator(`[data-day="${date}"] button`);
 		for (let month = 0; month < 25; month++) {
@@ -60,7 +60,7 @@ export class MeetupCalendar {
 	}
 
 	private async matchesDate(label: string, date: string): Promise<boolean> {
-		const trigger = this.page.getByRole("button", { name: label, exact: true });
+		const trigger = this.dateTrigger(label);
 		await trigger.click();
 		await this.page.locator("[data-day]:visible").first().waitFor();
 		const selected = this.page.locator(
@@ -69,6 +69,12 @@ export class MeetupCalendar {
 		const matches = await selected.isVisible();
 		await this.page.keyboard.press("Escape");
 		return matches;
+	}
+
+	private dateTrigger(label: string) {
+		return this.page
+			.getByRole("button", { name: label, exact: true })
+			.and(this.page.locator('[aria-haspopup="dialog"]'));
 	}
 
 	private async showEndTime(): Promise<void> {

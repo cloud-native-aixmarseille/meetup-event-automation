@@ -25,6 +25,8 @@ function editor(
 	event: ScheduledEvent | undefined,
 	status: SavedMeetupEvent["status"],
 	previewAvailable: boolean,
+	startFromDialog: boolean,
+	announcementCount: number,
 ) {
 	const value = event ?? {
 		...desiredEvent,
@@ -33,12 +35,13 @@ function editor(
 		date: "2026-10-20",
 	};
 	return `<!doctype html><html lang="en"><body>
+<main id="editor" ${startFromDialog ? 'aria-hidden="true"' : ""}>
 <input data-testid="event-name-input" value="${escapeHtml(value.title)}">
-<button aria-label="Open date picker" onclick="openCalendar('start')">Date</button>
+<button aria-label="Open date picker" aria-haspopup="dialog" onclick="openCalendar('start')">Date</button>
 <input type="time" aria-label="Edit start time" value="${value.startTime}">
 <div id="duration"><button onclick="document.querySelector('[role=menuitem]').hidden=false">2 hours</button></div>
 <button role="menuitem" hidden onclick="document.getElementById('custom-end').hidden=false;this.hidden=true">Set an end time...</button>
-<div id="custom-end" hidden><button aria-label="Open end date picker" onclick="openCalendar('end')">End date</button>
+<div id="custom-end" hidden><button aria-label="Open end date picker" aria-haspopup="dialog" onclick="openCalendar('end')">End date</button>
 <input type="time" aria-label="Edit end time" value="${value.endTime}"></div>
 <div id="calendar" hidden></div>
 <div data-testid="event-description-editor"><div contenteditable="true">${escapeHtml(value.description)}</div></div>
@@ -54,7 +57,16 @@ ${previewAvailable ? '<button data-testid="event-preview-btn" onclick="save(&quo
 		: '<button onclick="save(&quot;published&quot;)">Save changes</button>'
 }
 <button data-testid="event-publish-btn" hidden>Publish</button>
+</main>
+${startFromDialog ? `<div role="dialog" aria-label="Start from"><button data-testid="event-start-from-scratch-btn" onclick="${announcementCount ? "showAnnouncement(0)" : "document.getElementById('editor').removeAttribute('aria-hidden')"};this.parentElement.remove()">Start from scratch</button></div>` : ""}
+
 <script>
+function showAnnouncement(index) {
+const dialog=document.createElement('div'); dialog.setAttribute('role','dialog');
+const close=document.createElement('button'); close.dataset.testid='announcement-close-btn'; close.textContent='Close announcement';
+close.onclick=()=>{dialog.remove(); if(index+1<${announcementCount}) showAnnouncement(index+1); else document.getElementById('editor').removeAttribute('aria-hidden');};
+dialog.append(close); document.body.append(dialog);
+}
 let selectedDate=${JSON.stringify(value.date)}, endDate=${JSON.stringify((value as ScheduledEvent & { endDate?: string }).endDate ?? value.date)}, month=selectedDate.slice(0,7), mode='start';
 function openCalendar(next) { mode=next; document.getElementById('calendar').hidden=false; renderCalendar(); }
 function renderCalendar() {
@@ -88,6 +100,8 @@ export async function editorFixture(
 		publishClicks: 0,
 		corruptSaved: undefined as Partial<ScheduledEvent> | undefined,
 		previewAvailable: true,
+		startFromDialog: false,
+		announcementCount: 0,
 	};
 	await context.route("**/*", async (route) => {
 		const url = new URL(route.request().url());
@@ -113,6 +127,8 @@ export async function editorFixture(
 					url.pathname.endsWith("/edit/") ? state.event : undefined,
 					state.status,
 					state.previewAvailable,
+					state.startFromDialog && url.pathname.endsWith("/schedule/"),
+					state.announcementCount,
 				),
 			});
 			return;

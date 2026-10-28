@@ -24,6 +24,36 @@ afterEach(async () => {
 });
 
 describe("Meetup browser event editor", () => {
+	it.each([0, 1, 2])(
+		"starts a new draft through the template dialog and %i announcements",
+		async (announcementCount) => {
+			// Arrange
+			const state = await editorFixture(context);
+			state.startFromDialog = true;
+			state.announcementCount = announcementCount;
+			const editor = new MeetupEventGatewayComposition("en").meetupEventEditor(
+				await context.newPage(),
+				groupUrl,
+			);
+			const before = vi.fn().mockResolvedValue(undefined);
+			const after = vi.fn().mockResolvedValue(undefined);
+
+			// Act
+			const result = await editor.save(desiredEvent, undefined, before, after);
+
+			// Assert
+			expect(result).toEqual({ url: eventUrl, status: "draft" });
+			expect(state.event).toMatchObject({
+				...desiredEvent,
+				description: expect.any(String),
+			});
+			expect(state.writes).toBe(1);
+			expect(state.publishClicks).toBe(0);
+			expect(before).toHaveBeenCalledOnce();
+			expect(after).toHaveBeenCalledWith(eventUrl);
+		},
+	);
+
 	it.each(["draft", "published"] as const)(
 		"inspects an existing %s without saving or publishing",
 		async (status) => {
