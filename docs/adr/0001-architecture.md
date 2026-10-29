@@ -29,7 +29,7 @@ action boundary. The [release guide](../development/releases.md) owns operation
 and recovery instructions.
 
 Internal CI owns the JavaScript/TypeScript CodeQL configuration and passes it to
-the shared Node.js workflow through `code-ql-config-file`. It excludes only
+the shared Node.js workflow through the JSON `code-ql` input. It excludes only
 generated action bundles while retaining authored source, tests, tooling, and
 the default security queries. Bundle freshness and dependency checks remain
 separate gates; CodeQL no longer analyzes bundled third-party internals.
@@ -112,7 +112,8 @@ analysis, preserving the default queries and source coverage. The initial
 validation used a repository-owned CodeQL job because the pinned upstream
 interface could not accept a configuration. That approach was superseded by
 [upstream PR #557](https://github.com/hoverkraft-tech/ci-github-nodejs/pull/557),
-which adds `code-ql-config-file` so the shared workflow retains CodeQL execution.
+which extends `code-ql` to accept a language string or a JSON object containing
+`languages` and `config-file`, so the shared workflow retains CodeQL execution.
 This replaces the unconfigured whole-checkout scan; it does not replace
 dependency vulnerability checks or establish that excluded dependency code is safe.
 
