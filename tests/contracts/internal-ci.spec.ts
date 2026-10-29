@@ -10,40 +10,28 @@ import {
 } from "./support.js";
 
 describe("internal CI contracts", () => {
-	it("scans source with default security queries without duplicating generated bundle analysis", async () => {
+	it("delegates configured source analysis to the shared workflow without excluding security queries", async () => {
 		// Arrange
 		const nodeChecks = await readWorkflow("__check-nodejs");
-		const analysis = nodeChecks.jobs?.["code-ql"];
-		const initialization = analysis?.steps?.find((step) =>
-			step.uses?.startsWith("github/codeql-action/init@"),
+		const sharedChecks = nodeChecks.jobs?.["test-nodejs"];
+		const configurationPath = String(
+			sharedChecks?.with?.["code-ql-config-file"],
 		);
-		const configurationPath = String(initialization?.with?.["config-file"]);
 
 		// Act
 		const configuration =
 			await readYaml<Record<string, unknown>>(configurationPath);
 
 		// Assert
-		expect(nodeChecks.jobs?.["test-nodejs"].with?.["code-ql"]).toBe("");
-		expect(analysis?.permissions).toEqual({
-			contents: "read",
-			"security-events": "write",
-		});
-		expect(analysis?.if).toBeUndefined();
-		expect(initialization?.with).toEqual({
-			languages: "javascript-typescript",
-			"build-mode": "none",
-			"config-file": configurationPath,
-		});
+		expect(sharedChecks?.uses).toMatch(
+			/^hoverkraft-tech\/ci-github-nodejs\/\.github\/workflows\/continuous-integration\.yml@[0-9a-f]{40}$/,
+		);
+		expect(sharedChecks?.with?.["code-ql"]).toBeUndefined();
+		expect(nodeChecks.jobs).not.toHaveProperty("code-ql");
 		expect(configuration).toEqual({
 			name: expect.any(String),
 			"paths-ignore": ["actions/**/dist/**"],
 		});
-		expect(
-			analysis?.steps?.some((step) =>
-				step.uses?.startsWith("github/codeql-action/analyze@"),
-			),
-		).toBe(true);
 	});
 
 	it("routes main and pull-request CI through the shared workflow", async () => {

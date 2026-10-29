@@ -103,15 +103,15 @@ each layer of a stacked pull request is validated regardless of its base name.
 coverage reports. These reporting entrypoints must remain compatible with the
 shared CI workflows.
 
-The Node.js check workflow owns JavaScript/TypeScript CodeQL analysis and loads
-[its scan configuration](../../.github/codeql/config.yml). It scans authored
+The Node.js check workflow passes [its scan configuration](../../.github/codeql/config.yml)
+to the shared workflow through `code-ql-config-file`. CodeQL scans authored
 source, tests, and tooling with the default security queries, excluding only
 `actions/**/dist/**`. Those generated bundles duplicate source and third-party
 dependencies; `check:dist` verifies their bytes against a fresh build. Bundled
 dependency internals are outside this CodeQL scan. Dependency review and
 Dependabot remain separate dependency checks, and the shared linter scans GitHub
-Actions. The upstream Node.js workflow's unconfigured CodeQL job is disabled to
-avoid a second scan. CodeQL and bundle checks run for pull requests and main CI;
+Actions. The shared Node.js workflow owns CodeQL initialization and analysis.
+CodeQL and bundle checks run for pull requests and main CI;
 dependency review runs on pull requests.
 
 Keep action inputs and outputs in `action.yml`, and workflow inputs, outputs,
