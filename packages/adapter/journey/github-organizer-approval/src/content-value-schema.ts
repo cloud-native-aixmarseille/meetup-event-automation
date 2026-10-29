@@ -145,6 +145,7 @@ export class ContentValueSchema {
 			"endTime",
 			"timeZone",
 			"month",
+			"eventDescription",
 			"host",
 			"talks",
 			"registrationUrl",
@@ -164,6 +165,9 @@ export class ContentValueSchema {
 			endTime: this.text(item.endTime, 5),
 			timeZone: this.text(item.timeZone, 100),
 			month: this.text(item.month, 40),
+			...(item.eventDescription === undefined
+				? {}
+				: { eventDescription: this.text(item.eventDescription, 49_000) }),
 			host: {
 				name: this.text(host.name, 200),
 				city: this.text(host.city, 200),

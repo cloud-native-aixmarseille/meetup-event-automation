@@ -13,7 +13,12 @@ describe("cover artwork brief", () => {
 		const artwork = new CoverArtwork();
 		const facts = {
 			month: "FÉVRIER",
-			talks: [talk],
+			eventDescription:
+				"OpenTelemetry signals and a practical incident response exercise.",
+			talks: [
+				talk,
+				{ ...talk, id: "talk-two", title: "Incident response", abstract: "" },
+			],
 			aperitif: true,
 			privateEmail: "private@example.test",
 		};
@@ -31,13 +36,20 @@ describe("cover artwork brief", () => {
 			});
 			expect(brief.facts).toEqual({
 				month: "FÉVRIER",
-				topics: [{ title: talk.title, abstract: talk.abstract }],
+				eventDescription: facts.eventDescription,
+				topics: [
+					{ title: talk.title, abstract: talk.abstract },
+					{ title: "Incident response", abstract: "" },
+				],
 			});
 			expect(brief.instructions.join(" ")).toContain(
 				"only readable text anywhere is the exact supplied month",
 			);
 			expect(brief.instructions.join(" ")).toContain(
 				"One coherent full-canvas scene",
+			);
+			expect(brief.instructions.join(" ")).toContain(
+				"Make every distinct talk subject recognizable",
 			);
 		}
 	});

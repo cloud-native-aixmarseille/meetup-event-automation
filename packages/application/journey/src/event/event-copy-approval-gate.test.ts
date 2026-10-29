@@ -23,7 +23,13 @@ describe("downstream content authorization", () => {
 			const plan = f.plans.create(
 				"title",
 				"fr",
-				projection.create(event, settings.publication, settings.content, null),
+				projection.create(
+					event,
+					settings.publication,
+					settings.content,
+					null,
+					"title",
+				),
 				"09:00",
 			);
 			const draft = { text: event.eventTitle, media: [] };

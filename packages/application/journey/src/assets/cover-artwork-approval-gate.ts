@@ -36,6 +36,7 @@ export class CoverArtworkApprovalGate {
 				settings.publication,
 				settings.content,
 				null,
+				"cover",
 			),
 			settings.content.reminderTime,
 		);

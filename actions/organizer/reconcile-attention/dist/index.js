@@ -33925,6 +33925,7 @@ var CoverArtwork = class {
   source(facts) {
     return {
       month: facts.month,
+      ...facts.eventDescription ? { eventDescription: facts.eventDescription } : {},
       talks: facts.talks.map((talk) => ({
         id: talk.id,
         title: talk.title,
@@ -33942,11 +33943,14 @@ var CoverArtwork = class {
       guidance,
       instructions: [
         "Create one bright, engaging, polished, humorous social-preview illustration for a Cloud Native / IT meetup. One coherent full-canvas scene, no collage, grids, panels, mockup frames or composite alternatives. Deliver exactly one image, preferably PNG 1792x1024. Fill the landscape canvas, with a readable central composition that works as a small social preview.",
-        "The only readable text anywhere is the exact supplied month. No logos containing other text, brands as lettering, code, captions, watermarks, dates, numbers or UI labels.",
-        `${direction}. Invent a specific visual metaphor using the supplied topics; vary characters, setting, palette and visual style. Technology objects should feel native to the scene. Warm, witty and professional, never generic corporate stock imagery.`
+        "The only readable text anywhere is the exact supplied month, preserving its spelling, capitalization, language and accents. No logos containing other text, brands as lettering, code, captions, watermarks, dates, numbers or UI labels.",
+        "Identify the main technology, concept or practice of each supplied talk from its title and abstract. Use eventDescription only to clarify subjects missing from those fields; never override them, invent additional topics or illustrate event logistics. Interpret names in their software/IT context.",
+        "Make every distinct talk subject recognizable in a prominent visual element. Before rendering, silently map each subject to a concrete motif: recognizable unlettered technology symbols and characteristic operations, or visible actions and relationships for concepts and practices. Integrate these motifs into one interacting scene. Generic robots, clouds, servers, gears or portals alone do not establish a topic. If no topics are supplied, use Cloud Native and community imagery.",
+        `${direction}. Build the composition around the subject-specific motifs; the artistic style must support their recognition. Technology objects should feel native to the scene. Warm, witty and professional, never generic corporate stock imagery.`
       ],
       facts: {
         month: facts.month,
+        ...facts.eventDescription ? { eventDescription: facts.eventDescription } : {},
         topics: facts.talks.map((talk) => ({
           title: talk.title,
           abstract: talk.abstract
@@ -45088,6 +45092,7 @@ var ContentValueSchema = class {
       "endTime",
       "timeZone",
       "month",
+      "eventDescription",
       "host",
       "talks",
       "registrationUrl",
@@ -45107,6 +45112,7 @@ var ContentValueSchema = class {
       endTime: this.text(item.endTime, 5),
       timeZone: this.text(item.timeZone, 100),
       month: this.text(item.month, 40),
+      ...item.eventDescription === void 0 ? {} : { eventDescription: this.text(item.eventDescription, 49e3) },
       host: {
         name: this.text(host.name, 200),
         city: this.text(host.city, 200)

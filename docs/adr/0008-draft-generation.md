@@ -93,9 +93,14 @@ identity, fingerprint, and accessible description.
   language, and accents. The month is the only readable text, prominent and
   integrated into the scene. Do not add a year, product names, slogans, labels,
   commands, code, lettered logos, watermarks, or signatures.
-- A month alone is enough; topics and technologies are optional visual inspiration.
-  Use seasonal atmosphere and wordless technology metaphors without inventing
-  event logistics.
+- Represent the main technology, concept or practice of every supplied talk with
+  a prominent recognizable motif. Use characteristic wordless symbols, actions
+  and relationships; generic technology scenery alone is insufficient. Titles and
+  abstracts are authoritative. The public event description can clarify subjects
+  absent from them, including manual agendas. It is scoped to cover generation
+  and source identity, without feeding event-copy outputs into their own inputs.
+  A month alone remains enough when no validated agenda is available. Do not
+  invent event logistics or additional subjects.
 - Prefer landscape 1792×1024 PNG. Verify format and dimensions from bytes and show
   any deviation during review.
 - Each canvas contains one coherent scene and artistic direction, filling the
@@ -206,6 +211,14 @@ recovery, but preserve traceability and prevent approval or retries from silentl
 authorizing changed content.
 
 ## Decision history
+
+On 2026-10-29, organizer review found the generated covers visually suitable but
+too weakly connected to the talk subjects. This replaces optional topic
+inspiration with explicit subject recognition in the scene. Manual talk titles
+can omit the actual technology; cover facts now include the public description
+as supplementary context. Stored proposals without this context retain their
+source identities; adding or changing context creates a different cover source
+and cannot reuse approval of an earlier image.
 
 On 2026-10-29, live cover validation returned HTTP 400 for the image request.
 The adapter forwarded the brief's preferred PNG MIME type, while the
