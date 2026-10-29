@@ -1,4 +1,12 @@
+import type { ContentMedia } from "../domain/content-media.js";
 import type { ScheduledEvent } from "./scheduled-event-ports.js";
+
+export type CommunitySpeaker = Readonly<{ userId: string; username: string }>;
+export type CommunitySponsor = Readonly<{
+	id: string;
+	name: string;
+	level: string;
+}>;
 
 export type CommunityVenue = Readonly<{
 	name: string;
@@ -22,4 +30,8 @@ export type CommunityEvent = ScheduledEvent &
 		venue: CommunityVenue;
 		categoryId: string;
 		registration: CommunityRegistration;
+		meetupUrl: string;
+		cover: ContentMedia;
+		speakers: readonly CommunitySpeaker[];
+		sponsor: CommunitySponsor;
 	}>;

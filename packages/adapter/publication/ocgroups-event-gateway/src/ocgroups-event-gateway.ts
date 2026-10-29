@@ -1,4 +1,5 @@
 import {
+	type PublicationWriteGuard,
 	type CommunityEvent,
 	type EventPublicationGateway,
 	type EventPublicationIdentity,
@@ -37,7 +38,7 @@ export class OcgroupsEventGateway
 	save(
 		event: CommunityEvent,
 		identity: EventPublicationIdentity | undefined,
-		beforeSubmit: () => Promise<void>,
+		beforeSubmit: PublicationWriteGuard,
 		onSaved: (identity: EventPublicationIdentity) => Promise<void>,
 	): Promise<SavedEventPublication> {
 		return this.withSession(event.timeZone, (components) =>

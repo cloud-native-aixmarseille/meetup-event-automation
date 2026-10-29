@@ -37623,7 +37623,18 @@ var CommunityEventPolicy = class {
   }
   schedule;
   valid(event, now2) {
-    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/?$/.test(
+      event.meetupUrl
+    ) && event.speakers.length > 0 && event.speakers.every((speaker) => this.speaker(speaker)) && new Set(event.speakers.map((speaker) => speaker.userId)).size === event.speakers.length && this.sponsor(event.sponsor) && /^[0-9a-f]{64}$/.test(event.cover.fingerprint) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+  }
+  speaker(value) {
+    return this.uuid(value.userId) && /^[a-zA-Z0-9_.-]{1,100}$/.test(value.username);
+  }
+  sponsor(value) {
+    return this.uuid(value.id) && this.text(value.name, 120) && this.text(value.level, 100);
+  }
+  uuid(value) {
+    return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);
   }
   venue(venue) {
     return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
@@ -42300,7 +42311,9 @@ var EventPublicationConfiguration = class {
         "communityId",
         "groupId",
         "categoryId",
-        "registration"
+        "registration",
+        "speakers",
+        "sponsors"
       ].includes(key)
     ))
       throw new Error("Unsupported publication destination");
@@ -42489,8 +42502,38 @@ var OcgroupsPublicationSettings = class {
       communityId: value.communityId,
       groupId: value.groupId,
       categoryId: value.categoryId,
-      registration: this.registration(value.registration)
+      registration: this.registration(value.registration),
+      speakers: this.speakers(value.speakers),
+      sponsors: this.sponsors(value.sponsors)
     };
+  }
+  speakers(value) {
+    if (!this.input.isObject(value))
+      throw new Error("Missing OCGroups speaker mappings");
+    const mappings = {};
+    for (const [id, item] of Object.entries(value)) {
+      if (!id.trim() || !this.input.isObject(item) || typeof item.userId !== "string" || typeof item.username !== "string")
+        throw new Error("Invalid OCGroups speaker mapping");
+      const speaker = { userId: item.userId, username: item.username };
+      if (!this.policy.speaker(speaker))
+        throw new Error("Invalid OCGroups speaker mapping");
+      mappings[id] = speaker;
+    }
+    return mappings;
+  }
+  sponsors(value) {
+    if (!this.input.isObject(value))
+      throw new Error("Missing OCGroups sponsor mappings");
+    const mappings = {};
+    for (const [id, item] of Object.entries(value)) {
+      if (!id.trim() || !this.input.isObject(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.level !== "string")
+        throw new Error("Invalid OCGroups sponsor mapping");
+      const sponsor = { id: item.id, name: item.name, level: item.level };
+      if (!this.policy.sponsor(sponsor))
+        throw new Error("Invalid OCGroups sponsor mapping");
+      mappings[id] = sponsor;
+    }
+    return mappings;
   }
   venue(value) {
     if (!this.input.isObject(value) || typeof value.name !== "string" || typeof value.address !== "string" || typeof value.city !== "string" || typeof value.zipCode !== "string" || typeof value.state !== "string" || typeof value.country !== "string" || typeof value.countryCode !== "string")

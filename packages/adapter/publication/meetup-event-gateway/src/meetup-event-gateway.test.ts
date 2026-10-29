@@ -123,6 +123,10 @@ describe("Meetup event browser session", () => {
 			} = fixture(configuredGroup);
 			const before = vi.fn();
 			const after = vi.fn();
+			save.mockImplementation(async (_, __, guard) => {
+				await guard();
+				return { url: `${configuredGroup}events/12345/`, status: "draft" };
+			});
 
 			// Act
 			const result = await gateway.save(desiredEvent, undefined, before, after);
@@ -136,6 +140,7 @@ describe("Meetup event browser session", () => {
 				},
 				status: "draft",
 			});
+			expect(before).toHaveBeenCalledExactlyOnceWith("event");
 			expect(browser.open).toHaveBeenCalledExactlyOnceWith("Europe/Paris");
 			expect(login).toHaveBeenCalledWith(
 				"organizer@example.test",
@@ -144,7 +149,7 @@ describe("Meetup event browser session", () => {
 			expect(save).toHaveBeenCalledWith(
 				desiredEvent,
 				undefined,
-				before,
+				expect.any(Function),
 				expect.any(Function),
 			);
 			expect(browser.close).toHaveBeenCalledOnce();

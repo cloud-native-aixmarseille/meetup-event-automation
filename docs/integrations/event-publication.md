@@ -38,6 +38,19 @@ an explicit empty `destinations` array supports manual publication.
       "communityId": "20000000-0000-4000-8000-000000000002",
       "groupId": "30000000-0000-4000-8000-000000000003",
       "categoryId": "40000000-0000-4000-8000-000000000004",
+      "speakers": {
+        "speaker-0001": {
+          "userId": "50000000-0000-4000-8000-000000000005",
+          "username": "example-speaker"
+        }
+      },
+      "sponsors": {
+        "host-0001": {
+          "id": "60000000-0000-4000-8000-000000000006",
+          "name": "Example Sponsor",
+          "level": "Host"
+        }
+      },
       "registration": {
         "capacity": 75,
         "waitlist": true,
@@ -65,6 +78,16 @@ shared `community-event-url-prefixes` input. Accepted legacy community URLs are
 not automatically writable targets. Registration capacity is an integer from 1
 to 100000. Waitlist and attendee approval cannot both be enabled. Creation uses
 one free public ticket tier, no recurring series, and no automatic online meeting.
+
+OCGroups also requires `speakers` and `sponsors` mappings. Key speakers by the
+stable speaker IDs in the agenda and hosts by their stable host IDs. Use existing
+OCGroups account UUIDs and exact usernames; a display name cannot identify a
+speaker. Obtain the account UUID from the organizer dashboard's user search.
+Create the host as a group sponsor first, then copy its UUID and exact name from
+the dashboard sponsor list. `level` is the displayed sponsorship label, such as
+`Host`. Repeated talks by the same account produce one speaker entry. Missing
+mappings block event reconciliation; the adapter does not create accounts or
+sponsor catalog entries.
 
 ## Configure credentials
 
@@ -167,7 +190,9 @@ Post-event attendee messaging follows the separate policy below. Incomplete or s
 source data blocks synchronization before browser access.
 
 The workflow processes destinations in configuration order. Pending approval or
-a provider failure does not prevent the other destination from proceeding. A
+a provider failure does not prevent a ready destination from proceeding. OCGroups
+requires **Meetup Link**, so place Meetup first when both are automated. With
+manual Meetup publication, supply its event link before running OCGroups. A
 changed issue or invalidated content review stops further effects. Successful
 operations remain durable even when another provider fails. The summary reports
 status and review URL per destination, with localized diagnostics.
@@ -206,9 +231,29 @@ default crop, and verifies the saved photo identity when reopening the event.
 Images must be smaller than 15 MB and at most 24 megapixels. The downloaded bytes,
 format, and dimensions must match the approved media. A changed draft cover
 requires a new publication approval even when the text and schedule are unchanged.
-OCGroups does not manage cover artwork.
+OCGroups requires the same approved cover and uploads it under **Photos**.
+The banner field remains unmanaged. The source bytes, format, and dimensions
+are verified before adapting the image to OCGroups' 1 MiB upload limit. Images
+that fit retain their original bytes; larger images become JPEGs with a maximum
+edge of 1920 pixels and progressively reduced quality. Aspect ratio is preserved;
+transparent areas become white when JPEG conversion is needed. Images that still
+exceed the limit block the update. Review the result in the saved draft.
 
-For OCGroups, approval also binds target, category, and registration choices.
+The adapter verifies the uploaded content-hash path and checks it after reopening
+the event. Reruns reuse the attached photo. An upload failure before event
+submission does not reserve an event identity, so that stage remains retryable.
+The selected cover is added without removing other Photos. Obsolete photos must
+be removed manually.
+
+OCGroups fills **Meetup URL** from the issue's **Meetup Link**, adds mapped speakers
+under **Contributors**, and attaches the mapped host under **Event Sponsors**.
+It verifies UUIDs after selection and preserves other contributors and sponsors.
+Changed sponsorship levels are applied to the configured sponsor. Removing old
+speakers or sponsors remains manual; configuration identifies required entries,
+not an authoritative replacement for all organizer-managed contributors.
+
+For OCGroups, approval also binds target, category, registration choices, Meetup
+URL, cover identity and fingerprint, speaker accounts, and host sponsorship.
 Publishing can send native notifications to group members and speakers; published
 updates can send native reschedule notifications. Updates preserve ticketing and
 attendee records. Changed draft registration settings block publication until

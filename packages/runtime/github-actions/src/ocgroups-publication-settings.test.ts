@@ -23,6 +23,19 @@ function fixture() {
 		communityId: "20000000-0000-4000-8000-000000000002",
 		groupId: "30000000-0000-4000-8000-000000000003",
 		categoryId: "40000000-0000-4000-8000-000000000004",
+		speakers: {
+			"speaker-0001": {
+				userId: "50000000-0000-4000-8000-000000000005",
+				username: "example-speaker",
+			},
+		},
+		sponsors: {
+			"host-0001": {
+				id: "60000000-0000-4000-8000-000000000006",
+				name: "Example Sponsor",
+				level: "Host",
+			},
+		},
 		startTime: "18:45",
 		endTime: "20:45",
 		registration: {
@@ -65,6 +78,8 @@ describe("OCGroups configuration", () => {
 		"startTime",
 		"endTime",
 		"venues",
+		"speakers",
+		"sponsors",
 	])("rejects a missing %s", (key) => {
 		// Arrange
 		const { configuration, input } = fixture();
@@ -80,6 +95,26 @@ describe("OCGroups configuration", () => {
 		},
 		{ eventUrlPrefix: "https://community.example.test/events/" },
 		{ communityId: "not-a-uuid" },
+		{
+			speakers: { "speaker-0001": { userId: "invalid", username: "example" } },
+		},
+		{
+			speakers: {
+				"speaker-0001": {
+					userId: "50000000-0000-4000-8000-000000000005",
+					username: "bad username",
+				},
+			},
+		},
+		{
+			sponsors: {
+				"host-0001": {
+					id: "60000000-0000-4000-8000-000000000006",
+					name: "Example",
+					level: "",
+				},
+			},
+		},
 		{ endTime: "17:00" },
 		{
 			registration: {

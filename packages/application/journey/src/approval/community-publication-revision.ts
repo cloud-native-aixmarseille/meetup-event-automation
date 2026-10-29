@@ -36,6 +36,26 @@ export class CommunityPublicationRevision {
 			endTime: event.endTime,
 			timeZone: event.timeZone,
 			categoryId: event.categoryId,
+			meetupUrl: event.meetupUrl,
+			cover: {
+				id: event.cover.id,
+				fingerprint: event.cover.fingerprint,
+				sourceRevision: event.cover.sourceRevision,
+				mimeType: event.cover.mimeType,
+				width: event.cover.width,
+				height: event.cover.height,
+			},
+			speakers: event.speakers
+				.map((speaker) => ({
+					userId: speaker.userId,
+					username: speaker.username,
+				}))
+				.sort((left, right) => left.userId.localeCompare(right.userId)),
+			sponsor: {
+				id: event.sponsor.id,
+				name: event.sponsor.name,
+				level: event.sponsor.level,
+			},
 			venue: {
 				name: event.venue.name,
 				address: event.venue.address,

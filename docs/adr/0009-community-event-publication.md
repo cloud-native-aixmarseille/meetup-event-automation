@@ -108,12 +108,16 @@ credentials only to the reconciliation action. OCGroups-only callers need no AI 
 1. Load and evaluate the issue without normalizing unrelated fields. Require an
    open, future scheduled event, confirmed host and speakers, approved event
    copy, resolved agenda, explicit times, and configured public venue data.
-   Missing Meetup, CNCF, or Drive links must not block creating an OCG draft.
+   OCGroups requires a Meetup event link and current approved artwork, plus
+   mappings for each speaker account and the host sponsor. Missing CNCF or Drive
+   links do not block draft creation.
    Skip closed, cancelled, postponed, and held events. Automatic cancellation,
    deletion, unpublishing, and series operations are outside this integration.
 2. Reconcile only the declared managed fields: title, description with public
    talk/speaker information, date, start/end times, event timezone, in-person
-   type, configured category, and public venue. Validate OCG-required fields
+   type, configured category, public venue, Meetup URL, approved cover in Photos,
+   mapped speaker accounts, and host sponsorship. Preserve additional photos,
+   contributor roles, and sponsors. Validate OCG-required fields
    before submission. Creation settings must explicitly define registration
    and other required choices; never derive them from private host addresses or
    silently enable paid tickets, recurring events, or automatic meetings.
@@ -249,6 +253,28 @@ remain unverified.
 
 ## Decision history
 
+### 2026-10-29: reconcile OCGroups Photos and contributors
+
+The earlier projection omitted artwork, Meetup URL, speaker account associations,
+and host sponsorship. The organizer's live draft review identified all four
+omissions. Extend the managed projection and approval revision to include them.
+This supersedes the previous decision that an OCGroups draft could be created
+without a Meetup link and that artwork remained Meetup-only. Other destinations
+still proceed independently when their own prerequisites are satisfied.
+
+Resolve speaker and host identities through explicit destination mappings keyed
+by stable source IDs. Verify the chosen account and group sponsor UUIDs after UI
+selection. Retain manually added associations and photos; automatic deletion is
+outside this change. The same account referenced by multiple talks appears once.
+
+Upload approved artwork through Photos, preserving the banner. The adapter verifies
+source bytes and adapts oversized images to the provider's 1 MiB limit. OCGroups
+stores original uploads at a content-hash path, allowing attachment verification
+and reuse without a separate photo journal. Keep image conversion and provider
+controls in the adapter; the application owns approval and source checks. Asset
+writes recheck the source, while only event submissions reserve event creation.
+An interrupted upload can therefore be retried without an uncertain event record.
+
 ### 2026-10-28: include approved Meetup cover artwork
 
 The event gateway previously managed title, description, schedule, and venue,
@@ -347,3 +373,20 @@ does not establish reliable unattended delivery. The organizer then signed in
 locally, and the production attendee-message adapter sent the public PDF using
 that interactive session and the existing delivery ledger. That successful
 message validates the form and delivery guards, not unattended authentication.
+
+### 2026-10-29: OCGroups draft reconciliation
+
+An organizer-authorized interactive session saved and reopened an unpublished
+synthetic draft through the production projection, reconciliation, and browser
+editor. The local harness retained its UUID in a durable journal, returned pending
+for every approval request, and blocked publication requests. The initial check
+identified styled checkbox, read-only ticket price, and custom-element selector
+issues corrected in [PR #578](https://github.com/cloud-native-aixmarseille/meetup-event-automation/pull/578).
+
+After extending the managed content, one Photos upload returned HTTP 201 and one
+update returned HTTP 204 for the same UUID. Readback verified the approved test
+image's hash path, Meetup test event URL, deduplicated organizer speaker account,
+and approved host sponsor with its level. A fresh reconciliation reopened the
+draft and made zero writes. The event remained unpublished. This validates the
+form in that authenticated session; it does not validate unattended OCGroups
+login, GitHub approval/journal delivery, publication, or native notifications.

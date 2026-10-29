@@ -157,7 +157,7 @@ describe("Meetup event publication", () => {
 		const url = `${prefix}12345/`;
 		dependencies.meetupUrlPrefix = prefix;
 		gateway.save.mockImplementation(async (_, __, before, after) => {
-			await before();
+			await before("event");
 			await after(publicationIdentity(url));
 			return { identity: publicationIdentity(url), status: "draft" };
 		});
@@ -277,7 +277,7 @@ describe("Meetup event publication", () => {
 			status: "draft",
 		});
 		gateway.save.mockImplementation(async (_, url, before, after) => {
-			await before();
+			await before("event");
 			await after(url ?? publicationIdentity());
 			return { identity: url ?? publicationIdentity(), status: "draft" };
 		});
@@ -339,7 +339,7 @@ describe("Meetup event publication", () => {
 			publicationLinks: { meetup: publicationUrl },
 		});
 		gateway.save.mockImplementation(async (_, _url, before, after) => {
-			await before();
+			await before("event");
 			await after(publicationIdentity());
 			return { identity: publicationIdentity(), status: "draft" };
 		});
@@ -365,7 +365,7 @@ describe("Meetup event publication", () => {
 		// Arrange
 		const { useCase, gateway, journal, deps } = publicationFixture();
 		gateway.save.mockImplementation(async (_, _url, before, after) => {
-			await before();
+			await before("event");
 			await after(publicationIdentity());
 			return { identity: publicationIdentity(), status: "published" };
 		});
@@ -399,7 +399,7 @@ describe("Meetup event publication", () => {
 		// Arrange
 		const { useCase, gateway, journal } = publicationFixture();
 		gateway.save.mockImplementation(async (_, _url, before) => {
-			await before();
+			await before("event");
 			throw new ScheduledEventError("uncertain");
 		});
 
@@ -535,7 +535,7 @@ describe("Meetup event publication", () => {
 		// Arrange
 		const { useCase, gateway, journal, deps } = publicationFixture();
 		gateway.save.mockImplementation(async (_, _url, before, after) => {
-			await before();
+			await before("event");
 			await after(publicationIdentity());
 			throw new ScheduledEventError("verification");
 		});
@@ -808,7 +808,7 @@ describe("community publication", () => {
 		// Arrange
 		const f = communityPublicationFixture();
 		f.gateway.save.mockImplementation(async (_, __, before, after) => {
-			await before();
+			await before("event");
 			await after({ id: remote.id, reviewUrl: remote.reviewUrl });
 			throw new ScheduledEventError("verification");
 		});
@@ -956,8 +956,8 @@ describe("community publication", () => {
 	});
 });
 
-function multipleDestinations() {
-	const meetup = setupPublication();
+function multipleDestinations(overrides: Partial<MeetupEvent> = {}) {
+	const meetup = setupPublication(overrides);
 	const community = communityFixture();
 	const meetupGroup = MeetupGroupUrl.fromEventUrlPrefix(
 		meetup.dependencies.meetupUrlPrefix,
@@ -1027,7 +1027,9 @@ describe("publication destination collection", () => {
 		"continues other destinations after a provider failure without exposing its details",
 		async (error) => {
 			// Arrange
-			const f = multipleDestinations();
+			const f = multipleDestinations({
+				publicationLinks: { meetup: publicationUrl },
+			});
 			f.meetup.gateway.save.mockRejectedValue(error);
 			// Act
 			const result = await f.useCase.execute(identity);
@@ -1047,11 +1049,11 @@ describe("publication destination collection", () => {
 		},
 	);
 
-	it("does not recreate an uncertain destination while another destination makes progress", async () => {
+	it("does not recreate an uncertain Meetup draft or create OCGroups without its link", async () => {
 		// Arrange
 		const f = multipleDestinations();
 		f.meetup.gateway.save.mockImplementation(async (_, __, guard) => {
-			await guard();
+			await guard("event");
 			throw new ScheduledEventError("uncertain");
 		});
 		// Act
@@ -1060,12 +1062,12 @@ describe("publication destination collection", () => {
 		// Assert
 		expect(repeated.publications.map((item) => item.status)).toEqual([
 			"blocked",
-			"draft",
+			"blocked",
 		]);
 		expect(f.meetup.gateway.save).toHaveBeenCalledOnce();
 		expect(f.meetup.journal.reserve).toHaveBeenCalledOnce();
-		expect(f.community.journal.reserve).toHaveBeenCalledOnce();
-		expect(f.community.gateway.save.mock.calls[1]?.[1]).toEqual(remote);
+		expect(f.community.journal.reserve).not.toHaveBeenCalled();
+		expect(f.community.gateway.save).not.toHaveBeenCalled();
 	});
 
 	it("stops the collection if the source changes during a destination operation", async () => {

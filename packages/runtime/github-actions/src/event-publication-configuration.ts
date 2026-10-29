@@ -72,6 +72,8 @@ export class EventPublicationConfiguration {
 						"groupId",
 						"categoryId",
 						"registration",
+						"speakers",
+						"sponsors",
 					].includes(key),
 			)
 		)

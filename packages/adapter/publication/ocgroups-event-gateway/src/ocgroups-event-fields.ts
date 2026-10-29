@@ -8,7 +8,9 @@ export class OcgroupsEventFields {
 	async matches(event: CommunityEvent): Promise<boolean> {
 		for (const [name, expected] of Object.entries(this.values(event))) {
 			if (
-				(await this.page.locator(`[name="${name}"]`).inputValue()) !== expected
+				(await this.page
+					.locator(`:is(input, textarea, select)[name="${name}"]`)
+					.inputValue()) !== expected
 			)
 				return false;
 		}
@@ -20,13 +22,14 @@ export class OcgroupsEventFields {
 		await this.page.locator("#name").fill(event.title);
 		await this.page.locator("#kind_id").selectOption("in-person");
 		await this.page.locator("#category_id").selectOption(event.categoryId);
+		await this.page.locator("#meetup_url").fill(event.meetupUrl);
 		const editor = this.page.locator("markdown-editor#description .CodeMirror");
 		await editor.click();
 		await this.page.keyboard.press("ControlOrMeta+A");
 		await this.page.keyboard.insertText(event.description);
 		await this.page.locator('button[data-section="date-venue"]').click();
 		if (
-			(await this.page.locator('[name="timezone"]').inputValue()) !==
+			(await this.page.locator('input[name="timezone"]').inputValue()) !==
 			event.timeZone
 		) {
 			await this.page.locator("#timezone-selector-button").click();
@@ -37,9 +40,14 @@ export class OcgroupsEventFields {
 		}
 		for (const [name, value] of Object.entries(this.values(event))) {
 			if (
-				["name", "kind_id", "category_id", "description", "timezone"].includes(
-					name,
-				)
+				[
+					"name",
+					"kind_id",
+					"category_id",
+					"description",
+					"timezone",
+					"meetup_url",
+				].includes(name)
 			)
 				continue;
 			await this.page.locator(`[name="${name}"]`).fill(value);
@@ -52,6 +60,7 @@ export class OcgroupsEventFields {
 			description: event.description,
 			kind_id: "in-person",
 			category_id: event.categoryId,
+			meetup_url: event.meetupUrl,
 			timezone: event.timeZone,
 			starts_at: `${event.date}T${event.startTime}`,
 			ends_at: `${event.date}T${event.endTime}`,

@@ -99,7 +99,7 @@ export function publicationFixture(
 		save: vi
 			.fn<EventPublicationGateway["save"]>()
 			.mockImplementation(async (_, url, before, after) => {
-				await before();
+				await before("event");
 				await after(url ?? publicationIdentity());
 				return {
 					identity: url ?? publicationIdentity(),
