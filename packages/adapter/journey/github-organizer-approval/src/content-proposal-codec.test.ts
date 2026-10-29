@@ -7,6 +7,30 @@ import { contentStoreFixture } from "../testing/content-store.fixtures.js";
 import { ContentProposalCodec } from "./content-proposal-codec.js";
 
 describe("proposal persistence schema", () => {
+	it("preserves cover context in storage and rejects changes to reviewed subjects", () => {
+		// Arrange
+		const f = contentStoreFixture();
+		const source = contentFixture("cover");
+		const plan = source.plans.create(
+			"cover",
+			"fr",
+			{ ...source.plan.facts, eventDescription: "OpenTelemetry traces" },
+			"09:00",
+		);
+		const proposal = { ...source.proposal, plan };
+
+		// Act
+		const encoded = f.codec.write(proposal);
+		const decoded = f.codec.read(encoded);
+		const tampered = () =>
+			f.codec.read(
+				encoded.replace("OpenTelemetry traces", "OpenTelemetry metrics"),
+			);
+
+		// Assert
+		expect(decoded).toEqual(proposal);
+		expect(tampered).toThrow("Invalid content source fingerprint");
+	});
 	it("retains the delivery anchor independently of the reviewed content fingerprint", () => {
 		// Arrange
 		const f = contentStoreFixture();

@@ -2,6 +2,32 @@ import { describe, expect, it } from "vitest";
 import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 
 describe("content revision identity", () => {
+	it.each(["cover", "title", "description"] as const)(
+		"binds event description context only to the cover source for %s",
+		(target) => {
+			// Arrange
+			const f = contentFixture(target);
+			const original = f.plans.create(
+				target,
+				"fr",
+				{ ...f.plan.facts, eventDescription: "OpenTelemetry traces" },
+				"09:00",
+			);
+
+			// Act
+			const changed = f.plans.create(
+				target,
+				"fr",
+				{ ...f.plan.facts, eventDescription: "OpenTelemetry metrics" },
+				"09:00",
+			);
+
+			// Assert
+			expect(changed.sourceFingerprint === original.sourceFingerprint).toBe(
+				target !== "cover",
+			);
+		},
+	);
 	it("ignores unrelated links when a title is applied", () => {
 		// Arrange
 		const f = contentFixture();

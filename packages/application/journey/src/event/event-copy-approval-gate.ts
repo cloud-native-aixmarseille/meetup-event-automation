@@ -35,12 +35,6 @@ export class EventCopyApprovalGate {
 		);
 		if (!managed.length) return [];
 		const settings = await this.settings();
-		const facts = this.projection.create(
-			event,
-			settings.publication,
-			settings.content,
-			null,
-		);
 		const blocked: ("title" | "description")[] = [];
 		for (const target of ["title", "description"] as const) {
 			const proposal = managed
@@ -50,7 +44,13 @@ export class EventCopyApprovalGate {
 			const plan = this.plans.create(
 				target,
 				proposal.plan.language,
-				facts,
+				this.projection.create(
+					event,
+					settings.publication,
+					settings.content,
+					null,
+					target,
+				),
 				settings.content.reminderTime,
 			);
 			if (

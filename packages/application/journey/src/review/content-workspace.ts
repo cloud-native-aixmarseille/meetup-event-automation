@@ -98,6 +98,7 @@ export class ContentWorkspace {
 			this.dependencies.publication,
 			this.dependencies.settings,
 			announcement,
+			target,
 		);
 		return {
 			document,

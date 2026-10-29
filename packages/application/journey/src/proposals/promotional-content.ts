@@ -15,6 +15,7 @@ export interface ContentFacts {
 	readonly endTime: string;
 	readonly timeZone: string;
 	readonly month: string;
+	readonly eventDescription?: string;
 	readonly host: Readonly<{ name: string; city: string }>;
 	readonly talks: readonly Readonly<{
 		id: string;

@@ -1,6 +1,9 @@
 import type { MeetupEvent } from "@meetup-automation/event";
 import type { ContentMedia } from "@meetup-automation/publication";
-import type { ContentFacts } from "../proposals/promotional-content.js";
+import type {
+	ContentFacts,
+	ContentTarget,
+} from "../proposals/promotional-content.js";
 import type { ScheduledEventSettings } from "../use-cases/scheduled-event-projection.js";
 
 export interface ContentSettings {
@@ -15,6 +18,7 @@ export class ContentFactsProjection {
 		publication: ScheduledEventSettings,
 		settings: ContentSettings,
 		announcement: ContentMedia | null,
+		target: ContentTarget,
 	): ContentFacts {
 		return {
 			date: event.date,
@@ -22,6 +26,9 @@ export class ContentFactsProjection {
 			endTime: publication.endTime,
 			timeZone: event.timeZone,
 			month: settings.months[event.date.slice(0, 7)] ?? "",
+			...(target === "cover" && event.agenda.length && event.description
+				? { eventDescription: event.description }
+				: {}),
 			host: event.host?.id
 				? (publication.venues[event.host.id] ?? { name: "", city: "" })
 				: { name: "", city: "" },

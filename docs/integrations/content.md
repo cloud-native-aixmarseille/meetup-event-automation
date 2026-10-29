@@ -133,6 +133,16 @@ Dimensions and hashes are checked automatically; visual suitability is an
 organizer decision. Failed or uncertain slots remain visible and are not silently
 replaced with another request.
 
+The month and the main technology, concept or practice of every talk guide the
+cover. The brief requires recognizable subject-specific symbols, actions and
+relationships within one scene. Generic technology scenery alone is insufficient.
+Talk titles and abstracts are authoritative; the public event description supplies
+additional context for subjects absent from those fields, including manual agendas
+without proposal abstracts. This context is used only for covers, is retained in
+their source fingerprint, and requires fresh review when changed. It does not feed
+event-copy generation back into itself. With no validated agenda, the brief uses
+only the month and general Cloud Native/community themes.
+
 Routine meetup reconciliation imports submissions, finalizes reviews, applies
 approved values, and reports the content stage independently of event, asset,
 feedback, and communication work. Generation holds the event lock through review
