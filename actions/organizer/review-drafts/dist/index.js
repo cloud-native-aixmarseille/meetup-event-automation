@@ -85200,7 +85200,7 @@ var IssueFormWriter = class {
   }
   renderFields(document2, event) {
     const render = (participant) => this.renderParticipant(participant, document2.identity.repository);
-    const renderSpeaker = (participant) => event.proposalReferences?.length && participant.id ? `${this.collaborators.proposalSelectionCodec.escape(participant.displayName)} [${participant.id}]` : render({
+    const renderSpeaker = (participant) => render({
       ...participant,
       displayName: this.collaborators.proposalSelectionCodec.escape(
         participant.displayName

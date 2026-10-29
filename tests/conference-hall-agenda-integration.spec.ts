@@ -108,6 +108,7 @@ function fixture(sourceDocument = document) {
 					speakers: [
 						{
 							...catalog.speakers[0],
+							source: { path: "referentials/speakers.csv", line: 7 },
 							sourceProvider: "conference-hall",
 							sourceEvent: "example-cfp",
 							sourceSpeakerId: "source-one",
@@ -166,6 +167,10 @@ describe("Conference Hall agenda generation", () => {
 			expect.objectContaining({ code: "event.document.heading.missing" }),
 		);
 		expect(firstPatch.body).toContain("### Agenda");
+		expect(firstPatch.body).toContain(
+			"- [Example Speaker](https://github.com/example/meetups/blob/main/referentials/speakers.csv#L7): Reliable platforms",
+		);
+		expect(firstPatch.body).not.toContain("[speaker-0001]");
 		expect(firstPatch.body).toContain("### Conference Hall proposals\n\n17");
 		expect(firstPatch.body).toContain("### Organizer notes\n\nKeep this note.");
 		expect(firstPatch.body).not.toContain("speaker@example.test");
@@ -174,6 +179,9 @@ describe("Conference Hall agenda generation", () => {
 			"Updated platforms: A public abstract",
 		);
 		expect(refreshPatch.body).toContain("Updated platforms");
+		expect(refreshPatch.body).toContain(
+			"[Example Speaker](https://github.com/example/meetups/blob/main/referentials/speakers.csv#L7)",
+		);
 		expect(refreshPatch.body).not.toContain("Reliable platforms");
 	});
 

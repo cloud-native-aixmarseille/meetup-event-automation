@@ -79,14 +79,12 @@ export class IssueFormWriter {
 		const render = (participant: ParticipantReference) =>
 			this.renderParticipant(participant, document.identity.repository);
 		const renderSpeaker = (participant: ParticipantReference) =>
-			event.proposalReferences?.length && participant.id
-				? `${this.collaborators.proposalSelectionCodec.escape(participant.displayName)} [${participant.id}]`
-				: render({
-						...participant,
-						displayName: this.collaborators.proposalSelectionCodec.escape(
-							participant.displayName,
-						),
-					});
+			render({
+				...participant,
+				displayName: this.collaborators.proposalSelectionCodec.escape(
+					participant.displayName,
+				),
+			});
 
 		const fields = [
 			[HEADINGS.eventTitle, event.eventTitle],

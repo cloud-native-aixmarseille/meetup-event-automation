@@ -181,6 +181,9 @@ Correct managed talk text in Conference Hall. Public speaker names and optional
 HTTPS picture references come from the same live Conference Hall snapshot. Pictures are available to
 presenters; current issue and form presenters use text and do not download or
 embed portraits. Unrelated issue sections remain intact.
+In the generated agenda, each speaker's name links to their committed referential
+row at the consumer checkout revision. Stable speaker IDs remain in hidden issue
+metadata and are not displayed alongside the names.
 
 Failed refreshes preserve the last agenda verbatim, mark it stale, and publish
 specific English/French guidance for invalid numbers, missing proposals,
