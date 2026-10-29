@@ -1,9 +1,13 @@
+import { TemplateCollectionParser } from "./template-collection-parser.js";
 import { DateTemplateFormatter } from "./date-template-formatter.js";
 import { TemplateExpressionParser } from "./template-expression-parser.js";
 import { TemplateParser } from "./template-parser.js";
 import { TemplateRenderer } from "./template-renderer.js";
 
 export class TemplatingComposition {
+	collectionParser(): TemplateCollectionParser {
+		return new TemplateCollectionParser();
+	}
 	parser(): TemplateParser {
 		return new TemplateParser(new TemplateExpressionParser());
 	}

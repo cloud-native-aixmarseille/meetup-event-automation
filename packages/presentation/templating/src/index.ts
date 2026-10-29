@@ -9,3 +9,4 @@ export type {
 } from "./template-model.js";
 export { TemplateParser } from "./template-parser.js";
 export { TemplateRenderer } from "./template-renderer.js";
+export { TemplateCollectionParser } from "./template-collection-parser.js";

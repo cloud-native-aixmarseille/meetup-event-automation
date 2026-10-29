@@ -55,11 +55,22 @@ export type TemplateContentDefaults = Readonly<{
 	speaker: ImageSource;
 	host: ImageSource;
 }>;
+/** One native container, repeated in agenda order and owned as a single binding. */
+export type CollectionField = Readonly<{
+	type: "collection";
+	token: "talks" | "speakers";
+	slot: string;
+	objectId: string;
+	pageId: string;
+	template: string;
+	fields: readonly (TextField | ImageField)[];
+}>;
+export type ContentField = TextField | ImageField | CollectionField;
 export type ContentContract = Readonly<{
 	version: 1;
 	revision: string;
 	kind: string;
-	fields: readonly (TextField | ImageField)[];
+	fields: readonly ContentField[];
 }>;
 export type PublicAssetModel = Readonly<{
 	text: Readonly<Partial<Record<TextKey, string>>>;
@@ -79,7 +90,7 @@ export type ContentAnchor = Readonly<{
 }>;
 export type ContentBinding = Readonly<{
 	id: string;
-	type: "text" | "image";
+	type: "text" | "image" | "collection";
 	key: string;
 	anchor: ContentAnchor;
 	applied: string;
@@ -90,7 +101,7 @@ export type ContentBinding = Readonly<{
 }>;
 export type ObservedLocation = Readonly<{
 	id: string;
-	type: "text" | "image";
+	type: "text" | "image" | "collection";
 	key: string;
 	anchor: ContentAnchor;
 	fingerprint: string;
@@ -100,10 +111,14 @@ export type ContentSnapshot = Readonly<{
 	locations: readonly ObservedLocation[];
 }>;
 export type ContentValue = Readonly<{
-	type: "text" | "image";
+	type: "text" | "image" | "collection";
 	key: string;
 	fingerprint: string;
 	text?: string;
+	collection?: Readonly<{
+		template: string;
+		items: readonly (readonly ContentValue[])[];
+	}>;
 	image?: ImageSource;
 	speakerId?: string;
 	hostId?: string;

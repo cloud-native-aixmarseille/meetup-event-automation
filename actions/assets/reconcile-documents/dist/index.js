@@ -64645,6 +64645,10 @@ var ResolveContentValues = class {
   async execute(contract, model) {
     const values = [];
     for (const field of contract.fields) {
+      if (field.type === "collection") {
+        values.push(await this.collection(field, contract, model));
+        continue;
+      }
       if (field.type === "image") {
         values.push(await this.image(field, model));
         continue;
@@ -64661,6 +64665,36 @@ var ResolveContentValues = class {
       });
     }
     return values;
+  }
+  async collection(field, contract, model) {
+    const prefix = field.token === "talks" ? "talk.title:" : "speaker.name:";
+    const slots = Object.keys(model.text).filter((key) => key.startsWith(prefix)).map((key) => key.slice(prefix.length)).sort((a, b2) => Number(a) - Number(b2));
+    if (!slots.length || slots.length > 200) throw new ContentError("missing");
+    const items = [];
+    for (const slot of slots) {
+      const fields2 = field.fields.map(
+        (child) => child.type === "text" && child.slot ? { ...child, slot } : child.type === "image" && child.token === "speaker.picture" ? { ...child, sourceSlot: slot } : child
+      );
+      const values = await this.execute({ ...contract, fields: fields2 }, model);
+      items.push(
+        values.map((value, index) => ({
+          ...value,
+          key: field.fields[index].type === "text" ? this.collaborators.contentTextKey.of(field.fields[index]) : field.fields[index].slot
+        }))
+      );
+    }
+    return {
+      type: "collection",
+      key: field.slot,
+      collection: { template: field.template, items },
+      fallback: items.some((item) => item.some((value) => value.fallback)),
+      fingerprint: this.collaborators.contentFingerprint.of(
+        JSON.stringify([
+          field.template,
+          items.map((item) => item.map((value) => value.fingerprint))
+        ])
+      )
+    };
   }
   text(field, model) {
     if (field.format !== void 0) {
@@ -64837,7 +64871,7 @@ var ContentBindingPolicy = class {
     return bindings;
   }
   parse(value) {
-    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" && value.type !== "collection" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
       "id",
       "type",
       "key",
@@ -64953,7 +64987,39 @@ var ContentContractPolicy = class {
   }
   field(value, mimeType) {
     if (!this.record(value)) throw new ContentError("contract");
+    if (value.type === "collection") return this.collection(value, mimeType);
     return value.type === "text" ? this.textField(value) : this.image(value, mimeType);
+  }
+  collection(value, mimeType) {
+    if (!mimeType.endsWith("presentation") || value.token !== "talks" && value.token !== "speakers" || !this.name(value.slot) || !this.name(value.objectId) || !this.name(value.pageId) || typeof value.template !== "string" || value.template.length > 1e5 || !Array.isArray(value.fields) || !value.fields.length || value.fields.length > 100 || !this.keys(value, [
+      "type",
+      "token",
+      "slot",
+      "objectId",
+      "pageId",
+      "template",
+      "fields"
+    ]))
+      throw new ContentError("contract");
+    const fields2 = value.fields.map((item) => {
+      if (!this.record(item) || item.type === "collection")
+        throw new ContentError("contract");
+      return item.type === "text" ? this.textField(item) : this.image(item, mimeType);
+    });
+    const scope = value.token === "talks" ? "talk." : "speaker.";
+    if (fields2.some(
+      (field) => /^(talk|speaker)\./.test(field.token) && !field.token.startsWith(scope)
+    ))
+      throw new ContentError("contract");
+    return {
+      type: "collection",
+      token: value.token,
+      slot: value.slot,
+      objectId: value.objectId,
+      pageId: value.pageId,
+      template: value.template,
+      fields: fields2
+    };
   }
   textField(field) {
     const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
@@ -65311,7 +65377,7 @@ var ContentRenderPlan = class {
       );
       if (!location) throw new ContentError("conflict");
       const prior2 = manifest.bindings.find((item) => item.id === binding.id);
-      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
+      return binding.type !== "text" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
     });
     if (applied)
       return {
@@ -65327,7 +65393,7 @@ var ContentRenderPlan = class {
       (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
     );
     const uncertainImage = next.some(
-      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
+      (binding, index) => binding.type !== "text" && binding.desired !== manifest.bindings[index]?.desired
     );
     if (!prior)
       throw new ContentError(uncertainImage ? "recovery" : "conflict");
@@ -65433,7 +65499,7 @@ var ContentTemplateFields = class {
     const distinct = /* @__PURE__ */ new Map();
     for (const field of fields2) {
       const key = field.type === "text" ? this.keys.of(field) : field.slot;
-      if (distinct.has(key) && (field.type === "image" || distinct.get(key)?.type === "image"))
+      if (distinct.has(key) && (field.type !== "text" || distinct.get(key)?.type !== "text"))
         throw new ContentError("contract");
       distinct.set(key, field);
     }
@@ -70209,9 +70275,9 @@ var ReconcileMeetupDocuments = class {
         const model = await this.dependencies.renderProjection?.create(
           evaluation.event,
           [...evaluation.diagnostics, ...contentDiagnostics],
-          contract.fields.some(
-            (field) => field.token.startsWith("next_event.")
-          )
+          contract.fields.flatMap(
+            (field) => field.type === "collection" ? field.fields : [field]
+          ).some((field) => field.token.startsWith("next_event."))
         );
         return model ? { ...model, cover } : void 0;
       },
@@ -75069,6 +75135,16 @@ var DateTemplateFormatter = class {
   }
 };
 
+// packages/presentation/templating/src/template-collection-parser.ts
+var TemplateCollectionParser = class {
+  parse(text) {
+    if (!text.includes("{{#")) return void 0;
+    const match = /^\{\{#each ([a-z][a-z0-9_]*)\}\}$/.exec(text.trim());
+    if (!match) throw new TemplateError("syntax");
+    return match[1];
+  }
+};
+
 // packages/presentation/templating/src/template-expression-parser.ts
 var TemplateExpressionParser = class {
   parse(body, syntax) {
@@ -75150,6 +75226,9 @@ var TemplateRenderer = class {
 
 // packages/presentation/templating/src/dependency-composition.ts
 var TemplatingComposition = class {
+  collectionParser() {
+    return new TemplateCollectionParser();
+  }
   parser() {
     return new TemplateParser(new TemplateExpressionParser());
   }
@@ -82837,13 +82916,452 @@ var GoogleDriveAssetRepositoryComposition = class {
   }
 };
 
+// packages/adapter/publication/google-slides-content-repository/src/slide-collection-layout.ts
+var SlideCollectionLayout = class {
+  capture(group) {
+    const transform2 = this.transform(group.transform);
+    if (transform2.shearX || transform2.shearY || transform2.scaleX <= 0 || transform2.scaleY <= 0)
+      throw new ContentError("location");
+    const points = (group.elementGroup?.children ?? []).flatMap(
+      (child) => this.points(child)
+    );
+    if (!points.length) throw new ContentError("location");
+    const x4 = Math.min(...points.map((point) => point.x));
+    const y3 = Math.min(...points.map((point) => point.y));
+    const width = Math.max(...points.map((point) => point.x)) - x4;
+    const height = Math.max(...points.map((point) => point.y)) - y3;
+    if (width <= 0 || height <= 0) throw new ContentError("location");
+    return { transform: transform2, bounds: { x: x4, y: y3, width, height } };
+  }
+  place(original, bounds, index, count) {
+    if (!original || !bounds) throw new ContentError("contract");
+    const transform2 = this.transform(original);
+    const columns = Math.ceil(Math.sqrt(count));
+    const rows = Math.ceil(count / columns);
+    const scale = 1 / Math.max(columns, rows);
+    return {
+      ...transform2,
+      scaleX: transform2.scaleX * scale,
+      scaleY: transform2.scaleY * scale,
+      translateX: transform2.translateX + transform2.scaleX * (bounds.x * (1 - scale) + index % columns * bounds.width / columns),
+      translateY: transform2.translateY + transform2.scaleY * (bounds.y * (1 - scale) + Math.floor(index / columns) * bounds.height / rows)
+    };
+  }
+  points(element) {
+    const transform2 = this.transform(element.transform);
+    const width = this.pointsDimension(element.size?.width);
+    const height = this.pointsDimension(element.size?.height);
+    const points = element.elementGroup ? element.elementGroup.children?.flatMap(
+      (child) => this.points(child)
+    ) ?? [] : [
+      { x: 0, y: 0 },
+      { x: width, y: 0 },
+      { x: 0, y: height },
+      { x: width, y: height }
+    ];
+    return points.map((point) => ({
+      x: point.x * transform2.scaleX + point.y * transform2.shearX + transform2.translateX,
+      y: point.x * transform2.shearY + point.y * transform2.scaleY + transform2.translateY
+    }));
+  }
+  transform(value) {
+    const result = {
+      scaleX: value?.scaleX ?? 1,
+      scaleY: value?.scaleY ?? 1,
+      shearX: value?.shearX ?? 0,
+      shearY: value?.shearY ?? 0,
+      translateX: this.pointsDimension({
+        magnitude: value?.translateX ?? 0,
+        unit: value?.unit ?? "PT"
+      }),
+      translateY: this.pointsDimension({
+        magnitude: value?.translateY ?? 0,
+        unit: value?.unit ?? "PT"
+      }),
+      unit: "PT"
+    };
+    if ([result.scaleX, result.scaleY, result.shearX, result.shearY].some(
+      (value2) => !Number.isFinite(value2)
+    ))
+      throw new ContentError("location");
+    return result;
+  }
+  pointsDimension(value) {
+    if (!value) return 0;
+    if (!Number.isFinite(value.magnitude) || value.unit !== "PT" && value.unit !== "EMU")
+      throw new ContentError("location");
+    return (value.magnitude ?? 0) / (value.unit === "EMU" ? 12700 : 1);
+  }
+};
+
+// packages/adapter/publication/google-slides-content-repository/src/slide-collection-definition.ts
+var SlideCollectionDefinition = class {
+  constructor(layout, directives, expressions, fields2, keys, bindings) {
+    this.layout = layout;
+    this.directives = directives;
+    this.expressions = expressions;
+    this.fields = fields2;
+    this.keys = keys;
+    this.bindings = bindings;
+  }
+  layout;
+  directives;
+  expressions;
+  fields;
+  keys;
+  bindings;
+  read(page, defaults2) {
+    const collections = (page.pageElements ?? []).flatMap((element) => {
+      const marker = this.marker(element);
+      const token = marker ? this.directives.parse(marker.title ?? "") : void 0;
+      return token === void 0 ? [] : [this.collection(page, element, token, defaults2)];
+    });
+    if (collections.length > 1 && collections.some((field) => JSON.parse(field.template).mode === "slide"))
+      throw new ContentError("location");
+    return collections;
+  }
+  marker(element) {
+    const candidates = element.elementGroup ? this.flatten(element.elementGroup.children ?? []) : [element];
+    const markers = candidates.filter(
+      (child) => this.directives.parse(child.title ?? "") !== void 0
+    );
+    if (markers.length > 1) throw new ContentError("location");
+    return markers[0];
+  }
+  collection(page, element, token, defaults2) {
+    if (token !== "talks" && token !== "speakers" || !element.objectId || !page.objectId)
+      throw new ContentError("contract");
+    const grid = !!element.elementGroup;
+    if (!grid && !element.shape) throw new ContentError("location");
+    const elements = grid ? element.elementGroup?.children ?? [] : page.pageElements ?? [];
+    const { members, fields: fields2 } = this.members(
+      elements,
+      this.marker(element) ?? element,
+      page.objectId,
+      token,
+      defaults2
+    );
+    const template = {
+      mode: grid ? "grid" : "slide",
+      rootId: grid ? element.objectId : page.objectId,
+      pageId: page.objectId,
+      members,
+      ...grid ? this.layout.capture(element) : {}
+    };
+    return {
+      type: "collection",
+      token,
+      slot: element.objectId,
+      objectId: element.objectId,
+      pageId: page.objectId,
+      template: JSON.stringify(template),
+      fields: fields2
+    };
+  }
+  members(elements, marker, pageId, token, defaults2) {
+    const members = [];
+    const fields2 = /* @__PURE__ */ new Map();
+    for (const child of this.flatten(elements)) {
+      this.bindings.rejectTokens(child.table);
+      if (!child.image && child !== marker)
+        this.bindings.rejectTokens({ title: child.title });
+      if (child !== marker && this.directives.parse(child.title ?? ""))
+        throw new ContentError("location");
+      const field = this.member(child, pageId, token, defaults2);
+      if (!field) continue;
+      const key = field.type === "text" ? this.keys.of(field) : field.slot;
+      members.push({ objectId: child.objectId ?? "", key, type: field.type });
+      fields2.set(key, field);
+    }
+    return { members, fields: [...fields2.values()] };
+  }
+  member(element, pageId, collection, defaults2) {
+    const text = element.image ? element.title ?? "" : this.bindings.text(element);
+    const expressions = this.expressions.parse(text);
+    if (!expressions.length) return void 0;
+    if (expressions.length !== 1 || expressions[0].start !== 0 || expressions[0].end !== text.length || !element.objectId)
+      throw new ContentError("location");
+    const expression = expressions[0];
+    const token = expression.entity ? `${expression.entity}.${expression.property}` : expression.property;
+    const scoped = token.startsWith(
+      collection === "talks" ? "talk." : "speaker."
+    );
+    if (/^(talk|speaker)\./.test(token) && (!scoped || expression.argument !== void 0))
+      throw new ContentError("contract");
+    if (element.image)
+      return this.fields.image(
+        token,
+        scoped ? "1" : expression.argument,
+        { objectId: element.objectId, pageId },
+        defaults2
+      );
+    this.bindings.style(element);
+    return this.fields.text(
+      token,
+      scoped ? "1" : expression.argument,
+      defaults2
+    );
+  }
+  flatten(elements) {
+    return elements.flatMap((element) => [
+      element,
+      ...this.flatten(element.elementGroup?.children ?? [])
+    ]);
+  }
+};
+
+// packages/adapter/publication/google-slides-content-repository/src/slide-collection-identity.ts
+var SlideCollectionIdentity = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
+  prefix(slot) {
+    return `mc_${this.fingerprints.of(slot).slice(0, 12)}_`;
+  }
+  id(slot, index, original) {
+    return index === 0 ? original : `${this.prefix(slot)}${index}_${this.fingerprints.of(original).slice(0, 16)}`;
+  }
+  decode(source) {
+    try {
+      const value = JSON.parse(source);
+      if (!this.template(value)) throw new ContentError("contract");
+      return value;
+    } catch {
+      throw new ContentError("contract");
+    }
+  }
+  template(value) {
+    if (!this.record(value) || !["slide", "grid"].includes(String(value.mode)) || !this.objectId(value.rootId) || !this.objectId(value.pageId) || !Array.isArray(value.members) || !value.members.length || value.members.length > 100 || !value.members.every((member) => this.member(member)) || Object.keys(value).some(
+      (key) => ![
+        "mode",
+        "rootId",
+        "pageId",
+        "members",
+        "transform",
+        "bounds"
+      ].includes(key)
+    ))
+      return false;
+    if (value.mode === "slide")
+      return value.rootId === value.pageId && value.bounds === void 0 && value.transform === void 0;
+    return this.geometry(value.transform, value.bounds);
+  }
+  member(value) {
+    return this.record(value) && this.objectId(value.objectId) && typeof value.key === "string" && /^[\w.:-]{1,100}$/.test(value.key) && (value.type === "text" || value.type === "image") && Object.keys(value).every(
+      (key) => ["objectId", "key", "type"].includes(key)
+    );
+  }
+  geometry(transform2, bounds) {
+    return this.record(transform2) && transform2.unit === "PT" && [
+      "scaleX",
+      "scaleY",
+      "shearX",
+      "shearY",
+      "translateX",
+      "translateY"
+    ].every(
+      (key) => typeof transform2[key] === "number" && Number.isFinite(transform2[key])
+    ) && transform2.shearX === 0 && transform2.shearY === 0 && Number(transform2.scaleX) > 0 && Number(transform2.scaleY) > 0 && this.record(bounds) && ["x", "y", "width", "height"].every(
+      (key) => typeof bounds[key] === "number" && Number.isFinite(bounds[key])
+    ) && Number(bounds.width) > 0 && Number(bounds.height) > 0;
+  }
+  roots(data, field) {
+    const template = this.decode(field.template);
+    const page = data.slides?.find((page2) => page2.objectId === template.pageId);
+    if (!page) throw new ContentError("conflict");
+    const candidates = template.mode === "slide" ? data.slides ?? [] : page.pageElements ?? [];
+    const roots = candidates.filter(
+      (item) => item.objectId === template.rootId || item.objectId?.startsWith(this.prefix(field.slot))
+    );
+    const prototype = roots.find((item) => item.objectId === template.rootId);
+    if (!prototype || template.members.some(
+      (member) => !this.contains(prototype, member.objectId)
+    ))
+      throw new ContentError("conflict");
+    return roots;
+  }
+  contains(value, objectId) {
+    if (!value || typeof value !== "object") return false;
+    if ("objectId" in value && value.objectId === objectId) return true;
+    return Object.values(value).some((item) => this.contains(item, objectId));
+  }
+  objectId(value) {
+    return typeof value === "string" && /^[\w][\w:-]{0,99}$/.test(value);
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/publication/google-slides-content-repository/src/slide-collection-locations.ts
+var SlideCollectionLocations = class {
+  constructor(identity, fingerprints, images) {
+    this.identity = identity;
+    this.fingerprints = fingerprints;
+    this.images = images;
+  }
+  identity;
+  fingerprints;
+  images;
+  async read(data, field, binding) {
+    const roots = this.identity.roots(data, field);
+    const observed = [];
+    for (const root of roots) observed.push(await this.canonical(root));
+    return {
+      ...binding,
+      fingerprint: this.fingerprints.of(JSON.stringify(observed))
+    };
+  }
+  async canonical(value) {
+    if (Array.isArray(value))
+      return Promise.all(value.map((item) => this.canonical(item)));
+    if (!value || typeof value !== "object") return value;
+    const result = {};
+    for (const [key, item] of Object.entries(value).sort(
+      ([a], [b2]) => a.localeCompare(b2)
+    )) {
+      if (key === "sourceUrl") continue;
+      if (key === "contentUrl") {
+        if (typeof item !== "string") throw new ContentError("image");
+        result.embeddedBytes = await this.images.observe(item);
+      } else result[key] = await this.canonical(item);
+    }
+    return result;
+  }
+};
+
+// packages/adapter/publication/google-slides-content-repository/src/slide-collection-requests.ts
+var SlideCollectionRequests = class {
+  constructor(layouts, identity, definition, contents) {
+    this.layouts = layouts;
+    this.identity = identity;
+    this.definition = definition;
+    this.contents = contents;
+  }
+  layouts;
+  identity;
+  definition;
+  contents;
+  build(data, change) {
+    const collection = change.value.collection;
+    if (!collection?.items.length) throw new ContentError("missing");
+    const template = this.identity.decode(collection.template);
+    const slot = change.value.key;
+    const roots = this.identity.roots(data, {
+      slot,
+      template: collection.template
+    });
+    const root = roots.find((item) => item.objectId === template.rootId);
+    if (!root) throw new ContentError("conflict");
+    const elements = "pageElements" in root ? root.pageElements ?? [] : "elementGroup" in root ? root.elementGroup?.children ?? [] : [];
+    const flat = this.definition.flatten(elements);
+    const requests = roots.filter((item) => item !== root).map((item) => ({ deleteObject: { objectId: item.objectId } }));
+    for (let index = collection.items.length - 1; index >= 0; index--) {
+      const ids = Object.fromEntries(
+        [template.rootId, ...flat.map((item) => item.objectId)].map((id) => {
+          if (!id) throw new ContentError("location");
+          return [id, this.identity.id(slot, index, id)];
+        })
+      );
+      if (index > 0)
+        requests.push({
+          duplicateObject: { objectId: template.rootId, objectIds: ids }
+        });
+      requests.push(
+        ...this.values(data, template, collection.items[index], ids)
+      );
+      if (template.mode === "grid")
+        requests.push(
+          this.layout(
+            template,
+            ids[template.rootId],
+            index,
+            collection.items.length
+          )
+        );
+    }
+    return requests;
+  }
+  values(data, template, values, ids) {
+    const page = data.slides?.find((item) => item.objectId === template.pageId);
+    if (!page) throw new ContentError("conflict");
+    const flat = {
+      ...data,
+      slides: [
+        {
+          ...page,
+          pageElements: this.definition.flatten(page.pageElements ?? [])
+        }
+      ]
+    };
+    return template.members.flatMap((member) => {
+      const value = values.find(
+        (item) => item.key === member.key && item.type === member.type
+      );
+      if (!value) throw new ContentError("contract");
+      const requests = this.contents.build(flat, {
+        location: {
+          id: member.objectId,
+          type: member.type,
+          key: member.key,
+          anchor: { objectId: member.objectId, pageId: template.pageId },
+          fingerprint: ""
+        },
+        value
+      });
+      return requests.map(
+        (request3) => this.remap(request3, ids[member.objectId])
+      );
+    });
+  }
+  remap(request3, objectId) {
+    if (request3.replaceImage)
+      return {
+        replaceImage: { ...request3.replaceImage, imageObjectId: objectId }
+      };
+    if (request3.updatePageElementAltText)
+      return {
+        updatePageElementAltText: {
+          ...request3.updatePageElementAltText,
+          objectId
+        }
+      };
+    if (request3.deleteText)
+      return { deleteText: { ...request3.deleteText, objectId } };
+    if (request3.insertText)
+      return { insertText: { ...request3.insertText, objectId } };
+    if (request3.updateTextStyle)
+      return { updateTextStyle: { ...request3.updateTextStyle, objectId } };
+    throw new ContentError("contract");
+  }
+  layout(template, objectId, index, count) {
+    return {
+      updatePageElementTransform: {
+        objectId,
+        applyMode: "ABSOLUTE",
+        transform: this.layouts.place(
+          template.transform,
+          template.bounds,
+          index,
+          count
+        )
+      }
+    };
+  }
+};
+
 // packages/adapter/publication/google-slides-content-repository/src/slide-template-definition.ts
 var SlideTemplateDefinition = class {
-  constructor(parser, fields2, bindings) {
+  constructor(collections, collectionIdentity, parser, fields2, bindings) {
+    this.collections = collections;
+    this.collectionIdentity = collectionIdentity;
     this.parser = parser;
     this.fields = fields2;
     this.bindings = bindings;
   }
+  collections;
+  collectionIdentity;
   parser;
   fields;
   bindings;
@@ -82851,7 +83369,29 @@ var SlideTemplateDefinition = class {
     const fields2 = [];
     try {
       for (const page of presentation.slides ?? []) {
-        fields2.push(...this.page(page, defaults2));
+        const collections = this.collections.read(page, defaults2);
+        if (kind === "announcement" && collections.some(
+          (field) => this.collectionIdentity.decode(field.template).mode === "slide"
+        ))
+          throw new ContentError("contract");
+        fields2.push(...collections);
+        if (collections.some(
+          (field) => this.collectionIdentity.decode(field.template).mode === "slide"
+        ))
+          continue;
+        fields2.push(
+          ...this.page(
+            {
+              ...page,
+              pageElements: page.pageElements?.filter(
+                (element) => !collections.some(
+                  (field) => field.objectId === element.objectId
+                )
+              )
+            },
+            defaults2
+          )
+        );
       }
     } catch (error2) {
       if (error2 instanceof TemplateError) throw new ContentError("contract");
@@ -82923,7 +83463,21 @@ var GoogleSlidesContentRepository = class {
     if (!data.revisionId || data.presentationId !== fileId)
       throw new ContentError("location");
     const bindings = registered ?? this.collaborators.slideTemplateBindings.discover(data, contract);
-    const locations = await this.collaborators.createSlideContentLocations(this.images).read(data, bindings);
+    const locations = await this.collaborators.createSlideContentLocations(this.images).read(
+      data,
+      bindings.filter((binding) => binding.type !== "collection")
+    );
+    for (const binding of bindings.filter(
+      (binding2) => binding2.type === "collection"
+    )) {
+      const field = contract.fields.find(
+        (field2) => field2.type === "collection" && field2.slot === binding.key
+      );
+      if (field?.type !== "collection") throw new ContentError("contract");
+      locations.push(
+        await this.collaborators.createCollectionLocations(this.images).read(data, field, binding)
+      );
+    }
     this.current = data;
     return { revision: data.revisionId, locations };
   }
@@ -82932,7 +83486,7 @@ var GoogleSlidesContentRepository = class {
     if (!current || current.presentationId !== fileId || current.revisionId !== snapshot.revision)
       throw new ContentError("revision");
     const requests = changes.flatMap(
-      (change) => this.collaborators.slideContentRequests.build(current, change)
+      (change) => change.value.type === "collection" ? this.collaborators.collectionRequests.build(current, change) : this.collaborators.slideContentRequests.build(current, change)
     );
     try {
       const { data } = await this.client.presentations.batchUpdate(
@@ -83085,8 +83639,7 @@ var SlideTemplateBindings = class {
     const bindings = [];
     for (const page of presentation.slides ?? []) {
       if (!page.objectId) throw new ContentError("location");
-      for (const element of page.pageElements ?? [])
-        this.element(element, page.objectId, contract, bindings);
+      this.page(page, contract, bindings);
       this.rejectTokens(page.slideProperties?.notesPage);
     }
     this.rejectTokens(presentation.masters);
@@ -83097,6 +83650,30 @@ var SlideTemplateBindings = class {
         throw new ContentError("location");
     }
     return bindings;
+  }
+  page(page, contract, bindings) {
+    if (!page.objectId) throw new ContentError("location");
+    const collections = contract.fields.filter(
+      (field) => field.type === "collection" && field.pageId === page.objectId
+    );
+    for (const field of collections)
+      if (field.type === "collection")
+        bindings.push({
+          id: field.slot,
+          key: field.slot,
+          type: "collection",
+          anchor: { pageId: field.pageId, objectId: field.objectId },
+          applied: ""
+        });
+    if (collections.some(
+      (field) => field.type === "collection" && this.collaborators.collections.decode(field.template).mode === "slide"
+    ))
+      return;
+    for (const element of page.pageElements ?? [])
+      if (!collections.some(
+        (field) => field.type === "collection" && field.objectId === element.objectId
+      ))
+        this.element(element, page.objectId, contract, bindings);
   }
   element(element, pageId, contract, bindings) {
     const objectId = element.objectId;
@@ -83175,8 +83752,40 @@ var SlideTemplateBindings = class {
 
 // packages/adapter/publication/google-slides-content-repository/src/dependency-composition.ts
 var GoogleSlidesContentRepositoryComposition = class {
+  collectionLocations(images) {
+    return new SlideCollectionLocations(
+      this.collectionIdentity(),
+      new PublicationDomainComposition().contentFingerprint(),
+      images
+    );
+  }
+  collectionIdentity() {
+    return new SlideCollectionIdentity(
+      new PublicationDomainComposition().contentFingerprint()
+    );
+  }
+  collectionDefinition() {
+    return new SlideCollectionDefinition(
+      new SlideCollectionLayout(),
+      new TemplatingComposition().collectionParser(),
+      new TemplatingComposition().parser(),
+      new PublicationDomainComposition().contentTemplateFields(),
+      new PublicationDomainComposition().contentTextKey(),
+      this.slideTemplateBindings()
+    );
+  }
+  collectionRequests() {
+    return new SlideCollectionRequests(
+      new SlideCollectionLayout(),
+      this.collectionIdentity(),
+      this.collectionDefinition(),
+      this.slideContentRequests()
+    );
+  }
   definition() {
     return new SlideTemplateDefinition(
+      this.collectionDefinition(),
+      this.collectionIdentity(),
       new TemplatingComposition().parser(),
       new PublicationDomainComposition().contentTemplateFields(),
       this.slideTemplateBindings()
@@ -83185,6 +83794,8 @@ var GoogleSlidesContentRepositoryComposition = class {
   googleSlidesContentRepository(...args) {
     return new GoogleSlidesContentRepository(
       {
+        collectionRequests: this.collectionRequests(),
+        createCollectionLocations: (images) => this.collectionLocations(images),
         definition: this.definition(),
         slideTemplateBindings: this.slideTemplateBindings(),
         slideContentRequests: this.slideContentRequests(),
@@ -83219,6 +83830,7 @@ var GoogleSlidesContentRepositoryComposition = class {
   }
   slideTemplateBindings() {
     return new SlideTemplateBindings({
+      collections: this.collectionIdentity(),
       templates: new TemplatingComposition().parser(),
       contentTextKey: new PublicationDomainComposition().contentTextKey()
     });

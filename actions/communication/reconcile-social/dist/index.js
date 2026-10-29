@@ -64271,6 +64271,10 @@ var ResolveContentValues = class {
   async execute(contract, model) {
     const values = [];
     for (const field of contract.fields) {
+      if (field.type === "collection") {
+        values.push(await this.collection(field, contract, model));
+        continue;
+      }
       if (field.type === "image") {
         values.push(await this.image(field, model));
         continue;
@@ -64287,6 +64291,36 @@ var ResolveContentValues = class {
       });
     }
     return values;
+  }
+  async collection(field, contract, model) {
+    const prefix = field.token === "talks" ? "talk.title:" : "speaker.name:";
+    const slots = Object.keys(model.text).filter((key) => key.startsWith(prefix)).map((key) => key.slice(prefix.length)).sort((a, b2) => Number(a) - Number(b2));
+    if (!slots.length || slots.length > 200) throw new ContentError("missing");
+    const items = [];
+    for (const slot of slots) {
+      const fields2 = field.fields.map(
+        (child) => child.type === "text" && child.slot ? { ...child, slot } : child.type === "image" && child.token === "speaker.picture" ? { ...child, sourceSlot: slot } : child
+      );
+      const values = await this.execute({ ...contract, fields: fields2 }, model);
+      items.push(
+        values.map((value, index) => ({
+          ...value,
+          key: field.fields[index].type === "text" ? this.collaborators.contentTextKey.of(field.fields[index]) : field.fields[index].slot
+        }))
+      );
+    }
+    return {
+      type: "collection",
+      key: field.slot,
+      collection: { template: field.template, items },
+      fallback: items.some((item) => item.some((value) => value.fallback)),
+      fingerprint: this.collaborators.contentFingerprint.of(
+        JSON.stringify([
+          field.template,
+          items.map((item) => item.map((value) => value.fingerprint))
+        ])
+      )
+    };
   }
   text(field, model) {
     if (field.format !== void 0) {
@@ -64463,7 +64497,7 @@ var ContentBindingPolicy = class {
     return bindings;
   }
   parse(value) {
-    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" && value.type !== "collection" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
       "id",
       "type",
       "key",
@@ -64579,7 +64613,39 @@ var ContentContractPolicy = class {
   }
   field(value, mimeType) {
     if (!this.record(value)) throw new ContentError("contract");
+    if (value.type === "collection") return this.collection(value, mimeType);
     return value.type === "text" ? this.textField(value) : this.image(value, mimeType);
+  }
+  collection(value, mimeType) {
+    if (!mimeType.endsWith("presentation") || value.token !== "talks" && value.token !== "speakers" || !this.name(value.slot) || !this.name(value.objectId) || !this.name(value.pageId) || typeof value.template !== "string" || value.template.length > 1e5 || !Array.isArray(value.fields) || !value.fields.length || value.fields.length > 100 || !this.keys(value, [
+      "type",
+      "token",
+      "slot",
+      "objectId",
+      "pageId",
+      "template",
+      "fields"
+    ]))
+      throw new ContentError("contract");
+    const fields2 = value.fields.map((item) => {
+      if (!this.record(item) || item.type === "collection")
+        throw new ContentError("contract");
+      return item.type === "text" ? this.textField(item) : this.image(item, mimeType);
+    });
+    const scope = value.token === "talks" ? "talk." : "speaker.";
+    if (fields2.some(
+      (field) => /^(talk|speaker)\./.test(field.token) && !field.token.startsWith(scope)
+    ))
+      throw new ContentError("contract");
+    return {
+      type: "collection",
+      token: value.token,
+      slot: value.slot,
+      objectId: value.objectId,
+      pageId: value.pageId,
+      template: value.template,
+      fields: fields2
+    };
   }
   textField(field) {
     const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
@@ -64937,7 +65003,7 @@ var ContentRenderPlan = class {
       );
       if (!location) throw new ContentError("conflict");
       const prior2 = manifest.bindings.find((item) => item.id === binding.id);
-      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
+      return binding.type !== "text" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
     });
     if (applied)
       return {
@@ -64953,7 +65019,7 @@ var ContentRenderPlan = class {
       (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
     );
     const uncertainImage = next.some(
-      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
+      (binding, index) => binding.type !== "text" && binding.desired !== manifest.bindings[index]?.desired
     );
     if (!prior)
       throw new ContentError(uncertainImage ? "recovery" : "conflict");
@@ -65059,7 +65125,7 @@ var ContentTemplateFields = class {
     const distinct = /* @__PURE__ */ new Map();
     for (const field of fields2) {
       const key = field.type === "text" ? this.keys.of(field) : field.slot;
-      if (distinct.has(key) && (field.type === "image" || distinct.get(key)?.type === "image"))
+      if (distinct.has(key) && (field.type !== "text" || distinct.get(key)?.type !== "text"))
         throw new ContentError("contract");
       distinct.set(key, field);
     }
@@ -69885,9 +69951,9 @@ var ReconcileMeetupDocuments = class {
         const model = await this.dependencies.renderProjection?.create(
           evaluation.event,
           [...evaluation.diagnostics, ...contentDiagnostics],
-          contract.fields.some(
-            (field) => field.token.startsWith("next_event.")
-          )
+          contract.fields.flatMap(
+            (field) => field.type === "collection" ? field.fields : [field]
+          ).some((field) => field.token.startsWith("next_event."))
         );
         return model ? { ...model, cover } : void 0;
       },
@@ -75409,6 +75475,16 @@ var DateTemplateFormatter = class {
   }
 };
 
+// packages/presentation/templating/src/template-collection-parser.ts
+var TemplateCollectionParser = class {
+  parse(text) {
+    if (!text.includes("{{#")) return void 0;
+    const match = /^\{\{#each ([a-z][a-z0-9_]*)\}\}$/.exec(text.trim());
+    if (!match) throw new TemplateError("syntax");
+    return match[1];
+  }
+};
+
 // packages/presentation/templating/src/template-expression-parser.ts
 var TemplateExpressionParser = class {
   parse(body, syntax) {
@@ -75490,6 +75566,9 @@ var TemplateRenderer = class {
 
 // packages/presentation/templating/src/dependency-composition.ts
 var TemplatingComposition = class {
+  collectionParser() {
+    return new TemplateCollectionParser();
+  }
   parser() {
     return new TemplateParser(new TemplateExpressionParser());
   }

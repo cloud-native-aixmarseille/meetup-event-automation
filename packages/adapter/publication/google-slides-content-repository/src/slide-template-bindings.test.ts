@@ -1,3 +1,4 @@
+import { GoogleSlidesContentRepositoryComposition } from "./dependency-composition.js";
 import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { TemplatingComposition } from "@meetup-automation/templating";
 import { describe, expect, it } from "vitest";
@@ -27,6 +28,8 @@ describe("SlideTemplateBindings", () => {
 
 		// Act
 		const style = new SlideTemplateBindings({
+			collections:
+				new GoogleSlidesContentRepositoryComposition().collectionIdentity(),
 			templates: new TemplatingComposition().parser(),
 			contentTextKey: new PublicationDomainComposition().contentTextKey(),
 		}).style(element);
@@ -51,6 +54,8 @@ describe("SlideTemplateBindings", () => {
 		// Act
 		const read = () =>
 			new SlideTemplateBindings({
+				collections:
+					new GoogleSlidesContentRepositoryComposition().collectionIdentity(),
 				templates: new TemplatingComposition().parser(),
 				contentTextKey: new PublicationDomainComposition().contentTextKey(),
 			}).style(element);

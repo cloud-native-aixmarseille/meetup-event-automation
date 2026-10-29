@@ -32,6 +32,25 @@ Malformed expressions and unregistered fields are rejected. Values are inserted
 once as literal text, even if they contain template syntax or HTML. There is no
 recursive evaluation, arbitrary property access, or executable expression syntax.
 
+## Native Slides collections
+
+Put `{{#each talks}}` or `{{#each speakers}}` in a text shape's alt title.
+The native container supplies the repetition boundary: an ungrouped marker
+repeats its slide; a marker grouped with its card elements repeats that group
+inside its original area. No closing marker or external configuration is needed.
+
+Inside the container, use unnumbered fields such as `{{talk.title}}`,
+`{{talk.abstract}}`, `{{talk.speakers}}`, or `{{speaker.name}}` in text shapes.
+For a portrait, use `{{speaker.picture}}` in the image's alt title. Each text
+shape still contains exactly one expression. Keep meaningful image descriptions.
+The generic directive parser only identifies a collection; the asset feature
+supplies the allowed collections, public values, order, and native rendering.
+
+Collections support 1 to 200 current entries. An empty or invalid agenda leaves
+content pending before mutation. Nested collections, numbered participants
+inside a collection, and collection directives in Docs or filenames are rejected.
+See [collection layout and ownership](../integrations/assets.md#repeat-talks-and-speakers).
+
 ## Date formats
 
 | Pattern tokens | Meaning                                          |

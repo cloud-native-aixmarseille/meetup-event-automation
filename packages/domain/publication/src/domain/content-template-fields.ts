@@ -1,6 +1,7 @@
 import {
 	type ContentAnchor,
 	type ContentContract,
+	type ContentField,
 	type ImageField,
 	SLOTTED_TEXT_TOKENS,
 	TEXT_TOKENS,
@@ -91,15 +92,15 @@ export class ContentTemplateFields {
 	contract(
 		kind: string,
 		mimeType: string,
-		fields: readonly (TextField | ImageField)[],
+		fields: readonly ContentField[],
 	): ContentContract | undefined {
 		if (!fields.length) return undefined;
-		const distinct = new Map<string, TextField | ImageField>();
+		const distinct = new Map<string, ContentField>();
 		for (const field of fields) {
 			const key = field.type === "text" ? this.keys.of(field) : field.slot;
 			if (
 				distinct.has(key) &&
-				(field.type === "image" || distinct.get(key)?.type === "image")
+				(field.type !== "text" || distinct.get(key)?.type !== "text")
 			)
 				throw new ContentError("contract");
 			distinct.set(key, field);

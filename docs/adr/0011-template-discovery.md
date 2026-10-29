@@ -42,3 +42,27 @@ keep their frozen definition and manual-edit conflict checks. Previously authore
 named participant slots need a reviewed migration before positional rendering;
 there is no inferred identity-to-position conversion. Updating the consumer pin
 and the native templates must be coordinated before removing old configuration.
+
+## Collection rendering decision - 2026-10-29
+
+The original decision above supported positional fields and did not add native
+layout instances. That restriction is superseded for explicitly authored collection
+containers; the scalar field and existing-copy enrollment decisions remain accepted.
+
+Discover `{{#each talks}}` and `{{#each speakers}}` from a text shape's alt title.
+An ungrouped marker owns a repeated slide; a grouped marker owns a compact card
+region. Google does not support alt titles on groups, so the marker belongs to a
+child text shape. The shared templating package owns directive syntax, publication
+owns public collection values and pending-write policy, and the Slides adapter
+owns native geometry, duplication, observation and its frozen template descriptor.
+
+Keep one manifest binding per collection so its cardinality does not change when
+the agenda does. Observe the complete owned container, including image bytes and
+styling. Preserve the first native instance as the prototype and replace generated
+instances in one revision-bound atomic batch. Empty or invalid agendas remain
+pending without writes. This avoids hidden prototype slides and preserves native
+media and file identities. Announcement collections use groups to retain one image.
+
+This extends manual-edit protection to repeated containers and adds no consumer
+asset configuration. It deliberately requires explicit recovery for uncertain
+structural writes rather than inferring success from partially observed media.
