@@ -916,48 +916,72 @@ it("preserves the last managed agenda verbatim when proposal refresh fails", () 
 	expect(patch.body).not.toContain("Must not replace");
 });
 
-it("round-trips imported punctuation and prevents names from breaking managed comments", () => {
-	// Arrange
-	const source = document({
-		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\n17\n`,
-	});
-	const codec = new GitHubIssueFormEventDocumentCodec({
-		createIssueFormReader: (...args) =>
-			new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
-				...args,
-			),
-		createIssueFormWriter: (...args) =>
-			new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
-				...args,
-			),
-	});
-	const decoded = codec.decode(source).event;
-	const name = "Example, Person: --><script>alert(1)</script>";
-	const selected = {
-		...decoded,
-		proposalStatus: "current" as const,
-		agenda: [
+it.each([false, true])(
+	"round-trips imported speakers and punctuation with row links: %s",
+	(linked) => {
+		// Arrange
+		const source = document({
+			body: `${LEGACY_BODY}\n### Conference Hall proposals\n\n17\n`,
+		});
+		const codec = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		});
+		const decoded = codec.decode(source).event;
+		const name = "Example, Person: --><script>alert(1)</script>";
+		const speakers = [
 			{
-				speakers: [{ id: "speaker-0001", displayName: name }],
-				description: "Public: Abstract [text]",
+				id: "speaker-0001",
+				displayName: name,
+				...(linked && {
+					source: { path: "referentials/speakers.csv", line: 7 },
+				}),
 			},
-		],
-	};
+			{
+				id: "speaker-0002",
+				displayName: "Second [Speaker]",
+				...(linked && {
+					source: { path: "referentials/speakers.csv", line: 12 },
+				}),
+			},
+		];
+		const selected = {
+			...decoded,
+			proposalStatus: "current" as const,
+			agenda: [
+				{
+					speakers,
+					description: "Public: Abstract [text]",
+				},
+			],
+		};
 
-	// Act
-	const patch = codec.createPatch(source, selected);
-	const roundTrip = codec.decode({ ...source, ...patch });
+		// Act
+		const patch = codec.createPatch(source, selected);
+		const roundTrip = codec.decode({ ...source, ...patch });
 
-	// Assert
-	expect(patch.body).not.toContain("--><script>");
-	expect(roundTrip.event.agenda[0].speakers).toEqual([
-		{ id: "speaker-0001", displayName: name },
-	]);
-	expect(roundTrip.event.agenda[0].description).toBe("Public: Abstract [text]");
-	expect(roundTrip.diagnostics.map((item) => item.code)).not.toContain(
-		"event.document.reference-metadata.stale",
-	);
-});
+		// Assert
+		expect(patch.body).not.toContain("--><script>");
+		expect(roundTrip.event.agenda[0].speakers).toEqual(speakers);
+		expect(patch.body).not.toMatch(/\[speaker-000[12]\]/);
+		if (linked) {
+			expect(patch.body).toContain("referentials/speakers.csv#L7)");
+			expect(patch.body).toContain("referentials/speakers.csv#L12)");
+		}
+		expect(roundTrip.event.agenda[0].description).toBe(
+			"Public: Abstract [text]",
+		);
+		expect(roundTrip.diagnostics.map((item) => item.code)).not.toContain(
+			"event.document.reference-metadata.stale",
+		);
+	},
+);
 
 it.each([false, true])(
 	"roundtrips the Meetup URL and publication checkbox: %s",
