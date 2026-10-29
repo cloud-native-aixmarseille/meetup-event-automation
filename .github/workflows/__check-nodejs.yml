@@ -1,6 +1,6 @@
 # Goal: Validate and package the TypeScript workspace.
-# Behavior: Analyze authored JavaScript/TypeScript, delegate Node.js checks to the
-# shared workflow, and build and test the workspace with Codecov reporting.
+# Behavior: Delegate configured CodeQL analysis and Node.js checks to the shared
+# workflow, and build and test the workspace with Codecov reporting.
 
 name: Internal - Checks for nodejs
 
@@ -10,25 +10,9 @@ on:
 permissions: {}
 
 jobs:
-  code-ql:
-    name: 🛡️ CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
-        with:
-          languages: javascript-typescript
-          build-mode: none
-          config-file: ./.github/codeql/config.yml
-      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
-
   test-nodejs:
-    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@1f81dd00d941680ab227a6eae5378790d6242e02 # 1.0.0
+    # Validate upstream PR #557; pin its released revision before merging.
+    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@c50db00593f693ca6d3a1eade308785bdb86034d
     permissions:
       contents: read
       id-token: write
@@ -36,9 +20,7 @@ jobs:
       pull-requests: write
       security-events: write
     with:
-      # The shared workflow cannot pass a CodeQL configuration file. Run the
-      # configured job above instead of scanning the generated bundles again.
-      code-ql: ""
+      code-ql-config-file: ./.github/codeql/config.yml
       build: |
         workspace:build
         package
