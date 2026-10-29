@@ -39,7 +39,6 @@ describe("Gemini image generation", () => {
 			{
 				type: "image",
 				mime_type: "image/jpeg",
-				delivery: "inline",
 				aspect_ratio: "9:16",
 				image_size: "2K",
 			},

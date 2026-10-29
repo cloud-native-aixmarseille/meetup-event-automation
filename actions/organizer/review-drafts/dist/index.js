@@ -76161,7 +76161,6 @@ var GeminiImageFormat = class {
     return {
       type: "image",
       mime_type: "image/jpeg",
-      delivery: "inline",
       aspect_ratio: this.aspectRatio(width / height),
       image_size: edge <= 1024 ? "1K" : edge <= 2048 ? "2K" : "4K"
     };

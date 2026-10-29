@@ -19,14 +19,13 @@ describe("Gemini image output mapping", () => {
 			expect(encoded).toEqual({
 				type: "image",
 				mime_type: "image/jpeg",
-				delivery: "inline",
 				aspect_ratio: ratio,
 				image_size: size,
 			});
 		},
 	);
 	it.each(["image/png", "image/jpeg"] as const)(
-		"maps %s preferences to supported inline JPEG output",
+		"maps %s preferences to supported JPEG output",
 		(mimeType) => {
 			// Arrange
 			const format = new GeminiImageFormat();
@@ -35,7 +34,7 @@ describe("Gemini image output mapping", () => {
 			const encoded = format.encode(output);
 			// Assert
 			expect(encoded.mime_type).toBe("image/jpeg");
-			expect(encoded.delivery).toBe("inline");
+			expect(encoded).not.toHaveProperty("delivery");
 		},
 	);
 	it.each([
