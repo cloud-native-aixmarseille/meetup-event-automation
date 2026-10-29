@@ -30,7 +30,7 @@ Review content, import organizer submissions, and apply approved current values.
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/organizer/review-drafts@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/organizer/review-drafts@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
@@ -72,7 +72,7 @@ Review content, import organizer submissions, and apply approved current values.
     # This input is required.
     google-credentials: ""
 
-    # Public Drive folder for content images, shared with anyone as reader.
+    # Public Drive root ID containing the tmp-covers subfolder for content images.
     # This input is required.
     google-drive-public-folder-id: ""
 
@@ -102,7 +102,7 @@ Review content, import organizer submissions, and apply approved current values.
 | **`conference-hall-api-key`**       | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 | **`managed-comment-author`**        | GitHub App bot login owning content and approval comments.                                                                         | **true**     | -           |
 | **`google-credentials`**            | Google service-account JSON for immutable public content media.                                                                    | **true**     | -           |
-| **`google-drive-public-folder-id`** | Public Drive folder for content images, shared with anyone as reader.                                                              | **true**     | -           |
+| **`google-drive-public-folder-id`** | Public Drive root ID containing the tmp-covers subfolder for content images.                                                       | **true**     | -           |
 | **`slack-token`**                   | Slack bot token for organizer review requests and decision reactions.                                                              | **true**     | -           |
 | **`slack-organizer-channel-id`**    | Internal organizer channel receiving content reviews.                                                                              | **true**     | -           |
 
