@@ -104,7 +104,8 @@ coverage reports. These reporting entrypoints must remain compatible with the
 shared CI workflows.
 
 The Node.js check workflow passes [its scan configuration](../../.github/codeql/config.yml)
-to the shared workflow through `code-ql-config-file`. CodeQL scans authored
+to the shared workflow through the JSON `code-ql` input, with `languages` and
+`config-file` fields. CodeQL scans authored
 source, tests, and tooling with the default security queries, excluding only
 `actions/**/dist/**`. Those generated bundles duplicate source and third-party
 dependencies; `check:dist` verifies their bytes against a fresh build. Bundled

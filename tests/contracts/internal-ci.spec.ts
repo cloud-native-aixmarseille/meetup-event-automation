@@ -14,19 +14,21 @@ describe("internal CI contracts", () => {
 		// Arrange
 		const nodeChecks = await readWorkflow("__check-nodejs");
 		const sharedChecks = nodeChecks.jobs?.["test-nodejs"];
-		const configurationPath = String(
-			sharedChecks?.with?.["code-ql-config-file"],
-		);
 
 		// Act
-		const configuration =
-			await readYaml<Record<string, unknown>>(configurationPath);
+		const codeQl = JSON.parse(String(sharedChecks?.with?.["code-ql"]));
+		const configuration = await readYaml<Record<string, unknown>>(
+			codeQl["config-file"],
+		);
 
 		// Assert
 		expect(sharedChecks?.uses).toMatch(
 			/^hoverkraft-tech\/ci-github-nodejs\/\.github\/workflows\/continuous-integration\.yml@[0-9a-f]{40}$/,
 		);
-		expect(sharedChecks?.with?.["code-ql"]).toBeUndefined();
+		expect(codeQl).toEqual({
+			languages: "javascript-typescript",
+			"config-file": expect.any(String),
+		});
 		expect(nodeChecks.jobs).not.toHaveProperty("code-ql");
 		expect(configuration).toEqual({
 			name: expect.any(String),

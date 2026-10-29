@@ -12,7 +12,7 @@ permissions: {}
 jobs:
   test-nodejs:
     # Validate upstream PR #557; pin its released revision before merging.
-    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@c50db00593f693ca6d3a1eade308785bdb86034d
+    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@298790a342ce32dbbf8f24ab7cf1dd5a5f6d6c7f
     permissions:
       contents: read
       id-token: write
@@ -20,7 +20,11 @@ jobs:
       pull-requests: write
       security-events: write
     with:
-      code-ql-config-file: ./.github/codeql/config.yml
+      code-ql: |
+        {
+          "languages": "javascript-typescript",
+          "config-file": "./.github/codeql/config.yml"
+        }
       build: |
         workspace:build
         package
