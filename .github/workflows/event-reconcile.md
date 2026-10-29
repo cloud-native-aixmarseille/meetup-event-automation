@@ -44,7 +44,7 @@ on:
 permissions: {}
 jobs:
   event-reconcile:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile.yml@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile.yml@ffe0c106ecd89fcb30aa9e11fecaaccd15419ed5 # 5.1.1
     permissions:
       contents: read
     secrets:
