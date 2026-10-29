@@ -48,13 +48,17 @@ export class AttentionStageInput {
 					? stage.outcome
 					: "unknown",
 			diagnostics: this.readDiagnostics(stage.diagnostics),
-			reported: stage.diagnostics !== undefined && stage.diagnostics !== "",
+			reported:
+				stage.diagnostics !== undefined &&
+				stage.diagnostics !== null &&
+				stage.diagnostics !== "",
 		};
 	}
 	private isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === "object" && value !== null && !Array.isArray(value);
 	}
 	private readDiagnostics(input: unknown): readonly PublicDiagnostic[] {
+		if (input === undefined || input === null) return [];
 		let diagnostics = input;
 		if (typeof diagnostics === "string") {
 			if (!diagnostics) return [];
@@ -64,7 +68,6 @@ export class AttentionStageInput {
 				throw new Error("Invalid attention stage diagnostics");
 			}
 		}
-		if (diagnostics === undefined) return [];
 		if (!Array.isArray(diagnostics))
 			throw new Error("Invalid attention stage diagnostics");
 		return diagnostics.map((item: unknown) => {

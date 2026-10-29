@@ -47,6 +47,7 @@ describe("workflow attention input decoding", () => {
 		[],
 		{ event: [] },
 		{ assets: "success" },
+		{ event: { diagnostics: "null" } },
 		{
 			feedback: {
 				diagnostics: [
@@ -106,6 +107,30 @@ describe("workflow attention input decoding", () => {
 });
 
 describe("grouped stage evidence", () => {
+	it.each([undefined, null, ""])(
+		"retains incomplete evidence when a successful job omits diagnostics %j",
+		(diagnostics) => {
+			// Arrange
+			const input = JSON.stringify({
+				event: { outcome: "success", diagnostics },
+				assets: [
+					{ outcome: "success", diagnostics: "[]" },
+					{ outcome: "success", diagnostics },
+				],
+			});
+
+			// Act
+			const result = new AttentionStageInput().parse(input);
+
+			// Assert
+			for (const report of [result.event, result.assets])
+				expect(report).toEqual({
+					outcome: "success",
+					reported: false,
+					diagnostics: [],
+				});
+		},
+	);
 	it.each(["failure", "skipped", "cancelled"])(
 		"preserves incomplete document/PDF evidence for %s",
 		(outcome) => {
