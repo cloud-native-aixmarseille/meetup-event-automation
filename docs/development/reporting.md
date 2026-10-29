@@ -72,6 +72,9 @@ operations form the feedback stage. Every member must report success before its
 group is complete. A missing, failed or concurrently invalidated stage preserves previous tasks;
 new diagnostic tasks wait for a complete run. Technical attention still reports
 the failed stage. This avoids treating an unevaluated task as resolved.
+Missing diagnostics, including `null` when GitHub suppresses a job output,
+count as unreported evidence. They do not replace an explicit empty diagnostic
+array and cannot clear checklist tasks.
 Social publication has an optional independent stage in the same canonical
 comment. A complete social evaluation replaces only its marked section; base
 reconciliation preserves that section. Social reconciliation preserves the base

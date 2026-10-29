@@ -217,7 +217,15 @@ jobs:
       content-diagnostics: ${{ steps.content.outputs.diagnostics }}
       communications-outcome: ${{ steps.communications.outcome }}
       communications-diagnostics: ${{ steps.communications.outputs.diagnostics }}
-    if: ${{ !github.event.issue.pull_request && (!github.event.issue.number || github.event.issue.state == 'open') && (github.event_name != 'issue_comment' || (github.event.action == 'edited' && github.event.sender.type == 'User' && github.event.comment.user.type == 'Bot' && startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '))) }}
+    if: >-
+      ${{ !github.event.issue.pull_request &&
+          (!github.event.issue.number || github.event.issue.state == 'open') &&
+          ((github.event_name != 'issues' && github.event_name != 'issue_comment') ||
+           github.event.sender.type == 'User') &&
+          (github.event_name != 'issue_comment' ||
+           (github.event.action == 'edited' &&
+            github.event.comment.user.type == 'Bot' &&
+            startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '))) }}
   feedback-link:
     needs: manage
     if: ${{ !cancelled() && needs.manage.outputs.initialized == 'true' }}

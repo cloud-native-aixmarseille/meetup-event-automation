@@ -35698,13 +35698,14 @@ var AttentionStageInput = class {
     return {
       outcome: stage.outcome === "success" || stage.outcome === "failure" ? stage.outcome : "unknown",
       diagnostics: this.readDiagnostics(stage.diagnostics),
-      reported: stage.diagnostics !== void 0 && stage.diagnostics !== ""
+      reported: stage.diagnostics !== void 0 && stage.diagnostics !== null && stage.diagnostics !== ""
     };
   }
   isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
   readDiagnostics(input) {
+    if (input === void 0 || input === null) return [];
     let diagnostics = input;
     if (typeof diagnostics === "string") {
       if (!diagnostics) return [];
@@ -35714,7 +35715,6 @@ var AttentionStageInput = class {
         throw new Error("Invalid attention stage diagnostics");
       }
     }
-    if (diagnostics === void 0) return [];
     if (!Array.isArray(diagnostics))
       throw new Error("Invalid attention stage diagnostics");
     return diagnostics.map((item) => {

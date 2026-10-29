@@ -463,6 +463,7 @@ describe("typed attention stage boundary", () => {
 		},
 		{ event: { outcome: "failure" }, reported: false },
 		{ event: { outcome: "failure", diagnostics: "" }, reported: false },
+		{ event: { outcome: "success", diagnostics: null }, reported: false },
 		{ event: { outcome: "skipped", diagnostics: [] }, reported: false },
 		{ event: undefined, reported: false },
 	])(

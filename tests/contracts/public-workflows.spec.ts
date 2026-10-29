@@ -1,5 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { operationalWorkflows } from "./action-interface-usage.js";
 import {
@@ -256,6 +257,53 @@ describe("public reusable workflow contracts", () => {
 		])
 			expect(guard).toContain(condition);
 	});
+	it.each([
+		{ event: "issues", sender: "Bot", action: "edited", allowed: false },
+		{ event: "issues", sender: "Bot", action: "labeled", allowed: false },
+		{ event: "issues", sender: "User", action: "opened", allowed: true },
+		{ event: "issues", sender: "User", action: "edited", allowed: true },
+		{ event: "issues", sender: "User", action: "labeled", allowed: true },
+		{ event: "issue_comment", sender: "Bot", action: "edited", allowed: false },
+		{ event: "issue_comment", sender: "User", action: "edited", allowed: true },
+		{
+			event: "issue_comment",
+			sender: "User",
+			action: "created",
+			allowed: false,
+		},
+		{ event: "push", sender: "Bot", action: "", allowed: true },
+		{ event: "schedule", sender: "Bot", action: "", allowed: true },
+		{ event: "workflow_dispatch", sender: "User", action: "", allowed: true },
+	])(
+		"allows $event/$action by $sender: $allowed",
+		async ({ event, sender, action, allowed }) => {
+			// Arrange
+			const workflow = await readWorkflow("event-reconcile");
+			const expression = (workflow.jobs?.manage?.if ?? "").slice(3, -2);
+			const github = {
+				event_name: event,
+				event: {
+					action,
+					sender: { type: sender },
+					issue: { number: 42, state: "open" },
+					comment: {
+						user: { type: "Bot" },
+						body: '<!-- meetup-organizer-approval:v1 {"synthetic":true} -->',
+					},
+				},
+			};
+
+			// Act
+			// This guard uses the JS-compatible boolean subset of Actions expressions.
+			const actual = runInNewContext(expression, {
+				github,
+				startsWith: (value: string, prefix: string) => value.startsWith(prefix),
+			});
+
+			// Assert
+			expect(actual).toBe(allowed);
+		},
+	);
 });
 
 describe("event lifecycle entry points", () => {

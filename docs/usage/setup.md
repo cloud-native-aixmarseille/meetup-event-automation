@@ -102,6 +102,11 @@ that includes the features you configure. GitHub requires a literal revision in
 
 ### Process issue changes
 
+Only human issue changes and human edits to managed approval comments invoke
+reconciliation. GitHub App writes also emit issue events; their jobs must be
+skipped to prevent the automation from retriggering itself. Scheduled audits
+remain independent of this event filter.
+
 `.github/workflows/event-reconcile.yml`:
 
 ```yaml
@@ -117,9 +122,9 @@ jobs:
     if: >-
       ${{ !github.event.issue.pull_request &&
           github.event.issue.state == 'open' &&
+          github.event.sender.type == 'User' &&
           (github.event_name != 'issue_comment' ||
            (github.event.action == 'edited' &&
-            github.event.sender.type == 'User' &&
             github.event.comment.user.type == 'Bot' &&
             startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '))) }}
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile.yml@RELEASE_SHA
