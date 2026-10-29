@@ -86,6 +86,7 @@ export {
 	type ContentSettings,
 } from "./review/content-facts-projection.js";
 export { ContentReview } from "./review/content-review.js";
+export { ContentReviewWork } from "./review/content-review-work.js";
 export {
 	type ContentContext,
 	ContentWorkspace,

@@ -56,6 +56,7 @@ export { ContentFingerprint } from "./domain/content-fingerprint.js";
 export type * from "./domain/content-media.js";
 export { ContentMediaChangedError } from "./domain/content-media-changed-error.js";
 export { ContentTextKey } from "./domain/content-text-key.js";
+export { ContentTemplateFields } from "./domain/content-template-fields.js";
 export { CoverArtwork } from "./domain/cover-artwork.js";
 export { FeedbackLinkSelection } from "./domain/feedback-link-selection.js";
 export { FeedbackPolicy } from "./domain/feedback-policy.js";

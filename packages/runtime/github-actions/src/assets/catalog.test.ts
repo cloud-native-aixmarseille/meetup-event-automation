@@ -5,6 +5,10 @@ import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
 	"asset.agenda.talk": { title: "Public talk", speakers: "Example Speaker" },
+	"asset.next-event.missing": {},
+	"asset.abstract.missing": {},
+	"asset.speaker.generic": {},
+	"asset.host.generic": {},
 } satisfies MessageParameters;
 describe("asset catalogs", () => {
 	it.each(["en", "fr"] as const)(

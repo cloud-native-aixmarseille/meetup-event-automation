@@ -41,12 +41,19 @@ export type ImageField = Readonly<{
 	type: "image";
 	token: "speaker.picture" | "host.logo" | "event.cover";
 	slot: string;
+	sourceSlot?: string;
 	objectId: string;
 	pageId?: string;
 	tabId?: string;
 	required: boolean;
 	fallback?: ImageSource;
 	fit: "CENTER_CROP" | "CENTER_INSIDE";
+}>;
+export type TemplateContentDefaults = Readonly<{
+	missingNextEvent: string;
+	missingAbstract: string;
+	speaker: ImageSource;
+	host: ImageSource;
 }>;
 export type ContentContract = Readonly<{
 	version: 1;

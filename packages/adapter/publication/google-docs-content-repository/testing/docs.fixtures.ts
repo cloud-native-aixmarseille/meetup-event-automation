@@ -77,3 +77,16 @@ export function docsFixture() {
 			.documentTab as docs_v1.Schema$DocumentTab,
 	};
 }
+
+export const templateDefaults = {
+	missingNextEvent: "To be announced",
+	missingAbstract: "Abstract to be announced",
+	speaker: {
+		url: "https://images.example.test/speaker.png",
+		description: "Generic speaker",
+	},
+	host: {
+		url: "https://images.example.test/host.png",
+		description: "Generic host",
+	},
+};

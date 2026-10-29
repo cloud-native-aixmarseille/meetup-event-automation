@@ -1,6 +1,6 @@
 # Template expressions
 
-Drive filenames, Google Slides text shapes, and Google Docs body text use the
+Drive filenames, Google Slides text shapes, and Google Docs body text and image alt titles use the
 same template parser and renderer. Each feature supplies its permitted public
 fields. The templater does not access event objects, contacts, files, or services.
 
@@ -18,15 +18,14 @@ The `:` operator supplies an operand whose meaning belongs to the field:
 
 - A calendar date accepts a format: `[EVENT_DATE:YYYY-MM-DD]` or
   `{{event.date:D MMMM YYYY}}`.
-- A registered slotted field selects its assignment:
-  `{{talk.title:opening}}` or `{{speaker.name:portrait-a}}`.
+- A participant field selects its current agenda position:
+  `{{talk.title:1}}` or `{{speaker.name:1}}`.
 
 Filename templates permit only the event date and require an explicit format.
-Managed document fields must be declared in the
-[asset content contract](../integrations/assets.md#prepare-templates). For a
-formatted date, declare `token: "event.date"` or `token: "next_event.date"` and a
-`format` matching the expression's operand. For a slotted field, declare its
-`slot`. These are distinct operations; formatting cannot select a participant.
+Managed document fields are discovered directly from the template. Put image
+expressions such as `{{speaker.picture:1}}` or `{{host.logo}}` in the image's alt
+title. See [asset authoring](../integrations/assets.md#author-managed-content)
+for the allowed fields and agenda ordering. Formatting cannot select a participant.
 
 Names without expressions and ordinary labels such as `[Draft]` remain literal.
 Malformed expressions and unregistered fields are rejected. Values are inserted
@@ -68,6 +67,6 @@ occurrence in a supported body paragraph to a named range. See the
 fallbacks, and recovery.
 
 Reconciliation follows those stored bindings after rendering. It never scans
-rendered values for new expressions. Slotted fields retain their identities;
-formatted date fields have distinct stable identities for each format. Changing
-a contract still requires the documented ownership and recovery checks.
+rendered values for new expressions. Numbered selectors follow current agenda
+order; binding locations retain their identities. Changes to a source template
+affect new copies. Existing files keep their saved definition and edit history.

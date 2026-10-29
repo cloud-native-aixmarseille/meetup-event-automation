@@ -14,7 +14,21 @@ import type {
 	ImageField,
 	PublicAssetModel,
 	TextField,
+	TemplateContentDefaults,
 } from "../src/domain/asset-content.js";
+
+export const defaults: TemplateContentDefaults = {
+	missingNextEvent: "To be announced",
+	missingAbstract: "Abstract to be announced",
+	speaker: {
+		url: "https://images.example.org/speaker.png",
+		description: "Generic portrait",
+	},
+	host: {
+		url: "https://images.example.org/host.png",
+		description: "Generic logo",
+	},
+};
 
 export const mimeType = "application/vnd.google-apps.presentation";
 export const contract: ContentContract = {
@@ -102,6 +116,7 @@ export function contentDependencies(
 	};
 	const writes: ContentValue[] = [];
 	const renderer: AssetContentRepository = {
+		discover: vi.fn(async () => fields),
 		read: vi.fn(async (_file, _contract, registered) => ({
 			revision: String(state.revision),
 			locations: (registered ?? bindings)
@@ -150,6 +165,8 @@ export function contentFixture(
 		...dependencies,
 		service: new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -170,6 +187,7 @@ export function contentFixture(
 			dependencies.manifests,
 			{ [mimeType]: dependencies.renderer },
 			dependencies.images,
+			defaults,
 		),
 	};
 }

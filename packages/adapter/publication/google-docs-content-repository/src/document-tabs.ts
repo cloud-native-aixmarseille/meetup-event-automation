@@ -66,7 +66,8 @@ export class DocumentTabs {
 		if (!value || typeof value !== "object") return "";
 		return Object.entries(value)
 			.map(([key, item]) =>
-				key === "content" && typeof item === "string"
+				["content", "title", "description"].includes(key) &&
+				typeof item === "string"
 					? item
 					: this.allText(item),
 			)

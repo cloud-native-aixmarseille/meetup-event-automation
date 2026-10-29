@@ -23,6 +23,9 @@ export class DraftSourceInput {
 		private readonly social: Pick<SocialPublicationConfiguration, "load">,
 	) {}
 	async read(locale: Locale) {
+		return { ...this.readContext(locale), ...(await this.readConfiguration()) };
+	}
+	readContext(locale: Locale) {
 		return {
 			...context.repo,
 			locale,
@@ -38,6 +41,10 @@ export class DraftSourceInput {
 			commentAuthorLogin: core.getInput("managed-comment-author", {
 				required: true,
 			}),
+		};
+	}
+	async readConfiguration() {
+		return {
 			settings: await this.configuration.load(process.cwd()),
 			destinations: (await this.social.load(process.cwd())).destinations,
 			publication: (await this.publication.load(process.cwd())).schedule,

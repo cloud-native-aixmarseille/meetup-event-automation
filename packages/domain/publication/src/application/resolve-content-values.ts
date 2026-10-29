@@ -72,15 +72,20 @@ export class ResolveContentValues {
 			: this.collaborators.templates.value({ kind: "text", value: text });
 	}
 
+	private sourceSlot(field: ImageField): string {
+		return field.sourceSlot ?? field.slot;
+	}
+
 	private async image(
 		field: ImageField,
 		model: PublicAssetModel,
 	): Promise<ContentValue> {
 		if (field.token === "event.cover") return this.cover(field, model);
 		const host = field.token === "host.logo";
-		const picture = host ? model.hostLogo : model.pictures[field.slot];
+		const sourceSlot = this.sourceSlot(field);
+		const picture = host ? model.hostLogo : model.pictures[sourceSlot];
 		const hostId = host ? model.hostLogo?.hostId : undefined;
-		const speakerId = host ? undefined : model.pictures[field.slot]?.speakerId;
+		const speakerId = host ? undefined : model.pictures[sourceSlot]?.speakerId;
 		const identity = hostId ?? speakerId;
 		const fallback = field.fallback
 			? await this.images.validate(field.fallback)

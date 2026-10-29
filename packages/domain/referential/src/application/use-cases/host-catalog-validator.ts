@@ -8,12 +8,14 @@ import type {
 	ReferentialDiagnostics,
 } from "../../domain/referential-diagnostic.js";
 import type { ReferentialRecordFields } from "./referential-record-fields.js";
+import type { HostPublicDetails } from "./host-public-details.js";
 import type {
 	HostBuilder,
 	ParsedHostRecord,
 } from "./validate-referential-catalog-contracts.js";
 
 export interface HostCatalogValidatorCollaborators {
+	readonly publicDetails: Pick<HostPublicDetails, "parse" | "equal">;
 	readonly referentialDiagnostics: Pick<ReferentialDiagnostics, "diagnostic">;
 	readonly referentialRecordFields: Pick<
 		ReferentialRecordFields,
@@ -65,17 +67,22 @@ export class HostCatalogValidator {
 					id: parsed.hostId,
 					displayName: parsed.displayName,
 					contacts: [parsed.contact],
+					publicVenue: parsed.publicVenue,
+					logo: parsed.logo,
 				});
 				continue;
 			}
 
-			if (host.displayName !== parsed.displayName) {
+			if (
+				host.displayName !== parsed.displayName ||
+				!this.collaborators.publicDetails.equal(host, parsed)
+			) {
 				diagnostics.push(
 					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.host.id.conflict",
 						"error",
 						`hosts[${index}].hostId`,
-						"A host stable identifier cannot describe different host names.",
+						"A host stable identifier cannot describe different host names or public details.",
 					),
 				);
 				continue;
@@ -89,6 +96,8 @@ export class HostCatalogValidator {
 			id: host.id,
 			displayName: host.displayName,
 			contacts: host.contacts,
+			...(host.publicVenue ? { publicVenue: host.publicVenue } : {}),
+			...(host.logo ? { logo: host.logo } : {}),
 		}));
 	}
 
@@ -97,6 +106,11 @@ export class HostCatalogValidator {
 		index: number,
 		diagnostics: ReferentialDiagnostic[],
 	): ParsedHostRecord | undefined {
+		const publicDetails = this.collaborators.publicDetails.parse(
+			record,
+			index,
+			diagnostics,
+		);
 		const hostId = this.hostId(record, index, diagnostics);
 		const displayName = this.collaborators.referentialRecordFields.requiredText(
 			record.displayName,
@@ -127,15 +141,10 @@ export class HostCatalogValidator {
 			"Host contact phone must be a string when provided.",
 			diagnostics,
 		);
-		const address = this.collaborators.referentialRecordFields.requiredText(
-			record.address,
-			"referential.contact.address.invalid",
-			`hosts[${index}].address`,
-			"Host contact address must be a non-empty string.",
-			diagnostics,
-		);
+		const address = this.address(record, index, diagnostics);
 
 		if (
+			!publicDetails ||
 			!hostId ||
 			!displayName ||
 			!contactId ||
@@ -148,6 +157,7 @@ export class HostCatalogValidator {
 		}
 
 		return {
+			...publicDetails,
 			hostId,
 			displayName,
 			contact: {
@@ -158,6 +168,20 @@ export class HostCatalogValidator {
 				address,
 			},
 		};
+	}
+
+	private address(
+		record: RawHostRecord,
+		index: number,
+		diagnostics: ReferentialDiagnostic[],
+	) {
+		return this.collaborators.referentialRecordFields.requiredText(
+			record.address,
+			"referential.contact.address.invalid",
+			`hosts[${index}].address`,
+			"Host contact address must be a non-empty string.",
+			diagnostics,
+		);
 	}
 
 	private hostId(

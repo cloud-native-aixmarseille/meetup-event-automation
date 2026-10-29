@@ -1,89 +1,73 @@
 import { PublicationDomainComposition } from "@meetup-automation/publication";
+import type { SpeakerId } from "@meetup-automation/referential";
 import { describe, expect, it } from "vitest";
 import { publicCatalog, talk } from "../../testing/asset-render.fixtures.js";
 import { event } from "../../testing/meetup-journey.fixtures.js";
 import { AssetParticipantProjection } from "./asset-participant-projection.js";
 
-const assignments = {
-	speakers: { portrait: "speaker-0001" },
-	talks: {
-		opening: {
-			provider: "conference-hall",
-			event: "public-cfp",
-			id: "proposal-a",
-		},
-	},
-	venues: {},
-};
-
-describe("asset participant slots", () => {
-	it("retains the same talk and portrait after agenda reordering", () => {
+describe("asset participant positions", () => {
+	it("follows current agenda order for talks and unique speakers", () => {
 		// Arrange
+		const second = {
+			...publicCatalog.speakers[0],
+			id: "speaker-0002" as SpeakerId,
+			displayName: "Second Speaker",
+			pictureUrl: "https://images.example.test/second.png",
+		};
 		const other = {
 			...talk,
 			proposal: { ...talk.proposal, id: "proposal-b", title: "Other talk" },
+			speakers: [{ id: second.id, displayName: second.displayName }],
 		};
-
-		// Act
-		const before = new AssetParticipantProjection({
+		const catalog = {
+			...publicCatalog,
+			speakers: [...publicCatalog.speakers, second],
+		};
+		const projection = new AssetParticipantProjection({
 			publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
-		}).create({ ...event, agenda: [talk, other] }, publicCatalog, assignments);
-		const after = new AssetParticipantProjection({
-			publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
-		}).create({ ...event, agenda: [other, talk] }, publicCatalog, assignments);
-
-		// Assert
-		expect(after).toEqual(before);
-		expect(after.talks.opening).toEqual({
-			title: "Public title",
-			abstract: "Public abstract",
-			speakers: ["Example Speaker"],
 		});
-		expect(after.speakers.portrait).toBe("Public Speaker");
-		expect(after.pictures.portrait.speakerId).toBe("speaker-0001");
+		// Act
+		const before = projection.create(
+			{ ...event, agenda: [talk, other, talk] },
+			catalog,
+		);
+		const after = projection.create(
+			{ ...event, agenda: [other, talk] },
+			catalog,
+		);
+		// Assert
+		expect(before.talks["1"].title).toBe("Public title");
+		expect(before.talks["2"].title).toBe("Other talk");
+		expect(before.talks["3"].title).toBe("Public title");
+		expect(after.talks["1"].title).toBe("Other talk");
+		expect(after.talks["2"].title).toBe("Public title");
+		expect(before.speakers).toEqual({
+			"1": "Public Speaker",
+			"2": "Second Speaker",
+		});
+		expect(after.speakers).toEqual({
+			"1": "Second Speaker",
+			"2": "Public Speaker",
+		});
+		expect(after.pictures["1"].speakerId).toBe(second.id);
+		expect(after.pictures["2"].speakerId).toBe("speaker-0001");
 		expect(JSON.stringify(after)).not.toContain("private");
 	});
-
-	it.each([
-		{ agenda: [] },
-		{
-			agenda: [
-				{
-					...talk,
-					proposal: { ...talk.proposal, event: "different-cfp" },
-					speakers: [],
-				},
-			],
-		},
-	])(
-		"leaves removed or differently sourced identities missing",
-		({ agenda }) => {
-			// Arrange
-			const current = { ...event, agenda };
-
-			// Act
-			const actual = new AssetParticipantProjection({
-				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
-			}).create(current, publicCatalog, assignments);
-
-			// Assert
-			expect(actual).toEqual({ speakers: {}, talks: {}, pictures: {} });
-		},
-	);
-
-	it("does not guess between duplicated proposal identities", () => {
+	it("uses manual agenda descriptions and clears removed participants", () => {
 		// Arrange
-		const current = { ...event, agenda: [talk, talk] };
-
-		// Act
-		const actual = new AssetParticipantProjection({
+		const projection = new AssetParticipantProjection({
 			publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
-		}).create(current, publicCatalog, assignments);
-
+		});
+		// Act
+		const manual = projection.create(
+			{ ...event, agenda: [{ description: "Manual talk", speakers: [] }] },
+			publicCatalog,
+		);
+		const empty = projection.create({ ...event, agenda: [] }, publicCatalog);
 		// Assert
-		expect(actual.talks).toEqual({});
+		expect(manual.talks["1"]).toEqual({ title: "Manual talk", speakers: [] });
+		expect(empty).toEqual({ speakers: {}, talks: {}, pictures: {} });
 	});
-
 	it.each([
 		undefined,
 		"http://images.example.test/p.png",
@@ -91,7 +75,7 @@ describe("asset participant slots", () => {
 		"https://user:pass@example.test/p.png",
 		"invalid",
 	])(
-		"keeps a public name when its portrait URL is unusable: %s",
+		"keeps the public name when the portrait is unusable: %s",
 		(pictureUrl) => {
 			// Arrange
 			const catalog = {
@@ -101,15 +85,14 @@ describe("asset participant slots", () => {
 					pictureUrl,
 				})),
 			};
-
-			// Act
-			const actual = new AssetParticipantProjection({
+			const projection = new AssetParticipantProjection({
 				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
-			}).create({ ...event, agenda: [talk] }, catalog, assignments);
-
+			});
+			// Act
+			const actual = projection.create({ ...event, agenda: [talk] }, catalog);
 			// Assert
 			expect(actual.pictures).toEqual({});
-			expect(actual.speakers.portrait).toBe("Public Speaker");
+			expect(actual.speakers["1"]).toBe("Public Speaker");
 		},
 	);
 });

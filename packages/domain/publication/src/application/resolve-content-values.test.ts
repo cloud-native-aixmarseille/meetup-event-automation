@@ -149,3 +149,49 @@ describe("slotted content values", () => {
 		await expect(result).rejects.toMatchObject({ code: "missing" });
 	});
 });
+
+it("renders the same agenda portrait at independent discovered image locations", async () => {
+	// Arrange
+	const f = contentFixture();
+	const domain = new PublicationDomainComposition();
+	const resolver = new ResolveContentValues(
+		{
+			templates: { value: (value) => value.value },
+			contentTextKey: domain.contentTextKey(),
+			contentContractPolicy: domain.contentContractPolicy(),
+			contentFingerprint: domain.contentFingerprint(),
+		},
+		f.images,
+	);
+	const picture = {
+		speakerId: "speaker-0001",
+		url: "https://images.example.test/portrait.png",
+		description: "First speaker",
+	};
+	const fields = ["image-a", "image-b"].map((slot) => ({
+		type: "image" as const,
+		token: "speaker.picture" as const,
+		slot,
+		sourceSlot: "1",
+		objectId: slot,
+		pageId: "page",
+		required: true,
+		fit: "CENTER_CROP" as const,
+	}));
+	// Act
+	const values = await resolver.execute(
+		{ ...contract, fields },
+		{ text: {}, pictures: { "1": picture } },
+	);
+	// Assert
+	expect(values).toEqual(
+		["image-a", "image-b"].map((key) =>
+			expect.objectContaining({
+				key,
+				image: picture,
+				speakerId: picture.speakerId,
+				fallback: false,
+			}),
+		),
+	);
+});

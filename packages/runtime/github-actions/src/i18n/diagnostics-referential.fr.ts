@@ -66,4 +66,6 @@ export const DIAGNOSTICS_REFERENTIAL_FR = {
 		"Plusieurs hôtes portent ce nom ; ajoutez le bon identifiant stable.",
 	"diagnostic.referential.reference.speaker.ambiguous":
 		"Plusieurs intervenants portent ce nom ; ajoutez le bon identifiant stable.",
+	"diagnostic.referential.host.public-details.invalid":
+		"Renseigner des valeurs valides pour tous les champs du lieu public et du logo public, ou laisser chaque groupe vide.",
 } satisfies Record<keyof typeof DIAGNOSTICS_REFERENTIAL_EN, string>;

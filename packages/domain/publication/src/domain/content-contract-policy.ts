@@ -109,11 +109,13 @@ export class ContentContractPolicy {
 			typeof field.required !== "boolean" ||
 			!this.name(field.slot) ||
 			!this.name(field.objectId) ||
+			!this.validSourceSlot(field) ||
 			!this.keys(field, [
 				"type",
 				"token",
 				"slot",
 				"objectId",
+				"sourceSlot",
 				"pageId",
 				"tabId",
 				"required",
@@ -138,12 +140,25 @@ export class ContentContractPolicy {
 			token: field.token,
 			required: field.required,
 			slot: field.slot,
+			...(typeof field.sourceSlot === "string"
+				? { sourceSlot: field.sourceSlot }
+				: {}),
 			objectId: field.objectId,
 			fit: field.fit,
 			...(typeof field.pageId === "string" ? { pageId: field.pageId } : {}),
 			...(typeof field.tabId === "string" ? { tabId: field.tabId } : {}),
 			...(fallback ? { fallback } : {}),
 		};
+	}
+
+	private validSourceSlot(field: Record<string, unknown>): boolean {
+		return (
+			field.sourceSlot === undefined ||
+			(field.token === "speaker.picture" &&
+				typeof field.sourceSlot === "string" &&
+				/^[1-9]\d{0,2}$/.test(field.sourceSlot) &&
+				Number(field.sourceSlot) <= 200)
+		);
 	}
 
 	private coverContract(field: Record<string, unknown>): void {

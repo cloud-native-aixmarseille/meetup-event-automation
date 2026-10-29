@@ -179,7 +179,7 @@ function subject() {
 		publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 		createJourney: mocks.createAssets,
 		runtimeInput: composition.runtimeInput(),
-		assetContentConfiguration: composition.assetContentConfiguration(),
+		assetRecoveryInput: composition.assetRecoveryInput(),
 		conferenceHallInput: composition.conferenceHallInput(),
 		actionOutput: composition.actionOutput(),
 	});

@@ -9,7 +9,6 @@ import type {
 	MeetupPublicationChecklist,
 } from "@meetup-automation/event";
 import type {
-	PublicAssetVenue,
 	PublicationUrlPolicy,
 	PublicNextAssetEvent,
 } from "@meetup-automation/publication";
@@ -34,7 +33,6 @@ export class FindNextAssetEvent {
 		private readonly repository: Pick<EventRepository, "listPage">,
 		private readonly codec: EventDocumentCodec,
 		private readonly eventLabel: string,
-		private readonly venues: Readonly<Record<string, PublicAssetVenue>> = {},
 	) {}
 
 	async find(
@@ -53,7 +51,7 @@ export class FindNextAssetEvent {
 				return {
 					date: candidate.date,
 					hostName: host.displayName,
-					city: this.venues[host.id]?.city,
+					city: host.publicVenue?.city,
 				};
 		}
 		return undefined;

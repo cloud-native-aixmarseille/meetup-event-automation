@@ -63423,69 +63423,37 @@ var AiInput = class {
   }
 };
 
-// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+// packages/runtime/github-actions/src/assets/asset-recovery-input.ts
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-var AssetContentConfiguration = class {
+var AssetRecoveryInput = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
   }
   collaborators;
-  usesNextEvent(contracts) {
-    return Object.values(contracts).some((contract) => {
-      const fields2 = this.collaborators.runtimeInput.isObject(contract) ? contract.fields : void 0;
-      return Array.isArray(fields2) && fields2.some(
-        (field) => this.collaborators.runtimeInput.isObject(field) && typeof field.token === "string" && field.token.startsWith("next_event.")
-      );
-    });
-  }
   async load(root, eventId) {
     let text;
     try {
       text = await readFile(
-        join(root, ".github/meetup-asset-content.json"),
+        join(root, ".github/meetup-asset-recovery.json"),
         "utf8"
       );
     } catch (error2) {
       if (this.collaborators.runtimeInput.isObject(error2) && error2.code === "ENOENT")
-        return {
-          contracts: {},
-          speakers: {},
-          talks: {},
-          venues: {},
-          hostLogos: {},
-          recovery: {}
-        };
+        return {};
       throw error2;
     }
     if (Buffer.byteLength(text) > 1e6)
-      throw new Error("Asset content configuration is too large");
+      throw new Error("Asset recovery input is too large");
     return this.parse(JSON.parse(text), eventId);
   }
   parse(root, eventId) {
-    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.contracts) || !this.collaborators.contentContractPolicy.keys(root, [
+    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.events) || !this.collaborators.contentContractPolicy.keys(root, [
       "version",
-      "contracts",
-      "events",
-      "venues",
-      "hostLogos"
-    ]) || root.events !== void 0 && !this.collaborators.runtimeInput.isObject(root.events))
-      throw new Error("Invalid asset content configuration");
-    const selected = this.collaborators.runtimeInput.isObject(root.events) ? root.events[eventId] : void 0;
-    const event = selected === void 0 ? {} : selected;
-    if (!this.collaborators.runtimeInput.isObject(event) || !this.collaborators.contentContractPolicy.keys(event, [
-      "speakers",
-      "talks",
-      "recovery"
+      "events"
     ]))
-      throw new Error("Invalid asset event configuration");
-    const assignments = this.collaborators.assetRenderConfiguration.parse(
-      event,
-      root.venues,
-      root.hostLogos
-    );
-    const recovery = this.recovery(event.recovery);
-    return { contracts: root.contracts, ...assignments, recovery };
+      throw new Error("Invalid asset recovery input");
+    return this.recovery(root.events[eventId]);
   }
   recovery(input) {
     const value = input === void 0 ? {} : input;
@@ -63510,99 +63478,6 @@ var AssetContentConfiguration = class {
       };
     }
     return result;
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-render-configuration.ts
-var AssetRenderConfiguration = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  parse(event, venues, hostLogos) {
-    return {
-      speakers: this.speakers(event.speakers),
-      talks: this.talks(event.talks),
-      venues: this.venues(venues),
-      hostLogos: this.logos(hostLogos)
-    };
-  }
-  speakers(input) {
-    const result = {};
-    for (const [slot, id] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      if (!this.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
-        throw new Error("Invalid asset speaker assignment");
-      result[slot] = id;
-    }
-    return result;
-  }
-  talks(input) {
-    const result = {};
-    for (const [slot, value] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      const identity = this.record(value);
-      if (!this.slot(slot) || !this.collaborators.contentContractPolicy.keys(identity, [
-        "provider",
-        "event",
-        "id"
-      ]) || !this.identity(identity.provider) || !this.identity(identity.event) || !this.identity(identity.id))
-        throw new Error("Invalid asset talk assignment");
-      result[slot] = {
-        provider: identity.provider,
-        event: identity.event,
-        id: identity.id
-      };
-    }
-    return result;
-  }
-  venues(input) {
-    const result = {};
-    for (const [id, value] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      const venue = this.record(value);
-      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.contentContractPolicy.keys(venue, [
-        "address",
-        "postalCode",
-        "city"
-      ]) || !this.collaborators.contentContractPolicy.text(venue.address) || !this.collaborators.contentContractPolicy.text(venue.postalCode) || !this.collaborators.contentContractPolicy.text(venue.city))
-        throw new Error("Invalid public asset venue");
-      result[id] = {
-        address: venue.address,
-        postalCode: venue.postalCode,
-        city: venue.city
-      };
-    }
-    return result;
-  }
-  logos(input) {
-    const result = {};
-    for (const [hostId, value] of Object.entries(
-      this.record(input === void 0 ? {} : input)
-    )) {
-      const logo = this.record(value);
-      if (!/^host-[a-z0-9-]+$/.test(hostId) || !this.collaborators.contentContractPolicy.keys(logo, [
-        "url",
-        "description"
-      ]) || !this.collaborators.contentContractPolicy.text(logo.url) || !this.collaborators.contentContractPolicy.text(logo.description))
-        throw new Error("Invalid public host logo");
-      result[hostId] = { url: logo.url, description: logo.description };
-    }
-    return result;
-  }
-  slot(value) {
-    return this.collaborators.contentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
-  }
-  identity(value) {
-    return typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
-  }
-  record(value) {
-    if (!this.collaborators.runtimeInput.isObject(value) || Object.keys(value).length > 200)
-      throw new Error("Invalid asset render configuration");
-    return value;
   }
 };
 
@@ -63782,16 +63657,21 @@ var ContentError = class extends Error {
 
 // packages/domain/publication/src/application/reconcile-asset-content.ts
 var ReconcileAssetContent = class {
-  constructor(collaborators, manifests, renderers, images) {
+  constructor(collaborators, manifests, renderers, images, defaults2) {
     this.collaborators = collaborators;
     this.manifests = manifests;
     this.renderers = renderers;
     this.images = images;
+    this.defaults = defaults2;
   }
   collaborators;
   manifests;
   renderers;
   images;
+  defaults;
+  async definition(folderId, template, file, recovery) {
+    return this.collaborators.createDiscoverAssetContent(this.manifests, this.renderers, this.defaults).read(folderId, template, file, recovery);
+  }
   async preflight(templateId, kind, mimeType, value, model) {
     const contract = this.collaborators.contentContractPolicy.parse(
       value,
@@ -64210,6 +64090,43 @@ var ReconcileSlidePdf = class {
   }
 };
 
+// packages/domain/publication/src/application/discover-asset-content.ts
+var DiscoverAssetContent = class {
+  constructor(collaborators, manifests, renderers, defaults2) {
+    this.collaborators = collaborators;
+    this.manifests = manifests;
+    this.renderers = renderers;
+    this.defaults = defaults2;
+  }
+  collaborators;
+  manifests;
+  renderers;
+  defaults;
+  async read(folderId, template, file, recovery) {
+    if (file?.contentManaged) {
+      const stored = await this.manifests.load(folderId, file.id);
+      if (stored === void 0 && recovery?.operation !== "enroll")
+        throw new ContentError("recovery");
+      if (stored !== void 0) {
+        const contract = this.collaborators.policy.parse(
+          stored,
+          file.id,
+          template.id,
+          file.mimeType ?? template.mimeType ?? ""
+        ).contract;
+        this.collaborators.fields.validateSelectors(contract);
+        return contract;
+      }
+    }
+    const renderer = this.renderers[template.mimeType ?? ""];
+    return renderer?.discover(
+      file?.id ?? template.id,
+      template.kind,
+      this.defaults
+    );
+  }
+};
+
 // packages/domain/publication/src/application/reconcile-asset-file.ts
 var ReconcileAssetFile = class {
   constructor(names, repository, content) {
@@ -64231,21 +64148,37 @@ var ReconcileAssetFile = class {
     let file = matches[0];
     const fresh = !file;
     try {
-      await this.preflight(input, file);
-      if (!file) file = await this.copyOrRename(input);
+      const prepared = await this.prepare(input, file);
+      await this.preflight(prepared, file);
+      if (!file) file = await this.copyOrRename(prepared);
       if (!file)
         return {
-          status: input.template.contentContract ? "pending" : "copy-only"
+          status: prepared.template.contentContract ? "pending" : "copy-only"
         };
-      file = await this.enroll(input, file);
-      const status = await this.render(input, file, fresh);
+      file = await this.enroll(prepared, file);
+      const status = await this.render(prepared, file, fresh);
       if (!fresh && (status === "ready" || status === "copy-only"))
-        file = await this.copyOrRename(input, file);
+        file = await this.copyOrRename(prepared, file);
       return { file, status };
     } catch (error2) {
       if (!(error2 instanceof ContentError)) throw error2;
       return this.failed(file, error2, input.diagnostics);
     }
+  }
+  async prepare(input, file) {
+    if (file && !file.contentManaged && input.recovery?.[file.id]?.operation !== "enroll")
+      return { ...input, model: void 0 };
+    const contract = await this.content?.definition(
+      input.container.id,
+      input.template,
+      file,
+      file ? input.recovery?.[file.id] : void 0
+    );
+    return {
+      ...input,
+      template: { ...input.template, contentContract: contract },
+      model: contract ? await input.model?.(contract) : void 0
+    };
   }
   failed(file, error2, diagnostics) {
     diagnostics.push(this.diagnostic(error2.code));
@@ -64370,12 +64303,16 @@ var ResolveContentValues = class {
     const text = model.text[this.collaborators.contentTextKey.of(field)] || (!field.required ? field.fallback : void 0);
     return text === void 0 ? void 0 : this.collaborators.templates.value({ kind: "text", value: text });
   }
+  sourceSlot(field) {
+    return field.sourceSlot ?? field.slot;
+  }
   async image(field, model) {
     if (field.token === "event.cover") return this.cover(field, model);
     const host = field.token === "host.logo";
-    const picture = host ? model.hostLogo : model.pictures[field.slot];
+    const sourceSlot = this.sourceSlot(field);
+    const picture = host ? model.hostLogo : model.pictures[sourceSlot];
     const hostId = host ? model.hostLogo?.hostId : void 0;
-    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
+    const speakerId = host ? void 0 : model.pictures[sourceSlot]?.speakerId;
     const identity = hostId ?? speakerId;
     const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
     try {
@@ -64674,11 +64611,12 @@ var ContentContractPolicy = class {
     return field.format === void 0 || (field.token === "event.date" || field.token === "next_event.date") && typeof field.format === "string" && field.format.trim().length > 0 && field.format.length <= 100 && /^[A-Za-z ./_-]+$/u.test(field.format);
   }
   image(field, mimeType) {
-    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" && field.token !== "event.cover" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" && field.token !== "event.cover" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.validSourceSlot(field) || !this.keys(field, [
       "type",
       "token",
       "slot",
       "objectId",
+      "sourceSlot",
       "pageId",
       "tabId",
       "required",
@@ -64696,12 +64634,16 @@ var ContentContractPolicy = class {
       token: field.token,
       required: field.required,
       slot: field.slot,
+      ...typeof field.sourceSlot === "string" ? { sourceSlot: field.sourceSlot } : {},
       objectId: field.objectId,
       fit: field.fit,
       ...typeof field.pageId === "string" ? { pageId: field.pageId } : {},
       ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
       ...fallback ? { fallback } : {}
     };
+  }
+  validSourceSlot(field) {
+    return field.sourceSlot === void 0 || field.token === "speaker.picture" && typeof field.sourceSlot === "string" && /^[1-9]\d{0,2}$/.test(field.sourceSlot) && Number(field.sourceSlot) <= 200;
   }
   coverContract(field) {
     if (field.token === "event.cover" && (!field.required || field.fallback !== void 0))
@@ -65060,6 +65002,89 @@ var ContentTextKey = class {
   reference(field) {
     const argument = field.format ?? field.slot;
     return argument === void 0 ? field.token : `${field.token}:${argument}`;
+  }
+};
+
+// packages/domain/publication/src/domain/content-template-fields.ts
+var ContentTemplateFields = class {
+  constructor(policy, keys, fingerprints) {
+    this.policy = policy;
+    this.keys = keys;
+    this.fingerprints = fingerprints;
+  }
+  policy;
+  keys;
+  fingerprints;
+  text(token, operand, defaults2) {
+    const known = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
+      (item) => item === token
+    );
+    if (!known) throw new ContentError("contract");
+    const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === known);
+    const date = known === "event.date" || known === "next_event.date";
+    if (slotted ? !this.position(operand) : operand !== void 0 && !date)
+      throw new ContentError("contract");
+    const fallback = known.startsWith("next_event.") ? defaults2.missingNextEvent : known === "talk.abstract" ? defaults2.missingAbstract : void 0;
+    return {
+      type: "text",
+      token: known,
+      required: fallback === void 0,
+      ...slotted ? { slot: operand } : {},
+      ...date && operand !== void 0 ? { format: operand } : {},
+      ...fallback === void 0 ? {} : { fallback }
+    };
+  }
+  image(token, operand, anchor, defaults2) {
+    if (token !== "speaker.picture" && token !== "host.logo" && token !== "event.cover" || !anchor.objectId)
+      throw new ContentError("contract");
+    if (token === "speaker.picture" ? !this.position(operand) : operand !== void 0)
+      throw new ContentError("contract");
+    return {
+      type: "image",
+      token,
+      slot: anchor.objectId,
+      ...operand === void 0 ? {} : { sourceSlot: operand },
+      objectId: anchor.objectId,
+      ...anchor.pageId ? { pageId: anchor.pageId } : {},
+      ...anchor.tabId ? { tabId: anchor.tabId } : {},
+      required: token === "event.cover",
+      fit: token === "host.logo" && anchor.pageId ? "CENTER_INSIDE" : "CENTER_CROP",
+      ...token === "event.cover" ? {} : {
+        fallback: token === "host.logo" ? defaults2.host : defaults2.speaker
+      }
+    };
+  }
+  contract(kind, mimeType, fields2) {
+    if (!fields2.length) return void 0;
+    const distinct = /* @__PURE__ */ new Map();
+    for (const field of fields2) {
+      const key = field.type === "text" ? this.keys.of(field) : field.slot;
+      if (distinct.has(key) && (field.type === "image" || distinct.get(key)?.type === "image"))
+        throw new ContentError("contract");
+      distinct.set(key, field);
+    }
+    const values = [...distinct.values()];
+    return this.policy.parse(
+      {
+        version: 1,
+        kind,
+        revision: `template-${this.fingerprints.of(JSON.stringify(values))}`,
+        fields: values
+      },
+      kind,
+      mimeType
+    );
+  }
+  validateSelectors(contract) {
+    for (const field of contract.fields) {
+      if (field.type === "image" && field.token === "speaker.picture" && !this.position(field.sourceSlot))
+        throw new ContentError("contract");
+      if (field.type === "text" && SLOTTED_TEXT_TOKENS.some((token) => token === field.token) && !this.position(field.slot))
+        throw new ContentError("contract");
+    }
+  }
+  position(value) {
+    return value !== void 0 && /^[1-9]\d{0,2}$/.test(value) && Number(value) <= 200;
   }
 };
 
@@ -65495,6 +65520,13 @@ var ScheduledEventPolicy = class {
 
 // packages/domain/publication/src/dependency-composition.ts
 var PublicationDomainComposition = class {
+  contentTemplateFields() {
+    return new ContentTemplateFields(
+      this.contentContractPolicy(),
+      this.contentTextKey(),
+      this.contentFingerprint()
+    );
+  }
   pdfExportPolicy() {
     return new PdfExportPolicy();
   }
@@ -65588,11 +65620,21 @@ var PublicationDomainComposition = class {
       ...args
     );
   }
+  discoverAssetContent(...args) {
+    return new DiscoverAssetContent(
+      {
+        policy: this.contentManifestPolicy(),
+        fields: this.contentTemplateFields()
+      },
+      ...args
+    );
+  }
   reconcileAssetContent(templates, ...args) {
     return new ReconcileAssetContent(
       {
         contentContractPolicy: this.contentContractPolicy(),
         contentRenderPlan: this.contentRenderPlan(),
+        createDiscoverAssetContent: (...args2) => this.discoverAssetContent(...args2),
         contentTextKey: this.contentTextKey(),
         contentManifestPolicy: this.contentManifestPolicy(),
         contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
@@ -67733,6 +67775,59 @@ var ValidateReferentialCatalog = class {
   }
 };
 
+// packages/domain/referential/src/application/use-cases/host-public-details.ts
+var HostPublicDetails = class {
+  parse(record, index, diagnostics) {
+    const venue = [
+      record.venueAddress,
+      record.venuePostalCode,
+      record.venueCity
+    ];
+    const logo = [record.logoUrl, record.logoDescription];
+    const hasVenue = venue.some((value) => value !== void 0 && value !== "");
+    const hasLogo = logo.some((value) => value !== void 0 && value !== "");
+    if (hasVenue && !venue.every((value) => this.text(value)) || hasLogo && (!logo.every((value) => this.text(value)) || !this.url(record.logoUrl))) {
+      diagnostics.push({
+        code: "referential.host.public-details.invalid",
+        severity: "error",
+        path: `hosts[${index}]`,
+        message: "Public venue fields and public logo fields must each be complete and valid when supplied."
+      });
+      return void 0;
+    }
+    return {
+      ...hasVenue && this.text(record.venueAddress) && this.text(record.venuePostalCode) && this.text(record.venueCity) ? {
+        publicVenue: Object.freeze({
+          address: record.venueAddress,
+          postalCode: record.venuePostalCode,
+          city: record.venueCity
+        })
+      } : {},
+      ...hasLogo && this.text(record.logoUrl) && this.text(record.logoDescription) ? {
+        logo: Object.freeze({
+          url: record.logoUrl,
+          description: record.logoDescription
+        })
+      } : {}
+    };
+  }
+  equal(left, right) {
+    return left.publicVenue?.address === right.publicVenue?.address && left.publicVenue?.postalCode === right.publicVenue?.postalCode && left.publicVenue?.city === right.publicVenue?.city && left.logo?.url === right.logo?.url && left.logo?.description === right.logo?.description;
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 2e3 && !/[\r\n<>\p{Cc}]/u.test(value);
+  }
+  url(value) {
+    if (!this.text(value)) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
+};
+
 // packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
 var HostCatalogValidator = class {
   constructor(collaborators) {
@@ -67765,17 +67860,19 @@ var HostCatalogValidator = class {
           ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
           id: parsed.hostId,
           displayName: parsed.displayName,
-          contacts: [parsed.contact]
+          contacts: [parsed.contact],
+          publicVenue: parsed.publicVenue,
+          logo: parsed.logo
         });
         continue;
       }
-      if (host.displayName !== parsed.displayName) {
+      if (host.displayName !== parsed.displayName || !this.collaborators.publicDetails.equal(host, parsed)) {
         diagnostics.push(
           this.collaborators.referentialDiagnostics.diagnostic(
             "referential.host.id.conflict",
             "error",
             `hosts[${index}].hostId`,
-            "A host stable identifier cannot describe different host names."
+            "A host stable identifier cannot describe different host names or public details."
           )
         );
         continue;
@@ -67786,10 +67883,17 @@ var HostCatalogValidator = class {
       ...host.source ? { source: host.source } : {},
       id: host.id,
       displayName: host.displayName,
-      contacts: host.contacts
+      contacts: host.contacts,
+      ...host.publicVenue ? { publicVenue: host.publicVenue } : {},
+      ...host.logo ? { logo: host.logo } : {}
     }));
   }
   parseHostRecord(record, index, diagnostics) {
+    const publicDetails = this.collaborators.publicDetails.parse(
+      record,
+      index,
+      diagnostics
+    );
     const hostId = this.hostId(record, index, diagnostics);
     const displayName = this.collaborators.referentialRecordFields.requiredText(
       record.displayName,
@@ -67820,17 +67924,12 @@ var HostCatalogValidator = class {
       "Host contact phone must be a string when provided.",
       diagnostics
     );
-    const address = this.collaborators.referentialRecordFields.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
-    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+    const address = this.address(record, index, diagnostics);
+    if (!publicDetails || !hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
       return void 0;
     }
     return {
+      ...publicDetails,
       hostId,
       displayName,
       contact: {
@@ -67841,6 +67940,15 @@ var HostCatalogValidator = class {
         address
       }
     };
+  }
+  address(record, index, diagnostics) {
+    return this.collaborators.referentialRecordFields.requiredText(
+      record.address,
+      "referential.contact.address.invalid",
+      `hosts[${index}].address`,
+      "Host contact address must be a non-empty string.",
+      diagnostics
+    );
   }
   hostId(record, index, diagnostics) {
     const hostIdValue = this.collaborators.referentialRecordFields.requiredText(
@@ -68203,6 +68311,7 @@ var SourceSpeakerEquality = class {
 var ReferentialDomainComposition = class {
   hostCatalogValidator() {
     return new HostCatalogValidator({
+      publicDetails: new HostPublicDetails(),
       referentialDiagnostics: this.referentialDiagnostics(),
       referentialRecordFields: this.referentialRecordFields(),
       referentialIdentifiers: this.referentialIdentifiers()
@@ -68692,36 +68801,32 @@ var AssetParticipantProjection = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  create(event, catalog, assignments) {
-    const agendaIds = new Set(
-      event.agenda.flatMap(
-        (talk) => talk.speakers.map((speaker) => speaker.id)
-      )
-    );
+  create(event, catalog) {
     const speakers = {};
     const pictures = {};
-    for (const [slot, id] of Object.entries(assignments.speakers)) {
-      const speaker = catalog.speakers.find((item) => item.id === id);
-      if (!speaker || !agendaIds.has(id)) continue;
+    const talks = {};
+    const seen = /* @__PURE__ */ new Set();
+    const ordered = event.agenda.flatMap((talk) => talk.speakers).filter((speaker) => {
+      if (!speaker.id || seen.has(speaker.id)) return false;
+      seen.add(speaker.id);
+      return true;
+    });
+    for (const [index, selected] of ordered.entries()) {
+      const speaker = catalog.speakers.find((item) => item.id === selected.id);
+      if (!speaker) continue;
+      const slot = String(index + 1);
       speakers[slot] = speaker.displayName;
       if (this.collaborators.publicAssetUrl.valid(speaker.pictureUrl)) {
         pictures[slot] = {
-          speakerId: id,
+          speakerId: speaker.id,
           url: speaker.pictureUrl,
           description: speaker.displayName
         };
       }
     }
-    const talks = {};
-    for (const [slot, identity] of Object.entries(assignments.talks)) {
-      const matches = event.agenda.filter(
-        (talk2) => talk2.proposal?.id === identity.id && talk2.proposal.provider === identity.provider && talk2.proposal.event === identity.event
-      );
-      if (matches.length !== 1) continue;
-      const talk = matches[0];
-      if (!talk.proposal) continue;
-      talks[slot] = {
-        title: talk.proposal.title,
+    for (const [index, talk] of event.agenda.entries()) {
+      talks[String(index + 1)] = {
+        title: talk.proposal?.title ?? talk.description,
         abstract: talk.proposal?.abstract,
         speakers: talk.speakers.map((speaker) => speaker.displayName)
       };
@@ -69375,32 +69480,26 @@ var JourneyPolicyComposition = class {
 
 // packages/application/journey/src/use-cases/asset-render-projection.ts
 var AssetRenderProjection = class {
-  constructor(collaborators, presenter, repository, assignments = {
-    speakers: {},
-    talks: {},
-    venues: {}
-  }, nextEvent) {
+  constructor(collaborators, presenter, repository, nextEvent) {
     this.collaborators = collaborators;
     this.presenter = presenter;
     this.repository = repository;
-    this.assignments = assignments;
     this.nextEvent = nextEvent;
   }
   collaborators;
   presenter;
   repository;
-  assignments;
   nextEvent;
-  async create(event, diagnostics) {
+  async create(event, diagnostics, usesNextEvent) {
     const catalog = await this.collaborators.createValidateReferentialCatalog(this.repository).execute();
     const agendaValid = catalog.isValid && event.proposalStatus !== "stale" && !diagnostics.some(
       (item) => item.severity === "error" && /agenda|referential|proposals/.test(`${item.code} ${item.field}`)
     );
     const participants = agendaValid ? this.collaborators.assetParticipantProjection.create(
       event,
-      catalog.catalog,
-      this.assignments
+      catalog.catalog
     ) : { speakers: {}, talks: {}, pictures: {} };
+    const host = catalog.isValid ? catalog.catalog.hosts.find((item) => item.id === event.host?.id) : void 0;
     return this.presenter.format({
       title: diagnostics.some(
         (item) => item.severity === "error" && /title/.test(item.code)
@@ -69408,8 +69507,8 @@ var AssetRenderProjection = class {
       date: event.date,
       timeZone: event.timeZone,
       hostName: event.host?.displayName,
-      hostLogo: catalog.isValid && catalog.catalog.hosts.some((host) => host.id === event.host?.id) ? this.hostLogo(event.host?.id) : void 0,
-      venue: event.host?.id ? this.assignments.venues[event.host.id] : void 0,
+      hostLogo: host?.logo && this.collaborators.publicAssetUrl.valid(host.logo.url) ? { ...host.logo, hostId: host.id } : void 0,
+      venue: host?.publicVenue,
       feedbackUrl: !diagnostics.some(
         (item) => item.severity === "error" && /feedback/.test(item.code)
       ) && this.collaborators.publicAssetUrl.valid(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
@@ -69418,30 +69517,23 @@ var AssetRenderProjection = class {
         speakers: talk.speakers.map((speaker) => speaker.displayName)
       })) : [],
       ...participants,
-      nextEvent: catalog.isValid ? await this.nextEvent?.find(event, catalog.catalog) : void 0
+      nextEvent: usesNextEvent && catalog.isValid ? await this.nextEvent?.find(event, catalog.catalog) : void 0
     });
-  }
-  hostLogo(hostId) {
-    if (!hostId) return void 0;
-    const logo = this.assignments.hostLogos?.[hostId];
-    return logo && this.collaborators.publicAssetUrl.valid(logo.url) ? { ...logo, hostId } : void 0;
   }
 };
 
 // packages/application/journey/src/use-cases/find-next-asset-event.ts
 var FindNextAssetEvent = class {
-  constructor(collaborators, repository, codec, eventLabel, venues = {}) {
+  constructor(collaborators, repository, codec, eventLabel) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.codec = codec;
     this.eventLabel = eventLabel;
-    this.venues = venues;
   }
   collaborators;
   repository;
   codec;
   eventLabel;
-  venues;
   async find(current, catalog) {
     const candidates = await this.candidates(current);
     candidates.sort(
@@ -69453,7 +69545,7 @@ var FindNextAssetEvent = class {
         return {
           date: candidate.date,
           hostName: host.displayName,
-          city: this.venues[host.id]?.city
+          city: host.publicVenue?.city
         };
     }
     return void 0;
@@ -69782,10 +69874,6 @@ var ReconcileMeetupDocuments = class {
       field,
       message: "Content requires current organizer approval"
     }));
-    const model = await this.dependencies.renderProjection?.create(
-      evaluation.event,
-      [...evaluation.diagnostics, ...contentDiagnostics]
-    );
     const cover = await this.dependencies.contentGate.cover(evaluation.event);
     const assets = await this.dependencies.reconcileAssets.execute({
       eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
@@ -69793,7 +69881,16 @@ var ReconcileMeetupDocuments = class {
       hostName,
       existingUrl: evaluation.event.publicationLinks.assets,
       mode: "fix",
-      model: model ? { ...model, cover } : void 0,
+      model: async (contract) => {
+        const model = await this.dependencies.renderProjection?.create(
+          evaluation.event,
+          [...evaluation.diagnostics, ...contentDiagnostics],
+          contract.fields.some(
+            (field) => field.token.startsWith("next_event.")
+          )
+        );
+        return model ? { ...model, cover } : void 0;
+      },
       recovery: this.dependencies.recovery
     });
     await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
@@ -71845,17 +71942,9 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
     container.bind(ScheduledEventPolicy).toResolvedValue(
       () => new PublicationDomainComposition().scheduledEventPolicy()
     );
-    container.bind(AssetRenderConfiguration).toResolvedValue(
-      (runtimeInput, contentContractPolicy) => new AssetRenderConfiguration({ runtimeInput, contentContractPolicy }),
+    container.bind(AssetRecoveryInput).toResolvedValue(
+      (runtimeInput, contentContractPolicy) => new AssetRecoveryInput({ runtimeInput, contentContractPolicy }),
       [RuntimeInput, ContentContractPolicy]
-    );
-    container.bind(AssetContentConfiguration).toResolvedValue(
-      (runtimeInput, contentContractPolicy, assetRenderConfiguration) => new AssetContentConfiguration({
-        runtimeInput,
-        contentContractPolicy,
-        assetRenderConfiguration
-      }),
-      [RuntimeInput, ContentContractPolicy, AssetRenderConfiguration]
     );
   }
   static bindPublication(container) {
@@ -75436,12 +75525,20 @@ var AssetDateFormatter = class {
 
 // packages/runtime/github-actions/src/assets/messages.en.ts
 var EN_MESSAGES = {
-  "asset.agenda.talk": "{title} - {speakers}"
+  "asset.agenda.talk": "{title} - {speakers}",
+  "asset.next-event.missing": "To be announced",
+  "asset.abstract.missing": "Abstract to be announced",
+  "asset.speaker.generic": "Generic speaker portrait",
+  "asset.host.generic": "Generic host logo"
 };
 
 // packages/runtime/github-actions/src/assets/messages.fr.ts
 var FR_MESSAGES = {
-  "asset.agenda.talk": "{title} - {speakers}"
+  "asset.agenda.talk": "{title} - {speakers}",
+  "asset.next-event.missing": "\xC0 annoncer",
+  "asset.abstract.missing": "R\xE9sum\xE9 \xE0 annoncer",
+  "asset.speaker.generic": "Portrait g\xE9n\xE9rique d'intervenant",
+  "asset.host.generic": "Logo g\xE9n\xE9rique du lieu"
 };
 
 // packages/runtime/github-actions/src/assets/catalog.ts
@@ -75561,7 +75658,8 @@ var DIAGNOSTICS_REFERENTIAL_EN = {
   "diagnostic.referential.host.display-name.duplicate": "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
   "diagnostic.referential.speaker.display-name.duplicate": "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
   "diagnostic.referential.reference.host.ambiguous": "Several hosts share this name; include the correct stable host ID.",
-  "diagnostic.referential.reference.speaker.ambiguous": "Several speakers share this name; include the correct stable speaker ID."
+  "diagnostic.referential.reference.speaker.ambiguous": "Several speakers share this name; include the correct stable speaker ID.",
+  "diagnostic.referential.host.public-details.invalid": "Complete the public venue fields and public logo fields with valid values, or leave each group empty."
 };
 
 // packages/runtime/github-actions/src/i18n/diagnostics-referential.fr.ts
@@ -75598,7 +75696,8 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
   "diagnostic.referential.host.display-name.duplicate": "Les noms d'h\xF4te normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
   "diagnostic.referential.speaker.display-name.duplicate": "Les noms d'intervenant normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
   "diagnostic.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom ; ajoutez le bon identifiant stable.",
-  "diagnostic.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom ; ajoutez le bon identifiant stable."
+  "diagnostic.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom ; ajoutez le bon identifiant stable.",
+  "diagnostic.referential.host.public-details.invalid": "Renseigner des valeurs valides pour tous les champs du lieu public et du logo public, ou laisser chaque groupe vide."
 };
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
@@ -75652,6 +75751,7 @@ var EN_MESSAGES2 = {
   "diagnostic.communication.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "report.content.generated": "Content generation evaluated.",
   "report.content.reviewed": "Content reviews reconciled.",
+  "report.content.no-work": "No content proposals or organizer submissions to review.",
   "action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
   "action.feedback.reconcile-short-link": "Reconcile shared feedback link",
   "action.organizer.reconcile-checklist": "Reconcile organizer checklist",
@@ -75806,6 +75906,7 @@ var FR_MESSAGES2 = {
   "diagnostic.communication.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "report.content.generated": "G\xE9n\xE9ration du contenu \xE9valu\xE9e.",
   "report.content.reviewed": "Validations du contenu synchronis\xE9es.",
+  "report.content.no-work": "Aucune proposition de contenu ni soumission d'organisateur \xE0 examiner.",
   "action.assets.reconcile-slides-pdf": "Mettre \xE0 jour le PDF des slides",
   "action.feedback.reconcile-short-link": "Mettre \xE0 jour le lien de feedback partag\xE9",
   "action.organizer.reconcile-checklist": "Mettre \xE0 jour la checklist organisateur",
@@ -76119,11 +76220,8 @@ var GithubActionsComposition = class _GithubActionsComposition {
   actionRunner() {
     return this.container.get(ActionRunner);
   }
-  assetContentConfiguration() {
-    return this.container.get(AssetContentConfiguration);
-  }
-  assetRenderConfiguration() {
-    return this.container.get(AssetRenderConfiguration);
+  assetRecoveryInput() {
+    return this.container.get(AssetRecoveryInput);
   }
   attentionStageInput() {
     return this.container.get(AttentionStageInput);
@@ -80434,6 +80532,9 @@ var DraftSourceInput = class {
   publication;
   social;
   async read(locale) {
+    return { ...this.readContext(locale), ...await this.readConfiguration() };
+  }
+  readContext(locale) {
     return {
       ...context2.repo,
       locale,
@@ -80448,7 +80549,11 @@ var DraftSourceInput = class {
       client: getOctokit(this.secret("github-token")),
       commentAuthorLogin: getInput("managed-comment-author", {
         required: true
-      }),
+      })
+    };
+  }
+  async readConfiguration() {
+    return {
       settings: await this.configuration.load(process.cwd()),
       destinations: (await this.social.load(process.cwd())).destinations,
       publication: (await this.publication.load(process.cwd())).schedule
@@ -87712,7 +87817,12 @@ var CsvReferentialCodec = class {
         contactName: row.contact,
         email: row.mail,
         phone: row.phone || void 0,
-        address: row.address
+        address: row.address,
+        venueAddress: row.venue_address,
+        venuePostalCode: row.venue_postal_code,
+        venueCity: row.venue_city,
+        logoUrl: row.logo_url,
+        logoDescription: row.logo_description
       })
     );
     const speakers = this.parseRows(speakersSource).map(

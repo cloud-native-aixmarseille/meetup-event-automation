@@ -93,17 +93,20 @@ describe("next public meetup for assets", () => {
 			f.repository,
 			f.codec,
 			"meetup",
-			{
-				"host-0001": {
+		);
+
+		// Act
+		const actual = await finder.find(event, {
+			...publicCatalog,
+			hosts: publicCatalog.hosts.map((host) => ({
+				...host,
+				publicVenue: {
 					address: "Public place",
 					postalCode: "13001",
 					city: "Marseille",
 				},
-			},
-		);
-
-		// Act
-		const actual = await finder.find(event, publicCatalog);
+			})),
+		});
 
 		// Assert
 		expect(actual).toEqual({

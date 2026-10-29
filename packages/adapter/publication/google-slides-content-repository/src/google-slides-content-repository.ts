@@ -1,3 +1,4 @@
+import type { SlideTemplateDefinition } from "./slide-template-definition.js";
 import type { slides_v1 } from "@googleapis/slides";
 import {
 	type AssetContentRepository,
@@ -5,6 +6,7 @@ import {
 	type ContentBinding,
 	type ContentChange,
 	type ContentContract,
+	type TemplateContentDefaults,
 	ContentError,
 	type ContentSnapshot,
 } from "@meetup-automation/publication";
@@ -16,6 +18,7 @@ import type { SlideContentRequests } from "./slide-content-requests.js";
 import type { SlideTemplateBindings } from "./slide-template-bindings.js";
 
 export interface GoogleSlidesContentRepositoryCollaborators {
+	readonly definition: Pick<SlideTemplateDefinition, "read">;
 	readonly slideTemplateBindings: Pick<SlideTemplateBindings, "discover">;
 	readonly slideContentRequests: Pick<SlideContentRequests, "build">;
 	readonly createSlideContentLocations: (
@@ -30,6 +33,20 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 		private readonly client: Pick<slides_v1.Slides, "presentations">,
 		private readonly images: AssetImageRepository,
 	) {}
+
+	async discover(
+		fileId: string,
+		kind: string,
+		defaults: TemplateContentDefaults,
+	): Promise<ContentContract | undefined> {
+		const { data } = await this.client.presentations.get(
+			{ presentationId: fileId },
+			{ retry: false, timeout: 30_000 },
+		);
+		if (!data.revisionId || data.presentationId !== fileId)
+			throw new ContentError("location");
+		return this.collaborators.definition.read(data, kind, defaults);
+	}
 
 	async read(
 		fileId: string,

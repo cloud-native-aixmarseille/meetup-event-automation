@@ -1,6 +1,5 @@
 import type { MeetupEvent } from "@meetup-automation/event";
 import type {
-	AssetRenderAssignments,
 	AssetRenderPresenter,
 	PublicAssetModel,
 	PublicAssetUrl,
@@ -30,17 +29,13 @@ export class AssetRenderProjection {
 		private readonly collaborators: AssetRenderProjectionCollaborators,
 		private readonly presenter: AssetRenderPresenter,
 		private readonly repository: ReferentialRepository,
-		private readonly assignments: AssetRenderAssignments = {
-			speakers: {},
-			talks: {},
-			venues: {},
-		},
 		private readonly nextEvent?: Pick<FindNextAssetEvent, "find">,
 	) {}
 
 	async create(
 		event: MeetupEvent,
 		diagnostics: readonly PublicDiagnostic[],
+		usesNextEvent: boolean,
 	): Promise<PublicAssetModel> {
 		const catalog = await this.collaborators
 			.createValidateReferentialCatalog(this.repository)
@@ -57,9 +52,11 @@ export class AssetRenderProjection {
 			? this.collaborators.assetParticipantProjection.create(
 					event,
 					catalog.catalog,
-					this.assignments,
 				)
 			: { speakers: {}, talks: {}, pictures: {} };
+		const host = catalog.isValid
+			? catalog.catalog.hosts.find((item) => item.id === event.host?.id)
+			: undefined;
 		return this.presenter.format({
 			title: diagnostics.some(
 				(item) => item.severity === "error" && /title/.test(item.code),
@@ -70,13 +67,10 @@ export class AssetRenderProjection {
 			timeZone: event.timeZone,
 			hostName: event.host?.displayName,
 			hostLogo:
-				catalog.isValid &&
-				catalog.catalog.hosts.some((host) => host.id === event.host?.id)
-					? this.hostLogo(event.host?.id)
+				host?.logo && this.collaborators.publicAssetUrl.valid(host.logo.url)
+					? { ...host.logo, hostId: host.id }
 					: undefined,
-			venue: event.host?.id
-				? this.assignments.venues[event.host.id]
-				: undefined,
+			venue: host?.publicVenue,
 			feedbackUrl:
 				!diagnostics.some(
 					(item) => item.severity === "error" && /feedback/.test(item.code),
@@ -91,18 +85,11 @@ export class AssetRenderProjection {
 					}))
 				: [],
 			...participants,
-			nextEvent: catalog.isValid
-				? await this.nextEvent?.find(event, catalog.catalog)
-				: undefined,
+			nextEvent:
+				usesNextEvent && catalog.isValid
+					? await this.nextEvent?.find(event, catalog.catalog)
+					: undefined,
 		});
-	}
-
-	private hostLogo(hostId?: string): PublicAssetModel["hostLogo"] {
-		if (!hostId) return undefined;
-		const logo = this.assignments.hostLogos?.[hostId];
-		return logo && this.collaborators.publicAssetUrl.valid(logo.url)
-			? { ...logo, hostId }
-			: undefined;
 	}
 }
 export type AssetRenderProjectionArguments =

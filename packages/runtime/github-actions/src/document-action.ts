@@ -3,7 +3,7 @@ import { context, getOctokit } from "@actions/github";
 import type { ReconcileMeetupDocuments } from "@meetup-automation/journey";
 import type { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
-import type { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
+import type { AssetRecoveryInput } from "./assets/asset-recovery-input.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { DocumentComposition } from "./document-composition.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
@@ -21,7 +21,7 @@ export interface DocumentActionCollaborators {
 		input: Parameters<typeof DocumentComposition.createDocumentContainer>[0],
 	) => Pick<ReconcileMeetupDocuments, "execute">;
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
-	readonly assetContentConfiguration: Pick<AssetContentConfiguration, "load">;
+	readonly assetRecoveryInput: Pick<AssetRecoveryInput, "load">;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
 	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
 }
@@ -47,11 +47,10 @@ export class DocumentAction {
 				this.collaborators.publicationUrlInput.readCommunityEventUrlPrefixes(),
 			assetFolderUrlPrefix:
 				this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
-			contentConfiguration:
-				await this.collaborators.assetContentConfiguration.load(
-					process.cwd(),
-					`${owner}/${repo}#${issueNumber}`,
-				),
+			recovery: await this.collaborators.assetRecoveryInput.load(
+				process.cwd(),
+				`${owner}/${repo}#${issueNumber}`,
+			),
 			locale: messages.locale,
 			issueNumber,
 			commentAuthorLogin: core.getInput("managed-comment-author", {

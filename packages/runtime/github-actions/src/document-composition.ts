@@ -14,6 +14,7 @@ import {
 } from "@meetup-automation/journey";
 import {
 	type AssetRepository,
+	type ContentRecovery,
 	PublicationDomainComposition,
 	ReconcileAssetContent,
 	ReconcileEventAssets,
@@ -21,7 +22,7 @@ import {
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import { TemplatingComposition } from "@meetup-automation/templating";
 import { AssetFileNameComposition } from "./asset-file-name-composition.js";
-import type { AssetContentConfigurationData } from "./assets/asset-content-configuration.js";
+import { AssetTemplateDefaults } from "./assets/asset-template-defaults.js";
 import { AssetTemplateRendererImpl } from "./assets/asset-template-renderer.js";
 import {
 	EventComposition,
@@ -42,7 +43,7 @@ type PublicationInput = EventCompositionInput & {
 	readonly credentials: string;
 	readonly parentFolderId: string;
 	readonly templateFolderId: string;
-	readonly contentConfiguration?: AssetContentConfigurationData;
+	readonly recovery: Readonly<Record<string, ContentRecovery>>;
 };
 
 export class DocumentComposition {
@@ -54,7 +55,6 @@ export class DocumentComposition {
 				.createGoogleDriveAssetRepository(input.credentials, {
 					parentFolderId: input.parentFolderId,
 					templateFolderId: input.templateFolderId,
-					contentContracts: input.contentConfiguration?.contracts,
 				}),
 		);
 		DocumentComposition.bindContent(container, input.credentials, input.locale);
@@ -88,31 +88,19 @@ export class DocumentComposition {
 						new GithubActionsComposition().assetMessages(input.locale),
 					),
 					context.get<ReferentialRepository>(SERVICES.referentialRepository),
-					input.contentConfiguration ?? {
-						speakers: {},
-						talks: {},
-						venues: {},
-					},
-					new GithubActionsComposition()
-						.assetContentConfiguration()
-						.usesNextEvent(input.contentConfiguration?.contracts ?? {})
-						? new JourneyComposition().findNextAssetEvent(
-								new PublicationPolicyComposition().meetupEventUrlPolicy(
-									input.meetupEventUrlPrefix,
-								),
-								new PublicationPolicyComposition().communityEventUrlPolicy(
-									input.communityEventUrlPrefixes,
-								),
-								context.get<EventRepository>(SERVICES.eventRepository),
-								context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
-								context.get<AutomationConfig>(SERVICES.config).event[
-									"issue-label"
-								],
-								input.contentConfiguration?.venues,
-							)
-						: undefined,
+					new JourneyComposition().findNextAssetEvent(
+						new PublicationPolicyComposition().meetupEventUrlPolicy(
+							input.meetupEventUrlPrefix,
+						),
+						new PublicationPolicyComposition().communityEventUrlPolicy(
+							input.communityEventUrlPrefixes,
+						),
+						context.get<EventRepository>(SERVICES.eventRepository),
+						context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
+						context.get<AutomationConfig>(SERVICES.config).event["issue-label"],
+					),
 				),
-				recovery: input.contentConfiguration?.recovery,
+				recovery: input.recovery,
 				eventRepository: context.get<EventRepository>(SERVICES.eventRepository),
 				documentCodec: context.get<EventDocumentCodec>(
 					SERVICES.eventDocumentCodec,
@@ -153,6 +141,9 @@ export class DocumentComposition {
 							.create(authentication, images),
 				},
 				images,
+				new AssetTemplateDefaults(
+					new GithubActionsComposition().assetMessages(locale),
+				).create(),
 			);
 		});
 	}

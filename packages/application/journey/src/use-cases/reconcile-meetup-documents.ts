@@ -117,10 +117,6 @@ export class ReconcileMeetupDocuments {
 			field,
 			message: "Content requires current organizer approval",
 		}));
-		const model = await this.dependencies.renderProjection?.create(
-			evaluation.event,
-			[...evaluation.diagnostics, ...contentDiagnostics],
-		);
 		const cover = await this.dependencies.contentGate.cover(evaluation.event);
 		const assets = await this.dependencies.reconcileAssets.execute({
 			eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
@@ -128,7 +124,16 @@ export class ReconcileMeetupDocuments {
 			hostName,
 			existingUrl: evaluation.event.publicationLinks.assets,
 			mode: "fix",
-			model: model ? { ...model, cover } : undefined,
+			model: async (contract) => {
+				const model = await this.dependencies.renderProjection?.create(
+					evaluation.event,
+					[...evaluation.diagnostics, ...contentDiagnostics],
+					contract.fields.some((field) =>
+						field.token.startsWith("next_event."),
+					),
+				);
+				return model ? { ...model, cover } : undefined;
+			},
 			recovery: this.dependencies.recovery,
 		});
 		await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(

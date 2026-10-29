@@ -10,8 +10,7 @@ import {
 } from "@meetup-automation/publication";
 import type { Container } from "inversify";
 import { AiInput } from "./ai-input.js";
-import { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
-import { AssetRenderConfiguration } from "./assets/asset-render-configuration.js";
+import { AssetRecoveryInput } from "./assets/asset-recovery-input.js";
 import { AttentionStageInput } from "./attention-stage-input.js";
 import { AttentionStages } from "./attention-stages.js";
 import { CommunicationInput } from "./communication-input.js";
@@ -86,28 +85,14 @@ export class RuntimeInputComposition {
 				new PublicationDomainComposition().scheduledEventPolicy(),
 			);
 		container
-			.bind(AssetRenderConfiguration)
+			.bind(AssetRecoveryInput)
 			.toResolvedValue(
 				(
 					runtimeInput: RuntimeInput,
 					contentContractPolicy: ContentContractPolicy,
-				) =>
-					new AssetRenderConfiguration({ runtimeInput, contentContractPolicy }),
+				) => new AssetRecoveryInput({ runtimeInput, contentContractPolicy }),
 				[RuntimeInput, ContentContractPolicy],
 			);
-		container.bind(AssetContentConfiguration).toResolvedValue(
-			(
-				runtimeInput: RuntimeInput,
-				contentContractPolicy: ContentContractPolicy,
-				assetRenderConfiguration: AssetRenderConfiguration,
-			) =>
-				new AssetContentConfiguration({
-					runtimeInput,
-					contentContractPolicy,
-					assetRenderConfiguration,
-				}),
-			[RuntimeInput, ContentContractPolicy, AssetRenderConfiguration],
-		);
 	}
 
 	private static bindPublication(container: Container): void {

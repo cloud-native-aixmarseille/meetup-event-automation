@@ -48,213 +48,62 @@ Only the event date is available in filenames, and its format is required.
 Reconciliation validates all template filenames before any folder or file
 mutation. Announcement image validation uses the same renderer and workflow locale.
 
-Templates remain copy-only unless their kind has a content contract in the
-consumer's committed `.github/meetup-asset-content.json`. Google Slides and
-Google Docs support managed text, speaker portraits, and host logos. Sheets,
-uploaded Office files, PDFs and standalone images remain copy-only. Enable the Drive,
-Slides and Docs APIs in the service-account project for the formats used. The
-existing Drive OAuth scope authorizes these file operations; access still depends
-on the service account's file permissions. Automatic permission grants apply
-only to the verified presentation PDF; copied templates retain their existing
-sharing policy.
+Google Slides and Google Docs discover managed fields directly from their native
+text and image alt titles. No asset configuration file or object-ID mapping is
+needed. Templates without expressions, Sheets, uploaded Office files, PDFs and
+standalone images remain copy-only. Enable the Drive, Slides and Docs APIs for
+the formats used. The service account needs access to each template and copy.
 
 ## Author managed content
 
-The configuration has `version: 1`, a `contracts` map keyed by `template_kind`,
-optional `venues` and `hostLogos` maps keyed by stable host ID, and an optional
-`events` map keyed by `owner/repository#issue-number`. This
-synthetic example opts in the `slides` template:
+Write the [shared template expressions](../reference/templating.md) directly in
+the Google file. For example, `{{event.title}}`, `{{event.date:D MMMM YYYY}}`,
+`{{talk.title:1}}`, and `[SPEAKER_NAME:1]`.
 
-```json
-{
-  "version": 1,
-  "contracts": {
-    "slides": {
-      "version": 1,
-      "revision": "slides-v1",
-      "kind": "slides",
-      "fields": [
-        { "type": "text", "token": "event.title", "required": true },
-        { "type": "text", "token": "event.date", "required": true },
-        { "type": "text", "token": "host.name", "required": true },
-        { "type": "text", "token": "host.city", "required": true },
-        { "type": "text", "token": "agenda", "required": true },
-        {
-          "type": "text",
-          "token": "talk.title",
-          "slot": "opening",
-          "required": true
-        },
-        {
-          "type": "text",
-          "token": "talk.abstract",
-          "slot": "opening",
-          "required": false,
-          "fallback": "Details coming soon"
-        },
-        {
-          "type": "text",
-          "token": "speaker.name",
-          "slot": "portrait-a",
-          "required": true
-        },
-        {
-          "type": "text",
-          "token": "next_event.date.numeric",
-          "required": false,
-          "fallback": "To be announced"
-        },
-        {
-          "type": "text",
-          "token": "event.feedback_url",
-          "required": false,
-          "fallback": "Feedback opens soon"
-        },
-        {
-          "type": "image",
-          "token": "speaker.picture",
-          "slot": "portrait-a",
-          "objectId": "REPLACE_IMAGE_OBJECT_ID",
-          "pageId": "REPLACE_PAGE_OBJECT_ID",
-          "required": false,
-          "fit": "CENTER_CROP",
-          "fallback": {
-            "url": "https://images.example.org/generic-speaker.png",
-            "description": "Speaker portrait"
-          }
-        },
-        {
-          "type": "image",
-          "token": "host.logo",
-          "slot": "host-logo",
-          "objectId": "REPLACE_LOGO_OBJECT_ID",
-          "pageId": "REPLACE_PAGE_OBJECT_ID",
-          "required": false,
-          "fit": "CENTER_INSIDE",
-          "fallback": {
-            "url": "https://images.example.org/generic-host.png",
-            "description": "Host logo"
-          }
-        }
-      ]
-    }
-  },
-  "venues": {
-    "host-example": {
-      "address": "1 Public Square",
-      "postalCode": "13001",
-      "city": "Marseille"
-    }
-  },
-  "hostLogos": {
-    "host-example": {
-      "url": "https://images.example.org/host-example.png",
-      "description": "Example host logo"
-    }
-  },
-  "events": {
-    "example/meetups#42": {
-      "speakers": { "portrait-a": "speaker-example" },
-      "talks": {
-        "opening": {
-          "provider": "conference-hall",
-          "event": "example-cfp",
-          "id": "proposal-one"
-        }
-      }
-    }
-  }
-}
-```
+| Token                                           | Public value                                                                |
+| ----------------------------------------------- | --------------------------------------------------------------------------- |
+| `event.title`                                   | Validated event title.                                                      |
+| `event.date`                                    | Localized long event date.                                                  |
+| `event.date.month`                              | Localized month name.                                                       |
+| `event.date.numeric`                            | Event date as `DD/MM/YYYY`.                                                 |
+| `event.date.weekday`                            | Localized weekday and full event date.                                      |
+| `host.name`                                     | Resolved host display name.                                                 |
+| `host.address`, `host.postal_code`, `host.city` | Explicit public venue fields.                                               |
+| `agenda`                                        | Ordered talk titles and all public co-speaker names.                        |
+| `event.feedback_url`                            | Public feedback URL.                                                        |
+| `talk.title`, `talk.abstract`, `talk.speakers`  | Talk title, abstract, and co-speaker names at the numbered agenda position. |
+| `speaker.name`                                  | Public speaker name at the same numbered position as portraits.             |
+| `next_event.date`, `next_event.date.numeric`    | Next published meetup date, localized long form or `DD/MM/YYYY`.            |
+| `next_event.host.name`, `next_event.host.city`  | Next published meetup's host display name and explicit public city.         |
 
-Replace the example IDs and image URLs with real template IDs and public images,
-including separate generic portrait and logo fallbacks. Obtain object, page and
-tab IDs using the corresponding Google API `get` operation. The configuration supports at most 100 fields per
-contract and 500 registered locations per file. Configuration and sidecars are
-limited to 1 MB. Revisions and slot names use letters, digits, underscores,
-dots, colons or hyphens, with at most 100 characters. A slotted text field's
-complete `token:slot` key must also fit within 100 characters. Assignment maps
-and the public venue and host-logo maps each accept at most 200 entries; reserved
-object keys are not valid assignment slot names.
+Numbered selectors are one-based positions in the current validated agenda,
+from 1 to 200. Talks follow agenda order. Speakers follow their first appearance
+in that order, with co-speakers in their listed order and repeated speakers
+counted once. Reordering or removing agenda entries changes those positions.
+`{{speaker.name:1}}` and `{{speaker.picture:1}}` select the same person.
+A template needs a location for every participant it intends to show; rendering
+does not add slides or duplicate layouts. Manual talks use their description as
+the title. Selected Conference Hall talks use the refreshed public title and
+abstract. Stale or unresolved agenda data is withheld.
 
-Text fields use the [shared template syntax](../reference/templating.md), including
-`{{token}}`, `{{token:slot}}` for a slotted field, and
-`{{event.date:FORMAT}}` for an explicitly formatted date. The complete allowlist is:
+The workflow locale controls date and list formatting. Explicit date operands
+apply only to `event.date` and `next_event.date`; see the
+[date formats](../reference/templating.md#date-formats). Values remain literal,
+even when they contain template syntax. Missing next-event fields and talk
+abstracts use localized "To be announced" text. Other missing text values leave
+the file pending before copying or writing content.
 
-| Token                                           | Public value                                                            |
-| ----------------------------------------------- | ----------------------------------------------------------------------- |
-| `event.title`                                   | Validated event title.                                                  |
-| `event.date`                                    | Localized long event date.                                              |
-| `event.date.month`                              | Localized month name.                                                   |
-| `event.date.numeric`                            | Event date as `DD/MM/YYYY`.                                             |
-| `event.date.weekday`                            | Localized weekday and full event date.                                  |
-| `host.name`                                     | Resolved host display name.                                             |
-| `host.address`, `host.postal_code`, `host.city` | Explicit public venue fields.                                           |
-| `agenda`                                        | Ordered talk titles and all public co-speaker names.                    |
-| `event.feedback_url`                            | Public feedback URL.                                                    |
-| `talk.title`, `talk.abstract`, `talk.speakers`  | Slotted selected proposal title, abstract, and public co-speaker names. |
-| `speaker.name`                                  | Slotted public speaker name using the same assignment as portraits.     |
-| `next_event.date`, `next_event.date.numeric`    | Next published meetup date, localized long form or `DD/MM/YYYY`.        |
-| `next_event.host.name`, `next_event.host.city`  | Next published meetup's host display name and explicit public city.     |
+Public venue fields come from `venue_address`, `venue_postal_code`, and
+`venue_city` in the [host referential](../reference/referentials.md#hosts).
+Private contact addresses never supply public template values.
 
-Dates preserve the event timezone's calendar day; month and weekday names use
-the workflow locale. The `.numeric` fields use `DD/MM/YYYY`. Speaker lists use
-English or French list formatting. Required missing values block the file;
-optional text needs an explicit non-empty fallback in the template's language.
-Values are inserted literally, including token-looking text or HTML.
-
-For an explicit date format, declare `format` on `event.date` or
-`next_event.date`, and use the same pattern in the template expression:
-
-```json
-{
-  "type": "text",
-  "token": "event.date",
-  "format": "D MMMM YYYY",
-  "required": true
-}
-```
-
-This field binds `{{event.date:D MMMM YYYY}}` or `[EVENT_DATE:D MMMM YYYY]`.
-The [date format reference](../reference/templating.md#date-formats) lists supported
-patterns. Multiple formats of the same date are distinct bindings. Format operands
-are limited to 100 characters; they apply only to calendar-date fields and cannot
-be combined with participant slots. Invalid patterns leave the file pending before
-content writes. Optional missing dates use their literal fallback.
-
-For `{{talk.title:opening}}`, declare `token: "talk.title"` and `slot: "opening"`.
-Assign that slot to the proposal's exact `provider`, `event`, and `id` in the
-current event's `talks` map. Values come from the refreshed, selected Conference
-Hall proposal snapshot; `talk.abstract` uses its public abstract. Reordering the
-agenda retains the assignment. Removing the proposal, a duplicate identity, an
-unresolved selection, or stale source data leaves the slot missing. A manual
-agenda entry without a proposal identity can appear in `agenda` but cannot fill
-a talk slot. Extra talks require additional authored slots; extra co-speakers
-can use `talk.speakers` or explicit separate speaker/portrait slots.
-
-For `{{speaker.name:portrait-a}}`, use the event's `speakers` mapping. The speaker
-must still appear in the current validated agenda. Name and image slots share
-the stable ID; a missing portrait does not prevent a valid public name. Missing
-participants follow each field's required/fallback policy instead of silently
-moving the next participant into the slot.
-
-Public venue values are committed explicitly under `venues[host-id]` with
-`address`, `postalCode`, and `city`. All three must be non-empty. Private host
-contact addresses are never used as a fallback. Supply only venue information
-intended for public documents.
-
-Next-meetup lookup runs only when a configured contract declares a `next_event.*`
-field. It selects the earliest strictly later date among open `meetup` issues
-in the same repository with scheduled status, a confirmed resolved host, a valid
-date, and a valid Meetup or CNCF publication URL. Same-date ties use the lowest
-issue number. Cancelled, postponed, held, unpublished, and same-day events are
-excluded. The name of the host comes from the validated referential; its city comes
-from the same public venue map. A complete listing without an eligible candidate
-leaves the next-event fields missing; an unavailable public venue value also
-remains missing. API or unexpected decoding failures fail the action. Lookup
-is limited to 200 distinct issues and 20 pages; repeated cursors or exceeded
-limits fail explicitly. It never selects from a partial result or edits candidate
-issues.
+Next-event lookup runs only for templates using `next_event.*`. It selects the
+earliest strictly later open, scheduled event under the configured event label,
+with a confirmed resolved host and valid publication URL. Same-date ties use the
+lowest issue number. Cancelled, postponed, held, unpublished, and same-day events
+are excluded. The name of the host and its public city come from the validated referential.
+Lookup is bounded to 200 distinct issues and 20 pages. Incomplete listings,
+repeated cursors, and provider failures stop the action; no partial result is used.
 
 In Slides, put each text token in an entire, ungrouped text shape with uniform
 text styling. Repeated tokens use separate shapes. Tables, grouped shapes,
@@ -268,25 +117,22 @@ tokens are unsupported; suggestions inside managed content must be resolved
 first. The renderer renews named ranges when replacing text, and follows them
 when surrounding content moves. It does not search for previously rendered text.
 
-Image fields refer to actual placeholder images, not printed URLs. Slides uses
-`pageId` and `objectId`; Docs uses `tabId` and the inline image's `objectId` in a
-body paragraph. For `speaker.picture`, assign each slot to an explicit stable
-speaker ID in that event's `speakers` map. Reordering the agenda does not reassign portraits, and
-co-speakers need separate slots. A removed or unbound speaker uses the optional
-fallback instead of retaining the old portrait. Public URLs come from the
-committed speaker referential's optional `picture_url` column; renderers never
-contact Conference Hall or receive contact records.
+For an image, insert a real placeholder image. Put exactly one expression in
+its **alt title**, and a meaningful human-readable explanation in its **alt
+description**:
 
-For `host.logo`, configure the public image's `url` and non-empty `description`
-under `hostLogos[host-id]`. The renderer selects the current event's resolved
-host by stable ID; it does not match display names or read contact data.
-The contract's `slot` names the image binding and needs no per-event assignment.
-Multiple logo locations can use separate slots for the same current host.
-Changing the host or the image bytes updates the bound logo. A missing,
-unresolved, unconfigured, or invalid source uses the optional generic fallback
-instead of retaining the previous logo; a required logo leaves the file pending.
-Manual replacements remain conflicts. Logos are independent of agenda and venue
-assignments. Community branding and unregistered sponsor images remain manual.
+| Alt title               | Image source                                             |
+| ----------------------- | -------------------------------------------------------- |
+| `{{speaker.picture:1}}` | First speaker's public `picture_url`.                    |
+| `{{host.logo}}`         | Current host's public `logo_url` and `logo_description`. |
+| `{{event.cover}}`       | Selected and approved event cover.                       |
+
+Slides images must be ungrouped on a slide. Docs images must be inline in a body
+paragraph. Native object, page, and tab IDs are discovered automatically.
+Multiple placeholders may show the same source. Community branding and unmarked
+images remain manual. Missing or unusable speaker portraits and host logos use
+the automation's generic images and report a warning. The approved cover is
+required and has no fallback.
 
 Images and fallbacks must be publicly retrievable HTTPS PNG, JPEG or GIF files,
 smaller than 50 MB, at most 25 megapixels, with source URLs no longer than
@@ -296,22 +142,12 @@ no integration credentials. Media type and dimensions are checked before
 mutation. Keep source images available to Google after preflight. Prefer stable
 public URLs; changing bytes at the same URL is detected on reconciliation.
 
-The repository provides a [generic speaker portrait](../../assets/template-fallbacks/generic-speaker.png)
-and [generic host logo](../../assets/template-fallbacks/generic-host.png) for
-optional image bindings. Use their raw GitHub URLs pinned to the automation
-commit deployed by the consumer, so fallback images remain publicly retrievable
-without Drive credentials or temporary delivery URLs.
-
-Both renderers use explicit center crop. Slides also accepts `CENTER_INSIDE`;
-use it for logos that should fit entirely inside their frame. Docs rejects it;
-prepare a padded logo image for `CENTER_CROP` when cropping would cut off branding.
-Image replacement can remove provider effects; no preservation
-of shadows, recoloring or other image effects is promised. Supply meaningful
-generic alt text on placeholder images. Slides updates the description from
-the public image value; Docs retains the authored description because its image
-replacement API does not update alt text. A validated optional fallback reports
-a warning and counts as ready. Failure of a required image or its fallback
-leaves the file pending.
+Slides fits host logos with `CENTER_INSIDE`; portraits and covers use
+`CENTER_CROP`. Docs uses `CENTER_CROP` for all images, so pad logos when necessary.
+Image replacement does not promise to retain provider effects such as shadows
+or recoloring. Slides updates the image description from the public value; Docs
+retains the authored description. Generic images and missing-text messages are
+owned by the automation and need no consumer configuration.
 
 ## Run and retry
 
@@ -332,9 +168,9 @@ Each template file owns one managed copy: changes to template names or
 kinds update the copy's name and metadata; changes to template contents do not
 replace existing copy contents. New templates produce new copies.
 
-New opted-in copies validate their whole contract, locations and values before
+New managed copies validate discovered fields, locations and values before
 copying. A binding sidecar freezes the contract revision for that copy. Later
-template or contract edits affect new copies; they do not overwrite existing
+template edits affect new copies; they do not overwrite existing
 layouts or manual work. Existing copy-only files remain copy-only until an
 explicit enrollment. Upgrading an enrolled copy's contract needs a separately
 reviewed migration plan that preserves manual content and file identity.
@@ -520,14 +356,20 @@ matching previous content allows a safe retry. An uncertain image write requires
 explicit recovery when the stored observations cannot prove the result.
 
 For an intact binding with a manual edit, either restore the last managed value
-yourself or commit a one-time recovery entry under the event's `recovery` map:
+yourself or create `.github/meetup-asset-recovery.json` for a one-time, reviewed
+operation. This optional maintenance file is unnecessary for template rendering:
 
 ```json
 {
-  "COPY_FILE_ID": {
-    "operation": "restore",
-    "revision": "CURRENT_DOCS_OR_SLIDES_REVISION_ID",
-    "bindingId": "BINDING_ID_FROM_SIDECAR"
+  "version": 1,
+  "events": {
+    "owner/repository#42": {
+      "COPY_FILE_ID": {
+        "operation": "restore",
+        "revision": "CURRENT_DOCS_OR_SLIDES_REVISION_ID",
+        "bindingId": "BINDING_ID_FROM_SIDECAR"
+      }
+    }
   }
 }
 ```
@@ -542,8 +384,8 @@ anchors must be repaired explicitly or removed; automation never rebinds by
 matching text or image similarity.
 
 To enroll a copy-only file, use `operation: "enroll"` with its current revision
-and omit `bindingId`. The copy must contain the authored tokens and image IDs
-from the selected contract. Review and preserve organizer edits before adding
+and omit `bindingId`. The copy must contain valid text expressions and image
+alt-title markers. Its field definition is discovered directly from the copy. Review and preserve organizer edits before adding
 those locations. Enrollment validates them before marking the file as managed.
 For a missing initial sidecar, enrollment is possible only after explicitly
 restoring the authored placeholders; an already rendered file is not scanned

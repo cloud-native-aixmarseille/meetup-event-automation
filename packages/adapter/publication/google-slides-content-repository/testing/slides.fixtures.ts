@@ -77,3 +77,16 @@ export function slidesFixture() {
 			?.textElements?.[0].textRun as slides_v1.Schema$TextRun,
 	};
 }
+
+export const templateDefaults = {
+	missingNextEvent: "To be announced",
+	missingAbstract: "Abstract to be announced",
+	speaker: {
+		url: "https://images.example.test/speaker.png",
+		description: "Generic speaker",
+	},
+	host: {
+		url: "https://images.example.test/host.png",
+		description: "Generic host",
+	},
+};

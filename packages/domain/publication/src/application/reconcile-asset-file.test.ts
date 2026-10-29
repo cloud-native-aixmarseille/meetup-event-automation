@@ -52,7 +52,7 @@ describe("asset file failure classification", () => {
 			date: "2099-01-01",
 			mode: "check",
 			diagnostics: [],
-			model: f.input.model,
+			model: async () => f.input.model,
 			recovery: { [file.id]: { operation: "enroll", revision: "revision-1" } },
 		});
 
@@ -80,6 +80,7 @@ describe("asset file failure classification", () => {
 				status: "ready",
 				fallback: false,
 			});
+			vi.spyOn(f.service, "definition").mockResolvedValue(f.input.contract);
 			vi.spyOn(f.service, stage).mockRejectedValueOnce(error);
 			const file = {
 				id: f.input.fileId,
@@ -128,7 +129,7 @@ describe("asset file failure classification", () => {
 					date: "2026-11-15",
 					mode: "fix",
 					diagnostics,
-					model: f.input.model,
+					model: async () => f.input.model,
 				});
 			} catch (caught) {
 				failure = caught;

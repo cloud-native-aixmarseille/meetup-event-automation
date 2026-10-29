@@ -1,4 +1,8 @@
 import {
+	DiscoverAssetContent,
+	type DiscoverAssetContentArguments,
+} from "./application/discover-asset-content.js";
+import {
 	ReconcileAssetContent,
 	type ReconcileAssetContentArguments,
 } from "./application/reconcile-asset-content.js";
@@ -37,6 +41,7 @@ import { ContentRecoveryFingerprint } from "./domain/content-recovery-fingerprin
 import { ContentRecoveryPlan } from "./domain/content-recovery-plan.js";
 import { ContentRenderPlan } from "./domain/content-render-plan.js";
 import { ContentTextKey } from "./domain/content-text-key.js";
+import { ContentTemplateFields } from "./domain/content-template-fields.js";
 import { FeedbackLinkSelection } from "./domain/feedback-link-selection.js";
 import { FeedbackPolicy } from "./domain/feedback-policy.js";
 import { ManualPublicationPolicy } from "./domain/manual-task-policy.js";
@@ -56,6 +61,13 @@ import {
 import { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class PublicationDomainComposition {
+	contentTemplateFields(): ContentTemplateFields {
+		return new ContentTemplateFields(
+			this.contentContractPolicy(),
+			this.contentTextKey(),
+			this.contentFingerprint(),
+		);
+	}
 	pdfExportPolicy(): PdfExportPolicy {
 		return new PdfExportPolicy();
 	}
@@ -157,6 +169,17 @@ export class PublicationDomainComposition {
 			...args,
 		);
 	}
+	discoverAssetContent(
+		...args: DiscoverAssetContentArguments
+	): DiscoverAssetContent {
+		return new DiscoverAssetContent(
+			{
+				policy: this.contentManifestPolicy(),
+				fields: this.contentTemplateFields(),
+			},
+			...args,
+		);
+	}
 	reconcileAssetContent(
 		templates: Pick<AssetTemplateRenderer, "value">,
 		...args: ReconcileAssetContentArguments
@@ -165,6 +188,8 @@ export class PublicationDomainComposition {
 			{
 				contentContractPolicy: this.contentContractPolicy(),
 				contentRenderPlan: this.contentRenderPlan(),
+				createDiscoverAssetContent: (...args) =>
+					this.discoverAssetContent(...args),
 				contentTextKey: this.contentTextKey(),
 				contentManifestPolicy: this.contentManifestPolicy(),
 				contentRecoveryFingerprint: this.contentRecoveryFingerprint(),

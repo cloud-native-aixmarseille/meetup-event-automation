@@ -55,6 +55,7 @@ export class SlideTemplateBindings {
 		const objectId = element.objectId;
 		if (!objectId) throw new ContentError("location");
 		const text = this.text(element);
+		if (!element.image) this.rejectTokens({ title: element.title });
 		if (element.shape && this.collaborators.templates.contains(text)) {
 			const expressions = this.expressions(text);
 			if (
@@ -81,6 +82,18 @@ export class SlideTemplateBindings {
 		}
 		this.rejectTokens(element.table);
 		this.rejectTokens(element.elementGroup);
+		this.images(element, pageId, contract, bindings);
+	}
+
+	private images(
+		element: slides_v1.Schema$PageElement,
+		pageId: string,
+		contract: ContentContract,
+		bindings: ContentBinding[],
+	): void {
+		const objectId = element.objectId;
+		if (!objectId) throw new ContentError("location");
+
 		for (const field of contract.fields) {
 			if (
 				field.type !== "image" ||
@@ -137,7 +150,8 @@ export class SlideTemplateBindings {
 		if (!value || typeof value !== "object") return "";
 		return Object.entries(value)
 			.map(([key, item]) =>
-				key === "content" && typeof item === "string"
+				["content", "title", "description"].includes(key) &&
+				typeof item === "string"
 					? item
 					: this.allText(item),
 			)

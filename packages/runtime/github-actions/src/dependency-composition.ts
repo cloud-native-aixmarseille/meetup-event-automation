@@ -4,7 +4,7 @@ import { ActionOutput } from "./action-output.js";
 import { ActionReport } from "./action-report.js";
 import { ActionRunner } from "./action-runner.js";
 import { AiInput } from "./ai-input.js";
-import { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
+import { AssetRecoveryInput } from "./assets/asset-recovery-input.js";
 import type {
 	AssetDateFormatter,
 	AssetDateFormatterArguments,
@@ -13,7 +13,6 @@ import type {
 	AssetMessages,
 	AssetMessagesArguments,
 } from "./assets/asset-messages.js";
-import { AssetRenderConfiguration } from "./assets/asset-render-configuration.js";
 import type {
 	AssetRenderPresenterImpl,
 	AssetRenderPresenterImplArguments,
@@ -76,12 +75,8 @@ export class GithubActionsComposition {
 		return this.container.get(ActionRunner);
 	}
 
-	assetContentConfiguration(): AssetContentConfiguration {
-		return this.container.get(AssetContentConfiguration);
-	}
-
-	assetRenderConfiguration(): AssetRenderConfiguration {
-		return this.container.get(AssetRenderConfiguration);
+	assetRecoveryInput(): AssetRecoveryInput {
+		return this.container.get(AssetRecoveryInput);
 	}
 
 	attentionStageInput(): AttentionStageInput {

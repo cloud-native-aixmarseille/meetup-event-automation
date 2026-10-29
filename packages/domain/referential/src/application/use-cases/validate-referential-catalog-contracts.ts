@@ -25,12 +25,16 @@ export interface HostBuilder {
 	readonly id: HostId;
 	readonly displayName: string;
 	readonly contacts: HostContact[];
+	readonly publicVenue?: Host["publicVenue"];
+	readonly logo?: Host["logo"];
 }
 
 export interface ParsedHostRecord {
 	readonly hostId: NonNullable<ReturnType<ReferentialIdentifiers["asHostId"]>>;
 	readonly displayName: string;
 	readonly contact: HostContact;
+	readonly publicVenue?: Host["publicVenue"];
+	readonly logo?: Host["logo"];
 }
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

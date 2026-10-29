@@ -19,6 +19,12 @@ export interface Host {
 	readonly id: HostId;
 	readonly displayName: string;
 	readonly contacts: readonly HostContact[];
+	readonly publicVenue?: Readonly<{
+		address: string;
+		postalCode: string;
+		city: string;
+	}>;
+	readonly logo?: Readonly<{ url: string; description: string }>;
 }
 
 export interface Speaker {
@@ -52,6 +58,11 @@ export interface RawHostRecord {
 	readonly email: unknown;
 	readonly phone?: unknown;
 	readonly address: unknown;
+	readonly venueAddress?: unknown;
+	readonly venuePostalCode?: unknown;
+	readonly venueCity?: unknown;
+	readonly logoUrl?: unknown;
+	readonly logoDescription?: unknown;
 }
 
 export interface RawSpeakerRecord {

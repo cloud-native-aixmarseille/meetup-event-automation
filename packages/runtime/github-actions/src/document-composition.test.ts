@@ -8,6 +8,8 @@ import {
 } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
+import { AssetTemplateDefaults } from "./assets/asset-template-defaults.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { SERVICES } from "./composition.js";
 import {
 	ASSET_REPOSITORY,
@@ -16,6 +18,7 @@ import {
 
 const input = {
 	locale: "en" as const,
+	recovery: {},
 	...eventPublicationSettings,
 	conferenceHallEvent: "example-cfp",
 	conferenceHallApiKey: "synthetic-source-key",
@@ -55,6 +58,8 @@ describe("document-composition", () => {
 		container.rebind(ReconcileAssetContent).toConstantValue(
 			new ReconcileAssetContent(
 				{
+					createDiscoverAssetContent: (...args) =>
+						new PublicationDomainComposition().discoverAssetContent(...args),
 					contentContractPolicy:
 						new PublicationDomainComposition().contentContractPolicy(),
 					contentRenderPlan:
@@ -75,6 +80,9 @@ describe("document-composition", () => {
 				{ load: vi.fn(), save: vi.fn() },
 				{},
 				{ validate: vi.fn(), observe: vi.fn() },
+				new AssetTemplateDefaults(
+					new GithubActionsComposition().assetMessages("en"),
+				).create(),
 			),
 		);
 		const assets: AssetRepository = {

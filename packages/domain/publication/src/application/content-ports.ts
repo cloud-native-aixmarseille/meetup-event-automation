@@ -6,6 +6,7 @@ import type {
 	ContentSnapshot,
 	ImageSource,
 	PublicAssetModel,
+	TemplateContentDefaults,
 } from "../domain/asset-content.js";
 import type {
 	PublicAssetTalk,
@@ -14,6 +15,11 @@ import type {
 } from "../domain/asset-render-data.js";
 
 export interface AssetContentRepository {
+	discover(
+		fileId: string,
+		kind: string,
+		defaults: TemplateContentDefaults,
+	): Promise<ContentContract | undefined>;
 	read(
 		fileId: string,
 		contract: ContentContract,
@@ -26,6 +32,9 @@ export interface AssetContentRepository {
 		changes: readonly ContentChange[],
 	): Promise<string>;
 }
+export type AssetModelProvider = (
+	contract: ContentContract,
+) => Promise<PublicAssetModel | undefined>;
 export interface AssetManifestRepository {
 	load(folderId: string, fileId: string): Promise<unknown | undefined>;
 	save(folderId: string, manifest: ContentManifest): Promise<void>;

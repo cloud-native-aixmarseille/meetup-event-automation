@@ -13,7 +13,7 @@ export class DocumentActionComposition {
 					ReconcileMeetupDocuments,
 				),
 			runtimeInput: this.runtime.runtimeInput(),
-			assetContentConfiguration: this.runtime.assetContentConfiguration(),
+			assetRecoveryInput: this.runtime.assetRecoveryInput(),
 			conferenceHallInput: this.runtime.conferenceHallInput(),
 			actionOutput: this.runtime.actionOutput(),
 		});

@@ -1,3 +1,4 @@
+import { HostPublicDetails } from "./application/use-cases/host-public-details.js";
 import { HostCatalogValidator } from "./application/use-cases/host-catalog-validator.js";
 import { MergeSourceSpeakers } from "./application/use-cases/merge-source-speakers.js";
 import { ProjectReferentialChoices } from "./application/use-cases/project-referential-choices.js";
@@ -21,6 +22,7 @@ import { SourceSpeakerEquality } from "./domain/source-speaker-equality.js";
 export class ReferentialDomainComposition {
 	hostCatalogValidator(): HostCatalogValidator {
 		return new HostCatalogValidator({
+			publicDetails: new HostPublicDetails(),
 			referentialDiagnostics: this.referentialDiagnostics(),
 			referentialRecordFields: this.referentialRecordFields(),
 			referentialIdentifiers: this.referentialIdentifiers(),

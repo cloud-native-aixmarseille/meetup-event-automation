@@ -1,6 +1,5 @@
 import type { MeetupEvent } from "@meetup-automation/event";
 import type {
-	AssetRenderAssignments,
 	ImageSource,
 	PublicAssetTalk,
 	PublicAssetUrl,
@@ -16,43 +15,34 @@ export class AssetParticipantProjection {
 		private readonly collaborators: AssetParticipantProjectionCollaborators,
 	) {}
 
-	create(
-		event: MeetupEvent,
-		catalog: ReferentialCatalog,
-		assignments: AssetRenderAssignments,
-	) {
-		const agendaIds = new Set(
-			event.agenda.flatMap((talk) =>
-				talk.speakers.map((speaker) => speaker.id),
-			),
-		);
+	create(event: MeetupEvent, catalog: ReferentialCatalog) {
 		const speakers: Record<string, string> = {};
 		const pictures: Record<string, ImageSource & { speakerId: string }> = {};
-		for (const [slot, id] of Object.entries(assignments.speakers)) {
-			const speaker = catalog.speakers.find((item) => item.id === id);
-			if (!speaker || !agendaIds.has(id)) continue;
+		const talks: Record<string, PublicAssetTalk> = {};
+		const seen = new Set<string>();
+		const ordered = event.agenda
+			.flatMap((talk) => talk.speakers)
+			.filter((speaker) => {
+				if (!speaker.id || seen.has(speaker.id)) return false;
+				seen.add(speaker.id);
+				return true;
+			});
+		for (const [index, selected] of ordered.entries()) {
+			const speaker = catalog.speakers.find((item) => item.id === selected.id);
+			if (!speaker) continue;
+			const slot = String(index + 1);
 			speakers[slot] = speaker.displayName;
 			if (this.collaborators.publicAssetUrl.valid(speaker.pictureUrl)) {
 				pictures[slot] = {
-					speakerId: id,
+					speakerId: speaker.id,
 					url: speaker.pictureUrl,
 					description: speaker.displayName,
 				};
 			}
 		}
-		const talks: Record<string, PublicAssetTalk> = {};
-		for (const [slot, identity] of Object.entries(assignments.talks)) {
-			const matches = event.agenda.filter(
-				(talk) =>
-					talk.proposal?.id === identity.id &&
-					talk.proposal.provider === identity.provider &&
-					talk.proposal.event === identity.event,
-			);
-			if (matches.length !== 1) continue;
-			const talk = matches[0];
-			if (!talk.proposal) continue;
-			talks[slot] = {
-				title: talk.proposal.title,
+		for (const [index, talk] of event.agenda.entries()) {
+			talks[String(index + 1)] = {
+				title: talk.proposal?.title ?? talk.description,
 				abstract: talk.proposal?.abstract,
 				speakers: talk.speakers.map((speaker) => speaker.displayName),
 			};
