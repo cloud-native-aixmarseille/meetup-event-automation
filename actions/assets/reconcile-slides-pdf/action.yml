@@ -22,7 +22,7 @@ inputs:
     description: Service-account JSON with access to the presentation and public PDF folder.
     required: true
   google-drive-public-folder-id:
-    description: Shared public destination folder for PDFs.
+    description: Public Drive root ID containing the slides subfolder for generated PDFs.
     required: true
 outputs:
   diagnostics:

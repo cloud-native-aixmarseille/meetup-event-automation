@@ -3,17 +3,12 @@ import {
 	type PdfExportIdentity,
 } from "@meetup-automation/publication";
 import type { DrivePdfMetadata } from "./drive-pdf-metadata.js";
-import {
-	folderMimeType,
-	type GoogleDriveClient,
-	requestOptions,
-} from "./google-drive-asset-repository-contracts.js";
-
-const folderFields = "id,mimeType,trashed";
+import { DrivePublicFolderError } from "./drive-public-folder-error.js";
+import type { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
 
 export class GoogleDrivePublicFolder {
 	constructor(
-		private readonly client: GoogleDriveClient,
+		private readonly folders: Pick<GoogleDrivePublicAssetFolder, "resolve">,
 		private readonly metadata: Pick<DrivePdfMetadata, "validateIdentity">,
 		private readonly folderId: string,
 	) {}
@@ -27,20 +22,17 @@ export class GoogleDrivePublicFolder {
 			)
 		)
 			throw new PdfExportError("recovery");
-		const { data } = await this.client.files.get(
-			{
-				fileId: this.folderId,
-				fields: folderFields,
-				supportsAllDrives: true,
-			},
-			requestOptions,
-		);
-		if (
-			data.id !== this.folderId ||
-			data.mimeType !== folderMimeType ||
-			data.trashed
-		)
-			throw new PdfExportError("recovery");
-		return this.folderId;
+		try {
+			const id = await this.folders.resolve();
+			if (
+				[identity.folderId, identity.sourceId, identity.templateId].includes(id)
+			)
+				throw new PdfExportError("recovery");
+			return id;
+		} catch (error) {
+			if (error instanceof DrivePublicFolderError)
+				throw new PdfExportError("recovery");
+			throw error;
+		}
 	}
 }

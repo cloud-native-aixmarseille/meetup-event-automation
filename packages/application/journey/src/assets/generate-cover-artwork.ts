@@ -1,6 +1,7 @@
-import type {
-	ContentMedia,
-	ContentMediaStore,
+import {
+	type ContentMedia,
+	ContentMediaChangedError,
+	type ContentMediaStore,
 } from "@meetup-automation/publication";
 import type { ImageGeneration } from "../ports/generation.js";
 import type {
@@ -46,7 +47,12 @@ export class GenerateCoverArtwork {
 			proposal.origin.model !== this.generator.model
 		)
 			throw new Error("Image generation origin mismatch");
-		return this.cover(snapshot, proposal);
+		try {
+			return await this.cover(snapshot, proposal);
+		} catch (error) {
+			if (error instanceof ContentMediaChangedError) return "recovery";
+			throw error;
+		}
 	}
 	private async cover(
 		snapshot: PromotionalContentSnapshot,

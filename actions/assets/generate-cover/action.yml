@@ -34,7 +34,7 @@ inputs:
     description: Google service-account JSON for immutable public content media.
     required: true
   google-drive-public-folder-id:
-    description: Public Drive folder for content images, shared with anyone as reader.
+    description: Public Drive root ID containing the tmp-covers subfolder for content images.
     required: true
   ai-provider:
     description: AI provider identifier (gemini).

@@ -31,7 +31,7 @@ on:
         required: true
         type: string
       google-drive-public-folder-id:
-        description: Public Drive folder for content images, shared with anyone as reader.
+        description: Public Drive root ID containing the tmp-covers subfolder for content images.
         required: true
         type: string
       slack-organizer-channel-id:

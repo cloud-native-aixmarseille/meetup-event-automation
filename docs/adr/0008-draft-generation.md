@@ -212,6 +212,12 @@ authorizing changed content.
 
 ## Decision history
 
+On 2026-10-29, cover candidates moved to the dedicated `tmp-covers` child in the
+[public asset layout](0007-assets.md#a-separate-pdf-snapshot). Moving an existing
+candidate preserves its file identity and bytes but changes its source revision.
+A fresh proposal and pending review are required; earlier approvals must not be
+transferred. Candidates remain stored while reviews reference them.
+
 On 2026-10-29, organizer review found the generated covers visually suitable but
 too weakly connected to the talk subjects. This replaces optional topic
 inspiration with explicit subject recognition in the scene. Manual talk titles

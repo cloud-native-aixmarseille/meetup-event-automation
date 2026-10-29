@@ -10,17 +10,19 @@ import type { DriveAnnouncementImage } from "./drive-announcement-image.js";
 import type { DriveBoundedStream } from "./drive-bounded-stream.js";
 import type { DriveContentImage } from "./drive-content-image.js";
 import { requestOptions } from "./google-drive-asset-repository-contracts.js";
+import type { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
 
 /** Immutable public media in a dedicated folder; never writes existing asset sidecars. */
 export class GoogleDriveContentMediaStore implements ContentMediaStore {
 	constructor(
 		private readonly client: Pick<drive_v3.Drive, "files" | "permissions">,
-		private readonly folderId: string,
+		private readonly folders: Pick<GoogleDrivePublicAssetFolder, "resolve">,
 		private readonly image: Pick<DriveContentImage, "inspect">,
 		private readonly stream: Pick<DriveBoundedStream, "read">,
 		private readonly announcement: Pick<DriveAnnouncementImage, "verify">,
 	) {}
 	async reserve(): Promise<string> {
+		await this.folders.resolve();
 		const { data } = await this.client.files.generateIds(
 			{ count: 1, space: "drive", type: "files" },
 			requestOptions,
@@ -36,6 +38,7 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 		description: string,
 	): Promise<ContentMedia> {
 		const expected = this.image.inspect(image);
+		const folderId = await this.folders.resolve();
 		const existing = await this.read(id);
 		if (existing) {
 			if (existing.fingerprint !== expected.fingerprint)
@@ -52,7 +55,7 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 					name: `${id}.${image.mimeType === "image/png" ? "png" : "jpg"}`,
 					description,
 					mimeType: image.mimeType,
-					parents: [this.folderId],
+					parents: [folderId],
 					appProperties: {
 						contentSchema: "1",
 						contentHash: expected.fingerprint,
@@ -85,7 +88,8 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 		const file = metadata.data;
 		if (
 			file.trashed ||
-			!file.parents?.includes(this.folderId) ||
+			file.parents?.length !== 1 ||
+			file.parents[0] !== (await this.folders.resolve()) ||
 			file.appProperties?.contentSchema !== "1" ||
 			!file.version ||
 			!file.description ||

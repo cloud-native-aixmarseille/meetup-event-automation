@@ -15,7 +15,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const drive = createPdfDrive();
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
@@ -39,7 +39,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const drive = createPdfDrive();
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
@@ -99,7 +99,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		drive.records.set("state", { metadata: pdfMetadata("state"), bytes });
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
@@ -122,7 +122,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		const drive = createPdfDrive();
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(
@@ -151,7 +151,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 			drive.records.set("state", { metadata, bytes });
 			const adapter = new GoogleDrivePdfComposition(
 				drive.client,
-				"public-folder",
+				"public-root",
 				drive.download,
 			);
 			const repository = new GoogleDrivePdfStateRepository(
@@ -190,7 +190,7 @@ describe("GoogleDrivePdfStateRepository", () => {
 		});
 		const adapter = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		);
 		const repository = new GoogleDrivePdfStateRepository(

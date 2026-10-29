@@ -3,13 +3,14 @@ import { GoogleDrivePdfComposition } from "../../packages/adapter/publication/go
 import {
 	createPdfDrive,
 	exportIdentity,
+	publicRootFolderId,
 } from "../../packages/adapter/publication/google-drive-asset-repository/testing/pdf-drive.fixtures.js";
 import { PublicationDomainComposition } from "../../packages/domain/publication/src/dependency-composition.js";
 
 function journey(drive: ReturnType<typeof createPdfDrive>) {
 	const adapter = new GoogleDrivePdfComposition(
 		drive.client,
-		"public-folder",
+		publicRootFolderId,
 		drive.download,
 	);
 	return new PublicationDomainComposition().reconcileSlidePdf(

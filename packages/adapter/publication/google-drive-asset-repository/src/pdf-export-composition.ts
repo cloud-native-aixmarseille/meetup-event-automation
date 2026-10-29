@@ -10,6 +10,7 @@ import { GoogleDrivePdfRepository } from "./google-drive-pdf-repository.js";
 import { GoogleDrivePdfSharing } from "./google-drive-pdf-sharing.js";
 import { GoogleDrivePdfSource } from "./google-drive-pdf-source.js";
 import { GoogleDrivePdfStateRepository } from "./google-drive-pdf-state-repository.js";
+import { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
 import { GoogleDrivePublicFolder } from "./google-drive-public-folder.js";
 
 export class GoogleDrivePdfComposition {
@@ -37,7 +38,11 @@ export class GoogleDrivePdfComposition {
 	}
 	folders(): GoogleDrivePublicFolder {
 		return new GoogleDrivePublicFolder(
-			this.client,
+			new GoogleDrivePublicAssetFolder(
+				this.client,
+				this.publicFolderId,
+				"slides",
+			),
 			this.metadata(),
 			this.publicFolderId,
 		);
