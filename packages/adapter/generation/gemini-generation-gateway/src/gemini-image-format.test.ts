@@ -18,21 +18,26 @@ describe("Gemini image output mapping", () => {
 			// Assert
 			expect(encoded).toEqual({
 				type: "image",
-				mime_type: "image/png",
+				mime_type: "image/jpeg",
+				delivery: "inline",
 				aspect_ratio: ratio,
 				image_size: size,
 			});
 		},
 	);
-	it("encodes the requested media type", () => {
-		// Arrange
-		const format = new GeminiImageFormat();
-		const output = { width: 800, height: 600, mimeType: "image/jpeg" as const };
-		// Act
-		const encoded = format.encode(output);
-		// Assert
-		expect(encoded.mime_type).toBe("image/jpeg");
-	});
+	it.each(["image/png", "image/jpeg"] as const)(
+		"maps %s preferences to supported inline JPEG output",
+		(mimeType) => {
+			// Arrange
+			const format = new GeminiImageFormat();
+			const output = { width: 800, height: 600, mimeType };
+			// Act
+			const encoded = format.encode(output);
+			// Assert
+			expect(encoded.mime_type).toBe("image/jpeg");
+			expect(encoded.delivery).toBe("inline");
+		},
+	);
 	it.each([
 		{ width: 0, height: 1024 },
 		{ width: 1024, height: -1 },

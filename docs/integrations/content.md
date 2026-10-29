@@ -122,8 +122,9 @@ with `store: false`, no tools or conversation history, and
 Every image request starts independently. No model response is automatically
 published.
 
-The cover brief requests 1792×1024 PNG and the exact month as its only readable
-text. The API image request uses its supported landscape 2K format; review shows
+The cover brief prefers 1792×1024 PNG and the exact month as its only readable
+text. The Gemini adapter maps that preference to supported inline JPEG output in
+landscape 2K format; review shows
 actual dimensions, MIME type, identity, and fingerprint. Inspect each candidate
 for its month spelling, unwanted text, visual coherence, and topic relevance.
 Dimensions and hashes are checked automatically; visual suitability is an
