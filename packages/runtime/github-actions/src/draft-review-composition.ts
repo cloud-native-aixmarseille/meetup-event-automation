@@ -7,18 +7,34 @@ import { HttpsAssetImageRepositoryComposition } from "@meetup-automation/https-a
 import {
 	ApplyPromotionalContent,
 	ContentReview,
+	ContentReviewWork,
 	ManageContentReview,
 	SubmitPromotionalContent,
 } from "@meetup-automation/journey";
 import { SlackNotificationGatewayComposition } from "@meetup-automation/slack-notification-gateway";
 import { AssetFileNameComposition } from "./asset-file-name-composition.js";
 import type { DraftMediaInput } from "./draft-media-input.js";
+import type { DraftSourceInput } from "./draft-source-input.js";
 import {
 	type DraftSource,
 	DraftWorkspaceComposition,
 } from "./draft-workspace-composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 export class DraftReviewComposition {
+	work(input: ReturnType<DraftSourceInput["readContext"]>): ContentReviewWork {
+		const client =
+			new GithubOrganizerApprovalComposition().githubApprovalClient(
+				input.client,
+				input.owner,
+				input.repo,
+				input.issueNumber,
+			);
+		const storage = new GithubContentStoreComposition();
+		return new ContentReviewWork(
+			storage.store(client, input.commentAuthorLogin),
+			storage.submissions(client),
+		);
+	}
 	review(
 		input: DraftSource & DraftMediaInput,
 		slackToken: string,

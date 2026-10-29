@@ -1,6 +1,9 @@
 # Managed documents, images, and presentation PDFs
 
-Status: Accepted decisions consolidated on 2026-10-23.
+Status: Accepted decisions consolidated on 2026-10-23. External template
+configuration and stable participant-slot assignments are superseded by
+[Template discovery](0011-template-discovery.md); ownership, recovery, and PDF
+decisions remain accepted.
 
 Scope: template contracts, editable document ownership, image rendering, and
 presentation PDF snapshots. Authoring, configuration, and recovery live in the

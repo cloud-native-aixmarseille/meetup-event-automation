@@ -90,6 +90,8 @@ export const FR_MESSAGES = {
 
 	"report.content.generated": "Génération du contenu évaluée.",
 	"report.content.reviewed": "Validations du contenu synchronisées.",
+	"report.content.no-work":
+		"Aucune proposition de contenu ni soumission d'organisateur à examiner.",
 
 	"action.assets.reconcile-slides-pdf": "Mettre à jour le PDF des slides",
 	"action.feedback.reconcile-short-link":

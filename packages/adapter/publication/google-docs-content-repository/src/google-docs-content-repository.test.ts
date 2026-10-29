@@ -11,6 +11,8 @@ describe("Docs content repository", () => {
 		const f = docsFixture();
 		const repository = new GoogleDocsContentRepository(
 			{
+				definition: new GoogleDocsContentRepositoryComposition().definition(),
+
 				documentTabs:
 					new GoogleDocsContentRepositoryComposition().documentTabs(),
 				documentTemplateBindings:
@@ -54,6 +56,8 @@ describe("Docs content repository", () => {
 		const f = docsFixture();
 		const repository = new GoogleDocsContentRepository(
 			{
+				definition: new GoogleDocsContentRepositoryComposition().definition(),
+
 				documentTabs:
 					new GoogleDocsContentRepositoryComposition().documentTabs(),
 				documentTemplateBindings:
@@ -143,6 +147,8 @@ describe("Docs content repository", () => {
 		const f = docsFixture();
 		const repository = new GoogleDocsContentRepository(
 			{
+				definition: new GoogleDocsContentRepositoryComposition().definition(),
+
 				documentTabs:
 					new GoogleDocsContentRepositoryComposition().documentTabs(),
 				documentTemplateBindings:
@@ -216,6 +222,8 @@ describe("Docs content repository", () => {
 		const f = docsFixture();
 		const repository = new GoogleDocsContentRepository(
 			{
+				definition: new GoogleDocsContentRepositoryComposition().definition(),
+
 				documentTabs:
 					new GoogleDocsContentRepositoryComposition().documentTabs(),
 				documentTemplateBindings:
@@ -275,6 +283,8 @@ describe("Docs content repository", () => {
 		const f = docsFixture();
 		const repository = new GoogleDocsContentRepository(
 			{
+				definition: new GoogleDocsContentRepositoryComposition().definition(),
+
 				documentTabs:
 					new GoogleDocsContentRepositoryComposition().documentTabs(),
 				documentTemplateBindings:
@@ -317,6 +327,8 @@ describe("Docs content repository", () => {
 		const f = docsFixture();
 		const repository = new GoogleDocsContentRepository(
 			{
+				definition: new GoogleDocsContentRepositoryComposition().definition(),
+
 				documentTabs:
 					new GoogleDocsContentRepositoryComposition().documentTabs(),
 				documentTemplateBindings:
@@ -354,6 +366,7 @@ describe("Docs content repository", () => {
 			const f = docsFixture();
 			const repository = new GoogleDocsContentRepository(
 				{
+					definition: new GoogleDocsContentRepositoryComposition().definition(),
 					documentTabs:
 						new GoogleDocsContentRepositoryComposition().documentTabs(),
 					documentTemplateBindings:

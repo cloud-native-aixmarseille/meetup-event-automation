@@ -1,3 +1,4 @@
+import { SlideTemplateDefinition } from "./slide-template-definition.js";
 import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { TemplatingComposition } from "@meetup-automation/templating";
 import {
@@ -14,11 +15,19 @@ import { SlideContentRequests } from "./slide-content-requests.js";
 import { SlideTemplateBindings } from "./slide-template-bindings.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class GoogleSlidesContentRepositoryComposition {
+	definition(): SlideTemplateDefinition {
+		return new SlideTemplateDefinition(
+			new TemplatingComposition().parser(),
+			new PublicationDomainComposition().contentTemplateFields(),
+			this.slideTemplateBindings(),
+		);
+	}
 	googleSlidesContentRepository(
 		...args: GoogleSlidesContentRepositoryArguments
 	): GoogleSlidesContentRepository {
 		return new GoogleSlidesContentRepository(
 			{
+				definition: this.definition(),
 				slideTemplateBindings: this.slideTemplateBindings(),
 				slideContentRequests: this.slideContentRequests(),
 				createSlideContentLocations: (...args) =>

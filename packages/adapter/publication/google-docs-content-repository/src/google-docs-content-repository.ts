@@ -1,3 +1,4 @@
+import type { DocumentTemplateDefinition } from "./document-template-definition.js";
 import type { docs_v1 } from "@googleapis/docs";
 import {
 	type AssetContentRepository,
@@ -5,6 +6,7 @@ import {
 	type ContentBinding,
 	type ContentChange,
 	type ContentContract,
+	type TemplateContentDefaults,
 	ContentError,
 	type ContentSnapshot,
 } from "@meetup-automation/publication";
@@ -17,6 +19,7 @@ import type { DocumentTabs } from "./document-tabs.js";
 import type { DocumentTemplateBindings } from "./document-template-bindings.js";
 
 export interface GoogleDocsContentRepositoryCollaborators {
+	readonly definition: Pick<DocumentTemplateDefinition, "read">;
 	readonly documentTabs: Pick<DocumentTabs, "all">;
 	readonly documentTemplateBindings: Pick<DocumentTemplateBindings, "discover">;
 	readonly documentContentRequests: Pick<DocumentContentRequests, "build">;
@@ -32,6 +35,28 @@ export class GoogleDocsContentRepository implements AssetContentRepository {
 		private readonly client: Pick<docs_v1.Docs, "documents">,
 		private readonly images: AssetImageRepository,
 	) {}
+
+	async discover(
+		fileId: string,
+		kind: string,
+		defaults: TemplateContentDefaults,
+	): Promise<ContentContract | undefined> {
+		const { data } = await this.client.documents.get(
+			{
+				documentId: fileId,
+				includeTabsContent: true,
+				suggestionsViewMode: "SUGGESTIONS_INLINE",
+			},
+			{ retry: false, timeout: 30_000 },
+		);
+		if (!data.revisionId || data.documentId !== fileId)
+			throw new ContentError("location");
+		return this.collaborators.definition.read(
+			this.collaborators.documentTabs.all(data),
+			kind,
+			defaults,
+		);
+	}
 
 	async read(
 		fileId: string,

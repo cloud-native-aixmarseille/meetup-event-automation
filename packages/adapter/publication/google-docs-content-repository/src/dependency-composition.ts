@@ -1,3 +1,4 @@
+import { DocumentTemplateDefinition } from "./document-template-definition.js";
 import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { TemplatingComposition } from "@meetup-automation/templating";
 import {
@@ -14,6 +15,13 @@ import {
 import { GoogleDocsContentRepositoryFactory } from "./google-docs-content-repository-factory.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class GoogleDocsContentRepositoryComposition {
+	definition(): DocumentTemplateDefinition {
+		return new DocumentTemplateDefinition(
+			new TemplatingComposition().parser(),
+			new PublicationDomainComposition().contentTemplateFields(),
+			this.documentTemplateBindings(),
+		);
+	}
 	documentContentLocations(
 		...args: DocumentContentLocationsArguments
 	): DocumentContentLocations {
@@ -46,6 +54,7 @@ export class GoogleDocsContentRepositoryComposition {
 	): GoogleDocsContentRepository {
 		return new GoogleDocsContentRepository(
 			{
+				definition: this.definition(),
 				documentTabs: this.documentTabs(),
 				documentTemplateBindings: this.documentTemplateBindings(),
 				documentContentRequests: this.documentContentRequests(),

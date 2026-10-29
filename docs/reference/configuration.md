@@ -53,8 +53,9 @@ password, and AI settings; OCGroups requires username and password. The workflow
 also uses the shared GitHub App, Conference Hall, and Slack settings.
 See [event publication](../integrations/event-publication.md) for the complete
 configuration, credential schema, caller, approval, and recovery procedures.
-Content review reads its schedule from the same file, including when an explicit
-empty destination collection keeps publication manual.
+Review of content proposals or organizer submissions reads its schedule from the
+same file, including when an explicit empty destination collection keeps
+publication manual. Routine reconciliation without content work does not read it.
 
 ## AI configuration
 
@@ -212,25 +213,28 @@ synchronization, selected proposals and consumer workflow triggers.
 
 ## Managed asset content
 
-Commit `.github/meetup-asset-content.json` to opt template kinds into managed
-Slides or Docs rendering, assign talk/name/portrait slots by stable identity,
-and declare public venue addresses separately from private contact records.
-The [asset guide](../integrations/assets.md#author-managed-content) owns the
-versioned contract, event-specific configuration and recovery operations.
-Without this file, templates retain copy-only behavior.
+Author expressions directly in Google Slides or Docs templates. The automation
+discovers text and image bindings; no asset configuration file is required.
+Numbered talks and speakers follow the current agenda order. Public venue and
+logo data belong in the host referential. The
+[asset guide](../integrations/assets.md#author-managed-content) describes fields,
+locations, automatic fallbacks, and optional one-time recovery operations.
 
 ## Promotional content
 
 The [content guide](../integrations/content.md) owns `.github/meetup-content.json`,
 text/image model capabilities, public media prerequisites, and recovery.
 Content generation uses the shared AI inputs. Review and manual submission do
-not require AI credentials.
+not require AI credentials. Routine reconciliation without stored proposals or
+authenticated submissions requires none of the three content/publication
+configuration files; see the content guide for the exact conditions.
 
 ## Social publication
 
 The [social publication guide](../integrations/social-publication.md) owns the
 required `.github/meetup-social.json` allowlist, conditional `social-credentials`
 secret, scheduled and event-triggered callers, publication approval, and recovery.
-Draft generation and review also read this file. Use `{"version":1,"destinations":[]}`
-when no social destinations are enabled. Missing configuration never falls back
-to predefined channels.
+Draft generation and review of content proposals or organizer submissions also
+read this file. For those operations, use `{"version":1,"destinations":[]}` when no
+social destinations are enabled. Routine reconciliation without content work
+does not read it. Missing configuration never falls back to predefined channels.

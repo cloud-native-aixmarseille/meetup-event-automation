@@ -92,6 +92,7 @@ Use the current guides above for setup and supported operational behavior.
 | [Organizer workflow and attention](adr/0004-organizer-workflow.md)        | Checklists, diagnostics, reminders, follow-up, and issue archival.                |
 | [Referentials and Conference Hall](adr/0005-referentials.md)              | Source authority, stable identities, reviewed catalogs, and talk selection.       |
 | [Feedback and shared links](adr/0006-feedback.md)                         | OpenFeedback agendas, resource identity, and Kutt target selection.               |
+| [Template discovery](adr/0011-template-discovery.md)                      | Native field discovery and agenda-position selectors.                             |
 | [Managed assets](adr/0007-assets.md)                                      | Template bindings, public fields, images, and presentation PDFs.                  |
 | [Draft generation and review](adr/0008-draft-generation.md)               | Event copy, cover artwork, social formats, reminders, and provider boundaries.    |
 | [Event publication destinations](adr/0009-community-event-publication.md) | Shared lifecycle, Meetup and OCGroups adapters, approval, and recovery.           |
@@ -134,6 +135,7 @@ docs/
     ├── 0005-referentials.md
     ├── 0006-feedback.md
     ├── 0007-assets.md
+    ├── 0011-template-discovery.md
     ├── 0008-draft-generation.md
     ├── 0009-community-event-publication.md
     └── 0010-social-publication.md

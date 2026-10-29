@@ -11,6 +11,8 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				definition: new GoogleSlidesContentRepositoryComposition().definition(),
+
 				slideTemplateBindings:
 					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
 				slideContentRequests:
@@ -52,6 +54,8 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				definition: new GoogleSlidesContentRepositoryComposition().definition(),
+
 				slideTemplateBindings:
 					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
 				slideContentRequests:
@@ -136,6 +140,8 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				definition: new GoogleSlidesContentRepositoryComposition().definition(),
+
 				slideTemplateBindings:
 					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
 				slideContentRequests:
@@ -189,6 +195,8 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				definition: new GoogleSlidesContentRepositoryComposition().definition(),
+
 				slideTemplateBindings:
 					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
 				slideContentRequests:
@@ -216,6 +224,8 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				definition: new GoogleSlidesContentRepositoryComposition().definition(),
+
 				slideTemplateBindings:
 					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
 				slideContentRequests:
@@ -246,6 +256,8 @@ describe("Slides content repository", () => {
 			const f = slidesFixture();
 			const repository = new GoogleSlidesContentRepository(
 				{
+					definition:
+						new GoogleSlidesContentRepositoryComposition().definition(),
 					slideTemplateBindings:
 						new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
 					slideContentRequests:

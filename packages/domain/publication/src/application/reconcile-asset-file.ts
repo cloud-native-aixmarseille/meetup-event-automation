@@ -13,6 +13,7 @@ import type {
 	AssetTemplate,
 } from "./ports.js";
 import type { ReconcileAssetContent } from "./reconcile-asset-content.js";
+import type { AssetModelProvider } from "./content-ports.js";
 
 type AssetFileInput = {
 	container: AssetContainer;
@@ -33,7 +34,7 @@ export class ReconcileAssetFile {
 	) {}
 
 	async execute(
-		input: AssetFileInput,
+		input: Omit<AssetFileInput, "model"> & { model?: AssetModelProvider },
 	): Promise<{ file?: AssetFile; status: ContentStatus }> {
 		const matches = input.currentFiles.filter(
 			(file) => file.templateId === input.template.id,
@@ -45,21 +46,45 @@ export class ReconcileAssetFile {
 		let file = matches[0] as AssetFile | undefined;
 		const fresh = !file;
 		try {
-			await this.preflight(input, file);
-			if (!file) file = await this.copyOrRename(input);
+			const prepared = await this.prepare(input, file);
+			await this.preflight(prepared, file);
+			if (!file) file = await this.copyOrRename(prepared);
 			if (!file)
 				return {
-					status: input.template.contentContract ? "pending" : "copy-only",
+					status: prepared.template.contentContract ? "pending" : "copy-only",
 				};
-			file = await this.enroll(input, file);
-			const status = await this.render(input, file, fresh);
+			file = await this.enroll(prepared, file);
+			const status = await this.render(prepared, file, fresh);
 			if (!fresh && (status === "ready" || status === "copy-only"))
-				file = await this.copyOrRename(input, file);
+				file = await this.copyOrRename(prepared, file);
 			return { file, status };
 		} catch (error) {
 			if (!(error instanceof ContentError)) throw error;
 			return this.failed(file, error, input.diagnostics);
 		}
+	}
+
+	private async prepare(
+		input: Omit<AssetFileInput, "model"> & { model?: AssetModelProvider },
+		file?: AssetFile,
+	): Promise<AssetFileInput> {
+		if (
+			file &&
+			!file.contentManaged &&
+			input.recovery?.[file.id]?.operation !== "enroll"
+		)
+			return { ...input, model: undefined };
+		const contract = await this.content?.definition(
+			input.container.id,
+			input.template,
+			file,
+			file ? input.recovery?.[file.id] : undefined,
+		);
+		return {
+			...input,
+			template: { ...input.template, contentContract: contract },
+			model: contract ? await input.model?.(contract) : undefined,
+		};
 	}
 
 	private failed(

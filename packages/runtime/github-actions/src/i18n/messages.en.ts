@@ -87,6 +87,8 @@ export const EN_MESSAGES = {
 
 	"report.content.generated": "Content generation evaluated.",
 	"report.content.reviewed": "Content reviews reconciled.",
+	"report.content.no-work":
+		"No content proposals or organizer submissions to review.",
 
 	"action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
 	"action.feedback.reconcile-short-link": "Reconcile shared feedback link",

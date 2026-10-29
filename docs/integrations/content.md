@@ -10,6 +10,18 @@ item, approve an email batch, or authorize initial Meetup publication.
 
 ## Configure the repository
 
+Routine reconciliation checks stored proposals and authenticated organizer
+submissions before loading content settings. With neither present, review
+completes without `.github/meetup-content.json`, `.github/event-publication.json`,
+or `.github/meetup-social.json`. Consumers that use neither content proposals nor
+publication workflows can omit these files. Keep the independent
+[Drive asset configuration](assets.md#author-managed-content) when rendering
+managed templates.
+
+Generation, review of existing proposals, and imports of valid submissions
+require all three files. Failed or unverifiable reads of proposal state or
+submissions fail the action; they never count as an empty review.
+
 Provide the public venue and event hours in
 [`.github/event-publication.json`](event-publication.md). Add
 `.github/meetup-content.json`:
@@ -234,10 +246,9 @@ title wrapper and description display fences remain presentation details. Meetup
 publication retains the authoritative agenda and its separate initial approval.
 Later manual edits to proposal-managed fields block their use until reviewed.
 
-Managed asset contracts can bind the selected cover with an `event.cover` image
-field. Set `required: true`, provide its slot and registered object/page or tab
-identity, and use the existing image fit contract. No unapproved fallback is
-accepted. Rendering verifies the selected image bytes against the approved hash
+Put `{{event.cover}}` in a placeholder image's alt title to bind the selected
+cover. The automation discovers its location and requires the approved image;
+no fallback is accepted. Rendering verifies the selected image bytes against the approved hash
 and preserves existing binding conflict and recovery rules. This integration
 does not upload a cover to the Meetup browser editor.
 

@@ -8,6 +8,7 @@ export type ReferentialDiagnosticCode =
 	| "referential.source.conflict"
 	| "referential.host.id.invalid"
 	| "referential.host.id.conflict"
+	| "referential.host.public-details.invalid"
 	| "referential.host.display-name.invalid"
 	| "referential.host.display-name.duplicate"
 	| "referential.contact.id.invalid"

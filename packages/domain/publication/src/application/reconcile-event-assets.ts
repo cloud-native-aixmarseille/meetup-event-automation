@@ -1,8 +1,8 @@
 import type {
 	ContentRecovery,
 	ContentStatus,
-	PublicAssetModel,
 } from "../domain/asset-content.js";
+import type { AssetModelProvider } from "./content-ports.js";
 import type { AssetFileName } from "../domain/asset-file-name.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
@@ -47,7 +47,7 @@ export class ReconcileEventAssets {
 		hostName: string;
 		existingUrl?: string;
 		mode: ReconcileEventAssetsMode;
-		model?: PublicAssetModel;
+		model?: AssetModelProvider;
 		recovery?: Readonly<Record<string, ContentRecovery>>;
 	}): Promise<ReconcileEventAssetsResult> {
 		const date = input.date.trim();
@@ -113,7 +113,7 @@ export class ReconcileEventAssets {
 		input: {
 			date: string;
 			mode: ReconcileEventAssetsMode;
-			model?: PublicAssetModel;
+			model?: AssetModelProvider;
 			recovery?: Readonly<Record<string, ContentRecovery>>;
 		},
 		diagnostics: PublicationDiagnostic[],

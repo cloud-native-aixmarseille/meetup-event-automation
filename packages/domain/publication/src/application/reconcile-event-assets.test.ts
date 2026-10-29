@@ -1,3 +1,4 @@
+import { ContentError } from "../domain/content-error.js";
 import { describe, expect, it, vi } from "vitest";
 import { contentFixture } from "../../testing/content.fixtures.js";
 import { PublicationDomainComposition } from "../dependency-composition.js";
@@ -114,12 +115,14 @@ describe("event asset reconciliation", () => {
 		// Arrange
 		const { repository, names } = setup();
 		const content = contentFixture();
+		vi.mocked(content.renderer.discover).mockRejectedValue(
+			new ContentError("contract"),
+		);
 		repository.listFiles.mockResolvedValue([]);
 		repository.listTemplates.mockResolvedValue([
 			{
 				...template,
 				mimeType: content.input.mimeType,
-				contentContract: { ...content.input.contract, version: 99 },
 			},
 			{ id: "attendance-template", name: "Attendance", kind: "attendance" },
 		]);
@@ -145,7 +148,7 @@ describe("event asset reconciliation", () => {
 		// Act
 		const result = await reconcile.execute({
 			...input,
-			model: content.input.model,
+			model: async () => content.input.model,
 		});
 
 		// Assert

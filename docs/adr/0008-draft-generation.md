@@ -52,6 +52,23 @@ before transport. Approximate provider settings do not establish exact output
 dimensions; inspect the resulting bytes. Provider failures do not trigger an
 automatic retry with uncertain side effects.
 
+## Configuration when no content work exists (2026-10-29)
+
+Routine reconciliation first checks the verified proposal store and authenticated
+organizer submissions. When both are empty, content review completes without
+loading content, event-publication, or social-publication configuration. Existing
+proposals, including incomplete generation and past decisions, still require
+configuration and normal review. Read or verification failures remain failures.
+Explicit generation and publication retain their required configuration.
+
+This replaces unconditional configuration loading during routine review, which
+required placeholder files in consumers that use only event and asset workflows.
+Journey owns the presence-of-work query through existing read ports; runtime
+defers configuration and effect composition until that query finds work. GitHub
+adapters retain state verification and submission authorization. Active content
+review performs additional reads before its usual processing; it rereads state
+and authority rather than treating the preliminary result as review approval.
+
 ## Accepted editorial formats
 
 Use the resolved content language and validated public event facts. Preserve

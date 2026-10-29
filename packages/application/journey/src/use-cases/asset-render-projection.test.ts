@@ -43,17 +43,16 @@ describe("asset public projection", () => {
 				load: vi.fn(async () =>
 					reason === "invalid-catalog"
 						? { ...catalog, hosts: [...catalog.hosts, ...catalog.hosts] }
-						: catalog,
+						: {
+								...catalog,
+								hosts: catalog.hosts.map((host) => ({
+									...host,
+									...(reason === "unconfigured"
+										? {}
+										: { logoUrl: logo.url, logoDescription: logo.description }),
+								})),
+							},
 				),
-			},
-			{
-				speakers: {},
-				talks: {},
-				venues: {},
-				hostLogos:
-					reason === "unconfigured"
-						? {}
-						: { "host-0001": logo, "host-unknown": logo },
 			},
 		);
 		const host =
@@ -71,6 +70,7 @@ describe("asset public projection", () => {
 				proposalStatus: reason === "stale-agenda" ? "stale" : "current",
 			},
 			[],
+			true,
 		);
 		const payload = vi.mocked(presenter.format).mock.calls[0][0];
 
@@ -113,17 +113,6 @@ describe("asset public projection", () => {
 							: catalog,
 					),
 				},
-				{
-					speakers: { portrait: "speaker-0001" },
-					talks: {
-						opening: {
-							provider: "conference-hall",
-							event: "public-cfp",
-							id: "proposal-a",
-						},
-					},
-					venues: {},
-				},
 				nextEvent,
 			);
 
@@ -144,6 +133,7 @@ describe("asset public projection", () => {
 							},
 						]
 					: [],
+				true,
 			);
 			const payload = vi.mocked(presenter.format).mock.calls[0][0];
 
@@ -181,29 +171,28 @@ describe("asset public projection", () => {
 					),
 			},
 			presenter,
-			{ load: vi.fn(async () => catalog) },
 			{
-				speakers: { portrait: "speaker-0001" },
-				talks: {
-					opening: {
-						provider: "conference-hall",
-						event: "public-cfp",
-						id: "proposal-a",
-					},
-				},
-				venues: { "host-0001": venue },
+				load: vi.fn(async () => ({
+					...catalog,
+					hosts: catalog.hosts.map((host) => ({
+						...host,
+						venueAddress: venue.address,
+						venuePostalCode: venue.postalCode,
+						venueCity: venue.city,
+					})),
+				})),
 			},
 			{ find: vi.fn(async () => next) },
 		);
 
 		// Act
-		await projection.create({ ...event, agenda: [talk] }, []);
+		await projection.create({ ...event, agenda: [talk] }, [], true);
 		const payload = vi.mocked(presenter.format).mock.calls[0][0];
 
 		// Assert
 		expect(payload.venue).toEqual(venue);
 		expect(payload.nextEvent).toEqual(next);
-		expect(payload.talks?.opening).toMatchObject({
+		expect(payload.talks?.["1"]).toMatchObject({
 			title: "Public title",
 			abstract: "Public abstract",
 		});
@@ -211,7 +200,7 @@ describe("asset public projection", () => {
 		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].address);
 	});
 
-	it("exposes only public fields and assigns pictures by stable agenda identity", async () => {
+	it("exposes only public fields and assigns pictures by current agenda position", async () => {
 		// Arrange
 		const source = {
 			...catalog,
@@ -235,20 +224,15 @@ describe("asset public projection", () => {
 			},
 			presenter,
 			{ load: vi.fn(async () => source) },
-			{
-				speakers: { portrait: "speaker-0001", absent: "speaker-9999" },
-				talks: {},
-				venues: {},
-			},
 		);
 
 		// Act
-		await projection.create(event, []);
+		await projection.create(event, [], false);
 		const payload = vi.mocked(presenter.format).mock.calls[0][0];
 
 		// Assert
 		expect(payload.pictures).toEqual({
-			portrait: {
+			"1": {
 				speakerId: "speaker-0001",
 				url: "https://images.example.org/portrait.png",
 				description: "Example Speaker",
@@ -274,7 +258,7 @@ describe("asset public projection", () => {
 			expect(JSON.stringify(payload)).not.toContain(String(host.address));
 	});
 
-	it("does not transfer a removed speaker's portrait to the next agenda speaker", async () => {
+	it("clears portraits when the agenda becomes empty", async () => {
 		// Arrange
 		const presenter: AssetRenderPresenter = {
 			format: vi.fn(() => ({ text: {}, pictures: {} })),
@@ -291,11 +275,10 @@ describe("asset public projection", () => {
 			},
 			presenter,
 			{ load: vi.fn(async () => catalog) },
-			{ speakers: { portrait: "speaker-0001" }, talks: {}, venues: {} },
 		);
 
 		// Act
-		await projection.create({ ...event, agenda: [] }, []);
+		await projection.create({ ...event, agenda: [] }, [], true);
 
 		// Assert
 		expect(vi.mocked(presenter.format).mock.calls[0][0].pictures).toEqual({});

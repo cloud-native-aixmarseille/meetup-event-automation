@@ -8,9 +8,12 @@ and LinkedIn announcement image.
 
 ## Configure destinations
 
-Commit `.github/meetup-social.json` in the consumer repository. This file is also
-required by draft generation and review. Use an explicit empty `destinations`
-array when social publication is disabled; a missing file fails validation.
+Commit `.github/meetup-social.json` when using social publication, draft
+generation, or review of content proposals and organizer submissions. Use an
+explicit empty `destinations` array when using content review with social
+publication disabled; a missing file fails validation for these operations.
+[Routine reconciliation without content work](content.md#configure-the-repository)
+does not read this file.
 
 ```json
 {

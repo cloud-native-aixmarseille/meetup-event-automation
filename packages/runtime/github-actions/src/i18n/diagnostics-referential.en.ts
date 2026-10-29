@@ -66,4 +66,6 @@ export const DIAGNOSTICS_REFERENTIAL_EN = {
 		"Several hosts share this name; include the correct stable host ID.",
 	"diagnostic.referential.reference.speaker.ambiguous":
 		"Several speakers share this name; include the correct stable speaker ID.",
+	"diagnostic.referential.host.public-details.invalid":
+		"Complete the public venue fields and public logo fields with valid values, or leave each group empty.",
 } as const;

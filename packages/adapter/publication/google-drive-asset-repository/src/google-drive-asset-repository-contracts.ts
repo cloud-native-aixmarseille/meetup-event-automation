@@ -7,7 +7,6 @@ export type GoogleDriveClient = Pick<drive_v3.Drive, "files">;
 export type GoogleDriveAssetOptions = Readonly<{
 	parentFolderId: string;
 	templateFolderId: string;
-	contentContracts?: Readonly<Record<string, unknown>>;
 }>;
 
 export const folderMimeType = "application/vnd.google-apps.folder";

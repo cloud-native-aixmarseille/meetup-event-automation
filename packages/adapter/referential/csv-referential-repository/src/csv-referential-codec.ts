@@ -24,6 +24,11 @@ export class CsvReferentialCodec {
 				email: row.mail,
 				phone: row.phone || undefined,
 				address: row.address,
+				venueAddress: row.venue_address,
+				venuePostalCode: row.venue_postal_code,
+				venueCity: row.venue_city,
+				logoUrl: row.logo_url,
+				logoDescription: row.logo_description,
 			}),
 		);
 

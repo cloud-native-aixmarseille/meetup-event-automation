@@ -128,8 +128,6 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				name: file.name,
 				kind: file.appProperties.template_kind,
 				mimeType: file.mimeType ?? undefined,
-				contentContract:
-					this.options.contentContracts?.[file.appProperties.template_kind],
 			};
 		});
 	}

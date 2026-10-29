@@ -70,6 +70,7 @@ export class DraftActionComposition {
 		return new ReviewDraftsAction(
 			input,
 			new DraftMediaInputReader(input),
+			composition.work.bind(composition),
 			composition.review.bind(composition),
 		);
 	}

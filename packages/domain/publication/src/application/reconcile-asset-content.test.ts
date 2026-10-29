@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { contentDependencies } from "../../testing/content.fixtures.js";
+import {
+	contentDependencies,
+	defaults,
+} from "../../testing/content.fixtures.js";
 import { PublicationDomainComposition } from "../dependency-composition.js";
 import { ContentError } from "../domain/content-error.js";
 import { ReconcileAssetContent } from "./reconcile-asset-content.js";
@@ -10,6 +13,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies(true, undefined, "host.logo");
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -30,6 +35,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		const logo = {
 			url: "https://images.example.org/logo.png",
@@ -77,6 +83,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies(true, undefined, "host.logo");
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -97,6 +105,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		await service.execute(f.input);
 		f.state.content.set(
@@ -124,6 +133,8 @@ describe("managed content reconciliation", () => {
 		});
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -144,6 +155,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 
 		// Act
@@ -179,6 +191,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -199,6 +213,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		vi.mocked(f.renderer.apply).mockRejectedValueOnce(
 			new Error("connection lost before write"),
@@ -217,6 +232,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -237,6 +254,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		const save = f.manifests.save;
 		vi.mocked(f.manifests.save).mockImplementationOnce(
@@ -264,6 +282,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -284,6 +304,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 
 		// Act
@@ -299,6 +320,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -319,6 +342,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		vi.mocked(f.renderer.apply).mockImplementationOnce(async () => {
 			f.state.revision++;
@@ -344,6 +368,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -364,6 +390,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		await service.execute(f.input);
 		f.state.content.set(
@@ -386,6 +413,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -406,6 +435,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		const picture = {
 			url: "https://images.example.org/portrait.png",
@@ -444,6 +474,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -464,6 +496,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		await service.execute(f.input);
 		f.state.content.set(
@@ -496,6 +529,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -516,6 +551,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 
 		// Act
@@ -548,6 +584,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -568,6 +606,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		await service.execute(f.input);
 		f.state.content.set(
@@ -591,6 +630,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -611,6 +652,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		f.state.failAfterApply = true;
 
@@ -628,6 +670,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -648,6 +692,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		f.state.failAfterApply = true;
 
@@ -665,6 +710,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -685,6 +732,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		f.state.failAfterApply = true;
 		await service.execute(f.input).catch(() => undefined);
@@ -703,6 +751,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -723,6 +773,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		const error = new Error("Synthetic provider authentication failure");
 		vi.mocked(f.renderer.apply).mockRejectedValue(error);
@@ -746,6 +797,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -766,6 +819,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		const error = new Error("Synthetic transport failure");
 		vi.mocked(f.renderer.apply).mockImplementationOnce(async () => {
@@ -793,6 +847,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -813,6 +869,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 
 		// Act
@@ -834,6 +891,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -854,6 +913,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		vi.mocked(f.renderer.apply).mockRejectedValueOnce(
 			new ContentError("revision"),
@@ -872,6 +932,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -892,6 +954,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		await service.execute(f.input);
 
@@ -913,6 +976,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -933,6 +998,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 
 		// Act
@@ -953,6 +1019,8 @@ describe("managed content reconciliation", () => {
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
 			{
+				createDiscoverAssetContent: (...args) =>
+					new PublicationDomainComposition().discoverAssetContent(...args),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
 				contentRenderPlan:
@@ -973,6 +1041,7 @@ describe("managed content reconciliation", () => {
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
+			defaults,
 		);
 		await service.execute(f.input);
 		f.state.content.delete("title");
