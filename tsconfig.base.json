@@ -16,6 +16,9 @@
 		"resolveJsonModule": true,
 		"types": ["node", "vitest/globals"],
 		"paths": {
+			"@meetup-automation/google-sheets-registration-source": [
+				"./packages/adapter/publication/google-sheets-registration-source/src/index.ts"
+			],
 			"@meetup-automation/meetup-event-gateway": [
 				"./packages/adapter/publication/meetup-event-gateway/src/index.ts"
 			],

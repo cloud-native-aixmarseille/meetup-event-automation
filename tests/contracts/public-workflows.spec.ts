@@ -12,6 +12,9 @@ import {
 } from "./support.js";
 
 const actionWiring = {
+	"event-reconcile-registrations": {
+		reconcile: ["publication/reconcile-registrations"],
+	},
 	"event-preparation-generate-drafts": {
 		generate: [
 			"event/generate-copy",
@@ -59,6 +62,29 @@ const actionWiring = {
 };
 
 describe("public reusable workflow contracts", () => {
+	it("keeps blocked registration reconciliation read-only under the event lock", async () => {
+		// Arrange
+		const workflow = await readWorkflow("event-reconcile-registrations");
+		// Act
+		const reconcile = workflow.jobs?.reconcile;
+		const action = reconcile?.steps?.find((step) =>
+			step.uses?.endsWith("/publication/reconcile-registrations"),
+		);
+		// Assert
+		expect(reconcile?.permissions).toEqual({
+			contents: "read",
+			issues: "read",
+		});
+		expect(action?.with?.["github-token"]).toBe(
+			workflowExpression("github.token"),
+		);
+		expect(workflow.concurrency).toEqual({
+			group: workflowExpression(
+				"format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number)",
+			),
+			"cancel-in-progress": false,
+		});
+	});
 	it.each(Object.entries(actionWiring))(
 		"loads scoped actions from the workflow revision in %s",
 		async (name, jobs) => {
@@ -275,6 +301,7 @@ describe("event lifecycle entry points", () => {
 			"event-promotion-recover.yml",
 			"event-publication-reconcile.yml",
 			"event-reconcile-active.yml",
+			"event-reconcile-registrations.yml",
 			"event-reconcile.yml",
 			"issue-form-reconcile.yml",
 			"referential-check-catalog-and-form.yml",

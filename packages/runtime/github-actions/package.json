@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": "./src/index.ts",
 	"dependencies": {
+		"@meetup-automation/google-sheets-registration-source": "workspace:*",
 		"@meetup-automation/meetup-event-gateway": "workspace:*",
 		"@actions/core": "^3.0.1",
 		"@actions/github": "^9.1.1",

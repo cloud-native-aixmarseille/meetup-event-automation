@@ -13,6 +13,10 @@ export const actionBundles = [
 		"actions/communication/recover-social/dist/index.js",
 	],
 	[
+		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-registrations.ts",
+		"actions/publication/reconcile-registrations/dist/index.js",
+	],
+	[
 		"packages/runtime/github-actions/src/entrypoints/publication-prepare-runtime.ts",
 		"actions/publication/prepare-runtime/dist/index.js",
 	],

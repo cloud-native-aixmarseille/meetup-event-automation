@@ -36,6 +36,19 @@ const actionContracts = [
 		outputs: [],
 	},
 	{
+		directory: "actions/publication/reconcile-registrations",
+		inputs: [
+			"github-token",
+			"issue-number",
+			"registrations-sheet-url",
+			"email-column",
+			"first-data-row",
+			"last-data-row",
+			"google-credentials",
+		],
+		outputs: [],
+	},
+	{
 		directory: "actions/publication/prepare-runtime",
 		inputs: [],
 		outputs: ["requires-challenge-solver", "runtime-directory"],

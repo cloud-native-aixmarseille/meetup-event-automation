@@ -114,6 +114,10 @@ export type {
 } from "./use-cases/reconcile-meetup-issue-form.js";
 export { ReconcileMeetupIssueForm } from "./use-cases/reconcile-meetup-issue-form.js";
 export {
+	ReconcileMeetupRegistrations,
+	type ReconcileMeetupRegistrationsResult,
+} from "./use-cases/reconcile-meetup-registrations.js";
+export {
 	ReconcileMeetupSlidesPdf,
 	type SlidesPdfSource,
 } from "./use-cases/reconcile-meetup-slides-pdf.js";

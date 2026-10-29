@@ -1,0 +1,62 @@
+# Goal: Reconcile event-day participants with OCGroups membership and registration.
+# Behavior: Validate the selected Sheet source and report reconciliation blocked
+# until supported OCGroups provider operations are available.
+
+name: Event / Reconcile registrations
+on:
+  workflow_call:
+    inputs:
+      locale:
+        description: Language for generated reports (en or fr).
+        required: true
+        type: string
+      issue-number:
+        description: Open meetup issue with occurrence status held for these responses.
+        required: true
+        type: number
+      registrations-sheet-url:
+        description: Google response Sheet URL including its explicit tab gid.
+        required: true
+        type: string
+      email-column:
+        description: Exact email header in the first row of the selected tab.
+        required: true
+        type: string
+      first-data-row:
+        description: First reviewed response row for this event, one-based and at least 2.
+        required: true
+        type: number
+      last-data-row:
+        description: Last reviewed response row inclusive, with at most 1000 selected rows.
+        required: true
+        type: number
+    secrets:
+      google-credentials:
+        description: Google service-account JSON with read access to the response Sheet.
+        required: true
+permissions: {}
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - name: Checkout consumer repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Reconcile event registrations
+        uses: $/actions/publication/reconcile-registrations
+        with:
+          locale: ${{ inputs.locale }}
+          github-token: ${{ github.token }}
+          issue-number: ${{ inputs.issue-number }}
+          registrations-sheet-url: ${{ inputs.registrations-sheet-url }}
+          email-column: ${{ inputs.email-column }}
+          first-data-row: ${{ inputs.first-data-row }}
+          last-data-row: ${{ inputs.last-data-row }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+concurrency:
+  group: ${{ format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number) }}
+  cancel-in-progress: false

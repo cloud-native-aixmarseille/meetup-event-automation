@@ -3,6 +3,14 @@ import { DiagnosticPolicy } from "./diagnostic-policy.js";
 
 describe("diagnostic policy", () => {
 	it.each([
+		"publication.registration.mapping",
+		"publication.registration.headers",
+		"publication.registration.invalid",
+		"publication.registration.empty",
+		"publication.registration.event",
+		"publication.registration.destination",
+		"publication.registration.inactive",
+		"publication.registration.provider-unavailable",
 		"event.hoster.missing",
 		"event.document.heading.duplicate",
 		"event.proposals.invalid-selection",
@@ -51,6 +59,28 @@ describe("diagnostic policy", () => {
 		expect(category).toBe("organizer");
 		expect(failed).toBe(false);
 	});
+
+	it.each(["warning", "error"] as const)(
+		"distinguishes registration corrections from unexpected source failures at %s severity",
+		(severity) => {
+			// Arrange
+			const correction = { code: "publication.registration.headers", severity };
+			const sourceFailure = { code: "action.execution.failed", severity };
+			const policy = new DiagnosticPolicy();
+
+			// Act
+			const correctionCategory = policy.classify(correction);
+			const sourceFailureCategory = policy.classify(sourceFailure);
+			const failedForCorrection = policy.isTechnicalFailure(correction);
+			const failedForSource = policy.isTechnicalFailure(sourceFailure);
+
+			// Assert
+			expect(correctionCategory).toBe("organizer");
+			expect(sourceFailureCategory).toBe("technical");
+			expect(failedForCorrection).toBe(false);
+			expect(failedForSource).toBe(true);
+		},
+	);
 
 	it.each([
 		"event.proposals.unavailable",

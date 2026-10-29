@@ -3,6 +3,9 @@
 For browser-based creation and updates on Meetup and OCGroups, see
 [event publication](../integrations/event-publication.md).
 
+For event-day Google Form collection, response Sheet access, and post-event
+OCGroups reporting, follow [registration reconciliation](../integrations/registrations.md).
+
 This guide configures a consumer repository to run the published automation. You
 need repository administration access, a GitHub App installation, Google Drive
 service-account access, a Slack bot, an OpenFeedback organization API key, and an
