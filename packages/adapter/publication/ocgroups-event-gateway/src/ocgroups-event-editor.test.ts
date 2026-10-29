@@ -6,6 +6,7 @@ import {
 	remote,
 	target,
 } from "../testing/browser-fixture.js";
+import { images } from "../testing/photo-fixture.js";
 import { OcgroupsEventGatewayComposition } from "./dependency-composition.js";
 import type { OcgroupsEventEditor } from "./ocgroups-event-editor.js";
 
@@ -21,7 +22,7 @@ async function fixture(initial: "missing" | "draft" | "published" = "missing") {
 	const page = await context.newPage();
 	page.setDefaultTimeout(500);
 	const state = await installBrowserFixture(context, initial);
-	const composition = new OcgroupsEventGatewayComposition();
+	const composition = new OcgroupsEventGatewayComposition(images);
 	const session = composition.session(page, target());
 	return { context, state, editor: session.editor as OcgroupsEventEditor };
 }
@@ -38,7 +39,16 @@ describe("OCGroups editor browser contract", () => {
 		expect(result).toEqual({ identity: remote, status: "draft" });
 		expect(f.state.saves).toBe(1);
 		expect(f.state.publishes).toBe(0);
-		expect(before).toHaveBeenCalledOnce();
+		expect(before).toHaveBeenCalledTimes(2);
+		expect(f.state.uploads).toBe(1);
+		expect(before.mock.calls).toEqual([["asset"], ["event"]]);
+		expect(f.state.fields.meetup_url).toBe(event.meetupUrl);
+		expect(f.state.fields["speakers[0][user_id]"]).toBe(
+			event.speakers[0].userId,
+		);
+		expect(f.state.fields["sponsors[0][group_sponsor_id]"]).toBe(
+			event.sponsor.id,
+		);
 		expect(saved).toHaveBeenCalledExactlyOnceWith({
 			id: remote.id,
 			reviewUrl: remote.reviewUrl,
@@ -55,6 +65,7 @@ describe("OCGroups editor browser contract", () => {
 		expect(result.status).toBe("published");
 		expect(f.state.saves).toBe(0);
 		expect(before).not.toHaveBeenCalled();
+		expect(f.state.uploads).toBe(0);
 	});
 	it("preserves publication and existing registration while updating managed fields", async () => {
 		// Arrange

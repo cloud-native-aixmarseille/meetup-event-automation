@@ -38693,7 +38693,18 @@ var CommunityEventPolicy = class {
   }
   schedule;
   valid(event, now2) {
-    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/?$/.test(
+      event.meetupUrl
+    ) && event.speakers.length > 0 && event.speakers.every((speaker) => this.speaker(speaker)) && new Set(event.speakers.map((speaker) => speaker.userId)).size === event.speakers.length && this.sponsor(event.sponsor) && /^[0-9a-f]{64}$/.test(event.cover.fingerprint) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+  }
+  speaker(value) {
+    return this.uuid(value.userId) && /^[a-zA-Z0-9_.-]{1,100}$/.test(value.username);
+  }
+  sponsor(value) {
+    return this.uuid(value.id) && this.text(value.name, 120) && this.text(value.level, 100);
+  }
+  uuid(value) {
+    return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);
   }
   venue(venue) {
     return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
@@ -43763,12 +43774,16 @@ var ReconcileEventPublication = class {
       if (!event || !this.configuration.policy.valid(event, this.clock.now()))
         return this.blocked("prerequisites");
       const remote = await this.resolveIdentity(source);
+      let creationReserved = false;
       const saved = await this.configuration.gateway.save(
         event,
         remote,
-        async () => {
+        async (effect) => {
           await this.ensureCurrent(source, event);
-          if (!remote) await this.configuration.journal.reserve();
+          if (effect === "event" && !remote && !creationReserved) {
+            await this.configuration.journal.reserve();
+            creationReserved = true;
+          }
           await this.ensureCurrent(source, event);
         },
         async (identity) => {
@@ -44042,6 +44057,24 @@ var CommunityPublicationRevision = class {
       endTime: event.endTime,
       timeZone: event.timeZone,
       categoryId: event.categoryId,
+      meetupUrl: event.meetupUrl,
+      cover: {
+        id: event.cover.id,
+        fingerprint: event.cover.fingerprint,
+        sourceRevision: event.cover.sourceRevision,
+        mimeType: event.cover.mimeType,
+        width: event.cover.width,
+        height: event.cover.height
+      },
+      speakers: event.speakers.map((speaker) => ({
+        userId: speaker.userId,
+        username: speaker.username
+      })).sort((left, right) => left.userId.localeCompare(right.userId)),
+      sponsor: {
+        id: event.sponsor.id,
+        name: event.sponsor.name,
+        level: event.sponsor.level
+      },
       venue: {
         name: event.venue.name,
         address: event.venue.address,
@@ -44076,19 +44109,38 @@ var CommunityPublicationIssueProjection = class {
 
 // packages/application/journey/src/use-cases/community-publication-projection.ts
 var CommunityPublicationProjection = class {
-  constructor(projection) {
+  constructor(projection, artwork) {
     this.projection = projection;
+    this.artwork = artwork;
   }
   projection;
-  create(event, settings) {
+  artwork;
+  async create(event, settings) {
     const schedule = this.projection.create(event, settings);
     const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
-    if (!schedule || !venue) return void 0;
+    const sponsor = event.host?.id ? settings.sponsors[event.host.id] : void 0;
+    const meetupUrl = event.publicationLinks.meetup;
+    const speakers = /* @__PURE__ */ new Map();
+    for (const talk of event.agenda) {
+      for (const speaker of talk.speakers) {
+        const mapped = speaker.id ? settings.speakers[speaker.id] : void 0;
+        if (!mapped) return void 0;
+        speakers.set(mapped.userId, mapped);
+      }
+    }
+    if (!schedule || !venue || !sponsor || !meetupUrl || !speakers.size)
+      return void 0;
+    const cover = await this.artwork.cover(event);
+    if (!cover) throw new ScheduledEventError("content-review");
     return {
       ...schedule,
       venue,
       categoryId: settings.categoryId,
-      registration: settings.registration
+      registration: settings.registration,
+      meetupUrl,
+      cover,
+      sponsor,
+      speakers: [...speakers.values()]
     };
   }
 };
@@ -44161,7 +44213,8 @@ var PublicationDestinationComposition = class {
         label: "Community",
         approvalKind: "community-publication",
         projection: new CommunityPublicationProjection(
-          new JourneyPolicyComposition().scheduledEventProjection()
+          new JourneyPolicyComposition().scheduledEventProjection(),
+          input.artwork
         ),
         policy: new CommunityEventPolicy(
           new PublicationDomainComposition().scheduledEventPolicy()
@@ -44551,7 +44604,9 @@ var EventPublicationConfiguration = class {
         "communityId",
         "groupId",
         "categoryId",
-        "registration"
+        "registration",
+        "speakers",
+        "sponsors"
       ].includes(key)
     ))
       throw new Error("Unsupported publication destination");
@@ -44740,8 +44795,38 @@ var OcgroupsPublicationSettings = class {
       communityId: value.communityId,
       groupId: value.groupId,
       categoryId: value.categoryId,
-      registration: this.registration(value.registration)
+      registration: this.registration(value.registration),
+      speakers: this.speakers(value.speakers),
+      sponsors: this.sponsors(value.sponsors)
     };
+  }
+  speakers(value) {
+    if (!this.input.isObject(value))
+      throw new Error("Missing OCGroups speaker mappings");
+    const mappings = {};
+    for (const [id, item] of Object.entries(value)) {
+      if (!id.trim() || !this.input.isObject(item) || typeof item.userId !== "string" || typeof item.username !== "string")
+        throw new Error("Invalid OCGroups speaker mapping");
+      const speaker = { userId: item.userId, username: item.username };
+      if (!this.policy.speaker(speaker))
+        throw new Error("Invalid OCGroups speaker mapping");
+      mappings[id] = speaker;
+    }
+    return mappings;
+  }
+  sponsors(value) {
+    if (!this.input.isObject(value))
+      throw new Error("Missing OCGroups sponsor mappings");
+    const mappings = {};
+    for (const [id, item] of Object.entries(value)) {
+      if (!id.trim() || !this.input.isObject(item) || typeof item.id !== "string" || typeof item.name !== "string" || typeof item.level !== "string")
+        throw new Error("Invalid OCGroups sponsor mapping");
+      const sponsor = { id: item.id, name: item.name, level: item.level };
+      if (!this.policy.sponsor(sponsor))
+        throw new Error("Invalid OCGroups sponsor mapping");
+      mappings[id] = sponsor;
+    }
+    return mappings;
   }
   venue(value) {
     if (!this.input.isObject(value) || typeof value.name !== "string" || typeof value.address !== "string" || typeof value.city !== "string" || typeof value.zipCode !== "string" || typeof value.state !== "string" || typeof value.country !== "string" || typeof value.countryCode !== "string")
@@ -73374,7 +73459,7 @@ var MeetupEventGateway = class {
       (page) => this.collaborators.createMeetupEventEditor(page, this.group.value).save(
         event,
         identity?.reviewUrl,
-        beforeSubmit,
+        () => beforeSubmit("event"),
         (url) => onSaved(this.identity(url))
       )
     );
@@ -73925,6 +74010,29 @@ var OcgroupsEditorState = class {
   }
 };
 
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-event-content.ts
+var OcgroupsEventContent = class {
+  constructor(fields, speakers, sponsors, photos) {
+    this.fields = fields;
+    this.speakers = speakers;
+    this.sponsors = sponsors;
+    this.photos = photos;
+  }
+  fields;
+  speakers;
+  sponsors;
+  photos;
+  async matches(event) {
+    return await this.fields.matches(event) && await this.speakers.matches(event.speakers) && await this.sponsors.matches(event.sponsor) && await this.photos.matches(event.cover);
+  }
+  async write(event, beforeSubmit) {
+    await this.fields.write(event);
+    await this.speakers.write(event.speakers);
+    await this.sponsors.write(event.sponsor);
+    await this.photos.write(event.cover, beforeSubmit);
+  }
+};
+
 // packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-event-editor.ts
 var OcgroupsEventEditor = class {
   constructor(page, origin, dashboard, state, fields, registration, location) {
@@ -73975,13 +74083,14 @@ var OcgroupsEventEditor = class {
       await this.dashboard.add();
       await this.registration.create(event.registration);
     }
-    await this.fields.write(event);
+    await this.dashboard.assertTarget();
+    await this.fields.write(event, beforeSubmit);
     if (!await this.fields.matches(event))
       throw new ScheduledEventError("verification");
     if (!previous || previous.status === "draft")
       await this.registration.verify(event.registration);
     await this.dashboard.assertTarget();
-    await beforeSubmit();
+    await beforeSubmit("event");
     const savedIdentity = await this.submit(identity);
     await onSaved(savedIdentity);
     await this.dashboard.open(savedIdentity.id);
@@ -74021,7 +74130,7 @@ var OcgroupsEventFields = class {
   page;
   async matches(event) {
     for (const [name, expected] of Object.entries(this.values(event))) {
-      if (await this.page.locator(`[name="${name}"]`).inputValue() !== expected)
+      if (await this.page.locator(`:is(input, textarea, select)[name="${name}"]`).inputValue() !== expected)
         return false;
     }
     return true;
@@ -74031,20 +74140,26 @@ var OcgroupsEventFields = class {
     await this.page.locator("#name").fill(event.title);
     await this.page.locator("#kind_id").selectOption("in-person");
     await this.page.locator("#category_id").selectOption(event.categoryId);
+    await this.page.locator("#meetup_url").fill(event.meetupUrl);
     const editor = this.page.locator("markdown-editor#description .CodeMirror");
     await editor.click();
     await this.page.keyboard.press("ControlOrMeta+A");
     await this.page.keyboard.insertText(event.description);
     await this.page.locator('button[data-section="date-venue"]').click();
-    if (await this.page.locator('[name="timezone"]').inputValue() !== event.timeZone) {
+    if (await this.page.locator('input[name="timezone"]').inputValue() !== event.timeZone) {
       await this.page.locator("#timezone-selector-button").click();
       await this.page.locator("#timezone-search-input").fill(event.timeZone);
       await this.page.getByRole("option", { name: event.timeZone, exact: true }).click();
     }
     for (const [name, value] of Object.entries(this.values(event))) {
-      if (["name", "kind_id", "category_id", "description", "timezone"].includes(
-        name
-      ))
+      if ([
+        "name",
+        "kind_id",
+        "category_id",
+        "description",
+        "timezone",
+        "meetup_url"
+      ].includes(name))
         continue;
       await this.page.locator(`[name="${name}"]`).fill(value);
     }
@@ -74055,6 +74170,7 @@ var OcgroupsEventFields = class {
       description: event.description,
       kind_id: "in-person",
       category_id: event.categoryId,
+      meetup_url: event.meetupUrl,
       timezone: event.timeZone,
       starts_at: `${event.date}T${event.startTime}`,
       ends_at: `${event.date}T${event.endTime}`,
@@ -74212,6 +74328,131 @@ var OcgroupsLogin = class {
   }
 };
 
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-photo-image.ts
+import { createHash as createHash7 } from "node:crypto";
+var OcgroupsPhotoImage = class {
+  constructor(page, images) {
+    this.page = page;
+    this.images = images;
+  }
+  page;
+  images;
+  prepared = /* @__PURE__ */ new Map();
+  async prepare(cover) {
+    if (!Number.isSafeInteger(cover.width) || !Number.isSafeInteger(cover.height) || cover.width < 1 || cover.height < 1 || cover.width * cover.height > 24e6)
+      throw new ScheduledEventError("content-review");
+    const key = `${cover.fingerprint}|${cover.mimeType}|${cover.width}|${cover.height}`;
+    const cached = this.prepared.get(key);
+    if (cached) return cached;
+    const image = await this.images.load(cover.url);
+    if (!image.bytes.length || image.bytes.length > 15e6 || image.mimeType !== cover.mimeType || createHash7("sha256").update(image.bytes).digest("hex") !== cover.fingerprint)
+      throw new ScheduledEventError("content-review");
+    const encoded = await this.encode(image, cover);
+    const bytes = Buffer.from(encoded.base64, "base64");
+    if (!bytes.length || bytes.length > 1048576)
+      throw new ScheduledEventError("content-review");
+    const fingerprint = createHash7("sha256").update(bytes).digest("hex");
+    const name = `${fingerprint}.${encoded.mimeType === "image/png" ? "png" : "jpg"}`;
+    const prepared = {
+      bytes,
+      mimeType: encoded.mimeType,
+      name,
+      path: `/images/${name}`
+    };
+    this.prepared.set(key, prepared);
+    return prepared;
+  }
+  async encode(image, cover) {
+    try {
+      return await this.page.evaluate(
+        async ({ base64, mimeType, width, height }) => {
+          const bytes = Uint8Array.from(
+            atob(base64),
+            (character) => character.charCodeAt(0)
+          );
+          const bitmap = await createImageBitmap(
+            new Blob([bytes], { type: mimeType })
+          );
+          try {
+            if (bitmap.width !== width || bitmap.height !== height)
+              throw new Error("Image dimensions changed");
+            if (bytes.length <= 1048576) return { base64, mimeType };
+            const canvas = document.createElement("canvas");
+            const scale = Math.min(1, 1920 / Math.max(width, height));
+            canvas.width = Math.max(1, Math.round(width * scale));
+            canvas.height = Math.max(1, Math.round(height * scale));
+            const context3 = canvas.getContext("2d");
+            if (!context3) throw new Error("Canvas unavailable");
+            context3.fillStyle = "white";
+            context3.fillRect(0, 0, canvas.width, canvas.height);
+            context3.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            for (const quality of [0.9, 0.8, 0.7, 0.6, 0.5]) {
+              const candidate = canvas.toDataURL("image/jpeg", quality).split(",")[1];
+              if (atob(candidate).length <= 1048576)
+                return { base64: candidate, mimeType: "image/jpeg" };
+            }
+            throw new Error("Image too large");
+          } finally {
+            bitmap.close();
+          }
+        },
+        {
+          base64: Buffer.from(image.bytes).toString("base64"),
+          mimeType: image.mimeType,
+          width: cover.width,
+          height: cover.height
+        }
+      );
+    } catch {
+      throw new ScheduledEventError("content-review");
+    }
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-photos.ts
+var OcgroupsPhotos = class {
+  constructor(page, origin, images) {
+    this.page = page;
+    this.origin = origin;
+    this.images = images;
+  }
+  page;
+  origin;
+  images;
+  async matches(cover) {
+    const image = await this.images.prepare(cover);
+    return await this.page.locator(
+      `gallery-field input[name="photos_urls[]"][value="${image.path}"]`
+    ).count() === 1;
+  }
+  async write(cover, beforeSubmit) {
+    const image = await this.images.prepare(cover);
+    if (await this.matches(cover)) return;
+    await this.page.getByRole("button", { name: "Details", exact: true }).click();
+    await beforeSubmit("asset");
+    const response = this.page.waitForResponse(
+      (item) => item.url() === `${this.origin}/images` && item.request().method() === "POST"
+    );
+    const [uploaded] = await Promise.all([
+      response,
+      this.page.locator('gallery-field[field-name="photos_urls"] input[type="file"]').setInputFiles({
+        name: image.name,
+        mimeType: image.mimeType,
+        buffer: Buffer.from(image.bytes)
+      })
+    ]);
+    if (!uploaded.ok()) throw new ScheduledEventError("uncertain");
+    const result = await uploaded.json();
+    if (!result || typeof result !== "object" || !("url" in result) || result.url !== image.path)
+      throw new ScheduledEventError("verification");
+    await this.page.locator(
+      `gallery-field input[name="photos_urls[]"][value="${image.path}"]`
+    ).waitFor({ state: "attached" });
+    if (!await this.matches(cover))
+      throw new ScheduledEventError("verification");
+  }
+};
+
 // packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-registration.ts
 var OcgroupsRegistration = class {
   constructor(page) {
@@ -74220,22 +74461,37 @@ var OcgroupsRegistration = class {
   page;
   async create(value) {
     await this.page.locator('button[data-section="details"]').click();
-    await this.page.locator("#toggle_test_event").setChecked(false);
-    await this.page.locator("#toggle_waitlist_enabled").setChecked(value.waitlist);
-    await this.page.locator("#toggle_attendee_approval_required").setChecked(value.approvalRequired);
+    await this.setChecked("#toggle_test_event", false);
+    await this.setChecked("#toggle_waitlist_enabled", value.waitlist);
+    await this.setChecked(
+      "#toggle_attendee_approval_required",
+      value.approvalRequired
+    );
     await this.page.locator('button[data-section="date-venue"]').click();
     await this.page.locator("#recurrence_pattern").selectOption("just-once");
     await this.page.locator("#registration_starts_at").fill("");
     await this.page.locator("#registration_ends_at").fill("");
-    await this.page.locator("#toggle_event_reminder_enabled").setChecked(value.reminder);
+    await this.setChecked("#toggle_event_reminder_enabled", value.reminder);
     await this.page.locator('button[data-section="payments"]').click();
     await this.page.locator('[data-ticketing-action="edit-ticket"]').click();
     await this.page.locator("#ticket-title-draft").fill("General Admission");
     await this.page.locator("#ticket-seats-draft").fill(String(value.capacity));
     await this.page.locator("#ticket-availability-draft").selectOption("public");
-    await this.page.locator('[data-ticket-field="active"]').setChecked(true);
-    await this.page.locator('[data-ticket-window-field="amount"]').fill("0");
+    await this.setChecked('[data-ticket-field="active"]', true);
+    const amount = this.page.locator('[data-ticket-window-field="amount"]');
+    if (await amount.inputValue() !== "0") {
+      if (!await amount.isEditable())
+        throw new ScheduledEventError("verification");
+      await amount.fill("0");
+    }
     await this.page.locator('[data-ticketing-action="save-ticket"]').click();
+  }
+  async setChecked(selector, checked) {
+    const input = this.page.locator(selector);
+    if (await input.isChecked() === checked) return;
+    await this.page.locator("label").filter({ has: input }).click();
+    if (await input.isChecked() !== checked)
+      throw new ScheduledEventError("verification");
   }
   async verify(value) {
     const expected = {
@@ -74262,8 +74518,80 @@ var OcgroupsRegistration = class {
   }
 };
 
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-speakers.ts
+var OcgroupsSpeakers = class {
+  constructor(page) {
+    this.page = page;
+  }
+  page;
+  async matches(speakers) {
+    const ids = await this.page.locator(
+      '#event-speakers-selector input[name^="speakers["][name$="[user_id]"]'
+    ).evaluateAll(
+      (elements) => elements.map((element) => element.value)
+    );
+    return speakers.every(
+      (speaker) => ids.filter((id) => id === speaker.userId).length === 1
+    );
+  }
+  async write(speakers) {
+    await this.page.getByRole("button", { name: "Contributors", exact: true }).click();
+    for (const speaker of speakers) {
+      if (await this.matches([speaker])) continue;
+      await this.add(speaker);
+    }
+  }
+  async add(speaker) {
+    const selector = this.page.locator("#event-speakers-selector");
+    await selector.getByRole("button", { name: "Add speaker", exact: true }).click();
+    const modal = selector.locator("session-speaker-modal");
+    await modal.locator("[data-user-search-input]").fill(speaker.username);
+    await modal.locator("[data-user-search-dropdown]").getByText(`@${speaker.username}`, { exact: true }).click();
+    await modal.getByRole("button", { name: "Add speaker", exact: true }).click();
+    await modal.getByRole("heading", { name: "Add speaker", exact: true }).waitFor({ state: "hidden" });
+    if (!await this.matches([speaker]))
+      throw new ScheduledEventError("verification");
+  }
+};
+
+// packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-sponsors.ts
+var OcgroupsSponsors = class {
+  constructor(page) {
+    this.page = page;
+  }
+  page;
+  async matches(sponsor) {
+    const selected = this.page.locator(
+      `sponsors-section input[name$="[group_sponsor_id]"][value="${sponsor.id}"]`
+    );
+    if (await selected.count() !== 1) return false;
+    const name = await selected.getAttribute("name");
+    return await this.page.locator(
+      `input[name="${name?.replace("[group_sponsor_id]", "[level]")}"]`
+    ).inputValue() === sponsor.level;
+  }
+  async write(sponsor) {
+    if (await this.matches(sponsor)) return;
+    const section = this.page.locator("sponsors-section");
+    await this.page.getByRole("button", { name: "Contributors", exact: true }).click();
+    if (await section.locator(`input[name$="[group_sponsor_id]"][value="${sponsor.id}"]`).count())
+      await section.getByRole("button", { name: `Remove ${sponsor.name}`, exact: true }).click();
+    await section.getByPlaceholder("Search sponsors", { exact: true }).fill(sponsor.name);
+    await section.locator("[data-sponsor-search-dropdown]").getByText(sponsor.name, { exact: true }).click();
+    await section.locator("#sponsor-level-input").fill(sponsor.level);
+    await section.getByRole("button", { name: "Add", exact: true }).click();
+    await section.locator("#sponsor-level-input").waitFor({ state: "hidden" });
+    if (!await this.matches(sponsor))
+      throw new ScheduledEventError("verification");
+  }
+};
+
 // packages/adapter/publication/ocgroups-event-gateway/src/dependency-composition.ts
 var OcgroupsEventGatewayComposition = class {
+  constructor(images) {
+    this.images = images;
+  }
+  images;
   create(target, credentials) {
     return new OcgroupsEventGateway(
       chromium2,
@@ -74275,7 +74603,16 @@ var OcgroupsEventGatewayComposition = class {
     const identities = new CommunityEventIdentityPolicy(target.group);
     const dashboard = new OcgroupsDashboard(page, target);
     const state = new OcgroupsEditorState(page, target, identities);
-    const fields = new OcgroupsEventFields(page);
+    const fields = new OcgroupsEventContent(
+      new OcgroupsEventFields(page),
+      new OcgroupsSpeakers(page),
+      new OcgroupsSponsors(page),
+      new OcgroupsPhotos(
+        page,
+        target.group.origin,
+        new OcgroupsPhotoImage(page, this.images)
+      )
+    );
     const registration = new OcgroupsRegistration(page);
     return {
       login: new OcgroupsLogin(page, target.group.origin),
@@ -74389,6 +74726,11 @@ var PublicationAdapterComposition = class {
         clock: input.clock,
         approval: input.approval,
         target,
+        artwork: new ContentGateComposition().create(
+          input,
+          input.issueNumber,
+          input.commentAuthorLogin
+        ),
         journal: new GithubPublicationJournalComposition().communityJournal(
           group,
           target,
@@ -74400,7 +74742,9 @@ var PublicationAdapterComposition = class {
           },
           input.commentAuthorLogin
         ),
-        gateway: new OcgroupsEventGatewayComposition().create(
+        gateway: new OcgroupsEventGatewayComposition(
+          new HttpsAssetImageRepositoryComposition().contentImageLoader()
+        ).create(
           {
             group,
             communityId: settings.communityId,

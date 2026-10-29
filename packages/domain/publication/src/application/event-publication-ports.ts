@@ -12,6 +12,11 @@ export type SavedEventPublication = Readonly<{
 	status: "draft" | "published";
 }>;
 
+/** Asset writes recheck the source; event writes also reserve creation identity. */
+export type PublicationWriteGuard = (
+	effect: "asset" | "event",
+) => Promise<void>;
+
 export interface EventPublicationGateway<
 	Event extends ScheduledEvent = ScheduledEvent,
 > {
@@ -20,7 +25,7 @@ export interface EventPublicationGateway<
 	save(
 		event: Event,
 		identity: EventPublicationIdentity | undefined,
-		beforeSubmit: () => Promise<void>,
+		beforeSubmit: PublicationWriteGuard,
 		onSaved: (identity: EventPublicationIdentity) => Promise<void>,
 	): Promise<SavedEventPublication>;
 	/** Publish a verified existing draft after the final source and approval guard. */

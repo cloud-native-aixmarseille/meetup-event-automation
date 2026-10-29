@@ -1,6 +1,7 @@
 import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import {
 	type EventPublicationGateway,
+	type PublicationWriteGuard,
 	type EventPublicationIdentity,
 	MeetupEventUrl,
 	MeetupGroupUrl,
@@ -86,16 +87,17 @@ export class MeetupEventGateway
 	async save(
 		event: MeetupPublicationEvent,
 		identity: EventPublicationIdentity | undefined,
-		beforeSubmit: () => Promise<void>,
+		beforeSubmit: PublicationWriteGuard,
 		onSaved: (identity: EventPublicationIdentity) => Promise<void>,
 	): Promise<SavedEventPublication> {
 		if (identity) this.verifyIdentity(identity);
 		return this.withPublication(event.timeZone, (page) =>
-			this.collaborators
-				.createMeetupEventEditor(page, this.group.value)
-				.save(event, identity?.reviewUrl, beforeSubmit, (url) =>
-					onSaved(this.identity(url)),
-				),
+			this.collaborators.createMeetupEventEditor(page, this.group.value).save(
+				event,
+				identity?.reviewUrl,
+				() => beforeSubmit("event"),
+				(url) => onSaved(this.identity(url)),
+			),
 		);
 	}
 

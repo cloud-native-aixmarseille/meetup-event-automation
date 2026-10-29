@@ -6,6 +6,7 @@ import {
 	remote,
 	target,
 } from "../testing/browser-fixture.js";
+import { images } from "../testing/photo-fixture.js";
 import { OcgroupsEventGatewayComposition } from "./dependency-composition.js";
 import type { OcgroupsEventPublisher } from "./ocgroups-event-publisher.js";
 
@@ -25,8 +26,10 @@ async function fixture(initial: "draft" | "published" = "draft") {
 		context,
 		page,
 		state,
-		publisher: new OcgroupsEventGatewayComposition().session(page, target())
-			.publisher as OcgroupsEventPublisher,
+		publisher: new OcgroupsEventGatewayComposition(images).session(
+			page,
+			target(),
+		).publisher as OcgroupsEventPublisher,
 	};
 }
 describe("OCGroups publication browser contract", () => {

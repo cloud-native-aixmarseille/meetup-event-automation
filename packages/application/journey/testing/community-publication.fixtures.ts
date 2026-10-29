@@ -21,7 +21,13 @@ export function communityFixture(
 	overrides: Partial<MeetupEvent> = {},
 	record?: PublicationRecord,
 ) {
-	const base = meetupFixture(overrides);
+	const base = meetupFixture({
+		...overrides,
+		publicationLinks: {
+			meetup: "https://www.meetup.com/example-group/events/12345/",
+			...overrides.publicationLinks,
+		},
+	});
 	const journal = {
 		load: vi.fn(async () => record),
 		reserve: vi.fn(async () => {
@@ -38,7 +44,7 @@ export function communityFixture(
 		save: vi
 			.fn<EventPublicationGateway<CommunityEvent>["save"]>()
 			.mockImplementation(async (_, identity, before, after) => {
-				await before();
+				await before("event");
 				await after(identity ?? remote);
 				return { identity: identity ?? remote, status: "draft" };
 			}),
@@ -57,6 +63,19 @@ export function communityFixture(
 		gateway,
 		settings: {
 			...base.dependencies.settings,
+			speakers: {
+				"speaker-0001": {
+					userId: "50000000-0000-4000-8000-000000000005",
+					username: "example-speaker",
+				},
+			},
+			sponsors: {
+				"host-0001": {
+					id: "60000000-0000-4000-8000-000000000006",
+					name: "Example Sponsor",
+					level: "Host",
+				},
+			},
 			categoryId: "20000000-0000-4000-8000-000000000002",
 			registration: {
 				capacity: 75,

@@ -3,6 +3,8 @@ import {
 	type CommunityEventPolicy,
 	CommunityGroupUrl,
 	type CommunityRegistration,
+	type CommunitySpeaker,
+	type CommunitySponsor,
 	type CommunityVenue,
 } from "@meetup-automation/publication";
 import type { EventScheduleConfiguration } from "./event-schedule-configuration.js";
@@ -21,7 +23,7 @@ export class OcgroupsPublicationSettings {
 		private readonly schedule: Pick<EventScheduleConfiguration, "parse">,
 		private readonly policy: Pick<
 			CommunityEventPolicy,
-			"venue" | "registration"
+			"venue" | "registration" | "speaker" | "sponsor"
 		>,
 	) {}
 
@@ -48,7 +50,50 @@ export class OcgroupsPublicationSettings {
 			groupId: value.groupId,
 			categoryId: value.categoryId,
 			registration: this.registration(value.registration),
+			speakers: this.speakers(value.speakers),
+			sponsors: this.sponsors(value.sponsors),
 		};
+	}
+
+	private speakers(value: unknown): Record<string, CommunitySpeaker> {
+		if (!this.input.isObject(value))
+			throw new Error("Missing OCGroups speaker mappings");
+		const mappings: Record<string, CommunitySpeaker> = {};
+		for (const [id, item] of Object.entries(value)) {
+			if (
+				!id.trim() ||
+				!this.input.isObject(item) ||
+				typeof item.userId !== "string" ||
+				typeof item.username !== "string"
+			)
+				throw new Error("Invalid OCGroups speaker mapping");
+			const speaker = { userId: item.userId, username: item.username };
+			if (!this.policy.speaker(speaker))
+				throw new Error("Invalid OCGroups speaker mapping");
+			mappings[id] = speaker;
+		}
+		return mappings;
+	}
+
+	private sponsors(value: unknown): Record<string, CommunitySponsor> {
+		if (!this.input.isObject(value))
+			throw new Error("Missing OCGroups sponsor mappings");
+		const mappings: Record<string, CommunitySponsor> = {};
+		for (const [id, item] of Object.entries(value)) {
+			if (
+				!id.trim() ||
+				!this.input.isObject(item) ||
+				typeof item.id !== "string" ||
+				typeof item.name !== "string" ||
+				typeof item.level !== "string"
+			)
+				throw new Error("Invalid OCGroups sponsor mapping");
+			const sponsor = { id: item.id, name: item.name, level: item.level };
+			if (!this.policy.sponsor(sponsor))
+				throw new Error("Invalid OCGroups sponsor mapping");
+			mappings[id] = sponsor;
+		}
+		return mappings;
 	}
 
 	private venue(value: unknown): CommunityVenue {

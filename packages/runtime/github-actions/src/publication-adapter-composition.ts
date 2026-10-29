@@ -153,6 +153,11 @@ export class PublicationAdapterComposition {
 				clock: input.clock,
 				approval: input.approval,
 				target,
+				artwork: new ContentGateComposition().create(
+					input,
+					input.issueNumber,
+					input.commentAuthorLogin,
+				),
 				journal: new GithubPublicationJournalComposition().communityJournal(
 					group,
 					target,
@@ -164,7 +169,9 @@ export class PublicationAdapterComposition {
 					},
 					input.commentAuthorLogin,
 				),
-				gateway: new OcgroupsEventGatewayComposition().create(
+				gateway: new OcgroupsEventGatewayComposition(
+					new HttpsAssetImageRepositoryComposition().contentImageLoader(),
+				).create(
 					{
 						group,
 						communityId: settings.communityId,

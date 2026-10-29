@@ -2,6 +2,8 @@ export type { AttendeeSlidesGateway } from "./application/attendee-slides-gatewa
 export type {
 	CommunityEvent,
 	CommunityRegistration,
+	CommunitySpeaker,
+	CommunitySponsor,
 	CommunityVenue,
 } from "./application/community-event-ports.js";
 export type * from "./application/content-media-ports.js";

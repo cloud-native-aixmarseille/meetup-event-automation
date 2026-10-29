@@ -1,4 +1,5 @@
 import {
+	type PublicationWriteGuard,
 	type CommunityEvent,
 	type EventPublicationIdentity,
 	type SavedEventPublication,
@@ -8,7 +9,7 @@ import type { Page } from "playwright-core";
 import type { OcgroupsDashboard } from "./ocgroups-dashboard.js";
 import type { OcgroupsEditorLocation } from "./ocgroups-editor-location.js";
 import type { OcgroupsEditorState } from "./ocgroups-editor-state.js";
-import type { OcgroupsEventFields } from "./ocgroups-event-fields.js";
+import type { OcgroupsEventContent } from "./ocgroups-event-content.js";
 import type { OcgroupsRegistration } from "./ocgroups-registration.js";
 
 export class OcgroupsEventEditor {
@@ -20,7 +21,7 @@ export class OcgroupsEventEditor {
 			"select" | "open" | "add" | "assertTarget" | "candidates"
 		>,
 		private readonly state: Pick<OcgroupsEditorState, "read">,
-		private readonly fields: Pick<OcgroupsEventFields, "matches" | "write">,
+		private readonly fields: Pick<OcgroupsEventContent, "matches" | "write">,
 		private readonly registration: Pick<
 			OcgroupsRegistration,
 			"create" | "verify"
@@ -55,7 +56,7 @@ export class OcgroupsEventEditor {
 	async save(
 		event: CommunityEvent,
 		identity: EventPublicationIdentity | undefined,
-		beforeSubmit: () => Promise<void>,
+		beforeSubmit: PublicationWriteGuard,
 		onSaved: (identity: EventPublicationIdentity) => Promise<void>,
 	): Promise<SavedEventPublication> {
 		let previous: SavedEventPublication | undefined;
@@ -72,13 +73,14 @@ export class OcgroupsEventEditor {
 			await this.dashboard.add();
 			await this.registration.create(event.registration);
 		}
-		await this.fields.write(event);
+		await this.dashboard.assertTarget();
+		await this.fields.write(event, beforeSubmit);
 		if (!(await this.fields.matches(event)))
 			throw new ScheduledEventError("verification");
 		if (!previous || previous.status === "draft")
 			await this.registration.verify(event.registration);
 		await this.dashboard.assertTarget();
-		await beforeSubmit();
+		await beforeSubmit("event");
 		const savedIdentity = await this.submit(identity);
 		await onSaved(savedIdentity);
 		await this.dashboard.open(savedIdentity.id);

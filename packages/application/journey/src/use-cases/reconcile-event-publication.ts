@@ -58,12 +58,16 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 			if (!event || !this.configuration.policy.valid(event, this.clock.now()))
 				return this.blocked("prerequisites");
 			const remote = await this.resolveIdentity(source);
+			let creationReserved = false;
 			const saved = await this.configuration.gateway.save(
 				event,
 				remote,
-				async () => {
+				async (effect) => {
 					await this.ensureCurrent(source, event);
-					if (!remote) await this.configuration.journal.reserve();
+					if (effect === "event" && !remote && !creationReserved) {
+						await this.configuration.journal.reserve();
+						creationReserved = true;
+					}
 					await this.ensureCurrent(source, event);
 				},
 				async (identity) => {

@@ -7,7 +7,7 @@ import {
 import type { Page } from "playwright-core";
 import type { OcgroupsDashboard } from "./ocgroups-dashboard.js";
 import type { OcgroupsEditorState } from "./ocgroups-editor-state.js";
-import type { OcgroupsEventFields } from "./ocgroups-event-fields.js";
+import type { OcgroupsEventContent } from "./ocgroups-event-content.js";
 import type { OcgroupsRegistration } from "./ocgroups-registration.js";
 
 export class OcgroupsEventPublisher {
@@ -19,7 +19,7 @@ export class OcgroupsEventPublisher {
 			"open" | "assertTarget"
 		>,
 		private readonly state: Pick<OcgroupsEditorState, "read">,
-		private readonly fields: Pick<OcgroupsEventFields, "matches">,
+		private readonly fields: Pick<OcgroupsEventContent, "matches">,
 		private readonly registration: Pick<OcgroupsRegistration, "verify">,
 	) {}
 

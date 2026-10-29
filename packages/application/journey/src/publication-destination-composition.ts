@@ -69,6 +69,7 @@ export class PublicationDestinationComposition {
 	community(
 		input: DestinationInput<CommunityEvent, CommunityPublicationSettings> & {
 			target: string;
+			artwork: Pick<CoverArtworkApprovalGate, "cover">;
 		},
 		group: CommunityGroupUrl,
 	) {
@@ -81,6 +82,7 @@ export class PublicationDestinationComposition {
 				approvalKind: "community-publication",
 				projection: new CommunityPublicationProjection(
 					new JourneyPolicyComposition().scheduledEventProjection(),
+					input.artwork,
 				),
 				policy: new CommunityEventPolicy(
 					new PublicationDomainComposition().scheduledEventPolicy(),

@@ -8,10 +8,11 @@ import { CommunityPublicationProjection } from "../use-cases/community-publicati
 import { ScheduledEventProjection } from "../use-cases/scheduled-event-projection.js";
 import { CommunityPublicationRevision } from "./community-publication-revision.js";
 
-function fixture() {
+async function fixture() {
 	const f = communityFixture();
-	const event = new CommunityPublicationProjection(
+	const event = await new CommunityPublicationProjection(
 		new ScheduledEventProjection(),
+		f.dependencies.artwork,
 	).create(f.currentEvent, f.dependencies.settings);
 	if (!event) throw new Error("Invalid fixture");
 	return {
@@ -31,9 +32,9 @@ describe("community approval revisions", () => {
 		"target",
 		"identity",
 		"slug",
-	])("invalidates approval when %s changes", (field) => {
+	])("invalidates approval when %s changes", async (field) => {
 		// Arrange
-		const { event, revision } = fixture();
+		const { event, revision } = await fixture();
 		let changed = structuredClone(event);
 		let identity = remote;
 		let target = "target";
@@ -65,4 +66,41 @@ describe("community approval revisions", () => {
 		// Assert
 		expect(updated).not.toBe(original);
 	});
+});
+
+describe("community artwork and contributor approval", () => {
+	it.each(["meetupUrl", "cover", "speaker", "sponsor"])(
+		"invalidates approval for a changed %s",
+		async (field) => {
+			// Arrange
+			const { event, revision } = await fixture();
+			const changed = {
+				...event,
+				...(field === "meetupUrl"
+					? { meetupUrl: "https://www.meetup.com/example/events/99999/" }
+					: {}),
+				...(field === "cover"
+					? { cover: { ...event.cover, fingerprint: "b".repeat(64) } }
+					: {}),
+				...(field === "speaker"
+					? {
+							speakers: [
+								{
+									...event.speakers[0],
+									userId: "70000000-0000-4000-8000-000000000007",
+								},
+							],
+						}
+					: {}),
+				...(field === "sponsor"
+					? { sponsor: { ...event.sponsor, level: "Venue" } }
+					: {}),
+			};
+			// Act
+			const original = revision.of(event, remote, "target");
+			const updated = revision.of(changed, remote, "target");
+			// Assert
+			expect(updated).not.toBe(original);
+		},
+	);
 });

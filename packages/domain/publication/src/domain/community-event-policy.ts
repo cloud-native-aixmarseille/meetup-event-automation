@@ -1,6 +1,8 @@
 import type {
 	CommunityEvent,
 	CommunityRegistration,
+	CommunitySpeaker,
+	CommunitySponsor,
 	CommunityVenue,
 } from "../application/community-event-ports.js";
 import type { ScheduledEventPolicy } from "./scheduled-event-policy.js";
@@ -16,9 +18,34 @@ export class CommunityEventPolicy {
 			this.text(event.description, 8_000) &&
 			this.venue(event.venue) &&
 			this.registration(event.registration) &&
+			/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/?$/.test(
+				event.meetupUrl,
+			) &&
+			event.speakers.length > 0 &&
+			event.speakers.every((speaker) => this.speaker(speaker)) &&
+			new Set(event.speakers.map((speaker) => speaker.userId)).size ===
+				event.speakers.length &&
+			this.sponsor(event.sponsor) &&
+			/^[0-9a-f]{64}$/.test(event.cover.fingerprint) &&
 			/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) &&
 			this.schedule.validSchedule(event, now)
 		);
+	}
+
+	speaker(value: CommunitySpeaker): boolean {
+		return (
+			this.uuid(value.userId) && /^[a-zA-Z0-9_.-]{1,100}$/.test(value.username)
+		);
+	}
+	sponsor(value: CommunitySponsor): boolean {
+		return (
+			this.uuid(value.id) &&
+			this.text(value.name, 120) &&
+			this.text(value.level, 100)
+		);
+	}
+	private uuid(value: string): boolean {
+		return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value);
 	}
 
 	venue(venue: CommunityVenue): boolean {
