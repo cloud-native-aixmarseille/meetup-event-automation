@@ -3,12 +3,49 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	readWorkflow,
+	readYaml,
 	root,
 	sortedKeys,
 	workflowExpression,
 } from "./support.js";
 
 describe("internal CI contracts", () => {
+	it("scans source with default security queries without duplicating generated bundle analysis", async () => {
+		// Arrange
+		const nodeChecks = await readWorkflow("__check-nodejs");
+		const analysis = nodeChecks.jobs?.["code-ql"];
+		const initialization = analysis?.steps?.find((step) =>
+			step.uses?.startsWith("github/codeql-action/init@"),
+		);
+		const configurationPath = String(initialization?.with?.["config-file"]);
+
+		// Act
+		const configuration =
+			await readYaml<Record<string, unknown>>(configurationPath);
+
+		// Assert
+		expect(nodeChecks.jobs?.["test-nodejs"].with?.["code-ql"]).toBe("");
+		expect(analysis?.permissions).toEqual({
+			contents: "read",
+			"security-events": "write",
+		});
+		expect(analysis?.if).toBeUndefined();
+		expect(initialization?.with).toEqual({
+			languages: "javascript-typescript",
+			"build-mode": "none",
+			"config-file": configurationPath,
+		});
+		expect(configuration).toEqual({
+			name: expect.any(String),
+			"paths-ignore": ["actions/**/dist/**"],
+		});
+		expect(
+			analysis?.steps?.some((step) =>
+				step.uses?.startsWith("github/codeql-action/analyze@"),
+			),
+		).toBe(true);
+	});
+
 	it("routes main and pull-request CI through the shared workflow", async () => {
 		// Arrange
 		const workflowDirectory = join(root, ".github/workflows");

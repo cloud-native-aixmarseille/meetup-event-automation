@@ -1,0 +1,5 @@
+name: Authored JavaScript and TypeScript
+
+# Source remains in scope; check:dist verifies these generated action bundles.
+paths-ignore:
+  - actions/**/dist/**

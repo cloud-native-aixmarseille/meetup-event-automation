@@ -28,6 +28,11 @@ generation, and GitHub publication. Gemini credentials stay at that external
 action boundary. The [release guide](../development/releases.md) owns operation
 and recovery instructions.
 
+Internal CI owns the JavaScript/TypeScript CodeQL configuration. It excludes only
+generated action bundles while retaining authored source, tests, tooling, and
+the default security queries. Bundle freshness and dependency checks remain
+separate gates; CodeQL no longer analyzes bundled third-party internals.
+
 Business rules belong to event, referential, communication, and publication
 domains. Journey coordinates their public APIs. Each port has one owner, and
 vendor payloads remain inside adapters. Dependencies follow these boundaries:
@@ -96,6 +101,16 @@ automation surface; consumers choose when to adopt it. Current quality commands
 and release mechanics belong in the development guide rather than this record.
 
 ## Decision history
+
+On 2026-10-29, JavaScript/TypeScript CodeQL moved from the upstream Node.js
+workflow to the repository's Node.js check workflow because the pinned upstream
+interface cannot accept a scan configuration. Completed main job
+[123422078457](https://github.com/cloud-native-aixmarseille/meetup-event-automation/actions/runs/40865859490/job/123422078457)
+took 22m35s and extracted all 21 generated action bundles, duplicating source and
+vendored dependencies. The new configuration excludes `actions/**/dist/**` from
+analysis, preserving the default queries and source coverage. This replaces the
+unconfigured whole-checkout scan; it does not replace dependency vulnerability
+checks or establish that excluded dependency code is safe.
 
 On 2026-10-25, weekly and manual GitHub release publication was added alongside
 the existing generated-reference workflow. Both triggers require default-branch
