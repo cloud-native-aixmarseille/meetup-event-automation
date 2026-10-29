@@ -84567,7 +84567,7 @@ var GoogleDriveContentMediaStore = class {
       {
         fileId: id,
         supportsAllDrives: true,
-        fields: "id,mimeType,description,parents,trashed,version,appProperties,permissions(type,role)"
+        fields: "id,mimeType,description,parents,trashed,version,appProperties"
       },
       {
         ...requestOptions,
@@ -84576,9 +84576,7 @@ var GoogleDriveContentMediaStore = class {
     );
     if (metadata.status === 404) return void 0;
     const file = metadata.data;
-    if (file.trashed || !file.parents?.includes(this.folderId) || file.appProperties?.contentSchema !== "1" || !file.version || !file.description || !file.permissions?.some(
-      (permission) => permission.type === "anyone" && permission.role === "reader"
-    ))
+    if (file.trashed || !file.parents?.includes(this.folderId) || file.appProperties?.contentSchema !== "1" || !file.version || !file.description || !await this.readable(id))
       throw new ContentMediaChangedError(
         "Content media is not a verified public artifact"
       );
@@ -84614,6 +84612,37 @@ var GoogleDriveContentMediaStore = class {
       if (error2 instanceof ContentMediaChangedError) return false;
       throw error2;
     }
+  }
+  async readable(fileId) {
+    let pageToken;
+    let readable = false;
+    const seen = /* @__PURE__ */ new Set();
+    for (let page = 0; page < 10; page++) {
+      const { data } = await this.client.permissions.list(
+        {
+          fileId,
+          supportsAllDrives: true,
+          pageSize: 100,
+          pageToken,
+          fields: "nextPageToken,permissions(type,role)"
+        },
+        requestOptions
+      );
+      if (!Array.isArray(data.permissions))
+        throw new ContentMediaChangedError(
+          "Content permissions are unavailable"
+        );
+      readable ||= data.permissions.some(
+        (permission) => permission.type === "anyone" && permission.role === "reader"
+      );
+      pageToken = data.nextPageToken ?? void 0;
+      if (!pageToken) return readable;
+      if (seen.has(pageToken)) break;
+      seen.add(pageToken);
+    }
+    throw new ContentMediaChangedError(
+      "Content permission listing is incomplete"
+    );
   }
 };
 

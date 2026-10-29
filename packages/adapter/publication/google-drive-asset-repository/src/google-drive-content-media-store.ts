@@ -1,4 +1,5 @@
 import { Readable } from "node:stream";
+import type { drive_v3 } from "@googleapis/drive";
 import {
 	type ContentImageBytes,
 	type ContentMedia,
@@ -8,15 +9,12 @@ import {
 import type { DriveAnnouncementImage } from "./drive-announcement-image.js";
 import type { DriveBoundedStream } from "./drive-bounded-stream.js";
 import type { DriveContentImage } from "./drive-content-image.js";
-import {
-	type GoogleDriveClient,
-	requestOptions,
-} from "./google-drive-asset-repository-contracts.js";
+import { requestOptions } from "./google-drive-asset-repository-contracts.js";
 
 /** Immutable public media in a dedicated folder; never writes existing asset sidecars. */
 export class GoogleDriveContentMediaStore implements ContentMediaStore {
 	constructor(
-		private readonly client: GoogleDriveClient,
+		private readonly client: Pick<drive_v3.Drive, "files" | "permissions">,
 		private readonly folderId: string,
 		private readonly image: Pick<DriveContentImage, "inspect">,
 		private readonly stream: Pick<DriveBoundedStream, "read">,
@@ -76,8 +74,7 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 			{
 				fileId: id,
 				supportsAllDrives: true,
-				fields:
-					"id,mimeType,description,parents,trashed,version,appProperties,permissions(type,role)",
+				fields: "id,mimeType,description,parents,trashed,version,appProperties",
 			},
 			{
 				...requestOptions,
@@ -92,10 +89,7 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 			file.appProperties?.contentSchema !== "1" ||
 			!file.version ||
 			!file.description ||
-			!file.permissions?.some(
-				(permission) =>
-					permission.type === "anyone" && permission.role === "reader",
-			)
+			!(await this.readable(id))
 		)
 			throw new ContentMediaChangedError(
 				"Content media is not a verified public artifact",
@@ -138,5 +132,37 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 			if (error instanceof ContentMediaChangedError) return false;
 			throw error;
 		}
+	}
+	private async readable(fileId: string): Promise<boolean> {
+		let pageToken: string | undefined;
+		let readable = false;
+		const seen = new Set<string>();
+		for (let page = 0; page < 10; page++) {
+			const { data } = await this.client.permissions.list(
+				{
+					fileId,
+					supportsAllDrives: true,
+					pageSize: 100,
+					pageToken,
+					fields: "nextPageToken,permissions(type,role)",
+				},
+				requestOptions,
+			);
+			if (!Array.isArray(data.permissions))
+				throw new ContentMediaChangedError(
+					"Content permissions are unavailable",
+				);
+			readable ||= data.permissions.some(
+				(permission) =>
+					permission.type === "anyone" && permission.role === "reader",
+			);
+			pageToken = data.nextPageToken ?? undefined;
+			if (!pageToken) return readable;
+			if (seen.has(pageToken)) break;
+			seen.add(pageToken);
+		}
+		throw new ContentMediaChangedError(
+			"Content permission listing is incomplete",
+		);
 	}
 }

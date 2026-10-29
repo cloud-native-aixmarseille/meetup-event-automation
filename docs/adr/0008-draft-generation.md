@@ -218,6 +218,12 @@ image `delivery` setting, so the adapter uses the provider's default delivery.
 The decoder still requires bounded inline image bytes. Failed generation
 reservations remain in proposal history and require explicit recovery.
 
+The same validation exposed a shared-drive verification gap: Drive does not
+populate the file metadata's `permissions` field for shared-drive items. Content
+media verification now reads the paginated permissions endpoint before accepting
+public reader access. Incomplete or inaccessible listings cannot validate an
+image. This does not grant sharing permissions or change folder access.
+
 On 2026-10-27, the consumer-configured Slack channel list replaced the fixed
 destination set in the social announcement and reminder decisions. Channel
 identities and display names come from configuration; proposal counts follow

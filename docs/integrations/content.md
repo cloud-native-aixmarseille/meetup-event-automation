@@ -43,6 +43,8 @@ folder must grant the service account write access and inherit an `anyone`
 reader permission for generated files. Content media use separate immutable
 files, with reserved Drive IDs and SHA-256 fingerprints. Existing documents,
 asset manifests, PDF files, and delivery ledgers retain their identities.
+The media verifier reads file permissions through the paginated Drive permissions
+API, including for shared-drive files whose metadata omits permissions.
 
 The GitHub App needs repository contents read and issues write. Organizer
 reviewers and submission authors need current write, maintain, or admin
