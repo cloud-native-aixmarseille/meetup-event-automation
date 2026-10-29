@@ -99,7 +99,7 @@ jobs:
           locale: ${{ inputs.locale }}
 
       - name: Install locked automation dependencies
-        uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@1f81dd00d941680ab227a6eae5378790d6242e02 # 1.0.0
+        uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@97f64bc080b78daca8fb3ece49de448aaac83429 # 1.1.0
         with:
           working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
 

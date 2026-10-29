@@ -11,8 +11,7 @@ permissions: {}
 
 jobs:
   test-nodejs:
-    # Validate upstream PR #557; pin its released revision before merging.
-    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@298790a342ce32dbbf8f24ab7cf1dd5a5f6d6c7f
+    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@97f64bc080b78daca8fb3ece49de448aaac83429 # 1.1.0
     permissions:
       contents: read
       id-token: write
