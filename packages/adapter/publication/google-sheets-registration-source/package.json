@@ -1,0 +1,11 @@
+{
+	"name": "@meetup-automation/google-sheets-registration-source",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": "./src/index.ts",
+	"dependencies": {
+		"@meetup-automation/publication": "workspace:*",
+		"google-auth-library": "11.1.0"
+	}
+}

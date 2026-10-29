@@ -123,6 +123,13 @@ adds completion under **Automated thank-you emails**. See
 [communications](../integrations/communications.md#track-email-completion) for
 manually sent emails, message timing and recovery after partial failures.
 
+## Record participants during the event
+
+Ask participants to complete the attendance form during the meetup, including
+those registered through Meetup.com. Follow
+[registration reconciliation](../integrations/registrations.md) for collection,
+reviewed source mapping, and mandatory post-event OCGroups reporting.
+
 ## Postpone or cancel
 
 Add `event:postponed` or `event:cancelled` and remove any other `event:*` status
@@ -143,9 +150,11 @@ Use the single **Post-event follow-up** comment to review all five task statuses
 and approve or reject the thank-you email batch. Leave both choices unchecked to
 wait; checking both keeps the request pending. Approval sends only the unfinished
 emails, with completion recorded after accepted dispatch. Speaker emails include
-OpenFeedback report links. Slide sharing on Meetup is automatic. Import attendance
-into CNCF and post the event recap, then check the corresponding organizer tasks.
-The mailings workflow reports the email result.
+OpenFeedback report links. Slide sharing on Meetup is automatic. Follow
+[registration reconciliation](../integrations/registrations.md) for OCGroups
+reporting and its completion requirements. Post the event recap and record
+completed tasks in the issue checklist. The mailings workflow reports the email
+result.
 
 Keep the issue open while follow-up or delivery checks remain unfinished.
 Closing it archives the event and excludes it from automatic audits and issue

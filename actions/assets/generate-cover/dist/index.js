@@ -38429,9 +38429,9 @@ var require_src5 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/apiIndex.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/apiIndex.js
 var require_apiIndex = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/apiIndex.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/apiIndex.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getAPI = getAPI;
@@ -41362,9 +41362,9 @@ var require_url_template = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/isbrowser.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/isbrowser.js
 var require_isbrowser = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/isbrowser.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/isbrowser.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isBrowser = isBrowser;
@@ -41374,9 +41374,9 @@ var require_isbrowser = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/util.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/util.js
 var require_util11 = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/util.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/util.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.headersToClassicHeaders = headersToClassicHeaders;
@@ -41409,9 +41409,9 @@ var require_util11 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/http2.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/http2.js
 var require_http2 = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/http2.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/http2.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.sessions = void 0;
@@ -41589,9 +41589,9 @@ var require_http2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/transcoding.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/transcoding.js
 var require_transcoding = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/transcoding.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/transcoding.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateAndEncodeParams = validateAndEncodeParams;
@@ -41662,9 +41662,9 @@ var require_transcoding = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/package.json
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/package.json
 var require_package3 = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/package.json"(exports, module) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/package.json"(exports, module) {
     module.exports = {
       name: "googleapis-common",
       version: "9.1.0",
@@ -41762,9 +41762,9 @@ var require_package3 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/apirequest.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/apirequest.js
 var require_apirequest = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/apirequest.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/apirequest.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.createAPIRequest = createAPIRequest;
@@ -42027,9 +42027,9 @@ content-type: ${part["content-type"]}\r
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/authplus.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/authplus.js
 var require_authplus = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/authplus.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/authplus.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AuthPlus = void 0;
@@ -42063,9 +42063,9 @@ var require_authplus = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/endpoint.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/endpoint.js
 var require_endpoint = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/endpoint.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/endpoint.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Endpoint = void 0;
@@ -42175,9 +42175,9 @@ var require_endpoint = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/discovery.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/discovery.js
 var require_discovery = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/discovery.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/discovery.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Discovery = void 0;
@@ -42309,9 +42309,9 @@ var require_discovery = __commonJS({
   }
 });
 
-// node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/index.js
+// node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/index.js
 var require_src6 = __commonJS({
-  "node_modules/.pnpm/googleapis-common@9.1.0_supports-color@7.2.0/node_modules/googleapis-common/build/src/index.js"(exports) {
+  "node_modules/.pnpm/googleapis-common@9.1.0/node_modules/googleapis-common/build/src/index.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
       if (k22 === void 0) k22 = k2;
@@ -42392,9 +42392,9 @@ var require_src6 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js
+// node_modules/.pnpm/@googleapis+drive@26.0.2/node_modules/@googleapis/drive/build/v2.js
 var require_v2 = __commonJS({
-  "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js"(exports) {
+  "node_modules/.pnpm/@googleapis+drive@26.0.2/node_modules/@googleapis/drive/build/v2.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.drive_v2 = void 0;
@@ -44793,9 +44793,9 @@ var require_v2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v3.js
+// node_modules/.pnpm/@googleapis+drive@26.0.2/node_modules/@googleapis/drive/build/v3.js
 var require_v3 = __commonJS({
-  "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v3.js"(exports) {
+  "node_modules/.pnpm/@googleapis+drive@26.0.2/node_modules/@googleapis/drive/build/v3.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.drive_v3 = void 0;
@@ -46864,9 +46864,9 @@ var require_v3 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js
+// node_modules/.pnpm/@googleapis+drive@26.0.2/node_modules/@googleapis/drive/build/index.js
 var require_build = __commonJS({
-  "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js"(exports) {
+  "node_modules/.pnpm/@googleapis+drive@26.0.2/node_modules/@googleapis/drive/build/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AuthPlus = exports.drive_v3 = exports.drive_v2 = exports.auth = exports.VERSIONS = void 0;
@@ -65447,6 +65447,99 @@ var PublicationUrlPolicyEngine = class {
   }
 };
 
+// packages/domain/publication/src/domain/registration-response-policy.ts
+var RegistrationResponsePolicy = class {
+  evaluate(table, mapping) {
+    if (!mapping.emailColumn.trim())
+      return this.blocked("mapping", "Configure the response email column");
+    const header = table[0] ?? [];
+    const emailColumn = this.column(header, mapping.emailColumn);
+    if (emailColumn === void 0)
+      return this.blocked(
+        "headers",
+        "The configured response email column must occur exactly once"
+      );
+    const result = this.collect(table.slice(1), emailColumn);
+    const diagnostics = [];
+    if (result.invalidCount > 0)
+      diagnostics.push(
+        this.diagnostic(
+          "invalid",
+          "Response identities require organizer review"
+        )
+      );
+    if (result.responseCount === 0)
+      diagnostics.push(
+        this.diagnostic("empty", "No responses were selected for this event")
+      );
+    return {
+      ...result,
+      participants: diagnostics.length ? [] : result.participants,
+      diagnostics
+    };
+  }
+  collect(rows, emailColumn) {
+    const emails = /* @__PURE__ */ new Set();
+    let responseCount = 0;
+    let duplicateCount = 0;
+    let invalidCount = 0;
+    for (const row of rows) {
+      if (this.blank(row)) continue;
+      responseCount += 1;
+      const email = this.email(row[emailColumn]);
+      if (!email) invalidCount += 1;
+      else if (emails.has(email)) duplicateCount += 1;
+      else emails.add(email);
+    }
+    return {
+      participants: [...emails].map((email) => ({ email })),
+      responseCount,
+      duplicateCount,
+      invalidCount
+    };
+  }
+  blank(row) {
+    return row.every(
+      (cell) => cell === void 0 || cell === null || typeof cell === "string" && !cell.trim()
+    );
+  }
+  column(header, name) {
+    const index = header.indexOf(name);
+    return index >= 0 && header.lastIndexOf(name) === index ? index : void 0;
+  }
+  email(value) {
+    if (typeof value !== "string") return void 0;
+    const email = value.trim().toLowerCase();
+    const parts = email.split("@");
+    if (parts.length !== 2 || email.length > 254) return void 0;
+    const [local, domain] = parts;
+    if (!local || !domain || local.length > 64) return void 0;
+    const atom = /^[\p{L}\p{N}\p{M}!#$%&'*+/=?^_`{|}~-]+$/u;
+    const label = /^[\p{L}\p{N}](?:[\p{L}\p{N}\p{M}-]*[\p{L}\p{N}\p{M}])?$/u;
+    const labels = domain.split(".");
+    if (!local.split(".").every((part) => atom.test(part)) || labels.length < 2 || !labels.every((part) => part.length <= 63 && label.test(part)))
+      return void 0;
+    return email;
+  }
+  blocked(code, message) {
+    return {
+      participants: [],
+      responseCount: 0,
+      duplicateCount: 0,
+      invalidCount: 0,
+      diagnostics: [this.diagnostic(code, message)]
+    };
+  }
+  diagnostic(code, message) {
+    return {
+      code: `publication.registration.${code}`,
+      severity: "warning",
+      field: "community",
+      message
+    };
+  }
+};
+
 // packages/domain/publication/src/domain/scheduled-event-policy.ts
 var ScheduledEventPolicy = class {
   valid(event, now2) {
@@ -65495,6 +65588,9 @@ var ScheduledEventPolicy = class {
 
 // packages/domain/publication/src/dependency-composition.ts
 var PublicationDomainComposition = class {
+  registrationResponsePolicy() {
+    return new RegistrationResponsePolicy();
+  }
   pdfExportPolicy() {
     return new PdfExportPolicy();
   }
@@ -68518,6 +68614,14 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.meetup.slides-delivery-recovery",
   "publication.meetup.slides-link",
   "publication.meetup.slides-source-changed",
+  "publication.registration.mapping",
+  "publication.registration.headers",
+  "publication.registration.invalid",
+  "publication.registration.empty",
+  "publication.registration.event",
+  "publication.registration.destination",
+  "publication.registration.inactive",
+  "publication.registration.provider-unavailable",
   "publication.community.content-review",
   "publication.community.authentication",
   "publication.community.prerequisites",
@@ -75830,15 +75934,35 @@ var FR_MESSAGES2 = {
   "report.communication.uncertain": "uncertain={uncertain, number} rejected={rejected, number}"
 };
 
+// packages/runtime/github-actions/src/i18n/registration.en.ts
+var REGISTRATION_EN = {
+  "action.publication.reconcile-registrations": "Reconcile event registrations",
+  "report.registration.counts": "registration_reconciliation={status} source_responses={responses, number} source_participants={participants, number} duplicates={duplicates, number} invalid={invalid, number}",
+  "report.registration.blocked": "Reconciliation blocked: supported OCGroups membership and event registration operations are unavailable. Source records passed validation, but neither remote outcome has been verified. Keep the CNCF attendee checklist task open until both outcomes are verified.",
+  "report.registration.invalid": "Review the event's CNCF Link, response email header, and selected rows in the restricted Sheet. Correct missing or invalid identities before retrying. The CNCF attendee checklist task remains pending.",
+  "report.registration.skipped": "Reconciliation requires an open meetup issue confirmed as held. No responses were read; the CNCF attendee checklist task remains unchanged."
+};
+
+// packages/runtime/github-actions/src/i18n/registration.fr.ts
+var REGISTRATION_FR = {
+  "action.publication.reconcile-registrations": "R\xE9concilier les inscriptions au meetup",
+  "report.registration.counts": "registration_reconciliation={status} source_responses={responses, number} source_participants={participants, number} duplicates={duplicates, number} invalid={invalid, number}",
+  "report.registration.blocked": "R\xE9conciliation bloqu\xE9e : les op\xE9rations OCGroups n\xE9cessaires \xE0 l'adh\xE9sion au groupe et \xE0 l'inscription \xE0 l'\xE9v\xE9nement ne sont pas disponibles. Les r\xE9ponses sources sont valides, mais aucun des deux r\xE9sultats distants n'a \xE9t\xE9 v\xE9rifi\xE9. Gardez la t\xE2che CNCF ouverte jusqu'\xE0 la v\xE9rification des deux r\xE9sultats.",
+  "report.registration.invalid": "V\xE9rifiez le CNCF Link, l'en-t\xEAte de la colonne email et les lignes s\xE9lectionn\xE9es dans la feuille priv\xE9e. Corrigez les identit\xE9s manquantes ou invalides avant de relancer. La t\xE2che d'inscription CNCF reste en attente.",
+  "report.registration.skipped": "La r\xE9conciliation n\xE9cessite une issue meetup ouverte avec le statut d'\xE9v\xE9nement held. Aucune r\xE9ponse n'a \xE9t\xE9 lue ; la t\xE2che d'inscription CNCF reste inchang\xE9e."
+};
+
 // packages/runtime/github-actions/src/i18n/catalog.ts
 var CATALOGS2 = {
   en: {
     ...EN_MESSAGES2,
-    ...DIAGNOSTICS_REFERENTIAL_EN
+    ...DIAGNOSTICS_REFERENTIAL_EN,
+    ...REGISTRATION_EN
   },
   fr: {
     ...FR_MESSAGES2,
-    ...DIAGNOSTICS_REFERENTIAL_FR
+    ...DIAGNOSTICS_REFERENTIAL_FR,
+    ...REGISTRATION_FR
   }
 };
 

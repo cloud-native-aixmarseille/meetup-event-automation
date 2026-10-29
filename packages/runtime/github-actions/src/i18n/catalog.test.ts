@@ -9,6 +9,13 @@ const parameters = {
 		target: "engineering:announcement",
 		status: "published",
 	},
+	"report.registration.counts": {
+		status: "blocked",
+		responses: 3,
+		participants: 2,
+		duplicates: 1,
+		invalid: 0,
+	},
 	"report.publication.review": {
 		provider: "ocgroups",
 		url: "https://www.meetup.com/example/events/12345/",

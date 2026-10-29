@@ -36,6 +36,12 @@ export {
 	type ReconcileEventAssetsResult,
 } from "./application/reconcile-event-assets.js";
 export { ReconcileSlidePdf } from "./application/reconcile-slide-pdf.js";
+export type {
+	RegistrationResponseEvaluation,
+	RegistrationResponseMapping,
+	RegistrationResponseSource,
+	RegistrationResponseTable,
+} from "./application/registration-response-source.js";
 export type { ScheduledEvent } from "./application/scheduled-event-ports.js";
 export { PublicationDomainComposition } from "./dependency-composition.js";
 export type * from "./domain/asset-content.js";
@@ -88,6 +94,7 @@ export {
 	PublicationUrlPolicyEngine,
 	type PublicationUrlPolicyEngineArguments,
 } from "./domain/publication-url-policy-engine.js";
+export { RegistrationResponsePolicy } from "./domain/registration-response-policy.js";
 export { ScheduledEventError } from "./domain/scheduled-event-error.js";
 export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 export type { PublicationUrlPolicy } from "./domain/url-policy-contracts.js";

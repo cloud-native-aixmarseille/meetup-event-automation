@@ -53,9 +53,14 @@ import {
 	PublicationUrlPolicyEngine,
 	type PublicationUrlPolicyEngineArguments,
 } from "./domain/publication-url-policy-engine.js";
+import { RegistrationResponsePolicy } from "./domain/registration-response-policy.js";
 import { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class PublicationDomainComposition {
+	registrationResponsePolicy(): RegistrationResponsePolicy {
+		return new RegistrationResponsePolicy();
+	}
+
 	pdfExportPolicy(): PdfExportPolicy {
 		return new PdfExportPolicy();
 	}

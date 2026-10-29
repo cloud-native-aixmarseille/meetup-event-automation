@@ -1,6 +1,7 @@
 [codespell]
 # Codespell uses English dictionaries; French catalogs are reviewed separately.
 skip = *.svg,**/*.fr.ts,**/package-lock.json,**/pnpm-lock.yaml,**/node_modules/**,**/dist/**,**/coverage/**
-ignore-words-list = addIn
+# The French form header "Adresse e-mail" also appears in guides and fixtures.
+ignore-words-list = addIn,adresse
 # Vitest's lifecycle hook is an identifier, not prose.
 ignore-regex = \bafterAll\b
