@@ -207,6 +207,16 @@ authorizing changed content.
 
 ## Decision history
 
+On 2026-10-29, live cover validation returned HTTP 400 for the image request.
+The adapter forwarded the brief's preferred PNG MIME type, while the
+[Interactions API reference](https://ai.google.dev/api/interactions-api)
+lists only JPEG for image output. Provider mapping now requests inline JPEG,
+retaining the preferred aspect ratio and resolution. This replaces direct MIME
+forwarding without changing the domain's PNG/JPEG acceptance or the reviewed
+artifact's actual encoding. Explicit inline delivery matches the image decoder's
+bounded byte contract. Failed generation reservations remain in proposal history
+and require explicit recovery.
+
 On 2026-10-27, the consumer-configured Slack channel list replaced the fixed
 destination set in the social announcement and reminder decisions. Channel
 identities and display names come from configuration; proposal counts follow
