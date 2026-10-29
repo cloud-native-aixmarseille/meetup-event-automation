@@ -7,9 +7,9 @@ describe("cover context schema", () => {
 		"rejects invalid or oversized description context %#",
 		(eventDescription) => {
 			// Arrange
-		const schema = new ContentValueSchema({
-			valid: (value?: string): value is string => typeof value === "string",
-		});
+			const schema = new ContentValueSchema({
+				valid: (value?: string): value is string => typeof value === "string",
+			});
 
 			// Act
 			const parse = () => schema.facts({ ...facts, eventDescription });
