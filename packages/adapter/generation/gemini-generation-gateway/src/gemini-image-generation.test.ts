@@ -38,7 +38,8 @@ describe("Gemini image generation", () => {
 			expect.stringContaining(brief.instructions[0]),
 			{
 				type: "image",
-				mime_type: "image/png",
+				mime_type: "image/jpeg",
+				delivery: "inline",
 				aspect_ratio: "9:16",
 				image_size: "2K",
 			},
