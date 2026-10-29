@@ -43,7 +43,7 @@ on:
 permissions: {}
 jobs:
   event-promotion-generate-post:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
     permissions:
       contents: read
     secrets:
@@ -91,7 +91,7 @@ jobs:
       # This input is required.
       conference-hall-event: ""
 
-      # Public Drive folder for content images, shared with anyone as reader.
+      # Public Drive root ID containing the tmp-covers subfolder for content images.
       # This input is required.
       google-drive-public-folder-id: ""
 
@@ -131,7 +131,7 @@ jobs:
 | **`locale`**                        | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | **string** | -           |
 | **`issue-number`**                  | Meetup issue number.                                                                                                               | **true**     | **number** | -           |
 | **`conference-hall-event`**         | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | **string** | -           |
-| **`google-drive-public-folder-id`** | Public Drive folder for content images, shared with anyone as reader.                                                              | **true**     | **string** | -           |
+| **`google-drive-public-folder-id`** | Public Drive root ID containing the tmp-covers subfolder for content images.                                                       | **true**     | **string** | -           |
 | **`slack-organizer-channel-id`**    | Internal organizer channel receiving content reviews.                                                                              | **true**     | **string** | -           |
 | **`target`**                        | Draft target: configured destination key followed by :announcement, :d7, or :d0.                                                   | **true**     | **string** | -           |
 | **`ai-provider`**                   | AI provider identifier (gemini).                                                                                                   | **true**     | **string** | -           |

@@ -30,7 +30,7 @@ Reconcile the post-event presentation PDF while preserving its identity, source 
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-slides-pdf@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-slides-pdf@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
   with:
     # Language for generated reports (en or fr).
     # This input is required.
@@ -56,7 +56,7 @@ Reconcile the post-event presentation PDF while preserving its identity, source 
     # This input is required.
     google-credentials: ""
 
-    # Shared public destination folder for PDFs.
+    # Public Drive root ID containing the slides subfolder for generated PDFs.
     # This input is required.
     google-drive-public-folder-id: ""
 ```
@@ -74,7 +74,7 @@ Reconcile the post-event presentation PDF while preserving its identity, source 
 | **`pdf-source`**                    | Public asset identities and issue revision emitted by document reconciliation. | **true**     | -           |
 | **`slides-ready`**                  | Whether the prepared presentation content is ready.                            | **true**     | -           |
 | **`google-credentials`**            | Service-account JSON with access to the presentation and public PDF folder.    | **true**     | -           |
-| **`google-drive-public-folder-id`** | Shared public destination folder for PDFs.                                     | **true**     | -           |
+| **`google-drive-public-folder-id`** | Public Drive root ID containing the slides subfolder for generated PDFs.       | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

@@ -44,7 +44,7 @@ on:
 permissions: {}
 jobs:
   event-reconcile-active:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile-active.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile-active.yml@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
     permissions:
       contents: read
       issues: read
@@ -101,7 +101,7 @@ jobs:
       # This input is required.
       google-drive-folder-id: ""
 
-      # Google Drive ID of the shared public folder for generated PDFs.
+      # Public Drive root ID containing slides and tmp-covers subfolders.
       # This input is required.
       google-drive-public-folder-id: ""
 
@@ -138,7 +138,7 @@ jobs:
 | **`github-app-client-id`**            | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                              | **true**     | **string** | -           |
 | **`slack-organizer-channel-id`**      | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate. | **true**     | **string** | -           |
 | **`google-drive-folder-id`**          | Google Drive folder ID of the parent asset folder used for asset reconciliation.                                                             | **true**     | **string** | -           |
-| **`google-drive-public-folder-id`**   | Google Drive ID of the shared public folder for generated PDFs.                                                                              | **true**     | **string** | -           |
+| **`google-drive-public-folder-id`**   | Public Drive root ID containing slides and tmp-covers subfolders.                                                                            | **true**     | **string** | -           |
 | **`google-drive-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                                 | **true**     | **string** | -           |
 | **`kutt-base-url`**                   | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
 | **`kutt-link-id`**                    | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
