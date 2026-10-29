@@ -28,7 +28,9 @@ export class ContentBindingPolicy {
 			!this.collaborators.contentContractPolicy.record(value) ||
 			!this.collaborators.contentContractPolicy.name(value.id) ||
 			!this.collaborators.contentContractPolicy.name(value.key) ||
-			(value.type !== "text" && value.type !== "image") ||
+			(value.type !== "text" &&
+				value.type !== "image" &&
+				value.type !== "collection") ||
 			!this.hash(value.applied) ||
 			(value.desired !== undefined && !this.hash(value.desired)) ||
 			!this.collaborators.contentContractPolicy.keys(value, [

@@ -128,9 +128,11 @@ export class ReconcileMeetupDocuments {
 				const model = await this.dependencies.renderProjection?.create(
 					evaluation.event,
 					[...evaluation.diagnostics, ...contentDiagnostics],
-					contract.fields.some((field) =>
-						field.token.startsWith("next_event."),
-					),
+					contract.fields
+						.flatMap((field) =>
+							field.type === "collection" ? field.fields : [field],
+						)
+						.some((field) => field.token.startsWith("next_event.")),
 				);
 				return model ? { ...model, cover } : undefined;
 			},

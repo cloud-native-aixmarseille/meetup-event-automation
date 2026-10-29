@@ -1,5 +1,7 @@
 import {
 	type ContentContract,
+	type ContentField,
+	type CollectionField,
 	type ImageField,
 	type ImageSource,
 	SLOTTED_TEXT_TOKENS,
@@ -45,11 +47,65 @@ export class ContentContractPolicy {
 		return { version: 1, kind: value.kind, revision: value.revision, fields };
 	}
 
-	private field(value: unknown, mimeType: string): TextField | ImageField {
+	private field(value: unknown, mimeType: string): ContentField {
 		if (!this.record(value)) throw new ContentError("contract");
+		if (value.type === "collection") return this.collection(value, mimeType);
 		return value.type === "text"
 			? this.textField(value)
 			: this.image(value, mimeType);
+	}
+
+	private collection(
+		value: Record<string, unknown>,
+		mimeType: string,
+	): CollectionField {
+		if (
+			!mimeType.endsWith("presentation") ||
+			(value.token !== "talks" && value.token !== "speakers") ||
+			!this.name(value.slot) ||
+			!this.name(value.objectId) ||
+			!this.name(value.pageId) ||
+			typeof value.template !== "string" ||
+			value.template.length > 100_000 ||
+			!Array.isArray(value.fields) ||
+			!value.fields.length ||
+			value.fields.length > 100 ||
+			!this.keys(value, [
+				"type",
+				"token",
+				"slot",
+				"objectId",
+				"pageId",
+				"template",
+				"fields",
+			])
+		)
+			throw new ContentError("contract");
+		const fields = value.fields.map((item: unknown) => {
+			if (!this.record(item) || item.type === "collection")
+				throw new ContentError("contract");
+			return item.type === "text"
+				? this.textField(item)
+				: this.image(item, mimeType);
+		});
+		const scope = value.token === "talks" ? "talk." : "speaker.";
+		if (
+			fields.some(
+				(field) =>
+					/^(talk|speaker)\./.test(field.token) &&
+					!field.token.startsWith(scope),
+			)
+		)
+			throw new ContentError("contract");
+		return {
+			type: "collection",
+			token: value.token,
+			slot: value.slot,
+			objectId: value.objectId,
+			pageId: value.pageId,
+			template: value.template,
+			fields,
+		};
 	}
 
 	private textField(field: Record<string, unknown>): TextField {

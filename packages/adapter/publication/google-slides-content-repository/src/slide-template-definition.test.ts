@@ -8,6 +8,8 @@ import { SlideTemplateDefinition } from "./slide-template-definition.js";
 
 function definition() {
 	return new SlideTemplateDefinition(
+		new GoogleSlidesContentRepositoryComposition().collectionDefinition(),
+		new GoogleSlidesContentRepositoryComposition().collectionIdentity(),
 		new TemplatingComposition().parser(),
 		new PublicationDomainComposition().contentTemplateFields(),
 		new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),

@@ -1,3 +1,5 @@
+import type { SlideCollectionLocations } from "./slide-collection-locations.js";
+import type { SlideCollectionRequests } from "./slide-collection-requests.js";
 import type { SlideTemplateDefinition } from "./slide-template-definition.js";
 import type { slides_v1 } from "@googleapis/slides";
 import {
@@ -18,6 +20,10 @@ import type { SlideContentRequests } from "./slide-content-requests.js";
 import type { SlideTemplateBindings } from "./slide-template-bindings.js";
 
 export interface GoogleSlidesContentRepositoryCollaborators {
+	readonly collectionRequests: Pick<SlideCollectionRequests, "build">;
+	readonly createCollectionLocations: (
+		images: AssetImageRepository,
+	) => SlideCollectionLocations;
 	readonly definition: Pick<SlideTemplateDefinition, "read">;
 	readonly slideTemplateBindings: Pick<SlideTemplateBindings, "discover">;
 	readonly slideContentRequests: Pick<SlideContentRequests, "build">;
@@ -64,7 +70,23 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 			this.collaborators.slideTemplateBindings.discover(data, contract);
 		const locations = await this.collaborators
 			.createSlideContentLocations(this.images)
-			.read(data, bindings);
+			.read(
+				data,
+				bindings.filter((binding) => binding.type !== "collection"),
+			);
+		for (const binding of bindings.filter(
+			(binding) => binding.type === "collection",
+		)) {
+			const field = contract.fields.find(
+				(field) => field.type === "collection" && field.slot === binding.key,
+			);
+			if (field?.type !== "collection") throw new ContentError("contract");
+			locations.push(
+				await this.collaborators
+					.createCollectionLocations(this.images)
+					.read(data, field, binding),
+			);
+		}
 		this.current = data;
 		return { revision: data.revisionId, locations };
 	}
@@ -82,7 +104,9 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 		)
 			throw new ContentError("revision");
 		const requests = changes.flatMap((change) =>
-			this.collaborators.slideContentRequests.build(current, change),
+			change.value.type === "collection"
+				? this.collaborators.collectionRequests.build(current, change)
+				: this.collaborators.slideContentRequests.build(current, change),
 		);
 		try {
 			const { data } = await this.client.presentations.batchUpdate(

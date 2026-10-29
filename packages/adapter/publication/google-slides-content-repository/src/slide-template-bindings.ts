@@ -1,3 +1,4 @@
+import type { SlideCollectionIdentity } from "./slide-collection-identity.js";
 import { isDeepStrictEqual } from "node:util";
 import type { slides_v1 } from "@googleapis/slides";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@meetup-automation/templating";
 
 export interface SlideTemplateBindingsCollaborators {
+	readonly collections: Pick<SlideCollectionIdentity, "decode">;
 	readonly contentTextKey: Pick<ContentTextKey, "of" | "reference">;
 	readonly templates: Pick<TemplateParser, "parse" | "contains">;
 }
@@ -29,8 +31,7 @@ export class SlideTemplateBindings {
 		const bindings: ContentBinding[] = [];
 		for (const page of presentation.slides ?? []) {
 			if (!page.objectId) throw new ContentError("location");
-			for (const element of page.pageElements ?? [])
-				this.element(element, page.objectId, contract, bindings);
+			this.page(page, contract, bindings);
 			this.rejectTokens(page.slideProperties?.notesPage);
 		}
 		this.rejectTokens(presentation.masters);
@@ -44,6 +45,43 @@ export class SlideTemplateBindings {
 				throw new ContentError("location");
 		}
 		return bindings;
+	}
+
+	private page(
+		page: slides_v1.Schema$Page,
+		contract: ContentContract,
+		bindings: ContentBinding[],
+	): void {
+		if (!page.objectId) throw new ContentError("location");
+		const collections = contract.fields.filter(
+			(field) => field.type === "collection" && field.pageId === page.objectId,
+		);
+		for (const field of collections)
+			if (field.type === "collection")
+				bindings.push({
+					id: field.slot,
+					key: field.slot,
+					type: "collection",
+					anchor: { pageId: field.pageId, objectId: field.objectId },
+					applied: "",
+				});
+		if (
+			collections.some(
+				(field) =>
+					field.type === "collection" &&
+					this.collaborators.collections.decode(field.template).mode ===
+						"slide",
+			)
+		)
+			return;
+		for (const element of page.pageElements ?? [])
+			if (
+				!collections.some(
+					(field) =>
+						field.type === "collection" && field.objectId === element.objectId,
+				)
+			)
+				this.element(element, page.objectId, contract, bindings);
 	}
 
 	private element(
@@ -132,7 +170,7 @@ export class SlideTemplateBindings {
 		return style;
 	}
 
-	private rejectTokens(value: unknown): void {
+	rejectTokens(value: unknown): void {
 		if (this.collaborators.templates.contains(this.allText(value)))
 			throw new ContentError("location");
 	}

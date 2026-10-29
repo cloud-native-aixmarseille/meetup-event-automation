@@ -81,9 +81,8 @@ from 1 to 200. Talks follow agenda order. Speakers follow their first appearance
 in that order, with co-speakers in their listed order and repeated speakers
 counted once. Reordering or removing agenda entries changes those positions.
 `{{speaker.name:1}}` and `{{speaker.picture:1}}` select the same person.
-A template needs a location for every participant it intends to show; rendering
-does not add slides or duplicate layouts. Manual talks use their description as
-the title. Selected Conference Hall talks use the refreshed public title and
+Use collections to include every participant without adding numbered slots.
+Manual talks use their description as the title. Selected Conference Hall talks use the refreshed public title and
 abstract. Stale or unresolved agenda data is withheld.
 
 The workflow locale controls date and list formatting. Explicit date operands
@@ -106,8 +105,9 @@ Lookup is bounded to 200 distinct issues and 20 pages. Incomplete listings,
 repeated cursors, and provider failures stop the action; no partial result is used.
 
 In Slides, put each text token in an entire, ungrouped text shape with uniform
-text styling. Repeated tokens use separate shapes. Tables, grouped shapes,
-speaker notes, masters, layouts and mixed prose/token shapes are unsupported.
+text styling. Repeated tokens use separate shapes. Explicit collection groups
+are supported as described below. Tables, other grouped tokens, speaker notes,
+masters, layouts and mixed prose/token shapes are unsupported.
 The renderer preserves shape geometry and uniform text style. Manual slides
 and unregistered elements remain untouched.
 
@@ -127,7 +127,7 @@ description**:
 | `{{host.logo}}`         | Current host's public `logo_url` and `logo_description`. |
 | `{{event.cover}}`       | Selected and approved event cover.                       |
 
-Slides images must be ungrouped on a slide. Docs images must be inline in a body
+Slides images must be ungrouped or inside an explicit collection. Docs images must be inline in a body
 paragraph. Native object, page, and tab IDs are discovered automatically.
 Multiple placeholders may show the same source. Community branding and unmarked
 images remain manual. Missing or unusable speaker portraits and host logos use
@@ -148,6 +148,39 @@ Image replacement does not promise to retain provider effects such as shadows
 or recoloring. Slides updates the image description from the public value; Docs
 retains the authored description. Generic images and missing-text messages are
 owned by the automation and need no consumer configuration.
+
+## Repeat talks and speakers
+
+Use the [native collection directive](../reference/templating.md#native-slides-collections)
+in the alt title of a text shape:
+
+- `{{#each talks}}` repeats in current agenda order. Use `{{talk.title}}`,
+  `{{talk.abstract}}`, and `{{talk.speakers}}` for that talk.
+- `{{#each speakers}}` repeats speakers in first-appearance order, deduplicated
+  by stable speaker ID. Use `{{speaker.name}}` and a real portrait image whose
+  alt title is `{{speaker.picture}}`.
+
+Leave the marker shape ungrouped to repeat its entire slide as a section.
+Group the marker with its portrait, name and other card elements to repeat cards
+on that page. The original group's bounding area is the available region;
+keep it axis-aligned. The renderer arranges cards in a compact grid and scales
+uniformly to retain portrait proportions. For announcements, use groups: slide
+repetition is rejected so the announcement remains one image. Review the rendered
+image when using many entries or long titles because its available area is fixed.
+
+One marker defines one container. Use separate groups for talks and speakers.
+Nested markers and numbered participant fields within a collection are rejected.
+Static design elements and regular event or host expressions inside a repeated
+container are repeated too. Keep organizer-editable content outside it.
+
+Each collection is one managed binding. Adding, removing or reordering entries
+rebuilds its generated instances from the retained first native instance, with
+stable generated IDs and a frozen field mapping. An unchanged rerun does no work.
+An empty or invalid agenda leaves the asset pending and preserves current content.
+Manual changes to an owned container cause a conflict; content outside it remains
+untouched. Revision checks and a persisted pending intent protect the whole batch.
+An interrupted structural write with an uncertain result requires explicit recovery,
+just like an uncertain image replacement. Source template edits affect new copies.
 
 ## Run and retry
 

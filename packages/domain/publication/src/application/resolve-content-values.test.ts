@@ -195,3 +195,87 @@ it("renders the same agenda portrait at independent discovered image locations",
 		),
 	);
 });
+
+describe("collection values", () => {
+	it("pairs every ordered speaker name with its validated portrait identity", async () => {
+		// Arrange
+		const f = contentFixture();
+		const domain = new PublicationDomainComposition();
+		const subject = new ResolveContentValues(
+			{
+				templates: { value: (value) => value.value },
+				contentTextKey: domain.contentTextKey(),
+				contentContractPolicy: domain.contentContractPolicy(),
+				contentFingerprint: domain.contentFingerprint(),
+			},
+			f.images,
+		);
+		const definition = {
+			...contract,
+			fields: [
+				{
+					type: "collection" as const,
+					token: "speakers" as const,
+					slot: "cards",
+					objectId: "cards",
+					pageId: "page",
+					template: "native descriptor",
+					fields: [
+						{
+							type: "text" as const,
+							token: "speaker.name" as const,
+							slot: "1",
+							required: true,
+						},
+						{
+							type: "image" as const,
+							token: "speaker.picture" as const,
+							slot: "portrait",
+							objectId: "portrait",
+							pageId: "page",
+							sourceSlot: "1",
+							required: true,
+							fit: "CENTER_CROP" as const,
+						},
+					],
+				},
+			],
+		};
+		// Act
+		const values = await subject.execute(definition, {
+			text: {
+				"speaker.name:3": "Third",
+				"speaker.name:1": "First",
+				"speaker.name:2": "Second",
+			},
+			pictures: {
+				"1": {
+					speakerId: "speaker-first",
+					url: "https://images.example.org/first.png",
+					description: "First",
+				},
+				"2": {
+					speakerId: "speaker-second",
+					url: "https://images.example.org/second.png",
+					description: "Second",
+				},
+				"3": {
+					speakerId: "speaker-third",
+					url: "https://images.example.org/third.png",
+					description: "Third",
+				},
+			},
+		});
+		// Assert
+		expect(
+			values[0].collection?.items.map((item) => [
+				item[0].text,
+				item[1].speakerId,
+			]),
+		).toEqual([
+			["First", "speaker-first"],
+			["Second", "speaker-second"],
+			["Third", "speaker-third"],
+		]);
+	});
+});

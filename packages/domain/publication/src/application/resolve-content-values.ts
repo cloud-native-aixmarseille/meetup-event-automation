@@ -1,5 +1,6 @@
 import type {
 	ContentContract,
+	CollectionField,
 	ContentValue,
 	ImageField,
 	PublicAssetModel,
@@ -31,6 +32,10 @@ export class ResolveContentValues {
 	): Promise<readonly ContentValue[]> {
 		const values: ContentValue[] = [];
 		for (const field of contract.fields) {
+			if (field.type === "collection") {
+				values.push(await this.collection(field, contract, model));
+				continue;
+			}
 			if (field.type === "image") {
 				values.push(await this.image(field, model));
 				continue;
@@ -47,6 +52,51 @@ export class ResolveContentValues {
 			});
 		}
 		return values;
+	}
+
+	private async collection(
+		field: CollectionField,
+		contract: ContentContract,
+		model: PublicAssetModel,
+	): Promise<ContentValue> {
+		const prefix = field.token === "talks" ? "talk.title:" : "speaker.name:";
+		const slots = Object.keys(model.text)
+			.filter((key) => key.startsWith(prefix))
+			.map((key) => key.slice(prefix.length))
+			.sort((a, b) => Number(a) - Number(b));
+		if (!slots.length || slots.length > 200) throw new ContentError("missing");
+		const items: (readonly ContentValue[])[] = [];
+		for (const slot of slots) {
+			const fields = field.fields.map((child) =>
+				child.type === "text" && child.slot
+					? { ...child, slot }
+					: child.type === "image" && child.token === "speaker.picture"
+						? { ...child, sourceSlot: slot }
+						: child,
+			);
+			const values = await this.execute({ ...contract, fields }, model);
+			items.push(
+				values.map((value, index) => ({
+					...value,
+					key:
+						field.fields[index].type === "text"
+							? this.collaborators.contentTextKey.of(field.fields[index])
+							: field.fields[index].slot,
+				})),
+			);
+		}
+		return {
+			type: "collection",
+			key: field.slot,
+			collection: { template: field.template, items },
+			fallback: items.some((item) => item.some((value) => value.fallback)),
+			fingerprint: this.collaborators.contentFingerprint.of(
+				JSON.stringify([
+					field.template,
+					items.map((item) => item.map((value) => value.fingerprint)),
+				]),
+			),
+		};
 	}
 
 	private text(field: TextField, model: PublicAssetModel): string | undefined {

@@ -1,10 +1,12 @@
+import type { SlideCollectionDefinition } from "./slide-collection-definition.js";
+import type { SlideCollectionIdentity } from "./slide-collection-identity.js";
+import type { ContentField } from "@meetup-automation/publication";
 import type { slides_v1 } from "@googleapis/slides";
 import {
 	ContentError,
 	type ContentTemplateFields,
 	type ImageField,
 	type TemplateContentDefaults,
-	type TextField,
 } from "@meetup-automation/publication";
 import {
 	TemplateError,
@@ -14,6 +16,11 @@ import type { SlideTemplateBindings } from "./slide-template-bindings.js";
 
 export class SlideTemplateDefinition {
 	constructor(
+		private readonly collections: Pick<SlideCollectionDefinition, "read">,
+		private readonly collectionIdentity: Pick<
+			SlideCollectionIdentity,
+			"decode"
+		>,
 		private readonly parser: Pick<TemplateParser, "parse" | "contains">,
 		private readonly fields: Pick<
 			ContentTemplateFields,
@@ -26,10 +33,40 @@ export class SlideTemplateDefinition {
 		kind: string,
 		defaults: TemplateContentDefaults,
 	) {
-		const fields: (TextField | ImageField)[] = [];
+		const fields: ContentField[] = [];
 		try {
 			for (const page of presentation.slides ?? []) {
-				fields.push(...this.page(page, defaults));
+				const collections = this.collections.read(page, defaults);
+				if (
+					kind === "announcement" &&
+					collections.some(
+						(field) =>
+							this.collectionIdentity.decode(field.template).mode === "slide",
+					)
+				)
+					throw new ContentError("contract");
+				fields.push(...collections);
+				if (
+					collections.some(
+						(field) =>
+							this.collectionIdentity.decode(field.template).mode === "slide",
+					)
+				)
+					continue;
+				fields.push(
+					...this.page(
+						{
+							...page,
+							pageElements: page.pageElements?.filter(
+								(element) =>
+									!collections.some(
+										(field) => field.objectId === element.objectId,
+									),
+							),
+						},
+						defaults,
+					),
+				);
 			}
 		} catch (error) {
 			if (error instanceof TemplateError) throw new ContentError("contract");
@@ -49,8 +86,8 @@ export class SlideTemplateDefinition {
 	private page(
 		page: slides_v1.Schema$Page,
 		defaults: TemplateContentDefaults,
-	): (TextField | ImageField)[] {
-		const fields: (TextField | ImageField)[] = [];
+	): ContentField[] {
+		const fields: ContentField[] = [];
 		for (const element of page.pageElements ?? []) {
 			for (const expression of this.parser.parse(this.bindings.text(element))) {
 				const token = expression.entity

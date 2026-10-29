@@ -85,7 +85,7 @@ export class ContentRenderPlan {
 			);
 			if (!location) throw new ContentError("conflict");
 			const prior = manifest.bindings.find((item) => item.id === binding.id);
-			return binding.type === "image" && binding.desired !== prior?.desired
+			return binding.type !== "text" && binding.desired !== prior?.desired
 				? confirmed
 				: binding.applied === location.fingerprint;
 		});
@@ -108,7 +108,7 @@ export class ContentRenderPlan {
 		);
 		const uncertainImage = next.some(
 			(binding, index) =>
-				binding.type === "image" &&
+				binding.type !== "text" &&
 				binding.desired !== manifest.bindings[index]?.desired,
 		);
 		if (!prior)

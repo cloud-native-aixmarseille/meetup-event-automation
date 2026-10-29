@@ -11,6 +11,12 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				collectionRequests:
+					new GoogleSlidesContentRepositoryComposition().collectionRequests(),
+				createCollectionLocations: (images) =>
+					new GoogleSlidesContentRepositoryComposition().collectionLocations(
+						images,
+					),
 				definition: new GoogleSlidesContentRepositoryComposition().definition(),
 
 				slideTemplateBindings:
@@ -54,6 +60,12 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				collectionRequests:
+					new GoogleSlidesContentRepositoryComposition().collectionRequests(),
+				createCollectionLocations: (images) =>
+					new GoogleSlidesContentRepositoryComposition().collectionLocations(
+						images,
+					),
 				definition: new GoogleSlidesContentRepositoryComposition().definition(),
 
 				slideTemplateBindings:
@@ -140,6 +152,12 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				collectionRequests:
+					new GoogleSlidesContentRepositoryComposition().collectionRequests(),
+				createCollectionLocations: (images) =>
+					new GoogleSlidesContentRepositoryComposition().collectionLocations(
+						images,
+					),
 				definition: new GoogleSlidesContentRepositoryComposition().definition(),
 
 				slideTemplateBindings:
@@ -195,6 +213,12 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				collectionRequests:
+					new GoogleSlidesContentRepositoryComposition().collectionRequests(),
+				createCollectionLocations: (images) =>
+					new GoogleSlidesContentRepositoryComposition().collectionLocations(
+						images,
+					),
 				definition: new GoogleSlidesContentRepositoryComposition().definition(),
 
 				slideTemplateBindings:
@@ -224,6 +248,12 @@ describe("Slides content repository", () => {
 		const f = slidesFixture();
 		const repository = new GoogleSlidesContentRepository(
 			{
+				collectionRequests:
+					new GoogleSlidesContentRepositoryComposition().collectionRequests(),
+				createCollectionLocations: (images) =>
+					new GoogleSlidesContentRepositoryComposition().collectionLocations(
+						images,
+					),
 				definition: new GoogleSlidesContentRepositoryComposition().definition(),
 
 				slideTemplateBindings:
@@ -256,6 +286,12 @@ describe("Slides content repository", () => {
 			const f = slidesFixture();
 			const repository = new GoogleSlidesContentRepository(
 				{
+					collectionRequests:
+						new GoogleSlidesContentRepositoryComposition().collectionRequests(),
+					createCollectionLocations: (images) =>
+						new GoogleSlidesContentRepositoryComposition().collectionLocations(
+							images,
+						),
 					definition:
 						new GoogleSlidesContentRepositoryComposition().definition(),
 					slideTemplateBindings:
