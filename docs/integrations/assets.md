@@ -408,11 +408,20 @@ and file-level reader access, the action writes **Slides PDF** to the issue. A p
 export clears that link. [Meetup attendee delivery](event-publication.md#send-slides-to-attendees)
 uses it to send the PDF to members marked as having attended.
 
-Set `GOOGLE_DRIVE_PUBLIC_FOLDER_ID` to the existing destination folder's ID
-and forward it as `google-drive-public-folder-id`. The same destination
-is used for every event, regardless of where its event folder is archived.
-The automation validates the destination by ID, folder type and non-trashed status. It does
-not create per-event public folders or search for a shared folder by name.
+Set `GOOGLE_DRIVE_PUBLIC_FOLDER_ID` to the existing public root's ID and
+forward it as `google-drive-public-folder-id`. Its display name is arbitrary.
+Create these two direct child folders under that root:
+
+- `slides`: generated presentation PDFs, shared across all events.
+- `tmp-covers`: generated cover candidates awaiting or retaining content review.
+
+The automation resolves each destination by its exact child name under the
+configured root ID. It requires one existing, non-trashed folder with that name;
+missing, duplicate, malformed, or incomplete lookup results block the operation.
+It never creates destination folders or falls back to writing files in the root.
+The same layout applies when private event folders are archived. It does not
+create per-event public folders. Keep referenced cover candidates: there is no
+automatic cleanup of `tmp-covers`.
 
 The service account needs permission to export the source and create/update
 binary files in the event folder, move PDFs into the shared folder, update them,

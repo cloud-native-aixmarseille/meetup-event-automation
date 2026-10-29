@@ -36,7 +36,7 @@ on:
         required: true
         type: string
       google-drive-public-folder-id:
-        description: Google Drive ID of the shared public folder for generated PDFs.
+        description: Public Drive root ID containing slides and tmp-covers subfolders.
         required: true
         type: string
       google-drive-template-folder-id:

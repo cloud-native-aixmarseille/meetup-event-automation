@@ -18,7 +18,8 @@ export const pdfBytes = Buffer.from(
 export const pdfFingerprint = createHash("sha256")
 	.update(pdfBytes)
 	.digest("hex");
-export const publicFolderId = "public-folder";
+export const publicRootFolderId = "public-root";
+export const publicFolderId = "slides-folder";
 export const exportIdentity: PdfExportIdentity = {
 	eventId: "example/meetups#42",
 	folderId: "event-folder",
@@ -61,12 +62,21 @@ export function pdfMetadata(
 
 export function createPdfDrive() {
 	const records = new Map<string, { metadata: DriveFile; bytes: Buffer }>();
+	records.set(publicRootFolderId, {
+		metadata: {
+			id: publicRootFolderId,
+			name: "Public assets",
+			mimeType: "application/vnd.google-apps.folder",
+			parents: ["shared-assets"],
+		},
+		bytes: Buffer.alloc(0),
+	});
 	records.set(publicFolderId, {
 		metadata: {
 			id: publicFolderId,
-			name: "Shared presentations",
+			name: "slides",
 			mimeType: "application/vnd.google-apps.folder",
-			parents: ["shared-assets"],
+			parents: [publicRootFolderId],
 		},
 		bytes: Buffer.alloc(0),
 	});
@@ -128,10 +138,12 @@ export function createPdfDrive() {
 							metadata.parents?.some((parent) =>
 								input.q.includes(`'${parent}' in parents`),
 							) &&
-							Object.entries(metadata.appProperties ?? {}).some(
-								([key, value]) =>
-									input.q.includes(`key='${key}' and value='${value}'`),
-							),
+							(input.q.includes("name=")
+								? input.q.includes(`name='${metadata.name}'`)
+								: Object.entries(metadata.appProperties ?? {}).some(
+										([key, value]) =>
+											input.q.includes(`key='${key}' and value='${value}'`),
+									)),
 					)
 					.map(({ metadata }) => metadata),
 			},

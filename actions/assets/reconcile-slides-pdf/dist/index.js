@@ -62766,6 +62766,1938 @@ var FOLLOW_UP_TASKS = [
   "share-social"
 ];
 
+// packages/domain/publication/src/domain/content-error.ts
+var ContentError = class extends Error {
+  constructor(code) {
+    super(
+      `Asset content ${code}; review the template contract and managed bindings`
+    );
+    this.code = code;
+    this.name = "ContentError";
+  }
+  code;
+};
+
+// packages/domain/publication/src/application/reconcile-asset-content.ts
+var ReconcileAssetContent = class {
+  constructor(collaborators, manifests, renderers, images) {
+    this.collaborators = collaborators;
+    this.manifests = manifests;
+    this.renderers = renderers;
+    this.images = images;
+  }
+  collaborators;
+  manifests;
+  renderers;
+  images;
+  async preflight(templateId, kind, mimeType, value, model) {
+    const contract = this.collaborators.contentContractPolicy.parse(
+      value,
+      kind,
+      mimeType
+    );
+    await this.collaborators.createResolveContentValues(this.images).execute(contract, model);
+    this.collaborators.contentRenderPlan.initial(
+      await this.renderer(mimeType).read(templateId, contract)
+    );
+  }
+  async execute(input) {
+    const renderer = this.renderer(input.mimeType);
+    let manifest = await this.load(input, renderer);
+    if (!manifest) return { status: "copy-only", fallback: false };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const recovered = await this.recover(input, manifest, renderer);
+      manifest = recovered.manifest;
+      const snapshot = recovered.snapshot;
+      const values = await this.collaborators.createResolveContentValues(this.images).execute(
+        {
+          ...manifest.contract,
+          fields: manifest.contract.fields.filter(
+            (field) => recovered.manifest.bindings.some(
+              (binding) => binding.key === (field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot)
+            )
+          )
+        },
+        input.model
+      );
+      const changes = this.collaborators.contentRenderPlan.changes(
+        manifest,
+        snapshot,
+        values
+      );
+      if (!changes.length)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+      manifest = this.collaborators.contentRenderPlan.pending(
+        manifest,
+        snapshot,
+        changes
+      );
+      await this.manifests.save(input.folderId, manifest);
+      const written = await this.write(
+        input,
+        renderer,
+        manifest,
+        snapshot,
+        changes,
+        values,
+        attempt === 0
+      );
+      manifest = written.manifest;
+      if (written.complete)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+    }
+    return { status: "pending", fallback: false };
+  }
+  async write(input, renderer, manifest, snapshot, changes, values, retry) {
+    let confirmed = false;
+    let failure;
+    let current;
+    try {
+      const revision = await renderer.apply(input.fileId, snapshot, changes);
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings
+      );
+      confirmed = current.revision === revision;
+    } catch (error2) {
+      if (error2 instanceof ContentError && error2.code === "revision") {
+        const retriable = { ...manifest, pending: void 0 };
+        await this.manifests.save(input.folderId, retriable);
+        return { manifest: retriable, complete: false };
+      }
+      failure = { error: error2 };
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings,
+        manifest.pending?.revision
+      );
+    }
+    try {
+      const settled = this.collaborators.contentRenderPlan.settle(
+        manifest,
+        current,
+        confirmed
+      );
+      const complete = !this.collaborators.contentRenderPlan.changes(
+        settled,
+        current,
+        values
+      ).length;
+      if (failure && !complete) {
+        if (retry) return { manifest: settled, complete };
+        throw failure.error;
+      }
+      await this.manifests.save(input.folderId, settled);
+      return { manifest: settled, complete };
+    } catch (error2) {
+      throw failure ? failure.error : error2;
+    }
+  }
+  async load(input, renderer) {
+    const stored = await this.manifests.load(input.folderId, input.fileId);
+    if (stored !== void 0)
+      return this.collaborators.contentManifestPolicy.parse(
+        stored,
+        input.fileId,
+        input.templateId,
+        input.mimeType
+      );
+    if (!input.fresh && input.recovery?.operation !== "enroll") {
+      if (input.managed) throw new ContentError("recovery");
+      return void 0;
+    }
+    const contract = this.collaborators.contentContractPolicy.parse(
+      input.contract,
+      input.kind,
+      input.mimeType
+    );
+    const snapshot = await renderer.read(input.fileId, contract);
+    if (input.recovery && snapshot.revision !== input.recovery.revision)
+      throw new ContentError("revision");
+    const bindings = this.collaborators.contentRenderPlan.initial(snapshot);
+    return {
+      version: 1,
+      fileId: input.fileId,
+      templateId: input.templateId,
+      mimeType: input.mimeType,
+      contract,
+      bindings,
+      initialRevision: snapshot.revision,
+      recoveryId: input.recovery ? this.collaborators.contentRecoveryFingerprint.create(input.recovery) : void 0,
+      pending: { revision: snapshot.revision, bindings }
+    };
+  }
+  async recover(input, original, renderer) {
+    const recovery = this.collaborators.contentRecoveryPlan.active(
+      original,
+      input.recovery
+    );
+    const prepared = this.collaborators.contentRecoveryPlan.beforeRead(
+      original,
+      recovery
+    );
+    const snapshot = await renderer.read(
+      input.fileId,
+      prepared.contract,
+      prepared.bindings,
+      prepared.initialRevision
+    );
+    const manifest = this.collaborators.contentRecoveryPlan.settle(
+      prepared,
+      snapshot,
+      recovery
+    );
+    if (manifest !== original)
+      await this.manifests.save(input.folderId, manifest);
+    return { manifest, snapshot };
+  }
+  renderer(mimeType) {
+    const renderer = this.renderers[mimeType];
+    if (!renderer) throw new ContentError("contract");
+    return renderer;
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-event-assets.ts
+var ReconcileEventAssets = class {
+  constructor(collaborators, repository, content) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.content = content;
+  }
+  collaborators;
+  repository;
+  content;
+  async execute(input) {
+    const date = input.date.trim();
+    const host = input.hostName.trim();
+    if (!this.validDate(date) || !host) {
+      return {
+        files: {},
+        diagnostics: [
+          this.diagnostic(
+            "prerequisites",
+            "A valid event date and resolved host are required to reconcile assets",
+            false
+          )
+        ]
+      };
+    }
+    const templates = await this.repository.listTemplates();
+    this.validateTemplates(templates, date);
+    const month = new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      timeZone: "UTC"
+    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
+    const request2 = {
+      eventId: input.eventId,
+      idempotencyKey: `${input.eventId}:assets:v1`,
+      title: `${date} - ${month} - ${host}`
+    };
+    const diagnostics = [];
+    let container = await this.repository.findContainer(request2);
+    if (!container || container.name !== request2.title) {
+      diagnostics.push(
+        this.diagnostic(
+          "container.drift",
+          "The event asset folder must be created or renamed",
+          input.mode === "fix"
+        )
+      );
+      if (input.mode === "fix")
+        container = await this.repository.ensureContainer(request2);
+    }
+    if (!container) return { files: {}, diagnostics };
+    if (container.url !== input.existingUrl) {
+      diagnostics.push(
+        this.diagnostic(
+          "link.drift",
+          "The event asset link must reference the managed folder",
+          input.mode === "fix"
+        )
+      );
+    }
+    return this.reconcileFiles(
+      container,
+      templates,
+      { ...input, date },
+      diagnostics
+    );
+  }
+  async reconcileFiles(container, templates, input, diagnostics) {
+    const currentFiles = await this.repository.listFiles(container.id);
+    const files = {};
+    let presentation;
+    const content = {};
+    const reconcile = this.collaborators.createReconcileAssetFile(
+      this.repository,
+      this.content
+    );
+    for (const template of templates) {
+      const result = await reconcile.execute({
+        ...input,
+        template,
+        container,
+        currentFiles,
+        diagnostics
+      });
+      if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+      if (template.kind === "slides" && result.file)
+        presentation = { ...result.file, templateId: template.id };
+      content[template.kind] = result.status;
+    }
+    return { container, files, content, diagnostics, presentation };
+  }
+  diagnostic(code, message, fixApplied) {
+    return {
+      code: `publication.assets.${code}`,
+      field: "assets",
+      severity: "warning",
+      message,
+      fixAvailable: code !== "prerequisites",
+      fixApplied
+    };
+  }
+  validDate(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    return !Number.isNaN(instant.valueOf()) && instant.toISOString().slice(0, 10) === date;
+  }
+  validateTemplates(templates, date) {
+    if (!templates.length || templates.some(
+      (template) => !template.id || !template.name.trim() || !template.kind.trim()
+    ) || new Set(templates.map(({ id }) => id)).size !== templates.length || new Set(templates.map(({ kind }) => kind)).size !== templates.length) {
+      throw new Error(
+        "Asset templates must have unique IDs, unique kinds, and non-empty names"
+      );
+    }
+    for (const template of templates)
+      this.collaborators.names.render(template.name, date);
+  }
+};
+
+// packages/domain/publication/src/domain/pdf-export-error.ts
+var PdfExportError = class extends Error {
+  constructor(code) {
+    super(`PDF export could not complete: ${code}`);
+    this.code = code;
+    this.name = "PdfExportError";
+  }
+  code;
+};
+
+// packages/domain/publication/src/application/reconcile-slide-pdf.ts
+var ReconcileSlidePdf = class {
+  constructor(policy, source, files, states) {
+    this.policy = policy;
+    this.source = source;
+    this.files = files;
+    this.states = states;
+  }
+  policy;
+  source;
+  files;
+  states;
+  async execute(input) {
+    if (!input.eligible)
+      return { status: "not-applicable", updated: false, diagnostics: [] };
+    if (!input.sourceReady) return this.failure("source-pending");
+    if (!input.container || !input.source?.templateId)
+      return this.failure("source");
+    const identity = {
+      eventId: input.container.eventId,
+      folderId: input.container.id,
+      sourceId: input.source.id,
+      templateId: input.source.templateId
+    };
+    try {
+      return await this.reconcile(
+        identity,
+        this.policy.name(input.source.name, input.date)
+      );
+    } catch (error2) {
+      if (!(error2 instanceof PdfExportError)) throw error2;
+      return this.failure(error2.code);
+    }
+  }
+  async reconcile(identity, name) {
+    const state = await this.states.load(identity);
+    const observed = await this.files.find(identity, state?.fileId);
+    const confirmed = this.policy.recover(state, observed);
+    if (state?.pending && confirmed === state.pending) {
+      await this.states.save({ identity, fileId: state.fileId, confirmed });
+    }
+    const sourceVersion = await this.source.observe(identity);
+    if (observed && this.policy.current(confirmed, sourceVersion, name)) {
+      if (state?.pending && confirmed !== state.pending)
+        await this.states.save({ identity, fileId: state.fileId, confirmed });
+      const published2 = await this.files.placeInPublicFolder(
+        identity,
+        observed
+      );
+      return { status: "ready", ...published2, diagnostics: [] };
+    }
+    const binary = await this.source.export(identity);
+    if (await this.source.observe(identity) !== sourceVersion)
+      throw new PdfExportError("revision");
+    const pending = {
+      sourceVersion,
+      contract: "pdf-v1",
+      name,
+      fingerprint: binary.fingerprint
+    };
+    const next = {
+      identity,
+      fileId: state?.fileId ?? await this.files.reserveId(),
+      confirmed,
+      pending
+    };
+    await this.states.save(next);
+    await this.files.write({
+      identity,
+      fileId: next.fileId,
+      snapshot: pending,
+      binary,
+      previous: observed
+    });
+    const uploaded = await this.confirm(
+      next,
+      await this.files.find(identity, next.fileId)
+    );
+    const published = await this.files.placeInPublicFolder(identity, uploaded);
+    return {
+      status: "ready",
+      url: published.url,
+      updated: true,
+      diagnostics: []
+    };
+  }
+  async confirm(state, observed) {
+    if (observed?.id !== state.fileId || !this.policy.matches(state.pending, observed)) {
+      throw new PdfExportError("invalid");
+    }
+    await this.states.save({
+      identity: state.identity,
+      fileId: state.fileId,
+      confirmed: state.pending
+    });
+    return observed;
+  }
+  failure(code) {
+    return {
+      status: code === "conflict" ? "conflict" : code === "recovery" ? "recovery-required" : "pending",
+      updated: false,
+      diagnostics: [
+        {
+          code: `publication.assets.pdf.${code}`,
+          field: "assets",
+          severity: "warning",
+          message: "The presentation PDF could not be reconciled",
+          fixAvailable: false
+        }
+      ]
+    };
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-asset-file.ts
+var ReconcileAssetFile = class {
+  constructor(names, repository, content) {
+    this.names = names;
+    this.repository = repository;
+    this.content = content;
+  }
+  names;
+  repository;
+  content;
+  async execute(input) {
+    const matches = input.currentFiles.filter(
+      (file2) => file2.templateId === input.template.id
+    );
+    if (matches.length > 1)
+      throw new Error(
+        "Ambiguous event asset copies require manual reconciliation"
+      );
+    let file = matches[0];
+    const fresh = !file;
+    try {
+      await this.preflight(input, file);
+      if (!file) file = await this.copyOrRename(input);
+      if (!file)
+        return {
+          status: input.template.contentContract ? "pending" : "copy-only"
+        };
+      file = await this.enroll(input, file);
+      const status = await this.render(input, file, fresh);
+      if (!fresh && (status === "ready" || status === "copy-only"))
+        file = await this.copyOrRename(input, file);
+      return { file, status };
+    } catch (error2) {
+      if (!(error2 instanceof ContentError)) throw error2;
+      return this.failed(file, error2, input.diagnostics);
+    }
+  }
+  failed(file, error2, diagnostics) {
+    diagnostics.push(this.diagnostic(error2.code));
+    return {
+      file,
+      status: error2.code === "conflict" ? "conflict" : error2.code === "recovery" ? "recovery-required" : "pending"
+    };
+  }
+  async enroll(input, file) {
+    if (input.mode === "fix" && input.recovery?.[file.id]?.operation === "enroll" && !file.contentManaged) {
+      file = await this.repository.updateFile(
+        { ...file, contentManaged: true },
+        input.template,
+        file.name
+      );
+    }
+    return file;
+  }
+  async preflight(input, file) {
+    if (file && (file.contentManaged || input.recovery?.[file.id]?.operation !== "enroll"))
+      return;
+    if (!input.template.contentContract) return;
+    if (!this.content || !input.model) throw new ContentError("missing");
+    await this.content.preflight(
+      file?.id ?? input.template.id,
+      input.template.kind,
+      input.template.mimeType ?? "",
+      input.template.contentContract,
+      input.model
+    );
+  }
+  async render(input, file, fresh) {
+    const { template } = input;
+    const recovery = input.recovery?.[file.id];
+    if (!file.contentManaged && !recovery && (!fresh || !template.contentContract))
+      return "copy-only";
+    if (input.mode === "check" || !this.content || !input.model)
+      return "pending";
+    const outcome = await this.content.execute({
+      folderId: input.container.id,
+      fileId: file.id,
+      templateId: template.id,
+      kind: template.kind,
+      mimeType: file.mimeType ?? template.mimeType ?? "",
+      contract: template.contentContract,
+      fresh,
+      managed: file.contentManaged,
+      model: input.model,
+      recovery
+    });
+    if (outcome.fallback) input.diagnostics.push(this.diagnostic("fallback"));
+    if (outcome.status === "pending")
+      input.diagnostics.push(this.diagnostic("revision"));
+    return outcome.status;
+  }
+  async copyOrRename(input, file) {
+    const { template } = input;
+    const name = this.names.render(template.name, input.date);
+    if (file?.name === name && file.kind === template.kind) return file;
+    input.diagnostics.push({
+      code: "publication.assets.file.drift",
+      field: "assets",
+      severity: "warning",
+      message: "An event template copy is missing or its name or template metadata has changed",
+      fixAvailable: true,
+      fixApplied: input.mode === "fix"
+    });
+    if (input.mode !== "fix") return file;
+    return file ? this.repository.updateFile(file, template, name) : this.repository.copyTemplate(input.container.id, template, name);
+  }
+  diagnostic(code) {
+    return {
+      code: `publication.assets.content.${code}`,
+      field: "assets",
+      severity: "warning",
+      message: "Review the asset content status, template contract, public inputs and recovery instructions before using this file",
+      fixAvailable: false
+    };
+  }
+};
+
+// packages/domain/publication/src/application/resolve-content-values.ts
+var ResolveContentValues = class {
+  constructor(collaborators, images) {
+    this.collaborators = collaborators;
+    this.images = images;
+  }
+  collaborators;
+  images;
+  async execute(contract, model) {
+    const values = [];
+    for (const field of contract.fields) {
+      if (field.type === "image") {
+        values.push(await this.image(field, model));
+        continue;
+      }
+      const key = this.collaborators.contentTextKey.of(field);
+      const text = this.text(field, model);
+      if (!this.collaborators.contentContractPolicy.text(text))
+        throw new ContentError("missing");
+      values.push({
+        type: "text",
+        key,
+        text,
+        fingerprint: this.collaborators.contentFingerprint.of(text)
+      });
+    }
+    return values;
+  }
+  text(field, model) {
+    if (field.format !== void 0) {
+      const date = field.token === "event.date" || field.token === "next_event.date" ? model.dates?.[field.token] : void 0;
+      if (date) {
+        return this.collaborators.templates.value({
+          kind: "date",
+          value: date,
+          format: field.format
+        });
+      }
+      return field.required ? void 0 : field.fallback;
+    }
+    const text = model.text[this.collaborators.contentTextKey.of(field)] || (!field.required ? field.fallback : void 0);
+    return text === void 0 ? void 0 : this.collaborators.templates.value({ kind: "text", value: text });
+  }
+  async image(field, model) {
+    if (field.token === "event.cover") return this.cover(field, model);
+    const host = field.token === "host.logo";
+    const picture = host ? model.hostLogo : model.pictures[field.slot];
+    const hostId = host ? model.hostLogo?.hostId : void 0;
+    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
+    const identity = hostId ?? speakerId;
+    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
+    try {
+      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
+        identity ?? ""
+      ))
+        throw new ContentError("image");
+      const validated = await this.images.validate(picture);
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: this.collaborators.contentFingerprint.of(
+          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
+        ),
+        speakerId,
+        hostId,
+        fallback: false,
+        fit: field.fit
+      };
+    } catch {
+      if (field.required || !field.fallback || !fallback)
+        throw new ContentError("image");
+      const validated = fallback;
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: this.collaborators.contentFingerprint.of(
+          `${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`
+        ),
+        fallback: true,
+        fit: field.fit
+      };
+    }
+  }
+  async cover(field, model) {
+    if (!model.cover) throw new ContentError("missing");
+    const validated = await this.images.validate(model.cover);
+    if (validated.fingerprint !== model.cover.fingerprint)
+      throw new ContentError("image");
+    return {
+      type: "image",
+      key: field.slot,
+      image: validated.source,
+      fingerprint: this.collaborators.contentFingerprint.of(
+        `${validated.fingerprint}:${model.cover.id}:${model.cover.description}:${field.fit}`
+      ),
+      fit: field.fit,
+      fallback: false
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/asset-file-name.ts
+var AssetFileName = class {
+  constructor(templates) {
+    this.templates = templates;
+  }
+  templates;
+  render(templateName, date) {
+    return this.templates.render(templateName, (part) => {
+      if (part.entity !== "event")
+        throw new Error("Unsupported asset filename entity");
+      if (part.property !== "date")
+        throw new Error("Unsupported event filename property");
+      if (!part.argument)
+        throw new Error("Asset filename date format is required");
+      return { kind: "date", value: date, format: part.argument };
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/asset-folder-url-policy.ts
+var AssetFolderUrlPolicy = class {
+  constructor(collaborators, prefix) {
+    this.collaborators = collaborators;
+    this.prefix = prefix;
+  }
+  collaborators;
+  prefix;
+  evaluate(references) {
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
+      references,
+      path: "assets",
+      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
+        value,
+        [this.prefix],
+        /^[a-zA-Z0-9_-]+$/
+      ),
+      code: "publication.asset-url.invalid",
+      message: `Asset folder URL must start with ${this.prefix} and end with a folder identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/community-event-url-policy.ts
+var CommunityEventUrlPolicy = class {
+  constructor(collaborators, prefixes) {
+    this.collaborators = collaborators;
+    this.prefixes = prefixes;
+  }
+  collaborators;
+  prefixes;
+  evaluate(references) {
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
+      references,
+      path: "community",
+      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
+        value,
+        this.prefixes,
+        /^[0-9a-z-]+$/
+      ),
+      code: "publication.community-url.invalid",
+      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/content-anchor-identity.ts
+var ContentAnchorIdentity = class {
+  equal(left, right) {
+    return left.objectId === right.objectId && left.pageId === right.pageId && left.tabId === right.tabId && left.segmentId === right.segmentId && left.rangeName === right.rangeName && left.start === right.start && left.end === right.end;
+  }
+  locationKey(anchor) {
+    return JSON.stringify([
+      anchor.pageId,
+      anchor.tabId,
+      anchor.segmentId,
+      anchor.objectId,
+      anchor.rangeName
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/content-binding-policy.ts
+var ContentBindingPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parseMany(value) {
+    if (!Array.isArray(value) || value.length > 500)
+      throw new ContentError("recovery");
+    const bindings = value.map((item) => this.parse(item));
+    if (new Set(bindings.map((binding) => binding.id)).size !== bindings.length)
+      throw new ContentError("recovery");
+    return bindings;
+  }
+  parse(value) {
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
+      "id",
+      "type",
+      "key",
+      "anchor",
+      "applied",
+      "desired",
+      "speakerId",
+      "hostId",
+      "fallback"
+    ]))
+      throw new ContentError("recovery");
+    const identities = this.identities(value);
+    const anchor = this.anchor(value.anchor);
+    if (value.type === "image" ? !anchor.objectId : !anchor.objectId && !anchor.rangeName)
+      throw new ContentError("recovery");
+    return {
+      id: value.id,
+      key: value.key,
+      type: value.type,
+      applied: value.applied,
+      anchor,
+      ...typeof value.desired === "string" ? { desired: value.desired } : {},
+      ...identities
+    };
+  }
+  identities(value) {
+    if (value.speakerId !== void 0 && typeof value.speakerId !== "string" || value.hostId !== void 0 && typeof value.hostId !== "string" || value.fallback !== void 0 && typeof value.fallback !== "boolean")
+      throw new ContentError("recovery");
+    return {
+      ...typeof value.speakerId === "string" ? { speakerId: value.speakerId } : {},
+      ...typeof value.hostId === "string" ? { hostId: value.hostId } : {},
+      ...typeof value.fallback === "boolean" ? { fallback: value.fallback } : {}
+    };
+  }
+  anchor(value) {
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.keys(value, [
+      "objectId",
+      "pageId",
+      "tabId",
+      "segmentId",
+      "rangeName",
+      "start",
+      "end"
+    ]))
+      throw new ContentError("recovery");
+    this.validateAnchorValues(value);
+    return {
+      ...typeof value.objectId === "string" ? { objectId: value.objectId } : {},
+      ...typeof value.pageId === "string" ? { pageId: value.pageId } : {},
+      ...typeof value.tabId === "string" ? { tabId: value.tabId } : {},
+      ...typeof value.segmentId === "string" ? { segmentId: value.segmentId } : {},
+      ...typeof value.rangeName === "string" ? { rangeName: value.rangeName } : {},
+      ...typeof value.start === "number" ? { start: value.start } : {},
+      ...typeof value.end === "number" ? { end: value.end } : {}
+    };
+  }
+  validateAnchorValues(value) {
+    for (const [key, entry] of Object.entries(value)) {
+      if (key === "start" || key === "end") {
+        if (typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1)
+          throw new ContentError("recovery");
+      } else if (entry !== "" && !this.collaborators.contentContractPolicy.name(entry))
+        throw new ContentError("recovery");
+    }
+  }
+  hash(value) {
+    return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  }
+};
+
+// packages/domain/publication/src/domain/asset-content.ts
+var TEXT_TOKENS = [
+  "event.title",
+  "event.date",
+  "event.date.month",
+  "event.date.numeric",
+  "event.date.weekday",
+  "host.name",
+  "host.address",
+  "host.postal_code",
+  "host.city",
+  "agenda",
+  "event.feedback_url",
+  "next_event.date",
+  "next_event.date.numeric",
+  "next_event.host.name",
+  "next_event.host.city"
+];
+var SLOTTED_TEXT_TOKENS = [
+  "talk.title",
+  "talk.abstract",
+  "talk.speakers",
+  "speaker.name"
+];
+
+// packages/domain/publication/src/domain/content-contract-policy.ts
+var ContentContractPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, kind, mimeType) {
+    if (!this.record(value) || value.version !== 1 || typeof value.kind !== "string" || value.kind !== kind || !this.name(value.revision) || !Array.isArray(value.fields) || !value.fields.length || value.fields.length > 100 || !this.keys(value, ["version", "revision", "kind", "fields"]) || !this.supported(mimeType))
+      throw new ContentError("contract");
+    const fields2 = value.fields.map(
+      (field) => this.field(field, mimeType)
+    );
+    const keys = fields2.map(
+      (field) => field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot
+    );
+    if (new Set(keys).size !== keys.length) throw new ContentError("contract");
+    return { version: 1, kind: value.kind, revision: value.revision, fields: fields2 };
+  }
+  field(value, mimeType) {
+    if (!this.record(value)) throw new ContentError("contract");
+    return value.type === "text" ? this.textField(value) : this.image(value, mimeType);
+  }
+  textField(field) {
+    const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
+      (item) => item === field.token
+    );
+    const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
+    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.validFormat(field) || !this.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "format",
+      "required",
+      "fallback"
+    ]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
+      throw new ContentError("contract");
+    const result = {
+      type: "text",
+      token,
+      required: field.required,
+      ...typeof field.slot === "string" ? { slot: field.slot } : {},
+      ...typeof field.format === "string" ? { format: field.format } : {},
+      ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
+    };
+    if (!this.name(this.collaborators.contentTextKey.of(result)))
+      throw new ContentError("contract");
+    return result;
+  }
+  validFormat(field) {
+    return field.format === void 0 || (field.token === "event.date" || field.token === "next_event.date") && typeof field.format === "string" && field.format.trim().length > 0 && field.format.length <= 100 && /^[A-Za-z ./_-]+$/u.test(field.format);
+  }
+  image(field, mimeType) {
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" && field.token !== "event.cover" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "objectId",
+      "pageId",
+      "tabId",
+      "required",
+      "fallback",
+      "fit"
+    ]))
+      throw new ContentError("contract");
+    const slides = mimeType === "application/vnd.google-apps.presentation";
+    if (!(slides ? this.name(field.pageId) && field.tabId === void 0 : this.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides && field.fit === "CENTER_INSIDE"))
+      throw new ContentError("contract");
+    this.coverContract(field);
+    const fallback = this.fallback(field.fallback, field.required);
+    return {
+      type: "image",
+      token: field.token,
+      required: field.required,
+      slot: field.slot,
+      objectId: field.objectId,
+      fit: field.fit,
+      ...typeof field.pageId === "string" ? { pageId: field.pageId } : {},
+      ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
+      ...fallback ? { fallback } : {}
+    };
+  }
+  coverContract(field) {
+    if (field.token === "event.cover" && (!field.required || field.fallback !== void 0))
+      throw new ContentError("contract");
+  }
+  fallback(value, required) {
+    if (value === void 0 && required) return void 0;
+    if (!this.record(value) || !this.text(value.url) || !this.text(value.description) || !this.keys(value, ["url", "description"]))
+      throw new ContentError("contract");
+    return { url: value.url, description: value.description };
+  }
+  supported(mimeType) {
+    return [
+      "application/vnd.google-apps.presentation",
+      "application/vnd.google-apps.document"
+    ].includes(mimeType);
+  }
+  text(value) {
+    return typeof value === "string" && value.trim().length > 0 && value.length <= 2e4 && [...value].every((character) => {
+      const code = character.charCodeAt(0);
+      return (code >= 32 || code === 9 || code === 10) && (code < 57344 || code > 63743);
+    });
+  }
+  name(value) {
+    return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
+  }
+  keys(value, keys) {
+    return Object.keys(value).every((key) => keys.includes(key));
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/domain/publication/src/domain/content-fingerprint.ts
+import { createHash } from "node:crypto";
+var ContentFingerprint = class {
+  of(value) {
+    return createHash("sha256").update(value).digest("hex");
+  }
+};
+
+// packages/domain/publication/src/domain/content-manifest-policy.ts
+var ContentManifestPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, fileId, templateId, mimeType) {
+    const manifest = this.state(value, fileId, templateId, mimeType);
+    this.associations(manifest);
+    if (!manifest.pending) return manifest;
+    this.associations({
+      ...manifest,
+      bindings: manifest.pending.bindings
+    });
+    if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, index) => {
+      const prior = manifest.bindings[index];
+      return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || !this.collaborators.contentAnchorIdentity.equal(
+        prior.anchor,
+        binding.anchor
+      );
+    }))
+      throw new ContentError("recovery");
+    return manifest;
+  }
+  state(value, fileId, templateId, mimeType) {
+    if (!this.collaborators.contentContractPolicy.record(value) || value.version !== 1 || value.fileId !== fileId || value.templateId !== templateId || value.mimeType !== mimeType || !this.collaborators.contentContractPolicy.keys(value, [
+      "version",
+      "fileId",
+      "templateId",
+      "mimeType",
+      "contract",
+      "bindings",
+      "pending",
+      "initialRevision",
+      "recoveryId"
+    ]) || !this.collaborators.contentContractPolicy.record(value.contract) || typeof value.contract.kind !== "string")
+      throw new ContentError("recovery");
+    if (value.initialRevision !== void 0 && !this.collaborators.contentContractPolicy.text(
+      value.initialRevision
+    ) || value.recoveryId !== void 0 && (typeof value.recoveryId !== "string" || !/^[a-f0-9]{64}$/.test(value.recoveryId)))
+      throw new ContentError("recovery");
+    const pending = this.pending(value.pending);
+    return {
+      version: 1,
+      fileId,
+      templateId,
+      mimeType,
+      contract: this.collaborators.contentContractPolicy.parse(
+        value.contract,
+        value.contract.kind,
+        mimeType
+      ),
+      bindings: this.collaborators.contentBindingPolicy.parseMany(
+        value.bindings
+      ),
+      ...pending ? { pending } : {},
+      ...typeof value.initialRevision === "string" ? { initialRevision: value.initialRevision } : {},
+      ...typeof value.recoveryId === "string" ? { recoveryId: value.recoveryId } : {}
+    };
+  }
+  pending(value) {
+    if (value === void 0) return void 0;
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.text(value.revision) || !this.collaborators.contentContractPolicy.keys(value, [
+      "revision",
+      "bindings"
+    ]))
+      throw new ContentError("recovery");
+    return {
+      revision: value.revision,
+      bindings: this.collaborators.contentBindingPolicy.parseMany(
+        value.bindings
+      )
+    };
+  }
+  associations(manifest) {
+    const anchors = /* @__PURE__ */ new Set();
+    for (const binding of manifest.bindings) {
+      const field = manifest.contract.fields.find(
+        (field2) => field2.type === binding.type && (field2.type === "text" ? this.collaborators.contentTextKey.of(field2) : field2.slot) === binding.key
+      );
+      const anchor = binding.anchor;
+      const key = this.collaborators.contentAnchorIdentity.locationKey(anchor);
+      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
+        throw new ContentError("recovery");
+      anchors.add(key);
+      this.identity(binding, field);
+      this.rendererAnchor(manifest.mimeType, binding);
+    }
+  }
+  identity(binding, field) {
+    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
+      throw new ContentError("recovery");
+    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
+      throw new ContentError("recovery");
+  }
+  rendererAnchor(mimeType, binding) {
+    const anchor = binding.anchor;
+    if (mimeType.endsWith("presentation")) {
+      if (!anchor.objectId || !anchor.pageId || anchor.tabId || anchor.rangeName)
+        throw new ContentError("recovery");
+    } else if (!anchor.tabId || anchor.segmentId || binding.type === "text" && !anchor.rangeName)
+      throw new ContentError("recovery");
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-fingerprint.ts
+var ContentRecoveryFingerprint = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(recovery) {
+    return this.collaborators.contentFingerprint.of(
+      JSON.stringify({
+        operation: recovery.operation,
+        revision: recovery.revision,
+        bindingId: recovery.bindingId
+      })
+    );
+  }
+  matches(recovery, fingerprint) {
+    if (!fingerprint) return false;
+    const orders = [
+      ["operation", "revision", "bindingId"],
+      ["operation", "bindingId", "revision"],
+      ["revision", "operation", "bindingId"],
+      ["revision", "bindingId", "operation"],
+      ["bindingId", "operation", "revision"],
+      ["bindingId", "revision", "operation"]
+    ];
+    return orders.some(
+      (keys) => this.collaborators.contentFingerprint.of(
+        JSON.stringify(
+          Object.fromEntries(keys.map((key) => [key, recovery[key]]))
+        )
+      ) === fingerprint
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-plan.ts
+var ContentRecoveryPlan = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  active(manifest, recovery) {
+    return recovery && !this.collaborators.contentRecoveryFingerprint.matches(
+      recovery,
+      manifest.recoveryId
+    ) ? recovery : void 0;
+  }
+  beforeRead(manifest, recovery) {
+    if (recovery?.operation !== "remove") return manifest;
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.filter(
+        (binding) => binding.id !== recovery.bindingId
+      )
+    };
+  }
+  settle(original, snapshot, recovery) {
+    if (recovery && snapshot.revision !== recovery.revision)
+      throw new ContentError("revision");
+    let manifest = recovery?.operation === "restore" ? this.restore(original, snapshot, recovery.bindingId) : original;
+    if (manifest.pending)
+      manifest = this.collaborators.contentRenderPlan.settle(
+        manifest,
+        snapshot,
+        false
+      );
+    return recovery ? {
+      ...manifest,
+      recoveryId: this.collaborators.contentRecoveryFingerprint.create(recovery)
+    } : manifest;
+  }
+  restore(manifest, snapshot, bindingId) {
+    if (!manifest.bindings.some((binding) => binding.id === bindingId))
+      throw new ContentError("recovery");
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.map(
+        (binding) => binding.id === bindingId ? {
+          ...binding,
+          applied: this.collaborators.contentRenderPlan.fingerprint(
+            snapshot,
+            binding.id
+          ),
+          desired: void 0
+        } : binding
+      )
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/content-render-plan.ts
+var ContentRenderPlan = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  changes(manifest, snapshot, values) {
+    const changes = [];
+    for (const binding of manifest.bindings) {
+      const matches = snapshot.locations.filter(
+        (location2) => location2.id === binding.id
+      );
+      const location = matches[0];
+      if (matches.length !== 1 || location.fingerprint !== binding.applied)
+        throw new ContentError("conflict");
+      const value = values.find(
+        (item) => item.key === binding.key && item.type === binding.type
+      );
+      if (!value) throw new ContentError("contract");
+      if (binding.desired !== value.fingerprint || binding.type === "text" && location.fingerprint !== value.fingerprint)
+        changes.push({ location, value });
+    }
+    return changes;
+  }
+  pending(manifest, snapshot, changes) {
+    return {
+      ...manifest,
+      pending: {
+        revision: snapshot.revision,
+        bindings: manifest.bindings.map((binding) => {
+          const value = changes.find(
+            (change) => change.location.id === binding.id
+          )?.value;
+          return value ? {
+            ...binding,
+            desired: value.fingerprint,
+            applied: value.type === "text" ? value.fingerprint : binding.applied,
+            speakerId: value.speakerId,
+            hostId: value.hostId,
+            fallback: value.fallback
+          } : binding;
+        })
+      }
+    };
+  }
+  settle(manifest, snapshot, confirmed) {
+    if (!manifest.pending) return manifest;
+    const next = manifest.pending.bindings;
+    const applied = next.every((binding) => {
+      const location = snapshot.locations.find(
+        (item) => item.id === binding.id
+      );
+      if (!location) throw new ContentError("conflict");
+      const prior2 = manifest.bindings.find((item) => item.id === binding.id);
+      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
+    });
+    if (applied)
+      return {
+        ...manifest,
+        pending: void 0,
+        initialRevision: next.every((binding) => binding.desired) ? void 0 : manifest.initialRevision,
+        bindings: next.map((binding) => ({
+          ...binding,
+          applied: this.fingerprint(snapshot, binding.id)
+        }))
+      };
+    const prior = manifest.bindings.every(
+      (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
+    );
+    const uncertainImage = next.some(
+      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
+    );
+    if (!prior)
+      throw new ContentError(uncertainImage ? "recovery" : "conflict");
+    if (uncertainImage && snapshot.revision !== manifest.pending.revision)
+      throw new ContentError("recovery");
+    return { ...manifest, pending: void 0 };
+  }
+  initial(snapshot) {
+    if (!snapshot.locations.length || snapshot.locations.length > 500 || snapshot.locations.some(
+      (location) => !this.collaborators.contentContractPolicy.name(location.id) || !this.collaborators.contentContractPolicy.name(location.key)
+    ) || new Set(snapshot.locations.map((location) => location.id)).size !== snapshot.locations.length || snapshot.locations.some(
+      (location, index) => snapshot.locations.slice(0, index).some(
+        (prior) => this.collaborators.contentAnchorIdentity.equal(
+          prior.anchor,
+          location.anchor
+        )
+      )
+    ))
+      throw new ContentError("location");
+    return snapshot.locations.map((location) => ({
+      id: location.id,
+      type: location.type,
+      key: location.key,
+      anchor: location.anchor,
+      applied: location.fingerprint
+    }));
+  }
+  fingerprint(snapshot, bindingId) {
+    const matches = snapshot.locations.filter(
+      (location) => location.id === bindingId
+    );
+    if (matches.length !== 1) throw new ContentError("conflict");
+    return matches[0].fingerprint;
+  }
+};
+
+// packages/domain/publication/src/domain/content-text-key.ts
+var ContentTextKey = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
+  of(field) {
+    return field.format !== void 0 ? `${field.token}:format:${this.fingerprints.of(field.format)}` : this.reference(field);
+  }
+  reference(field) {
+    const argument = field.format ?? field.slot;
+    return argument === void 0 ? field.token : `${field.token}:${argument}`;
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-link-selection.ts
+var FeedbackLinkSelection = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  select(candidates, now2, timeZone) {
+    const due = candidates.map((event, index) => ({ event, index })).filter(
+      ({ event }) => event.isOpen && !["cancelled", "postponed"].includes(event.occurrenceStatus ?? "") && this.collaborators.feedbackPolicy.isLinkUpdateDue(
+        event.date,
+        now2,
+        timeZone
+      )
+    ).sort((left, right) => left.event.date.localeCompare(right.event.date));
+    const selected = due[0];
+    if (!selected) return {};
+    if (due.some(
+      (candidate) => candidate.index !== selected.index && candidate.event.date === selected.event.date
+    ))
+      return { conflict: "ambiguous-date" };
+    return { index: selected.index };
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-policy.ts
+var FeedbackPolicy = class {
+  validDate(value) {
+    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+  }
+  pollUrl(value) {
+    const url = new URL(value);
+    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
+      url.pathname
+    ) || url.search || url.hash)
+      throw new Error("Feedback link must be an OpenFeedback event URL");
+    return url.href.replace(/\/$/, "");
+  }
+  isLinkUpdateDue(date, now2, timeZone) {
+    if (!this.validDate(date)) return false;
+    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(now2));
+    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
+  }
+};
+
+// packages/domain/publication/src/domain/manual-task-policy.ts
+var ManualPublicationPolicy = class {
+  /** Tracks organizer approvals and manual work required for publication. */
+  planManualPublicationTasks(event) {
+    if (event.occurrenceStatus === "cancelled") {
+      return Object.freeze(
+        this.allTaskKinds().map((kind) => ({
+          kind,
+          status: "not-applicable",
+          reason: "The event is cancelled"
+        }))
+      );
+    }
+    const occurrenceConfirmed = event.occurrenceStatus === "held";
+    return Object.freeze([
+      this.task(
+        "publish-meetup-event",
+        Boolean(event.references.meetup) && event.meetupPublished,
+        "Approve publishing the event to Meetup"
+      ),
+      this.task(
+        "publish-community-event",
+        Boolean(event.references.community),
+        "Publish the event to the CNCF community platform"
+      ),
+      this.task(
+        "create-asset-folder",
+        Boolean(event.references.assets),
+        "Create the event asset folder"
+      ),
+      occurrenceConfirmed ? this.task(
+        "import-attendance",
+        event.attendanceImported,
+        "Import post-event attendance"
+      ) : this.notApplicable(
+        "import-attendance",
+        "Attendance is imported only after occurrence is explicitly confirmed"
+      )
+    ]);
+  }
+  task(kind, completed, reason) {
+    return {
+      kind,
+      status: completed ? "completed" : "pending",
+      reason
+    };
+  }
+  notApplicable(kind, reason) {
+    return { kind, status: "not-applicable", reason };
+  }
+  allTaskKinds() {
+    return [
+      "publish-meetup-event",
+      "publish-community-event",
+      "create-asset-folder",
+      "import-attendance"
+    ];
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-group-url.ts
+var MeetupGroupUrl = class _MeetupGroupUrl {
+  constructor(value) {
+    this.value = value;
+  }
+  value;
+  static parse(value) {
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      return void 0;
+    }
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || value !== `${url.origin}${url.pathname}` || !/^\/[a-z0-9-]+\/$/.test(url.pathname))
+      return void 0;
+    return new _MeetupGroupUrl(value);
+  }
+  static fromEventUrlPrefix(value) {
+    return value.endsWith("events/") ? _MeetupGroupUrl.parse(value.slice(0, -"events/".length)) : void 0;
+  }
+  get eventUrlPrefix() {
+    return `${this.value}events/`;
+  }
+  get origin() {
+    return new URL(this.value).origin;
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url.ts
+var MeetupEventUrl = class _MeetupEventUrl {
+  constructor(group, identifier) {
+    this.group = group;
+    this.identifier = identifier;
+  }
+  group;
+  identifier;
+  static parse(value, group) {
+    if (typeof value !== "string") return void 0;
+    const match = /^(.*\/)events\/([1-9]\d*)\/?$/.exec(value);
+    if (!match || match[0] !== value) return void 0;
+    const parsedGroup = MeetupGroupUrl.parse(match[1]);
+    if (!parsedGroup || group && parsedGroup.value !== group.value)
+      return void 0;
+    return new _MeetupEventUrl(parsedGroup, match[2]);
+  }
+  get value() {
+    return `${this.group.eventUrlPrefix}${this.identifier}/`;
+  }
+  get id() {
+    return this.identifier;
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url-policy.ts
+var MeetupEventUrlPolicy = class {
+  constructor(collaborators, prefix) {
+    this.collaborators = collaborators;
+    this.prefix = prefix;
+  }
+  collaborators;
+  prefix;
+  evaluate(references) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(this.prefix);
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
+      references,
+      path: "meetup",
+      isValid: (value) => !!group && !!MeetupEventUrl.parse(value, group),
+      code: "publication.meetup-url.invalid",
+      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/model.ts
+var PublicationDiagnostics = class {
+  applyPublicationPatch(references, patch) {
+    const result = { ...references };
+    for (const operation of patch.operations) {
+      switch (operation.path) {
+        case "meetup":
+          result.meetup = operation.value;
+          break;
+        case "community":
+          result.community = operation.value;
+          break;
+        case "feedback":
+          result.feedback = operation.value;
+          break;
+        case "assets":
+          result.assets = operation.value;
+          break;
+      }
+    }
+    return result;
+  }
+};
+
+// packages/domain/publication/src/domain/pdf-export-policy.ts
+var PdfExportPolicy = class {
+  name(sourceName, date) {
+    const clipped = sourceName.slice(0, 187);
+    const title = clipped.includes(date) ? clipped : `${date} - ${clipped}`;
+    return `${title.slice(0, 200)}.pdf`;
+  }
+  matches(snapshot, observed) {
+    return Boolean(
+      snapshot && observed && snapshot.name === observed.name && snapshot.fingerprint === observed.fingerprint
+    );
+  }
+  current(snapshot, sourceVersion, name) {
+    return snapshot?.contract === "pdf-v1" && snapshot.sourceVersion === sourceVersion && snapshot.name === name;
+  }
+  sameIdentity(left, right) {
+    return left.eventId === right.eventId && left.folderId === right.folderId && left.sourceId === right.sourceId && left.templateId === right.templateId;
+  }
+  recover(state, observed) {
+    if (!state) {
+      if (observed) throw new PdfExportError("recovery");
+      return void 0;
+    }
+    if (observed && observed.id !== state.fileId)
+      throw new PdfExportError("recovery");
+    if (state.pending && this.matches(state.pending, observed))
+      return state.pending;
+    if (state.confirmed && this.matches(state.confirmed, observed))
+      return state.confirmed;
+    if (state.confirmed || observed) throw new PdfExportError("conflict");
+    return void 0;
+  }
+};
+
+// packages/domain/publication/src/domain/presentation-file-url.ts
+var PresentationFileUrl = class {
+  normalize(value) {
+    if (!value?.trim()) return void 0;
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== "https:" || url.username || url.password || url.port)
+        return void 0;
+      const presentation = url.hostname === "docs.google.com" && /^\/presentation\/d\/[a-zA-Z0-9_-]+(?:\/(?:edit|view|preview|present))?\/?$/.test(
+        url.pathname
+      );
+      const file = url.hostname === "drive.google.com" && /^\/file\/d\/[a-zA-Z0-9_-]+(?:\/(?:view|preview|edit))?\/?$/.test(
+        url.pathname
+      );
+      return presentation || file ? url.href : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/public-asset-url.ts
+var PublicAssetUrl = class {
+  valid(value) {
+    if (!value) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(
+        (key) => /token|signature|credential|secret|key|auth/i.test(key)
+      );
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/publication-link-evaluation.ts
+var PublicationLinkEvaluation = class {
+  evaluateLink({
+    references,
+    path,
+    isValid,
+    code,
+    message
+  }) {
+    const raw = references[path];
+    if (raw === void 0 || raw === "") {
+      return this.emptyEvaluation(references);
+    }
+    const normalized = raw.trim().replace(/\/$/, "");
+    if (!isValid(raw.trim())) {
+      return {
+        references,
+        diagnostics: [
+          Object.freeze({
+            code,
+            severity: "error",
+            field: path,
+            message
+          })
+        ],
+        patch: Object.freeze({ operations: [] })
+      };
+    }
+    if (raw === normalized) {
+      return this.emptyEvaluation(references);
+    }
+    const operation = Object.freeze({
+      op: "replace",
+      path,
+      value: normalized,
+      reason: "Trim URL and remove its trailing slash"
+    });
+    return {
+      references: { ...references, [path]: normalized },
+      diagnostics: [
+        Object.freeze({
+          code: `publication.${path}.normalized`,
+          severity: "info",
+          field: path,
+          message: `${path} URL can be normalized safely`,
+          fixAvailable: true
+        })
+      ],
+      patch: Object.freeze({ operations: Object.freeze([operation]) })
+    };
+  }
+  emptyEvaluation(references) {
+    return {
+      references,
+      diagnostics: [],
+      patch: Object.freeze({ operations: [] })
+    };
+  }
+  isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+  matchesPrefix(value, prefixes, identifierPattern) {
+    const normalized = value.replace(/\/$/, "");
+    return this.isHttpsUrl(normalized) && prefixes.some((prefix) => {
+      if (!normalized.startsWith(prefix)) return false;
+      const identifier = normalized.slice(prefix.length);
+      return Boolean(identifier) && identifierPattern.test(identifier);
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/publication-url-policy-engine.ts
+var PublicationUrlPolicyEngine = class {
+  constructor(collaborators, policies) {
+    this.collaborators = collaborators;
+    this.policies = policies;
+  }
+  collaborators;
+  policies;
+  evaluate(references) {
+    let normalized = references;
+    const diagnostics = [];
+    const operations = [];
+    for (const policy of this.policies) {
+      const result = policy.evaluate(normalized);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalized = this.collaborators.publicationDiagnostics.applyPublicationPatch(
+        normalized,
+        result.patch
+      );
+    }
+    return {
+      references: normalized,
+      diagnostics: Object.freeze(diagnostics),
+      patch: Object.freeze({ operations: Object.freeze(operations) })
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/scheduled-event-policy.ts
+var ScheduledEventPolicy = class {
+  valid(event, now2) {
+    if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
+    return this.validSchedule(event, now2);
+  }
+  validSchedule(event, now2) {
+    if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
+    const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
+    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
+      return false;
+    try {
+      const format = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: event.timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      });
+      const start = this.instant(event.date, event.startTime, format);
+      const end = this.instant(event.date, event.endTime, format);
+      return start !== void 0 && end !== void 0 && start > Date.parse(now2) && end > start;
+    } catch {
+      return false;
+    }
+  }
+  validTime(value) {
+    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+  }
+  instant(date, time, format) {
+    const reference = Date.parse(`${date}T${time}:00Z`);
+    let match;
+    for (let offset = -840; offset <= 840; offset += 15) {
+      const candidate = reference + offset * 6e4;
+      if (format.format(candidate) !== `${date} ${time}`) continue;
+      if (match !== void 0) return void 0;
+      match = candidate;
+    }
+    return match;
+  }
+};
+
+// packages/domain/publication/src/dependency-composition.ts
+var PublicationDomainComposition = class {
+  pdfExportPolicy() {
+    return new PdfExportPolicy();
+  }
+  reconcileSlidePdf(...args) {
+    return new ReconcileSlidePdf(this.pdfExportPolicy(), ...args);
+  }
+  assetFolderUrlPolicy(...args) {
+    return new AssetFolderUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  communityEventUrlPolicy(...args) {
+    return new CommunityEventUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  contentAnchorIdentity() {
+    return new ContentAnchorIdentity();
+  }
+  contentBindingPolicy() {
+    return new ContentBindingPolicy({
+      contentContractPolicy: this.contentContractPolicy()
+    });
+  }
+  contentContractPolicy() {
+    return new ContentContractPolicy({ contentTextKey: this.contentTextKey() });
+  }
+  contentFingerprint() {
+    return new ContentFingerprint();
+  }
+  contentManifestPolicy() {
+    return new ContentManifestPolicy({
+      contentAnchorIdentity: this.contentAnchorIdentity(),
+      contentContractPolicy: this.contentContractPolicy(),
+      contentBindingPolicy: this.contentBindingPolicy(),
+      contentTextKey: this.contentTextKey()
+    });
+  }
+  contentRecoveryFingerprint() {
+    return new ContentRecoveryFingerprint({
+      contentFingerprint: this.contentFingerprint()
+    });
+  }
+  contentRecoveryPlan() {
+    return new ContentRecoveryPlan({
+      contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
+      contentRenderPlan: this.contentRenderPlan()
+    });
+  }
+  contentRenderPlan() {
+    return new ContentRenderPlan({
+      contentContractPolicy: this.contentContractPolicy(),
+      contentAnchorIdentity: this.contentAnchorIdentity()
+    });
+  }
+  contentTextKey() {
+    return new ContentTextKey(this.contentFingerprint());
+  }
+  feedbackLinkSelection() {
+    return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
+  }
+  feedbackPolicy() {
+    return new FeedbackPolicy();
+  }
+  manualPublicationPolicy() {
+    return new ManualPublicationPolicy();
+  }
+  meetupEventUrlPolicy(...args) {
+    return new MeetupEventUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  presentationFileUrl() {
+    return new PresentationFileUrl();
+  }
+  publicAssetUrl() {
+    return new PublicAssetUrl();
+  }
+  publicationDiagnostics() {
+    return new PublicationDiagnostics();
+  }
+  publicationLinkEvaluation() {
+    return new PublicationLinkEvaluation();
+  }
+  publicationUrlPolicyEngine(...args) {
+    return new PublicationUrlPolicyEngine(
+      { publicationDiagnostics: this.publicationDiagnostics() },
+      ...args
+    );
+  }
+  reconcileAssetContent(templates, ...args) {
+    return new ReconcileAssetContent(
+      {
+        contentContractPolicy: this.contentContractPolicy(),
+        contentRenderPlan: this.contentRenderPlan(),
+        contentTextKey: this.contentTextKey(),
+        contentManifestPolicy: this.contentManifestPolicy(),
+        contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
+        contentRecoveryPlan: this.contentRecoveryPlan(),
+        createResolveContentValues: (...args2) => this.resolveContentValues(templates, ...args2)
+      },
+      ...args
+    );
+  }
+  reconcileAssetFile(names, ...args) {
+    return new ReconcileAssetFile(names, ...args);
+  }
+  assetFileName(templates) {
+    return new AssetFileName(templates);
+  }
+  reconcileEventAssets(names, ...args) {
+    return new ReconcileEventAssets(
+      {
+        names,
+        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(names, ...args2)
+      },
+      ...args
+    );
+  }
+  resolveContentValues(templates, ...args) {
+    return new ResolveContentValues(
+      {
+        templates,
+        contentTextKey: this.contentTextKey(),
+        contentContractPolicy: this.contentContractPolicy(),
+        contentFingerprint: this.contentFingerprint()
+      },
+      ...args
+    );
+  }
+  scheduledEventPolicy() {
+    return new ScheduledEventPolicy();
+  }
+};
+
+// packages/domain/publication/src/domain/community-event-policy.ts
+var CommunityEventPolicy = class {
+  constructor(schedule) {
+    this.schedule = schedule;
+  }
+  schedule;
+  valid(event, now2) {
+    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
+  }
+  venue(venue) {
+    return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
+  }
+  registration(value) {
+    return Number.isSafeInteger(value.capacity) && value.capacity > 0 && value.capacity <= 1e5 && typeof value.waitlist === "boolean" && typeof value.approvalRequired === "boolean" && typeof value.reminder === "boolean" && !(value.waitlist && value.approvalRequired);
+  }
+  text(value, maximum) {
+    return value.trim().length > 0 && Buffer.byteLength(value, "utf8") <= maximum && ![...value].some(
+      (character) => character.charCodeAt(0) < 32 && !"\n\r	".includes(character)
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/community-group-url.ts
+var CommunityGroupUrl = class _CommunityGroupUrl {
+  constructor(eventUrlPrefix, origin, community, group) {
+    this.eventUrlPrefix = eventUrlPrefix;
+    this.origin = origin;
+    this.community = community;
+    this.group = group;
+  }
+  eventUrlPrefix;
+  origin;
+  community;
+  group;
+  static parse(value) {
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      return void 0;
+    }
+    const match = /^\/([a-z0-9-]+)\/group\/([a-z0-9-]+)\/event\/$/.exec(
+      url.pathname
+    );
+    if (!match || url.protocol !== "https:" || url.username || url.password || value !== `${url.origin}${url.pathname}`)
+      return void 0;
+    return new _CommunityGroupUrl(value, url.origin, match[1], match[2]);
+  }
+};
+
+// packages/domain/publication/src/domain/content-media-changed-error.ts
+var ContentMediaChangedError = class extends Error {
+};
+
+// packages/domain/publication/src/domain/feedback-resolution-error.ts
+var FeedbackResolutionError = class extends Error {
+  constructor(kind) {
+    super(
+      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
+    );
+    this.kind = kind;
+    this.name = "FeedbackResolutionError";
+  }
+  kind;
+};
+
 // packages/application/journey/src/communication/communication-diagnostic-projection.ts
 var COMMUNICATION_MESSAGES = {
   "duplicate-intent": "A duplicate communication intent was ignored.",
@@ -63687,7 +65619,7 @@ var CommunicationIdempotency = class {
 };
 
 // packages/domain/communication/src/mail-batch-fingerprint.ts
-import { createHash } from "node:crypto";
+import { createHash as createHash2 } from "node:crypto";
 var MailBatchFingerprint = class {
   create(eventDate, timeZone, intents) {
     const messages3 = intents.map((intent) => ({
@@ -63699,7 +65631,7 @@ var MailBatchFingerprint = class {
         typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
       ])
     })).sort((a, b2) => a.id.localeCompare(b2.id));
-    return createHash("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages3 })).digest("hex");
+    return createHash2("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages3 })).digest("hex");
   }
 };
 
@@ -65057,1934 +66989,6 @@ var SpeakerCatalogHistoryError = class extends Error {
     super("Speaker catalog allocation history is unavailable.");
     this.name = "SpeakerCatalogHistoryError";
   }
-};
-
-// packages/domain/publication/src/domain/content-error.ts
-var ContentError = class extends Error {
-  constructor(code) {
-    super(
-      `Asset content ${code}; review the template contract and managed bindings`
-    );
-    this.code = code;
-    this.name = "ContentError";
-  }
-  code;
-};
-
-// packages/domain/publication/src/application/reconcile-asset-content.ts
-var ReconcileAssetContent = class {
-  constructor(collaborators, manifests, renderers, images) {
-    this.collaborators = collaborators;
-    this.manifests = manifests;
-    this.renderers = renderers;
-    this.images = images;
-  }
-  collaborators;
-  manifests;
-  renderers;
-  images;
-  async preflight(templateId, kind, mimeType, value, model) {
-    const contract = this.collaborators.contentContractPolicy.parse(
-      value,
-      kind,
-      mimeType
-    );
-    await this.collaborators.createResolveContentValues(this.images).execute(contract, model);
-    this.collaborators.contentRenderPlan.initial(
-      await this.renderer(mimeType).read(templateId, contract)
-    );
-  }
-  async execute(input) {
-    const renderer = this.renderer(input.mimeType);
-    let manifest = await this.load(input, renderer);
-    if (!manifest) return { status: "copy-only", fallback: false };
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const recovered = await this.recover(input, manifest, renderer);
-      manifest = recovered.manifest;
-      const snapshot = recovered.snapshot;
-      const values = await this.collaborators.createResolveContentValues(this.images).execute(
-        {
-          ...manifest.contract,
-          fields: manifest.contract.fields.filter(
-            (field) => recovered.manifest.bindings.some(
-              (binding) => binding.key === (field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot)
-            )
-          )
-        },
-        input.model
-      );
-      const changes = this.collaborators.contentRenderPlan.changes(
-        manifest,
-        snapshot,
-        values
-      );
-      if (!changes.length)
-        return {
-          status: "ready",
-          fallback: values.some((value) => value.fallback)
-        };
-      manifest = this.collaborators.contentRenderPlan.pending(
-        manifest,
-        snapshot,
-        changes
-      );
-      await this.manifests.save(input.folderId, manifest);
-      const written = await this.write(
-        input,
-        renderer,
-        manifest,
-        snapshot,
-        changes,
-        values,
-        attempt === 0
-      );
-      manifest = written.manifest;
-      if (written.complete)
-        return {
-          status: "ready",
-          fallback: values.some((value) => value.fallback)
-        };
-    }
-    return { status: "pending", fallback: false };
-  }
-  async write(input, renderer, manifest, snapshot, changes, values, retry) {
-    let confirmed = false;
-    let failure;
-    let current;
-    try {
-      const revision = await renderer.apply(input.fileId, snapshot, changes);
-      current = await renderer.read(
-        input.fileId,
-        manifest.contract,
-        manifest.bindings
-      );
-      confirmed = current.revision === revision;
-    } catch (error2) {
-      if (error2 instanceof ContentError && error2.code === "revision") {
-        const retriable = { ...manifest, pending: void 0 };
-        await this.manifests.save(input.folderId, retriable);
-        return { manifest: retriable, complete: false };
-      }
-      failure = { error: error2 };
-      current = await renderer.read(
-        input.fileId,
-        manifest.contract,
-        manifest.bindings,
-        manifest.pending?.revision
-      );
-    }
-    try {
-      const settled = this.collaborators.contentRenderPlan.settle(
-        manifest,
-        current,
-        confirmed
-      );
-      const complete = !this.collaborators.contentRenderPlan.changes(
-        settled,
-        current,
-        values
-      ).length;
-      if (failure && !complete) {
-        if (retry) return { manifest: settled, complete };
-        throw failure.error;
-      }
-      await this.manifests.save(input.folderId, settled);
-      return { manifest: settled, complete };
-    } catch (error2) {
-      throw failure ? failure.error : error2;
-    }
-  }
-  async load(input, renderer) {
-    const stored = await this.manifests.load(input.folderId, input.fileId);
-    if (stored !== void 0)
-      return this.collaborators.contentManifestPolicy.parse(
-        stored,
-        input.fileId,
-        input.templateId,
-        input.mimeType
-      );
-    if (!input.fresh && input.recovery?.operation !== "enroll") {
-      if (input.managed) throw new ContentError("recovery");
-      return void 0;
-    }
-    const contract = this.collaborators.contentContractPolicy.parse(
-      input.contract,
-      input.kind,
-      input.mimeType
-    );
-    const snapshot = await renderer.read(input.fileId, contract);
-    if (input.recovery && snapshot.revision !== input.recovery.revision)
-      throw new ContentError("revision");
-    const bindings = this.collaborators.contentRenderPlan.initial(snapshot);
-    return {
-      version: 1,
-      fileId: input.fileId,
-      templateId: input.templateId,
-      mimeType: input.mimeType,
-      contract,
-      bindings,
-      initialRevision: snapshot.revision,
-      recoveryId: input.recovery ? this.collaborators.contentRecoveryFingerprint.create(input.recovery) : void 0,
-      pending: { revision: snapshot.revision, bindings }
-    };
-  }
-  async recover(input, original, renderer) {
-    const recovery = this.collaborators.contentRecoveryPlan.active(
-      original,
-      input.recovery
-    );
-    const prepared = this.collaborators.contentRecoveryPlan.beforeRead(
-      original,
-      recovery
-    );
-    const snapshot = await renderer.read(
-      input.fileId,
-      prepared.contract,
-      prepared.bindings,
-      prepared.initialRevision
-    );
-    const manifest = this.collaborators.contentRecoveryPlan.settle(
-      prepared,
-      snapshot,
-      recovery
-    );
-    if (manifest !== original)
-      await this.manifests.save(input.folderId, manifest);
-    return { manifest, snapshot };
-  }
-  renderer(mimeType) {
-    const renderer = this.renderers[mimeType];
-    if (!renderer) throw new ContentError("contract");
-    return renderer;
-  }
-};
-
-// packages/domain/publication/src/application/reconcile-event-assets.ts
-var ReconcileEventAssets = class {
-  constructor(collaborators, repository, content) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.content = content;
-  }
-  collaborators;
-  repository;
-  content;
-  async execute(input) {
-    const date = input.date.trim();
-    const host = input.hostName.trim();
-    if (!this.validDate(date) || !host) {
-      return {
-        files: {},
-        diagnostics: [
-          this.diagnostic(
-            "prerequisites",
-            "A valid event date and resolved host are required to reconcile assets",
-            false
-          )
-        ]
-      };
-    }
-    const templates = await this.repository.listTemplates();
-    this.validateTemplates(templates, date);
-    const month = new Intl.DateTimeFormat("en-US", {
-      month: "long",
-      timeZone: "UTC"
-    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
-    const request2 = {
-      eventId: input.eventId,
-      idempotencyKey: `${input.eventId}:assets:v1`,
-      title: `${date} - ${month} - ${host}`
-    };
-    const diagnostics = [];
-    let container = await this.repository.findContainer(request2);
-    if (!container || container.name !== request2.title) {
-      diagnostics.push(
-        this.diagnostic(
-          "container.drift",
-          "The event asset folder must be created or renamed",
-          input.mode === "fix"
-        )
-      );
-      if (input.mode === "fix")
-        container = await this.repository.ensureContainer(request2);
-    }
-    if (!container) return { files: {}, diagnostics };
-    if (container.url !== input.existingUrl) {
-      diagnostics.push(
-        this.diagnostic(
-          "link.drift",
-          "The event asset link must reference the managed folder",
-          input.mode === "fix"
-        )
-      );
-    }
-    return this.reconcileFiles(
-      container,
-      templates,
-      { ...input, date },
-      diagnostics
-    );
-  }
-  async reconcileFiles(container, templates, input, diagnostics) {
-    const currentFiles = await this.repository.listFiles(container.id);
-    const files = {};
-    let presentation;
-    const content = {};
-    const reconcile = this.collaborators.createReconcileAssetFile(
-      this.repository,
-      this.content
-    );
-    for (const template of templates) {
-      const result = await reconcile.execute({
-        ...input,
-        template,
-        container,
-        currentFiles,
-        diagnostics
-      });
-      if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
-      if (template.kind === "slides" && result.file)
-        presentation = { ...result.file, templateId: template.id };
-      content[template.kind] = result.status;
-    }
-    return { container, files, content, diagnostics, presentation };
-  }
-  diagnostic(code, message, fixApplied) {
-    return {
-      code: `publication.assets.${code}`,
-      field: "assets",
-      severity: "warning",
-      message,
-      fixAvailable: code !== "prerequisites",
-      fixApplied
-    };
-  }
-  validDate(date) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
-    const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-    return !Number.isNaN(instant.valueOf()) && instant.toISOString().slice(0, 10) === date;
-  }
-  validateTemplates(templates, date) {
-    if (!templates.length || templates.some(
-      (template) => !template.id || !template.name.trim() || !template.kind.trim()
-    ) || new Set(templates.map(({ id }) => id)).size !== templates.length || new Set(templates.map(({ kind }) => kind)).size !== templates.length) {
-      throw new Error(
-        "Asset templates must have unique IDs, unique kinds, and non-empty names"
-      );
-    }
-    for (const template of templates)
-      this.collaborators.names.render(template.name, date);
-  }
-};
-
-// packages/domain/publication/src/domain/pdf-export-error.ts
-var PdfExportError = class extends Error {
-  constructor(code) {
-    super(`PDF export could not complete: ${code}`);
-    this.code = code;
-    this.name = "PdfExportError";
-  }
-  code;
-};
-
-// packages/domain/publication/src/application/reconcile-slide-pdf.ts
-var ReconcileSlidePdf = class {
-  constructor(policy, source, files, states) {
-    this.policy = policy;
-    this.source = source;
-    this.files = files;
-    this.states = states;
-  }
-  policy;
-  source;
-  files;
-  states;
-  async execute(input) {
-    if (!input.eligible)
-      return { status: "not-applicable", updated: false, diagnostics: [] };
-    if (!input.sourceReady) return this.failure("source-pending");
-    if (!input.container || !input.source?.templateId)
-      return this.failure("source");
-    const identity = {
-      eventId: input.container.eventId,
-      folderId: input.container.id,
-      sourceId: input.source.id,
-      templateId: input.source.templateId
-    };
-    try {
-      return await this.reconcile(
-        identity,
-        this.policy.name(input.source.name, input.date)
-      );
-    } catch (error2) {
-      if (!(error2 instanceof PdfExportError)) throw error2;
-      return this.failure(error2.code);
-    }
-  }
-  async reconcile(identity, name) {
-    const state = await this.states.load(identity);
-    const observed = await this.files.find(identity, state?.fileId);
-    const confirmed = this.policy.recover(state, observed);
-    if (state?.pending && confirmed === state.pending) {
-      await this.states.save({ identity, fileId: state.fileId, confirmed });
-    }
-    const sourceVersion = await this.source.observe(identity);
-    if (observed && this.policy.current(confirmed, sourceVersion, name)) {
-      if (state?.pending && confirmed !== state.pending)
-        await this.states.save({ identity, fileId: state.fileId, confirmed });
-      const published2 = await this.files.placeInPublicFolder(
-        identity,
-        observed
-      );
-      return { status: "ready", ...published2, diagnostics: [] };
-    }
-    const binary = await this.source.export(identity);
-    if (await this.source.observe(identity) !== sourceVersion)
-      throw new PdfExportError("revision");
-    const pending = {
-      sourceVersion,
-      contract: "pdf-v1",
-      name,
-      fingerprint: binary.fingerprint
-    };
-    const next = {
-      identity,
-      fileId: state?.fileId ?? await this.files.reserveId(),
-      confirmed,
-      pending
-    };
-    await this.states.save(next);
-    await this.files.write({
-      identity,
-      fileId: next.fileId,
-      snapshot: pending,
-      binary,
-      previous: observed
-    });
-    const uploaded = await this.confirm(
-      next,
-      await this.files.find(identity, next.fileId)
-    );
-    const published = await this.files.placeInPublicFolder(identity, uploaded);
-    return {
-      status: "ready",
-      url: published.url,
-      updated: true,
-      diagnostics: []
-    };
-  }
-  async confirm(state, observed) {
-    if (observed?.id !== state.fileId || !this.policy.matches(state.pending, observed)) {
-      throw new PdfExportError("invalid");
-    }
-    await this.states.save({
-      identity: state.identity,
-      fileId: state.fileId,
-      confirmed: state.pending
-    });
-    return observed;
-  }
-  failure(code) {
-    return {
-      status: code === "conflict" ? "conflict" : code === "recovery" ? "recovery-required" : "pending",
-      updated: false,
-      diagnostics: [
-        {
-          code: `publication.assets.pdf.${code}`,
-          field: "assets",
-          severity: "warning",
-          message: "The presentation PDF could not be reconciled",
-          fixAvailable: false
-        }
-      ]
-    };
-  }
-};
-
-// packages/domain/publication/src/application/reconcile-asset-file.ts
-var ReconcileAssetFile = class {
-  constructor(names, repository, content) {
-    this.names = names;
-    this.repository = repository;
-    this.content = content;
-  }
-  names;
-  repository;
-  content;
-  async execute(input) {
-    const matches = input.currentFiles.filter(
-      (file2) => file2.templateId === input.template.id
-    );
-    if (matches.length > 1)
-      throw new Error(
-        "Ambiguous event asset copies require manual reconciliation"
-      );
-    let file = matches[0];
-    const fresh = !file;
-    try {
-      await this.preflight(input, file);
-      if (!file) file = await this.copyOrRename(input);
-      if (!file)
-        return {
-          status: input.template.contentContract ? "pending" : "copy-only"
-        };
-      file = await this.enroll(input, file);
-      const status = await this.render(input, file, fresh);
-      if (!fresh && (status === "ready" || status === "copy-only"))
-        file = await this.copyOrRename(input, file);
-      return { file, status };
-    } catch (error2) {
-      if (!(error2 instanceof ContentError)) throw error2;
-      return this.failed(file, error2, input.diagnostics);
-    }
-  }
-  failed(file, error2, diagnostics) {
-    diagnostics.push(this.diagnostic(error2.code));
-    return {
-      file,
-      status: error2.code === "conflict" ? "conflict" : error2.code === "recovery" ? "recovery-required" : "pending"
-    };
-  }
-  async enroll(input, file) {
-    if (input.mode === "fix" && input.recovery?.[file.id]?.operation === "enroll" && !file.contentManaged) {
-      file = await this.repository.updateFile(
-        { ...file, contentManaged: true },
-        input.template,
-        file.name
-      );
-    }
-    return file;
-  }
-  async preflight(input, file) {
-    if (file && (file.contentManaged || input.recovery?.[file.id]?.operation !== "enroll"))
-      return;
-    if (!input.template.contentContract) return;
-    if (!this.content || !input.model) throw new ContentError("missing");
-    await this.content.preflight(
-      file?.id ?? input.template.id,
-      input.template.kind,
-      input.template.mimeType ?? "",
-      input.template.contentContract,
-      input.model
-    );
-  }
-  async render(input, file, fresh) {
-    const { template } = input;
-    const recovery = input.recovery?.[file.id];
-    if (!file.contentManaged && !recovery && (!fresh || !template.contentContract))
-      return "copy-only";
-    if (input.mode === "check" || !this.content || !input.model)
-      return "pending";
-    const outcome = await this.content.execute({
-      folderId: input.container.id,
-      fileId: file.id,
-      templateId: template.id,
-      kind: template.kind,
-      mimeType: file.mimeType ?? template.mimeType ?? "",
-      contract: template.contentContract,
-      fresh,
-      managed: file.contentManaged,
-      model: input.model,
-      recovery
-    });
-    if (outcome.fallback) input.diagnostics.push(this.diagnostic("fallback"));
-    if (outcome.status === "pending")
-      input.diagnostics.push(this.diagnostic("revision"));
-    return outcome.status;
-  }
-  async copyOrRename(input, file) {
-    const { template } = input;
-    const name = this.names.render(template.name, input.date);
-    if (file?.name === name && file.kind === template.kind) return file;
-    input.diagnostics.push({
-      code: "publication.assets.file.drift",
-      field: "assets",
-      severity: "warning",
-      message: "An event template copy is missing or its name or template metadata has changed",
-      fixAvailable: true,
-      fixApplied: input.mode === "fix"
-    });
-    if (input.mode !== "fix") return file;
-    return file ? this.repository.updateFile(file, template, name) : this.repository.copyTemplate(input.container.id, template, name);
-  }
-  diagnostic(code) {
-    return {
-      code: `publication.assets.content.${code}`,
-      field: "assets",
-      severity: "warning",
-      message: "Review the asset content status, template contract, public inputs and recovery instructions before using this file",
-      fixAvailable: false
-    };
-  }
-};
-
-// packages/domain/publication/src/application/resolve-content-values.ts
-var ResolveContentValues = class {
-  constructor(collaborators, images) {
-    this.collaborators = collaborators;
-    this.images = images;
-  }
-  collaborators;
-  images;
-  async execute(contract, model) {
-    const values = [];
-    for (const field of contract.fields) {
-      if (field.type === "image") {
-        values.push(await this.image(field, model));
-        continue;
-      }
-      const key = this.collaborators.contentTextKey.of(field);
-      const text = this.text(field, model);
-      if (!this.collaborators.contentContractPolicy.text(text))
-        throw new ContentError("missing");
-      values.push({
-        type: "text",
-        key,
-        text,
-        fingerprint: this.collaborators.contentFingerprint.of(text)
-      });
-    }
-    return values;
-  }
-  text(field, model) {
-    if (field.format !== void 0) {
-      const date = field.token === "event.date" || field.token === "next_event.date" ? model.dates?.[field.token] : void 0;
-      if (date) {
-        return this.collaborators.templates.value({
-          kind: "date",
-          value: date,
-          format: field.format
-        });
-      }
-      return field.required ? void 0 : field.fallback;
-    }
-    const text = model.text[this.collaborators.contentTextKey.of(field)] || (!field.required ? field.fallback : void 0);
-    return text === void 0 ? void 0 : this.collaborators.templates.value({ kind: "text", value: text });
-  }
-  async image(field, model) {
-    if (field.token === "event.cover") return this.cover(field, model);
-    const host = field.token === "host.logo";
-    const picture = host ? model.hostLogo : model.pictures[field.slot];
-    const hostId = host ? model.hostLogo?.hostId : void 0;
-    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
-    const identity = hostId ?? speakerId;
-    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
-    try {
-      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
-        identity ?? ""
-      ))
-        throw new ContentError("image");
-      const validated = await this.images.validate(picture);
-      return {
-        type: "image",
-        key: field.slot,
-        image: validated.source,
-        fingerprint: this.collaborators.contentFingerprint.of(
-          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
-        ),
-        speakerId,
-        hostId,
-        fallback: false,
-        fit: field.fit
-      };
-    } catch {
-      if (field.required || !field.fallback || !fallback)
-        throw new ContentError("image");
-      const validated = fallback;
-      return {
-        type: "image",
-        key: field.slot,
-        image: validated.source,
-        fingerprint: this.collaborators.contentFingerprint.of(
-          `${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`
-        ),
-        fallback: true,
-        fit: field.fit
-      };
-    }
-  }
-  async cover(field, model) {
-    if (!model.cover) throw new ContentError("missing");
-    const validated = await this.images.validate(model.cover);
-    if (validated.fingerprint !== model.cover.fingerprint)
-      throw new ContentError("image");
-    return {
-      type: "image",
-      key: field.slot,
-      image: validated.source,
-      fingerprint: this.collaborators.contentFingerprint.of(
-        `${validated.fingerprint}:${model.cover.id}:${model.cover.description}:${field.fit}`
-      ),
-      fit: field.fit,
-      fallback: false
-    };
-  }
-};
-
-// packages/domain/publication/src/domain/asset-file-name.ts
-var AssetFileName = class {
-  constructor(templates) {
-    this.templates = templates;
-  }
-  templates;
-  render(templateName, date) {
-    return this.templates.render(templateName, (part) => {
-      if (part.entity !== "event")
-        throw new Error("Unsupported asset filename entity");
-      if (part.property !== "date")
-        throw new Error("Unsupported event filename property");
-      if (!part.argument)
-        throw new Error("Asset filename date format is required");
-      return { kind: "date", value: date, format: part.argument };
-    });
-  }
-};
-
-// packages/domain/publication/src/domain/asset-folder-url-policy.ts
-var AssetFolderUrlPolicy = class {
-  constructor(collaborators, prefix) {
-    this.collaborators = collaborators;
-    this.prefix = prefix;
-  }
-  collaborators;
-  prefix;
-  evaluate(references) {
-    return this.collaborators.publicationLinkEvaluation.evaluateLink({
-      references,
-      path: "assets",
-      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
-        value,
-        [this.prefix],
-        /^[a-zA-Z0-9_-]+$/
-      ),
-      code: "publication.asset-url.invalid",
-      message: `Asset folder URL must start with ${this.prefix} and end with a folder identifier`
-    });
-  }
-};
-
-// packages/domain/publication/src/domain/community-event-url-policy.ts
-var CommunityEventUrlPolicy = class {
-  constructor(collaborators, prefixes) {
-    this.collaborators = collaborators;
-    this.prefixes = prefixes;
-  }
-  collaborators;
-  prefixes;
-  evaluate(references) {
-    return this.collaborators.publicationLinkEvaluation.evaluateLink({
-      references,
-      path: "community",
-      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
-        value,
-        this.prefixes,
-        /^[0-9a-z-]+$/
-      ),
-      code: "publication.community-url.invalid",
-      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
-    });
-  }
-};
-
-// packages/domain/publication/src/domain/content-anchor-identity.ts
-var ContentAnchorIdentity = class {
-  equal(left, right) {
-    return left.objectId === right.objectId && left.pageId === right.pageId && left.tabId === right.tabId && left.segmentId === right.segmentId && left.rangeName === right.rangeName && left.start === right.start && left.end === right.end;
-  }
-  locationKey(anchor) {
-    return JSON.stringify([
-      anchor.pageId,
-      anchor.tabId,
-      anchor.segmentId,
-      anchor.objectId,
-      anchor.rangeName
-    ]);
-  }
-};
-
-// packages/domain/publication/src/domain/content-binding-policy.ts
-var ContentBindingPolicy = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  parseMany(value) {
-    if (!Array.isArray(value) || value.length > 500)
-      throw new ContentError("recovery");
-    const bindings = value.map((item) => this.parse(item));
-    if (new Set(bindings.map((binding) => binding.id)).size !== bindings.length)
-      throw new ContentError("recovery");
-    return bindings;
-  }
-  parse(value) {
-    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
-      "id",
-      "type",
-      "key",
-      "anchor",
-      "applied",
-      "desired",
-      "speakerId",
-      "hostId",
-      "fallback"
-    ]))
-      throw new ContentError("recovery");
-    const identities = this.identities(value);
-    const anchor = this.anchor(value.anchor);
-    if (value.type === "image" ? !anchor.objectId : !anchor.objectId && !anchor.rangeName)
-      throw new ContentError("recovery");
-    return {
-      id: value.id,
-      key: value.key,
-      type: value.type,
-      applied: value.applied,
-      anchor,
-      ...typeof value.desired === "string" ? { desired: value.desired } : {},
-      ...identities
-    };
-  }
-  identities(value) {
-    if (value.speakerId !== void 0 && typeof value.speakerId !== "string" || value.hostId !== void 0 && typeof value.hostId !== "string" || value.fallback !== void 0 && typeof value.fallback !== "boolean")
-      throw new ContentError("recovery");
-    return {
-      ...typeof value.speakerId === "string" ? { speakerId: value.speakerId } : {},
-      ...typeof value.hostId === "string" ? { hostId: value.hostId } : {},
-      ...typeof value.fallback === "boolean" ? { fallback: value.fallback } : {}
-    };
-  }
-  anchor(value) {
-    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.keys(value, [
-      "objectId",
-      "pageId",
-      "tabId",
-      "segmentId",
-      "rangeName",
-      "start",
-      "end"
-    ]))
-      throw new ContentError("recovery");
-    this.validateAnchorValues(value);
-    return {
-      ...typeof value.objectId === "string" ? { objectId: value.objectId } : {},
-      ...typeof value.pageId === "string" ? { pageId: value.pageId } : {},
-      ...typeof value.tabId === "string" ? { tabId: value.tabId } : {},
-      ...typeof value.segmentId === "string" ? { segmentId: value.segmentId } : {},
-      ...typeof value.rangeName === "string" ? { rangeName: value.rangeName } : {},
-      ...typeof value.start === "number" ? { start: value.start } : {},
-      ...typeof value.end === "number" ? { end: value.end } : {}
-    };
-  }
-  validateAnchorValues(value) {
-    for (const [key, entry] of Object.entries(value)) {
-      if (key === "start" || key === "end") {
-        if (typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1)
-          throw new ContentError("recovery");
-      } else if (entry !== "" && !this.collaborators.contentContractPolicy.name(entry))
-        throw new ContentError("recovery");
-    }
-  }
-  hash(value) {
-    return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-  }
-};
-
-// packages/domain/publication/src/domain/asset-content.ts
-var TEXT_TOKENS = [
-  "event.title",
-  "event.date",
-  "event.date.month",
-  "event.date.numeric",
-  "event.date.weekday",
-  "host.name",
-  "host.address",
-  "host.postal_code",
-  "host.city",
-  "agenda",
-  "event.feedback_url",
-  "next_event.date",
-  "next_event.date.numeric",
-  "next_event.host.name",
-  "next_event.host.city"
-];
-var SLOTTED_TEXT_TOKENS = [
-  "talk.title",
-  "talk.abstract",
-  "talk.speakers",
-  "speaker.name"
-];
-
-// packages/domain/publication/src/domain/content-contract-policy.ts
-var ContentContractPolicy = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  parse(value, kind, mimeType) {
-    if (!this.record(value) || value.version !== 1 || typeof value.kind !== "string" || value.kind !== kind || !this.name(value.revision) || !Array.isArray(value.fields) || !value.fields.length || value.fields.length > 100 || !this.keys(value, ["version", "revision", "kind", "fields"]) || !this.supported(mimeType))
-      throw new ContentError("contract");
-    const fields2 = value.fields.map(
-      (field) => this.field(field, mimeType)
-    );
-    const keys = fields2.map(
-      (field) => field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot
-    );
-    if (new Set(keys).size !== keys.length) throw new ContentError("contract");
-    return { version: 1, kind: value.kind, revision: value.revision, fields: fields2 };
-  }
-  field(value, mimeType) {
-    if (!this.record(value)) throw new ContentError("contract");
-    return value.type === "text" ? this.textField(value) : this.image(value, mimeType);
-  }
-  textField(field) {
-    const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
-      (item) => item === field.token
-    );
-    const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
-    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.validFormat(field) || !this.keys(field, [
-      "type",
-      "token",
-      "slot",
-      "format",
-      "required",
-      "fallback"
-    ]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
-      throw new ContentError("contract");
-    const result = {
-      type: "text",
-      token,
-      required: field.required,
-      ...typeof field.slot === "string" ? { slot: field.slot } : {},
-      ...typeof field.format === "string" ? { format: field.format } : {},
-      ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
-    };
-    if (!this.name(this.collaborators.contentTextKey.of(result)))
-      throw new ContentError("contract");
-    return result;
-  }
-  validFormat(field) {
-    return field.format === void 0 || (field.token === "event.date" || field.token === "next_event.date") && typeof field.format === "string" && field.format.trim().length > 0 && field.format.length <= 100 && /^[A-Za-z ./_-]+$/u.test(field.format);
-  }
-  image(field, mimeType) {
-    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" && field.token !== "event.cover" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
-      "type",
-      "token",
-      "slot",
-      "objectId",
-      "pageId",
-      "tabId",
-      "required",
-      "fallback",
-      "fit"
-    ]))
-      throw new ContentError("contract");
-    const slides = mimeType === "application/vnd.google-apps.presentation";
-    if (!(slides ? this.name(field.pageId) && field.tabId === void 0 : this.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides && field.fit === "CENTER_INSIDE"))
-      throw new ContentError("contract");
-    this.coverContract(field);
-    const fallback = this.fallback(field.fallback, field.required);
-    return {
-      type: "image",
-      token: field.token,
-      required: field.required,
-      slot: field.slot,
-      objectId: field.objectId,
-      fit: field.fit,
-      ...typeof field.pageId === "string" ? { pageId: field.pageId } : {},
-      ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
-      ...fallback ? { fallback } : {}
-    };
-  }
-  coverContract(field) {
-    if (field.token === "event.cover" && (!field.required || field.fallback !== void 0))
-      throw new ContentError("contract");
-  }
-  fallback(value, required) {
-    if (value === void 0 && required) return void 0;
-    if (!this.record(value) || !this.text(value.url) || !this.text(value.description) || !this.keys(value, ["url", "description"]))
-      throw new ContentError("contract");
-    return { url: value.url, description: value.description };
-  }
-  supported(mimeType) {
-    return [
-      "application/vnd.google-apps.presentation",
-      "application/vnd.google-apps.document"
-    ].includes(mimeType);
-  }
-  text(value) {
-    return typeof value === "string" && value.trim().length > 0 && value.length <= 2e4 && [...value].every((character) => {
-      const code = character.charCodeAt(0);
-      return (code >= 32 || code === 9 || code === 10) && (code < 57344 || code > 63743);
-    });
-  }
-  name(value) {
-    return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
-  }
-  keys(value, keys) {
-    return Object.keys(value).every((key) => keys.includes(key));
-  }
-  record(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-};
-
-// packages/domain/publication/src/domain/content-fingerprint.ts
-import { createHash as createHash2 } from "node:crypto";
-var ContentFingerprint = class {
-  of(value) {
-    return createHash2("sha256").update(value).digest("hex");
-  }
-};
-
-// packages/domain/publication/src/domain/content-manifest-policy.ts
-var ContentManifestPolicy = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  parse(value, fileId, templateId, mimeType) {
-    const manifest = this.state(value, fileId, templateId, mimeType);
-    this.associations(manifest);
-    if (!manifest.pending) return manifest;
-    this.associations({
-      ...manifest,
-      bindings: manifest.pending.bindings
-    });
-    if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, index) => {
-      const prior = manifest.bindings[index];
-      return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || !this.collaborators.contentAnchorIdentity.equal(
-        prior.anchor,
-        binding.anchor
-      );
-    }))
-      throw new ContentError("recovery");
-    return manifest;
-  }
-  state(value, fileId, templateId, mimeType) {
-    if (!this.collaborators.contentContractPolicy.record(value) || value.version !== 1 || value.fileId !== fileId || value.templateId !== templateId || value.mimeType !== mimeType || !this.collaborators.contentContractPolicy.keys(value, [
-      "version",
-      "fileId",
-      "templateId",
-      "mimeType",
-      "contract",
-      "bindings",
-      "pending",
-      "initialRevision",
-      "recoveryId"
-    ]) || !this.collaborators.contentContractPolicy.record(value.contract) || typeof value.contract.kind !== "string")
-      throw new ContentError("recovery");
-    if (value.initialRevision !== void 0 && !this.collaborators.contentContractPolicy.text(
-      value.initialRevision
-    ) || value.recoveryId !== void 0 && (typeof value.recoveryId !== "string" || !/^[a-f0-9]{64}$/.test(value.recoveryId)))
-      throw new ContentError("recovery");
-    const pending = this.pending(value.pending);
-    return {
-      version: 1,
-      fileId,
-      templateId,
-      mimeType,
-      contract: this.collaborators.contentContractPolicy.parse(
-        value.contract,
-        value.contract.kind,
-        mimeType
-      ),
-      bindings: this.collaborators.contentBindingPolicy.parseMany(
-        value.bindings
-      ),
-      ...pending ? { pending } : {},
-      ...typeof value.initialRevision === "string" ? { initialRevision: value.initialRevision } : {},
-      ...typeof value.recoveryId === "string" ? { recoveryId: value.recoveryId } : {}
-    };
-  }
-  pending(value) {
-    if (value === void 0) return void 0;
-    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.text(value.revision) || !this.collaborators.contentContractPolicy.keys(value, [
-      "revision",
-      "bindings"
-    ]))
-      throw new ContentError("recovery");
-    return {
-      revision: value.revision,
-      bindings: this.collaborators.contentBindingPolicy.parseMany(
-        value.bindings
-      )
-    };
-  }
-  associations(manifest) {
-    const anchors = /* @__PURE__ */ new Set();
-    for (const binding of manifest.bindings) {
-      const field = manifest.contract.fields.find(
-        (field2) => field2.type === binding.type && (field2.type === "text" ? this.collaborators.contentTextKey.of(field2) : field2.slot) === binding.key
-      );
-      const anchor = binding.anchor;
-      const key = this.collaborators.contentAnchorIdentity.locationKey(anchor);
-      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
-        throw new ContentError("recovery");
-      anchors.add(key);
-      this.identity(binding, field);
-      this.rendererAnchor(manifest.mimeType, binding);
-    }
-  }
-  identity(binding, field) {
-    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
-      throw new ContentError("recovery");
-    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
-      throw new ContentError("recovery");
-  }
-  rendererAnchor(mimeType, binding) {
-    const anchor = binding.anchor;
-    if (mimeType.endsWith("presentation")) {
-      if (!anchor.objectId || !anchor.pageId || anchor.tabId || anchor.rangeName)
-        throw new ContentError("recovery");
-    } else if (!anchor.tabId || anchor.segmentId || binding.type === "text" && !anchor.rangeName)
-      throw new ContentError("recovery");
-  }
-};
-
-// packages/domain/publication/src/domain/content-recovery-fingerprint.ts
-var ContentRecoveryFingerprint = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  create(recovery) {
-    return this.collaborators.contentFingerprint.of(
-      JSON.stringify({
-        operation: recovery.operation,
-        revision: recovery.revision,
-        bindingId: recovery.bindingId
-      })
-    );
-  }
-  matches(recovery, fingerprint) {
-    if (!fingerprint) return false;
-    const orders = [
-      ["operation", "revision", "bindingId"],
-      ["operation", "bindingId", "revision"],
-      ["revision", "operation", "bindingId"],
-      ["revision", "bindingId", "operation"],
-      ["bindingId", "operation", "revision"],
-      ["bindingId", "revision", "operation"]
-    ];
-    return orders.some(
-      (keys) => this.collaborators.contentFingerprint.of(
-        JSON.stringify(
-          Object.fromEntries(keys.map((key) => [key, recovery[key]]))
-        )
-      ) === fingerprint
-    );
-  }
-};
-
-// packages/domain/publication/src/domain/content-recovery-plan.ts
-var ContentRecoveryPlan = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  active(manifest, recovery) {
-    return recovery && !this.collaborators.contentRecoveryFingerprint.matches(
-      recovery,
-      manifest.recoveryId
-    ) ? recovery : void 0;
-  }
-  beforeRead(manifest, recovery) {
-    if (recovery?.operation !== "remove") return manifest;
-    return {
-      ...manifest,
-      pending: void 0,
-      bindings: manifest.bindings.filter(
-        (binding) => binding.id !== recovery.bindingId
-      )
-    };
-  }
-  settle(original, snapshot, recovery) {
-    if (recovery && snapshot.revision !== recovery.revision)
-      throw new ContentError("revision");
-    let manifest = recovery?.operation === "restore" ? this.restore(original, snapshot, recovery.bindingId) : original;
-    if (manifest.pending)
-      manifest = this.collaborators.contentRenderPlan.settle(
-        manifest,
-        snapshot,
-        false
-      );
-    return recovery ? {
-      ...manifest,
-      recoveryId: this.collaborators.contentRecoveryFingerprint.create(recovery)
-    } : manifest;
-  }
-  restore(manifest, snapshot, bindingId) {
-    if (!manifest.bindings.some((binding) => binding.id === bindingId))
-      throw new ContentError("recovery");
-    return {
-      ...manifest,
-      pending: void 0,
-      bindings: manifest.bindings.map(
-        (binding) => binding.id === bindingId ? {
-          ...binding,
-          applied: this.collaborators.contentRenderPlan.fingerprint(
-            snapshot,
-            binding.id
-          ),
-          desired: void 0
-        } : binding
-      )
-    };
-  }
-};
-
-// packages/domain/publication/src/domain/content-render-plan.ts
-var ContentRenderPlan = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  changes(manifest, snapshot, values) {
-    const changes = [];
-    for (const binding of manifest.bindings) {
-      const matches = snapshot.locations.filter(
-        (location2) => location2.id === binding.id
-      );
-      const location = matches[0];
-      if (matches.length !== 1 || location.fingerprint !== binding.applied)
-        throw new ContentError("conflict");
-      const value = values.find(
-        (item) => item.key === binding.key && item.type === binding.type
-      );
-      if (!value) throw new ContentError("contract");
-      if (binding.desired !== value.fingerprint || binding.type === "text" && location.fingerprint !== value.fingerprint)
-        changes.push({ location, value });
-    }
-    return changes;
-  }
-  pending(manifest, snapshot, changes) {
-    return {
-      ...manifest,
-      pending: {
-        revision: snapshot.revision,
-        bindings: manifest.bindings.map((binding) => {
-          const value = changes.find(
-            (change) => change.location.id === binding.id
-          )?.value;
-          return value ? {
-            ...binding,
-            desired: value.fingerprint,
-            applied: value.type === "text" ? value.fingerprint : binding.applied,
-            speakerId: value.speakerId,
-            hostId: value.hostId,
-            fallback: value.fallback
-          } : binding;
-        })
-      }
-    };
-  }
-  settle(manifest, snapshot, confirmed) {
-    if (!manifest.pending) return manifest;
-    const next = manifest.pending.bindings;
-    const applied = next.every((binding) => {
-      const location = snapshot.locations.find(
-        (item) => item.id === binding.id
-      );
-      if (!location) throw new ContentError("conflict");
-      const prior2 = manifest.bindings.find((item) => item.id === binding.id);
-      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
-    });
-    if (applied)
-      return {
-        ...manifest,
-        pending: void 0,
-        initialRevision: next.every((binding) => binding.desired) ? void 0 : manifest.initialRevision,
-        bindings: next.map((binding) => ({
-          ...binding,
-          applied: this.fingerprint(snapshot, binding.id)
-        }))
-      };
-    const prior = manifest.bindings.every(
-      (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
-    );
-    const uncertainImage = next.some(
-      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
-    );
-    if (!prior)
-      throw new ContentError(uncertainImage ? "recovery" : "conflict");
-    if (uncertainImage && snapshot.revision !== manifest.pending.revision)
-      throw new ContentError("recovery");
-    return { ...manifest, pending: void 0 };
-  }
-  initial(snapshot) {
-    if (!snapshot.locations.length || snapshot.locations.length > 500 || snapshot.locations.some(
-      (location) => !this.collaborators.contentContractPolicy.name(location.id) || !this.collaborators.contentContractPolicy.name(location.key)
-    ) || new Set(snapshot.locations.map((location) => location.id)).size !== snapshot.locations.length || snapshot.locations.some(
-      (location, index) => snapshot.locations.slice(0, index).some(
-        (prior) => this.collaborators.contentAnchorIdentity.equal(
-          prior.anchor,
-          location.anchor
-        )
-      )
-    ))
-      throw new ContentError("location");
-    return snapshot.locations.map((location) => ({
-      id: location.id,
-      type: location.type,
-      key: location.key,
-      anchor: location.anchor,
-      applied: location.fingerprint
-    }));
-  }
-  fingerprint(snapshot, bindingId) {
-    const matches = snapshot.locations.filter(
-      (location) => location.id === bindingId
-    );
-    if (matches.length !== 1) throw new ContentError("conflict");
-    return matches[0].fingerprint;
-  }
-};
-
-// packages/domain/publication/src/domain/content-text-key.ts
-var ContentTextKey = class {
-  constructor(fingerprints) {
-    this.fingerprints = fingerprints;
-  }
-  fingerprints;
-  of(field) {
-    return field.format !== void 0 ? `${field.token}:format:${this.fingerprints.of(field.format)}` : this.reference(field);
-  }
-  reference(field) {
-    const argument = field.format ?? field.slot;
-    return argument === void 0 ? field.token : `${field.token}:${argument}`;
-  }
-};
-
-// packages/domain/publication/src/domain/feedback-link-selection.ts
-var FeedbackLinkSelection = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  select(candidates, now2, timeZone) {
-    const due = candidates.map((event, index) => ({ event, index })).filter(
-      ({ event }) => event.isOpen && !["cancelled", "postponed"].includes(event.occurrenceStatus ?? "") && this.collaborators.feedbackPolicy.isLinkUpdateDue(
-        event.date,
-        now2,
-        timeZone
-      )
-    ).sort((left, right) => left.event.date.localeCompare(right.event.date));
-    const selected = due[0];
-    if (!selected) return {};
-    if (due.some(
-      (candidate) => candidate.index !== selected.index && candidate.event.date === selected.event.date
-    ))
-      return { conflict: "ambiguous-date" };
-    return { index: selected.index };
-  }
-};
-
-// packages/domain/publication/src/domain/feedback-policy.ts
-var FeedbackPolicy = class {
-  validDate(value) {
-    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
-    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
-  }
-  pollUrl(value) {
-    const url = new URL(value);
-    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
-      url.pathname
-    ) || url.search || url.hash)
-      throw new Error("Feedback link must be an OpenFeedback event URL");
-    return url.href.replace(/\/$/, "");
-  }
-  isLinkUpdateDue(date, now2, timeZone) {
-    if (!this.validDate(date)) return false;
-    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
-    const today = new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).format(new Date(now2));
-    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
-  }
-};
-
-// packages/domain/publication/src/domain/manual-task-policy.ts
-var ManualPublicationPolicy = class {
-  /** Tracks organizer approvals and manual work required for publication. */
-  planManualPublicationTasks(event) {
-    if (event.occurrenceStatus === "cancelled") {
-      return Object.freeze(
-        this.allTaskKinds().map((kind) => ({
-          kind,
-          status: "not-applicable",
-          reason: "The event is cancelled"
-        }))
-      );
-    }
-    const occurrenceConfirmed = event.occurrenceStatus === "held";
-    return Object.freeze([
-      this.task(
-        "publish-meetup-event",
-        Boolean(event.references.meetup) && event.meetupPublished,
-        "Approve publishing the event to Meetup"
-      ),
-      this.task(
-        "publish-community-event",
-        Boolean(event.references.community),
-        "Publish the event to the CNCF community platform"
-      ),
-      this.task(
-        "create-asset-folder",
-        Boolean(event.references.assets),
-        "Create the event asset folder"
-      ),
-      occurrenceConfirmed ? this.task(
-        "import-attendance",
-        event.attendanceImported,
-        "Import post-event attendance"
-      ) : this.notApplicable(
-        "import-attendance",
-        "Attendance is imported only after occurrence is explicitly confirmed"
-      )
-    ]);
-  }
-  task(kind, completed, reason) {
-    return {
-      kind,
-      status: completed ? "completed" : "pending",
-      reason
-    };
-  }
-  notApplicable(kind, reason) {
-    return { kind, status: "not-applicable", reason };
-  }
-  allTaskKinds() {
-    return [
-      "publish-meetup-event",
-      "publish-community-event",
-      "create-asset-folder",
-      "import-attendance"
-    ];
-  }
-};
-
-// packages/domain/publication/src/domain/meetup-group-url.ts
-var MeetupGroupUrl = class _MeetupGroupUrl {
-  constructor(value) {
-    this.value = value;
-  }
-  value;
-  static parse(value) {
-    if (typeof value !== "string") return void 0;
-    let url;
-    try {
-      url = new URL(value);
-    } catch {
-      return void 0;
-    }
-    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || value !== `${url.origin}${url.pathname}` || !/^\/[a-z0-9-]+\/$/.test(url.pathname))
-      return void 0;
-    return new _MeetupGroupUrl(value);
-  }
-  static fromEventUrlPrefix(value) {
-    return value.endsWith("events/") ? _MeetupGroupUrl.parse(value.slice(0, -"events/".length)) : void 0;
-  }
-  get eventUrlPrefix() {
-    return `${this.value}events/`;
-  }
-  get origin() {
-    return new URL(this.value).origin;
-  }
-};
-
-// packages/domain/publication/src/domain/meetup-event-url.ts
-var MeetupEventUrl = class _MeetupEventUrl {
-  constructor(group, identifier) {
-    this.group = group;
-    this.identifier = identifier;
-  }
-  group;
-  identifier;
-  static parse(value, group) {
-    if (typeof value !== "string") return void 0;
-    const match = /^(.*\/)events\/([1-9]\d*)\/?$/.exec(value);
-    if (!match || match[0] !== value) return void 0;
-    const parsedGroup = MeetupGroupUrl.parse(match[1]);
-    if (!parsedGroup || group && parsedGroup.value !== group.value)
-      return void 0;
-    return new _MeetupEventUrl(parsedGroup, match[2]);
-  }
-  get value() {
-    return `${this.group.eventUrlPrefix}${this.identifier}/`;
-  }
-  get id() {
-    return this.identifier;
-  }
-};
-
-// packages/domain/publication/src/domain/meetup-event-url-policy.ts
-var MeetupEventUrlPolicy = class {
-  constructor(collaborators, prefix) {
-    this.collaborators = collaborators;
-    this.prefix = prefix;
-  }
-  collaborators;
-  prefix;
-  evaluate(references) {
-    const group = MeetupGroupUrl.fromEventUrlPrefix(this.prefix);
-    return this.collaborators.publicationLinkEvaluation.evaluateLink({
-      references,
-      path: "meetup",
-      isValid: (value) => !!group && !!MeetupEventUrl.parse(value, group),
-      code: "publication.meetup-url.invalid",
-      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
-    });
-  }
-};
-
-// packages/domain/publication/src/domain/model.ts
-var PublicationDiagnostics = class {
-  applyPublicationPatch(references, patch) {
-    const result = { ...references };
-    for (const operation of patch.operations) {
-      switch (operation.path) {
-        case "meetup":
-          result.meetup = operation.value;
-          break;
-        case "community":
-          result.community = operation.value;
-          break;
-        case "feedback":
-          result.feedback = operation.value;
-          break;
-        case "assets":
-          result.assets = operation.value;
-          break;
-      }
-    }
-    return result;
-  }
-};
-
-// packages/domain/publication/src/domain/pdf-export-policy.ts
-var PdfExportPolicy = class {
-  name(sourceName, date) {
-    const clipped = sourceName.slice(0, 187);
-    const title = clipped.includes(date) ? clipped : `${date} - ${clipped}`;
-    return `${title.slice(0, 200)}.pdf`;
-  }
-  matches(snapshot, observed) {
-    return Boolean(
-      snapshot && observed && snapshot.name === observed.name && snapshot.fingerprint === observed.fingerprint
-    );
-  }
-  current(snapshot, sourceVersion, name) {
-    return snapshot?.contract === "pdf-v1" && snapshot.sourceVersion === sourceVersion && snapshot.name === name;
-  }
-  sameIdentity(left, right) {
-    return left.eventId === right.eventId && left.folderId === right.folderId && left.sourceId === right.sourceId && left.templateId === right.templateId;
-  }
-  recover(state, observed) {
-    if (!state) {
-      if (observed) throw new PdfExportError("recovery");
-      return void 0;
-    }
-    if (observed && observed.id !== state.fileId)
-      throw new PdfExportError("recovery");
-    if (state.pending && this.matches(state.pending, observed))
-      return state.pending;
-    if (state.confirmed && this.matches(state.confirmed, observed))
-      return state.confirmed;
-    if (state.confirmed || observed) throw new PdfExportError("conflict");
-    return void 0;
-  }
-};
-
-// packages/domain/publication/src/domain/presentation-file-url.ts
-var PresentationFileUrl = class {
-  normalize(value) {
-    if (!value?.trim()) return void 0;
-    try {
-      const url = new URL(value.trim());
-      if (url.protocol !== "https:" || url.username || url.password || url.port)
-        return void 0;
-      const presentation = url.hostname === "docs.google.com" && /^\/presentation\/d\/[a-zA-Z0-9_-]+(?:\/(?:edit|view|preview|present))?\/?$/.test(
-        url.pathname
-      );
-      const file = url.hostname === "drive.google.com" && /^\/file\/d\/[a-zA-Z0-9_-]+(?:\/(?:view|preview|edit))?\/?$/.test(
-        url.pathname
-      );
-      return presentation || file ? url.href : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-};
-
-// packages/domain/publication/src/domain/public-asset-url.ts
-var PublicAssetUrl = class {
-  valid(value) {
-    if (!value) return false;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(
-        (key) => /token|signature|credential|secret|key|auth/i.test(key)
-      );
-    } catch {
-      return false;
-    }
-  }
-};
-
-// packages/domain/publication/src/domain/publication-link-evaluation.ts
-var PublicationLinkEvaluation = class {
-  evaluateLink({
-    references,
-    path,
-    isValid,
-    code,
-    message
-  }) {
-    const raw = references[path];
-    if (raw === void 0 || raw === "") {
-      return this.emptyEvaluation(references);
-    }
-    const normalized = raw.trim().replace(/\/$/, "");
-    if (!isValid(raw.trim())) {
-      return {
-        references,
-        diagnostics: [
-          Object.freeze({
-            code,
-            severity: "error",
-            field: path,
-            message
-          })
-        ],
-        patch: Object.freeze({ operations: [] })
-      };
-    }
-    if (raw === normalized) {
-      return this.emptyEvaluation(references);
-    }
-    const operation = Object.freeze({
-      op: "replace",
-      path,
-      value: normalized,
-      reason: "Trim URL and remove its trailing slash"
-    });
-    return {
-      references: { ...references, [path]: normalized },
-      diagnostics: [
-        Object.freeze({
-          code: `publication.${path}.normalized`,
-          severity: "info",
-          field: path,
-          message: `${path} URL can be normalized safely`,
-          fixAvailable: true
-        })
-      ],
-      patch: Object.freeze({ operations: Object.freeze([operation]) })
-    };
-  }
-  emptyEvaluation(references) {
-    return {
-      references,
-      diagnostics: [],
-      patch: Object.freeze({ operations: [] })
-    };
-  }
-  isHttpsUrl(value) {
-    try {
-      return new URL(value).protocol === "https:";
-    } catch {
-      return false;
-    }
-  }
-  matchesPrefix(value, prefixes, identifierPattern) {
-    const normalized = value.replace(/\/$/, "");
-    return this.isHttpsUrl(normalized) && prefixes.some((prefix) => {
-      if (!normalized.startsWith(prefix)) return false;
-      const identifier = normalized.slice(prefix.length);
-      return Boolean(identifier) && identifierPattern.test(identifier);
-    });
-  }
-};
-
-// packages/domain/publication/src/domain/publication-url-policy-engine.ts
-var PublicationUrlPolicyEngine = class {
-  constructor(collaborators, policies) {
-    this.collaborators = collaborators;
-    this.policies = policies;
-  }
-  collaborators;
-  policies;
-  evaluate(references) {
-    let normalized = references;
-    const diagnostics = [];
-    const operations = [];
-    for (const policy of this.policies) {
-      const result = policy.evaluate(normalized);
-      diagnostics.push(...result.diagnostics);
-      operations.push(...result.patch.operations);
-      normalized = this.collaborators.publicationDiagnostics.applyPublicationPatch(
-        normalized,
-        result.patch
-      );
-    }
-    return {
-      references: normalized,
-      diagnostics: Object.freeze(diagnostics),
-      patch: Object.freeze({ operations: Object.freeze(operations) })
-    };
-  }
-};
-
-// packages/domain/publication/src/domain/scheduled-event-policy.ts
-var ScheduledEventPolicy = class {
-  valid(event, now2) {
-    if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
-      return false;
-    return this.validSchedule(event, now2);
-  }
-  validSchedule(event, now2) {
-    if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
-      return false;
-    const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
-    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
-      return false;
-    try {
-      const format = new Intl.DateTimeFormat("sv-SE", {
-        timeZone: event.timeZone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23"
-      });
-      const start = this.instant(event.date, event.startTime, format);
-      const end = this.instant(event.date, event.endTime, format);
-      return start !== void 0 && end !== void 0 && start > Date.parse(now2) && end > start;
-    } catch {
-      return false;
-    }
-  }
-  validTime(value) {
-    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-  }
-  instant(date, time, format) {
-    const reference = Date.parse(`${date}T${time}:00Z`);
-    let match;
-    for (let offset = -840; offset <= 840; offset += 15) {
-      const candidate = reference + offset * 6e4;
-      if (format.format(candidate) !== `${date} ${time}`) continue;
-      if (match !== void 0) return void 0;
-      match = candidate;
-    }
-    return match;
-  }
-};
-
-// packages/domain/publication/src/dependency-composition.ts
-var PublicationDomainComposition = class {
-  pdfExportPolicy() {
-    return new PdfExportPolicy();
-  }
-  reconcileSlidePdf(...args) {
-    return new ReconcileSlidePdf(this.pdfExportPolicy(), ...args);
-  }
-  assetFolderUrlPolicy(...args) {
-    return new AssetFolderUrlPolicy(
-      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
-      ...args
-    );
-  }
-  communityEventUrlPolicy(...args) {
-    return new CommunityEventUrlPolicy(
-      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
-      ...args
-    );
-  }
-  contentAnchorIdentity() {
-    return new ContentAnchorIdentity();
-  }
-  contentBindingPolicy() {
-    return new ContentBindingPolicy({
-      contentContractPolicy: this.contentContractPolicy()
-    });
-  }
-  contentContractPolicy() {
-    return new ContentContractPolicy({ contentTextKey: this.contentTextKey() });
-  }
-  contentFingerprint() {
-    return new ContentFingerprint();
-  }
-  contentManifestPolicy() {
-    return new ContentManifestPolicy({
-      contentAnchorIdentity: this.contentAnchorIdentity(),
-      contentContractPolicy: this.contentContractPolicy(),
-      contentBindingPolicy: this.contentBindingPolicy(),
-      contentTextKey: this.contentTextKey()
-    });
-  }
-  contentRecoveryFingerprint() {
-    return new ContentRecoveryFingerprint({
-      contentFingerprint: this.contentFingerprint()
-    });
-  }
-  contentRecoveryPlan() {
-    return new ContentRecoveryPlan({
-      contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
-      contentRenderPlan: this.contentRenderPlan()
-    });
-  }
-  contentRenderPlan() {
-    return new ContentRenderPlan({
-      contentContractPolicy: this.contentContractPolicy(),
-      contentAnchorIdentity: this.contentAnchorIdentity()
-    });
-  }
-  contentTextKey() {
-    return new ContentTextKey(this.contentFingerprint());
-  }
-  feedbackLinkSelection() {
-    return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
-  }
-  feedbackPolicy() {
-    return new FeedbackPolicy();
-  }
-  manualPublicationPolicy() {
-    return new ManualPublicationPolicy();
-  }
-  meetupEventUrlPolicy(...args) {
-    return new MeetupEventUrlPolicy(
-      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
-      ...args
-    );
-  }
-  presentationFileUrl() {
-    return new PresentationFileUrl();
-  }
-  publicAssetUrl() {
-    return new PublicAssetUrl();
-  }
-  publicationDiagnostics() {
-    return new PublicationDiagnostics();
-  }
-  publicationLinkEvaluation() {
-    return new PublicationLinkEvaluation();
-  }
-  publicationUrlPolicyEngine(...args) {
-    return new PublicationUrlPolicyEngine(
-      { publicationDiagnostics: this.publicationDiagnostics() },
-      ...args
-    );
-  }
-  reconcileAssetContent(templates, ...args) {
-    return new ReconcileAssetContent(
-      {
-        contentContractPolicy: this.contentContractPolicy(),
-        contentRenderPlan: this.contentRenderPlan(),
-        contentTextKey: this.contentTextKey(),
-        contentManifestPolicy: this.contentManifestPolicy(),
-        contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
-        contentRecoveryPlan: this.contentRecoveryPlan(),
-        createResolveContentValues: (...args2) => this.resolveContentValues(templates, ...args2)
-      },
-      ...args
-    );
-  }
-  reconcileAssetFile(names, ...args) {
-    return new ReconcileAssetFile(names, ...args);
-  }
-  assetFileName(templates) {
-    return new AssetFileName(templates);
-  }
-  reconcileEventAssets(names, ...args) {
-    return new ReconcileEventAssets(
-      {
-        names,
-        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(names, ...args2)
-      },
-      ...args
-    );
-  }
-  resolveContentValues(templates, ...args) {
-    return new ResolveContentValues(
-      {
-        templates,
-        contentTextKey: this.contentTextKey(),
-        contentContractPolicy: this.contentContractPolicy(),
-        contentFingerprint: this.contentFingerprint()
-      },
-      ...args
-    );
-  }
-  scheduledEventPolicy() {
-    return new ScheduledEventPolicy();
-  }
-};
-
-// packages/domain/publication/src/domain/community-event-policy.ts
-var CommunityEventPolicy = class {
-  constructor(schedule) {
-    this.schedule = schedule;
-  }
-  schedule;
-  valid(event, now2) {
-    return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(event.categoryId) && this.schedule.validSchedule(event, now2);
-  }
-  venue(venue) {
-    return this.text(venue.name, 120) && this.text(venue.address, 100) && this.text(venue.city, 100) && this.text(venue.country, 100) && this.text(venue.zipCode, 20) && this.text(venue.state, 100) && /^[A-Z]{2}$/.test(venue.countryCode);
-  }
-  registration(value) {
-    return Number.isSafeInteger(value.capacity) && value.capacity > 0 && value.capacity <= 1e5 && typeof value.waitlist === "boolean" && typeof value.approvalRequired === "boolean" && typeof value.reminder === "boolean" && !(value.waitlist && value.approvalRequired);
-  }
-  text(value, maximum) {
-    return value.trim().length > 0 && Buffer.byteLength(value, "utf8") <= maximum && ![...value].some(
-      (character) => character.charCodeAt(0) < 32 && !"\n\r	".includes(character)
-    );
-  }
-};
-
-// packages/domain/publication/src/domain/community-group-url.ts
-var CommunityGroupUrl = class _CommunityGroupUrl {
-  constructor(eventUrlPrefix, origin, community, group) {
-    this.eventUrlPrefix = eventUrlPrefix;
-    this.origin = origin;
-    this.community = community;
-    this.group = group;
-  }
-  eventUrlPrefix;
-  origin;
-  community;
-  group;
-  static parse(value) {
-    if (typeof value !== "string") return void 0;
-    let url;
-    try {
-      url = new URL(value);
-    } catch {
-      return void 0;
-    }
-    const match = /^\/([a-z0-9-]+)\/group\/([a-z0-9-]+)\/event\/$/.exec(
-      url.pathname
-    );
-    if (!match || url.protocol !== "https:" || url.username || url.password || value !== `${url.origin}${url.pathname}`)
-      return void 0;
-    return new _CommunityGroupUrl(value, url.origin, match[1], match[2]);
-  }
-};
-
-// packages/domain/publication/src/domain/feedback-resolution-error.ts
-var FeedbackResolutionError = class extends Error {
-  constructor(kind) {
-    super(
-      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
-    );
-    this.kind = kind;
-    this.name = "FeedbackResolutionError";
-  }
-  kind;
 };
 
 // packages/application/journey/src/approval/approval-value-fingerprint.ts
@@ -74984,6 +74988,56 @@ var GoogleDriveAuthentication = class {
   }
 };
 
+// packages/adapter/publication/google-drive-asset-repository/src/drive-public-folder-error.ts
+var DrivePublicFolderError = class extends ContentMediaChangedError {
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-public-asset-folder.ts
+var GoogleDrivePublicAssetFolder = class {
+  constructor(client, rootId, name) {
+    this.client = client;
+    this.rootId = rootId;
+    this.name = name;
+  }
+  client;
+  rootId;
+  name;
+  async resolve() {
+    if (!/^[\w-]{1,120}$/.test(this.rootId))
+      throw new DrivePublicFolderError("Invalid public root identity");
+    const root = await this.client.files.get(
+      {
+        fileId: this.rootId,
+        fields: "id,mimeType,trashed",
+        supportsAllDrives: true
+      },
+      requestOptions
+    );
+    if (root.data.id !== this.rootId || root.data.mimeType !== folderMimeType || root.data.trashed)
+      throw new DrivePublicFolderError("Invalid public root folder");
+    const { data } = await this.client.files.list(
+      {
+        q: `'${this.rootId}' in parents and name='${this.name}' and trashed=false`,
+        fields: "nextPageToken,incompleteSearch,files(id,name,mimeType,parents,trashed)",
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (!Array.isArray(data.files) || data.files.length !== 1 || data.nextPageToken || data.incompleteSearch)
+      throw new DrivePublicFolderError(
+        "Public asset folder is missing or ambiguous"
+      );
+    return this.child(data.files[0]);
+  }
+  child(folder) {
+    if (!folder?.id || !/^[\w-]{1,120}$/.test(folder.id) || folder.id === this.rootId || folder.name !== this.name || folder.mimeType !== folderMimeType || folder.trashed || folder.parents?.length !== 1 || folder.parents[0] !== this.rootId)
+      throw new DrivePublicFolderError("Invalid public asset folder");
+    return folder.id;
+  }
+};
+
 // packages/adapter/publication/google-drive-asset-repository/src/dependency-composition.ts
 var import_drive4 = __toESM(require_build(), 1);
 import { setTimeout as setTimeout2 } from "node:timers/promises";
@@ -75897,14 +75951,13 @@ var GoogleDrivePdfStateRepository = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-public-folder.ts
-var folderFields = "id,mimeType,trashed";
 var GoogleDrivePublicFolder = class {
-  constructor(client, metadata, folderId) {
-    this.client = client;
+  constructor(folders, metadata, folderId) {
+    this.folders = folders;
     this.metadata = metadata;
     this.folderId = folderId;
   }
-  client;
+  folders;
   metadata;
   folderId;
   async resolve(identity) {
@@ -75913,17 +75966,16 @@ var GoogleDrivePublicFolder = class {
       this.folderId
     ))
       throw new PdfExportError("recovery");
-    const { data } = await this.client.files.get(
-      {
-        fileId: this.folderId,
-        fields: folderFields,
-        supportsAllDrives: true
-      },
-      requestOptions
-    );
-    if (data.id !== this.folderId || data.mimeType !== folderMimeType || data.trashed)
-      throw new PdfExportError("recovery");
-    return this.folderId;
+    try {
+      const id = await this.folders.resolve();
+      if ([identity.folderId, identity.sourceId, identity.templateId].includes(id))
+        throw new PdfExportError("recovery");
+      return id;
+    } catch (error2) {
+      if (error2 instanceof DrivePublicFolderError)
+        throw new PdfExportError("recovery");
+      throw error2;
+    }
   }
 };
 
@@ -75954,7 +76006,11 @@ var GoogleDrivePdfComposition = class {
   }
   folders() {
     return new GoogleDrivePublicFolder(
-      this.client,
+      new GoogleDrivePublicAssetFolder(
+        this.client,
+        this.publicFolderId,
+        "slides"
+      ),
       this.metadata(),
       this.publicFolderId
     );

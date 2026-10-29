@@ -85,12 +85,15 @@ content and surface incomplete or conflicting bindings for explicit recovery.
 
 ### A separate PDF snapshot
 
-Export the presentation as a managed static PDF in the public shared event folder.
+Export the presentation as a managed static PDF in the `slides` child of the
+configured public root. Store cover candidates separately in its `tmp-covers`
+child. Resolve one existing direct child by its fixed name; do not create folders
+or fall back to storing assets in the root.
 It is a distinct artifact with its own stable file ID and provenance metadata,
 not another template copy or a document binding. Refresh that same managed file
 when the editable source changes; this does not create an immutable revision
 archive. Grant unlisted reader access only to the verified managed PDF, after
-placing it in its configured destination. Identify that folder only by its
+placing it in its resolved destination. Identify the public root only by its
 configured ID; its display name does not affect export or sharing. Keep folder, editable-source, and
 sidecar permissions unchanged. Read back permissions before reporting readiness;
 reuse existing grants and stop for incompatible public access.
@@ -140,6 +143,15 @@ Provider limits and supported object types remain constraints documented in the
 integration guide.
 
 ## Decision history
+
+On 2026-10-29, separate `slides` and `tmp-covers` children replaced the flat
+public destination, which mixed PDFs and cover candidates. The configured ID
+now identifies their parent root; its name remains irrelevant. This partially
+supersedes the 2026-10-28 destination rule below while retaining stable file IDs,
+file-level PDF sharing and private export state. Existing files can be relocated
+without changing URLs. A move changes a cover's Drive revision and therefore
+requires a fresh pending review of the same bytes; previous proposals remain
+historical records. Automatic folder creation and candidate cleanup are excluded.
 
 On 2026-10-28, destination identity became independent of the folder name at the
 organizer's request. This supersedes the adapter's requirement for the literal

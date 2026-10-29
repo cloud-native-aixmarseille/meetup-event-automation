@@ -37492,1287 +37492,6 @@ var FOLLOW_UP_TASKS = [
   "share-social"
 ];
 
-// packages/application/journey/src/communication/communication-diagnostic-projection.ts
-var COMMUNICATION_MESSAGES = {
-  "duplicate-intent": "A duplicate communication intent was ignored.",
-  "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
-  "gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
-  "gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
-  "gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
-  "invalid-clock": "The communication clock is invalid.",
-  "invalid-event-date": "The event date is invalid.",
-  "invalid-identifier": "A stable communication identifier is invalid.",
-  "invalid-time-zone": "The configured time zone is invalid.",
-  "ledger-read-failed": "The delivery ledger could not be read.",
-  "ledger-reservation-failed": "The delivery could not be reserved safely.",
-  "ledger-status-write-failed": "The delivery status could not be recorded.",
-  "missing-mail-destination": "An opted-in mail recipient has no destination.",
-  "occurrence-status-unknown": "The event occurrence status must be explicit.",
-  "delivery-already-recorded": "The delivery ledger already contains this intent."
-};
-var RUNTIME_MESSAGES = {
-  "communication.content-review": "Event content needs current organizer approval.",
-  "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
-  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
-  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
-  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
-  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
-  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
-  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
-  "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
-  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
-  "communication.checklist-concurrently-modified": "Delivery results are recorded; an organizer edit postponed checklist completion.",
-  "communication.event-skipped": "The issue is not a configured meetup event.",
-  "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
-  "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
-  "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
-};
-var CommunicationDiagnosticProjection = class {
-  domainDiagnostic(diagnostic) {
-    return {
-      code: `communication.${diagnostic.code}`,
-      severity: diagnostic.severity,
-      message: COMMUNICATION_MESSAGES[diagnostic.code]
-    };
-  }
-  runtimeDiagnostic(diagnostic) {
-    return {
-      code: diagnostic.code,
-      severity: diagnostic.severity,
-      message: RUNTIME_MESSAGES[diagnostic.code]
-    };
-  }
-};
-
-// packages/domain/communication/src/attention/attention-policy.ts
-var AttentionPolicy = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  day(now2) {
-    const local = this.collaborators.communicationCalendar.getLocalDate(
-      now2,
-      "Europe/Paris"
-    );
-    if (!local) throw new Error("Invalid attention clock");
-    return this.collaborators.communicationCalendar.toEpochDay(local);
-  }
-  eventDay(date) {
-    const local = this.collaborators.communicationCalendar.parseIsoLocalDate(date);
-    return local ? this.collaborators.communicationCalendar.toEpochDay(local) : void 0;
-  }
-  window(episode, date, now2) {
-    const day = this.day(now2);
-    const policy = episode.condition.policy;
-    if (policy === "daily") return `day:${day}`;
-    if (policy === "weekly")
-      return `week:${Math.floor((day - this.day(new Date(episode.openedAt))) / 7)}`;
-    if (policy === "approval") {
-      const age = now2.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
-      return age >= 864e5 ? `day:${day}` : void 0;
-    }
-    const eventDay = this.eventDay(date);
-    if (eventDay === void 0) return void 0;
-    return this.milestone(policy, day - eventDay);
-  }
-  milestone(policy, elapsed) {
-    if (policy === "preparation") {
-      if (elapsed < -7 || elapsed > 0) return void 0;
-      const milestone = [0, 1, 3, 7].find((days) => elapsed >= -days);
-      return `preparation:${milestone}`;
-    }
-    if ((policy === "occurrence" || policy === "follow-up") && elapsed >= 1)
-      return `${policy}:${elapsed >= 7 ? 7 : 1}`;
-    return void 0;
-  }
-  view(state) {
-    return {
-      state,
-      conditions: state.episodes.filter((item) => item.status === "active" || item.status === "unknown").sort(this.compare.bind(this))
-    };
-  }
-  compare(left, right) {
-    const severity = Number(right.condition.severity === "error") - Number(left.condition.severity === "error");
-    return severity || left.openedAt.localeCompare(right.openedAt) || left.condition.key.localeCompare(right.condition.key);
-  }
-};
-
-// packages/domain/communication/src/attention/attention-state-equality.ts
-var AttentionStateEquality = class {
-  equal(left, right) {
-    return left.eventDate === right.eventDate && left.stopped === right.stopped && left.runId === right.runId && left.commentId === right.commentId && this.post(left.post, right.post) && left.episodes.length === right.episodes.length && left.episodes.every((episode) => {
-      const counterpart = right.episodes.find(
-        (item) => item.condition.key === episode.condition.key
-      );
-      return counterpart !== void 0 && this.episode(episode, counterpart);
-    });
-  }
-  episode(left, right) {
-    return left.episode === right.episode && left.openedAt === right.openedAt && left.status === right.status && left.lastWindow === right.lastWindow && this.condition(left.condition, right.condition);
-  }
-  condition(left, right) {
-    return left.key === right.key && left.code === right.code && left.owner === right.owner && left.resource === right.resource && left.severity === right.severity && left.policy === right.policy && left.since === right.since && left.commentId === right.commentId && left.recovery === right.recovery;
-  }
-  post(left, right) {
-    if (!left || !right) return left === right;
-    return left.reservationId === right.reservationId && left.day === right.day && left.reservedAt === right.reservedAt && left.status === right.status && left.retryAt === right.retryAt && left.fingerprint === right.fingerprint && left.message?.destination === right.message?.destination && left.message?.messageId === right.message?.messageId;
-  }
-};
-
-// packages/domain/communication/src/attention/attention-state-rules.ts
-var AttentionStateRules = class {
-  validate(state) {
-    if (new Set(state.episodes.map((item) => item.condition.key)).size !== state.episodes.length)
-      throw new Error("Duplicate attention condition");
-    for (const episode of state.episodes)
-      if (episode.condition.key !== `${episode.condition.code}:${episode.condition.resource}`)
-        throw new Error("Invalid attention resource");
-    const post = state.post;
-    if (!post) return;
-    if (post.status === "accepted" && !post.message)
-      throw new Error("Missing accepted attention reference");
-    if (post.status !== "accepted" && (post.message !== void 0 || post.fingerprint !== void 0))
-      throw new Error(
-        "Unconfirmed attention reservation has delivery authority"
-      );
-    if (post.status !== "retry" && post.retryAt !== void 0)
-      throw new Error("Unexpected attention retry");
-  }
-};
-
-// packages/domain/communication/src/attention/attention-task-selection.ts
-var AttentionTaskSelection = class _AttentionTaskSelection {
-  select(view, checklist) {
-    const conditions = view.conditions.filter(
-      (episode) => !this.covered(episode, checklist.entries)
-    );
-    const tasks = view.state.stopped ? [] : checklist.entries.filter(
-      (entry) => !conditions.some(
-        (episode) => entry.action !== void 0 && entry.action === this.actionFor(episode)
-      )
-    );
-    const urgent = conditions.filter(this.urgent.bind(this));
-    return {
-      urgent,
-      checklist: [...tasks].sort(
-        (left, right) => Number(right.field === "agenda") - Number(left.field === "agenda")
-      ),
-      remaining: conditions.filter((episode) => !this.urgent(episode)),
-      details: conditions.filter(
-        (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
-          (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
-        ))
-      )
-    };
-  }
-  urgent(episode) {
-    return [
-      "delivery-recovery",
-      "approval-pending",
-      "integration-failure"
-    ].includes(episode.condition.code);
-  }
-  actionFor(episode) {
-    if (episode.condition.code === "delivery-recovery")
-      return "delivery-recovery";
-    if (episode.condition.code !== "approval-pending") return void 0;
-    if (episode.condition.resource.startsWith("social-publication:"))
-      return "social-approval";
-    if (episode.condition.resource.startsWith("community-publication:"))
-      return "community-approval";
-    return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
-  }
-  covered(episode, entries) {
-    if (!entries.length) return false;
-    const { code, resource } = episode.condition;
-    if (code === "required-data" || code === "integration-failure" && resource === "event-data")
-      return true;
-    const fields = code === "manual-publication" ? _AttentionTaskSelection.RESOURCE_FIELDS.get(resource) : _AttentionTaskSelection.CONDITION_FIELDS.get(code);
-    return fields?.some((field) => entries.some((entry) => entry.field === field)) ?? false;
-  }
-  static CONDITION_FIELDS = /* @__PURE__ */ new Map([
-    ["missing-date", ["date"]],
-    ["host-confirmation", ["host", "host-confirmation"]],
-    ["speaker-confirmation", ["speaker-confirmation"]]
-  ]);
-  static RESOURCE_FIELDS = /* @__PURE__ */ new Map([
-    ["publish-meetup-event", ["meetup"]],
-    ["publish-community-event", ["community"]]
-  ]);
-};
-
-// packages/domain/communication/src/attention/evaluate-attention.ts
-var EvaluateAttention = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  execute(facts, now2) {
-    const stopped = facts.closed || facts.occurrence === "cancelled" || facts.occurrence === "postponed";
-    const conditions = [];
-    if (!stopped) this.tasks(facts, now2, conditions);
-    const evaluated = [];
-    if (!stopped) this.stages(facts, evaluated, conditions);
-    if (facts.approvals) evaluated.push("approvals");
-    if (facts.recovery) evaluated.push("delivery");
-    for (const item of (facts.recovery ?? []).filter(
-      (item2) => !item2.resolved && (!stopped || item2.uncertain !== false)
-    ))
-      conditions.push({
-        ...this.condition("delivery-recovery", "delivery", item.key, "daily"),
-        recovery: item.uncertain === false ? void 0 : true,
-        commentId: item.commentId
-      });
-    return {
-      conditions,
-      evaluated,
-      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
-      stopped,
-      eventDate: facts.eventDate,
-      runId: facts.runId
-    };
-  }
-  stages(facts, evaluated, conditions) {
-    for (const stage of facts.stages) this.stage(stage, evaluated, conditions);
-    for (const owner of ["approvals", "delivery"]) {
-      const available = owner === "approvals" ? facts.approvals : facts.recovery;
-      if (!available)
-        conditions.push(this.condition("stage-unknown", owner, owner, "none"));
-    }
-  }
-  stage(stage, evaluated, conditions) {
-    if (stage.prerequisiteBlocked) return;
-    if (stage.outcome !== "unknown") evaluated.push(stage.owner);
-    if (stage.outcome === "success" && !stage.blocked) return;
-    const unknown = stage.outcome === "unknown";
-    conditions.push(
-      this.condition(
-        unknown ? "stage-unknown" : "integration-failure",
-        stage.owner,
-        this.stageResource(stage),
-        unknown ? "none" : "daily"
-      )
-    );
-  }
-  stageResource(stage) {
-    return stage.owner === "event" && stage.outcome === "success" ? "event-data" : stage.owner;
-  }
-  tasks(facts, now2, conditions) {
-    const eventDay = this.collaborators.attentionPolicy.eventDay(
-      facts.eventDate
-    );
-    const day = this.collaborators.attentionPolicy.day(now2);
-    const postEvent = this.collaborators.postEventPolicy.isDue({
-      eventDate: facts.eventDate,
-      timeZone: "Europe/Paris",
-      occurrenceStatus: facts.occurrence,
-      now: now2
-    });
-    if (eventDay === void 0)
-      conditions.push(
-        this.condition("missing-date", "event", "date", "weekly")
-      );
-    this.preparation(facts, eventDay, day, conditions);
-    if (postEvent)
-      for (const task of facts.followUpPending)
-        conditions.push(
-          this.condition("follow-up", "event", task, "follow-up")
-        );
-    this.approvals(facts, conditions, postEvent);
-  }
-  approvals(facts, conditions, postEvent) {
-    for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
-      if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
-        conditions.push({
-          ...this.condition(
-            "approval-pending",
-            "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
-            "approval"
-          ),
-          since: approval.requestedAt,
-          commentId: approval.commentId
-        });
-    }
-  }
-  preparation(facts, eventDay, day, conditions) {
-    if (facts.occurrence === "scheduled" && (eventDay === void 0 || day <= eventDay)) {
-      if (!facts.hostConfirmed)
-        conditions.push(
-          this.condition("host-confirmation", "event", "host", "preparation")
-        );
-      if (!facts.speakersConfirmed)
-        conditions.push(
-          this.condition(
-            "speaker-confirmation",
-            "event",
-            "speakers",
-            "preparation"
-          )
-        );
-      if (facts.requiredDataMissing)
-        conditions.push(
-          this.condition("required-data", "event", "event", "preparation")
-        );
-      for (const task of facts.publicationPending)
-        conditions.push(
-          this.condition("manual-publication", "event", task, "preparation")
-        );
-    }
-  }
-  condition(code, owner, resource, policy) {
-    return {
-      key: `${code}:${resource}`,
-      code,
-      owner,
-      resource,
-      policy,
-      severity: ["integration-failure", "delivery-recovery"].includes(code) ? "error" : "warning"
-    };
-  }
-};
-
-// packages/domain/communication/src/attention/model.ts
-var ATTENTION_CODES = [
-  "missing-date",
-  "required-data",
-  "host-confirmation",
-  "speaker-confirmation",
-  "manual-publication",
-  "approval-pending",
-  "integration-failure",
-  "delivery-recovery",
-  "occurrence-decision",
-  "follow-up",
-  "stage-unknown"
-];
-
-// packages/domain/communication/src/attention/reconcile-attention.ts
-var ReconcileAttention = class {
-  constructor(collaborators, repository, notification, clock) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.notification = notification;
-    this.clock = clock;
-  }
-  collaborators;
-  repository;
-  notification;
-  clock;
-  async execute(observation) {
-    const now2 = this.clock.now();
-    const day = this.collaborators.attentionPolicy.day(now2);
-    const previous = await this.repository.load();
-    const state = this.collaborators.attentionEpisodes.reconcile(
-      previous,
-      observation,
-      now2
-    );
-    await this.repository.save(state);
-    const view = this.collaborators.attentionPolicy.view(state);
-    const base = {
-      active: view.conditions.length,
-      posted: false,
-      notificationFailed: false
-    };
-    if (state.post?.status === "pending")
-      return { ...base, notificationFailed: true };
-    const due = this.collaborators.attentionEpisodes.due(state, now2);
-    if (state.post?.status === "retry" && Date.parse(state.post.retryAt ?? "") > now2.getTime())
-      return { ...base, notificationFailed: true };
-    if (due.length && state.post?.day !== day || due.length && state.post?.status === "retry")
-      return this.post(state, now2);
-    return this.update(state, now2);
-  }
-  async update(state, now2) {
-    const view = this.collaborators.attentionPolicy.view(state);
-    const base = {
-      active: view.conditions.length,
-      posted: false,
-      notificationFailed: false
-    };
-    if (!state.post?.message) return base;
-    const fingerprint = this.notification.fingerprint(view);
-    if (fingerprint !== state.post.fingerprint) {
-      if (!await this.notification.update(state.post.message, view))
-        return { ...base, notificationFailed: true };
-      state.post.fingerprint = fingerprint;
-    }
-    if (state.post.day === this.collaborators.attentionPolicy.day(now2))
-      this.collaborators.attentionEpisodes.acknowledge(state, now2);
-    await this.repository.save(state);
-    return base;
-  }
-  async post(state, now2) {
-    const day = this.collaborators.attentionPolicy.day(now2);
-    state.post = {
-      reservationId: `attention:${day}:${now2.getTime()}`,
-      day,
-      reservedAt: now2.toISOString(),
-      status: "pending"
-    };
-    await this.repository.save(state);
-    const view = this.collaborators.attentionPolicy.view(state);
-    let result;
-    try {
-      result = await this.notification.post(view);
-    } catch {
-      result = { outcome: "uncertain" };
-    }
-    if (result.outcome === "accepted") {
-      state.post.status = "accepted";
-      state.post.message = result.message;
-      state.post.fingerprint = this.notification.fingerprint(view);
-      this.collaborators.attentionEpisodes.acknowledge(state, now2);
-    } else if (result.outcome === "retry") {
-      state.post.status = "retry";
-      const delay = Math.max(300, result.retryAfterSeconds ?? 300);
-      state.post.retryAt = new Date(now2.getTime() + delay * 1e3).toISOString();
-    }
-    await this.repository.save(state);
-    return {
-      active: view.conditions.length,
-      posted: result.outcome === "accepted",
-      notificationFailed: result.outcome !== "accepted"
-    };
-  }
-};
-
-// packages/domain/communication/src/attention/attention-episodes.ts
-var AttentionEpisodes = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  reconcile(previous, observation, now2) {
-    const state = previous ? structuredClone(previous) : {
-      eventDate: observation.eventDate,
-      stopped: observation.stopped,
-      episodes: []
-    };
-    const changedDate = state.eventDate !== observation.eventDate;
-    const conditions = new Map(
-      observation.conditions.map((condition) => [condition.key, condition])
-    );
-    for (const episode of state.episodes) {
-      const condition = conditions.get(episode.condition.key);
-      if (condition) {
-        conditions.delete(condition.key);
-        if (episode.status === "resolved" || episode.status === "stopped") {
-          episode.episode += 1;
-          episode.openedAt = now2.toISOString();
-          episode.lastWindow = void 0;
-        }
-        episode.condition = condition;
-        episode.status = "active";
-        if (changedDate && episode.lastWindow && ["preparation", "occurrence", "follow-up"].includes(condition.policy))
-          episode.lastWindow = this.collaborators.attentionPolicy.window(
-            episode,
-            observation.eventDate,
-            now2
-          );
-      } else {
-        episode.status = this.absentStatus(episode, observation);
-      }
-    }
-    for (const condition of conditions.values())
-      state.episodes.push({
-        condition,
-        episode: 1,
-        openedAt: now2.toISOString(),
-        status: "active"
-      });
-    state.eventDate = observation.eventDate;
-    state.stopped = observation.stopped;
-    state.runId = observation.runId;
-    state.commentId = observation.commentId;
-    return state;
-  }
-  absentStatus(episode, observation) {
-    if (episode.condition.recovery && (episode.status === "active" || episode.status === "unknown") && !observation.verifiedRecovery?.includes(episode.condition.key))
-      return "unknown";
-    if (observation.stopped && !episode.condition.recovery) return "stopped";
-    if (observation.evaluated.includes(episode.condition.owner))
-      return "resolved";
-    return episode.status === "active" ? "unknown" : episode.status;
-  }
-  due(state, now2) {
-    return this.collaborators.attentionPolicy.view(state).conditions.filter((episode) => {
-      const window = this.collaborators.attentionPolicy.window(
-        episode,
-        state.eventDate,
-        now2
-      );
-      return window !== void 0 && window !== episode.lastWindow;
-    });
-  }
-  acknowledge(state, now2) {
-    for (const episode of this.collaborators.attentionPolicy.view(state).conditions) {
-      const window = this.collaborators.attentionPolicy.window(
-        episode,
-        state.eventDate,
-        now2
-      );
-      if (window) episode.lastWindow = window;
-    }
-  }
-};
-
-// packages/domain/communication/src/communication-calendar.ts
-var CommunicationCalendar = class {
-  parseIsoLocalDate(value) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-    if (!match) {
-      return void 0;
-    }
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const candidate = new Date(Date.UTC(year, month - 1, day));
-    if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
-      return void 0;
-    }
-    return { year, month, day };
-  }
-  getLocalDate(instant, timeZone) {
-    try {
-      const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).formatToParts(instant);
-      const values = new Map(parts.map((part) => [part.type, part.value]));
-      const year = Number(values.get("year"));
-      const month = Number(values.get("month"));
-      const day = Number(values.get("day"));
-      if (![year, month, day].every(Number.isInteger)) {
-        return void 0;
-      }
-      return { year, month, day };
-    } catch {
-      return void 0;
-    }
-  }
-  toEpochDay(date) {
-    return Math.floor(
-      Date.UTC(date.year, date.month - 1, date.day) / 864e5
-    );
-  }
-  isValidInstant(value) {
-    return value instanceof Date && Number.isFinite(value.getTime());
-  }
-};
-
-// packages/domain/communication/src/communication-dispatcher.ts
-var CommunicationDispatcher = class {
-  constructor(collaborators, ledger, mailGateway) {
-    this.collaborators = collaborators;
-    this.#ledger = ledger;
-    this.#mailGateway = mailGateway;
-  }
-  collaborators;
-  #ledger;
-  #mailGateway;
-  async execute(intent, timestamp, counts, diagnostics) {
-    let dispatchResult;
-    try {
-      dispatchResult = await this.#mailGateway.dispatch(intent);
-    } catch {
-      counts.uncertain += 1;
-      diagnostics.push({
-        code: "gateway-threw-ambiguous-error",
-        severity: "error",
-        intentId: intent.intentId
-      });
-      await this.#markUncertain(
-        intent,
-        timestamp,
-        "gateway-threw-ambiguous-error",
-        diagnostics
-      );
-      return false;
-    }
-    if (dispatchResult.outcome === "deferred") {
-      await this.defer(intent, dispatchResult, counts, diagnostics);
-      return false;
-    }
-    if (dispatchResult.outcome === "rejected") {
-      counts.rejected += 1;
-      diagnostics.push({
-        code: "gateway-delivery-rejected",
-        severity: "error",
-        intentId: intent.intentId,
-        detailCode: dispatchResult.diagnosticCode
-      });
-      try {
-        await this.#ledger.markRejected(
-          intent.idempotencyKey,
-          timestamp,
-          dispatchResult.diagnosticCode
-        );
-      } catch {
-        diagnostics.push({
-          code: "ledger-status-write-failed",
-          severity: "error",
-          intentId: intent.intentId
-        });
-      }
-      return false;
-    }
-    if (dispatchResult.outcome === "uncertain") {
-      const detailCode = this.collaborators.communicationResults.safeDetailCode(
-        dispatchResult.diagnosticCode
-      );
-      counts.uncertain += 1;
-      diagnostics.push({
-        code: "gateway-delivery-uncertain",
-        severity: "error",
-        intentId: intent.intentId,
-        ...detailCode ? { detailCode } : {}
-      });
-      await this.#markUncertain(
-        intent,
-        timestamp,
-        detailCode ?? "gateway-delivery-uncertain",
-        diagnostics
-      );
-      return false;
-    }
-    return this.accept(intent, timestamp, counts, diagnostics);
-  }
-  async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
-    try {
-      await this.#ledger.markUncertain(
-        intent.idempotencyKey,
-        timestamp,
-        diagnosticCode
-      );
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
-  }
-  async defer(intent, dispatchResult, counts, diagnostics) {
-    counts.deferred += 1;
-    diagnostics.push({
-      code: "gateway-delivery-deferred",
-      severity: "warning",
-      intentId: intent.intentId,
-      detailCode: dispatchResult.diagnosticCode
-    });
-    try {
-      await this.#ledger.releasePending(intent.idempotencyKey);
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
-    return;
-  }
-  async accept(intent, timestamp, counts, diagnostics) {
-    counts.accepted += 1;
-    try {
-      await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
-      return true;
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
-    return false;
-  }
-};
-
-// packages/domain/communication/src/model.ts
-var MAIL_TEMPLATE_NAMES = {
-  hostIntroduction: "meetup-intro-hosting",
-  speakerIntroduction: "meetup-intro-speakers",
-  hostThanks: "meetup-thanks-hosting",
-  speakerThanks: "meetup-thanks-speakers"
-};
-
-// packages/domain/communication/src/plan-communications-contracts.ts
-var MAIL_POLICIES = {
-  introduction: {
-    hosting: {
-      kind: "host-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
-    },
-    speaker: {
-      kind: "speaker-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
-    }
-  },
-  thanks: {
-    hosting: {
-      kind: "host-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.hostThanks
-    },
-    speaker: {
-      kind: "speaker-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
-    }
-  }
-};
-
-// packages/domain/communication/src/communication-planner.ts
-var CommunicationPlanner = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  planMailMessages(input, policyName, intents, diagnostics) {
-    for (const recipient of input.mailRecipients) {
-      if (!recipient.receivesCommunications) {
-        continue;
-      }
-      if (!this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier(
-        recipient.recipientId
-      )) {
-        diagnostics.push(this.errorDiagnostic("invalid-identifier"));
-        continue;
-      }
-      if (recipient.email.trim().length === 0) {
-        diagnostics.push(this.errorDiagnostic("missing-mail-destination"));
-        continue;
-      }
-      const policy = MAIL_POLICIES[policyName][recipient.role];
-      const base = this.createIntentBase(
-        input,
-        policy.kind,
-        recipient.recipientId
-      );
-      const intent = {
-        ...base,
-        channel: "mail",
-        recipient: this.cloneMailRecipient(recipient),
-        templateName: policy.templateName,
-        placeholders: {
-          ...input.mailPlaceholders ?? {},
-          ...recipient.placeholders ?? {}
-        }
-      };
-      intents.push(intent);
-    }
-  }
-  createIntentBase(input, kind, recipientId) {
-    const idempotencyKey = this.collaborators.communicationIdempotency.createCommunicationIdempotencyKey(
-      {
-        repositoryId: input.repositoryId,
-        eventId: input.eventId,
-        kind,
-        recipientId,
-        policyVersion: input.policyVersion
-      }
-    );
-    return {
-      intentId: idempotencyKey,
-      idempotencyKey,
-      repositoryId: input.repositoryId,
-      eventId: input.eventId,
-      policyVersion: input.policyVersion,
-      kind,
-      recipientId
-    };
-  }
-  cloneMailRecipient(recipient) {
-    return {
-      ...recipient,
-      ...recipient.placeholders ? { placeholders: { ...recipient.placeholders } } : {}
-    };
-  }
-  deduplicateIntents(intents, diagnostics) {
-    const uniqueIntents = /* @__PURE__ */ new Map();
-    for (const intent of intents) {
-      if (uniqueIntents.has(intent.idempotencyKey)) {
-        diagnostics.push({
-          ...this.warningDiagnostic("duplicate-intent"),
-          intentId: intent.intentId
-        });
-        continue;
-      }
-      uniqueIntents.set(intent.idempotencyKey, intent);
-    }
-    return {
-      intents: [...uniqueIntents.values()],
-      diagnostics
-    };
-  }
-  hasValidBaseIdentifiers(input) {
-    return [input.repositoryId, input.eventId, input.policyVersion].every(
-      this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier.bind(
-        this.collaborators.communicationIdempotency
-      )
-    );
-  }
-  errorDiagnostic(code) {
-    return { code, severity: "error" };
-  }
-  warningDiagnostic(code) {
-    return { code, severity: "warning" };
-  }
-};
-
-// packages/domain/communication/src/communication-results.ts
-var CommunicationResults = class {
-  recordExisting(intentId, entry, counts, diagnostics) {
-    counts.alreadyRecorded += 1;
-    diagnostics.push({
-      code: "delivery-already-recorded",
-      severity: "info",
-      intentId,
-      deliveryStatus: entry.status
-    });
-  }
-  result(mode, intents, counts, diagnostics, acceptedIds) {
-    return {
-      mode,
-      intentIds: intents.map((intent) => intent.intentId),
-      completedMailKinds: this.completedMailKinds(intents, acceptedIds),
-      counts: { ...counts },
-      diagnostics: [...diagnostics]
-    };
-  }
-  completedMailKinds(intents, acceptedIds) {
-    const groups = /* @__PURE__ */ new Map();
-    for (const intent of intents) {
-      if (intent.channel !== "mail") continue;
-      groups.set(
-        intent.kind,
-        (groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId)
-      );
-    }
-    return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
-  }
-  emptyResult(mode, diagnostic) {
-    return {
-      mode,
-      intentIds: [],
-      completedMailKinds: [],
-      counts: {
-        planned: 0,
-        due: 0,
-        alreadyRecorded: 0,
-        reserved: 0,
-        dispatched: 0,
-        accepted: 0,
-        uncertain: 0,
-        rejected: 0,
-        deferred: 0
-      },
-      diagnostics: [diagnostic]
-    };
-  }
-  safeDetailCode(value) {
-    return [
-      "ambiguous-response",
-      "connection-reset",
-      "provider-timeout",
-      "unknown-provider-state"
-    ].includes(value ?? "") ? value : void 0;
-  }
-};
-
-// packages/domain/communication/src/idempotency.ts
-var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
-var CommunicationIdempotency = class {
-  isSafeCommunicationIdentifier(value) {
-    return SAFE_IDENTIFIER_PATTERN.test(value);
-  }
-  createCommunicationIdempotencyKey(components) {
-    const values = [
-      components.repositoryId,
-      components.eventId,
-      components.recipientId,
-      components.policyVersion
-    ];
-    if (!values.every(this.isSafeCommunicationIdentifier.bind(this))) {
-      throw new Error(
-        "Communication identifiers must be stable, opaque, and PII-free"
-      );
-    }
-    return [
-      "meetup-communication:v1",
-      `repository=${encodeURIComponent(components.repositoryId)}`,
-      `event=${encodeURIComponent(components.eventId)}`,
-      `kind=${components.kind}`,
-      `recipient=${encodeURIComponent(components.recipientId)}`,
-      `policy=${encodeURIComponent(components.policyVersion)}`
-    ].join("|");
-  }
-};
-
-// packages/domain/communication/src/mail-batch-fingerprint.ts
-import { createHash as createHash2 } from "node:crypto";
-var MailBatchFingerprint = class {
-  create(eventDate, timeZone, intents) {
-    const messages3 = intents.map((intent) => ({
-      id: intent.idempotencyKey,
-      destination: intent.recipient.email,
-      template: intent.templateName,
-      placeholders: Object.entries(intent.placeholders).sort(([a], [b2]) => a.localeCompare(b2)).map(([key, value]) => [
-        key,
-        typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
-      ])
-    })).sort((a, b2) => a.id.localeCompare(b2.id));
-    return createHash2("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages3 })).digest("hex");
-  }
-};
-
-// packages/domain/communication/src/plan-communications.ts
-var PlanCommunications = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  execute(input) {
-    const diagnostics = [];
-    if (!this.collaborators.communicationPlanner.hasValidBaseIdentifiers(input)) {
-      return {
-        intents: [],
-        diagnostics: [
-          this.collaborators.communicationPlanner.errorDiagnostic(
-            "invalid-identifier"
-          )
-        ]
-      };
-    }
-    if (!this.collaborators.communicationCalendar.isValidInstant(input.now)) {
-      return {
-        intents: [],
-        diagnostics: [
-          this.collaborators.communicationPlanner.errorDiagnostic(
-            "invalid-clock"
-          )
-        ]
-      };
-    }
-    if (input.occurrenceStatus === "cancelled" || input.occurrenceStatus === "postponed") {
-      return { intents: [], diagnostics };
-    }
-    if (input.occurrenceStatus === "unknown") {
-      return {
-        intents: [],
-        diagnostics: [
-          this.collaborators.communicationPlanner.warningDiagnostic(
-            "occurrence-status-unknown"
-          )
-        ]
-      };
-    }
-    const eventDate = this.collaborators.communicationCalendar.parseIsoLocalDate(
-      input.eventDate
-    );
-    if (!eventDate) {
-      return {
-        intents: [],
-        diagnostics: [
-          this.collaborators.communicationPlanner.errorDiagnostic(
-            "invalid-event-date"
-          )
-        ]
-      };
-    }
-    const currentDate = this.collaborators.communicationCalendar.getLocalDate(
-      input.now,
-      input.timeZone
-    );
-    if (!currentDate) {
-      return {
-        intents: [],
-        diagnostics: [
-          this.collaborators.communicationPlanner.errorDiagnostic(
-            "invalid-time-zone"
-          )
-        ]
-      };
-    }
-    return this.planDue(input, diagnostics);
-  }
-  planDue(input, diagnostics) {
-    const intents = [];
-    if (this.collaborators.postEventPolicy.isDue(input)) {
-      this.collaborators.communicationPlanner.planMailMessages(
-        input,
-        "thanks",
-        intents,
-        diagnostics
-      );
-      return this.collaborators.communicationPlanner.deduplicateIntents(
-        intents,
-        diagnostics
-      );
-    }
-    if (input.readiness === "ready") {
-      this.collaborators.communicationPlanner.planMailMessages(
-        input,
-        "introduction",
-        intents,
-        diagnostics
-      );
-      return this.collaborators.communicationPlanner.deduplicateIntents(
-        intents,
-        diagnostics
-      );
-    }
-    return { intents, diagnostics };
-  }
-};
-
-// packages/domain/communication/src/post-event-policy.ts
-var PostEventPolicy = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  isDue(input) {
-    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
-    if (!this.collaborators.communicationCalendar.isValidInstant(input.now))
-      return false;
-    const event = this.collaborators.communicationCalendar.parseIsoLocalDate(
-      input.eventDate
-    );
-    const today = this.collaborators.communicationCalendar.getLocalDate(
-      input.now,
-      input.timeZone
-    );
-    if (!event || !today) return false;
-    return input.occurrenceStatus === "held" || this.collaborators.communicationCalendar.toEpochDay(today) > this.collaborators.communicationCalendar.toEpochDay(event);
-  }
-};
-
-// packages/domain/communication/src/reconcile-communications.ts
-var ReconcileCommunications = class {
-  constructor(collaborators, dependencies) {
-    this.collaborators = collaborators;
-    this.#planner = dependencies.planner;
-    this.#clock = dependencies.clock;
-    this.#ledger = dependencies.ledger;
-    this.#dispatcher = this.collaborators.createCommunicationDispatcher(
-      dependencies.ledger,
-      dependencies.mailGateway
-    );
-  }
-  collaborators;
-  #planner;
-  #clock;
-  #ledger;
-  #dispatcher;
-  async execute(input) {
-    let now2;
-    try {
-      now2 = this.#clock.now();
-    } catch {
-      return this.collaborators.communicationResults.emptyResult(input.mode, {
-        code: "invalid-clock",
-        severity: "error"
-      });
-    }
-    if (!this.collaborators.communicationCalendar.isValidInstant(now2)) {
-      return this.collaborators.communicationResults.emptyResult(input.mode, {
-        code: "invalid-clock",
-        severity: "error"
-      });
-    }
-    const { mode, dispatchAuthorized, ...planningInput } = input;
-    const plan2 = this.#planner.execute({ ...planningInput, now: now2 });
-    const diagnostics = [...plan2.diagnostics];
-    const counts = {
-      planned: plan2.intents.length,
-      due: 0,
-      alreadyRecorded: 0,
-      reserved: 0,
-      dispatched: 0,
-      accepted: 0,
-      uncertain: 0,
-      rejected: 0,
-      deferred: 0
-    };
-    const timestamp = now2.toISOString();
-    const acceptedIds = /* @__PURE__ */ new Set();
-    for (const intent of plan2.intents) {
-      const accepted = await this.processIntent(
-        intent,
-        timestamp,
-        mode,
-        dispatchAuthorized,
-        counts,
-        diagnostics
-      );
-      if (accepted) acceptedIds.add(intent.intentId);
-    }
-    return this.collaborators.communicationResults.result(
-      mode,
-      plan2.intents,
-      counts,
-      diagnostics,
-      acceptedIds
-    );
-  }
-  async #findExisting(intent, diagnostics) {
-    try {
-      return await this.#ledger.find(intent.idempotencyKey);
-    } catch {
-      diagnostics.push({
-        code: "ledger-read-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-      return "read-failed";
-    }
-  }
-  async #reserve(intent, timestamp, diagnostics) {
-    try {
-      return await this.#ledger.reservePending({
-        idempotencyKey: intent.idempotencyKey,
-        intentId: intent.intentId,
-        repositoryId: intent.repositoryId,
-        eventId: intent.eventId,
-        kind: intent.kind,
-        recipientId: intent.recipientId,
-        policyVersion: intent.policyVersion,
-        reservedAt: timestamp
-      });
-    } catch {
-      diagnostics.push({
-        code: "ledger-reservation-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-      return "reservation-failed";
-    }
-  }
-  async processIntent(intent, timestamp, mode, dispatchAuthorized, counts, diagnostics) {
-    const existing = await this.#findExisting(intent, diagnostics);
-    if (existing === "read-failed") {
-      return;
-    }
-    if (existing) {
-      this.collaborators.communicationResults.recordExisting(
-        intent.intentId,
-        existing,
-        counts,
-        diagnostics
-      );
-      return existing.status === "accepted";
-    }
-    counts.due += 1;
-    if (mode === "check") {
-      return;
-    }
-    if (!dispatchAuthorized) {
-      return;
-    }
-    const reservation = await this.#reserve(intent, timestamp, diagnostics);
-    if (reservation === "reservation-failed") {
-      return;
-    }
-    if (!reservation.reserved) {
-      this.collaborators.communicationResults.recordExisting(
-        intent.intentId,
-        reservation.entry,
-        counts,
-        diagnostics
-      );
-      return reservation.entry.status === "accepted";
-    }
-    counts.reserved += 1;
-    counts.dispatched += 1;
-    return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
-  }
-};
-
-// packages/domain/communication/src/dependency-composition.ts
-var CommunicationDomainComposition = class {
-  attentionEpisodes() {
-    return new AttentionEpisodes({ attentionPolicy: this.attentionPolicy() });
-  }
-  attentionPolicy() {
-    return new AttentionPolicy({
-      communicationCalendar: this.communicationCalendar()
-    });
-  }
-  attentionStateEquality() {
-    return new AttentionStateEquality();
-  }
-  attentionStateRules() {
-    return new AttentionStateRules();
-  }
-  attentionTaskSelection() {
-    return new AttentionTaskSelection();
-  }
-  communicationCalendar() {
-    return new CommunicationCalendar();
-  }
-  communicationDispatcher(...args) {
-    return new CommunicationDispatcher(
-      { communicationResults: this.communicationResults() },
-      ...args
-    );
-  }
-  communicationIdempotency() {
-    return new CommunicationIdempotency();
-  }
-  communicationPlanner() {
-    return new CommunicationPlanner({
-      communicationIdempotency: this.communicationIdempotency()
-    });
-  }
-  communicationResults() {
-    return new CommunicationResults();
-  }
-  evaluateAttention() {
-    return new EvaluateAttention({
-      attentionPolicy: this.attentionPolicy(),
-      postEventPolicy: this.postEventPolicy()
-    });
-  }
-  mailBatchFingerprint() {
-    return new MailBatchFingerprint();
-  }
-  planCommunications() {
-    return new PlanCommunications({
-      communicationPlanner: this.communicationPlanner(),
-      communicationCalendar: this.communicationCalendar(),
-      postEventPolicy: this.postEventPolicy()
-    });
-  }
-  postEventPolicy() {
-    return new PostEventPolicy({
-      communicationCalendar: this.communicationCalendar()
-    });
-  }
-  reconcileAttention(...args) {
-    return new ReconcileAttention(
-      {
-        attentionPolicy: this.attentionPolicy(),
-        attentionEpisodes: this.attentionEpisodes()
-      },
-      ...args
-    );
-  }
-  reconcileCommunications(...args) {
-    return new ReconcileCommunications(
-      {
-        communicationResults: this.communicationResults(),
-        communicationCalendar: this.communicationCalendar(),
-        createCommunicationDispatcher: (...args2) => this.communicationDispatcher(...args2)
-      },
-      ...args
-    );
-  }
-};
-
 // packages/domain/publication/src/domain/content-error.ts
 var ContentError = class extends Error {
   constructor(code) {
@@ -39742,10 +38461,10 @@ var ContentContractPolicy = class {
 };
 
 // packages/domain/publication/src/domain/content-fingerprint.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash2 } from "node:crypto";
 var ContentFingerprint = class {
   of(value) {
-    return createHash3("sha256").update(value).digest("hex");
+    return createHash2("sha256").update(value).digest("hex");
   }
 };
 
@@ -40699,6 +39418,1287 @@ var FeedbackResolutionError = class extends Error {
     this.name = "FeedbackResolutionError";
   }
   kind;
+};
+
+// packages/application/journey/src/communication/communication-diagnostic-projection.ts
+var COMMUNICATION_MESSAGES = {
+  "duplicate-intent": "A duplicate communication intent was ignored.",
+  "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
+  "gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
+  "gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
+  "gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
+  "invalid-clock": "The communication clock is invalid.",
+  "invalid-event-date": "The event date is invalid.",
+  "invalid-identifier": "A stable communication identifier is invalid.",
+  "invalid-time-zone": "The configured time zone is invalid.",
+  "ledger-read-failed": "The delivery ledger could not be read.",
+  "ledger-reservation-failed": "The delivery could not be reserved safely.",
+  "ledger-status-write-failed": "The delivery status could not be recorded.",
+  "missing-mail-destination": "An opted-in mail recipient has no destination.",
+  "occurrence-status-unknown": "The event occurrence status must be explicit.",
+  "delivery-already-recorded": "The delivery ledger already contains this intent."
+};
+var RUNTIME_MESSAGES = {
+  "communication.content-review": "Event content needs current organizer approval.",
+  "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
+  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
+  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
+  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
+  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
+  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
+  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
+  "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
+  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
+  "communication.checklist-concurrently-modified": "Delivery results are recorded; an organizer edit postponed checklist completion.",
+  "communication.event-skipped": "The issue is not a configured meetup event.",
+  "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
+  "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
+  "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
+};
+var CommunicationDiagnosticProjection = class {
+  domainDiagnostic(diagnostic) {
+    return {
+      code: `communication.${diagnostic.code}`,
+      severity: diagnostic.severity,
+      message: COMMUNICATION_MESSAGES[diagnostic.code]
+    };
+  }
+  runtimeDiagnostic(diagnostic) {
+    return {
+      code: diagnostic.code,
+      severity: diagnostic.severity,
+      message: RUNTIME_MESSAGES[diagnostic.code]
+    };
+  }
+};
+
+// packages/domain/communication/src/attention/attention-policy.ts
+var AttentionPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  day(now2) {
+    const local = this.collaborators.communicationCalendar.getLocalDate(
+      now2,
+      "Europe/Paris"
+    );
+    if (!local) throw new Error("Invalid attention clock");
+    return this.collaborators.communicationCalendar.toEpochDay(local);
+  }
+  eventDay(date) {
+    const local = this.collaborators.communicationCalendar.parseIsoLocalDate(date);
+    return local ? this.collaborators.communicationCalendar.toEpochDay(local) : void 0;
+  }
+  window(episode, date, now2) {
+    const day = this.day(now2);
+    const policy = episode.condition.policy;
+    if (policy === "daily") return `day:${day}`;
+    if (policy === "weekly")
+      return `week:${Math.floor((day - this.day(new Date(episode.openedAt))) / 7)}`;
+    if (policy === "approval") {
+      const age = now2.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
+      return age >= 864e5 ? `day:${day}` : void 0;
+    }
+    const eventDay = this.eventDay(date);
+    if (eventDay === void 0) return void 0;
+    return this.milestone(policy, day - eventDay);
+  }
+  milestone(policy, elapsed) {
+    if (policy === "preparation") {
+      if (elapsed < -7 || elapsed > 0) return void 0;
+      const milestone = [0, 1, 3, 7].find((days) => elapsed >= -days);
+      return `preparation:${milestone}`;
+    }
+    if ((policy === "occurrence" || policy === "follow-up") && elapsed >= 1)
+      return `${policy}:${elapsed >= 7 ? 7 : 1}`;
+    return void 0;
+  }
+  view(state) {
+    return {
+      state,
+      conditions: state.episodes.filter((item) => item.status === "active" || item.status === "unknown").sort(this.compare.bind(this))
+    };
+  }
+  compare(left, right) {
+    const severity = Number(right.condition.severity === "error") - Number(left.condition.severity === "error");
+    return severity || left.openedAt.localeCompare(right.openedAt) || left.condition.key.localeCompare(right.condition.key);
+  }
+};
+
+// packages/domain/communication/src/attention/attention-state-equality.ts
+var AttentionStateEquality = class {
+  equal(left, right) {
+    return left.eventDate === right.eventDate && left.stopped === right.stopped && left.runId === right.runId && left.commentId === right.commentId && this.post(left.post, right.post) && left.episodes.length === right.episodes.length && left.episodes.every((episode) => {
+      const counterpart = right.episodes.find(
+        (item) => item.condition.key === episode.condition.key
+      );
+      return counterpart !== void 0 && this.episode(episode, counterpart);
+    });
+  }
+  episode(left, right) {
+    return left.episode === right.episode && left.openedAt === right.openedAt && left.status === right.status && left.lastWindow === right.lastWindow && this.condition(left.condition, right.condition);
+  }
+  condition(left, right) {
+    return left.key === right.key && left.code === right.code && left.owner === right.owner && left.resource === right.resource && left.severity === right.severity && left.policy === right.policy && left.since === right.since && left.commentId === right.commentId && left.recovery === right.recovery;
+  }
+  post(left, right) {
+    if (!left || !right) return left === right;
+    return left.reservationId === right.reservationId && left.day === right.day && left.reservedAt === right.reservedAt && left.status === right.status && left.retryAt === right.retryAt && left.fingerprint === right.fingerprint && left.message?.destination === right.message?.destination && left.message?.messageId === right.message?.messageId;
+  }
+};
+
+// packages/domain/communication/src/attention/attention-state-rules.ts
+var AttentionStateRules = class {
+  validate(state) {
+    if (new Set(state.episodes.map((item) => item.condition.key)).size !== state.episodes.length)
+      throw new Error("Duplicate attention condition");
+    for (const episode of state.episodes)
+      if (episode.condition.key !== `${episode.condition.code}:${episode.condition.resource}`)
+        throw new Error("Invalid attention resource");
+    const post = state.post;
+    if (!post) return;
+    if (post.status === "accepted" && !post.message)
+      throw new Error("Missing accepted attention reference");
+    if (post.status !== "accepted" && (post.message !== void 0 || post.fingerprint !== void 0))
+      throw new Error(
+        "Unconfirmed attention reservation has delivery authority"
+      );
+    if (post.status !== "retry" && post.retryAt !== void 0)
+      throw new Error("Unexpected attention retry");
+  }
+};
+
+// packages/domain/communication/src/attention/attention-task-selection.ts
+var AttentionTaskSelection = class _AttentionTaskSelection {
+  select(view, checklist) {
+    const conditions = view.conditions.filter(
+      (episode) => !this.covered(episode, checklist.entries)
+    );
+    const tasks = view.state.stopped ? [] : checklist.entries.filter(
+      (entry) => !conditions.some(
+        (episode) => entry.action !== void 0 && entry.action === this.actionFor(episode)
+      )
+    );
+    const urgent = conditions.filter(this.urgent.bind(this));
+    return {
+      urgent,
+      checklist: [...tasks].sort(
+        (left, right) => Number(right.field === "agenda") - Number(left.field === "agenda")
+      ),
+      remaining: conditions.filter((episode) => !this.urgent(episode)),
+      details: conditions.filter(
+        (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
+          (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
+        ))
+      )
+    };
+  }
+  urgent(episode) {
+    return [
+      "delivery-recovery",
+      "approval-pending",
+      "integration-failure"
+    ].includes(episode.condition.code);
+  }
+  actionFor(episode) {
+    if (episode.condition.code === "delivery-recovery")
+      return "delivery-recovery";
+    if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("social-publication:"))
+      return "social-approval";
+    if (episode.condition.resource.startsWith("community-publication:"))
+      return "community-approval";
+    return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
+  }
+  covered(episode, entries) {
+    if (!entries.length) return false;
+    const { code, resource } = episode.condition;
+    if (code === "required-data" || code === "integration-failure" && resource === "event-data")
+      return true;
+    const fields = code === "manual-publication" ? _AttentionTaskSelection.RESOURCE_FIELDS.get(resource) : _AttentionTaskSelection.CONDITION_FIELDS.get(code);
+    return fields?.some((field) => entries.some((entry) => entry.field === field)) ?? false;
+  }
+  static CONDITION_FIELDS = /* @__PURE__ */ new Map([
+    ["missing-date", ["date"]],
+    ["host-confirmation", ["host", "host-confirmation"]],
+    ["speaker-confirmation", ["speaker-confirmation"]]
+  ]);
+  static RESOURCE_FIELDS = /* @__PURE__ */ new Map([
+    ["publish-meetup-event", ["meetup"]],
+    ["publish-community-event", ["community"]]
+  ]);
+};
+
+// packages/domain/communication/src/attention/evaluate-attention.ts
+var EvaluateAttention = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(facts, now2) {
+    const stopped = facts.closed || facts.occurrence === "cancelled" || facts.occurrence === "postponed";
+    const conditions = [];
+    if (!stopped) this.tasks(facts, now2, conditions);
+    const evaluated = [];
+    if (!stopped) this.stages(facts, evaluated, conditions);
+    if (facts.approvals) evaluated.push("approvals");
+    if (facts.recovery) evaluated.push("delivery");
+    for (const item of (facts.recovery ?? []).filter(
+      (item2) => !item2.resolved && (!stopped || item2.uncertain !== false)
+    ))
+      conditions.push({
+        ...this.condition("delivery-recovery", "delivery", item.key, "daily"),
+        recovery: item.uncertain === false ? void 0 : true,
+        commentId: item.commentId
+      });
+    return {
+      conditions,
+      evaluated,
+      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
+      stopped,
+      eventDate: facts.eventDate,
+      runId: facts.runId
+    };
+  }
+  stages(facts, evaluated, conditions) {
+    for (const stage of facts.stages) this.stage(stage, evaluated, conditions);
+    for (const owner of ["approvals", "delivery"]) {
+      const available = owner === "approvals" ? facts.approvals : facts.recovery;
+      if (!available)
+        conditions.push(this.condition("stage-unknown", owner, owner, "none"));
+    }
+  }
+  stage(stage, evaluated, conditions) {
+    if (stage.prerequisiteBlocked) return;
+    if (stage.outcome !== "unknown") evaluated.push(stage.owner);
+    if (stage.outcome === "success" && !stage.blocked) return;
+    const unknown = stage.outcome === "unknown";
+    conditions.push(
+      this.condition(
+        unknown ? "stage-unknown" : "integration-failure",
+        stage.owner,
+        this.stageResource(stage),
+        unknown ? "none" : "daily"
+      )
+    );
+  }
+  stageResource(stage) {
+    return stage.owner === "event" && stage.outcome === "success" ? "event-data" : stage.owner;
+  }
+  tasks(facts, now2, conditions) {
+    const eventDay = this.collaborators.attentionPolicy.eventDay(
+      facts.eventDate
+    );
+    const day = this.collaborators.attentionPolicy.day(now2);
+    const postEvent = this.collaborators.postEventPolicy.isDue({
+      eventDate: facts.eventDate,
+      timeZone: "Europe/Paris",
+      occurrenceStatus: facts.occurrence,
+      now: now2
+    });
+    if (eventDay === void 0)
+      conditions.push(
+        this.condition("missing-date", "event", "date", "weekly")
+      );
+    this.preparation(facts, eventDay, day, conditions);
+    if (postEvent)
+      for (const task of facts.followUpPending)
+        conditions.push(
+          this.condition("follow-up", "event", task, "follow-up")
+        );
+    this.approvals(facts, conditions, postEvent);
+  }
+  approvals(facts, conditions, postEvent) {
+    for (const approval of facts.approvals ?? []) {
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
+      if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
+        conditions.push({
+          ...this.condition(
+            "approval-pending",
+            "approvals",
+            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            "approval"
+          ),
+          since: approval.requestedAt,
+          commentId: approval.commentId
+        });
+    }
+  }
+  preparation(facts, eventDay, day, conditions) {
+    if (facts.occurrence === "scheduled" && (eventDay === void 0 || day <= eventDay)) {
+      if (!facts.hostConfirmed)
+        conditions.push(
+          this.condition("host-confirmation", "event", "host", "preparation")
+        );
+      if (!facts.speakersConfirmed)
+        conditions.push(
+          this.condition(
+            "speaker-confirmation",
+            "event",
+            "speakers",
+            "preparation"
+          )
+        );
+      if (facts.requiredDataMissing)
+        conditions.push(
+          this.condition("required-data", "event", "event", "preparation")
+        );
+      for (const task of facts.publicationPending)
+        conditions.push(
+          this.condition("manual-publication", "event", task, "preparation")
+        );
+    }
+  }
+  condition(code, owner, resource, policy) {
+    return {
+      key: `${code}:${resource}`,
+      code,
+      owner,
+      resource,
+      policy,
+      severity: ["integration-failure", "delivery-recovery"].includes(code) ? "error" : "warning"
+    };
+  }
+};
+
+// packages/domain/communication/src/attention/model.ts
+var ATTENTION_CODES = [
+  "missing-date",
+  "required-data",
+  "host-confirmation",
+  "speaker-confirmation",
+  "manual-publication",
+  "approval-pending",
+  "integration-failure",
+  "delivery-recovery",
+  "occurrence-decision",
+  "follow-up",
+  "stage-unknown"
+];
+
+// packages/domain/communication/src/attention/reconcile-attention.ts
+var ReconcileAttention = class {
+  constructor(collaborators, repository, notification, clock) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.notification = notification;
+    this.clock = clock;
+  }
+  collaborators;
+  repository;
+  notification;
+  clock;
+  async execute(observation) {
+    const now2 = this.clock.now();
+    const day = this.collaborators.attentionPolicy.day(now2);
+    const previous = await this.repository.load();
+    const state = this.collaborators.attentionEpisodes.reconcile(
+      previous,
+      observation,
+      now2
+    );
+    await this.repository.save(state);
+    const view = this.collaborators.attentionPolicy.view(state);
+    const base = {
+      active: view.conditions.length,
+      posted: false,
+      notificationFailed: false
+    };
+    if (state.post?.status === "pending")
+      return { ...base, notificationFailed: true };
+    const due = this.collaborators.attentionEpisodes.due(state, now2);
+    if (state.post?.status === "retry" && Date.parse(state.post.retryAt ?? "") > now2.getTime())
+      return { ...base, notificationFailed: true };
+    if (due.length && state.post?.day !== day || due.length && state.post?.status === "retry")
+      return this.post(state, now2);
+    return this.update(state, now2);
+  }
+  async update(state, now2) {
+    const view = this.collaborators.attentionPolicy.view(state);
+    const base = {
+      active: view.conditions.length,
+      posted: false,
+      notificationFailed: false
+    };
+    if (!state.post?.message) return base;
+    const fingerprint = this.notification.fingerprint(view);
+    if (fingerprint !== state.post.fingerprint) {
+      if (!await this.notification.update(state.post.message, view))
+        return { ...base, notificationFailed: true };
+      state.post.fingerprint = fingerprint;
+    }
+    if (state.post.day === this.collaborators.attentionPolicy.day(now2))
+      this.collaborators.attentionEpisodes.acknowledge(state, now2);
+    await this.repository.save(state);
+    return base;
+  }
+  async post(state, now2) {
+    const day = this.collaborators.attentionPolicy.day(now2);
+    state.post = {
+      reservationId: `attention:${day}:${now2.getTime()}`,
+      day,
+      reservedAt: now2.toISOString(),
+      status: "pending"
+    };
+    await this.repository.save(state);
+    const view = this.collaborators.attentionPolicy.view(state);
+    let result;
+    try {
+      result = await this.notification.post(view);
+    } catch {
+      result = { outcome: "uncertain" };
+    }
+    if (result.outcome === "accepted") {
+      state.post.status = "accepted";
+      state.post.message = result.message;
+      state.post.fingerprint = this.notification.fingerprint(view);
+      this.collaborators.attentionEpisodes.acknowledge(state, now2);
+    } else if (result.outcome === "retry") {
+      state.post.status = "retry";
+      const delay = Math.max(300, result.retryAfterSeconds ?? 300);
+      state.post.retryAt = new Date(now2.getTime() + delay * 1e3).toISOString();
+    }
+    await this.repository.save(state);
+    return {
+      active: view.conditions.length,
+      posted: result.outcome === "accepted",
+      notificationFailed: result.outcome !== "accepted"
+    };
+  }
+};
+
+// packages/domain/communication/src/attention/attention-episodes.ts
+var AttentionEpisodes = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  reconcile(previous, observation, now2) {
+    const state = previous ? structuredClone(previous) : {
+      eventDate: observation.eventDate,
+      stopped: observation.stopped,
+      episodes: []
+    };
+    const changedDate = state.eventDate !== observation.eventDate;
+    const conditions = new Map(
+      observation.conditions.map((condition) => [condition.key, condition])
+    );
+    for (const episode of state.episodes) {
+      const condition = conditions.get(episode.condition.key);
+      if (condition) {
+        conditions.delete(condition.key);
+        if (episode.status === "resolved" || episode.status === "stopped") {
+          episode.episode += 1;
+          episode.openedAt = now2.toISOString();
+          episode.lastWindow = void 0;
+        }
+        episode.condition = condition;
+        episode.status = "active";
+        if (changedDate && episode.lastWindow && ["preparation", "occurrence", "follow-up"].includes(condition.policy))
+          episode.lastWindow = this.collaborators.attentionPolicy.window(
+            episode,
+            observation.eventDate,
+            now2
+          );
+      } else {
+        episode.status = this.absentStatus(episode, observation);
+      }
+    }
+    for (const condition of conditions.values())
+      state.episodes.push({
+        condition,
+        episode: 1,
+        openedAt: now2.toISOString(),
+        status: "active"
+      });
+    state.eventDate = observation.eventDate;
+    state.stopped = observation.stopped;
+    state.runId = observation.runId;
+    state.commentId = observation.commentId;
+    return state;
+  }
+  absentStatus(episode, observation) {
+    if (episode.condition.recovery && (episode.status === "active" || episode.status === "unknown") && !observation.verifiedRecovery?.includes(episode.condition.key))
+      return "unknown";
+    if (observation.stopped && !episode.condition.recovery) return "stopped";
+    if (observation.evaluated.includes(episode.condition.owner))
+      return "resolved";
+    return episode.status === "active" ? "unknown" : episode.status;
+  }
+  due(state, now2) {
+    return this.collaborators.attentionPolicy.view(state).conditions.filter((episode) => {
+      const window = this.collaborators.attentionPolicy.window(
+        episode,
+        state.eventDate,
+        now2
+      );
+      return window !== void 0 && window !== episode.lastWindow;
+    });
+  }
+  acknowledge(state, now2) {
+    for (const episode of this.collaborators.attentionPolicy.view(state).conditions) {
+      const window = this.collaborators.attentionPolicy.window(
+        episode,
+        state.eventDate,
+        now2
+      );
+      if (window) episode.lastWindow = window;
+    }
+  }
+};
+
+// packages/domain/communication/src/communication-calendar.ts
+var CommunicationCalendar = class {
+  parseIsoLocalDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) {
+      return void 0;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const candidate = new Date(Date.UTC(year, month - 1, day));
+    if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
+      return void 0;
+    }
+    return { year, month, day };
+  }
+  getLocalDate(instant, timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(instant);
+      const values = new Map(parts.map((part) => [part.type, part.value]));
+      const year = Number(values.get("year"));
+      const month = Number(values.get("month"));
+      const day = Number(values.get("day"));
+      if (![year, month, day].every(Number.isInteger)) {
+        return void 0;
+      }
+      return { year, month, day };
+    } catch {
+      return void 0;
+    }
+  }
+  toEpochDay(date) {
+    return Math.floor(
+      Date.UTC(date.year, date.month - 1, date.day) / 864e5
+    );
+  }
+  isValidInstant(value) {
+    return value instanceof Date && Number.isFinite(value.getTime());
+  }
+};
+
+// packages/domain/communication/src/communication-dispatcher.ts
+var CommunicationDispatcher = class {
+  constructor(collaborators, ledger, mailGateway) {
+    this.collaborators = collaborators;
+    this.#ledger = ledger;
+    this.#mailGateway = mailGateway;
+  }
+  collaborators;
+  #ledger;
+  #mailGateway;
+  async execute(intent, timestamp, counts, diagnostics) {
+    let dispatchResult;
+    try {
+      dispatchResult = await this.#mailGateway.dispatch(intent);
+    } catch {
+      counts.uncertain += 1;
+      diagnostics.push({
+        code: "gateway-threw-ambiguous-error",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        "gateway-threw-ambiguous-error",
+        diagnostics
+      );
+      return false;
+    }
+    if (dispatchResult.outcome === "deferred") {
+      await this.defer(intent, dispatchResult, counts, diagnostics);
+      return false;
+    }
+    if (dispatchResult.outcome === "rejected") {
+      counts.rejected += 1;
+      diagnostics.push({
+        code: "gateway-delivery-rejected",
+        severity: "error",
+        intentId: intent.intentId,
+        detailCode: dispatchResult.diagnosticCode
+      });
+      try {
+        await this.#ledger.markRejected(
+          intent.idempotencyKey,
+          timestamp,
+          dispatchResult.diagnosticCode
+        );
+      } catch {
+        diagnostics.push({
+          code: "ledger-status-write-failed",
+          severity: "error",
+          intentId: intent.intentId
+        });
+      }
+      return false;
+    }
+    if (dispatchResult.outcome === "uncertain") {
+      const detailCode = this.collaborators.communicationResults.safeDetailCode(
+        dispatchResult.diagnosticCode
+      );
+      counts.uncertain += 1;
+      diagnostics.push({
+        code: "gateway-delivery-uncertain",
+        severity: "error",
+        intentId: intent.intentId,
+        ...detailCode ? { detailCode } : {}
+      });
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        detailCode ?? "gateway-delivery-uncertain",
+        diagnostics
+      );
+      return false;
+    }
+    return this.accept(intent, timestamp, counts, diagnostics);
+  }
+  async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
+    try {
+      await this.#ledger.markUncertain(
+        intent.idempotencyKey,
+        timestamp,
+        diagnosticCode
+      );
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+  }
+  async defer(intent, dispatchResult, counts, diagnostics) {
+    counts.deferred += 1;
+    diagnostics.push({
+      code: "gateway-delivery-deferred",
+      severity: "warning",
+      intentId: intent.intentId,
+      detailCode: dispatchResult.diagnosticCode
+    });
+    try {
+      await this.#ledger.releasePending(intent.idempotencyKey);
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+    return;
+  }
+  async accept(intent, timestamp, counts, diagnostics) {
+    counts.accepted += 1;
+    try {
+      await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
+      return true;
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+    return false;
+  }
+};
+
+// packages/domain/communication/src/model.ts
+var MAIL_TEMPLATE_NAMES = {
+  hostIntroduction: "meetup-intro-hosting",
+  speakerIntroduction: "meetup-intro-speakers",
+  hostThanks: "meetup-thanks-hosting",
+  speakerThanks: "meetup-thanks-speakers"
+};
+
+// packages/domain/communication/src/plan-communications-contracts.ts
+var MAIL_POLICIES = {
+  introduction: {
+    hosting: {
+      kind: "host-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
+    },
+    speaker: {
+      kind: "speaker-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
+    }
+  },
+  thanks: {
+    hosting: {
+      kind: "host-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.hostThanks
+    },
+    speaker: {
+      kind: "speaker-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
+    }
+  }
+};
+
+// packages/domain/communication/src/communication-planner.ts
+var CommunicationPlanner = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  planMailMessages(input, policyName, intents, diagnostics) {
+    for (const recipient of input.mailRecipients) {
+      if (!recipient.receivesCommunications) {
+        continue;
+      }
+      if (!this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier(
+        recipient.recipientId
+      )) {
+        diagnostics.push(this.errorDiagnostic("invalid-identifier"));
+        continue;
+      }
+      if (recipient.email.trim().length === 0) {
+        diagnostics.push(this.errorDiagnostic("missing-mail-destination"));
+        continue;
+      }
+      const policy = MAIL_POLICIES[policyName][recipient.role];
+      const base = this.createIntentBase(
+        input,
+        policy.kind,
+        recipient.recipientId
+      );
+      const intent = {
+        ...base,
+        channel: "mail",
+        recipient: this.cloneMailRecipient(recipient),
+        templateName: policy.templateName,
+        placeholders: {
+          ...input.mailPlaceholders ?? {},
+          ...recipient.placeholders ?? {}
+        }
+      };
+      intents.push(intent);
+    }
+  }
+  createIntentBase(input, kind, recipientId) {
+    const idempotencyKey = this.collaborators.communicationIdempotency.createCommunicationIdempotencyKey(
+      {
+        repositoryId: input.repositoryId,
+        eventId: input.eventId,
+        kind,
+        recipientId,
+        policyVersion: input.policyVersion
+      }
+    );
+    return {
+      intentId: idempotencyKey,
+      idempotencyKey,
+      repositoryId: input.repositoryId,
+      eventId: input.eventId,
+      policyVersion: input.policyVersion,
+      kind,
+      recipientId
+    };
+  }
+  cloneMailRecipient(recipient) {
+    return {
+      ...recipient,
+      ...recipient.placeholders ? { placeholders: { ...recipient.placeholders } } : {}
+    };
+  }
+  deduplicateIntents(intents, diagnostics) {
+    const uniqueIntents = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (uniqueIntents.has(intent.idempotencyKey)) {
+        diagnostics.push({
+          ...this.warningDiagnostic("duplicate-intent"),
+          intentId: intent.intentId
+        });
+        continue;
+      }
+      uniqueIntents.set(intent.idempotencyKey, intent);
+    }
+    return {
+      intents: [...uniqueIntents.values()],
+      diagnostics
+    };
+  }
+  hasValidBaseIdentifiers(input) {
+    return [input.repositoryId, input.eventId, input.policyVersion].every(
+      this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier.bind(
+        this.collaborators.communicationIdempotency
+      )
+    );
+  }
+  errorDiagnostic(code) {
+    return { code, severity: "error" };
+  }
+  warningDiagnostic(code) {
+    return { code, severity: "warning" };
+  }
+};
+
+// packages/domain/communication/src/communication-results.ts
+var CommunicationResults = class {
+  recordExisting(intentId, entry, counts, diagnostics) {
+    counts.alreadyRecorded += 1;
+    diagnostics.push({
+      code: "delivery-already-recorded",
+      severity: "info",
+      intentId,
+      deliveryStatus: entry.status
+    });
+  }
+  result(mode, intents, counts, diagnostics, acceptedIds) {
+    return {
+      mode,
+      intentIds: intents.map((intent) => intent.intentId),
+      completedMailKinds: this.completedMailKinds(intents, acceptedIds),
+      counts: { ...counts },
+      diagnostics: [...diagnostics]
+    };
+  }
+  completedMailKinds(intents, acceptedIds) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (intent.channel !== "mail") continue;
+      groups.set(
+        intent.kind,
+        (groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId)
+      );
+    }
+    return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
+  }
+  emptyResult(mode, diagnostic) {
+    return {
+      mode,
+      intentIds: [],
+      completedMailKinds: [],
+      counts: {
+        planned: 0,
+        due: 0,
+        alreadyRecorded: 0,
+        reserved: 0,
+        dispatched: 0,
+        accepted: 0,
+        uncertain: 0,
+        rejected: 0,
+        deferred: 0
+      },
+      diagnostics: [diagnostic]
+    };
+  }
+  safeDetailCode(value) {
+    return [
+      "ambiguous-response",
+      "connection-reset",
+      "provider-timeout",
+      "unknown-provider-state"
+    ].includes(value ?? "") ? value : void 0;
+  }
+};
+
+// packages/domain/communication/src/idempotency.ts
+var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
+var CommunicationIdempotency = class {
+  isSafeCommunicationIdentifier(value) {
+    return SAFE_IDENTIFIER_PATTERN.test(value);
+  }
+  createCommunicationIdempotencyKey(components) {
+    const values = [
+      components.repositoryId,
+      components.eventId,
+      components.recipientId,
+      components.policyVersion
+    ];
+    if (!values.every(this.isSafeCommunicationIdentifier.bind(this))) {
+      throw new Error(
+        "Communication identifiers must be stable, opaque, and PII-free"
+      );
+    }
+    return [
+      "meetup-communication:v1",
+      `repository=${encodeURIComponent(components.repositoryId)}`,
+      `event=${encodeURIComponent(components.eventId)}`,
+      `kind=${components.kind}`,
+      `recipient=${encodeURIComponent(components.recipientId)}`,
+      `policy=${encodeURIComponent(components.policyVersion)}`
+    ].join("|");
+  }
+};
+
+// packages/domain/communication/src/mail-batch-fingerprint.ts
+import { createHash as createHash3 } from "node:crypto";
+var MailBatchFingerprint = class {
+  create(eventDate, timeZone, intents) {
+    const messages3 = intents.map((intent) => ({
+      id: intent.idempotencyKey,
+      destination: intent.recipient.email,
+      template: intent.templateName,
+      placeholders: Object.entries(intent.placeholders).sort(([a], [b2]) => a.localeCompare(b2)).map(([key, value]) => [
+        key,
+        typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
+      ])
+    })).sort((a, b2) => a.id.localeCompare(b2.id));
+    return createHash3("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages3 })).digest("hex");
+  }
+};
+
+// packages/domain/communication/src/plan-communications.ts
+var PlanCommunications = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(input) {
+    const diagnostics = [];
+    if (!this.collaborators.communicationPlanner.hasValidBaseIdentifiers(input)) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-identifier"
+          )
+        ]
+      };
+    }
+    if (!this.collaborators.communicationCalendar.isValidInstant(input.now)) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-clock"
+          )
+        ]
+      };
+    }
+    if (input.occurrenceStatus === "cancelled" || input.occurrenceStatus === "postponed") {
+      return { intents: [], diagnostics };
+    }
+    if (input.occurrenceStatus === "unknown") {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.warningDiagnostic(
+            "occurrence-status-unknown"
+          )
+        ]
+      };
+    }
+    const eventDate = this.collaborators.communicationCalendar.parseIsoLocalDate(
+      input.eventDate
+    );
+    if (!eventDate) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-event-date"
+          )
+        ]
+      };
+    }
+    const currentDate = this.collaborators.communicationCalendar.getLocalDate(
+      input.now,
+      input.timeZone
+    );
+    if (!currentDate) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-time-zone"
+          )
+        ]
+      };
+    }
+    return this.planDue(input, diagnostics);
+  }
+  planDue(input, diagnostics) {
+    const intents = [];
+    if (this.collaborators.postEventPolicy.isDue(input)) {
+      this.collaborators.communicationPlanner.planMailMessages(
+        input,
+        "thanks",
+        intents,
+        diagnostics
+      );
+      return this.collaborators.communicationPlanner.deduplicateIntents(
+        intents,
+        diagnostics
+      );
+    }
+    if (input.readiness === "ready") {
+      this.collaborators.communicationPlanner.planMailMessages(
+        input,
+        "introduction",
+        intents,
+        diagnostics
+      );
+      return this.collaborators.communicationPlanner.deduplicateIntents(
+        intents,
+        diagnostics
+      );
+    }
+    return { intents, diagnostics };
+  }
+};
+
+// packages/domain/communication/src/post-event-policy.ts
+var PostEventPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  isDue(input) {
+    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
+    if (!this.collaborators.communicationCalendar.isValidInstant(input.now))
+      return false;
+    const event = this.collaborators.communicationCalendar.parseIsoLocalDate(
+      input.eventDate
+    );
+    const today = this.collaborators.communicationCalendar.getLocalDate(
+      input.now,
+      input.timeZone
+    );
+    if (!event || !today) return false;
+    return input.occurrenceStatus === "held" || this.collaborators.communicationCalendar.toEpochDay(today) > this.collaborators.communicationCalendar.toEpochDay(event);
+  }
+};
+
+// packages/domain/communication/src/reconcile-communications.ts
+var ReconcileCommunications = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.#planner = dependencies.planner;
+    this.#clock = dependencies.clock;
+    this.#ledger = dependencies.ledger;
+    this.#dispatcher = this.collaborators.createCommunicationDispatcher(
+      dependencies.ledger,
+      dependencies.mailGateway
+    );
+  }
+  collaborators;
+  #planner;
+  #clock;
+  #ledger;
+  #dispatcher;
+  async execute(input) {
+    let now2;
+    try {
+      now2 = this.#clock.now();
+    } catch {
+      return this.collaborators.communicationResults.emptyResult(input.mode, {
+        code: "invalid-clock",
+        severity: "error"
+      });
+    }
+    if (!this.collaborators.communicationCalendar.isValidInstant(now2)) {
+      return this.collaborators.communicationResults.emptyResult(input.mode, {
+        code: "invalid-clock",
+        severity: "error"
+      });
+    }
+    const { mode, dispatchAuthorized, ...planningInput } = input;
+    const plan2 = this.#planner.execute({ ...planningInput, now: now2 });
+    const diagnostics = [...plan2.diagnostics];
+    const counts = {
+      planned: plan2.intents.length,
+      due: 0,
+      alreadyRecorded: 0,
+      reserved: 0,
+      dispatched: 0,
+      accepted: 0,
+      uncertain: 0,
+      rejected: 0,
+      deferred: 0
+    };
+    const timestamp = now2.toISOString();
+    const acceptedIds = /* @__PURE__ */ new Set();
+    for (const intent of plan2.intents) {
+      const accepted = await this.processIntent(
+        intent,
+        timestamp,
+        mode,
+        dispatchAuthorized,
+        counts,
+        diagnostics
+      );
+      if (accepted) acceptedIds.add(intent.intentId);
+    }
+    return this.collaborators.communicationResults.result(
+      mode,
+      plan2.intents,
+      counts,
+      diagnostics,
+      acceptedIds
+    );
+  }
+  async #findExisting(intent, diagnostics) {
+    try {
+      return await this.#ledger.find(intent.idempotencyKey);
+    } catch {
+      diagnostics.push({
+        code: "ledger-read-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      return "read-failed";
+    }
+  }
+  async #reserve(intent, timestamp, diagnostics) {
+    try {
+      return await this.#ledger.reservePending({
+        idempotencyKey: intent.idempotencyKey,
+        intentId: intent.intentId,
+        repositoryId: intent.repositoryId,
+        eventId: intent.eventId,
+        kind: intent.kind,
+        recipientId: intent.recipientId,
+        policyVersion: intent.policyVersion,
+        reservedAt: timestamp
+      });
+    } catch {
+      diagnostics.push({
+        code: "ledger-reservation-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      return "reservation-failed";
+    }
+  }
+  async processIntent(intent, timestamp, mode, dispatchAuthorized, counts, diagnostics) {
+    const existing = await this.#findExisting(intent, diagnostics);
+    if (existing === "read-failed") {
+      return;
+    }
+    if (existing) {
+      this.collaborators.communicationResults.recordExisting(
+        intent.intentId,
+        existing,
+        counts,
+        diagnostics
+      );
+      return existing.status === "accepted";
+    }
+    counts.due += 1;
+    if (mode === "check") {
+      return;
+    }
+    if (!dispatchAuthorized) {
+      return;
+    }
+    const reservation = await this.#reserve(intent, timestamp, diagnostics);
+    if (reservation === "reservation-failed") {
+      return;
+    }
+    if (!reservation.reserved) {
+      this.collaborators.communicationResults.recordExisting(
+        intent.intentId,
+        reservation.entry,
+        counts,
+        diagnostics
+      );
+      return reservation.entry.status === "accepted";
+    }
+    counts.reserved += 1;
+    counts.dispatched += 1;
+    return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
+  }
+};
+
+// packages/domain/communication/src/dependency-composition.ts
+var CommunicationDomainComposition = class {
+  attentionEpisodes() {
+    return new AttentionEpisodes({ attentionPolicy: this.attentionPolicy() });
+  }
+  attentionPolicy() {
+    return new AttentionPolicy({
+      communicationCalendar: this.communicationCalendar()
+    });
+  }
+  attentionStateEquality() {
+    return new AttentionStateEquality();
+  }
+  attentionStateRules() {
+    return new AttentionStateRules();
+  }
+  attentionTaskSelection() {
+    return new AttentionTaskSelection();
+  }
+  communicationCalendar() {
+    return new CommunicationCalendar();
+  }
+  communicationDispatcher(...args) {
+    return new CommunicationDispatcher(
+      { communicationResults: this.communicationResults() },
+      ...args
+    );
+  }
+  communicationIdempotency() {
+    return new CommunicationIdempotency();
+  }
+  communicationPlanner() {
+    return new CommunicationPlanner({
+      communicationIdempotency: this.communicationIdempotency()
+    });
+  }
+  communicationResults() {
+    return new CommunicationResults();
+  }
+  evaluateAttention() {
+    return new EvaluateAttention({
+      attentionPolicy: this.attentionPolicy(),
+      postEventPolicy: this.postEventPolicy()
+    });
+  }
+  mailBatchFingerprint() {
+    return new MailBatchFingerprint();
+  }
+  planCommunications() {
+    return new PlanCommunications({
+      communicationPlanner: this.communicationPlanner(),
+      communicationCalendar: this.communicationCalendar(),
+      postEventPolicy: this.postEventPolicy()
+    });
+  }
+  postEventPolicy() {
+    return new PostEventPolicy({
+      communicationCalendar: this.communicationCalendar()
+    });
+  }
+  reconcileAttention(...args) {
+    return new ReconcileAttention(
+      {
+        attentionPolicy: this.attentionPolicy(),
+        attentionEpisodes: this.attentionEpisodes()
+      },
+      ...args
+    );
+  }
+  reconcileCommunications(...args) {
+    return new ReconcileCommunications(
+      {
+        communicationResults: this.communicationResults(),
+        communicationCalendar: this.communicationCalendar(),
+        createCommunicationDispatcher: (...args2) => this.communicationDispatcher(...args2)
+      },
+      ...args
+    );
+  }
 };
 
 // packages/application/journey/src/approval/approval-value-fingerprint.ts

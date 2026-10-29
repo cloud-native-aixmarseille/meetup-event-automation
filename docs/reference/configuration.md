@@ -34,7 +34,9 @@ short-lived token for email dispatch to that owner's `mailings` repository. See
 The OpenFeedback key must be an organization key beginning with `oforg_`.
 It is required even when an issue already contains a feedback URL.
 The Kutt link ID is the API identifier of an existing link, not its short URL.
-Drive settings contain folder IDs. See [Drive](../integrations/assets.md) and
+Drive settings contain folder IDs. `GOOGLE_DRIVE_PUBLIC_FOLDER_ID` identifies
+the root containing `slides` and `tmp-covers`, not either child folder.
+See [Drive](../integrations/assets.md#export-the-presentation-pdf) and
 [feedback](../integrations/feedback.md) for setup requirements. The
 referential/form validation workflow requires no credentials.
 

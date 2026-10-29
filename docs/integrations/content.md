@@ -38,13 +38,20 @@ publication hour. The reminder hour must precede the event start on D0. The
 workflow locale selects English or French content; submitted content records
 its own language.
 
-Use the service account already configured for Drive assets. The public media
-folder must grant the service account write access and inherit an `anyone`
-reader permission for generated files. Content media use separate immutable
-files, with reserved Drive IDs and SHA-256 fingerprints. Existing documents,
-asset manifests, PDF files, and delivery ledgers retain their identities.
-The media verifier reads file permissions through the paginated Drive permissions
-API, including for shared-drive files whose metadata omits permissions.
+Use the service account already configured for Drive assets and the
+[public asset layout](assets.md#export-the-presentation-pdf). Cover candidates live
+in the existing `tmp-covers` child of `GOOGLE_DRIVE_PUBLIC_FOLDER_ID`. The service
+account needs write access there. Generated files must have an `anyone` reader
+permission, inherited or granted on each file before verification. The content
+media adapter verifies this access but does not grant it or change folder access.
+Content media use separate immutable files, with reserved Drive IDs and SHA-256
+fingerprints. Existing documents, asset manifests, PDF files, and delivery
+ledgers retain their identities. The media verifier reads file permissions
+through the paginated Drive permissions API, including for shared-drive files
+whose metadata omits permissions. Keep candidates referenced by reviews; the
+folder name does not imply automatic deletion. Missing or ambiguous destination
+folders keep generation pending for organizer recovery before reserving an image
+or calling the provider. Transport failures remain technical action failures.
 
 The GitHub App needs repository contents read and issues write. Organizer
 reviewers and submission authors need current write, maintain, or admin

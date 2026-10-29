@@ -5,13 +5,14 @@ import {
 	exportIdentity,
 	pdfBytes,
 	publicFolderId,
+	publicRootFolderId,
 } from "../../packages/adapter/publication/google-drive-asset-repository/testing/pdf-drive.fixtures.js";
 import { PublicationDomainComposition } from "../../packages/domain/publication/src/dependency-composition.js";
 
 function exportJourney(drive: ReturnType<typeof createPdfDrive>) {
 	const adapter = new GoogleDrivePdfComposition(
 		drive.client,
-		publicFolderId,
+		publicRootFolderId,
 		drive.download,
 	);
 	return new PublicationDomainComposition().reconcileSlidePdf(
@@ -78,10 +79,10 @@ describe("presentation PDF export", () => {
 		]);
 		expect(rerun.updated).toBe(false);
 		expect(drive.records.get("reserved-pdf")?.metadata.parents).toEqual([
-			"public-folder",
+			publicFolderId,
 		]);
 		expect(drive.records.get("second-pdf")?.metadata.parents).toEqual([
-			"public-folder",
+			publicFolderId,
 		]);
 		expect(
 			drive.files.create.mock.calls.every(
@@ -132,7 +133,7 @@ describe("presentation PDF export", () => {
 		expect(result).toMatchObject({ status: "ready", updated: true });
 		expect(folder?.metadata).toMatchObject({
 			mimeType: "application/vnd.google-apps.folder",
-			parents: ["shared-assets"],
+			parents: [publicRootFolderId],
 		});
 		expect(drive.records.get("reserved-pdf")?.metadata.parents).toEqual([
 			folder?.metadata.id,
@@ -334,7 +335,7 @@ describe("presentation PDF export", () => {
 		expect(result.status).toBe("ready");
 		expect(drive.records.get("unmanaged")?.bytes).toEqual(pdfBytes);
 		expect(drive.records.get("reserved-pdf")?.metadata.parents).toEqual([
-			"public-folder",
+			publicFolderId,
 		]);
 	});
 });

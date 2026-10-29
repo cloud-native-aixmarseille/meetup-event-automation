@@ -1,3 +1,4 @@
+import { ContentMediaChangedError } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import {
 	contentFixture,
@@ -7,6 +8,35 @@ import { DraftProposalComposition } from "../draft-proposal-composition.js";
 import { GenerateCoverArtwork } from "./generate-cover-artwork.js";
 
 describe("durable artwork generation", () => {
+	it.each(["layout", "transport"])(
+		"handles %s failure before image reservation",
+		async (kind) => {
+			// Arrange
+			const f = contentFixture("cover");
+			const error =
+				kind === "layout"
+					? new ContentMediaChangedError("Invalid media destination")
+					: new Error("Service unavailable");
+			f.images.reserve.mockRejectedValue(error);
+			const useCase = new GenerateCoverArtwork(
+				f.store,
+				f.imageGenerator,
+				f.images,
+				f.fingerprints,
+				f.policy,
+				new DraftProposalComposition().artwork(),
+			);
+			const before = await f.store.load();
+			// Act
+			const result = useCase.execute(f.proposal.id);
+			// Assert
+			if (kind === "layout") await expect(result).resolves.toBe("recovery");
+			else await expect(result).rejects.toBe(error);
+			expect(f.imageGenerator.generate).not.toHaveBeenCalled();
+			expect(f.images.persist).not.toHaveBeenCalled();
+			expect(await f.store.load()).toEqual(before);
+		},
+	);
 	it("awaits four independent image requests and persists separate artifacts", async () => {
 		// Arrange
 		const f = contentFixture("cover");

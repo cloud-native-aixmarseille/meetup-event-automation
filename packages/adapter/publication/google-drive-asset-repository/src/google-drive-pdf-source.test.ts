@@ -13,7 +13,7 @@ describe("GoogleDrivePdfSource", () => {
 		const drive = createPdfDrive();
 		const source = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		).source();
 
@@ -34,7 +34,7 @@ describe("GoogleDrivePdfSource", () => {
 		drive.records.delete(exportIdentity.sourceId);
 		const source = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		).source();
 
@@ -50,7 +50,7 @@ describe("GoogleDrivePdfSource", () => {
 		const drive = createPdfDrive();
 		const source = new GoogleDrivePdfComposition(
 			drive.client,
-			"public-folder",
+			"public-root",
 			drive.download,
 		).source();
 

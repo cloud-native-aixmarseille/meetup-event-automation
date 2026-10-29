@@ -8,6 +8,7 @@ import { DriveBoundedStream } from "./drive-bounded-stream.js";
 import { DriveContentImage } from "./drive-content-image.js";
 import { GoogleDriveAuthentication } from "./google-drive-authentication.js";
 import { GoogleDriveContentMediaStore } from "./google-drive-content-media-store.js";
+import { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
 
 export class GoogleDriveContentMediaComposition {
 	create(
@@ -16,12 +17,13 @@ export class GoogleDriveContentMediaComposition {
 		loader: ContentImageLoader,
 		names: Pick<AssetFileName, "render">,
 	): GoogleDriveContentMediaStore {
+		const client = drive({
+			version: "v3",
+			auth: new GoogleDriveAuthentication().create(credentials),
+		});
 		return new GoogleDriveContentMediaStore(
-			drive({
-				version: "v3",
-				auth: new GoogleDriveAuthentication().create(credentials),
-			}),
-			folderId,
+			client,
+			new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers"),
 			new DriveContentImage(),
 			new DriveBoundedStream(),
 			this.announcement(credentials, loader, names),

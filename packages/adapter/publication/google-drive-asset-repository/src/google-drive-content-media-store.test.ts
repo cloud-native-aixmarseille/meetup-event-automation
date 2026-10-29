@@ -1,9 +1,51 @@
 import type { drive_v3 } from "@googleapis/drive";
 import { describe, expect, it, vi } from "vitest";
 import { DriveContentImage } from "./drive-content-image.js";
+import { DrivePublicFolderError } from "./drive-public-folder-error.js";
 import { GoogleDriveContentMediaStore } from "./google-drive-content-media-store.js";
 
 describe("immutable content media", () => {
+	it("rejects invalid destination layout before reserving an image identity", async () => {
+		// Arrange
+		const generateIds = vi.fn();
+		const store = new GoogleDriveContentMediaStore(
+			{ files: { generateIds } } as unknown as drive_v3.Drive,
+			{
+				resolve: async () => {
+					throw new DrivePublicFolderError("Missing cover folder");
+				},
+			},
+			new DriveContentImage(),
+			{ read: vi.fn() },
+			{ verify: vi.fn() },
+		);
+		// Act
+		const result = store.reserve();
+		// Assert
+		await expect(result).rejects.toThrow(DrivePublicFolderError);
+		expect(generateIds).not.toHaveBeenCalled();
+	});
+	it.each(["public-root", "slides-folder"])(
+		"rejects a cover in %s before downloading it",
+		async (parent) => {
+			// Arrange
+			const get = vi.fn(async () => ({ data: { parents: [parent] } }));
+			const read = vi.fn();
+			const store = new GoogleDriveContentMediaStore(
+				{ files: { get } } as unknown as drive_v3.Drive,
+				{ resolve: async () => "covers-folder" },
+				new DriveContentImage(),
+				{ read },
+				{ verify: vi.fn() },
+			);
+			// Act
+			const result = store.read("reserved");
+			// Assert
+			await expect(result).rejects.toThrow("verified public artifact");
+			expect(get).toHaveBeenCalledTimes(1);
+			expect(read).not.toHaveBeenCalled();
+		},
+	);
 	it.each([
 		"paginated-reader",
 		"restricted",
@@ -55,7 +97,7 @@ describe("immutable content media", () => {
 								id: "reserved",
 								mimeType: image.mimeType,
 								description: "Cover",
-								parents: ["public-folder"],
+								parents: ["covers-folder"],
 								version: "1",
 								appProperties: {
 									contentSchema: "1",
@@ -67,7 +109,7 @@ describe("immutable content media", () => {
 			const read = vi.fn(async () => image.bytes);
 			const store = new GoogleDriveContentMediaStore(
 				{ files: { get }, permissions: { list } } as unknown as drive_v3.Drive,
-				"public-folder",
+				{ resolve: async () => "covers-folder" },
 				inspector,
 				{ read },
 				{ verify: vi.fn() },
@@ -122,7 +164,7 @@ describe("immutable content media", () => {
 					id: "reserved",
 					mimeType: image.mimeType,
 					description: "Public cover",
-					parents: ["public-folder"],
+					parents: ["covers-folder"],
 					version: "1",
 					appProperties: properties,
 				},
@@ -148,7 +190,7 @@ describe("immutable content media", () => {
 			} as unknown as drive_v3.Drive;
 			const store = new GoogleDriveContentMediaStore(
 				client,
-				"public-folder",
+				{ resolve: async () => "covers-folder" },
 				inspector,
 				{ read: vi.fn(async () => image.bytes) },
 				{ verify: vi.fn() },
@@ -178,7 +220,7 @@ describe("immutable content media", () => {
 					expect.objectContaining({
 						requestBody: expect.objectContaining({
 							id: "reserved",
-							parents: ["public-folder"],
+							parents: ["covers-folder"],
 						}),
 					}),
 					expect.objectContaining({ retry: false }),
@@ -193,7 +235,7 @@ describe("immutable content media", () => {
 			.mockRejectedValue(new Error("Service unavailable"));
 		const store = new GoogleDriveContentMediaStore(
 			{ files: { get } } as unknown as drive_v3.Drive,
-			"public-folder",
+			{ resolve: async () => "covers-folder" },
 			new DriveContentImage(),
 			{ read: vi.fn() },
 			{ verify: vi.fn() },
