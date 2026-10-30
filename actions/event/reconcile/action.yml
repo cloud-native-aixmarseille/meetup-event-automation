@@ -23,6 +23,9 @@ inputs:
   conference-hall-event:
     description: Conference Hall CFP slug for live linked profiles and selected proposals.
     required: true
+  conference-hall-event-url:
+    description: Conference Hall organizer event URL, https://conference-hall.io/team/TEAM/EVENT, matching conference-hall-event.
+    required: true
   conference-hall-api-key:
     description: Read-only Conference Hall event API key.
     required: true

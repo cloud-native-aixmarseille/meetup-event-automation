@@ -1,4 +1,4 @@
-name: Reconcile organizer attention
+name: Update organizer tasks
 description:
   Reconcile organizer attention and bounded Slack reminders from the persisted checklist
   and stage evidence.

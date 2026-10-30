@@ -22,6 +22,8 @@ import {
 	PreparePromotionalContent,
 } from "@meetup-automation/journey";
 import type { ContentMedia } from "@meetup-automation/publication";
+import { DateTemplateFormatter } from "@meetup-automation/templating";
+import { AssetDateFormatter } from "./assets/asset-date-formatter.js";
 import { EventComposition, SERVICES } from "./composition.js";
 import type { DraftSourceInput } from "./draft-source-input.js";
 
@@ -53,7 +55,13 @@ export class DraftWorkspaceComposition {
 			repository: container.get<EventRepository>(SERVICES.eventRepository),
 			manageEvent: container.get(ManageMeetupEvent),
 			plans: new ContentPlanFactory(fingerprints, timing),
-			projection: new ContentFactsProjection(),
+			projection: new ContentFactsProjection(
+				(date, language) =>
+					new AssetDateFormatter(
+						new DateTemplateFormatter(language),
+						language,
+					).format(date, "UTC", "month") ?? "",
+			),
 			publication: input.publication,
 			settings: input.settings,
 			destinations: input.destinations,

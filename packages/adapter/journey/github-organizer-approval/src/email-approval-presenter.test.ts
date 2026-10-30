@@ -65,15 +65,15 @@ describe("approval request details", () => {
 			expect(body).toContain("Alex Example");
 			expect(body).toContain(
 				locale === "fr"
-					? "Remerciement pour l&#39;intervenant"
-					: "Thank-you email for the speaker",
+					? "Remerciement à l&#39;intervenant"
+					: "Speaker thank-you",
 			);
 			expect(body).toContain("Reliable platforms</a>");
 			expect(body).toContain(
 				'href="https://openfeedback.io/example/0/talk?displayVotes=true"',
 			);
 			expect(body).toContain(
-				locale === "fr" ? "Voir le détail des e-mails" : "Review email details",
+				locale === "fr" ? "Détail des emails" : "Email details",
 			);
 		},
 	);
@@ -171,7 +171,7 @@ describe("approval request details", () => {
 		const body = presenter.issue(record, record.decision);
 
 		// Assert
-		expect(body).toContain("✅ **Approved**");
+		expect(body).toContain("✅ Approved");
 		expect(body).toContain("<details>");
 		expect(body).toContain("Reliable platforms</a>");
 		expect(body).not.toContain("- [ ]");

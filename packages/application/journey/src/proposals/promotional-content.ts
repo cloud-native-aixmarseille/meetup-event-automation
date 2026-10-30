@@ -48,6 +48,7 @@ export interface ContentDecision {
 	readonly actor: string;
 	readonly decidedAt: string;
 	readonly selectedImage?: string;
+	readonly editedText?: string;
 }
 export interface ContentAttempt {
 	readonly id: string;

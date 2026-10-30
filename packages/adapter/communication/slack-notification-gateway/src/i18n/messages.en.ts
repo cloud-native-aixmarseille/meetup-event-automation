@@ -1,12 +1,12 @@
 export const EN_MESSAGES = {
 	"request.social-publication":
-		"Social publication · {date} · {target}\nReview the exact destination, text, media, and timing, then approve or reject publication in GitHub: {url}",
+		"Post on {target} · {date}\nReview and approve publication: {url}",
 	"request.community-publication":
-		"CNCF community event for {date}: review the OCGroups draft and approve publication, including native notifications, in GitHub: {url}",
+		"CNCF · {date}\nReview and approve the event and OCGroups notifications: {url}",
 	"request.content":
-		"Content review needed for {date}: {target}. Review and approve, reject, or request another iteration: {url}",
+		"Content for {date} · {target}\nEdit if needed, then approve: {url}",
 	"request.introduction":
-		"Introduction emails · {date} · Up to {count, number} recipients\nApprove or reject: {url}",
+		"Introduction emails · {date} · Up to {count, plural, one {# recipient} other {# recipients}}\nApprove or reject: {url}",
 	"request.publication":
-		"Meetup publication · {date}\nReview the draft and approve or reject publication: {url}",
+		"Meetup · {date}\nReview and approve publication: {url}",
 } as const;

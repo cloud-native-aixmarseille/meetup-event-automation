@@ -2,6 +2,10 @@ import type { MessageId } from "./i18n/catalog.js";
 
 export const STAGE_GUIDANCE = [
 	[
+		"publication.content.invalid",
+		["Event materials", "comment.guidance.content.invalid"],
+	],
+	[
 		"communication.social.evaluation-failed",
 		["Communication", "comment.guidance.social.evaluation-failed"],
 	],
@@ -56,35 +60,35 @@ export const STAGE_GUIDANCE = [
 	],
 	[
 		"publication.content.prerequisites",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.prerequisites"],
 	],
 	[
 		"publication.content.pending",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.pending"],
 	],
 	[
 		"publication.content.rejected",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.rejected"],
 	],
 	[
 		"publication.content.iteration-requested",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.iteration-requested"],
 	],
 	[
 		"publication.content.recovery",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.recovery"],
 	],
 	[
 		"publication.content.stale",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.stale"],
 	],
 	[
 		"publication.content.title-review",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.title-review"],
 	],
 	[
 		"publication.content.description-review",
-		["Event materials", "comment.guidance.content.review"],
+		["Event materials", "comment.guidance.content.description-review"],
 	],
 	[
 		"publication.meetup.content-review",

@@ -231,6 +231,7 @@ const actionContracts = [
 			"meetup-event-url-prefix",
 			"conference-hall-api-key",
 			"conference-hall-event",
+			"conference-hall-event-url",
 			"github-token",
 			"issue-number",
 		],

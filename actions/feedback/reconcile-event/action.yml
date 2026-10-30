@@ -1,4 +1,4 @@
-name: Reconcile feedback event
+name: Update meetup feedback
 description: Reconcile one OpenFeedback event, its talks and speakers, and the issue feedback link.
 inputs:
   meetup-event-url-prefix:

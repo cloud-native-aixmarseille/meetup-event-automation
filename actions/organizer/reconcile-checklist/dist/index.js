@@ -39910,6 +39910,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("content-review:"))
+      return "content-approval";
     if (episode.condition.resource.startsWith("social-publication:"))
       return "social-approval";
     if (episode.condition.resource.startsWith("community-publication:"))
@@ -46543,6 +46545,10 @@ var DiagnosticCommentSections = class {
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.content.invalid",
+    ["Event materials", "comment.guidance.content.invalid"]
+  ],
+  [
     "communication.social.evaluation-failed",
     ["Communication", "comment.guidance.social.evaluation-failed"]
   ],
@@ -46597,35 +46603,35 @@ var STAGE_GUIDANCE = [
   ],
   [
     "publication.content.prerequisites",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.prerequisites"]
   ],
   [
     "publication.content.pending",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.pending"]
   ],
   [
     "publication.content.rejected",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.rejected"]
   ],
   [
     "publication.content.iteration-requested",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.iteration-requested"]
   ],
   [
     "publication.content.recovery",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.recovery"]
   ],
   [
     "publication.content.stale",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.stale"]
   ],
   [
     "publication.content.title-review",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.title-review"]
   ],
   [
     "publication.content.description-review",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.description-review"]
   ],
   [
     "publication.meetup.content-review",
@@ -47439,13 +47445,22 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES = {
+  "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
+  "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
+  "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+  "comment.guidance.content.stale": "The event changed. Generate and review a new proposal.",
+  "comment.guidance.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
+  "comment.guidance.content.iteration-requested": "A new proposal was requested. Run generation again.",
+  "comment.guidance.content.rejected": "Content rejected. Submit a replacement for review.",
+  "comment.guidance.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
+  "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
   "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
   "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
   "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
   "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
   "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
-  "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "comment.guidance.content.review": "Review the title, description, and cover in their proposal comments.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
   "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
@@ -47462,10 +47477,10 @@ var EN_MESSAGES = {
   "comment.agenda.item": "Agenda (item {item}{speaker})",
   "comment.agenda.speaker-suffix": ", speaker {speaker}",
   "comment.agenda.speaker": "Agenda (speaker {speaker})",
-  "comment.guidance.event.title.missing": "Generate or submit the event title, then approve it for automatic application.",
+  "comment.guidance.event.title.missing": "Edit and approve the proposed title.",
   "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
   "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
-  "comment.guidance.event.description.missing": "Generate or submit the event description, then approve it for automatic application.",
+  "comment.guidance.event.description.missing": "Edit and approve the proposed description.",
   "comment.guidance.event.hoster.missing": "Select a host from the host list.",
   "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
   "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
@@ -47476,8 +47491,8 @@ var EN_MESSAGES = {
   "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
   "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
   "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
-  "comment.guidance.publication.community.missing": "Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.",
-  "comment.guidance.publication.assets.missing": "Run asset reconciliation to create the event folder and populate its Google Drive link.",
+  "comment.guidance.publication.community.missing": "Sync publications, then approve the OCGroups draft. The public link is added automatically.",
+  "comment.guidance.publication.assets.missing": "Sync assets to create the event Drive folder.",
   "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
   "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
   "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
@@ -47500,13 +47515,13 @@ var EN_MESSAGES = {
   "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
   "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
   "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata.",
-  "comment.guidance.event.document.reference-metadata.stale": "Check the host and agenda references, then rerun the issue update workflow to refresh their metadata.",
-  "comment.guidance.referential.reference.host.unknown": "This host was not found in the host list. Copy its exact name, including accents, or use a name with its stable ID: `Host name [host-0001]`.",
+  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.event.document.reference-metadata.stale": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.referential.reference.host.unknown": "Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
   "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
   "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
   "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "This speaker was not found in the speaker list. Copy its exact name, including accents, or use a name with its stable ID: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
   "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
@@ -47514,13 +47529,22 @@ var EN_MESSAGES = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
+  "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
+  "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
+  "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+  "comment.guidance.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
+  "comment.guidance.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
+  "comment.guidance.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
+  "comment.guidance.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
+  "comment.guidance.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
+  "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
   "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
   "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
   "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
   "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
   "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
-  "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "comment.guidance.content.review": "Validez le titre, la description et le visuel dans leurs commentaires.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
   "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
@@ -47537,10 +47561,10 @@ var FR_MESSAGES = {
   "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
   "comment.agenda.speaker-suffix": ", intervenant {speaker}",
   "comment.agenda.speaker": "Programme (intervenant {speaker})",
-  "comment.guidance.event.title.missing": "G\xE9n\xE9rez ou proposez le titre de l'\xE9v\xE9nement, puis approuvez-le pour qu'il soit appliqu\xE9 automatiquement.",
+  "comment.guidance.event.title.missing": "Modifiez et validez le titre propos\xE9.",
   "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
   "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
-  "comment.guidance.event.description.missing": "G\xE9n\xE9rez ou proposez la description de l'\xE9v\xE9nement, puis approuvez-la pour qu'elle soit appliqu\xE9e automatiquement.",
+  "comment.guidance.event.description.missing": "Modifiez et validez la description propos\xE9e.",
   "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
   "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
   "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
@@ -47551,8 +47575,8 @@ var FR_MESSAGES = {
   "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
   "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
   "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
-  "comment.guidance.publication.community.missing": "Lancez la synchronisation des publications et approuvez la publication CNCF / OCGroups ; l'automatisation ajoute le lien public v\xE9rifi\xE9.",
-  "comment.guidance.publication.assets.missing": "Lancez la synchronisation des ressources pour cr\xE9er le dossier de l'\xE9v\xE9nement et renseigner son lien Google Drive.",
+  "comment.guidance.publication.community.missing": "Synchronisez les publications, puis validez le brouillon OCGroups. Le lien public sera ajout\xE9 automatiquement.",
+  "comment.guidance.publication.assets.missing": "Synchronisez les fichiers pour cr\xE9er le dossier Drive du meetup.",
   "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
@@ -47575,13 +47599,13 @@ var FR_MESSAGES = {
   "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
   "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
   "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez les r\xE9f\xE9rences de l'h\xF4te et du programme, puis relancez la mise \xE0 jour de l'issue pour actualiser leurs anciennes m\xE9tadonn\xE9es.",
-  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez les r\xE9f\xE9rences de l'h\xF4te et du programme, puis relancez la mise \xE0 jour de l'issue pour actualiser leurs m\xE9tadonn\xE9es.",
-  "comment.guidance.referential.reference.host.unknown": "Cet h\xF4te est absent de la liste des h\xF4tes. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.referential.reference.host.unknown": "H\xF4te introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [host-0001]`.",
   "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
   "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
   "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l'h\xF4te [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "Cet intervenant est absent de la liste des intervenants. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Intervenant introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
   "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
@@ -47589,29 +47613,29 @@ var FR_MESSAGES = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
-  "comment.social.target": "Social publication ({destination}, {purpose})",
+  "comment.social.target": "Post ({destination}, {purpose})",
   "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
   "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
   "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
   "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
-  "comment.guidance.social.evaluation-failed": "Social publication could not be evaluated. Ask a maintainer to check source access and delivery records before retrying.",
+  "comment.guidance.social.evaluation-failed": "Could not check publication. Check source access and delivery records before retrying.",
   "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
   "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
   "comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
   "comment.guidance.assets.slides": "Complete the presentation and its public link before sending emails.",
-  "comment.guidance.communication.approval": "Approve or reject the email batch.",
-  "comment.guidance.communication.rejected": "Email batch rejected. Update its content to request a new approval.",
+  "comment.guidance.communication.approval": "Approve or reject the emails.",
+  "comment.guidance.communication.rejected": "Emails rejected. Change their content to request a new approval.",
   "comment.guidance.communication.approval-unavailable": "Approval could not be verified. Check the approval request, then retry.",
-  "comment.guidance.communication.approval-notification": "Review the email approval request on this issue; its Slack notification failed.",
+  "comment.guidance.communication.approval-notification": "Slack notification failed. Review the email approval comment in this issue.",
   "comment.guidance.communication.delivery-uncertain": "Verify delivery before retrying.",
   "comment.guidance.communication.delivery-rejected": "Delivery rejected. Check the mail gateway before retrying.",
   "comment.guidance.communication.delivery-deferred": "Delivery deferred; the next run will retry.",
   "comment.guidance.communication.configuration": "Ask a maintainer to check the communication workflow configuration.",
   "comment.guidance.communication.ledger": "Check the delivery ledger before retrying.",
-  "comment.guidance.communication.destination": "Add an email address for each opted-in recipient.",
+  "comment.guidance.communication.destination": "Add an email address for each recipient.",
   "comment.guidance.communication.content": "Complete the notification content before retrying.",
-  "comment.guidance.communication.checklist": "Rerun reconciliation to update completed email tasks.",
+  "comment.guidance.communication.checklist": "Sync again to mark completed email tasks.",
   "comment.guidance.communication.concurrent": "The issue changed during processing. Retry after editing.",
   "comment.guidance.communication.references": "Select known hosts and speakers before sending emails.",
   "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
@@ -47638,29 +47662,29 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
-  "comment.social.target": "Publication sociale ({destination}, {purpose})",
+  "comment.social.target": "Publication ({destination}, {purpose})",
   "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
   "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
   "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
-  "comment.guidance.social.evaluation-failed": "La publication sociale n'a pas pu \xEAtre \xE9valu\xE9e. Demandez \xE0 un responsable de v\xE9rifier les acc\xE8s aux sources et le registre des envois avant de r\xE9essayer.",
+  "comment.guidance.social.evaluation-failed": "Publication non v\xE9rifiable. V\xE9rifiez les acc\xE8s aux sources et le registre des envois avant de relancer.",
   "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
   "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
   "comment.guidance.feedback.access": "V\xE9rifiez les acc\xE8s OpenFeedback, puis r\xE9essayez.",
   "comment.guidance.assets.slides": "Compl\xE9tez la pr\xE9sentation et son lien public avant les envois.",
-  "comment.guidance.communication.approval": "Approuvez ou refusez le lot de courriels.",
-  "comment.guidance.communication.rejected": "Lot de courriels refus\xE9. Modifiez son contenu pour demander une nouvelle approbation.",
+  "comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
+  "comment.guidance.communication.rejected": "Emails refus\xE9s. Modifiez leur contenu pour demander une nouvelle validation.",
   "comment.guidance.communication.approval-unavailable": "Approbation non v\xE9rifiable. V\xE9rifiez la demande d'approbation, puis r\xE9essayez.",
-  "comment.guidance.communication.approval-notification": "Consultez la demande d'approbation des courriels sur ce ticket ; sa notification Slack a \xE9chou\xE9.",
+  "comment.guidance.communication.approval-notification": "La notification Slack a \xE9chou\xE9. Validez les emails dans le commentaire de cette issue.",
   "comment.guidance.communication.delivery-uncertain": "V\xE9rifiez l'envoi avant toute reprise.",
   "comment.guidance.communication.delivery-rejected": "Envoi refus\xE9. V\xE9rifiez la passerelle d'envoi avant de r\xE9essayer.",
   "comment.guidance.communication.delivery-deferred": "Envoi diff\xE9r\xE9 ; la prochaine ex\xE9cution r\xE9essaiera.",
   "comment.guidance.communication.configuration": "Demandez \xE0 un responsable de v\xE9rifier la configuration des communications.",
   "comment.guidance.communication.ledger": "V\xE9rifiez le registre des envois avant de r\xE9essayer.",
-  "comment.guidance.communication.destination": "Ajoutez une adresse courriel pour chaque destinataire inscrit.",
+  "comment.guidance.communication.destination": "Ajoutez une adresse email pour chaque destinataire.",
   "comment.guidance.communication.content": "Compl\xE9tez le contenu de la notification avant de r\xE9essayer.",
-  "comment.guidance.communication.checklist": "Relancez la synchronisation pour actualiser les t\xE2ches de courriel termin\xE9es.",
+  "comment.guidance.communication.checklist": "Relancez pour cocher les t\xE2ches d'email termin\xE9es.",
   "comment.guidance.communication.concurrent": "Le ticket a chang\xE9 pendant le traitement. R\xE9essayez apr\xE8s les modifications.",
   "comment.guidance.communication.references": "S\xE9lectionnez des h\xF4tes et intervenants connus avant les envois.",
   "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
@@ -48908,9 +48932,11 @@ var IssueFormWriter = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
     this.repositoryRef = options.repositoryRef ?? "main";
+    this.conferenceHallEventUrl = options.conferenceHallEventUrl;
   }
   collaborators;
   repositoryRef;
+  conferenceHallEventUrl;
   createPatch(document, event) {
     const patch = {};
     if (document.issueTitle !== event.issueTitle)
@@ -48924,7 +48950,8 @@ var IssueFormWriter = class {
         checklists,
         this.collaborators.eventReferenceMetadata.referenceMetadata(event)
       ),
-      event
+      event,
+      this.conferenceHallEventUrl
     );
     if (body !== document.body) patch.body = body;
     return Object.freeze(patch);
@@ -49405,7 +49432,7 @@ var ProposalSelectionCodec = class {
     );
     const hasMarker = body.includes("<!-- meetup-proposals:");
     if ((!value || value === "_No response_") && !hasMarker) return {};
-    const proposalReferences = (value || "!missing-selection").split(/\r?\n/).map((id) => id.trim().replace(/^[-*]\s+/, "")).filter(Boolean);
+    const proposalReferences = (value || "!missing-selection").split(/\r?\n/).map((id) => this.readReference(id.trim().replace(/^[-*]\s+/, ""))).filter(Boolean);
     const markers = this.collaborators.managedIssueMarkers.readManagedMarkerValues(
       body,
       "meetup-proposals"
@@ -49420,8 +49447,14 @@ var ProposalSelectionCodec = class {
       });
     return { proposalReferences, proposalStatus: "stale" };
   }
-  write(body, event) {
+  write(body, event, eventUrl) {
     if (!event.proposalReferences?.length) return body;
+    if (eventUrl && event.proposalStatus === "current")
+      body = this.collaborators.issueFormSections.replaceOrAppendSection(
+        body,
+        HEADINGS.proposals,
+        event.proposalReferences.map((id) => `[${id}](${eventUrl}/proposals/${id})`).join("\n")
+      );
     const marker = `<!-- meetup-proposals:1:${event.proposalStatus ?? "stale"} -->`;
     const replaced = this.collaborators.managedIssueMarkers.replaceManagedMarker(
       body,
@@ -49430,6 +49463,12 @@ var ProposalSelectionCodec = class {
     );
     return replaced.found ? replaced.body : `${marker}
 ${body}`;
+  }
+  readReference(value) {
+    const linked = /^\[([1-9]\d*)\]\(https:\/\/conference-hall\.io\/team\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*\/proposals\/\1\)$/.exec(
+      value
+    );
+    return linked?.[1] ?? value;
   }
   restore(event) {
     return {
@@ -49875,6 +49914,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   action(description) {
     for (const locale of ["en", "fr"]) {
       const messages3 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages3.t("action.content-approval-pending"))
+        return "content-approval";
       if (description === messages3.t("action.social-approval-pending"))
         return "social-approval";
       if (description === messages3.t("action.approval-pending"))
@@ -49949,6 +49990,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
+      return this.messages.t("action.content-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
       return this.messages.t("action.social-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
@@ -50319,11 +50362,12 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
-  "failure.social": "Public social publication failed.",
-  "task.social": "public social publication",
+  "failure.social": "Posting failed.",
+  "task.social": "social posts",
   "action.community-approval-pending": "Approve or reject OCGroups publication.",
-  "failure.communications": "Email preparation or delivery failed.",
+  "failure.communications": "Email preparation or sending failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
   "failure.assets": "Drive file preparation failed.",
   "failure.event": "Meetup issue update failed.",
@@ -50337,24 +50381,24 @@ var messages = {
   "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approve or reject Meetup publication.",
-  "action.approval-pending": "Approve or reject the email batch.",
+  "action.approval-pending": "Approve or reject the emails.",
   "action.integration-failure": "Automation failed: {task}.",
   "action.delivery-recovery": "Verify delivery before retrying.",
   "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
   "action.follow-up": "{task}.",
   "action.stage-unknown": "Check the incomplete stage: {task}.",
-  "task.approvals": "email approvals",
+  "task.approvals": "email approval",
   "task.delivery": "delivery recovery",
   "attention.clear": "No pending tasks.",
   "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
   "task.publish-meetup-event": "Approve Meetup publication",
   "task.publish-community-event": "Publish on the CNCF platform",
   "task.create-asset-folder": "Prepare the asset folder",
-  "task.thank-host": "Send host thanks",
-  "task.thank-speakers": "Send speaker thanks",
+  "task.thank-host": "Thank the host",
+  "task.thank-speakers": "Thank the speakers",
   "task.share-slides": "Share slides",
   "task.import-attendance": "Import attendance",
-  "task.share-social": "Publish an event recap with photos and links on LinkedIn",
+  "task.share-social": "Post a meetup recap on LinkedIn",
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
@@ -50365,11 +50409,12 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "failure.social": "La publication sociale a \xE9chou\xE9.",
-  "task.social": "publication sociale",
+  "failure.social": "La publication a \xE9chou\xE9.",
+  "task.social": "publications sur les r\xE9seaux",
   "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
-  "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
   "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
   "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
@@ -50383,24 +50428,24 @@ var messages2 = {
   "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
-  "action.approval-pending": "Approuvez ou refusez le lot de courriels.",
+  "action.approval-pending": "Approuvez ou refusez les emails.",
   "action.integration-failure": "Automatisation en \xE9chec : {task}.",
   "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
   "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
   "action.follow-up": "{task}.",
   "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
-  "task.approvals": "approbation des courriels",
+  "task.approvals": "validation des emails",
   "task.delivery": "reprise des envois",
   "attention.clear": "Aucune t\xE2che en attente.",
   "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
   "task.publish-meetup-event": "Approuver la publication Meetup",
   "task.publish-community-event": "Publiez sur la plateforme CNCF",
   "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
-  "task.thank-host": "Envoyez les remerciements au lieu h\xF4te",
-  "task.thank-speakers": "Envoyez les remerciements aux intervenants",
+  "task.thank-host": "Remerciez l'h\xF4te",
+  "task.thank-speakers": "Remerciez les intervenants",
   "task.share-slides": "Partagez les pr\xE9sentations",
   "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Publiez un r\xE9capitulatif du meetup avec des photos et des liens sur LinkedIn",
+  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
@@ -50555,14 +50600,14 @@ var SystemClockComposition = class {
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
-  "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
-  "form.speakers.show": "Show available speaker references"
+  "form.speakers.guidance": "Copy the speaker references into the agenda.",
+  "form.speakers.show": "Available speakers"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
-  "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
-  "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
+  "form.speakers.guidance": "Copiez les r\xE9f\xE9rences des intervenants dans le programme.",
+  "form.speakers.show": "Intervenants disponibles"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
@@ -64055,6 +64100,18 @@ var ConferenceHallInput = class {
       conferenceHallApiKey
     });
   }
+  readEventUrl(event) {
+    const value = getInput("conference-hall-event-url", { required: true }).trim().replace(/\/$/, "");
+    const match = /^https:\/\/conference-hall\.io\/team\/([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(
+      value
+    );
+    if (!match || match[2] !== event)
+      throw new RuntimeInputError(
+        "conference-hall-event-url",
+        "must be the Conference Hall organizer event URL matching conference-hall-event"
+      );
+    return value;
+  }
   validate(input) {
     const conferenceHallEvent = input.conferenceHallEvent?.trim();
     const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
@@ -64809,9 +64866,10 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
-  "action.communication.recover-social": "Recover social publication",
+  "diagnostic.publication.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+  "action.communication.recover-social": "Recover a social post",
   "report.social.recovery": "social_recovery={status}",
-  "action.communication.reconcile-social": "Reconcile social publication",
+  "action.communication.reconcile-social": "Update social posts",
   "report.social.empty": "social_publications=0",
   "report.social.result": "social_target={target} status={status}",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
@@ -64826,15 +64884,15 @@ var EN_MESSAGES4 = {
   "report.publication.skipped": "publication_provider={provider} event=skipped",
   "report.publication.blocked": "publication_provider={provider} event=blocked",
   "report.publication.review": "publication_provider={provider} review_url={url}",
-  "diagnostic.publication.community.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
-  "diagnostic.publication.community.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
-  "diagnostic.publication.community.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
-  "diagnostic.publication.community.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
-  "diagnostic.publication.community.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.community.content-review": "Review the title, description, and cover in their proposal comments.",
+  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the comment. The event stays in draft until approved.",
+  "diagnostic.publication.community.approval-rejected": "Publication rejected. The event stays in draft.",
+  "diagnostic.publication.community.approval-unavailable": "Approval could not be verified. Check the comment and GitHub App permissions.",
+  "diagnostic.publication.community.approval-notification-failed": "The approval notification failed. Review the comment in the issue.",
+  "diagnostic.publication.community.source": "Source data could not be read. Fix the reported errors before syncing.",
   "diagnostic.publication.community.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
   "diagnostic.publication.community.inactive": "OCGroups publication is inactive for this issue.",
-  "diagnostic.publication.community.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.community.prerequisites": "Complete the future date, title, description, confirmed speakers, agenda, and public venue. Fix any malformed Communication checkboxes.",
   "diagnostic.publication.community.link": "Set a valid event URL belonging to the configured OCGroups group.",
   "diagnostic.publication.community.conflict": "The issue link and recorded OCGroups event differ. Restore the recorded event link before running again.",
   "diagnostic.publication.community.uncertain": "Publication outcome is uncertain. Check the OCGroups dashboard and recover the verified event UUID in the community journal before retrying. Keep drafts out of CNCF Link. Clear a reservation only after confirming no event was created.",
@@ -64846,34 +64904,34 @@ var EN_MESSAGES4 = {
   "action.communication.generate-slack-post": "Generate Slack post",
   "action.communication.generate-linkedin-post": "Generate LinkedIn post",
   "action.organizer.review-drafts": "Review drafts",
-  "diagnostic.publication.content.prerequisites": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.pending": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.rejected": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.iteration-requested": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.recovery": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.stale": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.title-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.description-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.meetup.content-review": "Approve the current title, description, and cover artwork through content review. Replace invalid or changed artwork before synchronizing; changed content needs fresh approval.",
-  "diagnostic.communication.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "report.content.generated": "Content generation evaluated.",
-  "report.content.reviewed": "Content reviews reconciled.",
-  "report.content.no-work": "No content proposals or organizer submissions to review.",
+  "diagnostic.publication.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
+  "diagnostic.publication.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
+  "diagnostic.publication.content.rejected": "Content rejected. Submit a replacement for review.",
+  "diagnostic.publication.content.iteration-requested": "A new proposal was requested. Run generation again.",
+  "diagnostic.publication.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
+  "diagnostic.publication.content.stale": "The event changed. Generate and review a new proposal.",
+  "diagnostic.publication.content.title-review": "Edit and approve the title in its proposal comment.",
+  "diagnostic.publication.content.description-review": "Edit and approve the description in its proposal comment.",
+  "diagnostic.publication.meetup.content-review": "Review the title, description, and cover in their proposal comments.",
+  "diagnostic.communication.content-review": "Review the title, description, and cover in their proposal comments.",
+  "report.content.generated": "Content generation checked.",
+  "report.content.reviewed": "Content approvals updated.",
+  "report.content.no-work": "No content to review.",
   "action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
   "action.feedback.reconcile-short-link": "Reconcile shared feedback link",
   "action.organizer.reconcile-checklist": "Reconcile organizer checklist",
   "report.checklist.updated": "checklist=persisted",
   "report.checklist.retained": "checklist=retained",
   "report.feedback.link": "link_updated={updated}",
-  "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
-  "diagnostic.publication.meetup.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
-  "diagnostic.publication.meetup.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
-  "diagnostic.publication.meetup.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
-  "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the comment. The event stays in draft until approved.",
+  "diagnostic.publication.meetup.approval-rejected": "Publication rejected. The event stays in draft.",
+  "diagnostic.publication.meetup.approval-unavailable": "Approval could not be verified. Check the comment and GitHub App permissions.",
+  "diagnostic.publication.meetup.approval-notification-failed": "The approval notification failed. Review the comment in the issue.",
+  "diagnostic.publication.meetup.source": "Source data could not be read. Fix the reported errors before syncing.",
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
-  "action.publication.reconcile-event": "Reconcile event publication",
+  "action.publication.reconcile-event": "Update event publication",
   "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
-  "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.meetup.prerequisites": "Complete the future date, title, description, confirmed speakers, agenda, and public venue. Fix any malformed Communication checkboxes.",
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
   "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
   "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check the event and cover photo library before retrying. Restore the verified event URL in Meetup Link and recover any pending or detached cover photo in the trusted journal. Leave Meetup event published unchecked until publication is confirmed. Preserve event and photo identities; clear uncertain state only after checking what Meetup accepted.",
@@ -64910,11 +64968,11 @@ var EN_MESSAGES4 = {
   "diagnostic.speaker-sync.rate-limited": "Conference Hall rate limit reached; retry after the API cooldown.",
   "diagnostic.speaker-sync.unexpected": "Unexpected technical failure during speaker synchronization.",
   "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.organizer.reconcile-attention": "Reconcile organizer attention",
+  "action.organizer.reconcile-attention": "Update organizer tasks",
   "report.attention.updated": "attention=persisted",
   "report.attention.skipped": "attention=skipped reason=unrelated-issue",
   "report.attention.failed": "attention=synchronization-failed",
-  "action.feedback.reconcile-event": "Reconcile feedback event",
+  "action.feedback.reconcile-event": "Update meetup feedback",
   "report.feedback.skipped": "feedback=skipped",
   "report.feedback.completed": "feedback=completed",
   "report.feedback.changes": "issue_persisted={persisted}",
@@ -64931,8 +64989,8 @@ var EN_MESSAGES4 = {
   "action.issue-form.reconcile": "Reconcile meetup issue form",
   "action.event.reconcile": "Reconcile meetup event",
   "action.event.list-active": "List active meetup events",
-  "action.communication.reconcile-email": "Reconcile meetup email",
-  "action.assets.reconcile-documents": "Reconcile meetup documents",
+  "action.communication.reconcile-email": "Send meetup emails",
+  "action.assets.reconcile-documents": "Update meetup files",
   "report.failed": "failure={reason}",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
@@ -64966,9 +65024,10 @@ var EN_MESSAGES4 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
-  "action.communication.recover-social": "R\xE9tablir une publication sociale",
+  "diagnostic.publication.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+  "action.communication.recover-social": "Reprendre une publication",
   "report.social.recovery": "reprise_sociale={status}",
-  "action.communication.reconcile-social": "R\xE9concilier les publications sociales",
+  "action.communication.reconcile-social": "Mettre \xE0 jour les publications sur les r\xE9seaux",
   "report.social.empty": "publications_sociales=0",
   "report.social.result": "cible_sociale={target} statut={status}",
   "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
@@ -64983,15 +65042,15 @@ var FR_MESSAGES4 = {
   "report.publication.skipped": "fournisseur_publication={provider} evenement=ignore",
   "report.publication.blocked": "fournisseur_publication={provider} evenement=bloque",
   "report.publication.review": "fournisseur_publication={provider} url_validation={url}",
-  "diagnostic.publication.community.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
-  "diagnostic.publication.community.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
-  "diagnostic.publication.community.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
-  "diagnostic.publication.community.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
-  "diagnostic.publication.community.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.community.content-review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire. L'\xE9v\xE9nement reste en brouillon jusque-l\xE0.",
+  "diagnostic.publication.community.approval-rejected": "Publication refus\xE9e. L'\xE9v\xE9nement reste en brouillon.",
+  "diagnostic.publication.community.approval-unavailable": "Validation non v\xE9rifiable. V\xE9rifiez le commentaire et les droits de la GitHub App.",
+  "diagnostic.publication.community.approval-notification-failed": "La notification a \xE9chou\xE9. Consultez le commentaire de validation dans l'issue.",
+  "diagnostic.publication.community.source": "Lecture des sources impossible. Corrigez les erreurs signal\xE9es avant de relancer.",
   "diagnostic.publication.community.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, les s\xE9lecteurs de connexion.",
   "diagnostic.publication.community.inactive": "La publication OCGroups est inactive pour cette issue.",
-  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les intervenants confirm\xE9s, le programme et le lieu public. Corrigez les cases invalides de Communication.",
   "diagnostic.publication.community.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe OCGroups configur\xE9.",
   "diagnostic.publication.community.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
   "diagnostic.publication.community.uncertain": "Le r\xE9sultat est incertain. V\xE9rifiez le tableau de bord OCGroups et r\xE9cup\xE9rez le UUID v\xE9rifi\xE9 dans le journal community avant de relancer. Gardez les brouillons hors de CNCF Link. Effacez une r\xE9servation seulement apr\xE8s avoir confirm\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
@@ -65003,34 +65062,34 @@ var FR_MESSAGES4 = {
   "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
   "action.communication.generate-linkedin-post": "G\xE9n\xE9rer la publication LinkedIn",
   "action.organizer.review-drafts": "V\xE9rifier les propositions",
-  "diagnostic.publication.content.prerequisites": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.pending": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.rejected": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.iteration-requested": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.recovery": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.stale": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.title-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.description-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.meetup.content-review": "Validez le titre, la description et l'illustration de couverture actuels dans la revue de contenu. Remplacez une illustration invalide ou modifi\xE9e avant de synchroniser ; un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.communication.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "report.content.generated": "G\xE9n\xE9ration du contenu \xE9valu\xE9e.",
-  "report.content.reviewed": "Validations du contenu synchronis\xE9es.",
-  "report.content.no-work": "Aucune proposition de contenu ni soumission d'organisateur \xE0 examiner.",
+  "diagnostic.publication.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
+  "diagnostic.publication.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
+  "diagnostic.publication.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
+  "diagnostic.publication.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
+  "diagnostic.publication.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
+  "diagnostic.publication.content.title-review": "Modifiez et validez le titre dans son commentaire.",
+  "diagnostic.publication.content.description-review": "Modifiez et validez la description dans son commentaire.",
+  "diagnostic.publication.meetup.content-review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "diagnostic.communication.content-review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "report.content.generated": "G\xE9n\xE9ration v\xE9rifi\xE9e.",
+  "report.content.reviewed": "Validations mises \xE0 jour.",
+  "report.content.no-work": "Aucun contenu \xE0 v\xE9rifier.",
   "action.assets.reconcile-slides-pdf": "Mettre \xE0 jour le PDF des slides",
   "action.feedback.reconcile-short-link": "Mettre \xE0 jour le lien de feedback partag\xE9",
   "action.organizer.reconcile-checklist": "Mettre \xE0 jour la checklist organisateur",
   "report.checklist.updated": "checklist=persisted",
   "report.checklist.retained": "checklist=retained",
   "report.feedback.link": "link_updated={updated}",
-  "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
-  "diagnostic.publication.meetup.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
-  "diagnostic.publication.meetup.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
-  "diagnostic.publication.meetup.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
-  "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire. L'\xE9v\xE9nement reste en brouillon jusque-l\xE0.",
+  "diagnostic.publication.meetup.approval-rejected": "Publication refus\xE9e. L'\xE9v\xE9nement reste en brouillon.",
+  "diagnostic.publication.meetup.approval-unavailable": "Validation non v\xE9rifiable. V\xE9rifiez le commentaire et les droits de la GitHub App.",
+  "diagnostic.publication.meetup.approval-notification-failed": "La notification a \xE9chou\xE9. Consultez le commentaire de validation dans l'issue.",
+  "diagnostic.publication.meetup.source": "Lecture des sources impossible. Corrigez les erreurs signal\xE9es avant de relancer.",
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
-  "action.publication.reconcile-event": "R\xE9concilier la publication de l'\xE9v\xE9nement",
+  "action.publication.reconcile-event": "Mettre \xE0 jour la publication du meetup",
   "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
-  "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les intervenants confirm\xE9s, le programme et le lieu public. Corrigez les cases invalides de Communication.",
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
   "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
   "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez l'\xE9v\xE9nement et la phototh\xE8que avant de relancer. R\xE9tablissez l'URL v\xE9rifi\xE9e dans Meetup Link et r\xE9cup\xE9rez toute photo de couverture en attente ou d\xE9tach\xE9e dans le journal de confiance. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Pr\xE9servez les identifiants de l'\xE9v\xE9nement et de la photo ; ne supprimez un \xE9tat incertain qu'apr\xE8s avoir v\xE9rifi\xE9 ce que Meetup a accept\xE9.",
@@ -65067,11 +65126,11 @@ var FR_MESSAGES4 = {
   "diagnostic.speaker-sync.rate-limited": "Limite API Conference Hall atteinte ; r\xE9essayez apr\xE8s le d\xE9lai impos\xE9.",
   "diagnostic.speaker-sync.unexpected": "Erreur technique inattendue pendant la synchronisation des intervenants.",
   "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.organizer.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
+  "action.organizer.reconcile-attention": "Mettre \xE0 jour les t\xE2ches organisateur",
   "report.attention.updated": "attention=persisted",
   "report.attention.skipped": "attention=skipped reason=unrelated-issue",
   "report.attention.failed": "attention=synchronization-failed",
-  "action.feedback.reconcile-event": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
+  "action.feedback.reconcile-event": "Mettre \xE0 jour les retours du meetup",
   "report.feedback.skipped": "feedback=skipped",
   "report.feedback.completed": "feedback=completed",
   "report.feedback.changes": "issue_persisted={persisted}",
@@ -65088,8 +65147,8 @@ var FR_MESSAGES4 = {
   "action.issue-form.reconcile": "Synchroniser le formulaire du meetup",
   "action.event.reconcile": "V\xE9rifier et mettre \xE0 jour le meetup",
   "action.event.list-active": "Lister les meetups actifs",
-  "action.communication.reconcile-email": "V\xE9rifier et envoyer les communications du meetup",
-  "action.assets.reconcile-documents": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
+  "action.communication.reconcile-email": "Envoyer les emails du meetup",
+  "action.assets.reconcile-documents": "Mettre \xE0 jour les fichiers du meetup",
   "report.failed": "failure={reason}",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
@@ -65558,6 +65617,7 @@ var EventComposition = class _EventComposition {
       const config = context3.get(SERVICES.config);
       return new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec(
         {
+          conferenceHallEventUrl: input.conferenceHallEventUrl,
           repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
           timeZone: config.timezone,
           speakersConfirmationLabel: config.event["speakers-confirmation-label"]

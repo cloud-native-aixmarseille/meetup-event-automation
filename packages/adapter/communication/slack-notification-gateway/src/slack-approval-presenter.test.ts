@@ -16,8 +16,8 @@ const facts = {
 
 describe("Slack approval presentation", () => {
 	it.each([
-		["en", "Introduction emails", "Meetup publication"],
-		["fr", "E-mails d'introduction", "Publication Meetup"],
+		["en", "Introduction emails", "Meetup ·"],
+		["fr", "Emails de préparation", "Meetup ·"],
 	])(
 		"renders public approval facts in %s",
 		(locale, emailHeading, meetupHeading) => {

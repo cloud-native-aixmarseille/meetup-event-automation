@@ -45,7 +45,8 @@ export class StoredApprovalSchema {
 			if (
 				value.kind !== "content-review" &&
 				(decision.status === "iteration-requested" ||
-					decision.selectedImage !== undefined)
+					decision.selectedImage !== undefined ||
+					decision.editedText !== undefined)
 			)
 				throw new Error("Invalid content decision kind");
 			if (value.kind === "content-review")
@@ -80,6 +81,15 @@ export class StoredApprovalSchema {
 		decision: Record<string, unknown>,
 	): void {
 		const selected = decision.selectedImage;
+		if (
+			decision.editedText !== undefined &&
+			(decision.status !== "approved" ||
+				value.content.target === "cover" ||
+				typeof decision.editedText !== "string" ||
+				!decision.editedText.trim() ||
+				decision.editedText.length > 12000)
+		)
+			throw new Error("Invalid approved text edit");
 		if (value.content.target === "cover" && decision.status === "approved") {
 			if (!value.content.draft.media.some((media) => media.id === selected))
 				throw new Error("Missing approved cover identity");

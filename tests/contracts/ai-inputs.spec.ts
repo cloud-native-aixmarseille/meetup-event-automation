@@ -128,7 +128,11 @@ describe("shared AI action configuration", () => {
 				expect([...inputs, ...secrets], path).toEqual([]);
 				continue;
 			}
-			const preparation = path === "event-preparation-generate-drafts.yml";
+			const preparation = [
+				"event-preparation-generate-drafts.yml",
+				"event-reconcile.yml",
+				"event-reconcile-active.yml",
+			].includes(path);
 			expect(inputs.sort(), path).toEqual(
 				preparation
 					? ["ai-image-model", "ai-provider", "ai-text-model"]
@@ -162,7 +166,8 @@ describe("shared AI action configuration", () => {
 			for (const call of aiCalls) {
 				expect(call.with, path).toMatchObject({
 					"ai-provider": workflowExpression("inputs.ai-provider"),
-					"ai-model": workflowExpression("inputs.ai-model"),
+					"ai-text-model": workflowExpression("inputs.ai-text-model"),
+					"ai-image-model": workflowExpression("inputs.ai-image-model"),
 				});
 				expect(call.secrets?.["ai-api-key"], path).toBe(
 					workflowExpression("secrets.ai-api-key"),

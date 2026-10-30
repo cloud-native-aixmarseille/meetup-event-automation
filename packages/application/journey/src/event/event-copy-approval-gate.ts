@@ -50,6 +50,7 @@ export class EventCopyApprovalGate {
 					settings.content,
 					null,
 					target,
+					proposal.plan.language,
 				),
 				settings.content.reminderTime,
 			);

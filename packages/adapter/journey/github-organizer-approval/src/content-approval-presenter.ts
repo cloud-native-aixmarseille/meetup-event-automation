@@ -1,8 +1,12 @@
 import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
+import type { ContentTextPreview } from "./content-text-preview.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
 export class ContentApprovalPresenter {
-	constructor(private readonly messages: ApprovalMessages) {}
+	constructor(
+		private readonly messages: ApprovalMessages,
+		private readonly textPreview: ContentTextPreview,
+	) {}
 	issue(
 		record: StoredApproval<"content-review">,
 		decision: ApprovalDecision,
@@ -11,8 +15,6 @@ export class ContentApprovalPresenter {
 		return [
 			this.messages.t("approval.content.title", {
 				target: content.target,
-				language: content.language,
-				origin: this.escape(content.origin),
 			}),
 			content.plannedAt
 				? this.messages.t("approval.content.planned", {
@@ -20,16 +22,22 @@ export class ContentApprovalPresenter {
 					})
 				: "",
 			...(content.attempts ?? []).map((status, index) =>
-				this.messages.t("approval.content.slot", {
-					index: index + 1,
-					status: status.replaceAll("-", "_"),
-				}),
+				status === "complete"
+					? ""
+					: this.messages.t("approval.content.slot", {
+							index: index + 1,
+							status: status.replaceAll("-", "_"),
+						}),
 			),
-			content.draft.text ? `<pre>${this.escape(content.draft.text)}</pre>` : "",
-			...content.draft.media.map((media) =>
+			content.draft.text
+				? this.textPreview.render(
+						record.decision?.editedText ?? content.draft.text,
+					)
+				: "",
+			...content.draft.media.map((media, index) =>
 				[
+					this.messages.t("approval.content.image-label", { index: index + 1 }),
 					`![${this.escape(media.description)}](<${media.url}>)`,
-					`${this.escape(media.id)} · ${this.escape(media.sourceRevision)}${media.source ? ` · ${this.escape(media.source.id)} · ${this.escape(media.source.revision)}` : ""} · ${media.width}×${media.height} · ${media.mimeType} · ${media.fingerprint}`,
 				].join("\n\n"),
 			),
 			record.decision
@@ -37,7 +45,10 @@ export class ContentApprovalPresenter {
 						status: record.decision.status.replaceAll("-", "_"),
 						actor: record.decision.actor,
 						decidedAt: record.decision.decidedAt,
-						image: record.decision.selectedImage ?? "",
+						image:
+							content.draft.media.findIndex(
+								(media) => media.id === record.decision?.selectedImage,
+							) + 1,
 					})
 				: this.controls(record, decision),
 		]
@@ -67,6 +78,7 @@ export class ContentApprovalPresenter {
 					mark: decision.status === "approved" ? "x" : " ",
 				});
 		return this.messages.t("approval.content.request", {
+			target: record.content.target,
 			approve,
 			rejectMark: decision.status === "rejected" ? "x" : " ",
 			iterateMark: decision.status === "iteration-requested" ? "x" : " ",

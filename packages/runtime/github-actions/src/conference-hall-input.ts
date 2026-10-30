@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import { RuntimeInputError } from "./runtime-input-error.js";
 
 export interface ConferenceHallSettings {
 	readonly conferenceHallEvent: string;
@@ -17,6 +18,23 @@ export class ConferenceHallInput {
 			}),
 			conferenceHallApiKey,
 		});
+	}
+
+	readEventUrl(event: string): string {
+		const value = core
+			.getInput("conference-hall-event-url", { required: true })
+			.trim()
+			.replace(/\/$/, "");
+		const match =
+			/^https:\/\/conference-hall\.io\/team\/([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(
+				value,
+			);
+		if (!match || match[2] !== event)
+			throw new RuntimeInputError(
+				"conference-hall-event-url",
+				"must be the Conference Hall organizer event URL matching conference-hall-event",
+			);
+		return value;
 	}
 
 	validate(input: ConferenceHallSettings): ConferenceHallSettings {

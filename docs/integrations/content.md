@@ -2,19 +2,20 @@
 
 Generate or submit event titles, descriptions, covers, and social post drafts,
 then review their exact text and images on the meetup issue. Approval applies to
-one revision. Changed public facts, wording, language, or image bytes require a
-new review.
+the text visible at approval, including organizer edits. Changed public facts,
+language, or image bytes require a new review.
 
 Content approval does not send a social post, complete its manual checklist
 item, approve an email batch, or authorize initial Meetup publication.
 
 ## Configure the repository
 
-Event reconciliation automatically prepares title and description proposals. Both
+Event reconciliation automatically prepares title, description, and four cover
+proposals. Both
 `event-reconcile.yml` and `event-reconcile-active.yml` require the shared
-`ai-provider`, `ai-model`, and `ai-api-key` contract and all three content
-configuration files below. The model is for structured text; automatic event
-copy does not require an image model.
+`ai-provider`, `ai-text-model`, `ai-image-model`, and `ai-api-key` contract
+and all three content configuration files below. Supply separate supported
+models for structured text and image generation.
 
 The standalone review action checks stored proposals and authenticated organizer
 submissions before loading content settings. With neither present, that action
@@ -43,9 +44,10 @@ review accept social targets only from that configuration. A target uses the
 configured stable key; changing its provider or remote identity requires new
 content review. Removing it prevents further review or publication.
 
-These are synthetic examples. Supply the exact month spelling to appear in the
-cover, public organizer names intended for LinkedIn, and the local reminder
-publication hour. The reminder hour must precede the event start on D0. The
+These are synthetic examples. The cover month comes from the event date in the
+content language. Keep `months` empty to use that spelling, or set a `YYYY-MM`
+entry to override its exact spelling and capitalization. Supply public organizer
+names intended for LinkedIn and the local reminder publication hour. The reminder hour must precede the event start on D0. The
 workflow locale selects English or French content; submitted content records
 its own language.
 
@@ -72,9 +74,10 @@ organizer channel.
 ## Generate a proposal
 
 Issue updates and active-event audits apply existing organizer decisions, prepare
-title and description drafts, then request review of new proposals. A title
+title and description drafts and four cover candidates, then request review of
+new proposals. A title
 requires a valid agenda; a description also requires the event date, hours, and
-public host venue. Incomplete facts produce actionable diagnostics. The existing
+public host venue. Covers require a valid event month. Incomplete facts produce actionable diagnostics. The existing
 proposal ledger reuses unchanged drafts and decisions; changed source facts or
 an authorized iteration request create a new proposal. Failed or uncertain AI
 requests retain their recovery requirements. Approval is always required before
@@ -109,14 +112,14 @@ generation needs Google credentials to verify its announcement image, and cover
 generation also needs the public media folder. The shared review action needs
 both for manual image imports and media verification; it accepts no AI inputs.
 
-| Target                           | Proposal                                                                  |
-| -------------------------------- | ------------------------------------------------------------------------- |
-| `title`                          | One thematic headline, at most 80 characters.                             |
-| `description`                    | Welcoming prose, practical details, ordered talk teasers, and invitation. |
-| `cover`                          | Four separate image candidates, generated sequentially.                   |
-| `<destination-key>:announcement` | One announcement using the configured provider's format.                  |
-| `<destination-key>:d7`           | One reminder seven calendar days before the event.                        |
-| `<destination-key>:d0`           | One reminder on the event day.                                            |
+| Target                           | Proposal                                                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `title`                          | One clear event headline expressing the main idea or practical benefit, at most 80 characters.       |
+| `description`                    | Short paragraphs with empty lines: welcome, practical details, ordered talk teasers, and invitation. |
+| `cover`                          | Four separate image candidates, generated sequentially.                                              |
+| `<destination-key>:announcement` | One announcement using the configured provider's format.                                             |
+| `<destination-key>:d7`           | One reminder seven calendar days before the event.                                                   |
+| `<destination-key>:d0`           | One reminder on the event day.                                                                       |
 
 Slack uses emoji aliases. LinkedIn uses Unicode emoji, hashtags, a public mention
 footer, and the verified announcement image. Each configured Slack channel has
@@ -128,6 +131,13 @@ covers, event details for descriptions, and event details plus registration and
 channel-specific facts for social posts; private contact rows and entire issues are
 not sent to the model. Unresolved generic announcement and post-event social
 formats remain manual.
+
+Titles focus on what attendees can learn or do, without turning the abstract into
+a list of technologies. Tools mentioned as pitfalls or counterexamples must not
+become the headline promise. Review comments wrap text and preserve line breaks;
+Review comments omit language and generator attribution; internal proposal records
+retain them. Description briefs require separate paragraphs and a title/speaker line followed
+by a teaser for each talk.
 
 Descriptions are limited to 12,000 characters and the final description with
 the authoritative agenda to 49,000. Social text is limited to 2,800 characters,
@@ -154,8 +164,8 @@ published.
 
 The cover brief prefers 1792×1024 PNG and the exact month as its only readable
 text. The Gemini adapter maps that preference to supported JPEG output in
-landscape 2K format; review shows
-actual dimensions, MIME type, identity, and fingerprint. Inspect each candidate
+landscape 2K format. The review comment shows each candidate and its selection
+checkbox. Inspect each candidate
 for its month spelling, unwanted text, visual coherence, and topic relevance.
 Dimensions and hashes are checked automatically; visual suitability is an
 organizer decision. Failed or uncertain slots remain visible and are not silently
@@ -164,10 +174,11 @@ replaced with another request.
 The month and the main technology, concept or practice of every talk guide the
 cover. The brief requires recognizable subject-specific symbols, actions and
 relationships within one scene. Generic technology scenery alone is insufficient.
-Talk titles and abstracts are authoritative; the public event description supplies
-additional context for subjects absent from those fields, including manual agendas
-without proposal abstracts. This context is used only for covers, is retained in
-their source fingerprint, and requires fresh review when changed. It does not feed
+Talk titles and abstracts are authoritative. The public event description supplies
+additional context only when an agenda entry has no proposal abstract, including
+manual agendas. In that case it is retained in the cover source fingerprint and
+requires fresh review when changed. Approving event copy does not regenerate
+covers when every talk already has a proposal abstract. It does not feed
 event-copy generation back into itself. With no validated agenda, the brief uses
 only the month and general Cloud Native/community themes.
 
@@ -206,8 +217,8 @@ managed `announcement` presentation for that date. Its `template_file_id` metada
 must identify the original announcement template, which must remain readable by
 the service account. The workflow checks the source revision and managed metadata,
 loads the linked template and verifies the copy's expected filename, then validates
-the exported image bytes and dimensions. Review shows both the source revision and
-the image hash.
+the exported image bytes and dimensions. Source revisions and image hashes stay
+in the stored review record.
 Export again and update the configuration when the source changes. The organizer
 checks that the export matches the source; this integration does not render
 Slides automatically. Post-event PDF export remains a separate operation.
@@ -235,15 +246,18 @@ the AI provider is unavailable.
 
 ## Decide and apply
 
-Edit only the checkbox for one choice in the bot's review comment:
+Edit the proposed text directly in the bot's comment, then check **Approve**.
+You can replace the whole text with your own and approve it in the same edit.
+Keep the surrounding heading, hidden markers, and decision checkboxes intact.
+Saving an edit without approval preserves it for the next review. You can also
+reject the proposal or request another one. For covers, select one image.
 
-- Approve the exact text, or one identified cover candidate.
-- Reject this revision.
-- Request another iteration.
-
-Changing the preview and checking approval in the same edit is not a valid
-approval. Decisions are final for their revision. The original Slack request
-receives a distinct reaction for approval, rejection, or another iteration.
+Approval records the exact edited text and its authorized editor. The original
+generated draft remains in history. Invalid text stays editable: titles must fit
+on one line within 80 characters, descriptions within 12000, and social posts
+within 2800 with the registration link. Source, media, and permission checks still
+apply. Decisions are final once recorded; later changes need a new proposal.
+The original Slack request receives a reaction for the recorded decision.
 
 Run the generation workflow again for an iteration request. It verifies the
 requester's current permission, records one new intent, and uses the current

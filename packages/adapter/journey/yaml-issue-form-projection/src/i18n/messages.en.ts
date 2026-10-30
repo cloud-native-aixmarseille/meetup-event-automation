@@ -1,5 +1,4 @@
 export const EN_MESSAGES = {
-	"form.speakers.guidance":
-		"Select speakers by copying one or more references into the agenda.",
-	"form.speakers.show": "Show available speaker references",
+	"form.speakers.guidance": "Copy the speaker references into the agenda.",
+	"form.speakers.show": "Available speakers",
 } as const;

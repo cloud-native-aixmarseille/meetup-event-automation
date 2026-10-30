@@ -34,6 +34,7 @@ const actionWiring = {
 			"organizer/review-drafts",
 			"event/generate-copy",
 			"event/generate-copy",
+			"assets/generate-cover",
 			"organizer/review-drafts",
 			"assets/reconcile-documents",
 			"assets/reconcile-slides-pdf",

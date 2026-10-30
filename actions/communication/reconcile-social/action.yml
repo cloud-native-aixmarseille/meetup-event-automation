@@ -1,4 +1,4 @@
-name: Reconcile social publication
+name: Update social posts
 description: Publish exact approved social announcements and reminders to configured destinations.
 inputs:
   meetup-event-url-prefix:

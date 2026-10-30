@@ -67,8 +67,9 @@ AI generation actions require the same three inputs, without defaults:
 | `ai-model`    | String input `ai-model`     | Explicit model for that provider.     |
 | `ai-api-key`  | Secret `ai-api-key`         | API key authorized to use that model. |
 
-The preparation drafts workflow composes text and image actions. It requires
-`ai-text-model` and `ai-image-model` instead of a single `ai-model`, and forwards
+The preparation drafts and reconciliation workflows compose text and image
+actions. They require
+`ai-text-model` and `ai-image-model` instead of a single `ai-model`, and forward
 each to the corresponding action's `ai-model`. Both are required for every call;
 unselected operations do not run. `ai-provider` and the `ai-api-key` secret are
 shared. See [draft generation](../integrations/content.md#generate-a-proposal)
@@ -223,9 +224,9 @@ locations, automatic fallbacks, and optional one-time recovery operations.
 The [content guide](../integrations/content.md) owns `.github/meetup-content.json`,
 text/image model capabilities, public media prerequisites, and recovery.
 Content generation uses the shared AI inputs. Review and manual submission do
-not require AI credentials. Event reconciliation prepares title and description
-proposals automatically and requires text AI settings and all three configuration
-files. The standalone review action can skip configuration when no verified
+not require AI credentials. Event reconciliation prepares title, description, and
+four cover proposals automatically and requires text and image AI settings and
+all three configuration files. The standalone review action can skip configuration when no verified
 content work exists; see the content guide for the exact conditions.
 
 ## Social publication

@@ -30,8 +30,8 @@ describe("OCGroups publication approval presentation", () => {
 			expect(body).toContain("18:45–20:45 (Europe/Paris)");
 			expect(body).toContain(
 				locale === "en"
-					? "- [ ] Approve publishing this CNCF community event"
-					: "- [ ] Approuver la publication de cet événement CNCF",
+					? "- [ ] Approve publication"
+					: "- [ ] Approuver la publication",
 			);
 			expect(body).not.toContain("recipients");
 		},

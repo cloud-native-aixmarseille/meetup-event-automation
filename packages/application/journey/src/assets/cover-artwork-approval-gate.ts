@@ -37,6 +37,7 @@ export class CoverArtworkApprovalGate {
 				settings.content,
 				null,
 				"cover",
+				proposal.plan.language,
 			),
 			settings.content.reminderTime,
 		);

@@ -4,6 +4,7 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.content.image-label": { index: 1 },
 	"approval.social.after-approval": {},
 	"approval.social.details": {
 		target: "announcement",
@@ -48,10 +49,9 @@ const parameters = {
 	"approval.content.slot": { index: 1, status: "reserved" },
 	"approval.content.title": {
 		target: "title",
-		language: "en",
-		origin: "organizer",
 	},
 	"approval.content.request": {
+		target: "title",
 		approve: "Approve",
 		rejectMark: " ",
 		iterateMark: " ",
@@ -62,7 +62,7 @@ const parameters = {
 		status: "iteration-requested",
 		actor: "organizer",
 		decidedAt: "2099-06-01T10:00:00Z",
-		image: "",
+		image: 0,
 	},
 	"approval.meetup.details": {
 		title: "Example",

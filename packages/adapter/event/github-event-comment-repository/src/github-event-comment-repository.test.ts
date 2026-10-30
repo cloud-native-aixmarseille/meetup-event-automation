@@ -104,7 +104,7 @@ describe("GitHubEventCommentRepository", () => {
 		// Assert
 		const body = github.updateComment.mock.calls[0][0].body;
 		expect(body).toContain("Set the event date.");
-		expect(body).toContain("Social publication (community, announcement)");
+		expect(body).toContain("Post (community, announcement)");
 		expect(body).toContain("<!-- trusted-attention-state -->");
 		expect(body).not.toContain("private@example.test");
 		expect(github.createComment).not.toHaveBeenCalled();
@@ -138,7 +138,7 @@ describe("GitHubEventCommentRepository", () => {
 		await repository.reconcileDiagnostics(identity, [], "social");
 
 		// Assert
-		expect(unresolved).toContain("Social publication (community, d7)");
+		expect(unresolved).toContain("Post (community, d7)");
 		expect(unresolved).toContain("Verify the remote post");
 		expect(body).toContain("Event Date");
 		expect(body).not.toContain("Social publication");

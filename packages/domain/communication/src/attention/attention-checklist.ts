@@ -8,6 +8,7 @@ export type AttentionChecklistField =
 	| "agenda"
 	| "other";
 export type AttentionChecklistAction =
+	| "content-approval"
 	| "email-approval"
 	| "meetup-approval"
 	| "community-approval"

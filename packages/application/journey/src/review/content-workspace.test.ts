@@ -25,7 +25,7 @@ function fixture(
 		repository: f.deps.repository,
 		manageEvent: f.manageEvent,
 		plans: contentFixture().plans,
-		projection: new ContentFactsProjection(),
+		projection: new ContentFactsProjection(() => "novembre"),
 		publication: f.dependencies.settings,
 		settings: {
 			months: { "2026-09": "Septembre" },

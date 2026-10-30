@@ -30,8 +30,8 @@ describe("Meetup publication approval presentation", () => {
 			expect(body).toContain("18:45–20:45 (Europe/Paris)");
 			expect(body).toContain(
 				locale === "en"
-					? "- [ ] Approve publishing this Meetup event"
-					: "- [ ] Approuver la publication de ce meetup",
+					? "- [ ] Approve publication"
+					: "- [ ] Approuver la publication",
 			);
 			expect(body).not.toContain("recipients");
 		},

@@ -54,6 +54,8 @@ export const AUTOMATED_TASK_HEADINGS = new Map([
 export interface GitHubIssueFormEventDocumentCodecOptions {
 	/** Consumer checkout revision used for catalog navigation links. */
 	readonly repositoryRef?: string;
+	/** Organizer event URL used when converting selected proposal numbers into links. */
+	readonly conferenceHallEventUrl?: string;
 	readonly timeZone?: string;
 	readonly speakersConfirmationLabel?: string;
 }

@@ -34,6 +34,12 @@ source-owned fields across both exports; conflicting profiles stop the refresh.
 Speakers without a submitted proposal are absent from these exports and need
 separate identity review before they can be linked.
 
+For `event/reconcile` and both reconciliation workflows, also supply
+`conference-hall-event-url` from `CONFERENCE_HALL_EVENT_URL`, using
+`https://conference-hall.io/team/TEAM/EVENT`. Take it from a proposal dashboard URL
+and remove `/proposals/NUMBER`. Its event slug must match `conference-hall-event`.
+This URL supplies organizer navigation; the API still uses the configured CFP slug.
+
 Run the active-event audit on a schedule as well as issue changes and manual
 requests. Source edits alone do not trigger GitHub Actions; propagation occurs
 on the next successful audit. Pass the source settings to every event, feedback,
@@ -168,7 +174,10 @@ Use the `conference_hall_proposals` textarea from the
 `agenda` textarea and the `<!-- Available speakers -->` Markdown block.
 Enter one accepted proposal number per line in presentation order. For example,
 use `42` for a dashboard URL ending in `/proposals/42`. Use distinct positive whole
-numbers. The first successful reconciliation adds **Agenda** to the issue;
+numbers. A successful reconciliation converts each number into a link to its
+Conference Hall proposal, in the selected order. When editing, keep those links
+or replace them with plain numbers. Links must show the same number as their
+destination. The first successful reconciliation adds **Agenda** to the issue;
 subsequent runs refresh it from the selected proposals.
 Leaving the selection blank keeps the draft incomplete until
 talks are selected. Only selected, accepted proposals are projected. Declined
@@ -185,7 +194,7 @@ In the generated agenda, each speaker's name links to their committed referentia
 row at the consumer checkout revision. Stable speaker IDs remain in hidden issue
 metadata and are not displayed alongside the names.
 
-Failed refreshes preserve the last agenda verbatim, mark it stale, and publish
+Failed refreshes preserve the selection and last agenda verbatim, mark it stale, and publish
 specific English/French guidance for invalid numbers, missing proposals,
 acceptance, identity mappings, invalid exports, unavailable access, and rate limits.
 Mail dispatch and feedback synchronization requiring those talks stop.

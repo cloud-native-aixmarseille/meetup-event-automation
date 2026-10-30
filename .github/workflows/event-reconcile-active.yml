@@ -52,21 +52,29 @@ on:
         description: Existing Kutt feedback link API ID.
         required: true
         type: string
+      conference-hall-event-url:
+        description: Conference Hall organizer event URL, https://conference-hall.io/team/TEAM/EVENT, matching conference-hall-event.
+        required: true
+        type: string
       conference-hall-event:
         description: Conference Hall CFP slug for live linked profiles and selected proposals.
         required: true
         type: string
       ai-provider:
-        description: AI provider identifier for automatic event copy proposals (gemini).
+        description: AI provider identifier for automatic text and cover proposals (gemini).
         required: true
         type: string
-      ai-model:
+      ai-text-model:
         description: Structured-text model for automatic title and description proposals.
+        required: true
+        type: string
+      ai-image-model:
+        description: Image model for the four cover artwork candidates.
         required: true
         type: string
     secrets:
       ai-api-key:
-        description: API key for automatic event copy generation.
+        description: API key authorized for automatic text and cover generation.
         required: true
       openfeedback-api-key:
         description: OpenFeedback organization API key (`oforg_`) used to create and update events.
@@ -131,10 +139,12 @@ jobs:
       google-drive-template-folder-id: ${{ inputs.google-drive-template-folder-id }}
       kutt-base-url: ${{ inputs.kutt-base-url }}
       kutt-link-id: ${{ inputs.kutt-link-id }}
+      conference-hall-event-url: ${{ inputs.conference-hall-event-url }}
       conference-hall-event: ${{ inputs.conference-hall-event }}
       issue-number: ${{ matrix.issue-number }}
       ai-provider: ${{ inputs.ai-provider }}
-      ai-model: ${{ inputs.ai-model }}
+      ai-text-model: ${{ inputs.ai-text-model }}
+      ai-image-model: ${{ inputs.ai-image-model }}
     secrets:
       ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
       openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials

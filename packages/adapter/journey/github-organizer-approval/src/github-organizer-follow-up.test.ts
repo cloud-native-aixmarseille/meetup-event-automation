@@ -57,7 +57,7 @@ describe("shared post-event follow-up", () => {
 
 		// Assert
 		expect(commentId).toBe(100);
-		expect(waiting).toContain("Thank-you emails are not ready for approval.");
+		expect(waiting).toContain("Thank-you emails are not ready yet.");
 		expect(waiting).not.toContain("- [ ]");
 		expect(result.status).toBe("pending");
 		expect(f.comments).toHaveLength(1);

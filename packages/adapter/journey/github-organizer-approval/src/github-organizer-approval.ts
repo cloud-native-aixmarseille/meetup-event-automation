@@ -35,6 +35,7 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 	) {}
 	async request(
 		input: OrganizerApprovalRequest,
+		validateText?: (text: string) => boolean,
 	): Promise<OrganizerApprovalResult> {
 		input = this.reviewedRequest(input);
 		this.collaborators.approvalRequestSchema.validate(input);
@@ -52,7 +53,7 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 				existing.record.decision?.status ?? "pending",
 			)
 		) {
-			const result = await this.finalizer.execute(existing);
+			const result = await this.finalizer.execute(existing, validateText);
 			if (
 				(result.status === "approved" ||
 					result.status === "iteration-requested") &&
@@ -63,7 +64,8 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 				throw new Error(
 					"The recorded organizer no longer has approval permission",
 				);
-			if (result.status !== "pending") return result;
+			if (result.status !== "pending" || result.editedText !== undefined)
+				return result;
 			return {
 				status: "pending",
 				notificationFailed: await this.notifications.send(

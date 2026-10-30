@@ -16,6 +16,7 @@ import type {
 	ContentTarget,
 } from "../proposals/promotional-content.js";
 import type { DiagnosticPolicy } from "../result/diagnostic-policy.js";
+import type { PublicDiagnostic } from "../result/result-envelope.js";
 import type { ManageMeetupEvent } from "../use-cases/manage-meetup-event.js";
 import type { ScheduledEventSettings } from "../use-cases/scheduled-event-projection.js";
 import type {
@@ -68,14 +69,7 @@ export class ContentWorkspace {
 		)
 			throw new Error("Content source verification failed");
 		const event = result.event;
-		const agendaValid = !result.diagnostics.some(
-			(item) =>
-				item.severity === "error" &&
-				/agenda|proposals|referential\.speaker|reference\.speaker/.test(
-					item.code,
-				),
-		);
-		const source = agendaValid ? event : { ...event, agenda: [] };
+		const source = this.validatedAgenda(event, result.diagnostics);
 		if (
 			target.includes(":") &&
 			result.diagnostics.some(
@@ -99,6 +93,7 @@ export class ContentWorkspace {
 			this.dependencies.settings,
 			announcement,
 			target,
+			language,
 		);
 		return {
 			document,
@@ -112,6 +107,19 @@ export class ContentWorkspace {
 			),
 			destination: this.dependencies.projection.destination(event, target),
 		};
+	}
+	private validatedAgenda(
+		event: MeetupEvent,
+		diagnostics: readonly PublicDiagnostic[],
+	): MeetupEvent {
+		const invalid = diagnostics.some(
+			(item) =>
+				item.severity === "error" &&
+				/agenda|proposals|referential\.speaker|reference\.speaker/.test(
+					item.code,
+				),
+		);
+		return invalid ? { ...event, agenda: [] } : event;
 	}
 	private destination(target: ContentTarget): SocialDestination | undefined {
 		return this.dependencies.destinations.find((item) =>

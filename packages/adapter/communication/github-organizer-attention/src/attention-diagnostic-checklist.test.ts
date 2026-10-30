@@ -12,7 +12,7 @@ describe("diagnostic checklist decoding", () => {
 			createAttentionMessages: (...args) =>
 				new GithubOrganizerAttentionComposition().attentionMessages(...args),
 		});
-		const body = `${DIAGNOSTIC_MARKER}\n\n- [ ] **Event Date**: Set the event date.\n<!-- meetup-automation:social-diagnostics:v1 -->\n- [ ] **Social publication (community, d7)**: Verify the remote post.\n<!-- /meetup-automation:social-diagnostics:v1 -->`;
+		const body = `${DIAGNOSTIC_MARKER}\n\n- [ ] **Event Date**: Set the event date.\n<!-- meetup-automation:social-diagnostics:v1 -->\n- [ ] **Post (community, d7)**: Verify the remote post.\n<!-- /meetup-automation:social-diagnostics:v1 -->`;
 
 		// Act
 		checklist.set(100, body);
@@ -21,7 +21,7 @@ describe("diagnostic checklist decoding", () => {
 		// Assert
 		expect(decoded.entries.map((entry) => entry.label)).toEqual([
 			"Event Date",
-			"Social publication (community, d7)",
+			"Post (community, d7)",
 		]);
 		expect(JSON.stringify(decoded)).not.toContain("<!--");
 	});
@@ -52,7 +52,11 @@ describe("diagnostic checklist decoding", () => {
 	});
 	it.each([
 		["Approve or reject Meetup publication.", "meetup-approval"],
-		["Approuvez ou refusez le lot de courriels.", "email-approval"],
+		["Approuvez ou refusez les emails.", "email-approval"],
+		[
+			"Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+			"content-approval",
+		],
 		["Verify delivery before retrying.", "delivery-recovery"],
 	])(
 		"recognizes existing localized public action %s",

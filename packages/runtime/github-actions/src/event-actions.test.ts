@@ -16,6 +16,8 @@ vi.mock("@actions/core", () => ({
 		({
 			...publicationUrlInputs,
 			"conference-hall-event": "example-cfp",
+			"conference-hall-event-url":
+				"https://conference-hall.io/team/example-team/example-cfp",
 			"conference-hall-api-key": "synthetic-source-key",
 			"issue-number": "42",
 			"github-token": "private-token",

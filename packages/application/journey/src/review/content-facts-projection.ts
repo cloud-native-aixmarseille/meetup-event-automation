@@ -2,6 +2,7 @@ import type { MeetupEvent } from "@meetup-automation/event";
 import type { ContentMedia } from "@meetup-automation/publication";
 import type {
 	ContentFacts,
+	ContentLanguage,
 	ContentTarget,
 } from "../proposals/promotional-content.js";
 import type { ScheduledEventSettings } from "../use-cases/scheduled-event-projection.js";
@@ -13,20 +14,31 @@ export interface ContentSettings {
 	readonly guidance: string;
 }
 export class ContentFactsProjection {
+	constructor(
+		private readonly formatMonth: (
+			date: string,
+			language: ContentLanguage,
+		) => string,
+	) {}
 	create(
 		event: MeetupEvent,
 		publication: ScheduledEventSettings,
 		settings: ContentSettings,
 		announcement: ContentMedia | null,
 		target: ContentTarget,
+		language: ContentLanguage,
 	): ContentFacts {
 		return {
 			date: event.date,
 			startTime: publication.startTime,
 			endTime: publication.endTime,
 			timeZone: event.timeZone,
-			month: settings.months[event.date.slice(0, 7)] ?? "",
-			...(target === "cover" && event.agenda.length && event.description
+			month:
+				settings.months[event.date.slice(0, 7)] ??
+				this.formatMonth(event.date, language),
+			...(target === "cover" &&
+			event.agenda.some((talk) => !talk.proposal?.abstract.trim()) &&
+			event.description
 				? { eventDescription: event.description }
 				: {}),
 			host: event.host?.id

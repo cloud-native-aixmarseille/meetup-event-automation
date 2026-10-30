@@ -2,6 +2,7 @@ import type { ContentMediaStore } from "@meetup-automation/publication";
 import type {
 	OrganizerApproval,
 	OrganizerApprovalRequest,
+	OrganizerApprovalResult,
 } from "../ports/organizer-approval.js";
 import type {
 	ContentDraft,
@@ -25,7 +26,12 @@ export class ContentReview {
 		proposal: ContentProposal,
 		plan: ContentPlan,
 	): Promise<
-		"stale" | "pending" | "approved" | "rejected" | "iteration-requested"
+		| "stale"
+		| "pending"
+		| "approved"
+		| "rejected"
+		| "iteration-requested"
+		| "invalid"
 	> {
 		if (
 			!this.policy.current(proposal, plan) ||
@@ -35,12 +41,38 @@ export class ContentReview {
 			return "stale";
 		for (const image of proposal.draft.media)
 			if (!(await this.media.verify(image))) return "stale";
-		const result = await this.approvals.request(this.request(proposal));
+		const result = await this.approvals.request(
+			this.request(proposal),
+			(text) =>
+				this.policy.validDraft(plan, {
+					text,
+					media: proposal.draft?.media ?? [],
+				}),
+		);
 		if (result.notificationFailed)
 			throw new Error(
 				"Content approval notification failed; the stored request can be retried",
 			);
+		if (
+			result.invalidText ||
+			(result.editedText !== undefined &&
+				(plan.target === "cover" ||
+					!this.policy.validDraft(plan, {
+						...proposal.draft,
+						text: result.editedText,
+					})))
+		)
+			return "invalid";
 		if (result.status === "pending") return "pending";
+		await this.saveDecision(proposal, { ...result, status: result.status });
+		return result.status;
+	}
+	private async saveDecision(
+		proposal: ContentProposal,
+		result: OrganizerApprovalResult & {
+			status: "approved" | "rejected" | "iteration-requested";
+		},
+	): Promise<void> {
 		if (!result.actor || !result.decidedAt)
 			throw new Error("Content decision provenance is unavailable");
 		const snapshot = await this.store.load();
@@ -51,6 +83,9 @@ export class ContentReview {
 			status: result.status,
 			actor: result.actor,
 			decidedAt: result.decidedAt,
+			...(result.editedText === undefined
+				? {}
+				: { editedText: result.editedText }),
 			...(result.selectedImage ? { selectedImage: result.selectedImage } : {}),
 		};
 		if (!current.decision)
@@ -60,7 +95,6 @@ export class ContentReview {
 					item.id === current.id ? { ...item, decision } : item,
 				),
 			);
-		return result.status;
 	}
 	async approved(
 		proposal: ContentProposal,
@@ -72,7 +106,11 @@ export class ContentReview {
 		);
 		if (!current?.draft || current.decision?.status !== "approved")
 			return undefined;
-		if (plan.target !== "cover") return current.draft;
+		if (plan.target !== "cover")
+			return {
+				...current.draft,
+				text: current.decision.editedText ?? current.draft.text,
+			};
 		const selected = current.draft.media.find(
 			(image) => image.id === current.decision?.selectedImage,
 		);

@@ -11,9 +11,25 @@ export class FinalizeApprovalDecision {
 		private readonly repository: GithubApprovalRepository,
 		private readonly notifications: ApprovalNotifications,
 	) {}
-	async execute(state: ApprovalState): Promise<OrganizerApprovalResult> {
+	async execute(
+		state: ApprovalState,
+		validateText?: (text: string) => boolean,
+	): Promise<OrganizerApprovalResult> {
 		const { record, comment } = state;
 		const decision = await this.decisions.execute(record, comment);
+		const textValid =
+			decision.editedText === undefined || validateText?.(decision.editedText);
+		if (
+			!record.decision &&
+			decision.editedText !== undefined &&
+			(decision.status === "pending" || !textValid)
+		)
+			return {
+				status: "pending",
+				notificationFailed: false,
+				editedText: decision.editedText,
+				invalidText: textValid === false,
+			};
 		if (decision.status !== "pending" && !record.decision) {
 			if (!decision.actor || !decision.decidedAt)
 				throw new Error("Missing verified approval identity");
@@ -21,6 +37,9 @@ export class FinalizeApprovalDecision {
 				status: decision.status,
 				actor: decision.actor,
 				decidedAt: decision.decidedAt,
+				...(decision.editedText === undefined
+					? {}
+					: { editedText: decision.editedText }),
 				...(decision.selectedImage
 					? { selectedImage: decision.selectedImage }
 					: {}),

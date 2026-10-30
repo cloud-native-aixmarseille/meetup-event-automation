@@ -87,7 +87,7 @@ export class SocialPostDraft {
 			language,
 			guidance,
 			instructions: [
-				"Write one Cloud Native Aix-Marseille meetup post using only the supplied facts. Maximum 2800 characters.",
+				"Write one concise Cloud Native Aix-Marseille meetup post using only the supplied facts. Use short, direct sentences and familiar words. No marketing hype, inflated promises, generic welcome, or filler. Maximum 2800 characters; prefer much shorter when the programme allows it.",
 				channel === "linkedin"
 					? "Use Unicode emoji. End with one short relevant hashtags paragraph and a final line containing the public host name, public speaker names, and organizer names from mentions, separated by spaced hyphens. Never invent account handles or tags."
 					: "Use Slack emoji aliases such as :rocket:, :date:, :round_pushpin:, :beers:, :alarm_clock:. No hashtags or mention footer.",

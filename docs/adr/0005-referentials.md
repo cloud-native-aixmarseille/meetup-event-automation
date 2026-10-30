@@ -113,3 +113,17 @@ to existing profiles propagate on the next successful reconciliation.
 | [0012: Conference Hall](archive/0012-conference-hall-talks-and-speakers.md)    | Established live source authority, private reviewed mappings, field ownership, and preserved delivery identities. |
 | [0020: Unified checklist](archive/0020-unified-organizer-checklist.md)         | Replaced organizer entry of internal proposal IDs with visible proposal numbers; canonical IDs remain internal.   |
 | [0024: Action scopes](archive/0024-scoped-actions-and-workflow-composition.md) | Separated catalog reconciliation from issue-form projection while retaining complete-candidate publication.       |
+
+## Proposal navigation (2026-10-30)
+
+Event reconciliation converts ordered proposal numbers to organizer dashboard
+links after a successful source refresh. Plain numbers and generated links are
+both accepted when editing; parsing retains the numeric selection and still
+requires fresh source validation. The runtime requires an explicit organizer
+event URL matching the configured CFP slug. The API export supplies no team
+identifier, so navigation cannot be derived from its proposal number alone.
+
+The issue codec owns link presentation and parsing. Source identity, API access,
+acceptance checks, and ordering remain unchanged. Failed refreshes preserve the
+existing selection and agenda. This replaces the numeric-only presentation;
+no private export data or contact fields are introduced into the links.

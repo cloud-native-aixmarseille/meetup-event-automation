@@ -1,5 +1,23 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"comment.guidance.content.description-review":
+		"Modifiez et validez la description dans son commentaire.",
+	"comment.guidance.content.title-review":
+		"Modifiez et validez le titre dans son commentaire.",
+	"comment.guidance.content.invalid":
+		"Corrigez le texte du commentaire : titre sur une ligne de 80 caractères maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+	"comment.guidance.content.stale":
+		"Le meetup a changé. Générez et validez une nouvelle proposition.",
+	"comment.guidance.content.recovery":
+		"La génération a été interrompue. Vérifiez le résultat enregistré avant de relancer.",
+	"comment.guidance.content.iteration-requested":
+		"Une autre proposition a été demandée. Relancez la génération.",
+	"comment.guidance.content.rejected":
+		"Contenu refusé. Proposez un remplacement à valider.",
+	"comment.guidance.content.pending":
+		"Modifiez le texte proposé si besoin, puis validez-le dans le commentaire.",
+	"comment.guidance.content.prerequisites":
+		"Complétez la date, le lieu et le programme avant de générer le contenu.",
 	"comment.guidance.meetup.slides-source":
 		"Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
 	"comment.guidance.meetup.slides-link":
@@ -13,7 +31,7 @@ export const FR_MESSAGES = {
 	"comment.guidance.meetup.slides-source-changed":
 		"L'événement a changé avant l'envoi des slides. Relancez la synchronisation des publications.",
 	"comment.guidance.content.review":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Validez le titre, la description et le visuel dans leurs commentaires.",
 
 	"comment.guidance.proposals.invalid-selection":
 		"Saisissez les numéros des URL Conference Hall, un par ligne, sans doublons.",
@@ -43,13 +61,13 @@ export const FR_MESSAGES = {
 	"comment.agenda.speaker-suffix": ", intervenant {speaker}",
 	"comment.agenda.speaker": "Programme (intervenant {speaker})",
 	"comment.guidance.event.title.missing":
-		"Générez ou proposez le titre de l'événement, puis approuvez-le pour qu'il soit appliqué automatiquement.",
+		"Modifiez et validez le titre proposé.",
 	"comment.guidance.event.date.missing":
 		"Ajoutez la date de l'événement au format AAAA-MM-JJ.",
 	"comment.guidance.event.date.invalid":
 		"Saisissez une date valide au format AAAA-MM-JJ.",
 	"comment.guidance.event.description.missing":
-		"Générez ou proposez la description de l'événement, puis approuvez-la pour qu'elle soit appliquée automatiquement.",
+		"Modifiez et validez la description proposée.",
 	"comment.guidance.event.hoster.missing":
 		"Sélectionnez un hôte dans la liste.",
 	"comment.guidance.event.hoster.invalid":
@@ -71,9 +89,9 @@ export const FR_MESSAGES = {
 	"comment.guidance.publication.meetup.missing":
 		"Lancez la synchronisation des publications pour renseigner le lien Meetup vérifié.",
 	"comment.guidance.publication.community.missing":
-		"Lancez la synchronisation des publications et approuvez la publication CNCF / OCGroups ; l'automatisation ajoute le lien public vérifié.",
+		"Synchronisez les publications, puis validez le brouillon OCGroups. Le lien public sera ajouté automatiquement.",
 	"comment.guidance.publication.assets.missing":
-		"Lancez la synchronisation des ressources pour créer le dossier de l'événement et renseigner son lien Google Drive.",
+		"Synchronisez les fichiers pour créer le dossier Drive du meetup.",
 	"comment.guidance.event.link.meetup.invalid":
 		"Saisissez un lien HTTPS valide vers la page Meetup de l'événement.",
 	"comment.guidance.event.link.community.invalid":
@@ -119,11 +137,11 @@ export const FR_MESSAGES = {
 	"comment.guidance.event.document.reference-metadata.invalid":
 		"Demandez à un responsable de régénérer les métadonnées invalides des références d'hôte et d'intervenants.",
 	"comment.guidance.event.document.reference-metadata.legacy":
-		"Vérifiez les références de l'hôte et du programme, puis relancez la mise à jour de l'issue pour actualiser leurs anciennes métadonnées.",
+		"Vérifiez l'hôte et les intervenants, puis synchronisez l'issue pour actualiser leurs références.",
 	"comment.guidance.event.document.reference-metadata.stale":
-		"Vérifiez les références de l'hôte et du programme, puis relancez la mise à jour de l'issue pour actualiser leurs métadonnées.",
+		"Vérifiez l'hôte et les intervenants, puis synchronisez l'issue pour actualiser leurs références.",
 	"comment.guidance.referential.reference.host.unknown":
-		"Cet hôte est absent de la liste des hôtes. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l'hôte [host-0001]`.",
+		"Hôte introuvable. Copiez son nom exact ou sa référence : `Nom [host-0001]`.",
 	"comment.guidance.referential.reference.host.ambiguous":
 		"Plusieurs hôtes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'hôte [host-0001]`.",
 	"comment.guidance.referential.reference.host.display-name-mismatch":
@@ -131,7 +149,7 @@ export const FR_MESSAGES = {
 	"comment.guidance.referential.reference.host.invalid":
 		"Choisissez un hôte de la liste des hôtes par son nom ou `Nom de l'hôte [host-0001]`.",
 	"comment.guidance.referential.reference.speaker.unknown":
-		"Cet intervenant est absent de la liste des intervenants. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
+		"Intervenant introuvable. Copiez son nom exact ou sa référence : `Nom [speaker-0001]`.",
 	"comment.guidance.referential.reference.speaker.ambiguous":
 		"Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
 	"comment.guidance.referential.reference.speaker.display-name-mismatch":
