@@ -1,11 +1,13 @@
 export const messages = {
+	"action.content-approval-pending":
+		"Edit the proposed text if needed, then approve or request another proposal.",
 	"action.social-approval-pending":
 		"Review the announcement and approve publication for this destination.",
-	"failure.social": "Public social publication failed.",
-	"task.social": "public social publication",
+	"failure.social": "Posting failed.",
+	"task.social": "social posts",
 	"action.community-approval-pending":
 		"Approve or reject OCGroups publication.",
-	"failure.communications": "Email preparation or delivery failed.",
+	"failure.communications": "Email preparation or sending failed.",
 	"failure.feedback": "OpenFeedback synchronization failed.",
 	"failure.assets": "Drive file preparation failed.",
 	"failure.event": "Meetup issue update failed.",
@@ -22,7 +24,7 @@ export const messages = {
 	"action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
 	"action.manual-publication": "{task}.",
 	"action.meetup-approval-pending": "Approve or reject Meetup publication.",
-	"action.approval-pending": "Approve or reject the email batch.",
+	"action.approval-pending": "Approve or reject the emails.",
 	"action.integration-failure": "Automation failed: {task}.",
 	"action.delivery-recovery": "Verify delivery before retrying.",
 	"action.occurrence-decision":
@@ -30,18 +32,18 @@ export const messages = {
 	"action.follow-up": "{task}.",
 	"action.stage-unknown": "Check the incomplete stage: {task}.",
 
-	"task.approvals": "email approvals",
+	"task.approvals": "email approval",
 	"task.delivery": "delivery recovery",
 
 	"attention.clear": "No pending tasks.",
 	"task.publish-meetup-event": "Approve Meetup publication",
 	"task.publish-community-event": "Publish on the CNCF platform",
 	"task.create-asset-folder": "Prepare the asset folder",
-	"task.thank-host": "Send host thanks",
-	"task.thank-speakers": "Send speaker thanks",
+	"task.thank-host": "Thank the host",
+	"task.thank-speakers": "Thank the speakers",
 	"task.share-slides": "Share slides",
 	"task.import-attendance": "Import attendance",
-	"task.share-social": "Share the event recap on LinkedIn",
+	"task.share-social": "Post a meetup recap on LinkedIn",
 	"task.event": "event validation",
 	"task.assets": "assets",
 	"task.feedback": "feedback",

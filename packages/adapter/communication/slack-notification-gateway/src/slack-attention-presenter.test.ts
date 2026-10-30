@@ -28,16 +28,11 @@ function attentionFixture(
 }
 describe("Slack attention presentation", () => {
 	it.each([
-		[
-			"en",
-			"Jun 8, 2099",
-			"Email preparation or delivery failed.",
-			"Review run",
-		],
+		["en", "Jun 8, 2099", "Email preparation or sending failed.", "Review run"],
 		[
 			"fr",
 			"8 juin 2099",
-			"La préparation ou l'envoi des courriels a échoué.",
+			"La préparation ou l'envoi des emails a échoué.",
 			"Voir l'exécution",
 		],
 	])(
@@ -105,6 +100,19 @@ describe("Slack attention presentation", () => {
 			);
 		},
 	);
+	it("links pending content reviews without labeling them as emails", () => {
+		// Arrange
+		const presenter = attentionFixture("fr");
+		const pending = episode("approval-pending", "content-review:revision");
+		pending.condition = { ...pending.condition, commentId: 200 };
+		// Act
+		const body = presenter.render({ state: state(), conditions: [pending] });
+		// Assert
+		expect(body).toContain("Modifiez le texte si besoin");
+		expect(body).toContain("#issuecomment-200");
+		expect(body).not.toContain("courriels");
+	});
+
 	it("preserves the concrete checklist with approval links without repeated tasks", () => {
 		// Arrange
 		const presenter = attentionFixture("en", {
@@ -113,7 +121,7 @@ describe("Slack attention presentation", () => {
 				{
 					field: "other",
 					label: "Communication",
-					description: "Approve or reject the email batch.",
+					description: "Approve or reject the emails.",
 					action: "email-approval",
 				},
 				{
@@ -133,9 +141,7 @@ describe("Slack attention presentation", () => {
 		});
 
 		// Assert
-		expect(rendered.split("Approve or reject the email batch.")).toHaveLength(
-			2,
-		);
+		expect(rendered.split("Approve or reject the emails.")).toHaveLength(2);
 		expect(rendered).toContain("• OpenFeedback Link: Synchronize each talk.");
 		expect(rendered).toContain("#issuecomment-200|Meetup #42");
 	});

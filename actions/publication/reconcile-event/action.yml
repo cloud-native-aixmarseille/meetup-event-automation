@@ -1,4 +1,4 @@
-name: Reconcile event publication
+name: Update event publication
 description: Reconcile configured publication destinations and publish each event after its verified organizer approval.
 inputs:
   meetup-event-url-prefix:

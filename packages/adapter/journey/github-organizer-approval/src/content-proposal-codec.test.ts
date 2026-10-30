@@ -118,3 +118,34 @@ describe("proposal persistence schema", () => {
 		},
 	);
 });
+
+describe("approved replacement persistence", () => {
+	it.each([true, false])(
+		"requires accepted text to match the approved edit: %s",
+		(matches) => {
+			// Arrange
+			const f = contentStoreFixture();
+			const source = contentFixture();
+			const draft = { text: "Generated title", media: [] };
+			const editedText = "Organizer title";
+			const proposal = {
+				...source.proposal,
+				draft,
+				revision: source.fingerprints.proposal(source.proposal, draft),
+				decision: {
+					status: "approved" as const,
+					actor: "organizer",
+					decidedAt: "2026-10-01T10:00:00Z",
+					editedText,
+				},
+				accepted: { text: matches ? editedText : draft.text, media: [] },
+			};
+			// Act
+			const roundtrip = () => f.codec.read(f.codec.write(proposal));
+			const decoded = matches ? roundtrip() : undefined;
+			// Assert
+			if (matches) expect(decoded).toEqual(proposal);
+			else expect(roundtrip).toThrow("differs from the approved value");
+		},
+	);
+});

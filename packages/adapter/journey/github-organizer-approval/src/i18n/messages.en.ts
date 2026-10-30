@@ -1,41 +1,40 @@
 export const EN_MESSAGES = {
+	"approval.content.image-label": "#### Image {index, number}",
 	"approval.social.after-approval": "after approval",
 	"approval.social.details":
-		"### Organizer confirmation: public social publication\n\n{target} · {destination}\n\nDestination: {identity}\n\nPublication: {plannedAt}; expires at {expiresAt}.\n\nReview the exact text, registration link, and media below.",
+		"### Publish on {target}\n\n{destination} · {identity}\n\nScheduled for: {plannedAt}; expires: {expiresAt}.\n\nReview the post below.",
 	"approval.social.request":
-		"Repository writers: select one choice. Approval authorizes this exact post to this destination within the reviewed window. Changes require a new approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+		"Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
 	"approval.social.evidence":
-		"Recovery evidence: {reference}\n\nConfirmed outcome: {outcome, select, published {the post was published} not_published {the post was not published} other {unknown}}.",
+		"Evidence: {reference}\n\nResult: {outcome, select, published {published} not_published {not published} other {unknown}}.",
 	"approval.social.recovery":
-		"Verify the provider evidence above before deciding.\n\n- [{approveMark}] {outcome, select, published {Confirm this post was published and record its remote identity} not_published {Confirm this post was not published and permit a retry after current publication approval is checked} other {Confirm recovery}}\n- [{rejectMark}] Reject recovery and keep publication blocked",
+		"Check the evidence above before selecting a choice.\n\n- [{approveMark}] {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] Keep publication blocked",
 	"approval.social.final":
-		"{status, select, approved {✅ **Publication decision approved**} rejected {❌ **Publication decision rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThe delivery record tracks provider acceptance independently. Completed posts are never resent.",
+		"{status, select, approved {✅ Publication approved} rejected {❌ Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSee the delivery status for the result.",
 	"approval.community.details":
-		"### Organizer confirmation: publish CNCF community event\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing can send OCGroups notifications to group members and speakers.",
+		"### Publish on CNCF\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing may notify group members and speakers.",
 	"approval.community.request":
-		"Repository writers: select one choice. Approval authorizes publication of this OCGroups draft and its native notifications. Changed content requires a new approval.\n\n- [{approveMark}] Approve publishing this CNCF community event\n- [{rejectMark}] Reject publishing this CNCF community event",
+		"Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
 	"approval.community.final":
-		"{status, select, approved {✅ **Community publication approved**} rejected {❌ **Community publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nAutomation rechecks the saved draft before publishing. CNCF Link is filled only after publication is verified. Changed content requires a new approval.",
-	"approval.content.planned":
-		"Planned publication: {time}. Recheck eligibility before posting.",
+		"{status, select, approved {✅ CNCF publication approved} rejected {❌ CNCF publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nCNCF Link is added after publication is verified.",
+	"approval.content.planned": "Scheduled for: {time}.",
 	"approval.content.slot":
-		"Image {index}: {status, select, complete {stored} reserved {outcome uncertain; no automatic retry} failed {failed} other {not requested}}.",
+		"Image {index}: {status, select, complete {ready} reserved {result unknown; check before retrying} failed {generation failed} other {not generated}}.",
 
 	"approval.content.title":
-		"### Review event content: {target}\n\nLanguage: {language} · Author: {origin}",
+		"### {target, select, title {Meetup title} description {Meetup description} cover {Meetup covers} other {Text for {target}}}",
 	"approval.content.request":
-		"Review the exact text and images above. Select exactly one choice. Approval authorizes this content; publication and sending have separate controls. Submit replacements or iteration guidance separately.\n\n{approve}\n- [{rejectMark}] Reject this content\n- [{iterateMark}] Request another iteration",
-	"approval.content.text-choice": "- [{mark}] Approve this content",
-	"approval.content.image-choice":
-		"- [{mark}] Approve image {index, number} as the cover",
+		"{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] Reject\n- [{iterateMark}] Generate another proposal",
+	"approval.content.text-choice": "- [{mark}] Approve",
+	"approval.content.image-choice": "- [{mark}] Choose image {index, number}",
 	"approval.content.final":
-		"{status, select, approved {✅ Content approved} rejected {❌ Content rejected} iteration_requested {🔄 Another iteration requested} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSelected image: {image}\n\nThis decision is final for this revision. Changed content requires a new review.",
+		"{status, select, approved {✅ Approved} rejected {❌ Rejected} iteration_requested {🔄 New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
 	"approval.meetup.details":
-		"### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
+		"### Publish on Meetup\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
 	"approval.meetup.request":
-		"Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
+		"Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
 	"approval.meetup.final":
-		"{status, select, approved {✅ **Publication approved**} rejected {❌ **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+		"{status, select, approved {✅ Publication approved} rejected {❌ Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
 
 	"follow-up.title": "## Post-event follow-up · {date}",
 	"follow-up.instructions":
@@ -43,22 +42,22 @@ export const EN_MESSAGES = {
 	"follow-up.task":
 		"{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
 	"follow-up.stopped": "Follow-up paused.",
-	"follow-up.waiting": "Thank-you emails are not ready for approval.",
+	"follow-up.waiting": "Thank-you emails are not ready yet.",
 	"follow-up.emails-complete": "No thank-you emails pending.",
-	"approval.details.summary": "Review email details",
+	"approval.details.summary": "Email details",
 	"approval.details.email":
-		"{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
+		"{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thank-you} speaker_thanks {Speaker thank-you} other {Email}}",
 	"approval.details.purpose":
-		"{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+		"{kind, select, host_introduction {Event links, slides, and logistics.} speaker_introduction {Event links, arrival details, and talk instructions.} host_thanks {Thanks and an invitation to host again.} speaker_thanks {Thanks, talk feedback, and a request for suggestions.} other {Planned email.}}",
 	"approval.details.link":
 		"{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
 	"approval.details.feedback": "Feedback results: {title}",
 	"approval.details.omitted-emails":
-		"{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
+		"{count, plural, one {# more email.} other {# more emails.}}",
 	"approval.details.omitted-links":
 		"{count, plural, one {# more link.} other {# more links.}}",
 	"approval.final":
-		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} · Up to {count, number} recipients.\n\n{status, select, approved {✅ **Approved**} rejected {❌ **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
+		"### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} · Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {✅ Approved} rejected {❌ Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
 	"approval.request":
-		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} · Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval.",
+		"### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} · Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] Approve sending\n- [{rejectMark}] Reject sending",
 } as const;

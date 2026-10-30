@@ -1,4 +1,3 @@
-import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 import {
 	ApprovalRequestPolicy,
 	DraftProposalComposition,
@@ -17,8 +16,10 @@ import { socialPublicationRequest } from "../testing/social-publication.fixtures
 import { ApprovalDecisionParser } from "./approval-decision-parser.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
+import { ContentTextPreview } from "./content-text-preview.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
+import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 
 describe("approval decision parsing", () => {
 	it.each(["en", "fr"])(
@@ -31,6 +32,7 @@ describe("approval decision parsing", () => {
 				composition.approvalMessages(locale),
 			);
 			const parser = new ApprovalDecisionParser(
+				new ContentTextPreview(),
 				new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),
@@ -110,6 +112,7 @@ describe("approval decision parsing", () => {
 			.replace(/- \[x\]/g, "- [X]")
 			.replace(/\n/g, "\r\n");
 		const parser = new ApprovalDecisionParser(
+			new ContentTextPreview(),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			new GithubOrganizerApprovalComposition()
 				.approvalPresenterFactory()
@@ -175,6 +178,7 @@ describe("approval decision parsing", () => {
 				'href="https://example.invalid/different"',
 			);
 		const parser = new ApprovalDecisionParser(
+			new ContentTextPreview(),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			new GithubOrganizerApprovalComposition()
 				.approvalPresenterFactory()
@@ -245,6 +249,7 @@ describe("approval decision parsing", () => {
 				"changed metadata": approved.replace(record.revision, "b".repeat(64)),
 			};
 			const parser = new ApprovalDecisionParser(
+				new ContentTextPreview(),
 				new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),
@@ -271,6 +276,7 @@ describe("content decision parsing", () => {
 			composition.approvalMessages(locale),
 		);
 		const parser = new ApprovalDecisionParser(
+			new ContentTextPreview(),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			composition.approvalPresenterFactory().supportedLocales(),
 		);
@@ -280,7 +286,7 @@ describe("content decision parsing", () => {
 		// Assert
 		expect(result).toEqual({ status: "iteration-requested" });
 	});
-	it("rejects simultaneous text replacement and approval", () => {
+	it("accepts simultaneous text replacement and approval", () => {
 		// Arrange
 		const composition = new GithubOrganizerApprovalComposition();
 		const record = createStoredApproval(contentRequest);
@@ -288,19 +294,22 @@ describe("content decision parsing", () => {
 			composition.approvalMessages("en"),
 		);
 		const parser = new ApprovalDecisionParser(
+			new ContentTextPreview(),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			[presenter],
 		);
-		const body = presenter
-			.issue(record, { status: "approved" })
-			.replace(
-				"<pre>Kubernetes au quotidien</pre>",
-				"<pre>Changed content</pre>",
-			);
+		const body =
+			new ContentTextPreview().replace(
+				presenter.issue(record, { status: "approved" }),
+				"Changed content",
+			) ?? "";
 		// Act
 		const result = parser.parse(record, body);
 		// Assert
-		expect(result.status).toBe("pending");
+		expect(result).toEqual({
+			status: "approved",
+			editedText: "Changed content",
+		});
 	});
 	it("rejects multiple cover choices", () => {
 		// Arrange
@@ -310,15 +319,56 @@ describe("content decision parsing", () => {
 			composition.approvalMessages("en"),
 		);
 		const parser = new ApprovalDecisionParser(
+			new ContentTextPreview(),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			[presenter],
 		);
 		const body = presenter
 			.issue(record, { status: "approved", selectedImage: "image-2" })
-			.replace("- [ ] Approve image 1", "- [x] Approve image 1");
+			.replace("- [ ] Choose image 1", "- [x] Choose image 1");
 		// Act
 		const result = parser.parse(record, body);
 		// Assert
 		expect(result.status).toBe("pending");
+	});
+});
+
+describe("edited proposal integrity", () => {
+	it.each([
+		"metadata",
+		"multiple choices",
+		"changed controls",
+		"changed heading",
+	])("rejects a text edit with %s", (variant) => {
+		// Arrange
+		const composition = new GithubOrganizerApprovalComposition();
+		const record = createStoredApproval(contentRequest);
+		const presenter = composition.approvalPresenter(
+			composition.approvalMessages("en"),
+		);
+		const preview = new ContentTextPreview();
+		const parser = new ApprovalDecisionParser(
+			preview,
+			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
+			[presenter],
+		);
+		const edited =
+			preview.replace(
+				presenter.issue(record, { status: "approved" }),
+				"Organizer title",
+			) ?? "";
+		const bodies: Record<string, string> = {
+			metadata: edited.replace(record.revision, "b".repeat(64)),
+			"multiple choices": edited.replace("- [ ] Reject", "- [x] Reject"),
+			"changed controls": edited.replace("- [x] Approve", "- [x] Publish"),
+			"changed heading": edited.replace(
+				"### Meetup title",
+				"### Different target",
+			),
+		};
+		// Act
+		const result = parser.parse(record, bodies[variant] ?? "");
+		// Assert
+		expect(result).toEqual({ status: "pending" });
 	});
 });

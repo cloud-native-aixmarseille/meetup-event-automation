@@ -1,5 +1,5 @@
 export const STAGE_MESSAGES_FR = {
-	"comment.social.target": "Publication sociale ({destination}, {purpose})",
+	"comment.social.target": "Publication ({destination}, {purpose})",
 	"comment.guidance.social.pending":
 		"Vérifiez l'annonce et approuvez sa publication pour cette destination.",
 	"comment.guidance.social.blocked":
@@ -9,7 +9,7 @@ export const STAGE_MESSAGES_FR = {
 	"comment.guidance.social.expired":
 		"Le créneau de publication approuvé a expiré. Vérifiez la date du meetup et préparez une nouvelle publication si nécessaire.",
 	"comment.guidance.social.evaluation-failed":
-		"La publication sociale n'a pas pu être évaluée. Demandez à un responsable de vérifier les accès aux sources et le registre des envois avant de réessayer.",
+		"Publication non vérifiable. Vérifiez les accès aux sources et le registre des envois avant de relancer.",
 	"comment.guidance.communication.concurrent-checklist":
 		"Le ticket a changé après les envois. Relancez pour actualiser les tâches terminées.",
 	"comment.guidance.feedback.conflict":
@@ -20,14 +20,13 @@ export const STAGE_MESSAGES_FR = {
 		"Vérifiez les accès OpenFeedback, puis réessayez.",
 	"comment.guidance.assets.slides":
 		"Complétez la présentation et son lien public avant les envois.",
-	"comment.guidance.communication.approval":
-		"Approuvez ou refusez le lot de courriels.",
+	"comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
 	"comment.guidance.communication.rejected":
-		"Lot de courriels refusé. Modifiez son contenu pour demander une nouvelle approbation.",
+		"Emails refusés. Modifiez leur contenu pour demander une nouvelle validation.",
 	"comment.guidance.communication.approval-unavailable":
 		"Approbation non vérifiable. Vérifiez la demande d'approbation, puis réessayez.",
 	"comment.guidance.communication.approval-notification":
-		"Consultez la demande d'approbation des courriels sur ce ticket ; sa notification Slack a échoué.",
+		"La notification Slack a échoué. Validez les emails dans le commentaire de cette issue.",
 	"comment.guidance.communication.delivery-uncertain":
 		"Vérifiez l'envoi avant toute reprise.",
 	"comment.guidance.communication.delivery-rejected":
@@ -39,11 +38,11 @@ export const STAGE_MESSAGES_FR = {
 	"comment.guidance.communication.ledger":
 		"Vérifiez le registre des envois avant de réessayer.",
 	"comment.guidance.communication.destination":
-		"Ajoutez une adresse courriel pour chaque destinataire inscrit.",
+		"Ajoutez une adresse email pour chaque destinataire.",
 	"comment.guidance.communication.content":
 		"Complétez le contenu de la notification avant de réessayer.",
 	"comment.guidance.communication.checklist":
-		"Relancez la synchronisation pour actualiser les tâches de courriel terminées.",
+		"Relancez pour cocher les tâches d'email terminées.",
 	"comment.guidance.communication.concurrent":
 		"Le ticket a changé pendant le traitement. Réessayez après les modifications.",
 	"comment.guidance.communication.references":

@@ -30604,6 +30604,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("content-review:"))
+      return "content-approval";
     if (episode.condition.resource.startsWith("social-publication:"))
       return "social-approval";
     if (episode.condition.resource.startsWith("community-publication:"))
@@ -31742,7 +31744,7 @@ var SocialPostDraft = class {
       language,
       guidance,
       instructions: [
-        "Write one Cloud Native Aix-Marseille meetup post using only the supplied facts. Maximum 2800 characters.",
+        "Write one concise Cloud Native Aix-Marseille meetup post using only the supplied facts. Use short, direct sentences and familiar words. No marketing hype, inflated promises, generic welcome, or filler. Maximum 2800 characters; prefer much shorter when the programme allows it.",
         channel === "linkedin" ? "Use Unicode emoji. End with one short relevant hashtags paragraph and a final line containing the public host name, public speaker names, and organizer names from mentions, separated by spaced hyphens. Never invent account handles or tags." : "Use Slack emoji aliases such as :rocket:, :date:, :round_pushpin:, :beers:, :alarm_clock:. No hashtags or mention footer.",
         `Opening: ${reminder ? opening : "Prochain Meetup"} Cloud Native Aix-Marseille ! (translate for English). Then blank line, date at startTime, host - city, blank line, Au programme :, ordered talk bullets with technology topic and public speaker names${reminder ? ", without detailed teasers" : ", each followed by one concise factual teaser"}.`,
         "End with a short invitation and Inscrivez-vous : registrationUrl (translate for English). Use the exact registrationUrl; never shorten it. The date/time must remain explicit, including reminders. No invented countdown, scarcity or urgency. Mention an aperitif only when aperitif=true. Keep talk order and public speaker names."
@@ -33163,8 +33165,9 @@ var EventCopyDescriptionDraft = class {
       language,
       guidance,
       instructions: [
-        "Write one welcoming description for a Cloud Native Aix-Marseille meetup using only the supplied facts.",
-        "Use plain semantic text: welcoming emoji opening; confirmed date/time, host and city and theme; Au programme : (or English equivalent); one emoji-led title - public speaker(s) and short teaser per talk; factual connecting sentence; friendly invitation.",
+        "Write one concise description for a Cloud Native Aix-Marseille meetup using only the supplied facts. Use short, direct sentences and familiar words. No marketing hype, inflated promises, filler, or generic welcome paragraph.",
+        "State the topic and confirmed date/time, host and city. Add Au programme : (or English equivalent), then the title, public speaker(s), and one factual teaser for each talk. End with at most one short invitation. Use emoji sparingly; omit decorative transitions.",
+        "Return readable multiline text with actual line breaks. Separate the opening, practical details, programme heading, each talk, and closing invitation with a blank line. Put each talk's title and public speakers on one line and its teaser on the following line. Never return the whole description as one paragraph; do not use HTML or code blocks.",
         "Keep talk order and public speaker names. Maximum 12000 characters. Do not repeat full abstracts; publication appends them. Mention an aperitif only when aperitif=true. Never invent logistics, people or promises."
       ],
       facts: this.source(facts)
@@ -33192,7 +33195,9 @@ var EventCopyTitleDraft = class {
       language,
       guidance,
       instructions: [
-        "Write a short, specific technology theme for a Cloud Native Aix-Marseille meetup, at most 80 characters on one line.",
+        "Write one clear, natural event headline for a Cloud Native Aix-Marseille meetup, at most 80 characters on one line. Make the main idea or practical benefit of attending immediately clear. No marketing hype, grand claims, or filler.",
+        "Read the abstracts to identify what the talks actually promise. For one talk, capture its central challenge or takeaway in a memorable phrase. For several talks, find an honest shared theme without forcing a connection or listing every topic.",
+        "Prefer concrete, active wording over a generic technology theme. Do not produce a keyword list, a stack inventory, an abstract summary, or a generic 'meetup about' label. Technologies mentioned only as pitfalls, counterexamples, or things to avoid must not become the headline promise.",
         "No [Meetup] prefix, date, venue or administrative wrapper. Use only the supplied topics. Do not invent technologies or claims."
       ],
       facts: {
@@ -36439,7 +36444,10 @@ var PromotionalContentPolicy = class {
     return proposal.plan.sourceFingerprint === plan2.sourceFingerprint && proposal.promptVersion === "1";
   }
   eligible(proposal, plan2) {
-    return this.current(proposal, plan2) && proposal.decision?.status === "approved" && proposal.draft !== null && this.validDraft(plan2, proposal.draft);
+    return this.current(proposal, plan2) && proposal.decision?.status === "approved" && proposal.draft !== null && this.validDraft(plan2, {
+      ...proposal.draft,
+      text: proposal.decision.editedText ?? proposal.draft.text
+    });
   }
   definition(target) {
     const definitions = this.definitions.filter(
@@ -44741,24 +44749,24 @@ var GithubDeliveryLedger = class {
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/messages.en.ts
 var EN_MESSAGES = {
-  "ledger.title": "### Communication status",
+  "ledger.title": "### Delivery status",
   "ledger.empty": "No deliveries recorded.",
   "ledger.row": "- {kind}: {status} ({count, number})",
-  "ledger.kind": "{kind, select, host_introduction {Host introduction email} speaker_introduction {Speaker introduction email} host_thanks {Host thank-you email} speaker_thanks {Speaker thank-you email} attendee_slides {Slides email to Meetup attendees} readiness_reminder {Organizer Slack reminder} other {Message}}",
-  "ledger.status": "{status, select, accepted {Request accepted} pending {Delivery in progress or awaiting verification} rejected {Request rejected} uncertain {Delivery needs verification} other {Unknown status}}",
+  "ledger.kind": "{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thanks} speaker_thanks {Speaker thanks} attendee_slides {Slides to Meetup attendees} readiness_reminder {Organizer Slack reminder} other {Message}}",
+  "ledger.status": "{status, select, accepted {Accepted} pending {In progress or awaiting verification} rejected {Rejected} uncertain {Check delivery} other {Unknown}}",
   "ledger.explanation": "Accepted by the mail service; inbox delivery is unverified.",
-  "ledger.attention": "Check the provider before retrying unverified or rejected deliveries."
+  "ledger.attention": "Check delivery with the provider before retrying."
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
-  "ledger.title": "### \xC9tat des communications",
+  "ledger.title": "### Suivi des envois",
   "ledger.empty": "Aucun envoi enregistr\xE9.",
   "ledger.row": "- {kind} : {status} ({count, number})",
-  "ledger.kind": "{kind, select, host_introduction {Courriel de pr\xE9sentation au lieu d'accueil} speaker_introduction {Courriel de pr\xE9sentation aux intervenants} host_thanks {Courriel de remerciement au lieu d'accueil} speaker_thanks {Courriel de remerciement aux intervenants} attendee_slides {Courriel des slides aux participants Meetup} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
-  "ledger.status": "{status, select, accepted {Demande accept\xE9e} pending {Envoi en cours ou \xE0 v\xE9rifier} rejected {Demande refus\xE9e} uncertain {Envoi \xE0 v\xE9rifier} other {\xC9tat inconnu}}",
+  "ledger.kind": "{kind, select, host_introduction {Informations pour l'h\xF4te} speaker_introduction {Informations pour les intervenants} host_thanks {Remerciements \xE0 l'h\xF4te} speaker_thanks {Remerciements aux intervenants} attendee_slides {Slides aux participants Meetup} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
+  "ledger.status": "{status, select, accepted {Accept\xE9} pending {En cours ou \xE0 v\xE9rifier} rejected {Refus\xE9} uncertain {\xC0 v\xE9rifier} other {Inconnu}}",
   "ledger.explanation": "Accept\xE9 par le service d'envoi ; r\xE9ception non v\xE9rifi\xE9e.",
-  "ledger.attention": "V\xE9rifiez les envois refus\xE9s ou incertains aupr\xE8s du fournisseur avant de r\xE9essayer."
+  "ledger.attention": "V\xE9rifiez l'envoi aupr\xE8s du fournisseur avant de r\xE9essayer."
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/catalog.ts
@@ -45005,10 +45013,12 @@ var GithubDeliveryLedgerComposition = class {
 
 // packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
 var ApprovalDecisionParser = class {
-  constructor(policy, comments) {
+  constructor(textPreview, policy, comments) {
+    this.textPreview = textPreview;
     this.policy = policy;
     this.comments = comments;
   }
+  textPreview;
   policy;
   comments;
   parse(record, body) {
@@ -45029,10 +45039,13 @@ var ApprovalDecisionParser = class {
     return { status: "pending" };
   }
   content(record, body) {
-    const approvals = record.content.target === "cover" ? record.content.draft.media.map((media) => ({
-      status: "approved",
-      selectedImage: media.id
-    })) : [{ status: "approved" }];
+    if (record.content.target !== "cover") return this.text(record, body);
+    const approvals = record.content.draft.media.map(
+      (media) => ({
+        status: "approved",
+        selectedImage: media.id
+      })
+    );
     for (const decision of [
       ...approvals,
       { status: "rejected" },
@@ -45042,6 +45055,26 @@ var ApprovalDecisionParser = class {
         (comment) => comment.issue(record, decision) === body
       ))
         return decision;
+    return { status: "pending" };
+  }
+  text(record, body) {
+    const edited = this.textPreview.read(body);
+    if (!edited) return { status: "pending" };
+    const original = this.textPreview.replace(body, record.content.draft.text);
+    for (const status of [
+      "approved",
+      "pending",
+      "rejected",
+      "iteration-requested"
+    ]) {
+      if (!this.comments.some(
+        (comment) => comment.issue(record, { status }) === original
+      ))
+        continue;
+      if ((status === "approved" || status === "pending") && edited.text !== record.content.draft.text)
+        return { status, editedText: edited.text };
+      return { status };
+    }
     return { status: "pending" };
   }
 };
@@ -45129,78 +45162,80 @@ var ApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "approval.content.image-label": "#### Image {index, number}",
   "approval.social.after-approval": "after approval",
-  "approval.social.details": "### Organizer confirmation: public social publication\n\n{target} \xB7 {destination}\n\nDestination: {identity}\n\nPublication: {plannedAt}; expires at {expiresAt}.\n\nReview the exact text, registration link, and media below.",
-  "approval.social.request": "Repository writers: select one choice. Approval authorizes this exact post to this destination within the reviewed window. Changes require a new approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
-  "approval.social.evidence": "Recovery evidence: {reference}\n\nConfirmed outcome: {outcome, select, published {the post was published} not_published {the post was not published} other {unknown}}.",
-  "approval.social.recovery": "Verify the provider evidence above before deciding.\n\n- [{approveMark}] {outcome, select, published {Confirm this post was published and record its remote identity} not_published {Confirm this post was not published and permit a retry after current publication approval is checked} other {Confirm recovery}}\n- [{rejectMark}] Reject recovery and keep publication blocked",
-  "approval.social.final": "{status, select, approved {\u2705 **Publication decision approved**} rejected {\u274C **Publication decision rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThe delivery record tracks provider acceptance independently. Completed posts are never resent.",
-  "approval.community.details": "### Organizer confirmation: publish CNCF community event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing can send OCGroups notifications to group members and speakers.",
-  "approval.community.request": "Repository writers: select one choice. Approval authorizes publication of this OCGroups draft and its native notifications. Changed content requires a new approval.\n\n- [{approveMark}] Approve publishing this CNCF community event\n- [{rejectMark}] Reject publishing this CNCF community event",
-  "approval.community.final": "{status, select, approved {\u2705 **Community publication approved**} rejected {\u274C **Community publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nAutomation rechecks the saved draft before publishing. CNCF Link is filled only after publication is verified. Changed content requires a new approval.",
-  "approval.content.planned": "Planned publication: {time}. Recheck eligibility before posting.",
-  "approval.content.slot": "Image {index}: {status, select, complete {stored} reserved {outcome uncertain; no automatic retry} failed {failed} other {not requested}}.",
-  "approval.content.title": "### Review event content: {target}\n\nLanguage: {language} \xB7 Author: {origin}",
-  "approval.content.request": "Review the exact text and images above. Select exactly one choice. Approval authorizes this content; publication and sending have separate controls. Submit replacements or iteration guidance separately.\n\n{approve}\n- [{rejectMark}] Reject this content\n- [{iterateMark}] Request another iteration",
-  "approval.content.text-choice": "- [{mark}] Approve this content",
-  "approval.content.image-choice": "- [{mark}] Approve image {index, number} as the cover",
-  "approval.content.final": "{status, select, approved {\u2705 Content approved} rejected {\u274C Content rejected} iteration_requested {\u{1F504} Another iteration requested} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSelected image: {image}\n\nThis decision is final for this revision. Changed content requires a new review.",
-  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
-  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+  "approval.social.details": "### Publish on {target}\n\n{destination} \xB7 {identity}\n\nScheduled for: {plannedAt}; expires: {expiresAt}.\n\nReview the post below.",
+  "approval.social.request": "Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.social.evidence": "Evidence: {reference}\n\nResult: {outcome, select, published {published} not_published {not published} other {unknown}}.",
+  "approval.social.recovery": "Check the evidence above before selecting a choice.\n\n- [{approveMark}] {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] Keep publication blocked",
+  "approval.social.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSee the delivery status for the result.",
+  "approval.community.details": "### Publish on CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing may notify group members and speakers.",
+  "approval.community.request": "Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.community.final": "{status, select, approved {\u2705 CNCF publication approved} rejected {\u274C CNCF publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nCNCF Link is added after publication is verified.",
+  "approval.content.planned": "Scheduled for: {time}.",
+  "approval.content.slot": "Image {index}: {status, select, complete {ready} reserved {result unknown; check before retrying} failed {generation failed} other {not generated}}.",
+  "approval.content.title": "### {target, select, title {Meetup title} description {Meetup description} cover {Meetup covers} other {Text for {target}}}",
+  "approval.content.request": "{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] Reject\n- [{iterateMark}] Generate another proposal",
+  "approval.content.text-choice": "- [{mark}] Approve",
+  "approval.content.image-choice": "- [{mark}] Choose image {index, number}",
+  "approval.content.final": "{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} iteration_requested {\u{1F504} New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
+  "approval.meetup.details": "### Publish on Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
+  "approval.meetup.request": "Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.meetup.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
   "follow-up.title": "## Post-event follow-up \xB7 {date}",
   "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
   "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
   "follow-up.stopped": "Follow-up paused.",
-  "follow-up.waiting": "Thank-you emails are not ready for approval.",
+  "follow-up.waiting": "Thank-you emails are not ready yet.",
   "follow-up.emails-complete": "No thank-you emails pending.",
-  "approval.details.summary": "Review email details",
-  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+  "approval.details.summary": "Email details",
+  "approval.details.email": "{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thank-you} speaker_thanks {Speaker thank-you} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Event links, slides, and logistics.} speaker_introduction {Event links, arrival details, and talk instructions.} host_thanks {Thanks and an invitation to host again.} speaker_thanks {Thanks, talk feedback, and a request for suggestions.} other {Planned email.}}",
   "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
   "approval.details.feedback": "Feedback results: {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
+  "approval.details.omitted-emails": "{count, plural, one {# more email.} other {# more emails.}}",
   "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
-  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
-  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
+  "approval.final": "### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
+  "approval.request": "### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] Approve sending\n- [{rejectMark}] Reject sending"
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "approval.content.image-label": "#### Visuel {index, number}",
   "approval.social.after-approval": "apr\xE8s approbation",
-  "approval.social.details": "### Confirmation des organisateurs : publication sur les r\xE9seaux\n\n{target} \xB7 {destination}\n\nDestination : {identity}\n\nPublication : {plannedAt} ; expiration le {expiresAt}.\n\nV\xE9rifiez le texte exact, le lien d'inscription et les m\xE9dias ci-dessous.",
-  "approval.social.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. L'approbation autorise ce message exact vers cette destination dans la p\xE9riode indiqu\xE9e. Toute modification n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
-  "approval.social.evidence": "Preuve de r\xE9cup\xE9ration : {reference}\n\nR\xE9sultat confirm\xE9 : {outcome, select, published {le message a \xE9t\xE9 publi\xE9} not_published {le message n'a pas \xE9t\xE9 publi\xE9} other {inconnu}}.",
-  "approval.social.recovery": "V\xE9rifiez la preuve du fournisseur ci-dessus avant de d\xE9cider.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identit\xE9 distante} not_published {Confirmer l'absence de publication et autoriser un nouvel essai apr\xE8s v\xE9rification de l'approbation actuelle} other {Confirmer la r\xE9cup\xE9ration}}\n- [{rejectMark}] Refuser la r\xE9cup\xE9ration et maintenir le blocage",
-  "approval.social.final": "{status, select, approved {\u2705 **D\xE9cision de publication approuv\xE9e**} rejected {\u274C **D\xE9cision de publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nLe registre de livraison suit s\xE9par\xE9ment l'acceptation du fournisseur. Un message publi\xE9 n'est jamais renvoy\xE9.",
-  "approval.community.details": "### Confirmation organisateur : publier l'\xE9v\xE9nement CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut envoyer les notifications OCGroups aux membres du groupe et aux speakers.",
-  "approval.community.request": "Membres avec droit d'\xE9criture : s\xE9lectionner un choix. L'approbation autorise la publication de ce brouillon OCGroups et ses notifications natives. Un changement de contenu n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de cet \xE9v\xE9nement CNCF\n- [{rejectMark}] Refuser la publication de cet \xE9v\xE9nement CNCF",
-  "approval.community.final": "{status, select, approved {\u2705 **Publication CNCF approuv\xE9e**} rejected {\u274C **Publication CNCF refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nL'automatisation v\xE9rifie le brouillon avant publication. CNCF Link est rempli apr\xE8s v\xE9rification de la publication. Un changement de contenu n\xE9cessite une nouvelle approbation.",
-  "approval.content.planned": "Publication pr\xE9vue : {time}. V\xE9rifiez \xE0 nouveau la validit\xE9 avant publication.",
-  "approval.content.slot": "Image {index} : {status, select, complete {enregistr\xE9e} reserved {r\xE9sultat incertain ; aucun nouvel essai automatique} failed {\xE9chec} other {non demand\xE9e}}.",
-  "approval.content.title": "### V\xE9rification du contenu : {target}\n\nLangue : {language} \xB7 Auteur : {origin}",
-  "approval.content.request": "V\xE9rifiez le texte exact et les images ci-dessus. Cochez un seul choix. L'approbation autorise ce contenu ; la publication et l'envoi ont leurs propres validations. Soumettez les remplacements ou consignes s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] Refuser ce contenu\n- [{iterateMark}] Demander une nouvelle proposition",
-  "approval.content.text-choice": "- [{mark}] Approuver ce contenu",
-  "approval.content.image-choice": "- [{mark}] Approuver l'image {index, number} comme couverture",
-  "approval.content.final": "{status, select, approved {\u2705 Contenu approuv\xE9} rejected {\u274C Contenu refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nImage s\xE9lectionn\xE9e : {image}\n\nCette d\xE9cision est d\xE9finitive pour cette version. Un contenu modifi\xE9 n\xE9cessite une nouvelle v\xE9rification.",
-  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
-  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
+  "approval.social.details": "### Publier sur {target}\n\n{destination} \xB7 {identity}\n\nPublication : {plannedAt} ; expiration : {expiresAt}.\n\nV\xE9rifiez le message ci-dessous.",
+  "approval.social.request": "Cochez un choix pour publier ce message \xE0 la destination indiqu\xE9e. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.social.evidence": "Preuve : {reference}\n\nR\xE9sultat : {outcome, select, published {publi\xE9} not_published {non publi\xE9} other {inconnu}}.",
+  "approval.social.recovery": "V\xE9rifiez la preuve ci-dessus avant de choisir.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identifiant} not_published {Confirmer qu'aucun message n'a \xE9t\xE9 publi\xE9 et autoriser un nouvel essai apr\xE8s validation} other {Confirmer la reprise}}\n- [{rejectMark}] Garder la publication bloqu\xE9e",
+  "approval.social.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nConsultez le suivi des envois pour le r\xE9sultat.",
+  "approval.community.details": "### Publier sur CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut notifier les membres du groupe et les intervenants.",
+  "approval.community.request": "Cochez un choix. La validation inclut les notifications OCGroups.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.community.final": "{status, select, approved {\u2705 Publication CNCF approuv\xE9e} rejected {\u274C Publication CNCF refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCNCF Link sera ajout\xE9 apr\xE8s v\xE9rification de la publication.",
+  "approval.content.planned": "Publication pr\xE9vue : {time}.",
+  "approval.content.slot": "Visuel {index} : {status, select, complete {pr\xEAt} reserved {r\xE9sultat inconnu ; v\xE9rifiez avant de relancer} failed {g\xE9n\xE9ration en \xE9chec} other {non g\xE9n\xE9r\xE9}}.",
+  "approval.content.title": "### {target, select, title {Titre du meetup} description {Description du meetup} cover {Visuels du meetup} other {Texte pour {target}}}",
+  "approval.content.request": "{target, select, cover {Choisissez un visuel.} other {Modifiez le texte de ce commentaire si besoin, puis cochez un choix.}} La publication se valide s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] Refuser\n- [{iterateMark}] G\xE9n\xE9rer une autre proposition",
+  "approval.content.text-choice": "- [{mark}] Approuver",
+  "approval.content.image-choice": "- [{mark}] Choisir le visuel {index, number}",
+  "approval.content.final": "{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.{image, plural, =0 {} other {\n\nVisuel choisi : #}}",
+  "approval.meetup.details": "### Publier sur Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon Meetup]({url}).",
+  "approval.meetup.request": "Cochez un choix. L'automatisation publiera le brouillon approuv\xE9.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.meetup.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'\xE9v\xE9nement reste en brouillon.} other {}}",
   "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
   "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
   "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
   "follow-up.stopped": "Suivi suspendu.",
-  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
-  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
-  "approval.details.summary": "Voir le d\xE9tail des e-mails",
-  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
+  "follow-up.waiting": "Les emails de remerciement ne sont pas encore pr\xEAts.",
+  "follow-up.emails-complete": "Aucun email de remerciement en attente.",
+  "approval.details.summary": "D\xE9tail des emails",
+  "approval.details.email": "{kind, select, host_introduction {Informations pour l'h\xF4te} speaker_introduction {Informations pour l'intervenant} host_thanks {Remerciement \xE0 l'h\xF4te} speaker_thanks {Remerciement \xE0 l'intervenant} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Liens du meetup, slides et logistique.} speaker_introduction {Liens du meetup, acc\xE8s au lieu et consignes pour le talk.} host_thanks {Remerciements et proposition d'accueillir un prochain meetup.} speaker_thanks {Remerciements, retours sur le talk et demande de suggestions.} other {Email pr\xE9vu.}}",
   "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
   "approval.details.feedback": "R\xE9sultats des retours : {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
+  "approval.details.omitted-emails": "{count, plural, one {# autre email.} other {# autres emails.}}",
   "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
-  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
-  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
+  "approval.final": "### {kind, select, introduction {Emails de pr\xE9paration} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\n{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Les emails d\xE9j\xE0 envoy\xE9s ne seront pas renvoy\xE9s.} rejected {Ces emails ne seront pas envoy\xE9s.} other {}}",
+  "approval.request": "### {kind, select, introduction {Emails de pr\xE9paration} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\nCochez un choix. Les emails d\xE9j\xE0 envoy\xE9s sont ignor\xE9s. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] Approuver l'envoi\n- [{rejectMark}] Refuser l'envoi"
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
@@ -45749,39 +45784,43 @@ var CommunityApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/content-approval-presenter.ts
 var ContentApprovalPresenter = class {
-  constructor(messages5) {
+  constructor(messages5, textPreview) {
     this.messages = messages5;
+    this.textPreview = textPreview;
   }
   messages;
+  textPreview;
   issue(record, decision) {
     const content = record.content;
     return [
       this.messages.t("approval.content.title", {
-        target: content.target,
-        language: content.language,
-        origin: this.escape(content.origin)
+        target: content.target
       }),
       content.plannedAt ? this.messages.t("approval.content.planned", {
         time: content.plannedAt
       }) : "",
       ...(content.attempts ?? []).map(
-        (status, index) => this.messages.t("approval.content.slot", {
+        (status, index) => status === "complete" ? "" : this.messages.t("approval.content.slot", {
           index: index + 1,
           status: status.replaceAll("-", "_")
         })
       ),
-      content.draft.text ? `<pre>${this.escape(content.draft.text)}</pre>` : "",
+      content.draft.text ? this.textPreview.render(
+        record.decision?.editedText ?? content.draft.text
+      ) : "",
       ...content.draft.media.map(
-        (media) => [
-          `![${this.escape(media.description)}](<${media.url}>)`,
-          `${this.escape(media.id)} \xB7 ${this.escape(media.sourceRevision)}${media.source ? ` \xB7 ${this.escape(media.source.id)} \xB7 ${this.escape(media.source.revision)}` : ""} \xB7 ${media.width}\xD7${media.height} \xB7 ${media.mimeType} \xB7 ${media.fingerprint}`
+        (media, index) => [
+          this.messages.t("approval.content.image-label", { index: index + 1 }),
+          `![${this.escape(media.description)}](<${media.url}>)`
         ].join("\n\n")
       ),
       record.decision ? this.messages.t("approval.content.final", {
         status: record.decision.status.replaceAll("-", "_"),
         actor: record.decision.actor,
         decidedAt: record.decision.decidedAt,
-        image: record.decision.selectedImage ?? ""
+        image: content.draft.media.findIndex(
+          (media) => media.id === record.decision?.selectedImage
+        ) + 1
       }) : this.controls(record, decision)
     ].filter(Boolean).join("\n\n");
   }
@@ -45796,6 +45835,7 @@ var ContentApprovalPresenter = class {
       mark: decision.status === "approved" ? "x" : " "
     });
     return this.messages.t("approval.content.request", {
+      target: record.content.target,
       approve,
       rejectMark: decision.status === "rejected" ? "x" : " ",
       iterateMark: decision.status === "iteration-requested" ? "x" : " "
@@ -45803,6 +45843,32 @@ var ContentApprovalPresenter = class {
   }
   escape(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-text-preview.ts
+var ContentTextPreview = class {
+  start = "<!-- meetup-content:text -->";
+  end = "<!-- /meetup-content:text -->";
+  render(text) {
+    const escaped = text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;").replaceAll("@", "<span>@</span>").replaceAll("\n", "  \n");
+    return `${this.start}
+
+${escaped}
+
+${this.end}`;
+  }
+  read(body) {
+    const start = body.indexOf(this.start);
+    const end = body.indexOf(this.end);
+    if (start < 0 || end < start || body.indexOf(this.start, start + 1) !== -1 || body.indexOf(this.end, end + 1) !== -1)
+      return void 0;
+    const text = body.slice(start + this.start.length, end).trim().replace(/ {2}\n/g, "\n").replaceAll("<span>@</span>", "@").replaceAll("&#91;", "[").replaceAll("&#93;", "]").replaceAll("&gt;", ">").replaceAll("&lt;", "<").replaceAll("&amp;", "&");
+    return { text, start, end: end + this.end.length };
+  }
+  replace(body, text) {
+    const current = this.read(body);
+    return current ? body.slice(0, current.start) + this.render(text) + body.slice(current.end) : void 0;
   }
 };
 
@@ -45897,9 +45963,17 @@ var FinalizeApprovalDecision = class {
   decisions;
   repository;
   notifications;
-  async execute(state) {
+  async execute(state, validateText) {
     const { record, comment } = state;
     const decision = await this.decisions.execute(record, comment);
+    const textValid = decision.editedText === void 0 || validateText?.(decision.editedText);
+    if (!record.decision && decision.editedText !== void 0 && (decision.status === "pending" || !textValid))
+      return {
+        status: "pending",
+        notificationFailed: false,
+        editedText: decision.editedText,
+        invalidText: textValid === false
+      };
     if (decision.status !== "pending" && !record.decision) {
       if (!decision.actor || !decision.decidedAt)
         throw new Error("Missing verified approval identity");
@@ -45907,6 +45981,7 @@ var FinalizeApprovalDecision = class {
         status: decision.status,
         actor: decision.actor,
         decidedAt: decision.decidedAt,
+        ...decision.editedText === void 0 ? {} : { editedText: decision.editedText },
         ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
       };
     }
@@ -46274,7 +46349,7 @@ var GithubOrganizerApproval = class {
   finalizer;
   notifications;
   permissions;
-  async request(input) {
+  async request(input, validateText) {
     input = this.reviewedRequest(input);
     this.collaborators.approvalRequestSchema.validate(input);
     this.collaborators.approvalRequestPolicy.validate(input);
@@ -46286,14 +46361,15 @@ var GithubOrganizerApproval = class {
       input,
       existing.record.decision?.status ?? "pending"
     )) {
-      const result = await this.finalizer.execute(existing);
+      const result = await this.finalizer.execute(existing, validateText);
       if ((result.status === "approved" || result.status === "iteration-requested") && !await this.permissions.canApprove(
         existing.record.decision?.actor ?? ""
       ))
         throw new Error(
           "The recorded organizer no longer has approval permission"
         );
-      if (result.status !== "pending") return result;
+      if (result.status !== "pending" || result.editedText !== void 0)
+        return result;
       return {
         status: "pending",
         notificationFailed: await this.notifications.send(
@@ -46466,59 +46542,6 @@ var ResolveApprovalDecision = class {
   }
 };
 
-// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
-var StoredApprovalSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value))
-      throw new Error("Invalid approval state");
-    const state = value;
-    this.collaborators.approvalRequestSchema.validate(value);
-    this.collaborators.followUpSchema.validate(state.followUp);
-    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
-      hasFollowUp: state.followUp !== void 0,
-      decided: state.decision !== void 0
-    });
-    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
-      (status) => status === state.notification
-    ))
-      throw new Error("Invalid approval state");
-    if (state.decision !== void 0) {
-      this.decision(state.decision);
-      const decision = state.decision;
-      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0))
-        throw new Error("Invalid content decision kind");
-      if (value.kind === "content-review")
-        this.contentDecision(value, decision);
-    }
-    if (state.notificationMessage !== void 0)
-      this.notificationMessage(state.notificationMessage);
-    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
-      throw new Error("Invalid approval reaction state");
-  }
-  decision(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
-      String(value.status)
-    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
-      throw new Error("Invalid final approval decision");
-  }
-  contentDecision(value, decision) {
-    const selected = decision.selectedImage;
-    if (value.content.target === "cover" && decision.status === "approved") {
-      if (!value.content.draft.media.some((media) => media.id === selected))
-        throw new Error("Missing approved cover identity");
-    } else if (selected !== void 0)
-      throw new Error("Unexpected cover identity");
-  }
-  notificationMessage(value) {
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
-      throw new Error("Invalid approval notification reference");
-  }
-};
-
 // packages/adapter/journey/github-organizer-approval/src/social-publication-approval-presenter.ts
 var SocialPublicationApprovalPresenter = class {
   constructor(messages5) {
@@ -46570,6 +46593,61 @@ var SocialPublicationApprovalPresenter = class {
   }
 };
 
+// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
+var StoredApprovalSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value))
+      throw new Error("Invalid approval state");
+    const state = value;
+    this.collaborators.approvalRequestSchema.validate(value);
+    this.collaborators.followUpSchema.validate(state.followUp);
+    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
+      hasFollowUp: state.followUp !== void 0,
+      decided: state.decision !== void 0
+    });
+    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
+      (status) => status === state.notification
+    ))
+      throw new Error("Invalid approval state");
+    if (state.decision !== void 0) {
+      this.decision(state.decision);
+      const decision = state.decision;
+      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0 || decision.editedText !== void 0))
+        throw new Error("Invalid content decision kind");
+      if (value.kind === "content-review")
+        this.contentDecision(value, decision);
+    }
+    if (state.notificationMessage !== void 0)
+      this.notificationMessage(state.notificationMessage);
+    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
+      throw new Error("Invalid approval reaction state");
+  }
+  decision(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
+      String(value.status)
+    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
+      throw new Error("Invalid final approval decision");
+  }
+  contentDecision(value, decision) {
+    const selected = decision.selectedImage;
+    if (decision.editedText !== void 0 && (decision.status !== "approved" || value.content.target === "cover" || typeof decision.editedText !== "string" || !decision.editedText.trim() || decision.editedText.length > 12e3))
+      throw new Error("Invalid approved text edit");
+    if (value.content.target === "cover" && decision.status === "approved") {
+      if (!value.content.draft.media.some((media) => media.id === selected))
+        throw new Error("Missing approved cover identity");
+    } else if (selected !== void 0)
+      throw new Error("Unexpected cover identity");
+  }
+  notificationMessage(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
+      throw new Error("Invalid approval notification reference");
+  }
+};
+
 // packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
 var TrustedApprovalState = class {
   constructor(collaborators, client, authorLogin) {
@@ -46612,6 +46690,7 @@ var GithubOrganizerApprovalComposition = class {
   }
   approvalDecisionParser(...args) {
     return new ApprovalDecisionParser(
+      new ContentTextPreview(),
       new JourneyPolicyComposition().approvalRequestPolicy(),
       ...args
     );
@@ -46643,7 +46722,7 @@ var GithubOrganizerApprovalComposition = class {
     });
   }
   contentApprovalPresenter(messages5) {
-    return new ContentApprovalPresenter(messages5);
+    return new ContentApprovalPresenter(messages5, new ContentTextPreview());
   }
   approvalPresenterFactory() {
     return new ApprovalPresenterFactory({
@@ -46988,6 +47067,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   action(description) {
     for (const locale of ["en", "fr"]) {
       const messages5 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages5.t("action.content-approval-pending"))
+        return "content-approval";
       if (description === messages5.t("action.social-approval-pending"))
         return "social-approval";
       if (description === messages5.t("action.approval-pending"))
@@ -47062,6 +47143,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
+      return this.messages.t("action.content-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
       return this.messages.t("action.social-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
@@ -47432,11 +47515,12 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
-  "failure.social": "Public social publication failed.",
-  "task.social": "public social publication",
+  "failure.social": "Posting failed.",
+  "task.social": "social posts",
   "action.community-approval-pending": "Approve or reject OCGroups publication.",
-  "failure.communications": "Email preparation or delivery failed.",
+  "failure.communications": "Email preparation or sending failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
   "failure.assets": "Drive file preparation failed.",
   "failure.event": "Meetup issue update failed.",
@@ -47450,24 +47534,24 @@ var messages = {
   "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approve or reject Meetup publication.",
-  "action.approval-pending": "Approve or reject the email batch.",
+  "action.approval-pending": "Approve or reject the emails.",
   "action.integration-failure": "Automation failed: {task}.",
   "action.delivery-recovery": "Verify delivery before retrying.",
   "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
   "action.follow-up": "{task}.",
   "action.stage-unknown": "Check the incomplete stage: {task}.",
-  "task.approvals": "email approvals",
+  "task.approvals": "email approval",
   "task.delivery": "delivery recovery",
   "attention.clear": "No pending tasks.",
   "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
   "task.publish-meetup-event": "Approve Meetup publication",
   "task.publish-community-event": "Publish on the CNCF platform",
   "task.create-asset-folder": "Prepare the asset folder",
-  "task.thank-host": "Send host thanks",
-  "task.thank-speakers": "Send speaker thanks",
+  "task.thank-host": "Thank the host",
+  "task.thank-speakers": "Thank the speakers",
   "task.share-slides": "Share slides",
   "task.import-attendance": "Import attendance",
-  "task.share-social": "Publish an event recap with photos and links on LinkedIn",
+  "task.share-social": "Post a meetup recap on LinkedIn",
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
@@ -47478,11 +47562,12 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "failure.social": "La publication sociale a \xE9chou\xE9.",
-  "task.social": "publication sociale",
+  "failure.social": "La publication a \xE9chou\xE9.",
+  "task.social": "publications sur les r\xE9seaux",
   "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
-  "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
   "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
   "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
@@ -47496,24 +47581,24 @@ var messages2 = {
   "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
-  "action.approval-pending": "Approuvez ou refusez le lot de courriels.",
+  "action.approval-pending": "Approuvez ou refusez les emails.",
   "action.integration-failure": "Automatisation en \xE9chec : {task}.",
   "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
   "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
   "action.follow-up": "{task}.",
   "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
-  "task.approvals": "approbation des courriels",
+  "task.approvals": "validation des emails",
   "task.delivery": "reprise des envois",
   "attention.clear": "Aucune t\xE2che en attente.",
   "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
   "task.publish-meetup-event": "Approuver la publication Meetup",
   "task.publish-community-event": "Publiez sur la plateforme CNCF",
   "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
-  "task.thank-host": "Envoyez les remerciements au lieu h\xF4te",
-  "task.thank-speakers": "Envoyez les remerciements aux intervenants",
+  "task.thank-host": "Remerciez l'h\xF4te",
+  "task.thank-speakers": "Remerciez les intervenants",
   "task.share-slides": "Partagez les pr\xE9sentations",
   "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Publiez un r\xE9capitulatif du meetup avec des photos et des liens sur LinkedIn",
+  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
@@ -47636,11 +47721,12 @@ var GithubOrganizerAttentionComposition = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
 var messages3 = {
+  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
-  "failure.social": "Public social publication failed.",
-  "task.social": "public social publication",
+  "failure.social": "Posting failed.",
+  "task.social": "social posts",
   "action.community-approval-pending": "Approve or reject OCGroups publication.",
-  "failure.communications": "Email preparation or delivery failed.",
+  "failure.communications": "Email preparation or sending failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
   "failure.assets": "Drive file preparation failed.",
   "failure.event": "Meetup issue update failed.",
@@ -47656,23 +47742,23 @@ var messages3 = {
   "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approve or reject Meetup publication.",
-  "action.approval-pending": "Approve or reject the email batch.",
+  "action.approval-pending": "Approve or reject the emails.",
   "action.integration-failure": "Automation failed: {task}.",
   "action.delivery-recovery": "Verify delivery before retrying.",
   "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
   "action.follow-up": "{task}.",
   "action.stage-unknown": "Check the incomplete stage: {task}.",
-  "task.approvals": "email approvals",
+  "task.approvals": "email approval",
   "task.delivery": "delivery recovery",
   "attention.clear": "No pending tasks.",
   "task.publish-meetup-event": "Approve Meetup publication",
   "task.publish-community-event": "Publish on the CNCF platform",
   "task.create-asset-folder": "Prepare the asset folder",
-  "task.thank-host": "Send host thanks",
-  "task.thank-speakers": "Send speaker thanks",
+  "task.thank-host": "Thank the host",
+  "task.thank-speakers": "Thank the speakers",
   "task.share-slides": "Share slides",
   "task.import-attendance": "Import attendance",
-  "task.share-social": "Share the event recap on LinkedIn",
+  "task.share-social": "Post a meetup recap on LinkedIn",
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
@@ -47682,11 +47768,12 @@ var messages3 = {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
 var messages4 = {
+  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "failure.social": "La publication sociale a \xE9chou\xE9.",
-  "task.social": "publication sociale",
+  "failure.social": "La publication a \xE9chou\xE9.",
+  "task.social": "publications sur les r\xE9seaux",
   "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
-  "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
   "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
   "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
@@ -47702,23 +47789,23 @@ var messages4 = {
   "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
-  "action.approval-pending": "Approuvez ou refusez le lot de courriels.",
+  "action.approval-pending": "Approuvez ou refusez les emails.",
   "action.integration-failure": "Automatisation en \xE9chec : {task}.",
   "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
   "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
   "action.follow-up": "{task}.",
   "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
-  "task.approvals": "approbation des courriels",
+  "task.approvals": "validation des emails",
   "task.delivery": "reprise des envois",
   "attention.clear": "Aucune t\xE2che en attente.",
   "task.publish-meetup-event": "Approuver la publication Meetup",
   "task.publish-community-event": "Publiez sur la plateforme CNCF",
   "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
-  "task.thank-host": "Envoyez les remerciements au lieu h\xF4te",
-  "task.thank-speakers": "Envoyez les remerciements aux intervenants",
+  "task.thank-host": "Remerciez l'h\xF4te",
+  "task.thank-speakers": "Remerciez les intervenants",
   "task.share-slides": "Partagez les pr\xE9sentations",
   "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Partagez le r\xE9capitulatif du meetup sur LinkedIn",
+  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
@@ -47746,20 +47833,20 @@ var SlackAttentionMessages = class extends MessageLocalizer {
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
-  "request.social-publication": "Social publication \xB7 {date} \xB7 {target}\nReview the exact destination, text, media, and timing, then approve or reject publication in GitHub: {url}",
-  "request.community-publication": "CNCF community event for {date}: review the OCGroups draft and approve publication, including native notifications, in GitHub: {url}",
-  "request.content": "Content review needed for {date}: {target}. Review and approve, reject, or request another iteration: {url}",
-  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
-  "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
+  "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
+  "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
+  "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
+  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\nApprove or reject: {url}",
+  "request.publication": "Meetup \xB7 {date}\nReview and approve publication: {url}"
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
-  "request.social-publication": "Publication sur les r\xE9seaux \xB7 {date} \xB7 {target}\nV\xE9rifiez la destination exacte, le texte, les m\xE9dias et l'horaire, puis approuvez ou refusez la publication dans GitHub : {url}",
-  "request.community-publication": "\xC9v\xE9nement CNCF du {date} : v\xE9rifier le brouillon OCGroups et approuver la publication, avec ses notifications natives, dans GitHub : {url}",
-  "request.content": "Contenu \xE0 v\xE9rifier pour le {date} : {target}. Approuvez, refusez ou demandez une nouvelle proposition : {url}",
-  "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
-  "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
+  "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
+  "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
+  "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
+  "request.introduction": "Emails de pr\xE9paration \xB7 {date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
+  "request.publication": "Meetup \xB7 {date}\nV\xE9rifiez et validez la publication : {url}"
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
@@ -48070,6 +48157,8 @@ var SlackAttentionPresenter = class {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
+      return this.messages.t("action.content-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
       return this.messages.t("action.social-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
@@ -50747,6 +50836,10 @@ var DiagnosticCommentSections = class {
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.content.invalid",
+    ["Event materials", "comment.guidance.content.invalid"]
+  ],
+  [
     "communication.social.evaluation-failed",
     ["Communication", "comment.guidance.social.evaluation-failed"]
   ],
@@ -50801,35 +50894,35 @@ var STAGE_GUIDANCE = [
   ],
   [
     "publication.content.prerequisites",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.prerequisites"]
   ],
   [
     "publication.content.pending",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.pending"]
   ],
   [
     "publication.content.rejected",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.rejected"]
   ],
   [
     "publication.content.iteration-requested",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.iteration-requested"]
   ],
   [
     "publication.content.recovery",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.recovery"]
   ],
   [
     "publication.content.stale",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.stale"]
   ],
   [
     "publication.content.title-review",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.title-review"]
   ],
   [
     "publication.content.description-review",
-    ["Event materials", "comment.guidance.content.review"]
+    ["Event materials", "comment.guidance.content.description-review"]
   ],
   [
     "publication.meetup.content-review",
@@ -51643,13 +51736,22 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
+  "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
+  "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
+  "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+  "comment.guidance.content.stale": "The event changed. Generate and review a new proposal.",
+  "comment.guidance.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
+  "comment.guidance.content.iteration-requested": "A new proposal was requested. Run generation again.",
+  "comment.guidance.content.rejected": "Content rejected. Submit a replacement for review.",
+  "comment.guidance.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
+  "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
   "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
   "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
   "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
   "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
   "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
-  "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "comment.guidance.content.review": "Review the title, description, and cover in their proposal comments.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
   "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
@@ -51666,10 +51768,10 @@ var EN_MESSAGES4 = {
   "comment.agenda.item": "Agenda (item {item}{speaker})",
   "comment.agenda.speaker-suffix": ", speaker {speaker}",
   "comment.agenda.speaker": "Agenda (speaker {speaker})",
-  "comment.guidance.event.title.missing": "Generate or submit the event title, then approve it for automatic application.",
+  "comment.guidance.event.title.missing": "Edit and approve the proposed title.",
   "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
   "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
-  "comment.guidance.event.description.missing": "Generate or submit the event description, then approve it for automatic application.",
+  "comment.guidance.event.description.missing": "Edit and approve the proposed description.",
   "comment.guidance.event.hoster.missing": "Select a host from the host list.",
   "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
   "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
@@ -51680,8 +51782,8 @@ var EN_MESSAGES4 = {
   "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
   "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
   "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
-  "comment.guidance.publication.community.missing": "Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.",
-  "comment.guidance.publication.assets.missing": "Run asset reconciliation to create the event folder and populate its Google Drive link.",
+  "comment.guidance.publication.community.missing": "Sync publications, then approve the OCGroups draft. The public link is added automatically.",
+  "comment.guidance.publication.assets.missing": "Sync assets to create the event Drive folder.",
   "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
   "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
   "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
@@ -51704,13 +51806,13 @@ var EN_MESSAGES4 = {
   "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
   "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
   "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata.",
-  "comment.guidance.event.document.reference-metadata.stale": "Check the host and agenda references, then rerun the issue update workflow to refresh their metadata.",
-  "comment.guidance.referential.reference.host.unknown": "This host was not found in the host list. Copy its exact name, including accents, or use a name with its stable ID: `Host name [host-0001]`.",
+  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.event.document.reference-metadata.stale": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.referential.reference.host.unknown": "Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
   "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
   "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
   "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "This speaker was not found in the speaker list. Copy its exact name, including accents, or use a name with its stable ID: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
   "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
@@ -51718,13 +51820,22 @@ var EN_MESSAGES4 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
+  "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
+  "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
+  "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+  "comment.guidance.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
+  "comment.guidance.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
+  "comment.guidance.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
+  "comment.guidance.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
+  "comment.guidance.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
+  "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
   "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
   "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
   "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
   "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
   "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
-  "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "comment.guidance.content.review": "Validez le titre, la description et le visuel dans leurs commentaires.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
   "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
@@ -51741,10 +51852,10 @@ var FR_MESSAGES4 = {
   "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
   "comment.agenda.speaker-suffix": ", intervenant {speaker}",
   "comment.agenda.speaker": "Programme (intervenant {speaker})",
-  "comment.guidance.event.title.missing": "G\xE9n\xE9rez ou proposez le titre de l'\xE9v\xE9nement, puis approuvez-le pour qu'il soit appliqu\xE9 automatiquement.",
+  "comment.guidance.event.title.missing": "Modifiez et validez le titre propos\xE9.",
   "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
   "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
-  "comment.guidance.event.description.missing": "G\xE9n\xE9rez ou proposez la description de l'\xE9v\xE9nement, puis approuvez-la pour qu'elle soit appliqu\xE9e automatiquement.",
+  "comment.guidance.event.description.missing": "Modifiez et validez la description propos\xE9e.",
   "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
   "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
   "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
@@ -51755,8 +51866,8 @@ var FR_MESSAGES4 = {
   "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
   "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
   "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
-  "comment.guidance.publication.community.missing": "Lancez la synchronisation des publications et approuvez la publication CNCF / OCGroups ; l'automatisation ajoute le lien public v\xE9rifi\xE9.",
-  "comment.guidance.publication.assets.missing": "Lancez la synchronisation des ressources pour cr\xE9er le dossier de l'\xE9v\xE9nement et renseigner son lien Google Drive.",
+  "comment.guidance.publication.community.missing": "Synchronisez les publications, puis validez le brouillon OCGroups. Le lien public sera ajout\xE9 automatiquement.",
+  "comment.guidance.publication.assets.missing": "Synchronisez les fichiers pour cr\xE9er le dossier Drive du meetup.",
   "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
   "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
@@ -51779,13 +51890,13 @@ var FR_MESSAGES4 = {
   "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
   "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
   "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez les r\xE9f\xE9rences de l'h\xF4te et du programme, puis relancez la mise \xE0 jour de l'issue pour actualiser leurs anciennes m\xE9tadonn\xE9es.",
-  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez les r\xE9f\xE9rences de l'h\xF4te et du programme, puis relancez la mise \xE0 jour de l'issue pour actualiser leurs m\xE9tadonn\xE9es.",
-  "comment.guidance.referential.reference.host.unknown": "Cet h\xF4te est absent de la liste des h\xF4tes. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.referential.reference.host.unknown": "H\xF4te introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [host-0001]`.",
   "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
   "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
   "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l'h\xF4te [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "Cet intervenant est absent de la liste des intervenants. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Intervenant introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
   "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
   "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
@@ -51793,29 +51904,29 @@ var FR_MESSAGES4 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
-  "comment.social.target": "Social publication ({destination}, {purpose})",
+  "comment.social.target": "Post ({destination}, {purpose})",
   "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
   "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
   "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
   "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
-  "comment.guidance.social.evaluation-failed": "Social publication could not be evaluated. Ask a maintainer to check source access and delivery records before retrying.",
+  "comment.guidance.social.evaluation-failed": "Could not check publication. Check source access and delivery records before retrying.",
   "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
   "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
   "comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
   "comment.guidance.assets.slides": "Complete the presentation and its public link before sending emails.",
-  "comment.guidance.communication.approval": "Approve or reject the email batch.",
-  "comment.guidance.communication.rejected": "Email batch rejected. Update its content to request a new approval.",
+  "comment.guidance.communication.approval": "Approve or reject the emails.",
+  "comment.guidance.communication.rejected": "Emails rejected. Change their content to request a new approval.",
   "comment.guidance.communication.approval-unavailable": "Approval could not be verified. Check the approval request, then retry.",
-  "comment.guidance.communication.approval-notification": "Review the email approval request on this issue; its Slack notification failed.",
+  "comment.guidance.communication.approval-notification": "Slack notification failed. Review the email approval comment in this issue.",
   "comment.guidance.communication.delivery-uncertain": "Verify delivery before retrying.",
   "comment.guidance.communication.delivery-rejected": "Delivery rejected. Check the mail gateway before retrying.",
   "comment.guidance.communication.delivery-deferred": "Delivery deferred; the next run will retry.",
   "comment.guidance.communication.configuration": "Ask a maintainer to check the communication workflow configuration.",
   "comment.guidance.communication.ledger": "Check the delivery ledger before retrying.",
-  "comment.guidance.communication.destination": "Add an email address for each opted-in recipient.",
+  "comment.guidance.communication.destination": "Add an email address for each recipient.",
   "comment.guidance.communication.content": "Complete the notification content before retrying.",
-  "comment.guidance.communication.checklist": "Rerun reconciliation to update completed email tasks.",
+  "comment.guidance.communication.checklist": "Sync again to mark completed email tasks.",
   "comment.guidance.communication.concurrent": "The issue changed during processing. Retry after editing.",
   "comment.guidance.communication.references": "Select known hosts and speakers before sending emails.",
   "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
@@ -51842,29 +51953,29 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
-  "comment.social.target": "Publication sociale ({destination}, {purpose})",
+  "comment.social.target": "Publication ({destination}, {purpose})",
   "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
   "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
   "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
-  "comment.guidance.social.evaluation-failed": "La publication sociale n'a pas pu \xEAtre \xE9valu\xE9e. Demandez \xE0 un responsable de v\xE9rifier les acc\xE8s aux sources et le registre des envois avant de r\xE9essayer.",
+  "comment.guidance.social.evaluation-failed": "Publication non v\xE9rifiable. V\xE9rifiez les acc\xE8s aux sources et le registre des envois avant de relancer.",
   "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
   "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
   "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
   "comment.guidance.feedback.access": "V\xE9rifiez les acc\xE8s OpenFeedback, puis r\xE9essayez.",
   "comment.guidance.assets.slides": "Compl\xE9tez la pr\xE9sentation et son lien public avant les envois.",
-  "comment.guidance.communication.approval": "Approuvez ou refusez le lot de courriels.",
-  "comment.guidance.communication.rejected": "Lot de courriels refus\xE9. Modifiez son contenu pour demander une nouvelle approbation.",
+  "comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
+  "comment.guidance.communication.rejected": "Emails refus\xE9s. Modifiez leur contenu pour demander une nouvelle validation.",
   "comment.guidance.communication.approval-unavailable": "Approbation non v\xE9rifiable. V\xE9rifiez la demande d'approbation, puis r\xE9essayez.",
-  "comment.guidance.communication.approval-notification": "Consultez la demande d'approbation des courriels sur ce ticket ; sa notification Slack a \xE9chou\xE9.",
+  "comment.guidance.communication.approval-notification": "La notification Slack a \xE9chou\xE9. Validez les emails dans le commentaire de cette issue.",
   "comment.guidance.communication.delivery-uncertain": "V\xE9rifiez l'envoi avant toute reprise.",
   "comment.guidance.communication.delivery-rejected": "Envoi refus\xE9. V\xE9rifiez la passerelle d'envoi avant de r\xE9essayer.",
   "comment.guidance.communication.delivery-deferred": "Envoi diff\xE9r\xE9 ; la prochaine ex\xE9cution r\xE9essaiera.",
   "comment.guidance.communication.configuration": "Demandez \xE0 un responsable de v\xE9rifier la configuration des communications.",
   "comment.guidance.communication.ledger": "V\xE9rifiez le registre des envois avant de r\xE9essayer.",
-  "comment.guidance.communication.destination": "Ajoutez une adresse courriel pour chaque destinataire inscrit.",
+  "comment.guidance.communication.destination": "Ajoutez une adresse email pour chaque destinataire.",
   "comment.guidance.communication.content": "Compl\xE9tez le contenu de la notification avant de r\xE9essayer.",
-  "comment.guidance.communication.checklist": "Relancez la synchronisation pour actualiser les t\xE2ches de courriel termin\xE9es.",
+  "comment.guidance.communication.checklist": "Relancez pour cocher les t\xE2ches d'email termin\xE9es.",
   "comment.guidance.communication.concurrent": "Le ticket a chang\xE9 pendant le traitement. R\xE9essayez apr\xE8s les modifications.",
   "comment.guidance.communication.references": "S\xE9lectionnez des h\xF4tes et intervenants connus avant les envois.",
   "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
@@ -53112,9 +53223,11 @@ var IssueFormWriter = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
     this.repositoryRef = options.repositoryRef ?? "main";
+    this.conferenceHallEventUrl = options.conferenceHallEventUrl;
   }
   collaborators;
   repositoryRef;
+  conferenceHallEventUrl;
   createPatch(document, event) {
     const patch = {};
     if (document.issueTitle !== event.issueTitle)
@@ -53128,7 +53241,8 @@ var IssueFormWriter = class {
         checklists,
         this.collaborators.eventReferenceMetadata.referenceMetadata(event)
       ),
-      event
+      event,
+      this.conferenceHallEventUrl
     );
     if (body !== document.body) patch.body = body;
     return Object.freeze(patch);
@@ -53609,7 +53723,7 @@ var ProposalSelectionCodec = class {
     );
     const hasMarker = body.includes("<!-- meetup-proposals:");
     if ((!value || value === "_No response_") && !hasMarker) return {};
-    const proposalReferences = (value || "!missing-selection").split(/\r?\n/).map((id) => id.trim().replace(/^[-*]\s+/, "")).filter(Boolean);
+    const proposalReferences = (value || "!missing-selection").split(/\r?\n/).map((id) => this.readReference(id.trim().replace(/^[-*]\s+/, ""))).filter(Boolean);
     const markers = this.collaborators.managedIssueMarkers.readManagedMarkerValues(
       body,
       "meetup-proposals"
@@ -53624,8 +53738,14 @@ var ProposalSelectionCodec = class {
       });
     return { proposalReferences, proposalStatus: "stale" };
   }
-  write(body, event) {
+  write(body, event, eventUrl) {
     if (!event.proposalReferences?.length) return body;
+    if (eventUrl && event.proposalStatus === "current")
+      body = this.collaborators.issueFormSections.replaceOrAppendSection(
+        body,
+        HEADINGS.proposals,
+        event.proposalReferences.map((id) => `[${id}](${eventUrl}/proposals/${id})`).join("\n")
+      );
     const marker = `<!-- meetup-proposals:1:${event.proposalStatus ?? "stale"} -->`;
     const replaced = this.collaborators.managedIssueMarkers.replaceManagedMarker(
       body,
@@ -53634,6 +53754,12 @@ var ProposalSelectionCodec = class {
     );
     return replaced.found ? replaced.body : `${marker}
 ${body}`;
+  }
+  readReference(value) {
+    const linked = /^\[([1-9]\d*)\]\(https:\/\/conference-hall\.io\/team\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*\/proposals\/\1\)$/.exec(
+      value
+    );
+    return linked?.[1] ?? value;
   }
   restore(event) {
     return {
@@ -53857,14 +53983,14 @@ var GithubIssueFormEventDocumentCodecComposition = class {
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
 var EN_MESSAGES5 = {
-  "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
-  "form.speakers.show": "Show available speaker references"
+  "form.speakers.guidance": "Copy the speaker references into the agenda.",
+  "form.speakers.show": "Available speakers"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
 var FR_MESSAGES5 = {
-  "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
-  "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
+  "form.speakers.guidance": "Copiez les r\xE9f\xE9rences des intervenants dans le programme.",
+  "form.speakers.show": "Intervenants disponibles"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
@@ -67357,6 +67483,18 @@ var ConferenceHallInput = class {
       conferenceHallApiKey
     });
   }
+  readEventUrl(event) {
+    const value = getInput("conference-hall-event-url", { required: true }).trim().replace(/\/$/, "");
+    const match = /^https:\/\/conference-hall\.io\/team\/([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(
+      value
+    );
+    if (!match || match[2] !== event)
+      throw new RuntimeInputError(
+        "conference-hall-event-url",
+        "must be the Conference Hall organizer event URL matching conference-hall-event"
+      );
+    return value;
+  }
   validate(input) {
     const conferenceHallEvent = input.conferenceHallEvent?.trim();
     const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
@@ -68111,9 +68249,10 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES7 = {
-  "action.communication.recover-social": "Recover social publication",
+  "diagnostic.publication.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+  "action.communication.recover-social": "Recover a social post",
   "report.social.recovery": "social_recovery={status}",
-  "action.communication.reconcile-social": "Reconcile social publication",
+  "action.communication.reconcile-social": "Update social posts",
   "report.social.empty": "social_publications=0",
   "report.social.result": "social_target={target} status={status}",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
@@ -68128,15 +68267,15 @@ var EN_MESSAGES7 = {
   "report.publication.skipped": "publication_provider={provider} event=skipped",
   "report.publication.blocked": "publication_provider={provider} event=blocked",
   "report.publication.review": "publication_provider={provider} review_url={url}",
-  "diagnostic.publication.community.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
-  "diagnostic.publication.community.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
-  "diagnostic.publication.community.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
-  "diagnostic.publication.community.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
-  "diagnostic.publication.community.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.community.content-review": "Review the title, description, and cover in their proposal comments.",
+  "diagnostic.publication.community.approval-pending": "Approve or reject publication in the comment. The event stays in draft until approved.",
+  "diagnostic.publication.community.approval-rejected": "Publication rejected. The event stays in draft.",
+  "diagnostic.publication.community.approval-unavailable": "Approval could not be verified. Check the comment and GitHub App permissions.",
+  "diagnostic.publication.community.approval-notification-failed": "The approval notification failed. Review the comment in the issue.",
+  "diagnostic.publication.community.source": "Source data could not be read. Fix the reported errors before syncing.",
   "diagnostic.publication.community.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
   "diagnostic.publication.community.inactive": "OCGroups publication is inactive for this issue.",
-  "diagnostic.publication.community.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.community.prerequisites": "Complete the future date, title, description, confirmed speakers, agenda, and public venue. Fix any malformed Communication checkboxes.",
   "diagnostic.publication.community.link": "Set a valid event URL belonging to the configured OCGroups group.",
   "diagnostic.publication.community.conflict": "The issue link and recorded OCGroups event differ. Restore the recorded event link before running again.",
   "diagnostic.publication.community.uncertain": "Publication outcome is uncertain. Check the OCGroups dashboard and recover the verified event UUID in the community journal before retrying. Keep drafts out of CNCF Link. Clear a reservation only after confirming no event was created.",
@@ -68148,34 +68287,34 @@ var EN_MESSAGES7 = {
   "action.communication.generate-slack-post": "Generate Slack post",
   "action.communication.generate-linkedin-post": "Generate LinkedIn post",
   "action.organizer.review-drafts": "Review drafts",
-  "diagnostic.publication.content.prerequisites": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.pending": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.rejected": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.iteration-requested": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.recovery": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.stale": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.title-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.content.description-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "diagnostic.publication.meetup.content-review": "Approve the current title, description, and cover artwork through content review. Replace invalid or changed artwork before synchronizing; changed content needs fresh approval.",
-  "diagnostic.communication.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
-  "report.content.generated": "Content generation evaluated.",
-  "report.content.reviewed": "Content reviews reconciled.",
-  "report.content.no-work": "No content proposals or organizer submissions to review.",
+  "diagnostic.publication.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
+  "diagnostic.publication.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
+  "diagnostic.publication.content.rejected": "Content rejected. Submit a replacement for review.",
+  "diagnostic.publication.content.iteration-requested": "A new proposal was requested. Run generation again.",
+  "diagnostic.publication.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
+  "diagnostic.publication.content.stale": "The event changed. Generate and review a new proposal.",
+  "diagnostic.publication.content.title-review": "Edit and approve the title in its proposal comment.",
+  "diagnostic.publication.content.description-review": "Edit and approve the description in its proposal comment.",
+  "diagnostic.publication.meetup.content-review": "Review the title, description, and cover in their proposal comments.",
+  "diagnostic.communication.content-review": "Review the title, description, and cover in their proposal comments.",
+  "report.content.generated": "Content generation checked.",
+  "report.content.reviewed": "Content approvals updated.",
+  "report.content.no-work": "No content to review.",
   "action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
   "action.feedback.reconcile-short-link": "Reconcile shared feedback link",
   "action.organizer.reconcile-checklist": "Reconcile organizer checklist",
   "report.checklist.updated": "checklist=persisted",
   "report.checklist.retained": "checklist=retained",
   "report.feedback.link": "link_updated={updated}",
-  "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
-  "diagnostic.publication.meetup.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
-  "diagnostic.publication.meetup.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
-  "diagnostic.publication.meetup.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
-  "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the comment. The event stays in draft until approved.",
+  "diagnostic.publication.meetup.approval-rejected": "Publication rejected. The event stays in draft.",
+  "diagnostic.publication.meetup.approval-unavailable": "Approval could not be verified. Check the comment and GitHub App permissions.",
+  "diagnostic.publication.meetup.approval-notification-failed": "The approval notification failed. Review the comment in the issue.",
+  "diagnostic.publication.meetup.source": "Source data could not be read. Fix the reported errors before syncing.",
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
-  "action.publication.reconcile-event": "Reconcile event publication",
+  "action.publication.reconcile-event": "Update event publication",
   "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
-  "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.meetup.prerequisites": "Complete the future date, title, description, confirmed speakers, agenda, and public venue. Fix any malformed Communication checkboxes.",
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
   "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
   "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check the event and cover photo library before retrying. Restore the verified event URL in Meetup Link and recover any pending or detached cover photo in the trusted journal. Leave Meetup event published unchecked until publication is confirmed. Preserve event and photo identities; clear uncertain state only after checking what Meetup accepted.",
@@ -68212,11 +68351,11 @@ var EN_MESSAGES7 = {
   "diagnostic.speaker-sync.rate-limited": "Conference Hall rate limit reached; retry after the API cooldown.",
   "diagnostic.speaker-sync.unexpected": "Unexpected technical failure during speaker synchronization.",
   "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.organizer.reconcile-attention": "Reconcile organizer attention",
+  "action.organizer.reconcile-attention": "Update organizer tasks",
   "report.attention.updated": "attention=persisted",
   "report.attention.skipped": "attention=skipped reason=unrelated-issue",
   "report.attention.failed": "attention=synchronization-failed",
-  "action.feedback.reconcile-event": "Reconcile feedback event",
+  "action.feedback.reconcile-event": "Update meetup feedback",
   "report.feedback.skipped": "feedback=skipped",
   "report.feedback.completed": "feedback=completed",
   "report.feedback.changes": "issue_persisted={persisted}",
@@ -68233,8 +68372,8 @@ var EN_MESSAGES7 = {
   "action.issue-form.reconcile": "Reconcile meetup issue form",
   "action.event.reconcile": "Reconcile meetup event",
   "action.event.list-active": "List active meetup events",
-  "action.communication.reconcile-email": "Reconcile meetup email",
-  "action.assets.reconcile-documents": "Reconcile meetup documents",
+  "action.communication.reconcile-email": "Send meetup emails",
+  "action.assets.reconcile-documents": "Update meetup files",
   "report.failed": "failure={reason}",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
@@ -68268,9 +68407,10 @@ var EN_MESSAGES7 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES7 = {
-  "action.communication.recover-social": "R\xE9tablir une publication sociale",
+  "diagnostic.publication.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+  "action.communication.recover-social": "Reprendre une publication",
   "report.social.recovery": "reprise_sociale={status}",
-  "action.communication.reconcile-social": "R\xE9concilier les publications sociales",
+  "action.communication.reconcile-social": "Mettre \xE0 jour les publications sur les r\xE9seaux",
   "report.social.empty": "publications_sociales=0",
   "report.social.result": "cible_sociale={target} statut={status}",
   "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
@@ -68285,15 +68425,15 @@ var FR_MESSAGES7 = {
   "report.publication.skipped": "fournisseur_publication={provider} evenement=ignore",
   "report.publication.blocked": "fournisseur_publication={provider} evenement=bloque",
   "report.publication.review": "fournisseur_publication={provider} url_validation={url}",
-  "diagnostic.publication.community.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
-  "diagnostic.publication.community.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
-  "diagnostic.publication.community.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
-  "diagnostic.publication.community.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
-  "diagnostic.publication.community.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.community.content-review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "diagnostic.publication.community.approval-pending": "Approuvez ou refusez la publication dans le commentaire. L'\xE9v\xE9nement reste en brouillon jusque-l\xE0.",
+  "diagnostic.publication.community.approval-rejected": "Publication refus\xE9e. L'\xE9v\xE9nement reste en brouillon.",
+  "diagnostic.publication.community.approval-unavailable": "Validation non v\xE9rifiable. V\xE9rifiez le commentaire et les droits de la GitHub App.",
+  "diagnostic.publication.community.approval-notification-failed": "La notification a \xE9chou\xE9. Consultez le commentaire de validation dans l'issue.",
+  "diagnostic.publication.community.source": "Lecture des sources impossible. Corrigez les erreurs signal\xE9es avant de relancer.",
   "diagnostic.publication.community.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, les s\xE9lecteurs de connexion.",
   "diagnostic.publication.community.inactive": "La publication OCGroups est inactive pour cette issue.",
-  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.community.prerequisites": "Compl\xE9tez la date future, le titre, la description, les intervenants confirm\xE9s, le programme et le lieu public. Corrigez les cases invalides de Communication.",
   "diagnostic.publication.community.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe OCGroups configur\xE9.",
   "diagnostic.publication.community.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
   "diagnostic.publication.community.uncertain": "Le r\xE9sultat est incertain. V\xE9rifiez le tableau de bord OCGroups et r\xE9cup\xE9rez le UUID v\xE9rifi\xE9 dans le journal community avant de relancer. Gardez les brouillons hors de CNCF Link. Effacez une r\xE9servation seulement apr\xE8s avoir confirm\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
@@ -68305,34 +68445,34 @@ var FR_MESSAGES7 = {
   "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
   "action.communication.generate-linkedin-post": "G\xE9n\xE9rer la publication LinkedIn",
   "action.organizer.review-drafts": "V\xE9rifier les propositions",
-  "diagnostic.publication.content.prerequisites": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.pending": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.rejected": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.iteration-requested": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.recovery": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.stale": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.title-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.content.description-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.publication.meetup.content-review": "Validez le titre, la description et l'illustration de couverture actuels dans la revue de contenu. Remplacez une illustration invalide ou modifi\xE9e avant de synchroniser ; un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "diagnostic.communication.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
-  "report.content.generated": "G\xE9n\xE9ration du contenu \xE9valu\xE9e.",
-  "report.content.reviewed": "Validations du contenu synchronis\xE9es.",
-  "report.content.no-work": "Aucune proposition de contenu ni soumission d'organisateur \xE0 examiner.",
+  "diagnostic.publication.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
+  "diagnostic.publication.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
+  "diagnostic.publication.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
+  "diagnostic.publication.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
+  "diagnostic.publication.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
+  "diagnostic.publication.content.title-review": "Modifiez et validez le titre dans son commentaire.",
+  "diagnostic.publication.content.description-review": "Modifiez et validez la description dans son commentaire.",
+  "diagnostic.publication.meetup.content-review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "diagnostic.communication.content-review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "report.content.generated": "G\xE9n\xE9ration v\xE9rifi\xE9e.",
+  "report.content.reviewed": "Validations mises \xE0 jour.",
+  "report.content.no-work": "Aucun contenu \xE0 v\xE9rifier.",
   "action.assets.reconcile-slides-pdf": "Mettre \xE0 jour le PDF des slides",
   "action.feedback.reconcile-short-link": "Mettre \xE0 jour le lien de feedback partag\xE9",
   "action.organizer.reconcile-checklist": "Mettre \xE0 jour la checklist organisateur",
   "report.checklist.updated": "checklist=persisted",
   "report.checklist.retained": "checklist=retained",
   "report.feedback.link": "link_updated={updated}",
-  "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
-  "diagnostic.publication.meetup.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
-  "diagnostic.publication.meetup.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
-  "diagnostic.publication.meetup.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
-  "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire. L'\xE9v\xE9nement reste en brouillon jusque-l\xE0.",
+  "diagnostic.publication.meetup.approval-rejected": "Publication refus\xE9e. L'\xE9v\xE9nement reste en brouillon.",
+  "diagnostic.publication.meetup.approval-unavailable": "Validation non v\xE9rifiable. V\xE9rifiez le commentaire et les droits de la GitHub App.",
+  "diagnostic.publication.meetup.approval-notification-failed": "La notification a \xE9chou\xE9. Consultez le commentaire de validation dans l'issue.",
+  "diagnostic.publication.meetup.source": "Lecture des sources impossible. Corrigez les erreurs signal\xE9es avant de relancer.",
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
-  "action.publication.reconcile-event": "R\xE9concilier la publication de l'\xE9v\xE9nement",
+  "action.publication.reconcile-event": "Mettre \xE0 jour la publication du meetup",
   "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
-  "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les intervenants confirm\xE9s, le programme et le lieu public. Corrigez les cases invalides de Communication.",
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
   "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
   "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez l'\xE9v\xE9nement et la phototh\xE8que avant de relancer. R\xE9tablissez l'URL v\xE9rifi\xE9e dans Meetup Link et r\xE9cup\xE9rez toute photo de couverture en attente ou d\xE9tach\xE9e dans le journal de confiance. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Pr\xE9servez les identifiants de l'\xE9v\xE9nement et de la photo ; ne supprimez un \xE9tat incertain qu'apr\xE8s avoir v\xE9rifi\xE9 ce que Meetup a accept\xE9.",
@@ -68369,11 +68509,11 @@ var FR_MESSAGES7 = {
   "diagnostic.speaker-sync.rate-limited": "Limite API Conference Hall atteinte ; r\xE9essayez apr\xE8s le d\xE9lai impos\xE9.",
   "diagnostic.speaker-sync.unexpected": "Erreur technique inattendue pendant la synchronisation des intervenants.",
   "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.organizer.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
+  "action.organizer.reconcile-attention": "Mettre \xE0 jour les t\xE2ches organisateur",
   "report.attention.updated": "attention=persisted",
   "report.attention.skipped": "attention=skipped reason=unrelated-issue",
   "report.attention.failed": "attention=synchronization-failed",
-  "action.feedback.reconcile-event": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
+  "action.feedback.reconcile-event": "Mettre \xE0 jour les retours du meetup",
   "report.feedback.skipped": "feedback=skipped",
   "report.feedback.completed": "feedback=completed",
   "report.feedback.changes": "issue_persisted={persisted}",
@@ -68390,8 +68530,8 @@ var FR_MESSAGES7 = {
   "action.issue-form.reconcile": "Synchroniser le formulaire du meetup",
   "action.event.reconcile": "V\xE9rifier et mettre \xE0 jour le meetup",
   "action.event.list-active": "Lister les meetups actifs",
-  "action.communication.reconcile-email": "V\xE9rifier et envoyer les communications du meetup",
-  "action.assets.reconcile-documents": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
+  "action.communication.reconcile-email": "Envoyer les emails du meetup",
+  "action.assets.reconcile-documents": "Mettre \xE0 jour les fichiers du meetup",
   "report.failed": "failure={reason}",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
@@ -68860,6 +69000,7 @@ var EventComposition = class _EventComposition {
       const config = context3.get(SERVICES.config);
       return new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec(
         {
+          conferenceHallEventUrl: input.conferenceHallEventUrl,
           repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
           timeZone: config.timezone,
           speakersConfirmationLabel: config.event["speakers-confirmation-label"]

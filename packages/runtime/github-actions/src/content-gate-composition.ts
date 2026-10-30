@@ -11,6 +11,8 @@ import {
 	EventCopyApprovalGate,
 } from "@meetup-automation/journey";
 import { PublicAssetUrl } from "@meetup-automation/publication";
+import { DateTemplateFormatter } from "@meetup-automation/templating";
+import { AssetDateFormatter } from "./assets/asset-date-formatter.js";
 import type { EventDocumentCompositionInput } from "./composition.js";
 import { ContentConfiguration } from "./content-configuration.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
@@ -37,7 +39,13 @@ export class ContentGateComposition {
 				author,
 				adapter.approvalPresenter(adapter.approvalMessages(input.locale)),
 			),
-			new ContentFactsProjection(),
+			new ContentFactsProjection(
+				(date, language) =>
+					new AssetDateFormatter(
+						new DateTemplateFormatter(language),
+						language,
+					).format(date, "UTC", "month") ?? "",
+			),
 			new ContentPlanFactory(
 				new DraftProposalComposition().fingerprints(),
 				new SocialPostTiming(),

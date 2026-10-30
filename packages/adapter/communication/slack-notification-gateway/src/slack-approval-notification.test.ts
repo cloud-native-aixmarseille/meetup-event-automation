@@ -46,7 +46,7 @@ describe("Slack approval notification", () => {
 			expect.objectContaining({
 				body: JSON.stringify({
 					channel: "C12345",
-					text: "Meetup publication · 2099-06-08\nReview the draft and approve or reject publication: https://github.com/example/meetups/issues/42#issuecomment-100",
+					text: "Meetup · 2099-06-08\nReview and approve publication: https://github.com/example/meetups/issues/42#issuecomment-100",
 				}),
 			}),
 		);

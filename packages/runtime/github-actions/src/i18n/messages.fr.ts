@@ -1,9 +1,11 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
-	"action.communication.recover-social": "Rétablir une publication sociale",
+	"diagnostic.publication.content.invalid":
+		"Corrigez le texte du commentaire : titre sur une ligne de 80 caractères maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+	"action.communication.recover-social": "Reprendre une publication",
 	"report.social.recovery": "reprise_sociale={status}",
 	"action.communication.reconcile-social":
-		"Réconcilier les publications sociales",
+		"Mettre à jour les publications sur les réseaux",
 	"report.social.empty": "publications_sociales=0",
 	"report.social.result": "cible_sociale={target} statut={status}",
 	"diagnostic.publication.meetup.slides-source":
@@ -30,24 +32,24 @@ export const FR_MESSAGES = {
 	"report.publication.review":
 		"fournisseur_publication={provider} url_validation={url}",
 	"diagnostic.publication.community.content-review":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Validez le titre, la description et le visuel dans leurs commentaires.",
 	"diagnostic.publication.community.approval-pending":
-		"Approuvez ou refusez la publication dans le commentaire d'approbation. L'événement reste en brouillon avant approbation.",
+		"Approuvez ou refusez la publication dans le commentaire. L'événement reste en brouillon jusque-là.",
 	"diagnostic.publication.community.approval-rejected":
-		"La publication a été refusée. L'événement reste en brouillon ; toute modification nécessite une nouvelle approbation.",
+		"Publication refusée. L'événement reste en brouillon.",
 	"diagnostic.publication.community.approval-unavailable":
-		"Impossible de vérifier l'approbation de publication. Vérifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+		"Validation non vérifiable. Vérifiez le commentaire et les droits de la GitHub App.",
 	"diagnostic.publication.community.approval-notification-failed":
-		"La notification d'approbation n'a pas pu être confirmée. Consultez le commentaire d'approbation dans l'issue.",
+		"La notification a échoué. Consultez le commentaire de validation dans l'issue.",
 	"diagnostic.publication.community.source":
-		"La lecture des sources a échoué. Résolvez les diagnostics techniques des sources avant de synchroniser.",
+		"Lecture des sources impossible. Corrigez les erreurs signalées avant de relancer.",
 	"diagnostic.publication.community.unavailable":
 		"Le démarrage du navigateur ou la connexion a échoué. Vérifiez les dépendances, le réseau, les sélecteurs de connexion.",
 
 	"diagnostic.publication.community.inactive":
 		"La publication OCGroups est inactive pour cette issue.",
 	"diagnostic.publication.community.prerequisites":
-		"Complétez la date future, le titre, la description, les confirmations, le programme résolu et le lieu public, puis corrigez les cases mal formées dans Communication avant de synchroniser.",
+		"Complétez la date future, le titre, la description, les intervenants confirmés, le programme et le lieu public. Corrigez les cases invalides de Communication.",
 	"diagnostic.publication.community.link":
 		"Renseignez une URL d'événement valide du groupe OCGroups configuré.",
 	"diagnostic.publication.community.conflict":
@@ -68,30 +70,29 @@ export const FR_MESSAGES = {
 		"Générer la publication LinkedIn",
 	"action.organizer.review-drafts": "Vérifier les propositions",
 	"diagnostic.publication.content.prerequisites":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Complétez la date, le lieu et le programme avant de générer le contenu.",
 	"diagnostic.publication.content.pending":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Modifiez le texte proposé si besoin, puis validez-le dans le commentaire.",
 	"diagnostic.publication.content.rejected":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Contenu refusé. Proposez un remplacement à valider.",
 	"diagnostic.publication.content.iteration-requested":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Une autre proposition a été demandée. Relancez la génération.",
 	"diagnostic.publication.content.recovery":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"La génération a été interrompue. Vérifiez le résultat enregistré avant de relancer.",
 	"diagnostic.publication.content.stale":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Le meetup a changé. Générez et validez une nouvelle proposition.",
 	"diagnostic.publication.content.title-review":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Modifiez et validez le titre dans son commentaire.",
 	"diagnostic.publication.content.description-review":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Modifiez et validez la description dans son commentaire.",
 	"diagnostic.publication.meetup.content-review":
-		"Validez le titre, la description et l'illustration de couverture actuels dans la revue de contenu. Remplacez une illustration invalide ou modifiée avant de synchroniser ; un contenu modifié nécessite une nouvelle validation.",
+		"Validez le titre, la description et le visuel dans leurs commentaires.",
 	"diagnostic.communication.content-review":
-		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+		"Validez le titre, la description et le visuel dans leurs commentaires.",
 
-	"report.content.generated": "Génération du contenu évaluée.",
-	"report.content.reviewed": "Validations du contenu synchronisées.",
-	"report.content.no-work":
-		"Aucune proposition de contenu ni soumission d'organisateur à examiner.",
+	"report.content.generated": "Génération vérifiée.",
+	"report.content.reviewed": "Validations mises à jour.",
+	"report.content.no-work": "Aucun contenu à vérifier.",
 
 	"action.assets.reconcile-slides-pdf": "Mettre à jour le PDF des slides",
 	"action.feedback.reconcile-short-link":
@@ -103,25 +104,25 @@ export const FR_MESSAGES = {
 	"report.feedback.link": "link_updated={updated}",
 
 	"diagnostic.publication.meetup.approval-pending":
-		"Approuvez ou refusez la publication dans le commentaire d'approbation. L'événement reste en brouillon avant approbation.",
+		"Approuvez ou refusez la publication dans le commentaire. L'événement reste en brouillon jusque-là.",
 	"diagnostic.publication.meetup.approval-rejected":
-		"La publication a été refusée. L'événement reste en brouillon ; toute modification nécessite une nouvelle approbation.",
+		"Publication refusée. L'événement reste en brouillon.",
 	"diagnostic.publication.meetup.approval-unavailable":
-		"Impossible de vérifier l'approbation de publication. Vérifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+		"Validation non vérifiable. Vérifiez le commentaire et les droits de la GitHub App.",
 	"diagnostic.publication.meetup.approval-notification-failed":
-		"La notification d'approbation n'a pas pu être confirmée. Consultez le commentaire d'approbation dans l'issue.",
+		"La notification a échoué. Consultez le commentaire de validation dans l'issue.",
 
 	"diagnostic.publication.meetup.source":
-		"La lecture des sources a échoué. Résolvez les diagnostics techniques des sources avant de synchroniser.",
+		"Lecture des sources impossible. Corrigez les erreurs signalées avant de relancer.",
 	"diagnostic.publication.meetup.unavailable":
 		"Le démarrage du navigateur ou la connexion a échoué. Vérifiez les dépendances, le réseau, le solveur et les sélecteurs de connexion.",
 	"action.publication.reconcile-event":
-		"Réconcilier la publication de l'événement",
+		"Mettre à jour la publication du meetup",
 
 	"diagnostic.publication.meetup.inactive":
 		"La publication Meetup est inactive pour cette issue.",
 	"diagnostic.publication.meetup.prerequisites":
-		"Complétez la date future, le titre, la description, les confirmations, le programme résolu et le lieu public, puis corrigez les cases mal formées dans Communication avant de synchroniser.",
+		"Complétez la date future, le titre, la description, les intervenants confirmés, le programme et le lieu public. Corrigez les cases invalides de Communication.",
 	"diagnostic.publication.meetup.link":
 		"Renseignez une URL d'événement valide du groupe Meetup configuré.",
 	"diagnostic.publication.meetup.conflict":
@@ -186,12 +187,11 @@ export const FR_MESSAGES = {
 		"speaker_sync=blocked reason=private-repository-required",
 
 	"action.organizer.reconcile-attention":
-		"Synchroniser les points à traiter par les organisateurs",
+		"Mettre à jour les tâches organisateur",
 	"report.attention.updated": "attention=persisted",
 	"report.attention.skipped": "attention=skipped reason=unrelated-issue",
 	"report.attention.failed": "attention=synchronization-failed",
-	"action.feedback.reconcile-event":
-		"Vérifier et mettre à jour les retours du meetup",
+	"action.feedback.reconcile-event": "Mettre à jour les retours du meetup",
 	"report.feedback.skipped": "feedback=skipped",
 	"report.feedback.completed": "feedback=completed",
 	"report.feedback.changes": "issue_persisted={persisted}",
@@ -216,10 +216,8 @@ export const FR_MESSAGES = {
 	"action.issue-form.reconcile": "Synchroniser le formulaire du meetup",
 	"action.event.reconcile": "Vérifier et mettre à jour le meetup",
 	"action.event.list-active": "Lister les meetups actifs",
-	"action.communication.reconcile-email":
-		"Vérifier et envoyer les communications du meetup",
-	"action.assets.reconcile-documents":
-		"Vérifier et mettre à jour les ressources du meetup",
+	"action.communication.reconcile-email": "Envoyer les emails du meetup",
+	"action.assets.reconcile-documents": "Mettre à jour les fichiers du meetup",
 	"report.failed": "failure={reason}",
 	"report.technical-failure": "technical_failure={codes}",
 	"report.summary-unavailable": "summary=unavailable",

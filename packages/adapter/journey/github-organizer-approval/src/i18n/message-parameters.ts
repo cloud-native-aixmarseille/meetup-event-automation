@@ -1,4 +1,5 @@
 export interface MessageParameters {
+	"approval.content.image-label": { index: number };
 	"approval.social.after-approval": Record<string, never>;
 	"approval.social.details": {
 		target: string;
@@ -19,10 +20,9 @@ export interface MessageParameters {
 	"approval.content.slot": { index: number; status: string };
 	"approval.content.title": {
 		target: string;
-		language: string;
-		origin: string;
 	};
 	"approval.content.request": {
+		target: string;
 		approve: string;
 		rejectMark: string;
 		iterateMark: string;
@@ -33,7 +33,7 @@ export interface MessageParameters {
 		status: string;
 		actor: string;
 		decidedAt: string;
-		image: string;
+		image: number;
 	};
 	"approval.meetup.details": {
 		title: string;

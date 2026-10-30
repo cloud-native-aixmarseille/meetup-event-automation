@@ -1,7 +1,9 @@
 export const EN_MESSAGES = {
-	"action.communication.recover-social": "Recover social publication",
+	"diagnostic.publication.content.invalid":
+		"Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+	"action.communication.recover-social": "Recover a social post",
 	"report.social.recovery": "social_recovery={status}",
-	"action.communication.reconcile-social": "Reconcile social publication",
+	"action.communication.reconcile-social": "Update social posts",
 	"report.social.empty": "social_publications=0",
 	"report.social.result": "social_target={target} status={status}",
 	"diagnostic.publication.meetup.slides-source":
@@ -27,24 +29,24 @@ export const EN_MESSAGES = {
 		"publication_provider={provider} review_url={url}",
 
 	"diagnostic.publication.community.content-review":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Review the title, description, and cover in their proposal comments.",
 	"diagnostic.publication.community.approval-pending":
-		"Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+		"Approve or reject publication in the comment. The event stays in draft until approved.",
 	"diagnostic.publication.community.approval-rejected":
-		"Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+		"Publication rejected. The event stays in draft.",
 	"diagnostic.publication.community.approval-unavailable":
-		"Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+		"Approval could not be verified. Check the comment and GitHub App permissions.",
 	"diagnostic.publication.community.approval-notification-failed":
-		"The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+		"The approval notification failed. Review the comment in the issue.",
 	"diagnostic.publication.community.source":
-		"Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+		"Source data could not be read. Fix the reported errors before syncing.",
 	"diagnostic.publication.community.unavailable":
 		"Browser login or startup failed. Check runtime installation, connectivity, and the login page selectors.",
 
 	"diagnostic.publication.community.inactive":
 		"OCGroups publication is inactive for this issue.",
 	"diagnostic.publication.community.prerequisites":
-		"Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+		"Complete the future date, title, description, confirmed speakers, agenda, and public venue. Fix any malformed Communication checkboxes.",
 	"diagnostic.publication.community.link":
 		"Set a valid event URL belonging to the configured OCGroups group.",
 	"diagnostic.publication.community.conflict":
@@ -65,30 +67,29 @@ export const EN_MESSAGES = {
 	"action.organizer.review-drafts": "Review drafts",
 
 	"diagnostic.publication.content.prerequisites":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Complete the date, venue, and agenda before generating content.",
 	"diagnostic.publication.content.pending":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Edit the proposed text if needed, then approve it in the comment.",
 	"diagnostic.publication.content.rejected":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Content rejected. Submit a replacement for review.",
 	"diagnostic.publication.content.iteration-requested":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"A new proposal was requested. Run generation again.",
 	"diagnostic.publication.content.recovery":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Generation was interrupted. Check the saved result before retrying.",
 	"diagnostic.publication.content.stale":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"The event changed. Generate and review a new proposal.",
 	"diagnostic.publication.content.title-review":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Edit and approve the title in its proposal comment.",
 	"diagnostic.publication.content.description-review":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Edit and approve the description in its proposal comment.",
 	"diagnostic.publication.meetup.content-review":
-		"Approve the current title, description, and cover artwork through content review. Replace invalid or changed artwork before synchronizing; changed content needs fresh approval.",
+		"Review the title, description, and cover in their proposal comments.",
 	"diagnostic.communication.content-review":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Review the title, description, and cover in their proposal comments.",
 
-	"report.content.generated": "Content generation evaluated.",
-	"report.content.reviewed": "Content reviews reconciled.",
-	"report.content.no-work":
-		"No content proposals or organizer submissions to review.",
+	"report.content.generated": "Content generation checked.",
+	"report.content.reviewed": "Content approvals updated.",
+	"report.content.no-work": "No content to review.",
 
 	"action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
 	"action.feedback.reconcile-short-link": "Reconcile shared feedback link",
@@ -98,24 +99,24 @@ export const EN_MESSAGES = {
 	"report.feedback.link": "link_updated={updated}",
 
 	"diagnostic.publication.meetup.approval-pending":
-		"Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+		"Approve or reject publication in the comment. The event stays in draft until approved.",
 	"diagnostic.publication.meetup.approval-rejected":
-		"Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+		"Publication rejected. The event stays in draft.",
 	"diagnostic.publication.meetup.approval-unavailable":
-		"Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+		"Approval could not be verified. Check the comment and GitHub App permissions.",
 	"diagnostic.publication.meetup.approval-notification-failed":
-		"The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+		"The approval notification failed. Review the comment in the issue.",
 
 	"diagnostic.publication.meetup.source":
-		"Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+		"Source data could not be read. Fix the reported errors before syncing.",
 	"diagnostic.publication.meetup.unavailable":
 		"Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
-	"action.publication.reconcile-event": "Reconcile event publication",
+	"action.publication.reconcile-event": "Update event publication",
 
 	"diagnostic.publication.meetup.inactive":
 		"Meetup publication is inactive for this issue.",
 	"diagnostic.publication.meetup.prerequisites":
-		"Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+		"Complete the future date, title, description, confirmed speakers, agenda, and public venue. Fix any malformed Communication checkboxes.",
 	"diagnostic.publication.meetup.link":
 		"Set a valid event URL belonging to the configured Meetup group.",
 	"diagnostic.publication.meetup.conflict":
@@ -176,12 +177,12 @@ export const EN_MESSAGES = {
 	"report.speaker-sync.private":
 		"speaker_sync=blocked reason=private-repository-required",
 
-	"action.organizer.reconcile-attention": "Reconcile organizer attention",
+	"action.organizer.reconcile-attention": "Update organizer tasks",
 	"report.attention.updated": "attention=persisted",
 	"report.attention.skipped": "attention=skipped reason=unrelated-issue",
 	"report.attention.failed": "attention=synchronization-failed",
 
-	"action.feedback.reconcile-event": "Reconcile feedback event",
+	"action.feedback.reconcile-event": "Update meetup feedback",
 	"report.feedback.skipped": "feedback=skipped",
 	"report.feedback.completed": "feedback=completed",
 	"report.feedback.changes": "issue_persisted={persisted}",
@@ -206,8 +207,8 @@ export const EN_MESSAGES = {
 	"action.issue-form.reconcile": "Reconcile meetup issue form",
 	"action.event.reconcile": "Reconcile meetup event",
 	"action.event.list-active": "List active meetup events",
-	"action.communication.reconcile-email": "Reconcile meetup email",
-	"action.assets.reconcile-documents": "Reconcile meetup documents",
+	"action.communication.reconcile-email": "Send meetup emails",
+	"action.assets.reconcile-documents": "Update meetup files",
 	"report.failed": "failure={reason}",
 	"report.technical-failure": "technical_failure={codes}",
 	"report.summary-unavailable": "summary=unavailable",

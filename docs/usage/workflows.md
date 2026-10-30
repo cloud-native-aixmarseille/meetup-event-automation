@@ -36,9 +36,9 @@ Event-day link selection opens the day before the event and includes event day.
 Reconciliation outside that window does not force a redirect. See
 [feedback behavior](../integrations/feedback.md) for target selection and recovery.
 
-Routine reconciliation prepares title and description proposals automatically,
-reusing unchanged drafts and approvals. Cover and social post generation use the
-explicit preparation and promotion workflows. Social dispatch uses a separate
+Routine reconciliation prepares title, description, and four cover proposals
+automatically, reusing unchanged drafts and approvals. Explicit preparation can
+select individual targets; social post generation uses the promotion workflow. Social dispatch uses a separate
 [publication approval and workflow](../integrations/social-publication.md). See
 [content generation and review](../integrations/content.md) for targets, timing,
 attachments and approvals.

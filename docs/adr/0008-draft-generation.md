@@ -17,14 +17,14 @@ provider implementation.
 
 ## Automatic event copy
 
-Event reconciliation prepares title and description proposals during issue
+Event reconciliation prepares title, description, and four cover proposals during issue
 updates and active-event audits. It applies existing decisions before generation
 so an authorized iteration request takes effect in the same run, then requests
 review of newly generated drafts. The existing event lock covers all steps.
 Readiness, source fingerprints, deduplication, approvals, and uncertain-request
 recovery stay in their application and domain owners. The workflow only composes
 these operations and forwards their independent failure evidence to reporting.
-Cover and social generation remain explicit operations.
+Social generation remains an explicit operation.
 
 Decision history, 2026-10-30: preparation previously required a separate
 workflow call, while routine reconciliation only reviewed stored proposals. A
@@ -33,6 +33,19 @@ Automatic text preparation replaces that split for title and description; both
 reconciliation workflows now require explicit text AI configuration and the
 content settings files. This trades additional required integration settings for
 a complete preparation flow without a separate organizer trigger.
+
+Decision refinement, 2026-10-30: automatic preparation now includes four cover
+candidates. This supersedes the text-only generation scope above and requires
+separate explicit text and image models. The event date and content language
+supply the month unless an explicit month override exists. Complete proposal
+abstracts supply the artwork context without the generated event description,
+so approving copy does not invalidate unchanged artwork. Manual or incomplete
+abstracts retain the description as supplemental context.
+
+Titles emphasize the main reason to attend rather than a technology inventory.
+Descriptions explicitly request blank-line-separated blocks; escaped review
+text wraps naturally and preserves its line breaks. Content approvals use their
+own organizer task wording rather than the email approval wording.
 
 ## Ownership and provider boundary
 
@@ -99,8 +112,9 @@ Placeholders must be resolved before approval.
 
 ### Event copy
 
-The title is one plain-text thematic headline, at most 80 characters, combining
-the shared technology or theme with a practical angle. Do not concatenate full
+The title is one plain-text event headline, at most 80 characters, expressing
+the main idea or practical benefit. Technology inventories and tools mentioned
+only as counterexamples must not become the headline promise. Do not concatenate full
 talk titles or add Markdown, dates, or the separately generated issue prefix.
 
 The description uses short prose blocks separated by empty lines:
@@ -249,6 +263,16 @@ recovery, but preserve traceability and prevent approval or retries from silentl
 authorizing changed content.
 
 ## Decision history
+
+On 2026-10-30, organizers can replace text in the proposal comment and approve
+that version in the same edit. This supersedes the checkbox-only rule for text
+previews. The original draft and source revision remain immutable; the trusted
+decision records the exact edited text. Journey policies validate it before the
+GitHub adapter records approval. Pending or invalid edits are preserved. The
+independent authority record must match the edited text before use. Cover media,
+publication approvals, source checks, and permission checks retain their existing
+contracts. Organizer messages in English and French now use concise actions;
+provider metadata stays in stored state.
 
 On 2026-10-29, cover candidates moved to the dedicated `tmp-covers` child in the
 [public asset layout](0007-assets.md#a-separate-pdf-snapshot). Moving an existing

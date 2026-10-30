@@ -19,9 +19,11 @@ on the next successful issue update or scheduled audit. See
 Automation maintains **Event Title**, **Event Description**, **Meetup Link**,
 **CNCF Link**, **Drive Link** and **OpenFeedback Link**. The configured workflows
 add them to the issue as their steps complete. Reconciliation automatically
-proposes a title and description when their public facts are ready. Approve them
+proposes a title, description, and four cover candidates when their public facts
+are ready. Approve them
 through [content review](../integrations/content.md); automation applies the
-approved text. The issue starts with the title `[Meetup]`. After title
+approved text and selected cover. You can edit the proposed text directly in its
+comment, then check **Approve** to use your version. The issue starts with the title `[Meetup]`. After title
 approval, automation updates both **Event Title** in the body and the issue title.
 
 For manually managed issues without proposal selections, maintain **Agenda** with

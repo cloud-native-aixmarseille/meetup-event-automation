@@ -5,7 +5,13 @@ import { contentRequest } from "../testing/content.fixtures.js";
 import { GithubContentAuthority } from "./github-content-authority.js";
 
 describe("content authority", () => {
-	it.each(["current", "revoked", "changed-revision", "different-actor"])(
+	it.each([
+		"current",
+		"revoked",
+		"changed-revision",
+		"different-actor",
+		"different-text",
+	])(
 		"verifies %s approval against the independent trusted request",
 		async (scenario) => {
 			// Arrange
@@ -14,6 +20,7 @@ describe("content authority", () => {
 				status: "approved" as const,
 				actor: "organizer",
 				decidedAt: "2026-10-01T10:00:00Z",
+				editedText: "Approved title",
 			};
 			const proposal = {
 				...f.proposal,
@@ -30,6 +37,8 @@ describe("content authority", () => {
 			if (scenario === "changed-revision") record.revision = "d".repeat(64);
 			if (scenario === "different-actor")
 				record.decision = { ...decision, actor: "another-organizer" };
+			if (scenario === "different-text")
+				record.decision = { ...decision, editedText: "Unapproved title" };
 			const canApprove = vi.fn(async () => scenario !== "revoked");
 			const authority = new GithubContentAuthority(
 				{

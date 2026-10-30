@@ -48,5 +48,7 @@ describe("event description brief", () => {
 		expect(brief.facts).toEqual(facts);
 		expect(brief.instructions.join(" ")).toContain("only when aperitif=true");
 		expect(brief.instructions.join(" ")).toContain("publication appends them");
+		expect(brief.instructions.join(" ")).toContain("actual line breaks");
+		expect(brief.instructions.join(" ")).toContain("with a blank line");
 	});
 });

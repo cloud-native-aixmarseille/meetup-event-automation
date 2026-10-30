@@ -43,7 +43,10 @@ export class PromotionalContentPolicy {
 			this.current(proposal, plan) &&
 			proposal.decision?.status === "approved" &&
 			proposal.draft !== null &&
-			this.validDraft(plan, proposal.draft)
+			this.validDraft(plan, {
+				...proposal.draft,
+				text: proposal.decision.editedText ?? proposal.draft.text,
+			})
 		);
 	}
 	private definition(target: ContentTarget): ProposalDefinition {

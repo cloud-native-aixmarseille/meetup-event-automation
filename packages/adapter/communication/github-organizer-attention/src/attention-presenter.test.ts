@@ -1,13 +1,30 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
-import { episode, state } from "../testing/attention.fixtures.js";
+import { episode, fixture, state } from "../testing/attention.fixtures.js";
 import { AttentionDiagnosticChecklist } from "./attention-diagnostic-checklist.js";
 import { AttentionPresenter } from "./attention-presenter.js";
 import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 import { AttentionMessages } from "./i18n/attention-messages.js";
 
 describe("GitHub attention presentation", () => {
+	it("links content review with content-specific guidance", () => {
+		// Arrange
+		const { presenter } = fixture();
+		const pending = episode("approval-pending", "content-review:revision");
+		pending.condition = { ...pending.condition, commentId: 200 };
+		// Act
+		const body = presenter.details({
+			...state(),
+			post: undefined,
+			episodes: [pending],
+		});
+		// Assert
+		expect(body).toContain("Edit the proposed text if needed");
+		expect(body).toContain("#issuecomment-200");
+		expect(body).not.toContain("email batch");
+	});
+
 	it("keeps supplied metadata separate from localized task formatting", () => {
 		// Arrange
 		const checklist = new AttentionDiagnosticChecklist({
@@ -42,7 +59,7 @@ describe("GitHub attention presentation", () => {
 		expect(body.match(/Automation failed: review the issue/g)).toHaveLength(1);
 	});
 	it.each([
-		["approval-pending", "Approve or reject the email batch."],
+		["approval-pending", "Approve or reject the emails."],
 		["delivery-recovery", "Verify delivery before retrying."],
 	] as const)("keeps one concrete %s task", (code, action) => {
 		// Arrange

@@ -9,7 +9,7 @@ const talk = {
 	speakers: [{ id: "speaker-one", name: "Example Speaker" }],
 };
 describe("event title brief", () => {
-	it("supplies only technology topics, excluding identities and unrelated logistics", () => {
+	it("supplies only talk topics, excluding identities and unrelated logistics", () => {
 		// Arrange
 		const title = new EventCopyTitleDraft(new EventCopyAgenda());
 		const source = {
@@ -28,5 +28,11 @@ describe("event title brief", () => {
 			/aperitif|registrationUrl/,
 		);
 		expect(brief.language).toBe("fr");
+		expect(brief.instructions.join(" ")).toContain(
+			"practical benefit of attending",
+		);
+		expect(brief.instructions.join(" ")).toContain(
+			"pitfalls, counterexamples, or things to avoid",
+		);
 	});
 });

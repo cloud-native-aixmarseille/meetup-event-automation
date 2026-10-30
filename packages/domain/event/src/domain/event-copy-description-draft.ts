@@ -48,8 +48,9 @@ export class EventCopyDescriptionDraft {
 			language,
 			guidance,
 			instructions: [
-				"Write one welcoming description for a Cloud Native Aix-Marseille meetup using only the supplied facts.",
-				"Use plain semantic text: welcoming emoji opening; confirmed date/time, host and city and theme; Au programme : (or English equivalent); one emoji-led title - public speaker(s) and short teaser per talk; factual connecting sentence; friendly invitation.",
+				"Write one concise description for a Cloud Native Aix-Marseille meetup using only the supplied facts. Use short, direct sentences and familiar words. No marketing hype, inflated promises, filler, or generic welcome paragraph.",
+				"State the topic and confirmed date/time, host and city. Add Au programme : (or English equivalent), then the title, public speaker(s), and one factual teaser for each talk. End with at most one short invitation. Use emoji sparingly; omit decorative transitions.",
+				"Return readable multiline text with actual line breaks. Separate the opening, practical details, programme heading, each talk, and closing invitation with a blank line. Put each talk's title and public speakers on one line and its teaser on the following line. Never return the whole description as one paragraph; do not use HTML or code blocks.",
 				"Keep talk order and public speaker names. Maximum 12000 characters. Do not repeat full abstracts; publication appends them. Mention an aperitif only when aperitif=true. Never invent logistics, people or promises.",
 			],
 			facts: this.source(facts),

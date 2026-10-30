@@ -8,7 +8,7 @@ import { EVENT_DIAGNOSTIC_COMMENT_MARKER } from "./github-event-comment-reposito
 
 const baseTask = "- [ ] **Event Date**: Set the event date.";
 const socialTask =
-	"- [ ] **Social publication (community, announcement)**: Approve publication.";
+	"- [ ] **Post (community, announcement)**: Approve publication.";
 const prefix = EVENT_DIAGNOSTIC_COMMENT_MARKER;
 
 describe("independent diagnostic checklist sections", () => {

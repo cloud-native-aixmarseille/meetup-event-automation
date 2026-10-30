@@ -319,6 +319,7 @@ jobs:
         id: reconcile-event
         uses: $/actions/event/reconcile
         with:
+          conference-hall-event-url: https://conference-hall.io/team/synthetic-team/synthetic-cfp
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
           asset-folder-url-prefix: https://drive.google.com/drive/folders/

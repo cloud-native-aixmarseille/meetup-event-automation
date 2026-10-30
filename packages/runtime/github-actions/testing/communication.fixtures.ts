@@ -283,8 +283,8 @@ export function approveBatch(
 		),
 	);
 	comment.body = comment.body.replace(
-		`- [ ] ${choice} sending this batch`,
-		`- [x] ${choice} sending this batch`,
+		`- [ ] ${choice} sending`,
+		`- [x] ${choice} sending`,
 	);
 	comment.editor = { login: "organizer", __typename: "User" };
 	comment.updated_at = record.requestedAt;

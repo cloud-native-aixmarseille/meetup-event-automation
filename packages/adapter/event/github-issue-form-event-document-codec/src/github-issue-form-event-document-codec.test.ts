@@ -1009,3 +1009,29 @@ it.each([false, true])(
 		expect(repeat).toEqual({});
 	},
 );
+
+it("converts selected proposal numbers into links during issue normalization", () => {
+	// Arrange
+	const codec =
+		new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec(
+			{
+				conferenceHallEventUrl:
+					"https://conference-hall.io/team/example-team/example-cfp",
+			},
+		);
+	const source = document({
+		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\n17\n`,
+	});
+	const event = {
+		...codec.decode(source).event,
+		proposalStatus: "current" as const,
+	};
+	// Act
+	const patch = codec.createPatch(source, event);
+	const decoded = codec.decode({ ...source, ...patch });
+	// Assert
+	expect(patch.body).toContain(
+		"[17](https://conference-hall.io/team/example-team/example-cfp/proposals/17)",
+	);
+	expect(decoded.event.proposalReferences).toEqual(["17"]);
+});

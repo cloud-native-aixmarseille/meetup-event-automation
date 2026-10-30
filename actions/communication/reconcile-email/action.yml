@@ -1,4 +1,4 @@
-name: Reconcile meetup email
+name: Send meetup emails
 description:
   Reconcile due email batches, verified organizer approval, delivery records and
   checklist completion.

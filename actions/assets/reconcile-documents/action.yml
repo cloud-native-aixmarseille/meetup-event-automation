@@ -1,4 +1,4 @@
-name: Reconcile meetup documents
+name: Update meetup files
 description: Reconcile managed Drive folders, template copies, document content and the issue asset link.
 author: Cloud Native Aix-Marseille
 inputs:

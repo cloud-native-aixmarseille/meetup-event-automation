@@ -989,7 +989,7 @@ describe("organizer approval for email batches", () => {
 		});
 		expect(fetch).toHaveBeenCalledTimes(callsBeforeRetry + 1);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
-		expect(f.comments[0]?.body).toContain("✅ **Approved**");
+		expect(f.comments[0]?.body).toContain("✅ Approved");
 	});
 	it("finalizes rejection and reacts on Slack without sending email", async () => {
 		// Arrange
@@ -1034,7 +1034,7 @@ describe("organizer approval for email batches", () => {
 			severity: "warning",
 		});
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
-		expect(f.comments[0]?.body).toContain("❌ **Rejected** by @organizer");
+		expect(f.comments[0]?.body).toContain("❌ Rejected by @organizer");
 		expect(f.comments[0]?.body).not.toContain("- [");
 		expect(fetch).toHaveBeenCalledTimes(2);
 		expect(fetch).toHaveBeenLastCalledWith(
@@ -1096,7 +1096,7 @@ describe("organizer approval for email batches", () => {
 		});
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
 		expect(f.comments[0]?.body).not.toBe(originalRequest);
-		expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
+		expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
 	});
 	it.each(["scheduled", "held"])(
 		"shows human-readable collapsed details before approving %s emails",
@@ -1126,9 +1126,7 @@ describe("organizer approval for email batches", () => {
 
 			// Assert
 			expect(result.counts.dispatched).toBe(0);
-			expect(body).toContain(
-				"<details>\n<summary>Review email details</summary>",
-			);
+			expect(body).toContain("<details>\n<summary>Email details</summary>");
 			expect(body).toContain("Public Venue");
 			expect(body).toContain("Ada Speaker");
 			expect(body).toContain(
@@ -1191,7 +1189,7 @@ describe("organizer approval for email batches", () => {
 			severity: "warning",
 		});
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
-		expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
+		expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
 	});
 
 	it("keeps the thank-you approval after the speaker email succeeds and the host email is deferred", async () => {
@@ -1338,7 +1336,7 @@ describe("organizer approval for email batches", () => {
 			expect(notification.text).toContain(
 				"https://github.com/organization/meetups/issues/42#issuecomment-",
 			);
-			expect(f.comments[0]?.body).toContain("✅ **Approved** by @organizer");
+			expect(f.comments[0]?.body).toContain("✅ Approved by @organizer");
 			expect(f.comments[0]?.body).not.toContain("- [");
 			expect(fetch).toHaveBeenCalledWith(
 				"https://slack.com/api/reactions.add",
@@ -1495,9 +1493,7 @@ describe("organizer approval for email batches", () => {
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
 		expect(
-			f.comments.some((comment) =>
-				comment.body.includes("Organizer confirmation: thank-you emails"),
-			),
+			f.comments.some((comment) => comment.body.includes("Thank-you emails")),
 		).toBe(true);
 		expect(f.issue.body).toContain("- [ ] Mail thanks hoster");
 	});

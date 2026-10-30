@@ -94,12 +94,17 @@ export type OrganizerApprovalRequest = {
 export interface OrganizerApprovalResult {
 	readonly status: "pending" | "approved" | "rejected" | "iteration-requested";
 	readonly notificationFailed: boolean;
+	readonly invalidText?: boolean;
 	readonly actor?: string;
 	readonly decidedAt?: string;
 	readonly selectedImage?: string;
+	readonly editedText?: string;
 }
 export interface OrganizerApproval {
-	request(input: OrganizerApprovalRequest): Promise<OrganizerApprovalResult>;
+	request(
+		input: OrganizerApprovalRequest,
+		validateText?: (text: string) => boolean,
+	): Promise<OrganizerApprovalResult>;
 	synchronize(): Promise<{ readonly notificationFailed: boolean }>;
 }
 

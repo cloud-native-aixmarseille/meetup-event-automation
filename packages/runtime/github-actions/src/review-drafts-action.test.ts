@@ -59,7 +59,7 @@ describe("routine draft review", () => {
 		const result = await f.action.run(f.messages);
 		// Assert
 		expect(result).toEqual({
-			details: ["No content proposals or organizer submissions to review."],
+			details: ["No content to review."],
 			diagnostics: [],
 		});
 		expect(f.exists).toHaveBeenCalledOnce();
@@ -95,7 +95,7 @@ describe("routine draft review", () => {
 		const result = await f.action.run(f.messages);
 		// Assert
 		expect(result).toEqual({
-			details: ["Content reviews reconciled."],
+			details: ["Content approvals updated."],
 			diagnostics,
 		});
 		for (const loader of [f.configuration, f.publication, f.social])

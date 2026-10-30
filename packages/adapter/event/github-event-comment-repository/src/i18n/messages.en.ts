@@ -1,4 +1,22 @@
 export const EN_MESSAGES = {
+	"comment.guidance.content.description-review":
+		"Edit and approve the description in its proposal comment.",
+	"comment.guidance.content.title-review":
+		"Edit and approve the title in its proposal comment.",
+	"comment.guidance.content.invalid":
+		"Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+	"comment.guidance.content.stale":
+		"The event changed. Generate and review a new proposal.",
+	"comment.guidance.content.recovery":
+		"Generation was interrupted. Check the saved result before retrying.",
+	"comment.guidance.content.iteration-requested":
+		"A new proposal was requested. Run generation again.",
+	"comment.guidance.content.rejected":
+		"Content rejected. Submit a replacement for review.",
+	"comment.guidance.content.pending":
+		"Edit the proposed text if needed, then approve it in the comment.",
+	"comment.guidance.content.prerequisites":
+		"Complete the date, venue, and agenda before generating content.",
 	"comment.guidance.meetup.slides-source":
 		"Fix the issue errors before sending slides to Meetup attendees.",
 	"comment.guidance.meetup.slides-link":
@@ -12,7 +30,7 @@ export const EN_MESSAGES = {
 	"comment.guidance.meetup.slides-source-changed":
 		"The event changed before sending slides. Run publication reconciliation again.",
 	"comment.guidance.content.review":
-		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+		"Review the title, description, and cover in their proposal comments.",
 
 	"comment.guidance.proposals.invalid-selection":
 		"Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
@@ -41,13 +59,13 @@ export const EN_MESSAGES = {
 	"comment.agenda.speaker-suffix": ", speaker {speaker}",
 	"comment.agenda.speaker": "Agenda (speaker {speaker})",
 	"comment.guidance.event.title.missing":
-		"Generate or submit the event title, then approve it for automatic application.",
+		"Edit and approve the proposed title.",
 	"comment.guidance.event.date.missing":
 		"Add the event date in YYYY-MM-DD format.",
 	"comment.guidance.event.date.invalid":
 		"Enter a valid calendar date in YYYY-MM-DD format.",
 	"comment.guidance.event.description.missing":
-		"Generate or submit the event description, then approve it for automatic application.",
+		"Edit and approve the proposed description.",
 	"comment.guidance.event.hoster.missing": "Select a host from the host list.",
 	"comment.guidance.event.hoster.invalid":
 		"Use a host name or stable ID from the host list.",
@@ -68,9 +86,9 @@ export const EN_MESSAGES = {
 	"comment.guidance.publication.meetup.missing":
 		"Run event publication synchronization to populate the verified Meetup link.",
 	"comment.guidance.publication.community.missing":
-		"Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.",
+		"Sync publications, then approve the OCGroups draft. The public link is added automatically.",
 	"comment.guidance.publication.assets.missing":
-		"Run asset reconciliation to create the event folder and populate its Google Drive link.",
+		"Sync assets to create the event Drive folder.",
 	"comment.guidance.event.link.meetup.invalid":
 		"Enter a valid HTTPS link to the Meetup event page.",
 	"comment.guidance.event.link.community.invalid":
@@ -116,11 +134,11 @@ export const EN_MESSAGES = {
 	"comment.guidance.event.document.reference-metadata.invalid":
 		"Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
 	"comment.guidance.event.document.reference-metadata.legacy":
-		"Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata.",
+		"Check the host and speakers, then sync the issue to update their references.",
 	"comment.guidance.event.document.reference-metadata.stale":
-		"Check the host and agenda references, then rerun the issue update workflow to refresh their metadata.",
+		"Check the host and speakers, then sync the issue to update their references.",
 	"comment.guidance.referential.reference.host.unknown":
-		"This host was not found in the host list. Copy its exact name, including accents, or use a name with its stable ID: `Host name [host-0001]`.",
+		"Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
 	"comment.guidance.referential.reference.host.ambiguous":
 		"Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
 	"comment.guidance.referential.reference.host.display-name-mismatch":
@@ -128,7 +146,7 @@ export const EN_MESSAGES = {
 	"comment.guidance.referential.reference.host.invalid":
 		"Choose a host from the host list using its name or `Host name [host-0001]`.",
 	"comment.guidance.referential.reference.speaker.unknown":
-		"This speaker was not found in the speaker list. Copy its exact name, including accents, or use a name with its stable ID: `Speaker name [speaker-0001]`.",
+		"Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
 	"comment.guidance.referential.reference.speaker.ambiguous":
 		"Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
 	"comment.guidance.referential.reference.speaker.display-name-mismatch":

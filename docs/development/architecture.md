@@ -506,8 +506,11 @@ verification, and current write-permission checks. Its comment presenter delegat
 to explicitly injected email, content, Meetup, and OCGroups renderers through a complete kind map.
 The outer presenter encodes metadata once; the kind-specific renderers format
 their content. Slack uses its own injected renderer map and catalogs.
-A decision parser compares checkbox edits
-against exact localized requests rendered from trusted metadata; decision resolution
+A decision parser compares controls against exact localized requests rendered
+from trusted metadata. Text proposals expose a bounded editable preview; the
+journey validates replacement text before the adapter can finalize it. The
+original draft remains unchanged and the trusted decision records its exact
+replacement. Decision resolution
 verifies the editor's identity and permission separately. It durably records the
 verified human identity and final decision in the original bot comment before
 authorizing the action.

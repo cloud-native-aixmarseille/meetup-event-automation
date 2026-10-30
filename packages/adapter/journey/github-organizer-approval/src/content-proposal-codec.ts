@@ -115,6 +115,18 @@ export class ContentProposalCodec {
 			throw new Error("Incomplete content proposal");
 		if (proposal.accepted && proposal.decision?.status !== "approved")
 			throw new Error("Unapproved applied content");
+		const editedText = proposal.decision?.editedText;
+		if (
+			editedText !== undefined &&
+			(proposal.decision?.status !== "approved" ||
+				proposal.plan.target === "cover" ||
+				!proposal.draft ||
+				!this.policy.validDraft(proposal.plan, {
+					...proposal.draft,
+					text: editedText,
+				}))
+		)
+			throw new Error("Invalid approved text edit");
 		this.accepted(proposal);
 	}
 	private accepted(proposal: ContentProposal): void {
@@ -138,7 +150,10 @@ export class ContentProposalCodec {
 					text: "",
 					media: proposal.draft.media.filter((image) => image.id === selected),
 				}
-			: proposal.draft;
+			: {
+					...proposal.draft,
+					text: proposal.decision?.editedText ?? proposal.draft.text,
+				};
 		if (
 			this.fingerprints.proposal(proposal, expected) !==
 			this.fingerprints.proposal(proposal, proposal.accepted)
@@ -222,6 +237,7 @@ export class ContentProposalCodec {
 			"actor",
 			"decidedAt",
 			"selectedImage",
+			"editedText",
 		]);
 		if (
 			item.status !== "approved" &&
@@ -233,6 +249,9 @@ export class ContentProposalCodec {
 			status: item.status,
 			actor: this.values.text(item.actor, 39),
 			decidedAt: this.instant(item.decidedAt),
+			...(item.editedText === undefined
+				? {}
+				: { editedText: this.values.text(item.editedText, 12000) }),
 			...(item.selectedImage === undefined
 				? {}
 				: { selectedImage: this.values.text(item.selectedImage, 200) }),

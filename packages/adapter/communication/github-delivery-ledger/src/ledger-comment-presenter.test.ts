@@ -24,16 +24,8 @@ const entry: StoredEntry = {
 
 describe("LedgerCommentPresenter", () => {
 	it.each([
-		[
-			"en",
-			"Communication status",
-			"Organizer Slack reminder: Request accepted (1)",
-		],
-		[
-			"fr",
-			"État des communications",
-			"Rappel Slack aux organisateurs : Demande acceptée (1)",
-		],
+		["en", "Delivery status", "Organizer Slack reminder: Accepted (1)"],
+		["fr", "Suivi des envois", "Rappel Slack aux organisateurs : Accepté (1)"],
 	])(
 		"shows a readable delivery summary and hides machine state in %s",
 		(locale, title, row) => {
@@ -84,8 +76,10 @@ describe("LedgerCommentPresenter", () => {
 			});
 
 			// Assert
-			expect(body).toContain("Check the provider before retrying");
-			expect(body).not.toContain("Request accepted");
+			expect(body).toContain(
+				"Check delivery with the provider before retrying",
+			);
+			expect(body).not.toContain("Accepted");
 		},
 	);
 
@@ -107,7 +101,7 @@ describe("LedgerCommentPresenter", () => {
 		const body = presenter.render({ schemaVersion: 2, entries });
 
 		// Assert
-		expect(body).toContain("Speaker introduction email: Request accepted (2)");
+		expect(body).toContain("Speaker introduction: Accepted (2)");
 		expect(body).toContain("inbox delivery is unverified");
 	});
 

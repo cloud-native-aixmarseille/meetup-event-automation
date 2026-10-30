@@ -43,6 +43,7 @@ describe("content review", () => {
 				revision: proposal.revision,
 				content: expect.objectContaining({ draft }),
 			}),
+			expect.any(Function),
 		);
 	});
 	it("blocks changed image bytes before requesting or using approval", async () => {
@@ -86,4 +87,66 @@ describe("content review", () => {
 		await expect(result).rejects.toThrow("notification failed");
 		expect(f.store.save).not.toHaveBeenCalled();
 	});
+});
+
+describe("edited content approval", () => {
+	it("returns the organizer text while preserving the original proposal", async () => {
+		// Arrange
+		const f = contentFixture();
+		const draft = { text: "Generated title", media: [] };
+		const proposal = {
+			...f.proposal,
+			draft,
+			revision: f.fingerprints.proposal(f.proposal, draft),
+		};
+		await f.store.save(await f.store.load(), [proposal]);
+		const decision = {
+			status: "approved" as const,
+			actor: "organizer",
+			decidedAt: "2026-09-21T12:00:00Z",
+			editedText: "Our event title",
+		};
+		const approvals = {
+			request: vi.fn(async () => ({ ...decision, notificationFailed: false })),
+			synchronize: vi.fn(),
+		};
+		const review = new ContentReview(f.store, approvals, f.images, f.policy);
+		// Act
+		const approved = await review.approved(proposal, f.plan);
+		const stored = (await f.store.load()).proposals[0];
+		// Assert
+		expect(approved).toEqual({ text: decision.editedText, media: [] });
+		expect(stored?.draft).toEqual(draft);
+		expect(stored?.revision).toBe(proposal.revision);
+		expect(stored?.decision).toEqual(decision);
+	});
+	it.each(["", "x".repeat(81), "Two\nlines"])(
+		"rejects invalid replacement titles before saving: %s",
+		async (editedText) => {
+			// Arrange
+			const f = contentFixture();
+			const draft = { text: "Generated title", media: [] };
+			const proposal = {
+				...f.proposal,
+				draft,
+				revision: f.fingerprints.proposal(f.proposal, draft),
+			};
+			const approvals = {
+				request: vi.fn(async () => ({
+					status: "approved" as const,
+					actor: "organizer",
+					decidedAt: "2026-09-21T12:00:00Z",
+					editedText,
+					notificationFailed: false,
+				})),
+				synchronize: vi.fn(),
+			};
+			const review = new ContentReview(f.store, approvals, f.images, f.policy);
+			// Act
+			const result = await review.review(proposal, f.plan);
+			// Assert
+			expect(result).toBe("invalid");
+			expect(f.store.save).not.toHaveBeenCalled();
+		},
+	);
 });

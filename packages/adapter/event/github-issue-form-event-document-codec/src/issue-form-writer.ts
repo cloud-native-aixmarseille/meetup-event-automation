@@ -44,11 +44,13 @@ export interface IssueFormWriterCollaborators {
 
 export class IssueFormWriter {
 	private readonly repositoryRef: string;
+	private readonly conferenceHallEventUrl?: string;
 	constructor(
 		private readonly collaborators: IssueFormWriterCollaborators,
 		options: GitHubIssueFormEventDocumentCodecOptions = {},
 	) {
 		this.repositoryRef = options.repositoryRef ?? "main";
+		this.conferenceHallEventUrl = options.conferenceHallEventUrl;
 	}
 	createPatch(
 		document: EventDocument,
@@ -71,6 +73,7 @@ export class IssueFormWriter {
 				this.collaborators.eventReferenceMetadata.referenceMetadata(event),
 			),
 			event,
+			this.conferenceHallEventUrl,
 		);
 		if (body !== document.body) patch.body = body;
 		return Object.freeze(patch);

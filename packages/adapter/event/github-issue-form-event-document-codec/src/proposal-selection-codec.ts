@@ -6,7 +6,7 @@ import type { ManagedIssueMarkers } from "./managed-issue-markers.js";
 export interface ProposalSelectionCodecCollaborators {
 	readonly issueFormSections: Pick<
 		IssueFormSections,
-		"parseSections" | "readSection"
+		"parseSections" | "readSection" | "replaceOrAppendSection"
 	>;
 	readonly managedIssueMarkers: Pick<
 		ManagedIssueMarkers,
@@ -34,7 +34,7 @@ export class ProposalSelectionCodec {
 		if ((!value || value === "_No response_") && !hasMarker) return {};
 		const proposalReferences = (value || "!missing-selection")
 			.split(/\r?\n/)
-			.map((id) => id.trim().replace(/^[-*]\s+/, ""))
+			.map((id) => this.readReference(id.trim().replace(/^[-*]\s+/, "")))
 			.filter(Boolean);
 		const markers =
 			this.collaborators.managedIssueMarkers.readManagedMarkerValues(
@@ -57,8 +57,17 @@ export class ProposalSelectionCodec {
 	write(
 		body: string,
 		event: Pick<MeetupEvent, "proposalReferences" | "proposalStatus">,
+		eventUrl?: string,
 	): string {
 		if (!event.proposalReferences?.length) return body;
+		if (eventUrl && event.proposalStatus === "current")
+			body = this.collaborators.issueFormSections.replaceOrAppendSection(
+				body,
+				HEADINGS.proposals,
+				event.proposalReferences
+					.map((id) => `[${id}](${eventUrl}/proposals/${id})`)
+					.join("\n"),
+			);
 		const marker = `<!-- meetup-proposals:1:${event.proposalStatus ?? "stale"} -->`;
 		const replaced =
 			this.collaborators.managedIssueMarkers.replaceManagedMarker(
@@ -68,6 +77,14 @@ export class ProposalSelectionCodec {
 			);
 		return replaced.found ? replaced.body : `${marker}\n${body}`;
 	}
+	private readReference(value: string): string {
+		const linked =
+			/^\[([1-9]\d*)\]\(https:\/\/conference-hall\.io\/team\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*\/proposals\/\1\)$/.exec(
+				value,
+			);
+		return linked?.[1] ?? value;
+	}
+
 	restore(event: MeetupEvent): MeetupEvent {
 		return {
 			...event,

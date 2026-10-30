@@ -88,11 +88,11 @@ describe("social publication approval preview", () => {
 			expect(body).toContain(
 				"Verified provider history for this exact channel",
 			);
-			expect(body).toContain("Reject recovery and keep publication blocked");
+			expect(body).toContain("Keep publication blocked");
 			expect(body).toContain(
 				outcome === "published"
-					? "record its remote identity"
-					: "permit a retry after current publication approval is checked",
+					? "save the post ID"
+					: "allow a retry with valid approval",
 			);
 		},
 	);

@@ -8,7 +8,7 @@ import {
 } from "./support.js";
 
 describe("event side-effect safeguards", () => {
-	it.each(["title", "description"])(
+	it.each(["title", "description", "cover"])(
 		"prepares %s between applying decisions and requesting review",
 		async (target) => {
 			// Arrange
@@ -23,17 +23,21 @@ describe("event side-effect safeguards", () => {
 			expect(decisions).toBeGreaterThanOrEqual(0);
 			expect(generation).toBeGreaterThan(decisions);
 			expect(review).toBeGreaterThan(generation);
-			expect(step?.uses).toBe(`${automationActionPrefix}event/generate-copy`);
-			expect(step?.with?.target).toBe(target);
+			expect(step?.uses).toBe(
+				`${automationActionPrefix}${target === "cover" ? "assets/generate-cover" : "event/generate-copy"}`,
+			);
+			if (target !== "cover") expect(step?.with?.target).toBe(target);
 			expect(step?.if).toContain("!cancelled()");
 			expect(step?.if).toContain("steps.decisions.outcome == 'success'");
-			expect(step?.if).not.toMatch(/steps\.(title|description)\./);
+			expect(step?.if).not.toMatch(/steps\.(title|description|cover)\./);
 			expect(step).not.toHaveProperty("continue-on-error");
 			expect(steps[review]?.uses).toBe(
 				`${automationActionPrefix}organizer/review-drafts`,
 			);
 			expect(steps[review]?.if).toContain("!cancelled()");
-			expect(steps[review]?.if).not.toMatch(/steps\.(title|description)\./);
+			expect(steps[review]?.if).not.toMatch(
+				/steps\.(title|description|cover)\./,
+			);
 		},
 	);
 	it("routes the bounded active-event audit through one-event reconciliation", async () => {

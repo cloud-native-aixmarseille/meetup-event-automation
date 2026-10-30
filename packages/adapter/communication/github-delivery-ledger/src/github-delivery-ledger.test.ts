@@ -310,9 +310,7 @@ describe("GithubDeliveryLedger", () => {
 			});
 			expect(comments.comments[0]?.body).not.toContain(reservation.recipientId);
 			expect(comments.comments[0]?.body).toContain('"schemaVersion": 2');
-			expect(visible).toContain(
-				"Host introduction email: Request accepted (1)",
-			);
+			expect(visible).toContain("Host introduction: Accepted (1)");
 			expect(visible).not.toContain("schemaVersion");
 			expect(repeated).toMatchObject({
 				reserved: false,

@@ -17,13 +17,13 @@ describe("organizer diagnostic presentation", () => {
 			"en",
 			"communication.social.evaluation-failed",
 			"Communication",
-			"check source access and delivery records",
+			"Check source access and delivery records",
 		],
 		[
 			"fr",
 			"communication.social.evaluation-failed",
 			"Communication",
-			"vérifier les accès aux sources et le registre", // codespell:ignore registre
+			"Vérifiez les accès aux sources et le registre", // codespell:ignore registre
 		],
 		[
 			"en",
@@ -59,7 +59,7 @@ describe("organizer diagnostic presentation", () => {
 			"fr",
 			"communication.missing-mail-destination",
 			"Communication",
-			"Ajoutez une adresse courriel", // codespell:ignore adresse
+			"Ajoutez une adresse email", // codespell:ignore adresse
 		],
 		[
 			"en",

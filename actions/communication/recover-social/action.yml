@@ -1,4 +1,4 @@
-name: Recover social publication
+name: Recover a social post
 description: Request a verified organizer decision about an uncertain recorded social delivery.
 inputs:
   github-token:

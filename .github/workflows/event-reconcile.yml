@@ -1,5 +1,5 @@
 # Goal: Keep one event consistent throughout preparation, event day and follow-up.
-# Behavior: Prepare and review event copy, reconcile assets, feedback and due email/PDF work,
+# Behavior: Prepare and review event copy and covers, reconcile assets, feedback and due email/PDF work,
 # then update organizer tasks under the event lock. Domain policies and approvals
 # gate effects; incomplete stages preserve unresolved tasks.
 
@@ -51,6 +51,10 @@ on:
         description: Existing Kutt feedback link API ID.
         required: true
         type: string
+      conference-hall-event-url:
+        description: Conference Hall organizer event URL, https://conference-hall.io/team/TEAM/EVENT, matching conference-hall-event.
+        required: true
+        type: string
       conference-hall-event:
         description: Conference Hall CFP slug for live linked profiles and selected proposals.
         required: true
@@ -60,16 +64,20 @@ on:
         type: number
         required: true
       ai-provider:
-        description: AI provider identifier for automatic event copy proposals (gemini).
+        description: AI provider identifier for automatic text and cover proposals (gemini).
         required: true
         type: string
-      ai-model:
+      ai-text-model:
         description: Structured-text model for automatic title and description proposals.
+        required: true
+        type: string
+      ai-image-model:
+        description: Image model for the four cover artwork candidates.
         required: true
         type: string
     secrets:
       ai-api-key:
-        description: API key for automatic event copy generation.
+        description: API key authorized for automatic text and cover generation.
         required: true
       openfeedback-api-key:
         description: OpenFeedback organization API key (`oforg_`) used to create and update events.
@@ -158,7 +166,7 @@ jobs:
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           target: title
           ai-provider: ${{ inputs.ai-provider }}
-          ai-model: ${{ inputs.ai-model }}
+          ai-model: ${{ inputs.ai-text-model }}
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Generate event description
         id: description
@@ -176,7 +184,26 @@ jobs:
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           target: description
           ai-provider: ${{ inputs.ai-provider }}
-          ai-model: ${{ inputs.ai-model }}
+          ai-model: ${{ inputs.ai-text-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      - name: Generate cover artwork
+        id: cover
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && steps.decisions.outcome == 'success' }}
+        uses: $/actions/assets/generate-cover
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-image-model }}
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Reconcile content reviews
         id: content
@@ -230,6 +257,7 @@ jobs:
         if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
         uses: $/actions/event/reconcile
         with:
+          conference-hall-event-url: ${{ inputs.conference-hall-event-url }}
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
           asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
@@ -284,6 +312,8 @@ jobs:
       title-diagnostics: ${{ steps.title.outputs.diagnostics }}
       description-outcome: ${{ steps.description.outcome }}
       description-diagnostics: ${{ steps.description.outputs.diagnostics }}
+      cover-outcome: ${{ steps.cover.outcome }}
+      cover-diagnostics: ${{ steps.cover.outputs.diagnostics }}
       content-outcome: ${{ steps.content.outcome }}
       content-diagnostics: ${{ steps.content.outputs.diagnostics }}
       communications-outcome: ${{ steps.communications.outcome }}
@@ -327,7 +357,7 @@ jobs:
       github-app-client-id: ${{ inputs.github-app-client-id }}
       slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       issue-number: ${{ inputs.issue-number }}
-      stage-results: '{"content":[{"outcome":${{ toJSON(needs.manage.outputs.decisions-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.decisions-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.title-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.title-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.description-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.description-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.content-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.content-diagnostics) }}}],"event":{"outcome":${{ toJSON(needs.manage.outputs.event-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.event-diagnostics) }}},"assets":[{"outcome":${{ toJSON(needs.manage.outputs.assets-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.assets-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.pdf-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.pdf-diagnostics) }}}],"feedback":[{"outcome":${{ toJSON(needs.manage.outputs.feedback-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.feedback-diagnostics) }}},{"outcome":${{ toJSON(needs.feedback-link.outputs.outcome) }},"diagnostics":${{ toJSON(needs.feedback-link.outputs.diagnostics) }}}],"communications":{"outcome":${{ toJSON(needs.manage.outputs.communications-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.communications-diagnostics) }}}}'
+      stage-results: '{"content":[{"outcome":${{ toJSON(needs.manage.outputs.decisions-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.decisions-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.title-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.title-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.description-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.description-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.cover-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.cover-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.content-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.content-diagnostics) }}}],"event":{"outcome":${{ toJSON(needs.manage.outputs.event-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.event-diagnostics) }}},"assets":[{"outcome":${{ toJSON(needs.manage.outputs.assets-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.assets-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.pdf-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.pdf-diagnostics) }}}],"feedback":[{"outcome":${{ toJSON(needs.manage.outputs.feedback-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.feedback-diagnostics) }}},{"outcome":${{ toJSON(needs.feedback-link.outputs.outcome) }},"diagnostics":${{ toJSON(needs.feedback-link.outputs.diagnostics) }}}],"communications":{"outcome":${{ toJSON(needs.manage.outputs.communications-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.communications-diagnostics) }}}}'
     secrets:
       github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials

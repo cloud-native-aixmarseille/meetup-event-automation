@@ -223,11 +223,11 @@ describe("renderDiagnosticComment", () => {
 		// Assert
 		expect(body).toBe(`${EVENT_DIAGNOSTIC_COMMENT_MARKER}
 
-- [ ] **Event Title**: Generate or submit the event title, then approve it for automatic application.
-- [ ] **Event Description**: Generate or submit the event description, then approve it for automatic application.
+- [ ] **Event Title**: Edit and approve the proposed title.
+- [ ] **Event Description**: Edit and approve the proposed description.
 - [ ] **Meetup Link**: Run event publication synchronization to populate the verified Meetup link.
-- [ ] **CNCF Link**: Run event publication synchronization and approve CNCF / OCGroups publication; automation adds the verified public link.
-- [ ] **Drive Link**: Run asset reconciliation to create the event folder and populate its Google Drive link.
+- [ ] **CNCF Link**: Sync publications, then approve the OCGroups draft. The public link is added automatically.
+- [ ] **Drive Link**: Sync assets to create the event Drive folder.
 - [ ] **Speaker confirmation**: Confirm the speakers, then add the \`speakers:confirmed\` label.`);
 		expect(actual).toBe(body);
 	});
@@ -265,13 +265,9 @@ describe("renderDiagnosticComment", () => {
 		expect(body.match(/^- \[ \]/gm)).toHaveLength(4);
 		expect(body).toContain("**Aperitif**: Choose `Yes` or `No`");
 		expect(body).toContain("**Restaurant / Bar**: Choose `Yes` or `No`");
-		expect(body).toContain(
-			"**Agenda (speaker 1)**: This speaker was not found",
-		);
-		expect(body).toContain(
-			"**Agenda (speaker 2)**: This speaker was not found",
-		);
-		expect(body).toContain("including accents");
+		expect(body).toContain("**Agenda (speaker 1)**: Speaker not found");
+		expect(body).toContain("**Agenda (speaker 2)**: Speaker not found");
+		expect(body).toContain("Copy their exact name");
 		expect(body).toContain("Speaker name [speaker-0001]");
 	});
 

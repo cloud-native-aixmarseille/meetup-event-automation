@@ -60,6 +60,7 @@ export interface WorkspaceCompositionInput {
 export interface EventDocumentCompositionInput
 	extends WorkspaceCompositionInput {
 	readonly repositoryRef?: string;
+	readonly conferenceHallEventUrl?: string;
 	readonly client: GitHubClient;
 	readonly owner: string;
 	readonly repo: string;
@@ -245,6 +246,7 @@ export class EventComposition {
 				const config = context.get<AutomationConfig>(SERVICES.config);
 				return new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec(
 					{
+						conferenceHallEventUrl: input.conferenceHallEventUrl,
 						repositoryRef:
 							input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
 						timeZone: config.timezone,

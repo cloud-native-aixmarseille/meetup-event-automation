@@ -29,6 +29,7 @@ interface FinalApprovalDecision {
 	readonly actor: string;
 	readonly decidedAt: string;
 	readonly selectedImage?: string;
+	readonly editedText?: string;
 }
 
 export interface ApprovalDecision {
@@ -36,6 +37,7 @@ export interface ApprovalDecision {
 	readonly actor?: string;
 	readonly decidedAt?: string;
 	readonly selectedImage?: string;
+	readonly editedText?: string;
 }
 
 export interface ApprovalState {

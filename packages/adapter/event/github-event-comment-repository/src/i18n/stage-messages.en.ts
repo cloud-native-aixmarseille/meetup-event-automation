@@ -1,5 +1,5 @@
 export const STAGE_MESSAGES_EN = {
-	"comment.social.target": "Social publication ({destination}, {purpose})",
+	"comment.social.target": "Post ({destination}, {purpose})",
 	"comment.guidance.social.pending":
 		"Review the announcement and approve publication for this destination.",
 	"comment.guidance.social.blocked":
@@ -9,7 +9,7 @@ export const STAGE_MESSAGES_EN = {
 	"comment.guidance.social.expired":
 		"The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
 	"comment.guidance.social.evaluation-failed":
-		"Social publication could not be evaluated. Ask a maintainer to check source access and delivery records before retrying.",
+		"Could not check publication. Check source access and delivery records before retrying.",
 	"comment.guidance.communication.concurrent-checklist":
 		"The issue changed after dispatch. Rerun to update completed email tasks.",
 	"comment.guidance.feedback.conflict":
@@ -19,14 +19,13 @@ export const STAGE_MESSAGES_EN = {
 	"comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
 	"comment.guidance.assets.slides":
 		"Complete the presentation and its public link before sending emails.",
-	"comment.guidance.communication.approval":
-		"Approve or reject the email batch.",
+	"comment.guidance.communication.approval": "Approve or reject the emails.",
 	"comment.guidance.communication.rejected":
-		"Email batch rejected. Update its content to request a new approval.",
+		"Emails rejected. Change their content to request a new approval.",
 	"comment.guidance.communication.approval-unavailable":
 		"Approval could not be verified. Check the approval request, then retry.",
 	"comment.guidance.communication.approval-notification":
-		"Review the email approval request on this issue; its Slack notification failed.",
+		"Slack notification failed. Review the email approval comment in this issue.",
 	"comment.guidance.communication.delivery-uncertain":
 		"Verify delivery before retrying.",
 	"comment.guidance.communication.delivery-rejected":
@@ -38,11 +37,11 @@ export const STAGE_MESSAGES_EN = {
 	"comment.guidance.communication.ledger":
 		"Check the delivery ledger before retrying.",
 	"comment.guidance.communication.destination":
-		"Add an email address for each opted-in recipient.",
+		"Add an email address for each recipient.",
 	"comment.guidance.communication.content":
 		"Complete the notification content before retrying.",
 	"comment.guidance.communication.checklist":
-		"Rerun reconciliation to update completed email tasks.",
+		"Sync again to mark completed email tasks.",
 	"comment.guidance.communication.concurrent":
 		"The issue changed during processing. Retry after editing.",
 	"comment.guidance.communication.references":

@@ -335,9 +335,7 @@ describe("YamlIssueFormProjection", () => {
 		const after = await readFile(target.absolutePath, "utf8");
 
 		// Assert
-		expect(content).toContain(
-			"Afficher les références des intervenants disponibles",
-		);
+		expect(content).toContain("Intervenants disponibles");
 		expect(content).toContain("<!-- Available speakers -->");
 		expect(content).toContain("Unique &lt;Public&gt; Speaker &amp; Team");
 		expect(content).not.toContain("speaker-one@example.test");
@@ -409,10 +407,10 @@ describe("YamlIssueFormProjection", () => {
 			[
 				"<!-- Available speakers -->",
 				"",
-				"Select speakers by copying one or more references into the agenda.",
+				"Copy the speaker references into the agenda.",
 				"",
 				"<details>",
-				"<summary>Show available speaker references</summary>",
+				"<summary>Available speakers</summary>",
 				"",
 				"- <code>Example Speaker</code>",
 				"- <code>Other Speaker</code>",

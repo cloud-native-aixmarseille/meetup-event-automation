@@ -29,6 +29,7 @@ import { ApprovalRequestSchemaComposition } from "./approval-request-schema-comp
 import { ApprovalSchema } from "./approval-schema.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { ContentApprovalPresenter } from "./content-approval-presenter.js";
+import { ContentTextPreview } from "./content-text-preview.js";
 import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
 import {
 	EmailApprovalPresenter,
@@ -81,8 +82,8 @@ import {
 	ResolveApprovalDecision,
 	type ResolveApprovalDecisionArguments,
 } from "./resolve-approval-decision.js";
-import { StoredApprovalSchema } from "./stored-approval-schema.js";
 import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
+import { StoredApprovalSchema } from "./stored-approval-schema.js";
 import {
 	TrustedApprovalState,
 	type TrustedApprovalStateArguments,
@@ -98,6 +99,7 @@ export class GithubOrganizerApprovalComposition {
 		...args: ApprovalDecisionParserArguments
 	): ApprovalDecisionParser {
 		return new ApprovalDecisionParser(
+			new ContentTextPreview(),
 			new JourneyPolicyComposition().approvalRequestPolicy(),
 			...args,
 		);
@@ -135,7 +137,7 @@ export class GithubOrganizerApprovalComposition {
 	contentApprovalPresenter(
 		messages: ApprovalMessages,
 	): ContentApprovalPresenter {
-		return new ContentApprovalPresenter(messages);
+		return new ContentApprovalPresenter(messages, new ContentTextPreview());
 	}
 
 	approvalPresenterFactory(): ApprovalPresenterFactory {

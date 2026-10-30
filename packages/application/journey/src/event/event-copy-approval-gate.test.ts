@@ -10,7 +10,7 @@ describe("downstream content authorization", () => {
 		async (scenario) => {
 			// Arrange
 			const f = contentFixture();
-			const projection = new ContentFactsProjection();
+			const projection = new ContentFactsProjection(() => "novembre");
 			const settings = {
 				content: {
 					months: {},
@@ -29,6 +29,7 @@ describe("downstream content authorization", () => {
 					settings.content,
 					null,
 					"title",
+					"fr",
 				),
 				"09:00",
 			);
@@ -90,7 +91,7 @@ describe("downstream content authorization", () => {
 		const gate = new EventCopyApprovalGate(
 			store,
 			authority,
-			new ContentFactsProjection(),
+			new ContentFactsProjection(() => "novembre"),
 			f.plans,
 			f.policy,
 			settings,

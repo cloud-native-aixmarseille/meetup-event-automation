@@ -23,6 +23,7 @@ export class GithubContentAuthority implements ContentAuthority {
 			record.decision.actor === proposal.decision?.actor &&
 			record.decision.decidedAt === proposal.decision?.decidedAt &&
 			record.decision.selectedImage === proposal.decision?.selectedImage &&
+			record.decision.editedText === proposal.decision?.editedText &&
 			(await this.client.canApprove(record.decision.actor))
 		);
 	}

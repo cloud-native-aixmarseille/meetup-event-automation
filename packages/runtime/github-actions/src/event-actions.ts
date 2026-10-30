@@ -30,7 +30,10 @@ export interface EventActionsCollaborators {
 		input: Parameters<typeof EventComposition.createDocumentContainer>[0],
 	) => { events: Pick<ListActiveEvents, "execute">; label: string };
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
-	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
+	readonly conferenceHallInput: Pick<
+		ConferenceHallInput,
+		"read" | "readEventUrl"
+	>;
 	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
 }
 
@@ -47,6 +50,7 @@ export class EventActions {
 		const token = core.getInput("github-token", { required: true });
 		const { owner, repo } = context.repo;
 		const repository = `${owner}/${repo}`;
+		const conferenceHall = this.collaborators.conferenceHallInput.read();
 		const journey = this.collaborators.createEventJourney({
 			meetupEventUrlPrefix:
 				this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
@@ -55,7 +59,11 @@ export class EventActions {
 			assetFolderUrlPrefix:
 				this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
 			locale: messages.locale,
-			...this.collaborators.conferenceHallInput.read(),
+			...conferenceHall,
+			conferenceHallEventUrl:
+				this.collaborators.conferenceHallInput.readEventUrl(
+					conferenceHall.conferenceHallEvent,
+				),
 			client: getOctokit(token),
 			owner,
 			repo,

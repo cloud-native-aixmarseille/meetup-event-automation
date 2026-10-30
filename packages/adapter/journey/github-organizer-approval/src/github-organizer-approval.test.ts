@@ -1,4 +1,3 @@
-import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 import {
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
@@ -13,12 +12,15 @@ import {
 	publicationRequest,
 	request,
 } from "../testing/approval.fixtures.js";
+import { contentRequest } from "../testing/content.fixtures.js";
+import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
+import { ContentTextPreview } from "./content-text-preview.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
-import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
+import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 
 describe("organizer approval requests", () => {
 	it("keeps destination publication and recovery approvals independent", async () => {
@@ -183,7 +185,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		expect(result.status).toBe("pending");
-		expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
+		expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
 		expect(f.react).not.toHaveBeenCalled();
 		expect(f.permission).not.toHaveBeenCalled();
 	});
@@ -351,7 +353,7 @@ describe("organizer approval requests", () => {
 		const original = f.comments[0]?.body;
 
 		// Act
-		decision(f, { body: "- [x] Approve sending this batch" });
+		decision(f, { body: "- [x] Approve sending" });
 		const result = await approvals.request(request);
 
 		// Assert
@@ -389,7 +391,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		expect(first.notificationFailed).toBe(true);
-		expect(firstBody).toContain("✅ **Approved**");
+		expect(firstBody).toContain("✅ Approved");
 		expect(firstBody).not.toContain("- [");
 		expect(second.notificationFailed).toBe(false);
 		expect(f.react).toHaveBeenCalledTimes(2);
@@ -423,7 +425,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		expect(result).toEqual({ status: "approved", notificationFailed: false });
-		expect(f.comments[0]?.body).toContain("✅ **Approved**");
+		expect(f.comments[0]?.body).toContain("✅ Approved");
 		expect(f.react).not.toHaveBeenCalled();
 		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
@@ -487,7 +489,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		await expect(result).rejects.toThrow("no longer has approval permission");
-		expect(f.comments[0]?.body).toContain("✅ **Approved**");
+		expect(f.comments[0]?.body).toContain("✅ Approved");
 	});
 	it.each([{ eventDate: "2099-06-09" }, { recipientCount: 1 }])(
 		"resets a request whose displayed facts were changed: %j",
@@ -531,7 +533,7 @@ describe("organizer approval requests", () => {
 
 			// Assert
 			expect(result.status).toBe("pending");
-			expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
+			expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
 			expect(f.permission).not.toHaveBeenCalled();
 		},
 	);
@@ -780,7 +782,7 @@ describe("organizer approval requests", () => {
 		await expect(result).rejects.toThrow(
 			"Approval comment changed before persistence",
 		);
-		expect(f.comments[0]?.body).toContain("- [x] Approve sending this batch");
+		expect(f.comments[0]?.body).toContain("- [x] Approve sending");
 	});
 	it.each(["en", "fr"])(
 		"creates one issue request and one Slack alert in %s",
@@ -851,7 +853,7 @@ describe("organizer approval requests", () => {
 
 			// Assert
 			expect(result.status).toBe("approved");
-			expect(f.comments[0]?.body).toContain("✅ **Approved** by @organizer");
+			expect(f.comments[0]?.body).toContain("✅ Approved by @organizer");
 			expect(f.comments[0]?.body).not.toContain("- [");
 		},
 	);
@@ -952,7 +954,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		expect(result.status).toBe("rejected");
-		expect(f.comments[0]?.body).toContain("❌ **Rejected** by @organizer");
+		expect(f.comments[0]?.body).toContain("❌ Rejected by @organizer");
 		expect(f.comments[0]?.body).not.toContain("- [");
 		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
@@ -1230,9 +1232,7 @@ describe("Meetup publication approvals", () => {
 		// Assert
 		expect(result.status).toBe("pending");
 		expect(f.create).toHaveBeenCalledOnce();
-		expect(f.comments[0]?.body).toContain(
-			"- [ ] Approve publishing this Meetup event",
-		);
+		expect(f.comments[0]?.body).toContain("- [ ] Approve publication");
 	});
 
 	it("rejects publication approval from a user without repository write permission", async () => {
@@ -1394,9 +1394,7 @@ describe("OCGroups publication approvals", () => {
 		// Assert
 		expect(result.status).toBe("pending");
 		expect(f.create).toHaveBeenCalledOnce();
-		expect(f.comments[0]?.body).toContain(
-			"- [ ] Approve publishing this CNCF community event",
-		);
+		expect(f.comments[0]?.body).toContain("- [ ] Approve publication");
 	});
 
 	it("rejects publication approval from a user without repository write permission", async () => {
@@ -1472,5 +1470,115 @@ describe("OCGroups publication approvals", () => {
 		// Assert
 		expect(result.status).toBe("pending");
 		expect(f.permission).not.toHaveBeenCalled();
+	});
+});
+
+describe("organizer text replacement", () => {
+	it("preserves an edit through synchronization and approves exactly that text", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+		const preview = new ContentTextPreview();
+		const editedText = "Our meetup title";
+		const validate = vi.fn(
+			(text: string) => text.length > 0 && text.length <= 80,
+		);
+		// Act
+		await approvals.request(contentRequest, validate);
+		const pending =
+			preview.replace(f.comments[0]?.body ?? "", editedText) ?? "";
+		decision(f, { body: pending }, "pending");
+		await approvals.synchronize();
+		const pendingResult = await approvals.request(contentRequest, validate);
+		const pendingBody = f.comments[0]?.body;
+		decision(f, { body: pending.replace("- [ ] Approve", "- [x] Approve") });
+		await approvals.synchronize();
+		const beforeValidation = (await f.repository.states())[0]?.record.decision;
+		const result = await approvals.request(contentRequest, validate);
+		await approvals.synchronize();
+		const repeated = await approvals.request(contentRequest, validate);
+		const record = (await f.repository.states())[0]?.record;
+		// Assert
+		expect(pendingResult).toMatchObject({ status: "pending", editedText });
+		expect(pendingBody).toBe(pending);
+		expect(beforeValidation).toBeUndefined();
+		expect(result).toMatchObject({
+			status: "approved",
+			editedText,
+			actor: "organizer",
+		});
+		expect(repeated).toMatchObject({ status: "approved", editedText });
+		expect(record?.kind === "content-review" && record.content.draft.text).toBe(
+			contentRequest.content.draft.text,
+		);
+		expect(record?.decision).toMatchObject({ editedText });
+		expect(preview.read(f.comments[0]?.body ?? "")?.text).toBe(editedText);
+	});
+	it("keeps invalid text editable and accepts a later correction", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+		const preview = new ContentTextPreview();
+		const validate = (text: string) => text.length > 0 && text.length <= 80;
+		// Act
+		await approvals.request(contentRequest, validate);
+		const original = f.comments[0]?.body ?? "";
+		const invalid = (preview.replace(original, "x".repeat(81)) ?? "").replace(
+			"- [ ] Approve",
+			"- [x] Approve",
+		);
+		decision(f, { body: invalid });
+		const rejected = await approvals.request(contentRequest, validate);
+		const invalidBody = f.comments[0]?.body;
+		const before = (await f.repository.states())[0]?.record.decision;
+		decision(f, { body: preview.replace(invalid, "A corrected title") ?? "" });
+		const corrected = await approvals.request(contentRequest, validate);
+		// Assert
+		expect(rejected).toMatchObject({ status: "pending", invalidText: true });
+		expect(invalidBody).toBe(invalid);
+		expect(before).toBeUndefined();
+		expect(corrected).toMatchObject({
+			status: "approved",
+			editedText: "A corrected title",
+		});
+	});
+	it("does not approve a text replacement by an unauthorized editor", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+		const preview = new ContentTextPreview();
+		// Act
+		await approvals.request(contentRequest, () => true);
+		const edited = (
+			preview.replace(f.comments[0]?.body ?? "", "Untrusted replacement") ?? ""
+		).replace("- [ ] Approve", "- [x] Approve");
+		decision(f, { body: edited });
+		f.permission.mockResolvedValue({ data: { permission: "read" } });
+		const result = await approvals.request(contentRequest, () => true);
+		const record = (await f.repository.states())[0]?.record;
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(record?.decision).toBeUndefined();
 	});
 });

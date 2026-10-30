@@ -1,4 +1,3 @@
-import { SocialPublicationApprovalPresenter } from "../src/social-publication-approval-presenter.js";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import {
 	ApprovalNotificationPolicy,
@@ -16,6 +15,7 @@ import { ApprovalNotifications } from "../src/approval-notifications.js";
 import { ApprovalPresenter } from "../src/approval-presenter.js";
 import { ApprovalRecordFactory } from "../src/approval-record-factory.js";
 import { CommunityApprovalPresenter } from "../src/community-approval-presenter.js";
+import { ContentTextPreview } from "../src/content-text-preview.js";
 import { FinalizeApprovalDecision } from "../src/finalize-approval-decision.js";
 import { GithubApprovalAttentionSource } from "../src/github-approval-attention-source.js";
 import { GithubApprovalClient } from "../src/github-approval-client.js";
@@ -27,6 +27,7 @@ import type {
 import { GithubApprovalRepository } from "../src/github-approval-repository.js";
 import { ApprovalMessages } from "../src/i18n/approval-messages.js";
 import { ResolveApprovalDecision } from "../src/resolve-approval-decision.js";
+import { SocialPublicationApprovalPresenter } from "../src/social-publication-approval-presenter.js";
 import { TrustedApprovalState } from "../src/trusted-approval-state.js";
 export const request = {
 	kind: "email-introduction",
@@ -314,6 +315,7 @@ export function approvalDependencies(
 		new ResolveApprovalDecision(
 			client,
 			new ApprovalDecisionParser(
+				new ContentTextPreview(),
 				new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),
