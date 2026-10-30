@@ -11,7 +11,6 @@ permissions: {}
 
 env:
   ISSUE_LABEL: integration-test-meetup
-  HOST_CONFIRMATION_LABEL: integration-test-hoster-confirmed
   SPEAKER_CONFIRMATION_LABEL: integration-test-speakers-confirmed
   EVENT_DATE: "2099-06-08"
 
@@ -36,10 +35,8 @@ jobs:
           script: |
             const labels = [...new Set([
               'meetup',
-              'hoster:confirmed',
               'speakers:confirmed',
               process.env.ISSUE_LABEL,
-              process.env.HOST_CONFIRMATION_LABEL,
               process.env.SPEAKER_CONFIRMATION_LABEL,
             ])];
 
@@ -103,10 +100,8 @@ jobs:
             `;
             const labels = [...new Set([
               process.env.ISSUE_LABEL,
-              process.env.HOST_CONFIRMATION_LABEL,
               process.env.SPEAKER_CONFIRMATION_LABEL,
               'meetup',
-              'hoster:confirmed',
               'speakers:confirmed',
             ])];
             const issue = await github.rest.issues.create({
