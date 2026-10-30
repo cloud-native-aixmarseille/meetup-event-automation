@@ -35,7 +35,9 @@ and accepted delivery.
   host and speaker slides. Approve covers and announcement drafts
   through [content review](../integrations/content.md#decide-and-apply).
 - **Communication** tracks publication of the event announcement and registration
-  link on Slack - AixMarseille.Tech, Slack - OpenBaR and LinkedIn.
+  link on Slack - AixMarseille.Tech, Slack - OpenBaR and LinkedIn. Social automation
+  updates these statuses after delivery. Review the content and publication
+  requests in the comments; these are not manual posting tasks.
 - **Event logistics** covers games and goodies. Check each task once arranged or
   confirmed unnecessary.
 - **Post event** tracks attendee import into CNCF and the event recap with photos
@@ -60,10 +62,10 @@ uses the same policy. Unexpected execution, source or persistence failures fail
 the workflow; open its Actions run for technical codes and counts. An incomplete
 evaluation preserves the previous checklist and reports the affected stage.
 
-After confirming participation, add `hoster:confirmed` and `speakers:confirmed`.
-Selecting a host removes `hoster:needed`; it does not confirm participation.
+Select the confirmed host in **Hoster**; no host label or separate confirmation
+is required. After confirming speaker participation, add `speakers:confirmed`.
 Speaker `needed` labels follow their confirmation state. A ready event has
-valid required fields, resolved host and speaker references, both confirmations,
+valid required fields, resolved host and speaker references, confirmed speakers,
 Meetup/CNCF/Drive links, a checked **Meetup event published** task in
 **Communication**, and no blocking diagnostics. **OpenFeedback Link** appears
 when automation creates the feedback event.

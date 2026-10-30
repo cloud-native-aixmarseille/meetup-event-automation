@@ -57,11 +57,7 @@ describe("immutable event patches", () => {
 			new EventPatches({
 				meetupEventOperations:
 					new EventDomainComposition().meetupEventOperations(),
-			}).replaceEventField(
-				"confirmations",
-				{ host: false, speakers: false },
-				"test",
-			),
+			}).replaceEventField("confirmations", { speakers: false }, "test"),
 			new EventPatches({
 				meetupEventOperations:
 					new EventDomainComposition().meetupEventOperations(),
@@ -107,7 +103,7 @@ describe("immutable event patches", () => {
 			publicationLinks: {},
 			occurrenceStatus: "postponed",
 			timeZone: "UTC",
-			confirmations: { host: false, speakers: false },
+			confirmations: { speakers: false },
 			logistics: { aperitif: "not-planned", postEventVenue: "planned" },
 			operationalChecklists: {
 				slidesAndContent: [{ name: "Basic Slides", completed: true }],

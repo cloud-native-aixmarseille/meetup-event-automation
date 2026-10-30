@@ -129,7 +129,6 @@ describe("next public meetup for assets", () => {
 		{ issueState: "closed" },
 		{ labels: [] },
 		{ host: undefined },
-		{ confirmations: { host: false, speakers: true } },
 		{ publicationLinks: {} },
 		{ publicationLinks: { meetup: "https://example.test/not-a-meetup" } },
 		{

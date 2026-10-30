@@ -127,7 +127,7 @@ export class FindNextAssetEvent {
 			invalid ||
 			event.date <= current.date ||
 			event.occurrenceStatus !== "scheduled" ||
-			!event.confirmations.host
+			!event.host?.displayName.trim()
 		)
 			return undefined;
 		const published =

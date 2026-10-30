@@ -1,6 +1,7 @@
 # Goal: Prepare a public announcement or reminder for one destination.
 # Behavior: Generate a Slack or LinkedIn announcement, D-7 reminder or D0 reminder,
-# then review and report it under the event lock. Organizers publish approved posts.
+# then review and report it under the event lock. Promotion reconciliation publishes
+# posts after their separate publication approvals.
 
 name: Event / Promotion / Generate post
 on:

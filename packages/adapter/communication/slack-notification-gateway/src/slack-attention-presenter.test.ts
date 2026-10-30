@@ -74,7 +74,7 @@ describe("Slack attention presentation", () => {
 				episode("speaker-confirmation"),
 				episode("missing-date"),
 				episode("delivery-recovery"),
-				episode("manual-publication", "public-social"),
+				episode("manual-publication", "publish-meetup-event"),
 			];
 
 			// Act

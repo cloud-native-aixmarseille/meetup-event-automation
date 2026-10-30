@@ -47,7 +47,7 @@ describe("EventRuleEngine", () => {
 			date: "2026-09-30",
 			description: "Description with outer space",
 			host: { id: "host-1", displayName: "Aix Tech Hub" },
-			labels: ["community", "meetup", "hoster:confirmed", "speakers:confirmed"],
+			labels: ["community", "meetup", "speakers:confirmed"],
 			publicationLinks: {
 				meetup:
 					"https://www.meetup.com/cloud-native-aix-marseille/events/123456789",
@@ -169,7 +169,6 @@ describe("EventRuleEngine", () => {
 					"community",
 					"speakers:confirmed",
 					"meetup",
-					"hoster:confirmed",
 				],
 			}),
 		);

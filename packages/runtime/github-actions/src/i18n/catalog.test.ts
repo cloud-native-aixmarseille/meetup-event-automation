@@ -4,6 +4,10 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"report.error.details": {
+		summary: "Technical failure.",
+		details: "status=503",
+	},
 	"report.social.recovery": { status: "pending" },
 	"report.social.result": {
 		target: "engineering:announcement",

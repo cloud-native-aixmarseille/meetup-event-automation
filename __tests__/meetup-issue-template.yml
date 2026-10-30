@@ -46,7 +46,7 @@
     "id": "communication"
     "attributes":
       "label": "Communication"
-      "description": "Post the approved announcement with the registration link."
+      "description": "Automation updates these publication statuses after delivery. Review approval requests in the comments."
       "options":
         - "label": "Announce on Slack - AixMarseille.Tech"
         - "label": "Announce on Slack - OpenBaR"

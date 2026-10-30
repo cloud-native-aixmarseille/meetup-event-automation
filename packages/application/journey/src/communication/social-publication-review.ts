@@ -57,7 +57,7 @@ export class SocialPublicationReview {
 			proposal.plan.language,
 		);
 		if (
-			!context?.event.confirmations.host ||
+			!context?.event.host?.displayName.trim() ||
 			!context.event.confirmations.speakers ||
 			!this.publication.isPublished(context.event) ||
 			!this.dependencies.policy.eligible(proposal, context.plan) ||

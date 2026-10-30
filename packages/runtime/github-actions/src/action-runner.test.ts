@@ -3,6 +3,7 @@ import { EventConcurrentModificationError } from "@meetup-automation/event";
 import { JourneyPolicyComposition } from "@meetup-automation/journey";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionRunner } from "./action-runner.js";
+import { AttentionStageInput } from "./attention-stage-input.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 
 vi.mock("@actions/core", () => ({
@@ -430,6 +431,50 @@ describe("action runner reporting contract", () => {
 		expect(core.setOutput).not.toHaveBeenCalled();
 		expect(core.setFailed).not.toHaveBeenCalled();
 	});
+	it.each(["en", "fr"])(
+		"preserves the failing stage input path across reporting surfaces in %s",
+		async (locale) => {
+			// Arrange
+			vi.mocked(core.getInput).mockReturnValue(locale);
+			const input = JSON.stringify({
+				assets: [
+					{ outcome: "success", diagnostics: [] },
+					{ outcome: "success", diagnostics: { private: "PRIVATE_TOKEN" } },
+				],
+			});
+			const operation = async () => {
+				new AttentionStageInput().parse(input);
+				return { details: [], diagnostics: [] };
+			};
+			const runner = new GithubActionsComposition().actionRunner();
+			const expected =
+				"RuntimeInputError: stage-results.assets[1].diagnostics must be an array";
+
+			// Act
+			await runner.run("action.organizer.reconcile-checklist", operation, true);
+
+			// Assert
+			expect(core.setFailed).toHaveBeenCalledWith(
+				expect.stringContaining(expected),
+			);
+			expect(core.info).toHaveBeenCalledWith(expect.stringContaining(expected));
+			expect(core.summary.addRaw).toHaveBeenCalledWith(
+				expect.stringContaining(expected),
+			);
+			expect(core.setOutput).toHaveBeenCalledWith(
+				"diagnostics",
+				expect.stringContaining(expected),
+			);
+			expect(
+				JSON.stringify([
+					vi.mocked(core.setFailed).mock.calls,
+					vi.mocked(core.info).mock.calls,
+					vi.mocked(core.summary.addRaw).mock.calls,
+					vi.mocked(core.setOutput).mock.calls,
+				]),
+			).not.toContain("PRIVATE_TOKEN");
+		},
+	);
 	it("redacts exceptions in French on every reporting surface", async () => {
 		// Arrange
 		vi.mocked(core.getInput).mockReturnValue("fr");
@@ -449,7 +494,9 @@ describe("action runner reporting contract", () => {
 		}).run("action.event.reconcile", operation, true);
 
 		// Assert
-		expect(core.setFailed).toHaveBeenCalledWith("Erreur technique inattendue.");
+		expect(core.setFailed).toHaveBeenCalledWith(
+			"Erreur technique inattendue. error=Error message=redacted",
+		);
 		expect(core.error).not.toHaveBeenCalled();
 		expect(core.summary.addRaw).toHaveBeenCalledWith(
 			expect.stringContaining("failure=Erreur technique inattendue."),

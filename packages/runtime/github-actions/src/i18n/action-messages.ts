@@ -24,10 +24,12 @@ export class ActionMessages extends MessageLocalizer<
 
 	error(name: string, publicFallback: string): string {
 		const key = `error.${name}` as Extract<MessageId, `error.${string}`>;
-		if (this.locale === "en") return publicFallback;
-		return Object.hasOwn(CATALOGS.en, key)
-			? this.t(key)
-			: this.t("report.error.unexpected");
+		const known = Object.hasOwn(CATALOGS.en, key);
+		if (this.locale === "en" && known) return publicFallback;
+		return this.t("report.error.details", {
+			summary: known ? this.t(key) : this.t("report.error.unexpected"),
+			details: publicFallback,
+		});
 	}
 }
 export type ActionMessagesArguments =

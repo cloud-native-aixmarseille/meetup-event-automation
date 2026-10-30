@@ -4,10 +4,11 @@ import { EventDomainComposition } from "../dependency-composition.js";
 import { EventReadinessPolicy } from "./readiness.js";
 
 describe("EventReadinessPolicy", () => {
-	it("reports an event with unconfirmed participants as incomplete", () => {
+	it("reports an event without a selected host as incomplete", () => {
 		// Arrange
 		const incomplete = createTestEvent({
-			confirmations: { host: false, speakers: true },
+			host: undefined,
+			confirmations: { speakers: true },
 		});
 
 		// Act
@@ -17,6 +18,20 @@ describe("EventReadinessPolicy", () => {
 
 		// Assert
 		expect(status).toBe("incomplete");
+	});
+	it("accepts a selected host without a confirmation label", () => {
+		// Arrange
+		const event = createTestEvent({ labels: ["meetup", "speakers:confirmed"] });
+		const policy = new EventReadinessPolicy({
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+		});
+
+		// Act
+		const result = policy.evaluateEventReadiness(event, []);
+
+		// Assert
+		expect(result.isReady).toBe(true);
+		expect(result.diagnostics).toEqual([]);
 	});
 	it("reports an event with error diagnostics as invalid", () => {
 		// Arrange

@@ -22,7 +22,7 @@ const document: EventDocument = {
 	identity: { repository: "example/meetups", issueNumber: 42 },
 	issueState: "open",
 	issueTitle: "[Meetup]",
-	labels: ["meetup", "hoster:confirmed", "speakers:confirmed"],
+	labels: ["meetup", "speakers:confirmed"],
 	body: `### Event Title
 
 Platform Night

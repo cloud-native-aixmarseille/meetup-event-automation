@@ -48,14 +48,14 @@ export class EventReadinessPolicy {
 			};
 		}
 
-		if (!event.confirmations.host) {
+		if (!event.host?.displayName.trim()) {
 			readinessDiagnostics.push(
 				this.collaborators.eventDiagnostics.diagnostic({
-					code: "event.confirmation.host.missing",
+					code: "event.hoster.missing",
 					severity: "warning",
 					category: "incomplete",
-					field: "confirmations.host",
-					message: "Host confirmation is required before the event is ready",
+					field: "host",
+					message: "A host must be selected",
 				}),
 			);
 		}

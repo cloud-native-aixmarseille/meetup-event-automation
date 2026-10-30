@@ -78,7 +78,7 @@ describe("public attention event facts", () => {
 			"share-social",
 		]);
 	});
-	it("maps unfinished manual tasks to safe identifiers without arbitrary checklist text", () => {
+	it("leaves announcement tasks to social automation without manual publication reminders", () => {
 		// Arrange
 		const event = createTestEvent({
 			publicationLinks: publishedEvent.publicationLinks,
@@ -110,11 +110,10 @@ describe("public attention event facts", () => {
 		}).create({ event, diagnostics: [] });
 
 		// Assert
-		expect(result.publicationPending).toContain("public-slack-community");
 		expect(
-			result.publicationPending.filter((task) => task === "public-social"),
-		).toHaveLength(1);
-		expect(result.publicationPending).not.toContain("public-slack-local");
+			result.publicationPending.filter((task) => task.startsWith("public-")),
+		).toEqual([]);
+		expect(result.hostConfirmed).toBe(true);
 		expect(result.followUpPending).toContain("thank-host");
 		expect(JSON.stringify(result)).not.toContain("private@example.test");
 	});

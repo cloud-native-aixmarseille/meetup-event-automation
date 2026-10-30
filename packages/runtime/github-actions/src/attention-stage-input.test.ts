@@ -1,7 +1,66 @@
 import { describe, expect, it } from "vitest";
 import { AttentionStageInput } from "./attention-stage-input.js";
+import { RuntimeInputError } from "./runtime-input-error.js";
 
 describe("workflow attention input decoding", () => {
+	it.each([
+		["PRIVATE_INVALID_JSON", "stage-results must contain valid JSON"],
+		[
+			JSON.stringify({ event: { diagnostics: "PRIVATE_INVALID_JSON" } }),
+			"stage-results.event.diagnostics must contain valid JSON",
+		],
+		[
+			JSON.stringify({ event: { diagnostics: { value: "PRIVATE_VALUE" } } }),
+			"stage-results.event.diagnostics must be an array",
+		],
+		[
+			JSON.stringify({
+				assets: [{ diagnostics: [] }, { diagnostics: ["PRIVATE_VALUE"] }],
+			}),
+			"stage-results.assets[1].diagnostics[0] must be an object",
+		],
+		[
+			JSON.stringify({
+				feedback: {
+					diagnostics: [
+						{
+							code: "PRIVATE_VALUE",
+							field: "PRIVATE_FIELD",
+							severity: "error",
+						},
+					],
+				},
+			}),
+			"stage-results.feedback.diagnostics[0].code must be a supported diagnostic code",
+		],
+		[
+			JSON.stringify({
+				feedback: {
+					diagnostics: [
+						{
+							code: "event.date.invalid",
+							field: "PRIVATE_FIELD",
+							severity: "PRIVATE_VALUE",
+						},
+					],
+				},
+			}),
+			"stage-results.feedback.diagnostics[0].severity must be error, warning or info",
+		],
+	])(
+		"identifies invalid schema paths without including input values: %s",
+		(encoded, expected) => {
+			// Arrange
+			const parser = new AttentionStageInput();
+
+			// Act
+			const parse = () => parser.parse(encoded);
+
+			// Assert
+			expect(parse).toThrow(expected);
+			expect(parse).toThrow(RuntimeInputError);
+		},
+	);
 	it("accepts an independent social report and retains only allowlisted target fields", () => {
 		// Arrange
 		const encoded = JSON.stringify({

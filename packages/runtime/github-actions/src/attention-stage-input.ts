@@ -4,14 +4,16 @@ import {
 	type AttentionStageReports,
 	type PublicDiagnostic,
 } from "@meetup-automation/journey";
+import { RuntimeInputError } from "./runtime-input-error.js";
 /** Decodes workflow JSON into safe machine facts; no delivery or organizer policy. */
 export class AttentionStageInput {
 	parse(value: string): AttentionStageReports {
-		const input: unknown = JSON.parse(value);
+		const input = this.json(value, "stage-results");
 		if (!this.isRecord(input))
-			throw new Error("Invalid attention stage results");
+			throw new RuntimeInputError("stage-results", "must be an object");
 		const reports = ATTENTION_STAGE_OWNERS.map(
-			(owner) => [owner, this.group(input[owner])] as const,
+			(owner) =>
+				[owner, this.group(input[owner], `stage-results.${owner}`)] as const,
 		);
 		return {
 			event: reports[0][1],
@@ -21,13 +23,16 @@ export class AttentionStageInput {
 			content: reports[4][1],
 			...(input.social === undefined
 				? {}
-				: { social: this.group(input.social) }),
+				: { social: this.group(input.social, "stage-results.social") }),
 		};
 	}
-	private group(value: unknown): AttentionStageReport {
-		if (!Array.isArray(value)) return this.stage(value);
-		if (!value.length) throw new Error("Empty attention stage group");
-		const stages = value.map((item) => this.stage(item));
+	private group(value: unknown, field: string): AttentionStageReport {
+		if (!Array.isArray(value)) return this.stage(value, field);
+		if (!value.length)
+			throw new RuntimeInputError(field, "must not be an empty group");
+		const stages = value.map((item, index) =>
+			this.stage(item, `${field}[${index}]`),
+		);
 		return {
 			outcome: stages.some((stage) => stage.outcome === "failure")
 				? "failure"
@@ -38,16 +43,19 @@ export class AttentionStageInput {
 			diagnostics: stages.flatMap((stage) => stage.diagnostics),
 		};
 	}
-	private stage(value: unknown): AttentionStageReport {
+	private stage(value: unknown, field: string): AttentionStageReport {
 		if (value !== undefined && !this.isRecord(value))
-			throw new Error("Invalid attention stage");
+			throw new RuntimeInputError(field, "must be an object");
 		const stage = value ?? {};
 		return {
 			outcome:
 				stage.outcome === "success" || stage.outcome === "failure"
 					? stage.outcome
 					: "unknown",
-			diagnostics: this.readDiagnostics(stage.diagnostics),
+			diagnostics: this.readDiagnostics(
+				stage.diagnostics,
+				`${field}.diagnostics`,
+			),
 			reported:
 				stage.diagnostics !== undefined &&
 				stage.diagnostics !== null &&
@@ -57,22 +65,28 @@ export class AttentionStageInput {
 	private isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === "object" && value !== null && !Array.isArray(value);
 	}
-	private readDiagnostics(input: unknown): readonly PublicDiagnostic[] {
+	private json(value: string, field: string): unknown {
+		try {
+			return JSON.parse(value);
+		} catch {
+			throw new RuntimeInputError(field, "must contain valid JSON");
+		}
+	}
+	private readDiagnostics(
+		input: unknown,
+		path: string,
+	): readonly PublicDiagnostic[] {
 		if (input === undefined || input === null) return [];
-		let diagnostics = input;
+		let diagnostics: unknown = input;
 		if (typeof diagnostics === "string") {
 			if (!diagnostics) return [];
-			try {
-				diagnostics = JSON.parse(diagnostics);
-			} catch {
-				throw new Error("Invalid attention stage diagnostics");
-			}
+			diagnostics = this.json(diagnostics, path);
 		}
 		if (!Array.isArray(diagnostics))
-			throw new Error("Invalid attention stage diagnostics");
-		return diagnostics.map((item: unknown) => {
+			throw new RuntimeInputError(path, "must be an array");
+		return diagnostics.map((item: unknown, index) => {
 			if (!item || typeof item !== "object" || Array.isArray(item))
-				throw new Error("Invalid attention stage diagnostic");
+				throw new RuntimeInputError(`${path}[${index}]`, "must be an object");
 			const { code, severity, field, fixApplied } = item as Record<
 				string,
 				unknown
@@ -81,10 +95,17 @@ export class AttentionStageInput {
 				typeof code !== "string" ||
 				!/^(event|publication|communication|referential|action)\.[a-z.-]{1,120}$/.test(
 					code,
-				) ||
-				(severity !== "error" && severity !== "warning" && severity !== "info")
+				)
 			)
-				throw new Error("Invalid attention stage diagnostic");
+				throw new RuntimeInputError(
+					`${path}[${index}].code`,
+					"must be a supported diagnostic code",
+				);
+			if (severity !== "error" && severity !== "warning" && severity !== "info")
+				throw new RuntimeInputError(
+					`${path}[${index}].severity`,
+					"must be error, warning or info",
+				);
 			return {
 				code,
 				severity,

@@ -17,7 +17,6 @@ export const FIELD_ORDER = [
 	"Restaurant / Bar",
 	"Post event",
 	"Automated thank-you emails",
-	"Host confirmation",
 	"Speaker confirmation",
 	"Event Status",
 	"Issue format",
@@ -160,10 +159,6 @@ export const GUIDANCE = new Map<
 	[
 		"publication.asset-url.invalid",
 		["Drive Link", "comment.guidance.publication.asset-url.invalid"],
-	],
-	[
-		"event.confirmation.host.missing",
-		["Host confirmation", "comment.guidance.event.confirmation.host.missing"],
 	],
 	[
 		"event.confirmation.speakers.missing",

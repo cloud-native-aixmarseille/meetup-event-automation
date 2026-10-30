@@ -18,10 +18,7 @@ describe("opinionated automation configuration", () => {
 				"issue-label": "meetup",
 				"issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
 				"occurrence-status-field": "event_status",
-				"required-confirmation-labels": [
-					"hoster:confirmed",
-					"speakers:confirmed",
-				],
+				"speakers-confirmation-label": "speakers:confirmed",
 			},
 			referentials: {
 				hosts: "referentials/hosting.csv",

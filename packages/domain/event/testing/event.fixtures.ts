@@ -11,7 +11,7 @@ export function createTestEvent(
 		},
 		issueState: "open",
 		issueTitle: "[Meetup] - 2026-09-30 - Cloud Native Evening",
-		labels: ["meetup", "hoster:confirmed", "speakers:confirmed"],
+		labels: ["meetup", "speakers:confirmed"],
 		eventTitle: "Cloud Native Evening",
 		date: "2026-09-30",
 		description: "An evening about cloud-native technology",
@@ -31,7 +31,7 @@ export function createTestEvent(
 		},
 		occurrenceStatus: "scheduled",
 		timeZone: "Europe/Paris",
-		confirmations: { host: true, speakers: true },
+		confirmations: { speakers: true },
 		logistics: {
 			aperitif: "planned",
 			postEventVenue: "not-planned",

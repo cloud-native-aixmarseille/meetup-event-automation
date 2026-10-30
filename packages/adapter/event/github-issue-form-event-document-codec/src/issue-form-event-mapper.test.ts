@@ -44,7 +44,7 @@ describe("issue form event mapping", () => {
 					description: "Platform history: lessons learned",
 				},
 			],
-			confirmations: { host: true, speakers: false },
+			confirmations: { speakers: false },
 			logistics: {
 				aperitif: "unspecified",
 				postEventVenue: "unspecified",

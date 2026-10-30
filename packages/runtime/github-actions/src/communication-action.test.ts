@@ -274,7 +274,7 @@ describe("communication action report facts", () => {
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
-			"Unexpected technical failure.",
+			"Unexpected technical failure. error=Error message=redacted",
 		);
 		expect(core.setOutput).toHaveBeenCalledWith(
 			"diagnostics",

@@ -54,7 +54,7 @@ describe("attention runtime composition", () => {
 		const event = createTestEvent({
 			publicationLinks,
 			date: "2099-06-08",
-			confirmations: { host: false, speakers: false },
+			confirmations: { speakers: false },
 		});
 		const document = {
 			identity: event.identity,
@@ -122,7 +122,9 @@ describe("attention runtime composition", () => {
 		]);
 		expect(f.comments).toHaveLength(1);
 		expect(f.comments[0]?.body).toContain('"status":"accepted"');
-		expect(f.comments[0]?.body).toContain("- [ ] Confirmez l'hôte");
+		expect(f.comments[0]?.body).not.toContain("hoster:confirmed");
+		expect(f.comments[0]?.body).not.toContain("Sélectionnez un hôte");
+		expect(f.comments[0]?.body).toContain("speakers:confirmed");
 		expect(f.comments[0]?.body).not.toContain("private-token");
 	});
 });

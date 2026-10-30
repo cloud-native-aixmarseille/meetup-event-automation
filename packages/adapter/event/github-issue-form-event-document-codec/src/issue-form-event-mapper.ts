@@ -56,7 +56,6 @@ export class IssueFormEventMapper {
 			occurrenceStatus,
 			timeZone: dto.timeZone ?? "Europe/Paris",
 			confirmations: {
-				host: dto.labels?.includes("hoster:confirmed") ?? false,
 				speakers: dto.labels?.includes("speakers:confirmed") ?? false,
 			},
 			logistics: {

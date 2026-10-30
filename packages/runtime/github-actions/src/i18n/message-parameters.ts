@@ -1,4 +1,5 @@
 export interface MessageParameters {
+	"report.error.details": { summary: string; details: string };
 	"report.social.recovery": { status: string };
 	"report.social.result": { target: string; status: string };
 	"report.feedback.link": { updated: string };

@@ -53,7 +53,6 @@ const ORGANIZER_CODES = new Set([
 	"event.agenda.normalized",
 	"event.agenda.speaker.invalid",
 	"event.agenda.speaker.missing",
-	"event.confirmation.host.missing",
 	"event.confirmation.speakers.missing",
 	"event.date.invalid",
 	"event.date.missing",

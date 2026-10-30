@@ -92,7 +92,7 @@ describe("public feedback agenda", () => {
 		// Arrange
 		const source = {
 			...event,
-			confirmations: { host: false, speakers: false },
+			confirmations: { speakers: false },
 		};
 		const diagnostics = [
 			{
