@@ -129,7 +129,6 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 				actual !== undefined &&
 				actual.fingerprint === media.fingerprint &&
 				actual.url === media.url &&
-				actual.sourceRevision === media.sourceRevision &&
 				actual.description === media.description
 			);
 		} catch (error) {
