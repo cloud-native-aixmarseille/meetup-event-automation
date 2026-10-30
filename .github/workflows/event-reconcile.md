@@ -22,7 +22,7 @@
 ## Overview
 
 Goal: Keep one event consistent throughout preparation, event day and follow-up.
-Behavior: Reconcile facts, draft reviews, assets, feedback and due email/PDF work,
+Behavior: Prepare and review event copy, reconcile assets, feedback and due email/PDF work,
 then update organizer tasks under the event lock. Domain policies and approvals
 gate effects; incomplete stages preserve unresolved tasks.
 
@@ -44,10 +44,14 @@ on:
 permissions: {}
 jobs:
   event-reconcile:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile.yml@ffe0c106ecd89fcb30aa9e11fecaaccd15419ed5 # 5.1.1
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile.yml@4f7ea7fba73f31503043176bbe12d8c7170150ab # 6.0.0
     permissions:
       contents: read
     secrets:
+      # API key for automatic event copy generation.
+      # This input is required.
+      ai-api-key: ""
+
       # OpenFeedback organization API key (`oforg_`) used to create and update events.
       # This input is required.
       openfeedback-api-key: ""
@@ -123,6 +127,14 @@ jobs:
       # Meetup issue number.
       # This input is required.
       issue-number: 0
+
+      # AI provider identifier for automatic event copy proposals (gemini).
+      # This input is required.
+      ai-provider: ""
+
+      # Structured-text model for automatic title and description proposals.
+      # This input is required.
+      ai-model: ""
 ```
 
 <!-- usage:end -->
@@ -147,6 +159,8 @@ jobs:
 | **`kutt-link-id`**                    | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
 | **`conference-hall-event`**           | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
 | **`issue-number`**                    | Meetup issue number.                                                                                                                         | **true**     | **number** | -           |
+| **`ai-provider`**                     | AI provider identifier for automatic event copy proposals (gemini).                                                                          | **true**     | **string** | -           |
+| **`ai-model`**                        | Structured-text model for automatic title and description proposals.                                                                         | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -155,6 +169,7 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                                             | **Required** |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| **`ai-api-key`**              | API key for automatic event copy generation.                                                                                                | **true**     |
 | **`openfeedback-api-key`**    | OpenFeedback organization API key (`oforg_`) used to create and update events.                                                              | **true**     |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`google-credentials`**      | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |

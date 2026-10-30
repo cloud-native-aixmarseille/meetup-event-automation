@@ -44,11 +44,15 @@ on:
 permissions: {}
 jobs:
   event-reconcile-active:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile-active.yml@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile-active.yml@4f7ea7fba73f31503043176bbe12d8c7170150ab # 6.0.0
     permissions:
       contents: read
       issues: read
     secrets:
+      # API key for automatic event copy generation.
+      # This input is required.
+      ai-api-key: ""
+
       # OpenFeedback organization API key (`oforg_`) used to create and update events.
       # This input is required.
       openfeedback-api-key: ""
@@ -120,6 +124,14 @@ jobs:
       # Conference Hall CFP slug for live linked profiles and selected proposals.
       # This input is required.
       conference-hall-event: ""
+
+      # AI provider identifier for automatic event copy proposals (gemini).
+      # This input is required.
+      ai-provider: ""
+
+      # Structured-text model for automatic title and description proposals.
+      # This input is required.
+      ai-model: ""
 ```
 
 <!-- usage:end -->
@@ -143,6 +155,8 @@ jobs:
 | **`kutt-base-url`**                   | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
 | **`kutt-link-id`**                    | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
 | **`conference-hall-event`**           | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
+| **`ai-provider`**                     | AI provider identifier for automatic event copy proposals (gemini).                                                                          | **true**     | **string** | -           |
+| **`ai-model`**                        | Structured-text model for automatic title and description proposals.                                                                         | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -151,6 +165,7 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                                             | **Required** |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| **`ai-api-key`**              | API key for automatic event copy generation.                                                                                                | **true**     |
 | **`openfeedback-api-key`**    | OpenFeedback organization API key (`oforg_`) used to create and update events.                                                              | **true**     |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`google-credentials`**      | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |
