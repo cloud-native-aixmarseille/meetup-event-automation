@@ -85,7 +85,7 @@ pillow==13.0.0
     # via
     #   hcaptcha-challenger
     #   matplotlib
-playwright==1.64.0
+playwright==1.64.1
     # via
     #   -r requirements.in
     #   hcaptcha-challenger
