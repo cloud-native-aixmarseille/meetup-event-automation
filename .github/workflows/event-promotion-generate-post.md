@@ -23,7 +23,8 @@
 
 Goal: Prepare a public announcement or reminder for one destination.
 Behavior: Generate a Slack or LinkedIn announcement, D-7 reminder or D0 reminder,
-then review and report it under the event lock. Organizers publish approved posts.
+then review and report it under the event lock. Promotion reconciliation publishes
+posts after their separate publication approvals.
 
 ### Permissions
 
@@ -43,7 +44,7 @@ on:
 permissions: {}
 jobs:
   event-promotion-generate-post:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@757dc68926b7cc4b76100b6c28fd156d744c2b7c # 5.1.2
     permissions:
       contents: read
     secrets:
