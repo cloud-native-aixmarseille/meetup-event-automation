@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Action: Recover social publication
+# GitHub Action: Recover a social post
 
 <div align="center">
-  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Recover social publication" />
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Recover a social post" />
 </div>
 
 ---
@@ -11,7 +11,7 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Marketplace](https://img.shields.io/badge/Marketplace-recover--social--publication-blue?logo=github-actions)](https://github.com/marketplace/actions/recover-social-publication)
+[![Marketplace](https://img.shields.io/badge/Marketplace-recover--a--social--post-blue?logo=github-actions)](https://github.com/marketplace/actions/recover-a-social-post)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
 [![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
@@ -30,7 +30,7 @@ Request a verified organizer decision about an uncertain recorded social deliver
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/recover-social@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/recover-social@4f7ea7fba73f31503043176bbe12d8c7170150ab # 6.0.0
   with:
     # GitHub token with issue read and write permissions.
     # This input is required.

@@ -1,9 +1,9 @@
 <!-- header:start -->
 
-# GitHub Action: Reconcile event publication
+# GitHub Action: Update event publication
 
 <div align="center">
-  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile event publication" />
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Update event publication" />
 </div>
 
 ---
@@ -11,7 +11,7 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--event--publication-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-event-publication)
+[![Marketplace](https://img.shields.io/badge/Marketplace-update--event--publication-blue?logo=github-actions)](https://github.com/marketplace/actions/update-event-publication)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
 [![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
@@ -30,7 +30,7 @@ Reconcile configured publication destinations and publish each event after its v
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-event@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-event@4f7ea7fba73f31503043176bbe12d8c7170150ab # 6.0.0
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
