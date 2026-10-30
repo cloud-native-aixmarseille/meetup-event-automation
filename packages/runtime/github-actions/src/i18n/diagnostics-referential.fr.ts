@@ -26,8 +26,6 @@ export const DIAGNOSTICS_REFERENTIAL_FR = {
 		"L'adresse e-mail du contact de l'hôte est invalide.",
 	"diagnostic.referential.contact.phone.invalid":
 		"Le téléphone du contact doit être une chaîne de caractères lorsqu'il est renseigné.",
-	"diagnostic.referential.contact.address.invalid":
-		"L'adresse du contact doit être une chaîne de caractères non vide.",
 	"diagnostic.referential.host.id.invalid":
 		"L'identifiant stable de l'hôte doit respecter le format opaque host-0001.",
 	"diagnostic.referential.contact.id.invalid":

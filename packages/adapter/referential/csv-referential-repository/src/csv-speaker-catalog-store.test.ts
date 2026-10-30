@@ -23,7 +23,7 @@ async function workspace() {
 	await mkdir(join(root, "referentials"));
 	await writeFile(
 		join(root, "referentials/hosting.csv"),
-		"host_id,name,contact_id,contact,mail,phone,address\n",
+		"host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city\n",
 	);
 	await writeFile(
 		join(root, "referentials/speakers.csv"),

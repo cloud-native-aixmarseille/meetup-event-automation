@@ -11,7 +11,6 @@ export interface HostContact {
 	readonly name: string;
 	readonly email: string;
 	readonly phone?: string;
-	readonly address: string;
 }
 
 export interface Host {
@@ -57,7 +56,6 @@ export interface RawHostRecord {
 	readonly contactName: unknown;
 	readonly email: unknown;
 	readonly phone?: unknown;
-	readonly address: unknown;
 	readonly venueAddress?: unknown;
 	readonly venuePostalCode?: unknown;
 	readonly venueCity?: unknown;

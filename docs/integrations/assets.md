@@ -94,7 +94,7 @@ the file pending before copying or writing content.
 
 Public venue fields come from `venue_address`, `venue_postal_code`, and
 `venue_city` in the [host referential](../reference/referentials.md#hosts).
-Private contact addresses never supply public template values.
+Contact names, emails, and phone numbers never supply public template values.
 
 Next-event lookup runs only for templates using `next_event.*`. It selects the
 earliest strictly later open, scheduled event under the configured event label,

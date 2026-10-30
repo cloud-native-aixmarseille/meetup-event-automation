@@ -65,7 +65,7 @@ an explicit empty `destinations` array supports manual publication.
 These values are synthetic. Times use the issue date and event timezone
 (`Europe/Paris`). End time must follow start time on the same day. Ambiguous and
 nonexistent local times are rejected. Venue keys are stable host IDs; configure
-every intended host with public information, never private contact addresses.
+every intended host with its public venue name and city.
 
 Meetup requires the venue's `name` and `city`; its search must find exactly one
 matching venue. It does not create venues. The required workflow input

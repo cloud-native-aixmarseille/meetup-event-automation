@@ -37,7 +37,7 @@ async function fixture(selected = true) {
 	roots.push(workspaceRoot);
 	await writeFile(
 		join(workspaceRoot, "hosts.csv"),
-		"host_id,name,contact_id,contact,mail,phone,address\nhost-0001,Example Venue,contact-0001,Private Contact,host@example.test,,Private Address\n",
+		"host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city\nhost-0001,Example Venue,contact-0001,Private Contact,host@example.test,,1 Example Street,13001,Marseille\n",
 	);
 	const csv =
 		"speaker_id,display_name,firstname,lastname,company,mail,phone,picture_url,source_provider,source_event,source_speaker_id\nspeaker-0001,Old Name,Old,Name,Old Company,old@example.test,local phone,https://example.test/old.png,conference-hall,example-cfp,source-one\n";
@@ -219,7 +219,7 @@ describe("Conference Hall source precedence in runtime composition", () => {
 		expect(request).toHaveBeenCalledTimes(4);
 		expect(preservedCsv).toBe(current.csv);
 		expect(updatedDocument.body).not.toMatch(
-			/current@example|renamed@example|local phone|Private Address/,
+			/current@example|renamed@example|local phone|Private Contact/,
 		);
 	});
 

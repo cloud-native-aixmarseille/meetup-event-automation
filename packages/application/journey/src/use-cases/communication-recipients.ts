@@ -51,7 +51,10 @@ export class CommunicationRecipients {
 
 		const eventHost = resolution.host;
 		const primaryContact = eventHost.contacts[0];
-		const hostingAddress = primaryContact?.address ?? "";
+		const venue = eventHost.publicVenue;
+		const hostingAddress = venue
+			? `${venue.address}, ${venue.postalCode} ${venue.city}`
+			: "";
 		const recipients: MailRecipient[] = primaryContact
 			? [
 					{

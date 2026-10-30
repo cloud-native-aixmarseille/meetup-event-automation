@@ -160,10 +160,10 @@ An evening about reliable platforms.
 		await writeFile(
 			join(workspaceRoot, "venues.csv"),
 			[
-				"host_id,name,contact_id,contact,mail,phone,address",
-				"host-0090,Another Venue,contact-0090,Private Contact,private@example.test,,Private address",
-				"host-0042,Example Venue,contact-0042,Private Contact,private@example.test,,Private address",
-				"host-0042,Example Venue,contact-0043,Other Contact,other@example.test,,Private address",
+				"host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city",
+				"host-0090,Another Venue,contact-0090,Private Contact,private@example.test,,1 Example Street,13001,Marseille",
+				"host-0042,Example Venue,contact-0042,Private Contact,private@example.test,,1 Example Street,13001,Marseille",
+				"host-0042,Example Venue,contact-0043,Other Contact,other@example.test,,1 Example Street,13001,Marseille",
 			].join("\n"),
 		);
 		await writeFile(
@@ -281,7 +281,7 @@ An evening about reliable platforms.
 			]);
 			expect(document.body).not.toContain("Private Contact");
 			expect(document.body).not.toContain("private@example.test");
-			expect(document.body).not.toContain("Private address");
+			expect(document.body).not.toContain("Private Contact");
 		},
 	);
 

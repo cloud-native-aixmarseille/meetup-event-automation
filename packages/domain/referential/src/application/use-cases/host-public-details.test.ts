@@ -8,7 +8,6 @@ const contact = {
 	contactId: "contact-0001",
 	contactName: "Private contact",
 	email: "private@example.test",
-	address: "Private address",
 };
 
 describe("host public details", () => {

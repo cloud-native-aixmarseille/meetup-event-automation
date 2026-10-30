@@ -26,8 +26,6 @@ export const DIAGNOSTICS_REFERENTIAL_EN = {
 		"Host contact email address is invalid.",
 	"diagnostic.referential.contact.phone.invalid":
 		"Host contact phone must be a string when provided.",
-	"diagnostic.referential.contact.address.invalid":
-		"Host contact address must be a non-empty string.",
 	"diagnostic.referential.host.id.invalid":
 		"Host stable identifier must use the opaque host-0001 format.",
 	"diagnostic.referential.contact.id.invalid":

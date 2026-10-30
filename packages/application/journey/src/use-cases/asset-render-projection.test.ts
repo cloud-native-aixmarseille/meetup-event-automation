@@ -81,7 +81,7 @@ describe("asset public projection", () => {
 				: undefined,
 		);
 		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].email);
-		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].address);
+		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].contactName);
 	});
 
 	it.each(["stale", "invalid-agenda", "invalid-catalog"])(
@@ -149,7 +149,7 @@ describe("asset public projection", () => {
 		},
 	);
 
-	it("projects explicit public venues and source abstracts without contact addresses", async () => {
+	it("projects explicit public venues and source abstracts without private contact details", async () => {
 		// Arrange
 		const presenter: AssetRenderPresenter = {
 			format: vi.fn(() => ({ text: {}, pictures: {} })),
@@ -197,7 +197,7 @@ describe("asset public projection", () => {
 			abstract: "Public abstract",
 		});
 		expect(payload.agenda[0].title).toBe("Public title");
-		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].address);
+		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].contactName);
 	});
 
 	it("exposes only public fields and assigns pictures by current agenda position", async () => {
@@ -255,7 +255,7 @@ describe("asset public projection", () => {
 		for (const speaker of source.speakers)
 			expect(JSON.stringify(payload)).not.toContain(speaker.email);
 		for (const host of source.hosts)
-			expect(JSON.stringify(payload)).not.toContain(String(host.address));
+			expect(JSON.stringify(payload)).not.toContain(String(host.contactName));
 	});
 
 	it("clears portraits when the agenda becomes empty", async () => {

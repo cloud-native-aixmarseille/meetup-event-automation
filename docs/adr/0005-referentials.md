@@ -30,6 +30,13 @@ complete catalog candidates without leaking provider payloads into business rule
 
 ### Identity and field ownership
 
+The 2026-10-30 host-address decision replaces the former required private contact
+`address` with `venue_address`, `venue_postal_code`, and `venue_city` as the sole
+event location. The old field duplicated venue data and prevented complete public
+projections when only it was filled. Host contacts retain names, emails, and phone
+numbers; speaker emails use the structured public venue. Consumers migrate their
+reviewed addresses explicitly while preserving stable IDs and contact order.
+
 | Data                                                 | Authority and preservation rule                                                                  |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Local `speaker_id`                                   | Allocate once; retain across refreshes and retries; never reuse removed IDs.                     |

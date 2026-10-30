@@ -116,7 +116,7 @@ describe("next public meetup for assets", () => {
 		});
 		expect(f.repository.listPage).toHaveBeenCalledTimes(2);
 		expect(f.repository.applyPatch).not.toHaveBeenCalled();
-		expect(JSON.stringify(actual)).not.toContain("Private contact address");
+		expect(JSON.stringify(actual)).not.toContain("private@example.test");
 	});
 
 	it.each<Partial<MeetupEvent>>([

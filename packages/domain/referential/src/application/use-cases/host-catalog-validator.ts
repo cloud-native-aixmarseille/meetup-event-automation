@@ -141,7 +141,6 @@ export class HostCatalogValidator {
 			"Host contact phone must be a string when provided.",
 			diagnostics,
 		);
-		const address = this.address(record, index, diagnostics);
 
 		if (
 			!publicDetails ||
@@ -150,7 +149,6 @@ export class HostCatalogValidator {
 			!contactId ||
 			!contactName ||
 			!email ||
-			address === undefined ||
 			phone === null
 		) {
 			return undefined;
@@ -165,23 +163,8 @@ export class HostCatalogValidator {
 				name: contactName,
 				email,
 				...(phone ? { phone } : {}),
-				address,
 			},
 		};
-	}
-
-	private address(
-		record: RawHostRecord,
-		index: number,
-		diagnostics: ReferentialDiagnostic[],
-	) {
-		return this.collaborators.referentialRecordFields.requiredText(
-			record.address,
-			"referential.contact.address.invalid",
-			`hosts[${index}].address`,
-			"Host contact address must be a non-empty string.",
-			diagnostics,
-		);
 	}
 
 	private hostId(

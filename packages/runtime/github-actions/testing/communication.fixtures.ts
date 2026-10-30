@@ -19,9 +19,9 @@ export async function createWorkspace(): Promise<string> {
 	await mkdir(join(root, "referentials"), { recursive: true });
 	await writeFile(
 		join(root, "referentials", "hosting.csv"),
-		`host_id,name,contact_id,contact,mail,phone,address
-host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,"1 Private Street"
-host-0001,Public Venue,contact-0002,Opted Out Contact,host-opted-out@example.invalid,,"1 Private Street"
+		`host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city
+host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,"1 Example Street",13001,Marseille
+host-0001,Public Venue,contact-0002,Opted Out Contact,host-opted-out@example.invalid,,"1 Example Street",13001,Marseille
 `,
 		"utf8",
 	);
