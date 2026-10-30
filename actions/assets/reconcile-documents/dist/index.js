@@ -98443,12 +98443,13 @@ var ApprovalDecisionParser = class {
       decided: record.decision !== void 0
     }) !== "pending")
       return { status: "pending" };
-    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+    const normalized = body.replace(/\r\n/g, "\n");
     if (record.kind === "content-review")
       return this.content(record, normalized);
     for (const comment of this.comments) {
       for (const status of ["approved", "rejected"]) {
-        if (normalized === comment.issue(record, { status })) return { status };
+        if (normalized.replace(/- \[X\]/g, "- [x]") === comment.issue(record, { status }))
+          return { status };
       }
     }
     return { status: "pending" };
@@ -98467,7 +98468,7 @@ var ApprovalDecisionParser = class {
       { status: "iteration-requested" }
     ])
       if (this.comments.some(
-        (comment) => comment.issue(record, decision) === body
+        (comment) => comment.issue(record, decision) === body.replace(/- \[X\]/g, "- [x]")
       ))
         return decision;
     return { status: "pending" };
@@ -98475,7 +98476,10 @@ var ApprovalDecisionParser = class {
   text(record, body) {
     const edited = this.textPreview.read(body);
     if (!edited) return { status: "pending" };
-    const original = this.textPreview.replace(body, record.content.draft.text);
+    const original = this.textPreview.replace(
+      body.replace(/- \[X\]/g, "- [x]"),
+      record.content.draft.text
+    );
     for (const status of [
       "approved",
       "pending",
@@ -98590,9 +98594,9 @@ var EN_MESSAGES5 = {
   "approval.content.planned": "Scheduled for: {time}.",
   "approval.content.slot": "Image {index}: {status, select, complete {ready} reserved {result unknown; check before retrying} failed {generation failed} other {not generated}}.",
   "approval.content.title": "### {target, select, title {Meetup title} description {Meetup description} cover {Meetup covers} other {Text for {target}}}",
-  "approval.content.request": "{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] Reject\n- [{iterateMark}] Generate another proposal",
-  "approval.content.text-choice": "- [{mark}] Approve",
-  "approval.content.image-choice": "- [{mark}] Choose image {index, number}",
+  "approval.content.request": "{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] \u274C Reject\n- [{iterateMark}] \u{1F504} Generate another proposal",
+  "approval.content.text-choice": "- [{mark}] \u2705 Approve",
+  "approval.content.image-choice": "- [{mark}] \u2705 Choose image {index, number}",
   "approval.content.final": "{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} iteration_requested {\u{1F504} New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
   "approval.meetup.details": "### Publish on Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
   "approval.meetup.request": "Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
@@ -98629,9 +98633,9 @@ var FR_MESSAGES5 = {
   "approval.content.planned": "Publication pr\xE9vue : {time}.",
   "approval.content.slot": "Visuel {index} : {status, select, complete {pr\xEAt} reserved {r\xE9sultat inconnu ; v\xE9rifiez avant de relancer} failed {g\xE9n\xE9ration en \xE9chec} other {non g\xE9n\xE9r\xE9}}.",
   "approval.content.title": "### {target, select, title {Titre du meetup} description {Description du meetup} cover {Visuels du meetup} other {Texte pour {target}}}",
-  "approval.content.request": "{target, select, cover {Choisissez un visuel.} other {Modifiez le texte de ce commentaire si besoin, puis cochez un choix.}} La publication se valide s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] Refuser\n- [{iterateMark}] G\xE9n\xE9rer une autre proposition",
-  "approval.content.text-choice": "- [{mark}] Approuver",
-  "approval.content.image-choice": "- [{mark}] Choisir le visuel {index, number}",
+  "approval.content.request": "{target, select, cover {Choisissez un visuel.} other {Modifiez le texte de ce commentaire si besoin, puis cochez un choix.}} La publication se valide s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] \u274C Refuser\n- [{iterateMark}] \u{1F504} G\xE9n\xE9rer une autre proposition",
+  "approval.content.text-choice": "- [{mark}] \u2705 Approuver",
+  "approval.content.image-choice": "- [{mark}] \u2705 Choisir le visuel {index, number}",
   "approval.content.final": "{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.{image, plural, =0 {} other {\n\nVisuel choisi : #}}",
   "approval.meetup.details": "### Publier sur Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon Meetup]({url}).",
   "approval.meetup.request": "Cochez un choix. L'automatisation publiera le brouillon approuv\xE9.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
@@ -99462,11 +99466,13 @@ var ContentTextPreview = class {
   start = "<!-- meetup-content:text -->";
   end = "<!-- /meetup-content:text -->";
   render(text) {
-    const escaped = text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;").replaceAll("@", "<span>@</span>").replaceAll("\n", "  \n");
+    const fence = "`".repeat(
+      Math.max(3, ...(text.match(/`+/g) ?? []).map((run) => run.length + 1))
+    );
     return `${this.start}
-
-${escaped}
-
+${fence}
+${text}
+${fence}
 ${this.end}`;
   }
   read(body) {
@@ -99474,8 +99480,13 @@ ${this.end}`;
     const end = body.indexOf(this.end);
     if (start < 0 || end < start || body.indexOf(this.start, start + 1) !== -1 || body.indexOf(this.end, end + 1) !== -1)
       return void 0;
-    const text = body.slice(start + this.start.length, end).trim().replace(/ {2}\n/g, "\n").replaceAll("<span>@</span>", "@").replaceAll("&#91;", "[").replaceAll("&#93;", "]").replaceAll("&gt;", ">").replaceAll("&lt;", "<").replaceAll("&amp;", "&");
-    return { text, start, end: end + this.end.length };
+    const block = body.slice(start + this.start.length, end).trim();
+    const match = /^(`{3,})\n([\s\S]*)\n\1$/.exec(block);
+    if (!match || new RegExp(`^ {0,3}\`{${match[1].length},}[ \\t]*$`, "m").test(
+      match[2]
+    ))
+      return void 0;
+    return { text: match[2], start, end: end + this.end.length };
   }
   replace(body, text) {
     const current = this.read(body);

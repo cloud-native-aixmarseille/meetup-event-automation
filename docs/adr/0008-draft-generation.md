@@ -264,6 +264,13 @@ authorizing changed content.
 
 ## Decision history
 
+On 2026-10-30, text previews use editable fenced code blocks between the existing
+preview markers. This supersedes the escaped paragraph rendering described
+above. The preview codec preserves literal text and rejects broken fences;
+checkbox normalization applies only to decision matching, never to the saved
+text. Content controls use consistent approve, reject and regenerate emoji in
+both locales. Generation, text validation and approval authority are unchanged.
+
 On 2026-10-30, immutable cover verification stopped requiring Drive's file
 version to equal its recorded value. Drive increments this metadata counter
 after upload even when the bytes, description, location and permissions remain

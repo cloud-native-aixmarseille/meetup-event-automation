@@ -250,11 +250,12 @@ the AI provider is unavailable.
 
 ## Decide and apply
 
-Edit the proposed text directly in the bot's comment, then check **Approve**.
+Edit the proposed text inside the code block in the bot's comment, then check
+**✅ Approve**. Code blocks preserve paragraphs and display Markdown literally.
 You can replace the whole text with your own and approve it in the same edit.
-Keep the surrounding heading, hidden markers, and decision checkboxes intact.
+Keep the code fences, surrounding heading, hidden markers, and decision checkboxes intact.
 Saving an edit without approval preserves it for the next review. You can also
-reject the proposal or request another one. For covers, select one image.
+select **❌ Reject** or **🔄 Generate another proposal**. For covers, select one image.
 
 Approval records the exact edited text and its authorized editor. The original
 generated draft remains in history. Invalid text stays editable: titles must fit

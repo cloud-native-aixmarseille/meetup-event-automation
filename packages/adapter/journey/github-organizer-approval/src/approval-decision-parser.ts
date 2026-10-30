@@ -20,12 +20,16 @@ export class ApprovalDecisionParser {
 		)
 			return { status: "pending" };
 
-		const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+		const normalized = body.replace(/\r\n/g, "\n");
 		if (record.kind === "content-review")
 			return this.content(record, normalized);
 		for (const comment of this.comments) {
 			for (const status of ["approved", "rejected"] as const) {
-				if (normalized === comment.issue(record, { status })) return { status };
+				if (
+					normalized.replace(/- \[X\]/g, "- [x]") ===
+					comment.issue(record, { status })
+				)
+					return { status };
 			}
 		}
 		return { status: "pending" };
@@ -48,7 +52,9 @@ export class ApprovalDecisionParser {
 		])
 			if (
 				this.comments.some(
-					(comment) => comment.issue(record, decision) === body,
+					(comment) =>
+						comment.issue(record, decision) ===
+						body.replace(/- \[X\]/g, "- [x]"),
 				)
 			)
 				return decision;
@@ -60,7 +66,10 @@ export class ApprovalDecisionParser {
 	): ApprovalDecision {
 		const edited = this.textPreview.read(body);
 		if (!edited) return { status: "pending" };
-		const original = this.textPreview.replace(body, record.content.draft.text);
+		const original = this.textPreview.replace(
+			body.replace(/- \[X\]/g, "- [x]"),
+			record.content.draft.text,
+		);
 		for (const status of [
 			"approved",
 			"pending",

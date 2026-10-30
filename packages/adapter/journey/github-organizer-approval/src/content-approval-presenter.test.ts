@@ -7,7 +7,7 @@ import { GithubOrganizerApprovalComposition } from "./dependency-composition.js"
 
 describe("content review presentation", () => {
 	it.each(["en", "fr"])(
-		"shows exact escaped text with independent controls in %s",
+		"shows literal fenced text with independent controls in %s",
 		(locale) => {
 			// Arrange
 			const record = createStoredApproval({
@@ -35,8 +35,12 @@ describe("content review presentation", () => {
 			expect(body).not.toMatch(
 				/Langue :|Language:|Auteur :|Author:|test-provider|test-model/,
 			);
-			expect(body.match(/- \[x\]/g)).toHaveLength(1);
-			expect(body.match(/- \[ \]/g)).toHaveLength(2);
+			const controls = body.slice(new ContentTextPreview().read(body)?.end);
+			expect(controls.match(/- \[x\]/g)).toHaveLength(1);
+			expect(controls.match(/- \[ \]/g)).toHaveLength(2);
+			expect(controls).toContain("- [ ] ✅");
+			expect(controls).toContain("- [ ] ❌");
+			expect(controls).toContain("- [x] 🔄");
 		},
 	);
 	it("binds cover approval to one image rather than the whole batch", () => {
@@ -53,8 +57,8 @@ describe("content review presentation", () => {
 			selectedImage: "image-2",
 		});
 		// Assert
-		expect(body).toContain("- [x] Choose image 2");
-		expect(body).toContain("- [ ] Choose image 1");
+		expect(body).toContain("- [x] ✅ Choose image 2");
+		expect(body).toContain("- [ ] ✅ Choose image 1");
 		expect(body).toContain("https://images.example.org/cover-2.png");
 		expect(body).not.toContain("revision-2");
 		expect(body).not.toContain("1792×1024");

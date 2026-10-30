@@ -286,31 +286,38 @@ describe("content decision parsing", () => {
 		// Assert
 		expect(result).toEqual({ status: "iteration-requested" });
 	});
-	it("accepts simultaneous text replacement and approval", () => {
-		// Arrange
-		const composition = new GithubOrganizerApprovalComposition();
-		const record = createStoredApproval(contentRequest);
-		const presenter = composition.approvalPresenter(
-			composition.approvalMessages("en"),
-		);
-		const parser = new ApprovalDecisionParser(
-			new ContentTextPreview(),
-			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
-			[presenter],
-		);
-		const body =
-			new ContentTextPreview().replace(
-				presenter.issue(record, { status: "approved" }),
-				"Changed content",
-			) ?? "";
-		// Act
-		const result = parser.parse(record, body);
-		// Assert
-		expect(result).toEqual({
-			status: "approved",
-			editedText: "Changed content",
-		});
-	});
+	it.each(["Changed content", "First paragraph\n\nLiteral - [X] text & &#91;"])(
+		"accepts exact text replacement and approval: %s",
+		(text) => {
+			// Arrange
+			const composition = new GithubOrganizerApprovalComposition();
+			const record = createStoredApproval(contentRequest);
+			const presenter = composition.approvalPresenter(
+				composition.approvalMessages("en"),
+			);
+			const parser = new ApprovalDecisionParser(
+				new ContentTextPreview(),
+				new ApprovalRequestPolicy(
+					new DraftProposalComposition().fingerprints(),
+				),
+				[presenter],
+			);
+			const body =
+				new ContentTextPreview().replace(
+					presenter
+						.issue(record, { status: "approved" })
+						.replace("- [x] ✅ Approve", "- [X] ✅ Approve"),
+					text,
+				) ?? "";
+			// Act
+			const result = parser.parse(record, body);
+			// Assert
+			expect(result).toEqual({
+				status: "approved",
+				editedText: text,
+			});
+		},
+	);
 	it("rejects multiple cover choices", () => {
 		// Arrange
 		const composition = new GithubOrganizerApprovalComposition();
@@ -325,7 +332,7 @@ describe("content decision parsing", () => {
 		);
 		const body = presenter
 			.issue(record, { status: "approved", selectedImage: "image-2" })
-			.replace("- [ ] Choose image 1", "- [x] Choose image 1");
+			.replace("- [ ] ✅ Choose image 1", "- [x] ✅ Choose image 1");
 		// Act
 		const result = parser.parse(record, body);
 		// Assert
@@ -359,8 +366,8 @@ describe("edited proposal integrity", () => {
 			) ?? "";
 		const bodies: Record<string, string> = {
 			metadata: edited.replace(record.revision, "b".repeat(64)),
-			"multiple choices": edited.replace("- [ ] Reject", "- [x] Reject"),
-			"changed controls": edited.replace("- [x] Approve", "- [x] Publish"),
+			"multiple choices": edited.replace("- [ ] ❌ Reject", "- [x] ❌ Reject"),
+			"changed controls": edited.replace("- [x] ✅ Approve", "- [x] Publish"),
 			"changed heading": edited.replace(
 				"### Meetup title",
 				"### Different target",

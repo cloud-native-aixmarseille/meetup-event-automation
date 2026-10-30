@@ -24,9 +24,9 @@ export const EN_MESSAGES = {
 	"approval.content.title":
 		"### {target, select, title {Meetup title} description {Meetup description} cover {Meetup covers} other {Text for {target}}}",
 	"approval.content.request":
-		"{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] Reject\n- [{iterateMark}] Generate another proposal",
-	"approval.content.text-choice": "- [{mark}] Approve",
-	"approval.content.image-choice": "- [{mark}] Choose image {index, number}",
+		"{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] ❌ Reject\n- [{iterateMark}] 🔄 Generate another proposal",
+	"approval.content.text-choice": "- [{mark}] ✅ Approve",
+	"approval.content.image-choice": "- [{mark}] ✅ Choose image {index, number}",
 	"approval.content.final":
 		"{status, select, approved {✅ Approved} rejected {❌ Rejected} iteration_requested {🔄 New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
 	"approval.meetup.details":
