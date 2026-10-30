@@ -87,6 +87,7 @@ describe("release workflow", () => {
 			owner: workflowExpression("github.repository_owner"),
 			repositories: workflowExpression("github.event.repository.name"),
 			"permission-contents": "write",
+			"permission-workflows": "write",
 			"permission-pull-requests": "read",
 		});
 	});
