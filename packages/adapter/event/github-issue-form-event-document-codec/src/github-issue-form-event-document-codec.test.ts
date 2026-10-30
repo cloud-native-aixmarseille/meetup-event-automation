@@ -82,7 +82,7 @@ function document(override: Partial<EventDocument> = {}): EventDocument {
 		},
 		issueState: "open",
 		issueTitle: "Legacy issue title",
-		labels: ["meetup", "hoster:confirmed", "speakers:confirmed"],
+		labels: ["meetup", "speakers:confirmed"],
 		body: LEGACY_BODY,
 		...override,
 	};
@@ -97,13 +97,7 @@ function normalizedEvent(override: Partial<MeetupEvent> = {}): MeetupEvent {
 		},
 		issueState: "open",
 		issueTitle: "[Meetup] - 2026-11-05 - Platform Engineering Night",
-		labels: [
-			"meetup",
-			"hoster:confirmed",
-			"speakers:confirmed",
-			"event:held",
-			"custom",
-		],
+		labels: ["meetup", "speakers:confirmed", "event:held", "custom"],
 		eventTitle: "Platform Engineering Night",
 		date: "2026-11-05",
 		description: "An event description.",
@@ -124,7 +118,7 @@ function normalizedEvent(override: Partial<MeetupEvent> = {}): MeetupEvent {
 		},
 		occurrenceStatus: "held",
 		timeZone: "Europe/Paris",
-		confirmations: { host: true, speakers: true },
+		confirmations: { speakers: true },
 		logistics: {
 			aperitif: "planned",
 			postEventVenue: "not-planned",
@@ -185,7 +179,7 @@ describe("GitHubIssueFormEventDocumentCodec", () => {
 				},
 			],
 			occurrenceStatus: "held",
-			confirmations: { host: true, speakers: true },
+			confirmations: { speakers: true },
 			logistics: {
 				aperitif: "planned",
 				postEventVenue: "not-planned",
@@ -439,7 +433,6 @@ finished
 		);
 		expect(patch.labels).toEqual([
 			"meetup",
-			"hoster:confirmed",
 			"speakers:confirmed",
 			"event:held",
 			"custom",
@@ -832,15 +825,13 @@ finished
 			},
 			{
 				timeZone: "UTC",
-				hostConfirmationLabel: "host:approved",
 				speakersConfirmationLabel: "speakers:approved",
 			},
-		).decode(document({ labels: ["host:approved", "speakers:approved"] }));
+		).decode(document({ labels: ["speakers:approved"] }));
 
 		// Assert
 		expect(result.event.timeZone).toBe("UTC");
 		expect(result.event.confirmations).toEqual({
-			host: true,
 			speakers: true,
 		});
 	});

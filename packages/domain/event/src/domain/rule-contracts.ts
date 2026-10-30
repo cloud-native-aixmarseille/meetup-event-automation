@@ -21,8 +21,6 @@ export type EventRuleEngineResult = Readonly<{
 
 export type ManagedLabelConfiguration = Readonly<{
 	meetup: string;
-	hostNeeded: string;
-	hostConfirmed: string;
 	speakersNeeded: string;
 	speakersConfirmed: string;
 	occurrencePostponed: string;
@@ -33,8 +31,6 @@ export type ManagedLabelConfiguration = Readonly<{
 export const DEFAULT_MANAGED_LABEL_CONFIGURATION: ManagedLabelConfiguration =
 	Object.freeze({
 		meetup: "meetup",
-		hostNeeded: "hoster:needed",
-		hostConfirmed: "hoster:confirmed",
 		speakersNeeded: "speakers:needed",
 		speakersConfirmed: "speakers:confirmed",
 		occurrencePostponed: "event:postponed",

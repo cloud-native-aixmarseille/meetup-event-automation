@@ -13,7 +13,7 @@ describe("managed host labels", () => {
 		const event = createTestEvent({
 			host,
 			labels: ["meetup", "hoster:needed", "custom"],
-			confirmations: { host: false, speakers: false },
+			confirmations: { speakers: false },
 		});
 		const rule = new ManagedLabelsRule(
 			{
@@ -30,15 +30,15 @@ describe("managed host labels", () => {
 
 		// Assert
 		expect(result.labels).toEqual(["custom", "meetup", "speakers:needed"]);
-		expect(result.confirmations.host).toBe(false);
 	});
 	it.each([undefined, { displayName: "   " }])(
-		"requests a host when the selection is empty: %j",
+		"removes obsolete host labels regardless of selection: %j",
 		(host) => {
 			// Arrange
 			const event = createTestEvent({
 				host,
-				confirmations: { host: false, speakers: true },
+				labels: ["meetup", "hoster:needed", "hoster:confirmed", "custom"],
+				confirmations: { speakers: true },
 			});
 			const rule = new ManagedLabelsRule(
 				{
@@ -54,7 +54,8 @@ describe("managed host labels", () => {
 				.applyEventPatch(event, rule.evaluate(event).patch);
 
 			// Assert
-			expect(result.labels).toContain("hoster:needed");
+			expect(result.labels).toEqual(["custom", "meetup", "speakers:confirmed"]);
+			expect(result.labels).not.toContain("hoster:needed");
 			expect(result.labels).not.toContain("hoster:confirmed");
 		},
 	);

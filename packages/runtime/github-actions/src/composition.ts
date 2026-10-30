@@ -148,11 +148,8 @@ export class EventComposition {
 						.eventRuleFactory()
 						.createDefaultEventRules({
 							meetup: config.event["issue-label"],
-							hostNeeded: "hoster:needed",
-							hostConfirmed: config.event["required-confirmation-labels"][0],
 							speakersNeeded: "speakers:needed",
-							speakersConfirmed:
-								config.event["required-confirmation-labels"][1],
+							speakersConfirmed: config.event["speakers-confirmation-label"],
 							occurrencePostponed: "event:postponed",
 							occurrenceHeld: "event:held",
 							occurrenceCancelled: "event:cancelled",
@@ -251,10 +248,8 @@ export class EventComposition {
 						repositoryRef:
 							input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
 						timeZone: config.timezone,
-						hostConfirmationLabel:
-							config.event["required-confirmation-labels"][0],
 						speakersConfirmationLabel:
-							config.event["required-confirmation-labels"][1],
+							config.event["speakers-confirmation-label"],
 					},
 				);
 			});

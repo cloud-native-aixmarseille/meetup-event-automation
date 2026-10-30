@@ -25,7 +25,11 @@ export class ManagedLabelsRule implements EventRule {
 	) {}
 
 	evaluate(event: MeetupEvent): EventRuleResult {
-		const managed = Object.values(this.configuration);
+		const managed = [
+			...Object.values(this.configuration),
+			"hoster:needed",
+			"hoster:confirmed",
+		];
 		const unmanaged = event.labels.filter((label) => !managed.includes(label));
 		const occurrenceLabels =
 			event.occurrenceStatus === "postponed"
@@ -38,11 +42,6 @@ export class ManagedLabelsRule implements EventRule {
 		const expected = [
 			...unmanaged,
 			this.configuration.meetup,
-			...(event.confirmations.host
-				? [this.configuration.hostConfirmed]
-				: event.host?.displayName.trim()
-					? []
-					: [this.configuration.hostNeeded]),
 			event.confirmations.speakers
 				? this.configuration.speakersConfirmed
 				: this.configuration.speakersNeeded,

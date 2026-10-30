@@ -63,7 +63,7 @@ export class AttentionEventFacts {
 			requiredDataMissing: diagnostics.some(
 				(item) => item.category === "invalid" || item.category === "incomplete",
 			),
-			hostConfirmed: event.confirmations.host,
+			hostConfirmed: Boolean(event.host?.displayName.trim()),
 			speakersConfirmed: event.confirmations.speakers,
 			publicationPending: [
 				...tasks
@@ -72,7 +72,6 @@ export class AttentionEventFacts {
 							task.status === "pending" && task.kind !== "import-attendance",
 					)
 					.map((task) => task.kind),
-				...this.announcements(event.operationalChecklists.communication),
 			],
 			followUpPending: this.followUp(event),
 		};
@@ -92,24 +91,5 @@ export class AttentionEventFacts {
 						);
 			return completed ? [] : [FOLLOW_UP_TASKS[index]];
 		});
-	}
-	private announcements(
-		items: readonly { name: string; completed: boolean }[],
-	): string[] {
-		const tasks = [
-			["Slack - AixMarseille.Tech", "public-slack-local"],
-			["Slack - OpenBaR", "public-slack-community"],
-			["LinkedIn", "public-social"],
-			["Social networks", "public-social"],
-		] as const;
-		return [
-			...new Set(
-				tasks
-					.filter(([name]) =>
-						items.some((item) => item.name === name && !item.completed),
-					)
-					.map(([, resource]) => resource),
-			),
-		];
 	}
 }

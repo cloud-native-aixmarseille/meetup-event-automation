@@ -33476,6 +33476,14 @@ var Container = class {
   }
 };
 
+// packages/runtime/github-actions/src/runtime-input-error.ts
+var RuntimeInputError = class extends Error {
+  constructor(field, requirement) {
+    super(`${field} ${requirement}`);
+    this.name = "RuntimeInputError";
+  }
+};
+
 // packages/runtime/github-actions/src/action-failure-presenter.ts
 var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
   "GoogleDriveAssetRepositoryError",
@@ -33488,13 +33496,74 @@ var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
   "GitHubEventCommentRepositoryScopeError",
   "GitHubEventCommentRepositoryResponseError"
 ]);
+var STANDARD_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "Error",
+  "TypeError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "URIError",
+  "EvalError",
+  "AggregateError",
+  "AbortError",
+  "TimeoutError"
+]);
+var NETWORK_ERROR_CODES = /* @__PURE__ */ new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "EPIPE",
+  "ENETUNREACH",
+  "EHOSTUNREACH",
+  "ERR_NETWORK",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT",
+  "UND_ERR_SOCKET",
+  "CERT_HAS_EXPIRED",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+]);
 var ActionFailurePresenter = class {
   /** Never expose provider responses, input values, or contact data in failures. */
   publicErrorMessage(error2) {
-    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-      return `${error2.name}: ${error2.message}`;
+    const details = [this.reason(error2)];
+    const seen = /* @__PURE__ */ new Set();
+    let current = error2;
+    while (current instanceof Error && !seen.has(current) && seen.size < 3) {
+      seen.add(current);
+      if (seen.size > 1) details.push(`cause=${this.reason(current)}`);
+      details.push(...this.context(current));
+      current = current.cause;
     }
-    return "Unexpected technical failure.";
+    return details.join("; ");
+  }
+  reason(error2) {
+    if (error2 instanceof RuntimeInputError || error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name))
+      return `${error2.name}: ${error2.message}`;
+    if (!(error2 instanceof Error))
+      return `thrown=${error2 === null ? "null" : typeof error2}`;
+    const name = STANDARD_ERROR_NAMES.has(error2.name) ? error2.name : "Error";
+    return `error=${name} message=redacted`;
+  }
+  context(error2) {
+    const fields = error2;
+    const details = [];
+    if (typeof fields.code === "string" && NETWORK_ERROR_CODES.has(fields.code))
+      details.push(`code=${fields.code}`);
+    if (typeof fields.status === "number" && Number.isInteger(fields.status) && fields.status >= 100 && fields.status <= 599)
+      details.push(`status=${fields.status}`);
+    const locations = /* @__PURE__ */ new Set();
+    for (const line of (error2.stack ?? "").split("\n")) {
+      if (!/^\s+at /.test(line)) continue;
+      const match = line.match(
+        /\/(actions\/(?:assets|communication|event|feedback|issue-form|organizer|publication|referential)\/[a-z-]+\/dist\/index\.js:\d+:\d+)\)?$/
+      );
+      if (match) locations.add(`at=${match[1]}`);
+      if (locations.size === 3) break;
+    }
+    return [...details, ...locations];
   }
 };
 
@@ -34761,8 +34830,6 @@ var EventRuleEngine = class {
 // packages/domain/event/src/domain/rule-contracts.ts
 var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
   meetup: "meetup",
-  hostNeeded: "hoster:needed",
-  hostConfirmed: "hoster:confirmed",
   speakersNeeded: "speakers:needed",
   speakersConfirmed: "speakers:confirmed",
   occurrencePostponed: "event:postponed",
@@ -35030,13 +35097,16 @@ var ManagedLabelsRule = class {
   id = "managed-labels";
   dependencies = ["event-host", "event-agenda"];
   evaluate(event) {
-    const managed = Object.values(this.configuration);
+    const managed = [
+      ...Object.values(this.configuration),
+      "hoster:needed",
+      "hoster:confirmed"
+    ];
     const unmanaged2 = event.labels.filter((label) => !managed.includes(label));
     const occurrenceLabels = event.occurrenceStatus === "postponed" ? [this.configuration.occurrencePostponed] : event.occurrenceStatus === "held" ? [this.configuration.occurrenceHeld] : event.occurrenceStatus === "cancelled" ? [this.configuration.occurrenceCancelled] : [];
     const expected = [
       ...unmanaged2,
       this.configuration.meetup,
-      ...event.confirmations.host ? [this.configuration.hostConfirmed] : event.host?.displayName.trim() ? [] : [this.configuration.hostNeeded],
       event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
       ...occurrenceLabels
     ];
@@ -35187,14 +35257,14 @@ var EventReadinessPolicy = class {
         diagnostics: readinessDiagnostics
       };
     }
-    if (!event.confirmations.host) {
+    if (!event.host?.displayName.trim()) {
       readinessDiagnostics.push(
         this.collaborators.eventDiagnostics.diagnostic({
-          code: "event.confirmation.host.missing",
+          code: "event.hoster.missing",
           severity: "warning",
           category: "incomplete",
-          field: "confirmations.host",
-          message: "Host confirmation is required before the event is ready"
+          field: "host",
+          message: "A host must be selected"
         })
       );
     }
@@ -40225,10 +40295,7 @@ var AutomationConfigFactory = class {
         "issue-label": "meetup",
         "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
         "occurrence-status-field": "event_status",
-        "required-confirmation-labels": [
-          "hoster:confirmed",
-          "speakers:confirmed"
-        ]
+        "speakers-confirmation-label": "speakers:confirmed"
       },
       referentials: {
         hosts: "referentials/hosting.csv",
@@ -40377,7 +40444,6 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "event.agenda.normalized",
   "event.agenda.speaker.invalid",
   "event.agenda.speaker.missing",
-  "event.confirmation.host.missing",
   "event.confirmation.speakers.missing",
   "event.date.invalid",
   "event.date.missing",
@@ -40638,13 +40704,12 @@ var AttentionEventFacts = class {
       requiredDataMissing: diagnostics.some(
         (item) => item.category === "invalid" || item.category === "incomplete"
       ),
-      hostConfirmed: event.confirmations.host,
+      hostConfirmed: Boolean(event.host?.displayName.trim()),
       speakersConfirmed: event.confirmations.speakers,
       publicationPending: [
         ...tasks.filter(
           (task) => task.status === "pending" && task.kind !== "import-attendance"
-        ).map((task) => task.kind),
-        ...this.announcements(event.operationalChecklists.communication)
+        ).map((task) => task.kind)
       ],
       followUpPending: this.followUp(event)
     };
@@ -40661,21 +40726,6 @@ var AttentionEventFacts = class {
       );
       return completed ? [] : [FOLLOW_UP_TASKS[index]];
     });
-  }
-  announcements(items) {
-    const tasks = [
-      ["Slack - AixMarseille.Tech", "public-slack-local"],
-      ["Slack - OpenBaR", "public-slack-community"],
-      ["LinkedIn", "public-social"],
-      ["Social networks", "public-social"]
-    ];
-    return [
-      ...new Set(
-        tasks.filter(
-          ([name]) => items.some((item) => item.name === name && !item.completed)
-        ).map(([, resource]) => resource)
-      )
-    ];
   }
 };
 
@@ -41110,7 +41160,7 @@ var FeedbackAgendaProjection = class {
 var ScheduledEventProjection = class {
   create(event, settings) {
     const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
-    if (!venue || !event.description.trim() || !event.confirmations.host || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
+    if (!venue || !event.description.trim() || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
       (talk) => !talk.description.trim() || !talk.speakers.length || talk.speakers.some((speaker) => !speaker.id)
     ))
       return void 0;
@@ -41370,7 +41420,7 @@ var FindNextAssetEvent = class {
     const invalid = [...decoded.diagnostics, ...evaluated.diagnostics].some(
       (item) => item.severity === "error" && (/date|host/.test(item.field ?? "") || item.code.startsWith("event.document."))
     );
-    if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
+    if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.host?.displayName.trim())
       return void 0;
     const published = this.collaborators.meetupPublicationChecklist.isPublished(event) && this.validLink(
       event,
@@ -42256,11 +42306,11 @@ var JourneyComposition = class {
 // packages/runtime/github-actions/src/attention-stage-input.ts
 var AttentionStageInput = class {
   parse(value) {
-    const input = JSON.parse(value);
+    const input = this.json(value, "stage-results");
     if (!this.isRecord(input))
-      throw new Error("Invalid attention stage results");
+      throw new RuntimeInputError("stage-results", "must be an object");
     const reports = ATTENTION_STAGE_OWNERS.map(
-      (owner) => [owner, this.group(input[owner])]
+      (owner) => [owner, this.group(input[owner], `stage-results.${owner}`)]
     );
     return {
       event: reports[0][1],
@@ -42268,53 +42318,70 @@ var AttentionStageInput = class {
       feedback: reports[2][1],
       communications: reports[3][1],
       content: reports[4][1],
-      ...input.social === void 0 ? {} : { social: this.group(input.social) }
+      ...input.social === void 0 ? {} : { social: this.group(input.social, "stage-results.social") }
     };
   }
-  group(value) {
-    if (!Array.isArray(value)) return this.stage(value);
-    if (!value.length) throw new Error("Empty attention stage group");
-    const stages = value.map((item) => this.stage(item));
+  group(value, field) {
+    if (!Array.isArray(value)) return this.stage(value, field);
+    if (!value.length)
+      throw new RuntimeInputError(field, "must not be an empty group");
+    const stages = value.map(
+      (item, index) => this.stage(item, `${field}[${index}]`)
+    );
     return {
       outcome: stages.some((stage) => stage.outcome === "failure") ? "failure" : stages.every((stage) => stage.outcome === "success") ? "success" : "unknown",
       reported: stages.every((stage) => stage.reported),
       diagnostics: stages.flatMap((stage) => stage.diagnostics)
     };
   }
-  stage(value) {
+  stage(value, field) {
     if (value !== void 0 && !this.isRecord(value))
-      throw new Error("Invalid attention stage");
+      throw new RuntimeInputError(field, "must be an object");
     const stage = value ?? {};
     return {
       outcome: stage.outcome === "success" || stage.outcome === "failure" ? stage.outcome : "unknown",
-      diagnostics: this.readDiagnostics(stage.diagnostics),
+      diagnostics: this.readDiagnostics(
+        stage.diagnostics,
+        `${field}.diagnostics`
+      ),
       reported: stage.diagnostics !== void 0 && stage.diagnostics !== null && stage.diagnostics !== ""
     };
   }
   isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
-  readDiagnostics(input) {
+  json(value, field) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      throw new RuntimeInputError(field, "must contain valid JSON");
+    }
+  }
+  readDiagnostics(input, path) {
     if (input === void 0 || input === null) return [];
     let diagnostics = input;
     if (typeof diagnostics === "string") {
       if (!diagnostics) return [];
-      try {
-        diagnostics = JSON.parse(diagnostics);
-      } catch {
-        throw new Error("Invalid attention stage diagnostics");
-      }
+      diagnostics = this.json(diagnostics, path);
     }
     if (!Array.isArray(diagnostics))
-      throw new Error("Invalid attention stage diagnostics");
-    return diagnostics.map((item) => {
+      throw new RuntimeInputError(path, "must be an array");
+    return diagnostics.map((item, index) => {
       if (!item || typeof item !== "object" || Array.isArray(item))
-        throw new Error("Invalid attention stage diagnostic");
+        throw new RuntimeInputError(`${path}[${index}]`, "must be an object");
       const { code, severity, field, fixApplied } = item;
       if (typeof code !== "string" || !/^(event|publication|communication|referential|action)\.[a-z.-]{1,120}$/.test(
         code
-      ) || severity !== "error" && severity !== "warning" && severity !== "info")
-        throw new Error("Invalid attention stage diagnostic");
+      ))
+        throw new RuntimeInputError(
+          `${path}[${index}].code`,
+          "must be a supported diagnostic code"
+        );
+      if (severity !== "error" && severity !== "warning" && severity !== "info")
+        throw new RuntimeInputError(
+          `${path}[${index}].severity`,
+          "must be error, warning or info"
+        );
       return {
         code,
         severity,
@@ -42594,18 +42661,21 @@ var ReferentialActionReport = class {
 var RuntimeInput = class {
   positiveIntegerInput(name, value) {
     if (!/^\d+$/.test(value)) {
-      throw new Error(`${name} must be a positive integer`);
+      throw new RuntimeInputError(name, "must be a positive integer");
     }
     const parsed = Number(value);
     if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-      throw new Error(`${name} must be a positive integer`);
+      throw new RuntimeInputError(name, "must be a positive integer");
     }
     return parsed;
   }
   enumInput(name, value, allowed) {
     const parsed = allowed.find((candidate) => candidate === value);
     if (parsed === void 0) {
-      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+      throw new RuntimeInputError(
+        name,
+        `must be one of: ${allowed.join(", ")}`
+      );
     }
     return parsed;
   }
@@ -42615,7 +42685,7 @@ var RuntimeInput = class {
   booleanInput(name, value) {
     if (value === "true") return true;
     if (value === "false") return false;
-    throw new Error(`${name} must be true or false`);
+    throw new RuntimeInputError(name, "must be true or false");
   }
 };
 
@@ -46671,6 +46741,8 @@ var EN_MESSAGES2 = {
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
   "report.error.unexpected": "Unexpected technical failure.",
+  "error.RuntimeInputError": "Invalid action input.",
+  "report.error.details": "{summary} {details}",
   "report.referential.valid": "referentials=valid",
   "report.referential.invalid": "referentials=invalid",
   "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
@@ -46826,6 +46898,8 @@ var FR_MESSAGES2 = {
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
   "report.error.unexpected": "Erreur technique inattendue.",
+  "error.RuntimeInputError": "Entr\xE9e de l'action invalide.",
+  "report.error.details": "{summary} {details}",
   "report.referential.valid": "referentials=valid",
   "report.referential.invalid": "referentials=invalid",
   "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
@@ -46875,8 +46949,12 @@ var ActionMessages = class extends MessageLocalizer {
   }
   error(name, publicFallback) {
     const key = `error.${name}`;
-    if (this.locale === "en") return publicFallback;
-    return Object.hasOwn(CATALOGS2.en, key) ? this.t(key) : this.t("report.error.unexpected");
+    const known = Object.hasOwn(CATALOGS2.en, key);
+    if (this.locale === "en" && known) return publicFallback;
+    return this.t("report.error.details", {
+      summary: known ? this.t(key) : this.t("report.error.unexpected"),
+      details: publicFallback
+    });
   }
 };
 
@@ -54625,7 +54703,6 @@ var FIELD_ORDER = [
   "Restaurant / Bar",
   "Post event",
   "Automated thank-you emails",
-  "Host confirmation",
   "Speaker confirmation",
   "Event Status",
   "Issue format",
@@ -54759,10 +54836,6 @@ var GUIDANCE = new Map([
   [
     "publication.asset-url.invalid",
     ["Drive Link", "comment.guidance.publication.asset-url.invalid"]
-  ],
-  [
-    "event.confirmation.host.missing",
-    ["Host confirmation", "comment.guidance.event.confirmation.host.missing"]
   ],
   [
     "event.confirmation.speakers.missing",
@@ -54920,7 +54993,6 @@ var DiagnosticPresenter = class {
     ["drive_link", "Drive Link"],
     ["publicationLinks.feedback", "OpenFeedback Link"],
     ["openfeedback_link", "OpenFeedback Link"],
-    ["confirmations.host", "Host confirmation"],
     ["confirmations.speakers", "Speaker confirmation"],
     ["occurrenceStatus", "Event Status"],
     ["event_status", "Event Status"]
@@ -55268,7 +55340,6 @@ var EN_MESSAGES3 = {
   "comment.guidance.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
   "comment.guidance.publication.community-url.invalid": "Use this group's CNCF / OCGroups event URL.",
   "comment.guidance.publication.asset-url.invalid": "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
-  "comment.guidance.event.confirmation.host.missing": "Confirm the host, then add the `hoster:confirmed` label.",
   "comment.guidance.event.confirmation.speakers.missing": "Confirm the speakers, then add the `speakers:confirmed` label.",
   "comment.guidance.event.logistics.intent.invalid": "Choose `Yes` or `No`, or leave the response empty if undecided.",
   "comment.guidance.event.occurrence-status.invalid": "Use `scheduled`, `postponed`, `held`, or `cancelled`.",
@@ -55344,7 +55415,6 @@ var FR_MESSAGES3 = {
   "comment.guidance.publication.meetup-url.invalid": "Utilisez l'URL Meetup de ce groupe, termin\xE9e par l'identifiant num\xE9rique de l'\xE9v\xE9nement.",
   "comment.guidance.publication.community-url.invalid": "Utilisez l'URL CNCF / OCGroups de ce groupe.",
   "comment.guidance.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
-  "comment.guidance.event.confirmation.host.missing": "Confirmez l'h\xF4te, puis ajoutez le label `hoster:confirmed`.",
   "comment.guidance.event.confirmation.speakers.missing": "Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
   "comment.guidance.event.logistics.intent.invalid": "Choisissez `Yes` ou `No`, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
   "comment.guidance.event.occurrence-status.invalid": "Utilisez `scheduled`, `postponed`, `held` ou `cancelled`.",
@@ -56147,7 +56217,6 @@ var IssueFormEventMapper = class {
       occurrenceStatus,
       timeZone: dto.timeZone ?? "Europe/Paris",
       confirmations: {
-        host: dto.labels?.includes("hoster:confirmed") ?? false,
         speakers: dto.labels?.includes("speakers:confirmed") ?? false
       },
       logistics: {
@@ -56382,12 +56451,10 @@ var IssueFormReader = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
     this.timeZone = options.timeZone ?? "Europe/Paris";
-    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
     this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
   }
   collaborators;
   timeZone;
-  hostConfirmationLabel;
   speakersConfirmationLabel;
   decode(document) {
     const diagnostics = [];
@@ -56428,7 +56495,6 @@ var IssueFormReader = class {
         diagnostics
       ),
       confirmations: {
-        host: document.labels.includes(this.hostConfirmationLabel),
         speakers: document.labels.includes(this.speakersConfirmationLabel)
       }
     };
@@ -58123,7 +58189,7 @@ var messages = {
   "attention.unknown": "status unverified",
   "action.missing-date": "Set the event date.",
   "action.required-data": "Complete the event details.",
-  "action.host-confirmation": "Confirm the host (`hoster:confirmed`).",
+  "action.host-confirmation": "Select a host in the meetup form.",
   "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approve or reject Meetup publication.",
@@ -58135,9 +58201,6 @@ var messages = {
   "action.stage-unknown": "Check the incomplete stage: {task}.",
   "task.approvals": "email approvals",
   "task.delivery": "delivery recovery",
-  "task.public-slack-local": "Publish the event announcement on Slack - AixMarseille.Tech",
-  "task.public-slack-community": "Publish the event announcement on Slack - OpenBaR",
-  "task.public-social": "Publish the event announcement on LinkedIn",
   "attention.clear": "No pending tasks.",
   "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
   "task.publish-meetup-event": "Approve Meetup publication",
@@ -58172,7 +58235,7 @@ var messages2 = {
   "attention.unknown": "statut non v\xE9rifi\xE9",
   "action.missing-date": "Renseignez la date du meetup.",
   "action.required-data": "Compl\xE9tez les informations du meetup.",
-  "action.host-confirmation": "Confirmez l'h\xF4te (`hoster:confirmed`).",
+  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
   "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
@@ -58184,9 +58247,6 @@ var messages2 = {
   "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
   "task.approvals": "approbation des courriels",
   "task.delivery": "reprise des envois",
-  "task.public-slack-local": "Publiez l'annonce du meetup sur Slack - AixMarseille.Tech",
-  "task.public-slack-community": "Publiez l'annonce du meetup sur Slack - OpenBaR",
-  "task.public-social": "Publiez l'annonce du meetup sur LinkedIn",
   "attention.clear": "Aucune t\xE2che en attente.",
   "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
   "task.publish-meetup-event": "Approuver la publication Meetup",
@@ -65973,10 +66033,8 @@ var EventComposition = class _EventComposition {
         clock: context3.get(SERVICES.eventClock),
         rules: new EventDomainComposition().eventRuleFactory().createDefaultEventRules({
           meetup: config.event["issue-label"],
-          hostNeeded: "hoster:needed",
-          hostConfirmed: config.event["required-confirmation-labels"][0],
           speakersNeeded: "speakers:needed",
-          speakersConfirmed: config.event["required-confirmation-labels"][1],
+          speakersConfirmed: config.event["speakers-confirmation-label"],
           occurrencePostponed: "event:postponed",
           occurrenceHeld: "event:held",
           occurrenceCancelled: "event:cancelled"
@@ -66053,8 +66111,7 @@ var EventComposition = class _EventComposition {
         {
           repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
           timeZone: config.timezone,
-          hostConfirmationLabel: config.event["required-confirmation-labels"][0],
-          speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
+          speakersConfirmationLabel: config.event["speakers-confirmation-label"]
         }
       );
     });

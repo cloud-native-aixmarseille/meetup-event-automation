@@ -19,7 +19,7 @@ export const config: AutomationConfig = {
 		"issue-label": "meetup",
 		"issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
 		"occurrence-status-field": "event_status",
-		"required-confirmation-labels": ["hoster:confirmed", "speakers:confirmed"],
+		"speakers-confirmation-label": "speakers:confirmed",
 	},
 	referentials: {
 		hosts: "referentials/hosting.csv",
@@ -66,7 +66,7 @@ export const sourceDocument: EventDocument = {
 	identity,
 	issueState: "open",
 	issueTitle: "[Meetup] - 2026-09-30 - Cloud Native Evening",
-	labels: ["meetup", "hoster:confirmed", "speakers:confirmed"],
+	labels: ["meetup", "speakers:confirmed"],
 	body: "synthetic event document",
 };
 
@@ -94,7 +94,7 @@ export const event: MeetupEvent = {
 	},
 	occurrenceStatus: "held",
 	timeZone: "Europe/Paris",
-	confirmations: { host: true, speakers: true },
+	confirmations: { speakers: true },
 	logistics: {
 		aperitif: "planned",
 		postEventVenue: "not-planned",

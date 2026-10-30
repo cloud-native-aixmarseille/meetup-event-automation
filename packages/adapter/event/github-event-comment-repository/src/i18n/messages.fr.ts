@@ -86,8 +86,6 @@ export const FR_MESSAGES = {
 		"Utilisez l'URL CNCF / OCGroups de ce groupe.",
 	"comment.guidance.publication.asset-url.invalid":
 		"Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
-	"comment.guidance.event.confirmation.host.missing":
-		"Confirmez l'hôte, puis ajoutez le label `hoster:confirmed`.",
 	"comment.guidance.event.confirmation.speakers.missing":
 		"Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
 	"comment.guidance.event.logistics.intent.invalid":

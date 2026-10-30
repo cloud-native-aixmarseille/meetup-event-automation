@@ -18,7 +18,8 @@ export const messages = {
 	"slack.unknown": "statut non vérifié",
 	"action.missing-date": "Renseignez la date du meetup.",
 	"action.required-data": "Complétez les informations du meetup.",
-	"action.host-confirmation": "Confirmez l'hôte (`hoster:confirmed`).",
+	"action.host-confirmation":
+		"Sélectionnez un hôte dans le formulaire du meetup.",
 	"action.speaker-confirmation":
 		"Confirmez les intervenants (`speakers:confirmed`).",
 	"action.manual-publication": "{task}.",
@@ -34,9 +35,6 @@ export const messages = {
 
 	"task.approvals": "approbation des courriels",
 	"task.delivery": "reprise des envois",
-	"task.public-slack-local": "Publiez l'annonce sur le Slack local",
-	"task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
-	"task.public-social": "Publiez l'annonce du meetup sur LinkedIn",
 
 	"attention.clear": "Aucune tâche en attente.",
 	"task.publish-meetup-event": "Approuver la publication Meetup",

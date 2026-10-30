@@ -212,6 +212,8 @@ export const EN_MESSAGES = {
 	"report.technical-failure": "technical_failure={codes}",
 	"report.summary-unavailable": "summary=unavailable",
 	"report.error.unexpected": "Unexpected technical failure.",
+	"error.RuntimeInputError": "Invalid action input.",
+	"report.error.details": "{summary} {details}",
 	"report.referential.valid": "referentials=valid",
 	"report.referential.invalid": "referentials=invalid",
 	"report.referential.counts":

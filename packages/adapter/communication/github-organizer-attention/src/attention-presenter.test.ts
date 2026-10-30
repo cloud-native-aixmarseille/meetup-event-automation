@@ -102,7 +102,7 @@ describe("GitHub attention presentation", () => {
 			episodes: [
 				episode("required-data", "event"),
 				episode("host-confirmation", "host"),
-				episode("manual-publication", "public-slack-local"),
+				episode("manual-publication", "publish-meetup-event"),
 			],
 		};
 
@@ -112,9 +112,7 @@ describe("GitHub attention presentation", () => {
 		// Assert
 		expect(body.startsWith(prefix)).toBe(true);
 		expect(body.match(/Confirmez/g)).toHaveLength(1);
-		expect(body).toContain(
-			"Publiez l'annonce du meetup sur Slack - AixMarseille.Tech",
-		);
+		expect(body).toContain("Approuver la publication Meetup.");
 	});
 	it("shows pending notification recovery without claiming the event is clear", () => {
 		// Arrange

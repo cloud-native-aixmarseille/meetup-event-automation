@@ -74,7 +74,7 @@ describe("social publication reconciliation", () => {
 				...f.context,
 				event: {
 					...f.context.event,
-					confirmations: { host: false, speakers: true },
+					host: undefined,
 				},
 			};
 		if (scenario === "changed-destination")

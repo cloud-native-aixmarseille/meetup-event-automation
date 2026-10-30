@@ -55,7 +55,6 @@ export interface GitHubIssueFormEventDocumentCodecOptions {
 	/** Consumer checkout revision used for catalog navigation links. */
 	readonly repositoryRef?: string;
 	readonly timeZone?: string;
-	readonly hostConfirmationLabel?: string;
 	readonly speakersConfirmationLabel?: string;
 }
 

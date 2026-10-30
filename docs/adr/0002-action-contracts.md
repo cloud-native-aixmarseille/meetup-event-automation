@@ -39,6 +39,14 @@ effects; removing a mode does not remove those gates.
 
 ### Composition and failure boundaries
 
+Accepted refinement, 2026-10-30: exception redaction must preserve actionable
+technical evidence. Runtime input errors identify the authored schema path and
+requirement without rejected values. Localized reports retain safe adapter
+details. Unknown errors expose only standard types, allowlisted error codes,
+numeric HTTP status, bounded causes, and relative bundled code locations. Raw
+messages and payloads remain excluded. This refines the shared reporting policy
+in [ADR 0004](0004-organizer-workflow.md#shared-reporting-policy).
+
 Event triggers and audits call `event-reconcile.yml`, which owns sequencing,
 locking and reporting directly. Workflows load actions from their own pinned
 revision and coordinate these separate responsibilities:

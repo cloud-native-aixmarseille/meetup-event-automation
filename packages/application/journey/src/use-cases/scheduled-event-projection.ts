@@ -16,7 +16,6 @@ export class ScheduledEventProjection {
 		if (
 			!venue ||
 			!event.description.trim() ||
-			!event.confirmations.host ||
 			!event.confirmations.speakers ||
 			event.proposalStatus === "stale" ||
 			!event.agenda.length ||

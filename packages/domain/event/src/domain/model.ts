@@ -48,7 +48,6 @@ export type EventPublicationLinks = Readonly<{
 }>;
 
 export type EventConfirmations = Readonly<{
-	host: boolean;
 	speakers: boolean;
 }>;
 

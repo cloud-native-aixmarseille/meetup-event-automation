@@ -147,7 +147,8 @@ describe("ActionMessages", () => {
 
 		// Assert
 		expect(known).toContain("L'événement est introuvable.");
-		expect(unknown).toBe("Erreur technique inattendue.");
+		expect(known).toContain("Safe English detail.");
+		expect(unknown).toBe("Erreur technique inattendue. Safe English fallback.");
 		expect(canonical).toBe("Safe English detail.");
 	});
 	it.each([

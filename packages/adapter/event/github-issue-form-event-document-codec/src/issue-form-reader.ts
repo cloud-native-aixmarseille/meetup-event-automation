@@ -54,15 +54,12 @@ export interface IssueFormReaderCollaborators {
 
 export class IssueFormReader {
 	private readonly timeZone: string;
-	private readonly hostConfirmationLabel: string;
 	private readonly speakersConfirmationLabel: string;
 	constructor(
 		private readonly collaborators: IssueFormReaderCollaborators,
 		options: GitHubIssueFormEventDocumentCodecOptions = {},
 	) {
 		this.timeZone = options.timeZone ?? "Europe/Paris";
-		this.hostConfirmationLabel =
-			options.hostConfirmationLabel ?? "hoster:confirmed";
 		this.speakersConfirmationLabel =
 			options.speakersConfirmationLabel ?? "speakers:confirmed";
 	}
@@ -106,7 +103,6 @@ export class IssueFormReader {
 				diagnostics,
 			),
 			confirmations: {
-				host: document.labels.includes(this.hostConfirmationLabel),
 				speakers: document.labels.includes(this.speakersConfirmationLabel),
 			},
 		};

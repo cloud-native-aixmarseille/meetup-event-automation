@@ -30,7 +30,6 @@ export class DiagnosticPresenter {
 		["drive_link", "Drive Link"],
 		["publicationLinks.feedback", "OpenFeedback Link"],
 		["openfeedback_link", "OpenFeedback Link"],
-		["confirmations.host", "Host confirmation"],
 		["confirmations.speakers", "Speaker confirmation"],
 		["occurrenceStatus", "Event Status"],
 		["event_status", "Event Status"],

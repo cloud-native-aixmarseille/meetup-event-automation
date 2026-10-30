@@ -153,7 +153,7 @@ new submissions. Run content review first when processing a new draft.
 
 ## Approve and monitor
 
-Confirm the host and speakers, publish the registration page, and complete the
+Select the confirmed host, confirm speakers, publish the registration page, and complete the
 content review. A valid URL alone does not prove publication: the Meetup
 publication task must also be complete. Social reconciliation then creates a
 separate bot-owned publication request for each destination and purpose.

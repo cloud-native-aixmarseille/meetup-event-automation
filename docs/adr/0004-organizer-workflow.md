@@ -15,6 +15,21 @@ misleading. Follow-up and archival processing needed explicit lifecycle rules.
 
 ## Accepted decisions
 
+### Host selection and social task ownership (2026-10-30)
+
+Status: Accepted. This replaces the separate host confirmation requirement and
+manual announcement reminders in preparation tasks. A selected host is the
+participation evidence; an empty or unresolved host remains incomplete. Host
+labels are no longer produced or consulted. Speaker confirmation is unchanged.
+
+Slack and LinkedIn announcements belong to the social publication lifecycle in
+[ADR 0010](0010-social-publication.md). Organizer attention must report its content
+reviews, publication approvals, configuration problems, and delivery outcomes,
+instead of asking organizers to publish the same announcements manually. Keep
+existing delivery records and exact publication approvals authoritative.
+
+### Shared reporting policy
+
 Use one application diagnostic policy for issue updates and audits. Expected
 organizer corrections and approval waits block affected work without failing CI.
 Unexpected exceptions, provider failures, and failed persistence remain technical

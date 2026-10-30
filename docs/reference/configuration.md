@@ -180,16 +180,14 @@ Create these labels in the consumer repository:
 | Label                | Meaning                                 |
 | -------------------- | --------------------------------------- |
 | `meetup`             | Marks an issue as a meetup.             |
-| `hoster:needed`      | No host has been selected.              |
-| `hoster:confirmed`   | Organizer confirms the host.            |
 | `speakers:needed`    | Speaker participation is not confirmed. |
 | `speakers:confirmed` | Organizer confirms the speakers.        |
 | `event:postponed`    | Meetup is postponed.                    |
 | `event:held`         | Meetup took place.                      |
 | `event:cancelled`    | Meetup is cancelled.                    |
 
-The automation removes `hoster:needed` when a host is selected; selection does
-not add `hoster:confirmed`. Speaker `needed` labels follow the confirmation state. Use at
+Host participation is determined by the selected **Hoster** value. No host label
+is required. Speaker `needed` labels follow the confirmation state. Use at
 most one `event:*` status label. An open issue without a status label is
 scheduled; closing it marks it held unless an explicit status says otherwise.
 The date passing alone does not mark an event held. It enables

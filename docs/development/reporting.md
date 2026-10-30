@@ -47,6 +47,14 @@ Return `ActionReportData` on every normal path, including skipped or blocked wor
 - Exceptions are redacted by the injected `ActionFailurePresenter`. Missing locale
   fails before execution and uses English. A summary-write failure emits a safe
   warning and preserves the original result.
+- Reports retain specific, safe exception details in every locale. Runtime input
+  validators use `RuntimeInputError` with authored field names and requirements,
+  never rejected values. Stage-report failures identify the stage, group index,
+  and diagnostic field. Unknown exceptions retain their standard error type,
+  allowlisted network code, HTTP status, and up to three bundle locations per
+  cause, with at most three causes. Arbitrary messages, provider bodies, absolute
+  paths, and function names are not published. Bundle line/column locations refer
+  to the action revision downloaded in the job's setup log.
 
 The same policy applies to issue updates and scheduled audits. Never use
 `continue-on-error` to hide a technical failure or make failure depend on where a

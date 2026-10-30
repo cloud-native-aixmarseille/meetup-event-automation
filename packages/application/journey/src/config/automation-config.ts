@@ -4,7 +4,7 @@ export interface AutomationConfig {
 		"issue-label": string;
 		"issue-form": string;
 		"occurrence-status-field": string;
-		"required-confirmation-labels": readonly [host: string, speakers: string];
+		"speakers-confirmation-label": string;
 	}>;
 	readonly referentials: Readonly<{ hosts: string; speakers: string }>;
 	readonly communication: Readonly<{
@@ -23,10 +23,7 @@ export class AutomationConfigFactory {
 				"issue-label": "meetup",
 				"issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
 				"occurrence-status-field": "event_status",
-				"required-confirmation-labels": [
-					"hoster:confirmed",
-					"speakers:confirmed",
-				],
+				"speakers-confirmation-label": "speakers:confirmed",
 			},
 			referentials: {
 				hosts: "referentials/hosting.csv",
