@@ -32,6 +32,9 @@ const actionWiring = {
 		manage: [
 			"feedback/reconcile-event",
 			"organizer/review-drafts",
+			"event/generate-copy",
+			"event/generate-copy",
+			"organizer/review-drafts",
 			"assets/reconcile-documents",
 			"assets/reconcile-slides-pdf",
 			"event/reconcile",

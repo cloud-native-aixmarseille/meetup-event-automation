@@ -111,6 +111,12 @@ describe("shared AI action configuration", () => {
 				const action = step.uses?.match(/^[.$]\/actions\/(.+)$/)?.[1];
 				return action !== undefined && consumers.has(action);
 			});
+			const aiCalls = Object.values(workflow.jobs ?? {}).filter((job) => {
+				const target = workflows.find(
+					(item) => job.uses === `$/.github/workflows/${item.path}`,
+				);
+				return target?.workflow.on?.workflow_call?.inputs?.["ai-provider"];
+			});
 			const contract = workflow.on?.workflow_call;
 			const inputs = Object.keys(contract?.inputs ?? {}).filter((name) =>
 				name.startsWith("ai-"),
@@ -118,7 +124,7 @@ describe("shared AI action configuration", () => {
 			const secrets = Object.keys(contract?.secrets ?? {}).filter((name) =>
 				name.startsWith("ai-"),
 			);
-			if (aiSteps.length === 0) {
+			if (aiSteps.length === 0 && aiCalls.length === 0) {
 				expect([...inputs, ...secrets], path).toEqual([]);
 				continue;
 			}
@@ -153,9 +159,18 @@ describe("shared AI action configuration", () => {
 			}
 			for (const step of steps.filter((step) => !aiSteps.includes(step)))
 				expect(JSON.stringify(step), path).not.toContain("secrets.ai-api-key");
+			for (const call of aiCalls) {
+				expect(call.with, path).toMatchObject({
+					"ai-provider": workflowExpression("inputs.ai-provider"),
+					"ai-model": workflowExpression("inputs.ai-model"),
+				});
+				expect(call.secrets?.["ai-api-key"], path).toBe(
+					workflowExpression("secrets.ai-api-key"),
+				);
+			}
 			for (const { steps: _steps, ...settings } of Object.values(
 				workflow.jobs ?? {},
-			))
+			).filter((job) => !aiCalls.includes(job)))
 				expect(JSON.stringify(settings), path).not.toContain(
 					"secrets.ai-api-key",
 				);
