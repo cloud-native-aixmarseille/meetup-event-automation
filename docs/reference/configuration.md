@@ -55,7 +55,7 @@ See [event publication](../integrations/event-publication.md) for the complete
 configuration, credential schema, caller, approval, and recovery procedures.
 Review of content proposals or organizer submissions reads its schedule from the
 same file, including when an explicit empty destination collection keeps
-publication manual. Routine reconciliation without content work does not read it.
+publication manual. Automatic event copy preparation also requires this file.
 
 ## AI configuration
 
@@ -223,9 +223,10 @@ locations, automatic fallbacks, and optional one-time recovery operations.
 The [content guide](../integrations/content.md) owns `.github/meetup-content.json`,
 text/image model capabilities, public media prerequisites, and recovery.
 Content generation uses the shared AI inputs. Review and manual submission do
-not require AI credentials. Routine reconciliation without stored proposals or
-authenticated submissions requires none of the three content/publication
-configuration files; see the content guide for the exact conditions.
+not require AI credentials. Event reconciliation prepares title and description
+proposals automatically and requires text AI settings and all three configuration
+files. The standalone review action can skip configuration when no verified
+content work exists; see the content guide for the exact conditions.
 
 ## Social publication
 
@@ -234,5 +235,5 @@ required `.github/meetup-social.json` allowlist, conditional `social-credentials
 secret, scheduled and event-triggered callers, publication approval, and recovery.
 Draft generation and review of content proposals or organizer submissions also
 read this file. For those operations, use `{"version":1,"destinations":[]}` when no
-social destinations are enabled. Routine reconciliation without content work
-does not read it. Missing configuration never falls back to predefined channels.
+social destinations are enabled. Automatic event copy preparation also reads this
+file. Missing configuration never falls back to predefined channels.

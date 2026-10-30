@@ -6,7 +6,7 @@ For browser-based creation and updates on Meetup and OCGroups, see
 This guide configures a consumer repository to run the published automation. You
 need repository administration access, a GitHub App installation, Google Drive
 service-account access, a Slack bot, an OpenFeedback organization API key, and an
-existing Kutt short link. See
+existing Kutt short link, and a supported Gemini text model with an API key. See
 [configuration](../reference/configuration.md) for all settings and supported conventions.
 
 ## 1. Add the event data files
@@ -15,6 +15,9 @@ Create these files in the consumer repository:
 
 ```text
 .github/ISSUE_TEMPLATE/meetup.yml
+.github/meetup-content.json
+.github/event-publication.json
+.github/meetup-social.json
 referentials/hosting.csv
 referentials/speakers.csv
 ```
@@ -23,6 +26,10 @@ Use the [meetup form](../../__tests__/meetup-issue-template.yml) from your
 chosen release as the initial form. Populate the CSV files using the
 [referential schemas](../reference/referentials.md). Store real contact data
 only in the private consumer repository.
+
+Configure event hours, public venues, writing guidance, and social destinations
+using the [content setup guide](../integrations/content.md#configure-the-repository).
+Use an empty destination list when social publication is disabled.
 
 Create the labels listed in
 [configuration](../reference/configuration.md#labels). Keep the form's field IDs
@@ -48,19 +55,21 @@ repository-scoped tokens it needs and revokes them when the job ends.
 
 Add the following repository settings:
 
-| Type     | Name                           | Value                                                               |
-| -------- | ------------------------------ | ------------------------------------------------------------------- |
-| Variable | `MEETUP_EVENT_URL_PREFIX`      | Authorized Meetup group event URL prefix.                           |
-| Variable | `COMMUNITY_EVENT_URL_PREFIXES` | JSON array of accepted community event URL prefixes.                |
-| Variable | `ASSET_FOLDER_URL_PREFIX`      | Accepted event asset folder URL prefix.                             |
-| Variable | `CONFERENCE_HALL_EVENT`        | CFP slug, such as `meetup-cloud-native-aix-marseille`.              |
-| Secret   | `CONFERENCE_HALL_API_KEY`      | Read-only event key from Conference Hall's Web API settings.        |
-| Variable | `CI_BOT_APP_CLIENT_ID`         | GitHub App client ID.                                               |
-| Secret   | `CI_BOT_APP_PRIVATE_KEY`       | App private key in PEM format.                                      |
-| Variable | `KUTT_BASE_URL`                | HTTPS base URL of the Kutt instance, without `/api/v2`; no default. |
-| Variable | `KUTT_FEEDBACK_LINK_ID`        | API ID of the existing Kutt short link.                             |
-| Secret   | `OPENFEEDBACK_API_KEY`         | OpenFeedback organization API key beginning with `oforg_`.          |
-| Secret   | `KUTT_API_KEY`                 | API key of that link's owner.                                       |
+| Type     | Name                           | Value                                                                      |
+| -------- | ------------------------------ | -------------------------------------------------------------------------- |
+| Variable | `MEETUP_EVENT_URL_PREFIX`      | Authorized Meetup group event URL prefix.                                  |
+| Variable | `COMMUNITY_EVENT_URL_PREFIXES` | JSON array of accepted community event URL prefixes.                       |
+| Variable | `ASSET_FOLDER_URL_PREFIX`      | Accepted event asset folder URL prefix.                                    |
+| Variable | `CONFERENCE_HALL_EVENT`        | CFP slug, such as `meetup-cloud-native-aix-marseille`.                     |
+| Variable | `GEMINI_MODEL`                 | Supported structured-text model for event title and description proposals. |
+| Secret   | `GEMINI_API_KEY`               | API key authorized to use the configured text model.                       |
+| Secret   | `CONFERENCE_HALL_API_KEY`      | Read-only event key from Conference Hall's Web API settings.               |
+| Variable | `CI_BOT_APP_CLIENT_ID`         | GitHub App client ID.                                                      |
+| Secret   | `CI_BOT_APP_PRIVATE_KEY`       | App private key in PEM format.                                             |
+| Variable | `KUTT_BASE_URL`                | HTTPS base URL of the Kutt instance, without `/api/v2`; no default.        |
+| Variable | `KUTT_FEEDBACK_LINK_ID`        | API ID of the existing Kutt short link.                                    |
+| Secret   | `OPENFEEDBACK_API_KEY`         | OpenFeedback organization API key beginning with `oforg_`.                 |
+| Secret   | `KUTT_API_KEY`                 | API key of that link's owner.                                              |
 
 Configure the [publication URL inputs](../reference/configuration.md#publication-url-inputs)
 for your community and use the same three values in every event workflow. The
@@ -144,7 +153,10 @@ jobs:
       google-drive-folder-id: ${{ vars.GOOGLE_DRIVE_FOLDER_ID }}
       google-drive-public-folder-id: ${{ vars.GOOGLE_DRIVE_PUBLIC_FOLDER_ID }}
       google-drive-template-folder-id: ${{ vars.GOOGLE_DRIVE_TEMPLATE_FOLDER_ID }}
+      ai-provider: gemini
+      ai-model: ${{ vars.GEMINI_MODEL }}
     secrets:
+      ai-api-key: ${{ secrets.GEMINI_API_KEY }}
       conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
       openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
@@ -183,7 +195,10 @@ jobs:
       google-drive-folder-id: ${{ vars.GOOGLE_DRIVE_FOLDER_ID }}
       google-drive-public-folder-id: ${{ vars.GOOGLE_DRIVE_PUBLIC_FOLDER_ID }}
       google-drive-template-folder-id: ${{ vars.GOOGLE_DRIVE_TEMPLATE_FOLDER_ID }}
+      ai-provider: gemini
+      ai-model: ${{ vars.GEMINI_MODEL }}
     secrets:
+      ai-api-key: ${{ secrets.GEMINI_API_KEY }}
       conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
       openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}

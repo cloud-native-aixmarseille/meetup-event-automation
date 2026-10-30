@@ -12,8 +12,8 @@ Commit `.github/meetup-social.json` when using social publication, draft
 generation, or review of content proposals and organizer submissions. Use an
 explicit empty `destinations` array when using content review with social
 publication disabled; a missing file fails validation for these operations.
-[Routine reconciliation without content work](content.md#configure-the-repository)
-does not read this file.
+[Automatic event copy preparation](content.md#configure-the-repository) also
+requires this file; an empty list does not enable social publication.
 
 ```json
 {

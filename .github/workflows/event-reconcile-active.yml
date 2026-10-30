@@ -56,7 +56,18 @@ on:
         description: Conference Hall CFP slug for live linked profiles and selected proposals.
         required: true
         type: string
+      ai-provider:
+        description: AI provider identifier for automatic event copy proposals (gemini).
+        required: true
+        type: string
+      ai-model:
+        description: Structured-text model for automatic title and description proposals.
+        required: true
+        type: string
     secrets:
+      ai-api-key:
+        description: API key for automatic event copy generation.
+        required: true
       openfeedback-api-key:
         description: OpenFeedback organization API key (`oforg_`) used to create and update events.
         required: true
@@ -122,7 +133,10 @@ jobs:
       kutt-link-id: ${{ inputs.kutt-link-id }}
       conference-hall-event: ${{ inputs.conference-hall-event }}
       issue-number: ${{ matrix.issue-number }}
+      ai-provider: ${{ inputs.ai-provider }}
+      ai-model: ${{ inputs.ai-model }}
     secrets:
+      ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
       openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
       kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
       google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials

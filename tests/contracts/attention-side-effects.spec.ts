@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { AttentionStageInput } from "../../packages/runtime/github-actions/src/attention-stage-input.js";
 import { automationActionPrefix, readWorkflow } from "./support.js";
 
 describe("organizer reporting composition", () => {
@@ -34,6 +35,9 @@ describe("organizer reporting composition", () => {
 			checklist?.with?.["stage-results"],
 		);
 		for (const stage of [
+			"decisions",
+			"title",
+			"description",
 			"content",
 			"event",
 			"assets",
@@ -55,6 +59,30 @@ describe("organizer reporting composition", () => {
 			"needs.feedback-link.outputs.outcome",
 		);
 	});
+	it.each(["decisions", "title", "description"])(
+		"preserves a failed %s operation when the final content review succeeds",
+		async (failed) => {
+			// Arrange
+			const workflow = await readWorkflow("event-reconcile");
+			const template = String(workflow.jobs?.report?.with?.["stage-results"]);
+			// Act
+			const encoded = template.replace(
+				/\$\{\{ toJSON\(needs\.([\w-]+)\.outputs\.([\w-]+)\) \}\}/g,
+				(_match, job, output) =>
+					JSON.stringify(
+						output.endsWith("diagnostics")
+							? "[]"
+							: job === "manage" && output === `${failed}-outcome`
+								? "failure"
+								: "success",
+					),
+			);
+			const actual = new AttentionStageInput().parse(encoded).content;
+			// Assert
+			expect(JSON.parse(encoded).content).toHaveLength(4);
+			expect(actual?.outcome).toBe("failure");
+		},
+	);
 	it("allows independent event and mail work after a PDF failure while requiring prepared documents", async () => {
 		// Arrange
 		const workflow = await readWorkflow("event-reconcile");

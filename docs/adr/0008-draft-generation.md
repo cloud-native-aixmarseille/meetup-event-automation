@@ -15,6 +15,25 @@ traceability. Grouping every editorial rule under a generic content component
 would also couple unrelated event, publication, and communication policies to a
 provider implementation.
 
+## Automatic event copy
+
+Event reconciliation prepares title and description proposals during issue
+updates and active-event audits. It applies existing decisions before generation
+so an authorized iteration request takes effect in the same run, then requests
+review of newly generated drafts. The existing event lock covers all steps.
+Readiness, source fingerprints, deduplication, approvals, and uncertain-request
+recovery stay in their application and domain owners. The workflow only composes
+these operations and forwards their independent failure evidence to reporting.
+Cover and social generation remain explicit operations.
+
+Decision history, 2026-10-30: preparation previously required a separate
+workflow call, while routine reconciliation only reviewed stored proposals. A
+consumer wired only to reconciliation consequently never received event copy.
+Automatic text preparation replaces that split for title and description; both
+reconciliation workflows now require explicit text AI configuration and the
+content settings files. This trades additional required integration settings for
+a complete preparation flow without a separate organizer trigger.
+
 ## Ownership and provider boundary
 
 | Responsibility                                                            | Owner                                                          |
@@ -54,12 +73,14 @@ automatic retry with uncertain side effects.
 
 ## Configuration when no content work exists (2026-10-29)
 
-Routine reconciliation first checks the verified proposal store and authenticated
+The standalone review action first checks the verified proposal store and authenticated
 organizer submissions. When both are empty, content review completes without
 loading content, event-publication, or social-publication configuration. Existing
 proposals, including incomplete generation and past decisions, still require
 configuration and normal review. Read or verification failures remain failures.
-Explicit generation and publication retain their required configuration.
+Generation and publication retain their required configuration. The 2026-10-30
+automatic event-copy decision supersedes the ability to omit configuration from
+the reconciliation workflows, while retaining this standalone review safeguard.
 
 This replaces unconditional configuration loading during routine review, which
 required placeholder files in consumers that use only event and asset workflows.

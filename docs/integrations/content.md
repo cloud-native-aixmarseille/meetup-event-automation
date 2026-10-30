@@ -10,16 +10,15 @@ item, approve an email batch, or authorize initial Meetup publication.
 
 ## Configure the repository
 
-Routine reconciliation checks stored proposals and authenticated organizer
-submissions before loading content settings. With neither present, review
-completes without `.github/meetup-content.json`, `.github/event-publication.json`,
-or `.github/meetup-social.json`. Consumers that use neither content proposals nor
-publication workflows can omit these files. Keep the independent
-[Drive asset configuration](assets.md#author-managed-content) when rendering
-managed templates.
+Event reconciliation automatically prepares title and description proposals. Both
+`event-reconcile.yml` and `event-reconcile-active.yml` require the shared
+`ai-provider`, `ai-model`, and `ai-api-key` contract and all three content
+configuration files below. The model is for structured text; automatic event
+copy does not require an image model.
 
-Generation, review of existing proposals, and imports of valid submissions
-require all three files. Failed or unverifiable reads of proposal state or
+The standalone review action checks stored proposals and authenticated organizer
+submissions before loading content settings. With neither present, that action
+completes without these files. Failed or unverifiable reads of proposal state or
 submissions fail the action; they never count as an empty review.
 
 Provide the public venue and event hours in
@@ -72,7 +71,17 @@ organizer channel.
 
 ## Generate a proposal
 
-Choose the workflow for the output you need:
+Issue updates and active-event audits apply existing organizer decisions, prepare
+title and description drafts, then request review of new proposals. A title
+requires a valid agenda; a description also requires the event date, hours, and
+public host venue. Incomplete facts produce actionable diagnostics. The existing
+proposal ledger reuses unchanged drafts and decisions; changed source facts or
+an authorized iteration request create a new proposal. Failed or uncertain AI
+requests retain their recovery requirements. Approval is always required before
+applying generated text.
+
+For explicit preparation or social generation, choose the workflow for the
+output you need:
 
 | Workflow                                                                                     | Selection input                                                                             |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
