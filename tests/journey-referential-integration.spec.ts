@@ -43,7 +43,6 @@ const catalog: RawReferentialCatalog = {
 			contactId: "contact-0001",
 			contactName: "Synthetic Contact",
 			email: "host@example.test",
-			address: "Synthetic address",
 		},
 	],
 	speakers: [

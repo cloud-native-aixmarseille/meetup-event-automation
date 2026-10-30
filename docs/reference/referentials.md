@@ -15,20 +15,19 @@ Path: `referentials/hosting.csv`.
 | `contact`    | Yes      | Contact person's name.                                 |
 | `mail`       | Yes      | Valid contact email address.                           |
 | `phone`      | No       | Contact phone number.                                  |
-| `address`    | Yes      | Private contact address.                               |
 
 Public document fields are optional columns: `venue_address`,
 `venue_postal_code`, `venue_city`, `logo_url`, and `logo_description`.
 Supply all three venue fields together, and both logo fields together, or leave
 each group empty. Logo URLs must use public HTTPS without credentials. These
-values are public; the required contact `address` is never used as a fallback.
+values are public and supply both generated assets and speaker email locations.
 Repeat the same public details on each contact row belonging to the same host.
 
 Synthetic example:
 
 ```csv
-host_id,name,contact_id,contact,mail,phone,address
-host-0001,Example Host,contact-0001,Example Contact,host@example.test,,1 Example Street
+host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city
+host-0001,Example Host,contact-0001,Example Contact,host@example.test,,1 Example Street,13001,Marseille
 ```
 
 Several rows may use the same `host_id`, host display name, and public details for different

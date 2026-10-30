@@ -124,7 +124,6 @@ export const catalog: RawReferentialCatalog = {
 			contactId: "contact-0001",
 			contactName: "Synthetic Contact",
 			email: "contact@example.test",
-			address: "Synthetic address",
 		},
 	],
 	speakers: [

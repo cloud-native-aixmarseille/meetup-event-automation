@@ -148,8 +148,8 @@ jobs:
           mkdir -p .github/ISSUE_TEMPLATE referentials
 
           cat > referentials/hosting.csv <<'EOF'
-          host_id,name,contact_id,contact,mail,phone,address
-          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Private Street
+          host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city
+          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Example Street,13001,Marseille
           EOF
 
           cat > referentials/speakers.csv <<'EOF'
@@ -186,8 +186,8 @@ jobs:
           mkdir -p .github/ISSUE_TEMPLATE referentials
 
           cat > referentials/hosting.csv <<'EOF'
-          host_id,name,contact_id,contact,mail,phone,address
-          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Private Street
+          host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city
+          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Example Street,13001,Marseille
           EOF
 
           cat > referentials/speakers.csv <<'EOF'
@@ -306,8 +306,8 @@ jobs:
           mkdir -p .github referentials
 
           cat > referentials/hosting.csv <<'EOF'
-          host_id,name,contact_id,contact,mail,phone,address
-          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Private Street
+          host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city
+          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Example Street,13001,Marseille
           EOF
 
           cat > referentials/speakers.csv <<'EOF'
@@ -357,8 +357,8 @@ jobs:
           mkdir -p .github referentials
 
           cat > referentials/hosting.csv <<'EOF'
-          host_id,name,contact_id,contact,mail,phone,address
-          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Private Street
+          host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city
+          host-0001,Public Venue,contact-0001,Private Host Contact,host@example.invalid,,1 Example Street,13001,Marseille
           EOF
 
           cat > referentials/speakers.csv <<'EOF'

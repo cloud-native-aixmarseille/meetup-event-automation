@@ -68060,8 +68060,7 @@ var HostCatalogValidator = class {
       "Host contact phone must be a string when provided.",
       diagnostics
     );
-    const address = this.address(record, index, diagnostics);
-    if (!publicDetails || !hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+    if (!publicDetails || !hostId || !displayName || !contactId || !contactName || !email || phone === null) {
       return void 0;
     }
     return {
@@ -68072,19 +68071,9 @@ var HostCatalogValidator = class {
         id: contactId,
         name: contactName,
         email,
-        ...phone ? { phone } : {},
-        address
+        ...phone ? { phone } : {}
       }
     };
-  }
-  address(record, index, diagnostics) {
-    return this.collaborators.referentialRecordFields.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
   }
   hostId(record, index, diagnostics) {
     const hostIdValue = this.collaborators.referentialRecordFields.requiredText(
@@ -68775,7 +68764,6 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "event.proposals.not-accepted",
   "event.proposals.not-found",
   "event.title.missing",
-  "referential.contact.address.invalid",
   "referential.contact.email.invalid",
   "referential.contact.id.duplicate",
   "referential.contact.id.invalid",
@@ -69237,7 +69225,8 @@ var CommunicationRecipients = class {
     }
     const eventHost = resolution.host;
     const primaryContact = eventHost.contacts[0];
-    const hostingAddress = primaryContact?.address ?? "";
+    const venue = eventHost.publicVenue;
+    const hostingAddress = venue ? `${venue.address}, ${venue.postalCode} ${venue.city}` : "";
     const recipients = primaryContact ? [
       {
         channel: "mail",
@@ -75788,7 +75777,6 @@ var DIAGNOSTICS_REFERENTIAL_EN = {
   "diagnostic.referential.contact.name.invalid": "Contact name must be a non-empty string.",
   "diagnostic.referential.contact.email.invalid": "Host contact email address is invalid.",
   "diagnostic.referential.contact.phone.invalid": "Host contact phone must be a string when provided.",
-  "diagnostic.referential.contact.address.invalid": "Host contact address must be a non-empty string.",
   "diagnostic.referential.host.id.invalid": "Host stable identifier must use the opaque host-0001 format.",
   "diagnostic.referential.contact.id.invalid": "Contact stable identifier must use the opaque contact-0001 format.",
   "diagnostic.referential.reference.host.invalid": "Explicit host reference contains an invalid stable identifier.",
@@ -75826,7 +75814,6 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
   "diagnostic.referential.contact.name.invalid": "Le nom du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
   "diagnostic.referential.contact.email.invalid": "L'adresse e-mail du contact de l'h\xF4te est invalide.",
   "diagnostic.referential.contact.phone.invalid": "Le t\xE9l\xE9phone du contact doit \xEAtre une cha\xEEne de caract\xE8res lorsqu'il est renseign\xE9.",
-  "diagnostic.referential.contact.address.invalid": "L'adresse du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
   "diagnostic.referential.host.id.invalid": "L'identifiant stable de l'h\xF4te doit respecter le format opaque host-0001.",
   "diagnostic.referential.contact.id.invalid": "L'identifiant stable du contact doit respecter le format opaque contact-0001.",
   "diagnostic.referential.reference.host.invalid": "La r\xE9f\xE9rence de l'h\xF4te ou son identifiant stable est invalide.",
@@ -87968,7 +87955,6 @@ var CsvReferentialCodec = class {
         contactName: row.contact,
         email: row.mail,
         phone: row.phone || void 0,
-        address: row.address,
         venueAddress: row.venue_address,
         venuePostalCode: row.venue_postal_code,
         venueCity: row.venue_city,

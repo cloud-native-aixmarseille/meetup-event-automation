@@ -4,9 +4,56 @@ import {
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
 import { describe, expect, it } from "vitest";
+import { publicCatalog } from "../../testing/asset-render.fixtures.js";
+import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
 import { CommunicationRecipients } from "./communication-recipients.js";
 
 describe("CommunicationRecipients", () => {
+	it.each([
+		{
+			venue: {
+				address: "1 Public Street",
+				postalCode: "13001",
+				city: "Marseille",
+			},
+			expected: "1 Public Street, 13001 Marseille",
+		},
+		{ venue: undefined, expected: "" },
+	])(
+		"uses the structured public venue in speaker emails: $expected",
+		({ venue, expected }) => {
+			// Arrange
+			const catalog = {
+				...publicCatalog,
+				hosts: publicCatalog.hosts.map((host) => ({
+					...host,
+					publicVenue: venue,
+				})),
+			};
+			const event = {
+				host: { id: "host-0001", displayName: "Public Host" },
+				agenda: [
+					{ speakers: [{ id: "speaker-0001", displayName: "Public Speaker" }] },
+				],
+			};
+			const diagnostics: CommunicationJourneyDiagnostic[] = [];
+			const subject = new CommunicationRecipients({
+				resolveEventReferences:
+					new ReferentialDomainComposition().resolveEventReferences(),
+			});
+			// Act
+			const result = subject.resolveMailRecipients(event, catalog, diagnostics);
+			// Assert
+			expect(result.resolved).toBe(true);
+			expect(
+				result.recipients.find((recipient) => recipient.role === "speaker"),
+			).toMatchObject({
+				recipientId: "speaker-0001",
+				placeholders: { hostingAddress: expected },
+			});
+			expect(diagnostics).toEqual([]);
+		},
+	);
 	it("uses the current source name and address while retaining the delivery identity", () => {
 		// Arrange
 		const speaker = {

@@ -92,7 +92,6 @@ const ORGANIZER_CODES = new Set([
 	"event.proposals.not-accepted",
 	"event.proposals.not-found",
 	"event.title.missing",
-	"referential.contact.address.invalid",
 	"referential.contact.email.invalid",
 	"referential.contact.id.duplicate",
 	"referential.contact.id.invalid",

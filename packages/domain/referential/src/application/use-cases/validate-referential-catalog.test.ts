@@ -266,7 +266,6 @@ describe("ValidateReferentialCatalog", () => {
 			"Secret Person",
 			"secret-address@example.invalid",
 			"+33 6 66 66 66 66",
-			"42 Confidential Avenue",
 		];
 
 		// Act
@@ -288,7 +287,6 @@ describe("ValidateReferentialCatalog", () => {
 						contactName: privateValues[0],
 						email: privateValues[1],
 						phone: { raw: privateValues[2] },
-						address: privateValues[3],
 					}),
 				],
 			}),

@@ -14,7 +14,6 @@ export function hostRecord(
 		contactName: "Private Contact",
 		email: "contact@example.test",
 		phone: "+33 1 23 45 67 89",
-		address: "1 Private Street",
 		...override,
 	};
 }

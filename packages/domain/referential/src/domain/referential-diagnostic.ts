@@ -16,7 +16,6 @@ export type ReferentialDiagnosticCode =
 	| "referential.contact.name.invalid"
 	| "referential.contact.email.invalid"
 	| "referential.contact.phone.invalid"
-	| "referential.contact.address.invalid"
 	| "referential.speaker.display-name.invalid"
 	| "referential.speaker.mapping.invalid"
 	| "referential.speaker.id.invalid"

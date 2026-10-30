@@ -38,8 +38,8 @@ describe("CsvReferentialRepository", () => {
 		await mkdir(join(root, "referentials"));
 		await writeFile(
 			join(root, "referentials/hosts.csv"),
-			"host_id,name,contact_id,contact,mail,phone,address\n" +
-				"host-0001,Example,contact-0001,Pat,pat@example.invalid,,Somewhere\n",
+			"host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city\n" +
+				"host-0001,Example,contact-0001,Pat,pat@example.invalid,,Somewhere,13001,Marseille\n",
 		);
 		await writeFile(
 			join(root, "referentials/speakers.csv"),
@@ -64,6 +64,11 @@ describe("CsvReferentialRepository", () => {
 		expect(result.hosts).toHaveLength(1);
 		expect(result.speakers[0]?.speakerId).toBe("speaker-0001");
 		expect(result.hosts[0]?.contactId).toBe("contact-0001");
+		expect(result.hosts[0]).toMatchObject({
+			venueAddress: "Somewhere",
+			venuePostalCode: "13001",
+			venueCity: "Marseille",
+		});
 	});
 
 	it.each(["\n", "\r\n", "\r"])(
@@ -74,11 +79,11 @@ describe("CsvReferentialRepository", () => {
 			await writeFile(
 				join(root, "venues.csv"),
 				[
-					"host_id,name,contact_id,contact,mail,phone,address",
+					"host_id,name,contact_id,contact,mail,phone,venue_address,venue_postal_code,venue_city",
 					"",
 					'host-0042,Example Venue,contact-0042,Pat,pat@example.test,,"First line',
-					'Second line"',
-					"host-0090,Another Venue,contact-0090,Sam,sam@example.test,,Somewhere",
+					'Second line",13001,Marseille',
+					"host-0090,Another Venue,contact-0090,Sam,sam@example.test,,Somewhere,13001,Marseille",
 				].join(newline),
 			);
 			await writeFile(

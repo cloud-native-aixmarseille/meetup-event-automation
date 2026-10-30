@@ -23,7 +23,6 @@ export const publicCatalog: ReferentialCatalog = {
 					id: "contact-0001" as ContactId,
 					name: "Private contact",
 					email: "private@example.test",
-					address: "Private contact address",
 				},
 			],
 		},

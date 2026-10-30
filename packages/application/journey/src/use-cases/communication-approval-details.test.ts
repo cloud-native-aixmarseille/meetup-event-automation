@@ -22,7 +22,7 @@ const mail: MailMessageIntent = {
 	},
 	placeholders: {
 		speakerName: "Private Contact Name",
-		hostingAddress: "Private address",
+		hostingAddress: "1 Public Street, 13001 Marseille",
 		unknown: "private value",
 		eventMeetupUrl: "https://www.meetup.com/example/events/123",
 		eventCncfUrl: "https://ocgroups.dev/example",
