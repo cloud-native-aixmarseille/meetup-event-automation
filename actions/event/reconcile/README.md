@@ -30,7 +30,7 @@ Read one meetup issue, derive lifecycle and readiness, and persist safe issue up
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/reconcile@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/reconcile@4f7ea7fba73f31503043176bbe12d8c7170150ab # 6.0.0
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
@@ -56,6 +56,10 @@ Read one meetup issue, derive lifecycle and readiness, and persist safe issue up
     # This input is required.
     conference-hall-event: ""
 
+    # Conference Hall organizer event URL, https://conference-hall.io/team/TEAM/EVENT, matching conference-hall-event.
+    # This input is required.
+    conference-hall-event-url: ""
+
     # Read-only Conference Hall event API key.
     # This input is required.
     conference-hall-api-key: ""
@@ -78,6 +82,7 @@ Read one meetup issue, derive lifecycle and readiness, and persist safe issue up
 | **`locale`**                       | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`issue-number`**                 | GitHub issue number in the caller repository containing the meetup event document to inspect.                                      | **true**     | -           |
 | **`conference-hall-event`**        | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
+| **`conference-hall-event-url`**    | Conference Hall organizer event URL, <https://conference-hall.io/team/TEAM/EVENT>, matching conference-hall-event.                 | **true**     | -           |
 | **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 | **`github-token`**                 | Token for the caller repository. Requires issues:write for issue normalization.                                                    | **true**     | -           |
 

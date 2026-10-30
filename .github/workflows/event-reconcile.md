@@ -22,7 +22,7 @@
 ## Overview
 
 Goal: Keep one event consistent throughout preparation, event day and follow-up.
-Behavior: Prepare and review event copy, reconcile assets, feedback and due email/PDF work,
+Behavior: Prepare and review event copy and covers, reconcile assets, feedback and due email/PDF work,
 then update organizer tasks under the event lock. Domain policies and approvals
 gate effects; incomplete stages preserve unresolved tasks.
 
@@ -48,7 +48,7 @@ jobs:
     permissions:
       contents: read
     secrets:
-      # API key for automatic event copy generation.
+      # API key authorized for automatic text and cover generation.
       # This input is required.
       ai-api-key: ""
 
@@ -120,6 +120,10 @@ jobs:
       # This input is required.
       kutt-link-id: ""
 
+      # Conference Hall organizer event URL, https://conference-hall.io/team/TEAM/EVENT, matching conference-hall-event.
+      # This input is required.
+      conference-hall-event-url: ""
+
       # Conference Hall CFP slug for live linked profiles and selected proposals.
       # This input is required.
       conference-hall-event: ""
@@ -128,13 +132,17 @@ jobs:
       # This input is required.
       issue-number: 0
 
-      # AI provider identifier for automatic event copy proposals (gemini).
+      # AI provider identifier for automatic text and cover proposals (gemini).
       # This input is required.
       ai-provider: ""
 
       # Structured-text model for automatic title and description proposals.
       # This input is required.
-      ai-model: ""
+      ai-text-model: ""
+
+      # Image model for the four cover artwork candidates.
+      # This input is required.
+      ai-image-model: ""
 ```
 
 <!-- usage:end -->
@@ -157,10 +165,12 @@ jobs:
 | **`google-drive-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                                 | **true**     | **string** | -           |
 | **`kutt-base-url`**                   | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
 | **`kutt-link-id`**                    | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
+| **`conference-hall-event-url`**       | Conference Hall organizer event URL, <https://conference-hall.io/team/TEAM/EVENT>, matching conference-hall-event.                           | **true**     | **string** | -           |
 | **`conference-hall-event`**           | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
 | **`issue-number`**                    | Meetup issue number.                                                                                                                         | **true**     | **number** | -           |
-| **`ai-provider`**                     | AI provider identifier for automatic event copy proposals (gemini).                                                                          | **true**     | **string** | -           |
-| **`ai-model`**                        | Structured-text model for automatic title and description proposals.                                                                         | **true**     | **string** | -           |
+| **`ai-provider`**                     | AI provider identifier for automatic text and cover proposals (gemini).                                                                      | **true**     | **string** | -           |
+| **`ai-text-model`**                   | Structured-text model for automatic title and description proposals.                                                                         | **true**     | **string** | -           |
+| **`ai-image-model`**                  | Image model for the four cover artwork candidates.                                                                                           | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -169,7 +179,7 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                                             | **Required** |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| **`ai-api-key`**              | API key for automatic event copy generation.                                                                                                | **true**     |
+| **`ai-api-key`**              | API key authorized for automatic text and cover generation.                                                                                 | **true**     |
 | **`openfeedback-api-key`**    | OpenFeedback organization API key (`oforg_`) used to create and update events.                                                              | **true**     |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`google-credentials`**      | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |
