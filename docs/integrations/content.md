@@ -62,7 +62,11 @@ fingerprints. Existing documents, asset manifests, PDF files, and delivery
 ledgers retain their identities. The media verifier reads file permissions
 through the paginated Drive permissions API, including for shared-drive files
 whose metadata omits permissions. Keep candidates referenced by reviews; the
-folder name does not imply automatic deletion. Missing or ambiguous destination
+folder name does not imply automatic deletion. Cover verification compares the
+downloaded bytes, file URL, description, managed folder and public reader access.
+Drive's file version is recorded for traceability; a metadata-only version change
+does not invalidate identical artwork. Changed bytes or access still block review
+and use. Missing or ambiguous destination
 folders keep generation pending for organizer recovery before reserving an image
 or calling the provider. Transport failures remain technical action failures.
 

@@ -85022,7 +85022,7 @@ var GoogleDriveContentMediaStore = class {
     if (media.source) return this.announcement.verify(media);
     try {
       const actual = await this.read(media.id);
-      return actual !== void 0 && actual.fingerprint === media.fingerprint && actual.url === media.url && actual.sourceRevision === media.sourceRevision && actual.description === media.description;
+      return actual !== void 0 && actual.fingerprint === media.fingerprint && actual.url === media.url && actual.description === media.description;
     } catch (error2) {
       if (error2 instanceof ContentMediaChangedError) return false;
       throw error2;

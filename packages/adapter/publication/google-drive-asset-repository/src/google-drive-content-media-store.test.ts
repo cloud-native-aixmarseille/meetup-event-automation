@@ -5,6 +5,68 @@ import { DrivePublicFolderError } from "./drive-public-folder-error.js";
 import { GoogleDriveContentMediaStore } from "./google-drive-content-media-store.js";
 
 describe("immutable content media", () => {
+	it.each(["metadata-version", "bytes", "description", "private", "moved"])(
+		"verifies a saved cover after a change to %s",
+		async (change) => {
+			// Arrange
+			const bytes = Buffer.from(
+				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+				"base64",
+			);
+			const inspector = new DriveContentImage();
+			const media = {
+				...inspector.inspect({ bytes, mimeType: "image/png" }),
+				mimeType: "image/png" as const,
+				id: "saved-cover",
+				url: "https://drive.google.com/uc?export=download&id=saved-cover",
+				description: "Reviewed artwork",
+				sourceRevision: "1",
+			};
+			const currentBytes =
+				change === "bytes" ? Buffer.concat([bytes, Buffer.from([0])]) : bytes;
+			const get = vi.fn(async (input: { alt?: string }) =>
+				input.alt
+					? { data: "image-stream" }
+					: {
+							status: 200,
+							data: {
+								id: media.id,
+								mimeType: media.mimeType,
+								description:
+									change === "description" ? "Changed" : media.description,
+								parents: [
+									change === "moved" ? "other-folder" : "covers-folder",
+								],
+								version: "2",
+								appProperties: {
+									contentSchema: "1",
+									contentHash: inspector.inspect({
+										bytes: currentBytes,
+										mimeType: "image/png",
+									}).fingerprint,
+								},
+							},
+						},
+			);
+			const list = vi.fn(async () => ({
+				data: {
+					permissions:
+						change === "private" ? [] : [{ type: "anyone", role: "reader" }],
+				},
+			}));
+			const store = new GoogleDriveContentMediaStore(
+				{ files: { get }, permissions: { list } } as unknown as drive_v3.Drive,
+				{ resolve: async () => "covers-folder" },
+				inspector,
+				{ read: async () => currentBytes },
+				{ verify: vi.fn() },
+			);
+			// Act
+			const verified = await store.verify(media);
+			// Assert
+			expect(verified).toBe(change === "metadata-version");
+		},
+	);
 	it("rejects invalid destination layout before reserving an image identity", async () => {
 		// Arrange
 		const generateIds = vi.fn();

@@ -264,6 +264,15 @@ authorizing changed content.
 
 ## Decision history
 
+On 2026-10-30, immutable cover verification stopped requiring Drive's file
+version to equal its recorded value. Drive increments this metadata counter
+after upload even when the bytes, description, location and permissions remain
+unchanged. Verification still downloads and hashes the bytes and checks the
+stored URL, description, managed folder and public reader access. The observed
+version remains in proposal history. This supersedes version equality for raw
+cover artifacts only; source-linked announcement images retain their source
+revision checks. No proposal, approval or media identity is rewritten.
+
 On 2026-10-30, organizers can replace text in the proposal comment and approve
 that version in the same edit. This supersedes the checkbox-only rule for text
 previews. The original draft and source revision remain immutable; the trusted
