@@ -1498,7 +1498,9 @@ describe("organizer text replacement", () => {
 		await approvals.synchronize();
 		const pendingResult = await approvals.request(contentRequest, validate);
 		const pendingBody = f.comments[0]?.body;
-		decision(f, { body: pending.replace("- [ ] Approve", "- [x] Approve") });
+		decision(f, {
+			body: pending.replace("- [ ] ✅ Approve", "- [x] ✅ Approve"),
+		});
 		await approvals.synchronize();
 		const beforeValidation = (await f.repository.states())[0]?.record.decision;
 		const result = await approvals.request(contentRequest, validate);
@@ -1538,8 +1540,8 @@ describe("organizer text replacement", () => {
 		await approvals.request(contentRequest, validate);
 		const original = f.comments[0]?.body ?? "";
 		const invalid = (preview.replace(original, "x".repeat(81)) ?? "").replace(
-			"- [ ] Approve",
-			"- [x] Approve",
+			"- [ ] ✅ Approve",
+			"- [x] ✅ Approve",
 		);
 		decision(f, { body: invalid });
 		const rejected = await approvals.request(contentRequest, validate);
@@ -1572,7 +1574,7 @@ describe("organizer text replacement", () => {
 		await approvals.request(contentRequest, () => true);
 		const edited = (
 			preview.replace(f.comments[0]?.body ?? "", "Untrusted replacement") ?? ""
-		).replace("- [ ] Approve", "- [x] Approve");
+		).replace("- [ ] ✅ Approve", "- [x] ✅ Approve");
 		decision(f, { body: edited });
 		f.permission.mockResolvedValue({ data: { permission: "read" } });
 		const result = await approvals.request(contentRequest, () => true);

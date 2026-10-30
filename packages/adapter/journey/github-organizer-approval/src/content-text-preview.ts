@@ -3,15 +3,10 @@ export class ContentTextPreview {
 	private readonly start = "<!-- meetup-content:text -->";
 	private readonly end = "<!-- /meetup-content:text -->";
 	render(text: string): string {
-		const escaped = text
-			.replaceAll("&", "&amp;")
-			.replaceAll("<", "&lt;")
-			.replaceAll(">", "&gt;")
-			.replaceAll("[", "&#91;")
-			.replaceAll("]", "&#93;")
-			.replaceAll("@", "<span>@</span>")
-			.replaceAll("\n", "  \n");
-		return `${this.start}\n\n${escaped}\n\n${this.end}`;
+		const fence = "`".repeat(
+			Math.max(3, ...(text.match(/`+/g) ?? []).map((run) => run.length + 1)),
+		);
+		return `${this.start}\n${fence}\n${text}\n${fence}\n${this.end}`;
 	}
 	read(body: string): { text: string; start: number; end: number } | undefined {
 		const start = body.indexOf(this.start);
@@ -23,17 +18,16 @@ export class ContentTextPreview {
 			body.indexOf(this.end, end + 1) !== -1
 		)
 			return undefined;
-		const text = body
-			.slice(start + this.start.length, end)
-			.trim()
-			.replace(/ {2}\n/g, "\n")
-			.replaceAll("<span>@</span>", "@")
-			.replaceAll("&#91;", "[")
-			.replaceAll("&#93;", "]")
-			.replaceAll("&gt;", ">")
-			.replaceAll("&lt;", "<")
-			.replaceAll("&amp;", "&");
-		return { text, start, end: end + this.end.length };
+		const block = body.slice(start + this.start.length, end).trim();
+		const match = /^(`{3,})\n([\s\S]*)\n\1$/.exec(block);
+		if (
+			!match ||
+			new RegExp(`^ {0,3}\u0060{${match[1].length},}[ \\t]*$`, "m").test(
+				match[2],
+			)
+		)
+			return undefined;
+		return { text: match[2], start, end: end + this.end.length };
 	}
 	replace(body: string, text: string): string | undefined {
 		const current = this.read(body);

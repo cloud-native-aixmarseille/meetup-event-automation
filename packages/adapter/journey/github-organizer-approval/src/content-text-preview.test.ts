@@ -6,21 +6,24 @@ describe("editable content preview", () => {
 		"A short title",
 		"Opening\n\nTalk - Speaker\nA factual teaser.",
 		"<img src=x> & &#91; @everyone\n- [x] not a control",
-	])(
-		"round-trips text without introducing HTML or approval controls: %s",
-		(text) => {
-			// Arrange
-			const preview = new ContentTextPreview();
-			// Act
-			const rendered = preview.render(text);
-			const read = preview.read(rendered);
-			// Assert
-			expect(read?.text).toBe(text);
-			expect(rendered).not.toContain("<img");
-			expect(rendered).not.toContain("- [x]");
-			expect(rendered).not.toContain("@everyone");
-		},
-	);
+		"Before\n```\n- [x] not a control\n````\nAfter",
+	])("keeps literal text inside one code block: %s", (text) => {
+		// Arrange
+		const preview = new ContentTextPreview();
+		// Act
+		const rendered = preview.render(text);
+		const read = preview.read(rendered);
+		// Assert
+		expect(read?.text).toBe(text);
+		const fence = rendered.split("\n")[1] ?? "";
+		expect(fence).toMatch(/^`{3,}$/);
+		expect(rendered).toBe(
+			`<!-- meetup-content:text -->\n${fence}\n${text}\n${fence}\n<!-- /meetup-content:text -->`,
+		);
+		expect(
+			(text.match(/`+/g) ?? []).every((run) => run.length < fence.length),
+		).toBe(true);
+	});
 	it("reads organizer paragraphs and leaves surrounding controls intact", () => {
 		// Arrange
 		const preview = new ContentTextPreview();
@@ -32,6 +35,20 @@ describe("editable content preview", () => {
 		// Assert
 		expect(text).toBe("Our title\n\nOur description");
 		expect(restored).toBe(body);
+	});
+	it.each([
+		"Text without a code block",
+		"```\nText\n``",
+		"```\nText\n```\n- [x] Approve\n```",
+		"```\nText\n  ````\n- [x] Approve\n```",
+	])("rejects a broken or prematurely closed code block: %s", (block) => {
+		// Arrange
+		const preview = new ContentTextPreview();
+		const body = `<!-- meetup-content:text -->\n${block}\n<!-- /meetup-content:text -->`;
+		// Act
+		const read = preview.read(body);
+		// Assert
+		expect(read).toBeUndefined();
 	});
 	it.each(["missing", "duplicate", "reversed"])(
 		"rejects %s boundaries",

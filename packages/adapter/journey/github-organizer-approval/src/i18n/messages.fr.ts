@@ -24,10 +24,10 @@ export const FR_MESSAGES = {
 	"approval.content.title":
 		"### {target, select, title {Titre du meetup} description {Description du meetup} cover {Visuels du meetup} other {Texte pour {target}}}",
 	"approval.content.request":
-		"{target, select, cover {Choisissez un visuel.} other {Modifiez le texte de ce commentaire si besoin, puis cochez un choix.}} La publication se valide séparément.\n\n{approve}\n- [{rejectMark}] Refuser\n- [{iterateMark}] Générer une autre proposition",
-	"approval.content.text-choice": "- [{mark}] Approuver",
+		"{target, select, cover {Choisissez un visuel.} other {Modifiez le texte de ce commentaire si besoin, puis cochez un choix.}} La publication se valide séparément.\n\n{approve}\n- [{rejectMark}] ❌ Refuser\n- [{iterateMark}] 🔄 Générer une autre proposition",
+	"approval.content.text-choice": "- [{mark}] ✅ Approuver",
 	"approval.content.image-choice":
-		"- [{mark}] Choisir le visuel {index, number}",
+		"- [{mark}] ✅ Choisir le visuel {index, number}",
 	"approval.content.final":
 		"{status, select, approved {✅ Approuvé} rejected {❌ Refusé} iteration_requested {🔄 Nouvelle proposition demandée} other {Décision enregistrée}} par @{actor} le {decidedAt}.{image, plural, =0 {} other {\n\nVisuel choisi : #}}",
 	"approval.meetup.details":
