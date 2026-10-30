@@ -17,9 +17,11 @@ organization settings:
 | Secret `GEMINI_API_KEY`         | Gemini API key with access to the text model configured in the workflow. |
 
 The release job requests an App token scoped to this repository with Contents
-write and Pull requests read permissions. App-authenticated tags trigger the
-existing main CI and documentation workflow. Its separate documentation token
-also needs Pull requests and Workflows write permissions, as described in the
+and Workflows write and Pull requests read permissions. GitHub requires
+Workflows write when the tagged commit's workflow files differ from the default
+branch, including when documentation advances that branch during release CI.
+App-authenticated tags trigger the existing main CI and documentation workflow.
+Its separate documentation token also needs Pull requests write, as described in the
 [development guide](README.md#ci-and-public-documentation).
 
 The Gemini credential is passed only to the release summary step. Provider and
