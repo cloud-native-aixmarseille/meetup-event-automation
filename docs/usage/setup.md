@@ -55,23 +55,24 @@ repository-scoped tokens it needs and revokes them when the job ends.
 
 Add the following repository settings:
 
-| Type     | Name                           | Value                                                                      |
-| -------- | ------------------------------ | -------------------------------------------------------------------------- |
-| Variable | `MEETUP_EVENT_URL_PREFIX`      | Authorized Meetup group event URL prefix.                                  |
-| Variable | `COMMUNITY_EVENT_URL_PREFIXES` | JSON array of accepted community event URL prefixes.                       |
-| Variable | `ASSET_FOLDER_URL_PREFIX`      | Accepted event asset folder URL prefix.                                    |
-| Variable | `CONFERENCE_HALL_EVENT_URL`    | Organizer event URL: `https://conference-hall.io/team/TEAM/EVENT`.         |
-| Variable | `CONFERENCE_HALL_EVENT`        | CFP slug, such as `meetup-cloud-native-aix-marseille`.                     |
-| Variable | `GEMINI_MODEL`                 | Supported structured-text model for event title and description proposals. |
-| Variable | `GEMINI_IMAGE_MODEL`           | Supported image model for four cover proposals.                            |
-| Secret   | `GEMINI_API_KEY`               | API key authorized to use the configured text and image models.            |
-| Secret   | `CONFERENCE_HALL_API_KEY`      | Read-only event key from Conference Hall's Web API settings.               |
-| Variable | `CI_BOT_APP_CLIENT_ID`         | GitHub App client ID.                                                      |
-| Secret   | `CI_BOT_APP_PRIVATE_KEY`       | App private key in PEM format.                                             |
-| Variable | `KUTT_BASE_URL`                | HTTPS base URL of the Kutt instance, without `/api/v2`; no default.        |
-| Variable | `KUTT_FEEDBACK_LINK_ID`        | API ID of the existing Kutt short link.                                    |
-| Secret   | `OPENFEEDBACK_API_KEY`         | OpenFeedback organization API key beginning with `oforg_`.                 |
-| Secret   | `KUTT_API_KEY`                 | API key of that link's owner.                                              |
+| Type     | Name                           | Value                                                                                                                       |
+| -------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Variable | `MEETUP_EVENT_URL_PREFIX`      | Authorized Meetup group event URL prefix.                                                                                   |
+| Variable | `COMMUNITY_EVENT_URL_PREFIXES` | JSON array of accepted community event URL prefixes.                                                                        |
+| Variable | `ASSET_FOLDER_URL_PREFIX`      | Accepted event asset folder URL prefix.                                                                                     |
+| Variable | `CONFERENCE_HALL_EVENT_URL`    | Organizer event URL: `https://conference-hall.io/team/TEAM/EVENT`.                                                          |
+| Variable | `CONFERENCE_HALL_EVENT`        | CFP slug, such as `meetup-cloud-native-aix-marseille`.                                                                      |
+| Variable | `GEMINI_MODEL`                 | Supported structured-text model for event title and description proposals.                                                  |
+| Variable | `GEMINI_IMAGE_MODEL`           | Supported image model for four cover proposals.                                                                             |
+| Secret   | `PUBLICATION_CREDENTIALS`      | JSON credentials for the configured [publication destinations](../integrations/event-publication.md#configure-credentials). |
+| Secret   | `GEMINI_API_KEY`               | API key authorized to use the configured text and image models.                                                             |
+| Secret   | `CONFERENCE_HALL_API_KEY`      | Read-only event key from Conference Hall's Web API settings.                                                                |
+| Variable | `CI_BOT_APP_CLIENT_ID`         | GitHub App client ID.                                                                                                       |
+| Secret   | `CI_BOT_APP_PRIVATE_KEY`       | App private key in PEM format.                                                                                              |
+| Variable | `KUTT_BASE_URL`                | HTTPS base URL of the Kutt instance, without `/api/v2`; no default.                                                         |
+| Variable | `KUTT_FEEDBACK_LINK_ID`        | API ID of the existing Kutt short link.                                                                                     |
+| Secret   | `OPENFEEDBACK_API_KEY`         | OpenFeedback organization API key beginning with `oforg_`.                                                                  |
+| Secret   | `KUTT_API_KEY`                 | API key of that link's owner.                                                                                               |
 
 Configure the [publication URL inputs](../reference/configuration.md#publication-url-inputs)
 for your community and use the same three values in every event workflow. The
@@ -160,6 +161,7 @@ jobs:
       ai-text-model: ${{ vars.GEMINI_MODEL }}
       ai-image-model: ${{ vars.GEMINI_IMAGE_MODEL }}
     secrets:
+      publication-credentials: ${{ secrets.PUBLICATION_CREDENTIALS }}
       ai-api-key: ${{ secrets.GEMINI_API_KEY }}
       conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
@@ -204,6 +206,7 @@ jobs:
       ai-text-model: ${{ vars.GEMINI_MODEL }}
       ai-image-model: ${{ vars.GEMINI_IMAGE_MODEL }}
     secrets:
+      publication-credentials: ${{ secrets.PUBLICATION_CREDENTIALS }}
       ai-api-key: ${{ secrets.GEMINI_API_KEY }}
       conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}

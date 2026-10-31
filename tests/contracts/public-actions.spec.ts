@@ -55,7 +55,7 @@ const actionContracts = [
 			"slack-token",
 			"slack-organizer-channel-id",
 		],
-		outputs: [],
+		outputs: ["diagnostics"],
 	},
 	{
 		directory: "actions/organizer/review-drafts",

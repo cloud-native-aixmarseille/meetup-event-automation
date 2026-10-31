@@ -38,10 +38,10 @@ operations use `reconcile`; queries and validation use `list-active` and
 `validate`. Action paths, workflow filenames and public display names describe
 business responsibilities, independently of adapter implementations. Use
 `referential-reconcile-speakers.yml` for the speaker referential and
-`publication/reconcile-event` with `event-publication-reconcile.yml` for the
+`publication/reconcile-event` with `event-reconcile.yml` for the
 configured Meetup and OCGroups adapter collection. `publication/prepare-runtime`
 reads the shared configuration to select required runtime capabilities and emits
-the downloaded automation directory. The publication workflow installs locked
+the downloaded automation directory. Event reconciliation installs locked
 Node.js dependencies and Chromium, plus Chrome and the Python solver for Meetup, before
 running the publication action from the same revision. Provider
 identities belong in adapter wiring, integration guides

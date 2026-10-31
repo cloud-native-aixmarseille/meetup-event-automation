@@ -37,9 +37,8 @@ describe("explicit publication URL configuration", () => {
 	});
 
 	it.each([
-		["event-reconcile", 4],
+		["event-reconcile", 5],
 		["__organizer-reconcile-reporting", 1],
-		["event-publication-reconcile", 1],
 	] as const)(
 		"forwards the same required prefixes to every evaluating action in %s",
 		async (name, expectedCount) => {

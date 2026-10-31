@@ -41,6 +41,7 @@ describe("organizer reporting composition", () => {
 			"cover",
 			"content",
 			"event",
+			"publication",
 			"assets",
 			"pdf",
 			"feedback",
@@ -60,7 +61,7 @@ describe("organizer reporting composition", () => {
 			"needs.feedback-link.outputs.outcome",
 		);
 	});
-	it.each(["decisions", "title", "description", "cover"])(
+	it.each(["decisions", "title", "description", "cover", "publication"])(
 		"preserves a failed %s operation when the final content review succeeds",
 		async (failed) => {
 			// Arrange
@@ -78,7 +79,8 @@ describe("organizer reporting composition", () => {
 								: "success",
 					),
 			);
-			const actual = new AttentionStageInput().parse(encoded).content;
+			const stage = failed === "publication" ? "event" : "content";
+			const actual = new AttentionStageInput().parse(encoded)[stage];
 			// Assert
 			expect(JSON.parse(encoded).content).toHaveLength(5);
 			expect(actual?.outcome).toBe("failure");

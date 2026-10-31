@@ -11,7 +11,6 @@ function event(overrides: Partial<PublicationEvent> = {}): PublicationEvent {
 		timeZone: "Europe/Paris",
 		occurrenceStatus: "scheduled",
 		references: {},
-		meetupPublished: false,
 		attendanceImported: false,
 		...overrides,
 	};
@@ -31,7 +30,7 @@ describe("manual publication tasks", () => {
 		expect(tasks).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
-					kind: "publish-meetup-event",
+					kind: "publish-community-event",
 					status: "pending",
 				}),
 				expect.objectContaining({
@@ -61,7 +60,6 @@ describe("manual publication tasks", () => {
 						"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/event",
 					assets: "https://drive.google.com/drive/folders/folder",
 				},
-				meetupPublished: false,
 				attendanceImported: true,
 			}),
 		);
@@ -86,36 +84,7 @@ describe("manual publication tasks", () => {
 		const actual = tasks.every((task) => task.status === "not-applicable");
 
 		// Assert
-		expect(tasks).toHaveLength(4);
+		expect(tasks).toHaveLength(3);
 		expect(actual).toBe(true);
 	});
-	it.each([
-		{
-			meetupPublished: false,
-			references: { meetup: "https://www.meetup.com/example/events/123/" },
-			status: "pending",
-		},
-		{ meetupPublished: true, references: {}, status: "pending" },
-		{
-			meetupPublished: true,
-			references: { meetup: "https://www.meetup.com/example/events/123/" },
-			status: "completed",
-		},
-	])(
-		"requires publication and a URL for the Meetup task: %j",
-		({ status, ...overrides }) => {
-			// Arrange
-			const source = event(overrides);
-
-			// Act
-			const tasks = new ManualPublicationPolicy().planManualPublicationTasks(
-				source,
-			);
-
-			// Assert
-			expect(tasks).toContainEqual(
-				expect.objectContaining({ kind: "publish-meetup-event", status }),
-			);
-		},
-	);
 });

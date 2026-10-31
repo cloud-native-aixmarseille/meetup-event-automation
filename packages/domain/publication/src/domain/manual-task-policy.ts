@@ -1,7 +1,6 @@
 import type { PublicationEvent } from "./model.js";
 
 export type ManualPublicationTaskKind =
-	| "publish-meetup-event"
 	| "publish-community-event"
 	| "create-asset-folder"
 	| "import-attendance";
@@ -18,7 +17,7 @@ export type ManualPublicationTask = Readonly<{
 }>;
 
 export class ManualPublicationPolicy {
-	/** Tracks organizer approvals and manual work required for publication. */
+	/** Tracks manual work outside automated event publication. */
 	planManualPublicationTasks(
 		event: PublicationEvent,
 	): readonly ManualPublicationTask[] {
@@ -34,11 +33,6 @@ export class ManualPublicationPolicy {
 
 		const occurrenceConfirmed = event.occurrenceStatus === "held";
 		return Object.freeze([
-			this.task(
-				"publish-meetup-event",
-				Boolean(event.references.meetup) && event.meetupPublished,
-				"Approve publishing the event to Meetup",
-			),
 			this.task(
 				"publish-community-event",
 				Boolean(event.references.community),
@@ -83,7 +77,6 @@ export class ManualPublicationPolicy {
 
 	allTaskKinds(): readonly ManualPublicationTaskKind[] {
 		return [
-			"publish-meetup-event",
 			"publish-community-event",
 			"create-asset-folder",
 			"import-attendance",

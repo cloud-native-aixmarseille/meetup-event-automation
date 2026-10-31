@@ -37,6 +37,9 @@ inputs:
   publication-credentials:
     description: JSON credentials keyed by configured provider. Meetup requires email, password, and ai (provider, model, apiKey); OCGroups requires username and password.
     required: true
+outputs:
+  diagnostics:
+    description: JSON diagnostics consumed by consolidated organizer reporting.
 runs:
   using: node24
   main: dist/index.js

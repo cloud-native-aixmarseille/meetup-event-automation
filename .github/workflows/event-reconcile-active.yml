@@ -73,6 +73,9 @@ on:
         required: true
         type: string
     secrets:
+      publication-credentials:
+        description: JSON credentials for the configured publication providers, including AI settings for Meetup.
+        required: true
       ai-api-key:
         description: API key authorized for automatic text and cover generation.
         required: true
@@ -146,6 +149,7 @@ jobs:
       ai-text-model: ${{ inputs.ai-text-model }}
       ai-image-model: ${{ inputs.ai-image-model }}
     secrets:
+      publication-credentials: ${{ secrets.publication-credentials }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
       ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
       openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
       kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials

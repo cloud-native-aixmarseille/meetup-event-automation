@@ -29155,7 +29155,7 @@ var FeedbackPolicy = class {
 
 // packages/domain/publication/src/domain/manual-task-policy.ts
 var ManualPublicationPolicy = class {
-  /** Tracks organizer approvals and manual work required for publication. */
+  /** Tracks manual work outside automated event publication. */
   planManualPublicationTasks(event) {
     if (event.occurrenceStatus === "cancelled") {
       return Object.freeze(
@@ -29168,11 +29168,6 @@ var ManualPublicationPolicy = class {
     }
     const occurrenceConfirmed = event.occurrenceStatus === "held";
     return Object.freeze([
-      this.task(
-        "publish-meetup-event",
-        Boolean(event.references.meetup) && event.meetupPublished,
-        "Approve publishing the event to Meetup"
-      ),
       this.task(
         "publish-community-event",
         Boolean(event.references.community),
@@ -29205,7 +29200,6 @@ var ManualPublicationPolicy = class {
   }
   allTaskKinds() {
     return [
-      "publish-meetup-event",
       "publish-community-event",
       "create-asset-folder",
       "import-attendance"
@@ -29969,7 +29963,6 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     ["speaker-confirmation", ["speaker-confirmation"]]
   ]);
   static RESOURCE_FIELDS = /* @__PURE__ */ new Map([
-    ["publish-meetup-event", ["meetup"]],
     ["publish-community-event", ["community"]]
   ]);
 };
@@ -32965,7 +32958,6 @@ var EventPublicationEvaluation = class {
         timeZone: event.timeZone,
         occurrenceStatus: event.occurrenceStatus,
         references: event.publicationLinks,
-        meetupPublished: this.collaborators.meetupPublicationChecklist.isPublished(event),
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
           POST_EVENT_TASK_NAMES.importAttendance

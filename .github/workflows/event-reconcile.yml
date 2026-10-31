@@ -1,5 +1,6 @@
 # Goal: Keep one event consistent throughout preparation, event day and follow-up.
-# Behavior: Prepare and review event copy and covers, reconcile assets, feedback and due email/PDF work,
+# Behavior: Review event copy and covers, prepare publication drafts and publish after approval,
+# reconcile assets, feedback and due email/PDF work,
 # then update organizer tasks under the event lock. Domain policies and approvals
 # gate effects; incomplete stages preserve unresolved tasks.
 
@@ -76,6 +77,9 @@ on:
         required: true
         type: string
     secrets:
+      publication-credentials:
+        description: JSON credentials for the configured publication providers, including AI settings for Meetup.
+        required: true
       ai-api-key:
         description: API key authorized for automatic text and cover generation.
         required: true
@@ -101,6 +105,9 @@ permissions: {}
 jobs:
   manage:
     runs-on: ubuntu-latest
+    env:
+      DEBUG: ""
+      PWDEBUG: ""
     permissions:
       contents: read
     steps:
@@ -252,6 +259,55 @@ jobs:
           google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
           pdf-source: ${{ steps.assets.outputs.pdf-source }}
           slides-ready: ${{ steps.assets.outputs.slides-ready }}
+      - name: Prepare publication runtime
+        id: publication-runtime
+        uses: $/actions/publication/prepare-runtime
+        with:
+          locale: ${{ inputs.locale }}
+
+      - name: Install locked automation dependencies
+        uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@97f64bc080b78daca8fb3ece49de448aaac83429 # 1.1.0
+        with:
+          working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
+
+      - name: Install Chromium
+        working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
+        run: pnpm exec playwright-core install --with-deps chromium
+
+      - name: Install Chrome for Meetup
+        if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
+        working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
+        run: pnpm exec playwright-core install --with-deps chrome
+
+      - name: Set up Python
+        if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+
+      - name: Install locked challenge solver dependencies
+        if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' }}
+        working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Reconcile event publication
+        id: publication
+        uses: $/actions/publication/reconcile-event
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          issue-number: ${{ inputs.issue-number }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+          locale: ${{ inputs.locale }}
+          publication-credentials: ${{ secrets.publication-credentials }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
       - name: Reconcile event
         id: event
         if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
@@ -298,6 +354,8 @@ jobs:
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
     outputs:
       initialized: ${{ steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+      publication-outcome: ${{ steps.publication.outcome }}
+      publication-diagnostics: ${{ steps.publication.outputs.diagnostics }}
       event-outcome: ${{ steps.event.outcome }}
       event-diagnostics: ${{ steps.event.outputs.diagnostics }}
       assets-outcome: ${{ steps.assets.outcome }}
@@ -357,7 +415,7 @@ jobs:
       github-app-client-id: ${{ inputs.github-app-client-id }}
       slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       issue-number: ${{ inputs.issue-number }}
-      stage-results: '{"content":[{"outcome":${{ toJSON(needs.manage.outputs.decisions-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.decisions-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.title-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.title-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.description-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.description-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.cover-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.cover-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.content-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.content-diagnostics) }}}],"event":{"outcome":${{ toJSON(needs.manage.outputs.event-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.event-diagnostics) }}},"assets":[{"outcome":${{ toJSON(needs.manage.outputs.assets-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.assets-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.pdf-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.pdf-diagnostics) }}}],"feedback":[{"outcome":${{ toJSON(needs.manage.outputs.feedback-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.feedback-diagnostics) }}},{"outcome":${{ toJSON(needs.feedback-link.outputs.outcome) }},"diagnostics":${{ toJSON(needs.feedback-link.outputs.diagnostics) }}}],"communications":{"outcome":${{ toJSON(needs.manage.outputs.communications-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.communications-diagnostics) }}}}'
+      stage-results: '{"content":[{"outcome":${{ toJSON(needs.manage.outputs.decisions-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.decisions-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.title-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.title-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.description-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.description-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.cover-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.cover-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.content-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.content-diagnostics) }}}],"event":[{"outcome":${{ toJSON(needs.manage.outputs.publication-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.publication-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.event-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.event-diagnostics) }}}],"assets":[{"outcome":${{ toJSON(needs.manage.outputs.assets-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.assets-diagnostics) }}},{"outcome":${{ toJSON(needs.manage.outputs.pdf-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.pdf-diagnostics) }}}],"feedback":[{"outcome":${{ toJSON(needs.manage.outputs.feedback-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.feedback-diagnostics) }}},{"outcome":${{ toJSON(needs.feedback-link.outputs.outcome) }},"diagnostics":${{ toJSON(needs.feedback-link.outputs.diagnostics) }}}],"communications":{"outcome":${{ toJSON(needs.manage.outputs.communications-outcome) }},"diagnostics":${{ toJSON(needs.manage.outputs.communications-diagnostics) }}}}'
     secrets:
       github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials

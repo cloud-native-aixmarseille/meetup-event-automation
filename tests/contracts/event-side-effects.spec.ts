@@ -61,12 +61,8 @@ describe("event side-effect safeguards", () => {
 	it("holds the same issue lock for mutations, reporting and Meetup publication", async () => {
 		// Arrange
 		const pipeline = await readWorkflow("event-reconcile");
-		const publication = await readWorkflow("event-publication-reconcile");
 		// Act
-		const locks = [
-			pipeline.concurrency,
-			publication.jobs?.publish?.concurrency,
-		];
+		const locks = [pipeline.concurrency];
 		// Assert
 		for (const lock of locks) {
 			expect(lock?.["cancel-in-progress"]).toBe(false);

@@ -45,7 +45,7 @@ does not forward it to a reusable workflow.
 
 ## Event publication
 
-The [publication workflow](../../.github/workflows/event-publication-reconcile.yml)
+The [publication workflow](../../.github/workflows/event-reconcile.yml)
 uses `.github/event-publication.json` for the common schedule, public venues,
 and configured destination collection. The required `publication-credentials`
 secret contains credentials keyed by enabled provider. Meetup requires email,

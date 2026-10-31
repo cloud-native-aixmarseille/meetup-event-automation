@@ -29711,7 +29711,7 @@ var FeedbackPolicy = class {
 
 // packages/domain/publication/src/domain/manual-task-policy.ts
 var ManualPublicationPolicy = class {
-  /** Tracks organizer approvals and manual work required for publication. */
+  /** Tracks manual work outside automated event publication. */
   planManualPublicationTasks(event) {
     if (event.occurrenceStatus === "cancelled") {
       return Object.freeze(
@@ -29724,11 +29724,6 @@ var ManualPublicationPolicy = class {
     }
     const occurrenceConfirmed = event.occurrenceStatus === "held";
     return Object.freeze([
-      this.task(
-        "publish-meetup-event",
-        Boolean(event.references.meetup) && event.meetupPublished,
-        "Approve publishing the event to Meetup"
-      ),
       this.task(
         "publish-community-event",
         Boolean(event.references.community),
@@ -29761,7 +29756,6 @@ var ManualPublicationPolicy = class {
   }
   allTaskKinds() {
     return [
-      "publish-meetup-event",
       "publish-community-event",
       "create-asset-folder",
       "import-attendance"
@@ -30627,7 +30621,6 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     ["speaker-confirmation", ["speaker-confirmation"]]
   ]);
   static RESOURCE_FIELDS = /* @__PURE__ */ new Map([
-    ["publish-meetup-event", ["meetup"]],
     ["publish-community-event", ["community"]]
   ]);
 };
@@ -35146,7 +35139,6 @@ var EventPublicationEvaluation = class {
         timeZone: event.timeZone,
         occurrenceStatus: event.occurrenceStatus,
         references: event.publicationLinks,
-        meetupPublished: this.collaborators.meetupPublicationChecklist.isPublished(event),
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
           POST_EVENT_TASK_NAMES.importAttendance
@@ -47559,7 +47551,6 @@ var messages = {
   "task.delivery": "delivery recovery",
   "attention.clear": "No pending tasks.",
   "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
-  "task.publish-meetup-event": "Approve Meetup publication",
   "task.publish-community-event": "Publish on the CNCF platform",
   "task.create-asset-folder": "Prepare the asset folder",
   "task.thank-host": "Thank the host",
@@ -47606,7 +47597,6 @@ var messages2 = {
   "task.delivery": "reprise des envois",
   "attention.clear": "Aucune t\xE2che en attente.",
   "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
-  "task.publish-meetup-event": "Approuver la publication Meetup",
   "task.publish-community-event": "Publiez sur la plateforme CNCF",
   "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
   "task.thank-host": "Remerciez l'h\xF4te",
@@ -47766,7 +47756,6 @@ var messages3 = {
   "task.approvals": "email approval",
   "task.delivery": "delivery recovery",
   "attention.clear": "No pending tasks.",
-  "task.publish-meetup-event": "Approve Meetup publication",
   "task.publish-community-event": "Publish on the CNCF platform",
   "task.create-asset-folder": "Prepare the asset folder",
   "task.thank-host": "Thank the host",
@@ -47813,7 +47802,6 @@ var messages4 = {
   "task.approvals": "validation des emails",
   "task.delivery": "reprise des envois",
   "attention.clear": "Aucune t\xE2che en attente.",
-  "task.publish-meetup-event": "Approuver la publication Meetup",
   "task.publish-community-event": "Publiez sur la plateforme CNCF",
   "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
   "task.thank-host": "Remerciez l'h\xF4te",
