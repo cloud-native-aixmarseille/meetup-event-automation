@@ -5,9 +5,14 @@ import { describe, expect, it, vi } from "vitest";
 import { BoundedImageDownload } from "./bounded-image-download.js";
 import { HttpsAssetImageRepositoryComposition } from "./dependency-composition.js";
 import { HttpsAssetImageRepository } from "./https-asset-image-repository.js";
+import { WixImageUrl } from "./wix-image-url.js";
 
 const png = Buffer.from(
 	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+	"base64",
+);
+const webp = Buffer.from(
+	"UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA",
 	"base64",
 );
 const source = {
@@ -16,6 +21,90 @@ const source = {
 };
 
 describe("image preflight", () => {
+	it("uses the validated PNG representation of a Wix WebP portrait", async () => {
+		// Arrange
+		const url =
+			"https://static.wixstatic.com/media/photo.jpg/v1/fit/w_500,h_400/portrait.webp";
+		const pngUrl = url.replace(/\.webp$/, ".png");
+		const get = vi
+			.fn()
+			.mockResolvedValueOnce({ bytes: webp, mediaType: "image/webp", url })
+			.mockResolvedValueOnce({
+				bytes: png,
+				mediaType: "image/png",
+				url: pngUrl,
+			});
+		const fingerprint = new PublicationDomainComposition().contentFingerprint();
+		const repository = new HttpsAssetImageRepository(
+			{ contentFingerprint: fingerprint, wixImageUrl: new WixImageUrl() },
+			{ get },
+		);
+
+		// Act
+		const result = await repository.validate({ ...source, url });
+
+		// Assert
+		expect(result).toEqual({
+			fingerprint: fingerprint.of(png),
+			source: { ...source, url: pngUrl },
+		});
+		expect(get.mock.calls).toEqual([[url], [pngUrl]]);
+	});
+
+	it.each([
+		{ bytes: webp, mediaType: "image/webp" },
+		{ bytes: png, mediaType: "text/html" },
+	])("rejects unusable Wix PNG responses: $mediaType", async (response) => {
+		// Arrange
+		const url =
+			"https://static.wixstatic.com/media/photo.jpg/v1/fit/w_500/portrait.webp";
+		const get = vi
+			.fn()
+			.mockResolvedValueOnce({ bytes: webp, mediaType: "image/webp", url })
+			.mockResolvedValueOnce({
+				...response,
+				url: url.replace(/\.webp$/, ".png"),
+			});
+		const repository = new HttpsAssetImageRepository(
+			{
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+				wixImageUrl: new WixImageUrl(),
+			},
+			{ get },
+		);
+
+		// Act
+		const result = repository.validate({ ...source, url });
+
+		// Assert
+		await expect(result).rejects.toMatchObject({ code: "image" });
+		expect(get).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not invent conversion URLs for other WebP providers", async () => {
+		// Arrange
+		const url = "https://images.example.org/portrait.webp";
+		const get = vi
+			.fn()
+			.mockResolvedValue({ bytes: webp, mediaType: "image/webp", url });
+		const repository = new HttpsAssetImageRepository(
+			{
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+				wixImageUrl: new WixImageUrl(),
+			},
+			{ get },
+		);
+
+		// Act
+		const result = repository.validate({ ...source, url });
+
+		// Assert
+		await expect(result).rejects.toMatchObject({ code: "image" });
+		expect(get).toHaveBeenCalledTimes(1);
+	});
+
 	it("fingerprints downloaded bytes and returns the validated final URL", async () => {
 		// Arrange
 		const download = new BoundedImageDownload(
@@ -35,6 +124,7 @@ describe("image preflight", () => {
 			{
 				contentFingerprint:
 					new PublicationDomainComposition().contentFingerprint(),
+				wixImageUrl: new WixImageUrl(),
 			},
 			download,
 		);
@@ -72,6 +162,7 @@ describe("image preflight", () => {
 				{
 					contentFingerprint:
 						new PublicationDomainComposition().contentFingerprint(),
+					wixImageUrl: new WixImageUrl(),
 				},
 				download,
 			);
@@ -106,6 +197,7 @@ describe("image preflight", () => {
 			{
 				contentFingerprint:
 					new PublicationDomainComposition().contentFingerprint(),
+				wixImageUrl: new WixImageUrl(),
 			},
 			download,
 		);

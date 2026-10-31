@@ -6,9 +6,11 @@ import {
 } from "@meetup-automation/publication";
 import { imageSize } from "image-size";
 import type { BoundedImageDownload } from "./bounded-image-download.js";
+import type { WixImageUrl } from "./wix-image-url.js";
 
 export interface HttpsAssetImageRepositoryCollaborators {
 	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
+	readonly wixImageUrl: Pick<WixImageUrl, "png">;
 }
 
 export class HttpsAssetImageRepository implements AssetImageRepository {
@@ -22,7 +24,7 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 	): Promise<{ fingerprint: string; source: ImageSource }> {
 		try {
 			if (!source.description?.trim()) throw new ContentError("image");
-			const result = await this.download.get(source.url);
+			const result = await this.compatibleImage(source.url);
 			const size = imageSize(result.bytes);
 			const mimeTypes: Record<string, string> = {
 				png: "image/png",
@@ -44,6 +46,17 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 		} catch {
 			throw new ContentError("image");
 		}
+	}
+
+	private async compatibleImage(url: string) {
+		const result = await this.download.get(url);
+		if (
+			result.mediaType !== "image/webp" ||
+			imageSize(result.bytes).type !== "webp"
+		)
+			return result;
+		const compatibleUrl = this.collaborators.wixImageUrl.png(result.url);
+		return compatibleUrl ? this.download.get(compatibleUrl) : result;
 	}
 
 	async observe(url: string): Promise<string> {
