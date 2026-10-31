@@ -290,8 +290,9 @@ the audience to all members or everyone who RSVP'd.
 Keep the issue open. Delivery is eligible when the event is marked `held`, or
 when a scheduled event's local date has ended. Cancelled, postponed and unknown
 occurrences are skipped. [PDF export](assets.md#export-the-presentation-pdf)
-verifies public placement and adds **Slides PDF** to the issue. That issue edit
-triggers the publication caller above. No manual sharing checkbox is required.
+verifies public placement and adds **Slides PDF** to the issue. Publication
+processes the PDF later in the same reconciliation run; the scheduled audit
+resumes pending work. No manual sharing checkbox is required.
 
 For `locale: fr`, the message is:
 
