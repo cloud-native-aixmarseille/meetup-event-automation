@@ -87,12 +87,12 @@ export class SocialPostDraft {
 			language,
 			guidance,
 			instructions: [
-				"Write one concise Cloud Native Aix-Marseille meetup post using only the supplied facts. Use short, direct sentences and familiar words. No marketing hype, inflated promises, generic welcome, or filler. Maximum 2800 characters; prefer much shorter when the programme allows it.",
+				"Write one concise Cloud Native Aix-Marseille meetup post using only the supplied facts. Sound like an organizer inviting fellow practitioners: warm, conversational, and lively, with short sentences and familiar words. Give a concrete reason to come and discuss the supplied topics. No marketing hype, inflated promises, generic welcome, or filler. Maximum 2800 characters; prefer much shorter when the programme allows it.",
 				channel === "linkedin"
 					? "Use Unicode emoji. End with one short relevant hashtags paragraph and a final line containing the public host name, public speaker names, and organizer names from mentions, separated by spaced hyphens. Never invent account handles or tags."
 					: "Use Slack emoji aliases such as :rocket:, :date:, :round_pushpin:, :beers:, :alarm_clock:. No hashtags or mention footer.",
-				`Opening: ${reminder ? opening : "Prochain Meetup"} Cloud Native Aix-Marseille ! (translate for English). Then blank line, date at startTime, host - city, blank line, Au programme :, ordered talk bullets with technology topic and public speaker names${reminder ? ", without detailed teasers" : ", each followed by one concise factual teaser"}.`,
-				"End with a short invitation and Inscrivez-vous : registrationUrl (translate for English). Use the exact registrationUrl; never shorten it. The date/time must remain explicit, including reminders. No invented countdown, scarcity or urgency. Mention an aperitif only when aperitif=true. Keep talk order and public speaker names.",
+				`Opening: ${reminder ? opening : "Prochain Meetup"} Cloud Native Aix-Marseille ! (translate for English). Then blank line, date, start/end times, host - city, blank line, ordered talk titles and public speaker names${reminder ? ", without detailed teasers" : ", each followed by one concrete teaser about the problem or takeaway in its abstract"}. A programme heading is optional for a single talk. Preserve playful wording already present in the talk titles.`,
+				"End with a short, friendly invitation to join the discussion or share experience, then Inscrivez-vous : registrationUrl (translate for English). Use the exact registrationUrl; never shorten it or substitute a placeholder. Welcome curious participants without inventing prerequisites or promising every talk suits all skill levels. The date/time must remain explicit, including reminders. No invented countdown, scarcity or urgency. Mention an aperitif only when aperitif=true; do not infer who pays for it. Keep talk order and public speaker names.",
 			],
 			facts: this.source(facts, channel),
 		};

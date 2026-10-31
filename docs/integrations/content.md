@@ -32,7 +32,7 @@ Provide the public venue and event hours in
   "months": { "2026-11": "Novembre" },
   "mentions": ["Example Organizer"],
   "reminderTime": "09:00",
-  "guidance": "Keep the wording concise and factual.",
+  "guidance": "Use a warm, conversational invitation with concise wording and only confirmed public facts.",
   "announcements": {}
 }
 ```
@@ -121,14 +121,14 @@ generation needs Google credentials to verify its announcement image, and cover
 generation also needs the public media folder. The shared review action needs
 both for manual image imports and media verification; it accepts no AI inputs.
 
-| Target                           | Proposal                                                                                             |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `title`                          | One clear event headline expressing the main idea or practical benefit, at most 80 characters.       |
-| `description`                    | Short paragraphs with empty lines: welcome, practical details, ordered talk teasers, and invitation. |
-| `cover`                          | Four separate image candidates, generated sequentially.                                              |
-| `<destination-key>:announcement` | One announcement using the configured provider's format.                                             |
-| `<destination-key>:d7`           | One reminder seven calendar days before the event.                                                   |
-| `<destination-key>:d0`           | One reminder on the event day.                                                                       |
+| Target                           | Proposal                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `title`                          | One clear event headline expressing the main idea or practical benefit, at most 80 characters.      |
+| `description`                    | Practical details first, ordered talk teasers, and a friendly invitation, separated by empty lines. |
+| `cover`                          | Four separate image candidates, generated sequentially.                                             |
+| `<destination-key>:announcement` | One announcement using the configured provider's format.                                            |
+| `<destination-key>:d7`           | One reminder seven calendar days before the event.                                                  |
+| `<destination-key>:d0`           | One reminder on the event day.                                                                      |
 
 Slack uses emoji aliases. LinkedIn uses Unicode emoji, hashtags, a public mention
 footer, and the verified announcement image. Each configured Slack channel has
@@ -145,8 +145,17 @@ Titles focus on what attendees can learn or do, without turning the abstract int
 a list of technologies. Tools mentioned as pitfalls or counterexamples must not
 become the headline promise. Review comments wrap text and preserve line breaks;
 Review comments omit language and generator attribution; internal proposal records
-retain them. Description briefs require separate paragraphs and a title/speaker line followed
-by a teaser for each talk.
+retain them. Descriptions open with practical details, then give each talk its
+own title line followed by its public speakers and a concrete teaser. The tone
+is a concise invitation from an organizer: conversational, welcoming, and grounded
+in the talks' actual topics. Social posts use the same tone and include the real
+registration link; event descriptions omit that link because they appear on the
+registration page itself. Neither brief infers audience skill levels or aperitif
+sponsorship from missing information.
+
+Use `guidance` for the community's editorial preferences. A style change applies
+to new generations; existing drafts and approvals are retained. Request another
+proposal to try the updated wording on an existing event.
 
 Descriptions are limited to 12,000 characters and the final description with
 the authoritative agenda to 49,000. Social text is limited to 2,800 characters,
