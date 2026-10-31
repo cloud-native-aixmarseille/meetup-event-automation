@@ -4,7 +4,7 @@ import { AttentionStageInput } from "../../packages/runtime/github-actions/src/a
 import { readWorkflow, type Workflow, workflowExpression } from "./support.js";
 
 const preparation = "event-preparation-generate-drafts";
-const promotion = "event-promotion-generate-post";
+const promotion = "__event-promotion-generate-post";
 
 describe("generation selection at the workflow boundary", () => {
 	it.each(
@@ -59,43 +59,6 @@ describe("generation selection at the workflow boundary", () => {
 			expect(write).not.toHaveBeenCalled();
 		},
 	);
-	it.each(
-		["slack-engineering", "slack-community", "linkedin"].flatMap(
-			(destination) =>
-				["announcement", "d7", "d0"].map((purpose) => [
-					`${destination}:${purpose}`,
-					destination === "linkedin" ? "linkedin" : "slack",
-				]),
-		),
-	)("routes %s to its focused %s generator", async (target, operation) => {
-		// Arrange
-		const workflow = await readWorkflow(promotion);
-		const write = vi.fn();
-		// Act
-		runSelection(workflow, { REQUESTED_TARGET: target }, write);
-		// Assert
-		expect(write).toHaveBeenCalledExactlyOnceWith(
-			"/synthetic/output",
-			`operations=${JSON.stringify([operation])}\n`,
-		);
-	});
-	it.each([
-		"",
-		"slack-engineering",
-		"linkedin:d1",
-		"slack-other:d7",
-		"linkedin:announcement,d7",
-	])("rejects unsupported promotion target %s", async (target) => {
-		// Arrange
-		const workflow = await readWorkflow(promotion);
-		const write = vi.fn();
-		// Act
-		const execute = () =>
-			runSelection(workflow, { REQUESTED_TARGET: target }, write);
-		// Assert
-		expect(execute).toThrow("Unsupported promotion draft target");
-		expect(write).not.toHaveBeenCalled();
-	});
 });
 
 describe("generation and reporting effect boundaries", () => {
@@ -103,7 +66,7 @@ describe("generation and reporting effect boundaries", () => {
 		[preparation, ["title", "description", "cover"]],
 		[promotion, ["slack", "linkedin"]],
 	] as const)(
-		"keeps independent generation and shared reporting under the event lock in %s",
+		"keeps review and reporting independent of generator failures in %s",
 		async (name, operations) => {
 			// Arrange
 			const workflow = await readWorkflow(name);
@@ -111,18 +74,24 @@ describe("generation and reporting effect boundaries", () => {
 			const steps = workflow.jobs?.generate?.steps ?? [];
 			const report = workflow.jobs?.report;
 			// Assert
-			expect(steps.findIndex((step) => step.id === "selection")).toBeLessThan(
-				steps.findIndex((step) => step.id === operations[0]),
-			);
+			if (name === preparation)
+				expect(steps.findIndex((step) => step.id === "selection")).toBeLessThan(
+					steps.findIndex((step) => step.id === operations[0]),
+				);
 			expect(
 				steps.findIndex((step) => step.id === "app-token"),
 			).toBeGreaterThanOrEqual(0);
 			for (const id of operations) {
 				const step = steps.find((item) => item.id === id);
 				expect(step?.if).toContain("!cancelled()");
-				expect(step?.if).toContain("steps.selection.outcome == 'success'");
+				expect(step?.if).toContain("steps.app-token.outcome == 'success'");
+				expect(step?.if).toContain("steps.checkout.outcome == 'success'");
+				if (name === preparation)
+					expect(step?.if).toContain("steps.selection.outcome == 'success'");
 				expect(step?.if).toContain(
-					`contains(fromJSON(steps.selection.outputs.operations), '${id}')`,
+					name === preparation
+						? `contains(fromJSON(steps.selection.outputs.operations), '${id}')`
+						: `inputs.provider == '${id}'`,
 				);
 				expect(step).not.toHaveProperty("continue-on-error");
 				for (const other of operations.filter((other) => other !== id))
@@ -130,7 +99,9 @@ describe("generation and reporting effect boundaries", () => {
 				expect(
 					String(workflow.jobs?.generate?.outputs?.[`${id}-report`]),
 				).toContain(
-					`contains(fromJSON(steps.selection.outputs.operations || '[]'), '${id}')`,
+					name === preparation
+						? `contains(fromJSON(steps.selection.outputs.operations || '[]'), '${id}')`
+						: `inputs.provider == '${id}'`,
 				);
 			}
 			expect(steps.at(-1)?.id).toBe("review");
@@ -143,12 +114,13 @@ describe("generation and reporting effect boundaries", () => {
 			expect(report?.if).toContain(
 				"needs.generate.outputs.initialized == 'true'",
 			);
-			expect(workflow.concurrency).toEqual({
-				group: workflowExpression(
-					"format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number)",
-				),
-				"cancel-in-progress": false,
-			});
+			if (name === preparation)
+				expect(workflow.concurrency).toEqual({
+					group: workflowExpression(
+						"format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number)",
+					),
+					"cancel-in-progress": false,
+				});
 			expect(report?.concurrency).toBeUndefined();
 		},
 	);
@@ -216,15 +188,6 @@ function runSelection(
 				if (name !== "node:fs") throw new Error("Unexpected script dependency");
 				return {
 					appendFileSync: write,
-					readFileSync: () =>
-						JSON.stringify({
-							version: 1,
-							destinations: [
-								{ key: "slack-engineering", provider: "slack" },
-								{ key: "slack-community", provider: "slack" },
-								{ key: "linkedin", provider: "linkedin" },
-							],
-						}),
 				};
 			},
 		},

@@ -262,6 +262,14 @@ on this date. Provider account permissions, installations, OAuth grants, uploads
 and live publication were not tested. Live acceptance checks remain outstanding; synthetic validation does not establish
 account eligibility or permission to post.
 
+2026-10-31: promotion generation owns destination selection in the reusable
+workflow. A `*` destination selector expands to the configured list; explicit
+destination keys remain supported. Consumer callers do not parse configuration
+or build matrices. One event lock covers sequential generation, review and
+reporting for the batch; a failed destination does not cancel the remaining ones.
+This keeps orchestration with automation while preserving consumer ownership of
+destinations and credentials.
+
 [pinned-communications]: https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/5a80cd5013781ff071bea0dfda49044bc4071c5f/docs/integrations/communications.md
 [slack-post]: https://docs.slack.dev/reference/methods/chat.postMessage/
 [slack-limits]: https://docs.slack.dev/apis/web-api/rate-limits/

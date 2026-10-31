@@ -69,6 +69,13 @@ concurrently. The link lock uses
 to retain pending calls. Each issue pipeline includes the shared-link outcome
 without exchanging private artifacts.
 
+`event-promotion-generate-post.yml` resolves destination selectors from the
+consumer's social configuration and holds the event lock across the whole batch.
+Its internal helper generates, reviews and reports one destination; the matrix
+runs one helper at a time and continues after a destination fails. Consumers
+own destination configuration and triggers, without parsing or routing that list.
+Generation actions retain content validation, approval and recovery policies.
+
 Document reconciliation passes public asset identities, protected folder IDs and
 an opaque canonical issue revision to PDF export. The revision covers repository,
 issue number, state, title, sorted labels and body; the PDF operation rereads and

@@ -90,17 +90,20 @@ applying generated text.
 For explicit preparation or social generation, choose the workflow for the
 output you need:
 
-| Workflow                                                                                     | Selection input                                                                             |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [Generate preparation drafts](../../.github/workflows/event-preparation-generate-drafts.yml) | `targets`: a nonempty JSON array of distinct `title`, `description`, and/or `cover` values. |
-| [Generate promotion post](../../.github/workflows/event-promotion-generate-post.yml)         | `target`: a configured destination key followed by `:announcement`, `:d7`, or `:d0`.        |
+| Workflow                                                                                     | Selection input                                                                                                   |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [Generate preparation drafts](../../.github/workflows/event-preparation-generate-drafts.yml) | `targets`: a nonempty JSON array of distinct `title`, `description`, and/or `cover` values.                       |
+| [Generate promotion post](../../.github/workflows/event-promotion-generate-post.yml)         | `target`: a configured destination key or `*` for all destinations, followed by `:announcement`, `:d7`, or `:d0`. |
 
 For all preparation outputs, pass `targets: '["title","description","cover"]'`.
 To run only one output, pass a singleton such as `targets: '["cover"]'`.
 Unknown or duplicate preparation targets fail validation before credentials or effects.
 Promotion resolves the destination provider from the checked-out configuration
 and rejects unlisted keys. For example, the configured key `engineering` uses
-`engineering:d7` for its seven-day reminder.
+`engineering:d7` for its seven-day reminder. Use `target: "*:announcement"`
+to prepare announcements for every configured destination. The reusable workflow
+reads `.github/meetup-social.json` and builds the selection; consumer callers need
+no destination parsing or matrix. An empty destination list produces no drafts.
 Forward all inputs and secrets declared by the selected workflow: issue number,
 locale, public URL prefixes, Conference Hall settings, organizer channel,
 GitHub App credentials, Drive settings for review, and explicit AI configuration.
@@ -109,7 +112,9 @@ Pin it to the released automation commit used by the consumer repository.
 Preparation runs the selected scoped actions in title, description, cover order,
 then runs [organizer review](../../actions/organizer/review-drafts/action.yml) once.
 A failed generator does not prevent the other selected generators or review from
-running. Promotion runs the selected destination's action, then review.
+running. Promotion runs each selected destination's action, review and reporting
+sequentially, holding the event lock for the whole batch. Failure for one
+destination does not cancel the others.
 Each proposal retains its own approval and recovery state.
 Event copy and Slack generation actions accept no Google credentials. LinkedIn
 generation needs Google credentials to verify its announcement image, and cover

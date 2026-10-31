@@ -21,7 +21,7 @@ const actionWiring = {
 			"organizer/review-drafts",
 		],
 	},
-	"event-promotion-generate-post": {
+	"__event-promotion-generate-post": {
 		generate: [
 			"communication/generate-slack-post",
 			"communication/generate-linkedin-post",
