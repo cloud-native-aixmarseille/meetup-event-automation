@@ -23,7 +23,10 @@ export interface DocumentActionCollaborators {
 	) => Pick<ReconcileMeetupDocuments, "execute">;
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
 	readonly assetRecoveryInput: Pick<AssetRecoveryInput, "load">;
-	readonly publicationConfiguration: Pick<EventPublicationConfiguration, "load">;
+	readonly publicationConfiguration: Pick<
+		EventPublicationConfiguration,
+		"load"
+	>;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
 	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
 }
