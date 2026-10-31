@@ -23,6 +23,25 @@ afterEach(async () => {
 });
 
 describe("approved Meetup publication", () => {
+	it.each(["hosts", "topics"] as const)(
+		"requires complete %s before publication",
+		async (field) => {
+			// Arrange
+			const state = await editorFixture(context, desiredEvent);
+			state[field] = [];
+			const publisher = state.composition.meetupEventPublisher(
+				await context.newPage(),
+				groupUrl,
+			);
+			const guard = vi.fn();
+			// Act
+			const result = publisher.publish(desiredEvent, eventUrl, guard);
+			// Assert
+			await expect(result).rejects.toMatchObject({ kind: "verification" });
+			expect(state.publishClicks).toBe(0);
+			expect(guard).not.toHaveBeenCalled();
+		},
+	);
 	it("publishes the verified draft after the guard and skips a published rerun", async () => {
 		// Arrange
 		const state = await editorFixture(context, desiredEvent);

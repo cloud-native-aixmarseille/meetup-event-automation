@@ -83,8 +83,9 @@ OCGroups-only collection requires neither. The credentials parser masks all
 decoded secret values before invoking the shared validator.
 
 The supported provider identifier is `gemini`. Meetup publication requires a
-model with image input and structured output, with API quota available to the
-supplied key. Both model and key must be nonblank. There is no automatic provider
+model with image input and structured output for login challenges, and text
+generation for event topics, with API quota available to the supplied key.
+Both model and key must be nonblank. There is no automatic provider
 or model selection. Actions without AI behavior do not accept these inputs.
 
 The shared runtime `AiInput` parser validates these inputs and masks the API key

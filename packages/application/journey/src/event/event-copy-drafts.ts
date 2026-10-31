@@ -32,7 +32,7 @@ export class EventCopyDrafts implements ProposalDefinition {
 			draft.media.length === 0 &&
 			(plan.target === "title"
 				? this.title.valid(draft.text)
-				: this.description.valid(plan.facts, draft.text))
+				: this.description.valid(draft.text))
 		);
 	}
 	brief(plan: ContentPlan, guidance: string) {

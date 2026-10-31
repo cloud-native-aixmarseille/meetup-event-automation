@@ -113,8 +113,8 @@ credentials only to the reconciliation action. OCGroups-only callers need no AI 
    links do not block draft creation.
    Skip closed, cancelled, postponed, and held events. Automatic cancellation,
    deletion, unpublishing, and series operations are outside this integration.
-2. Reconcile only the declared managed fields: title, description with public
-   talk/speaker information, date, start/end times, event timezone, in-person
+2. Reconcile only the declared managed fields: title, approved event description,
+   date, start/end times, event timezone, in-person
    type, configured category, public venue, Meetup URL, approved cover in Photos,
    mapped speaker accounts, and host sponsorship. Preserve additional photos,
    contributor roles, and sponsors. Validate OCG-required fields
@@ -122,6 +122,10 @@ credentials only to the reconciliation action. OCGroups-only callers need no AI 
    and other required choices; never derive them from private host addresses or
    silently enable paid tickets, recurring events, or automatic meetings.
    Preserve unmanaged settings, registrations, and attendee records on updates.
+   For Meetup, require every current group leader as an event host and fill empty
+   topic selections from relevant provider suggestions. Preserve additional hosts
+   and organizer-selected topics. Verify these provider-side choices after saving
+   and before publication; they are not source-projected approval fields.
 3. Reserve creation in a trusted bot-authored journal before saving. Save one
    draft through the editor and record its observed stable identity immediately,
    before field verification or issue writes. OCG's preview is not a save.
@@ -252,6 +256,42 @@ unattended Meetup login and draft editing. Publication and native notifications
 remain unverified.
 
 ## Decision history
+
+### 2026-10-31: preserve approved event copy during publication
+
+The scheduled-event projection passes the approved description unchanged to
+both publication providers. The previous projection appended the agenda's talk
+descriptions, speaker names, and proposal abstracts. That duplicated information
+already included in reviewed event copy and published text organizers had not
+approved. Agenda completeness remains a prerequisite; it no longer adds prose
+to the approved description.
+
+### 2026-10-31: complete Meetup hosts and topics
+
+Read all members of the group's leadership team and add missing event hosts.
+The editor's suggested active members are limited and do not define leadership.
+Preserve extra organizer-selected hosts. The browser controls expose display
+names, so incomplete lists and ambiguous names stop the update.
+
+When topics are empty, use the configured text model to rank the provider's
+suggested group topics against the approved title and description. Select one
+to five exact candidates and reject invalid output before saving. The publication
+domain owns the selection brief and validation, journey owns generation, and the
+Meetup adapter owns reading and updating provider controls. Reuse the existing
+Meetup AI credential; no second topic configuration is needed.
+
+Preserve nonempty topic choices so organizers can refine the draft directly.
+Hosts and topics are provider-side defaults and completeness constraints, not
+new source-projected approval fields. Reopening the saved draft must confirm
+the exact selected topics and all retained hosts. Publication must still find
+all current leaders and one to five topics, but does not fingerprint manual
+topic edits or leadership membership. Source copy, schedule, venue, artwork,
+and identity retain their existing approval boundaries.
+
+The provider's deployed editor and membership-page source established the
+selectors and group-topic origin. Browser regressions use synthetic controls.
+Live selection and persistence validation remains pending while the consumer's
+GitHub Actions jobs are blocked by its billing limit.
 
 ### 2026-10-29: reconcile OCGroups Photos and contributors
 

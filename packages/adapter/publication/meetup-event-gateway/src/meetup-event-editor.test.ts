@@ -23,6 +23,75 @@ afterEach(async () => {
 });
 
 describe("Meetup browser event editor", () => {
+	it("adds every leader and relevant topics to an otherwise synchronized draft", async () => {
+		// Arrange
+		const state = await editorFixture(context, desiredEvent);
+		state.hosts = ["Guest Host", "First Leader"];
+		state.topics = [];
+		const editor = state.composition.meetupEventEditor(
+			await context.newPage(),
+			groupUrl,
+		);
+		// Act
+		const saved = await editor.save(desiredEvent, eventUrl, vi.fn(), vi.fn());
+		const repeated = await editor.save(
+			desiredEvent,
+			eventUrl,
+			vi.fn(),
+			vi.fn(),
+		);
+		// Assert
+		expect(saved).toEqual({ url: eventUrl, status: "draft" });
+		expect(repeated).toEqual(saved);
+		expect(state.hosts).toEqual([
+			"Guest Host",
+			"First Leader",
+			"Second Leader",
+		]);
+		expect(state.topics).toEqual(["Cloud Computing", "Containers"]);
+		expect(state.topicSelection.select).toHaveBeenCalledOnce();
+		expect(state.writes).toBe(1);
+		expect(state.publishClicks).toBe(0);
+	});
+	it("adds newly appointed leaders while retaining organizer-selected topics", async () => {
+		// Arrange
+		const state = await editorFixture(context, desiredEvent);
+		state.leaders.push("New Leader");
+		state.topics = ["Manual Topic"];
+		const editor = state.composition.meetupEventEditor(
+			await context.newPage(),
+			groupUrl,
+		);
+		// Act
+		const saved = await editor.save(desiredEvent, eventUrl, vi.fn(), vi.fn());
+		// Assert
+		expect(saved).toEqual({ url: eventUrl, status: "draft" });
+		expect(state.hosts).toEqual(state.leaders);
+		expect(state.topics).toEqual(["Manual Topic"]);
+		expect(state.topicSelection.select).not.toHaveBeenCalled();
+		expect(state.writes).toBe(1);
+		expect(state.publishClicks).toBe(0);
+	});
+	it.each(["corruptHosts", "corruptTopics"] as const)(
+		"retains the event identity when %s prevents complete persistence",
+		async (field) => {
+			// Arrange
+			const state = await editorFixture(context);
+			state[field] = true;
+			const recorded = vi.fn();
+			const editor = state.composition.meetupEventEditor(
+				await context.newPage(),
+				groupUrl,
+			);
+			// Act
+			const result = editor.save(desiredEvent, undefined, vi.fn(), recorded);
+			// Assert
+			await expect(result).rejects.toMatchObject({ kind: "verification" });
+			expect(recorded).toHaveBeenCalledWith(eventUrl);
+			expect(state.writes).toBe(1);
+			expect(state.publishClicks).toBe(0);
+		},
+	);
 	it("rejects changed image bytes before reserving event creation", async () => {
 		// Arrange
 		const state = await editorFixture(context);
@@ -160,6 +229,8 @@ describe("Meetup browser event editor", () => {
 			{
 				createCover: (page) => state.composition.meetupCover(page),
 				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+				createHosts: (page) => state.composition.meetupHosts(page),
+				createTopics: (page) => state.composition.meetupTopics(page),
 				createMeetupEventVerification: (...args) =>
 					state.composition.meetupEventVerification(...args),
 				createMeetupCalendar: (...args) =>
@@ -205,6 +276,8 @@ describe("Meetup browser event editor", () => {
 				{
 					createCover: (page) => state.composition.meetupCover(page),
 					meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+					createHosts: (page) => state.composition.meetupHosts(page),
+					createTopics: (page) => state.composition.meetupTopics(page),
 					createMeetupEventVerification: (...args) =>
 						state.composition.meetupEventVerification(...args),
 					createMeetupCalendar: (...args) =>
@@ -236,6 +309,8 @@ describe("Meetup browser event editor", () => {
 			{
 				createCover: (page) => state.composition.meetupCover(page),
 				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+				createHosts: (page) => state.composition.meetupHosts(page),
+				createTopics: (page) => state.composition.meetupTopics(page),
 				createMeetupEventVerification: (...args) =>
 					state.composition.meetupEventVerification(...args),
 				createMeetupCalendar: (...args) =>
@@ -264,6 +339,8 @@ describe("Meetup browser event editor", () => {
 			{
 				createCover: (page) => state.composition.meetupCover(page),
 				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+				createHosts: (page) => state.composition.meetupHosts(page),
+				createTopics: (page) => state.composition.meetupTopics(page),
 				createMeetupEventVerification: (...args) =>
 					state.composition.meetupEventVerification(...args),
 				createMeetupCalendar: (...args) =>
@@ -305,6 +382,8 @@ describe("Meetup browser event editor", () => {
 				{
 					createCover: (page) => state.composition.meetupCover(page),
 					meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+					createHosts: (page) => state.composition.meetupHosts(page),
+					createTopics: (page) => state.composition.meetupTopics(page),
 					createMeetupEventVerification: (...args) =>
 						state.composition.meetupEventVerification(...args),
 					createMeetupCalendar: (...args) =>
@@ -338,6 +417,8 @@ describe("Meetup browser event editor", () => {
 			{
 				createCover: (page) => state.composition.meetupCover(page),
 				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+				createHosts: (page) => state.composition.meetupHosts(page),
+				createTopics: (page) => state.composition.meetupTopics(page),
 				createMeetupEventVerification: (...args) =>
 					state.composition.meetupEventVerification(...args),
 				createMeetupCalendar: (...args) =>
@@ -370,6 +451,8 @@ describe("Meetup browser event editor", () => {
 			{
 				createCover: (page) => state.composition.meetupCover(page),
 				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+				createHosts: (page) => state.composition.meetupHosts(page),
+				createTopics: (page) => state.composition.meetupTopics(page),
 				createMeetupEventVerification: (...args) =>
 					state.composition.meetupEventVerification(...args),
 				createMeetupCalendar: (...args) =>
@@ -411,6 +494,8 @@ describe("Meetup browser event editor", () => {
 			{
 				createCover: (page) => state.composition.meetupCover(page),
 				meetupBrowserRoutes: state.composition.meetupBrowserRoutes(),
+				createHosts: (page) => state.composition.meetupHosts(page),
+				createTopics: (page) => state.composition.meetupTopics(page),
 				createMeetupEventVerification: (...args) =>
 					state.composition.meetupEventVerification(...args),
 				createMeetupCalendar: (...args) =>

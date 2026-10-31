@@ -1,8 +1,10 @@
 import type { MeetupPublicationEvent } from "@meetup-automation/publication";
 import type { BrowserContext } from "playwright-core";
+import { vi } from "vitest";
 import { MeetupEventGatewayComposition } from "../src/dependency-composition.js";
 import type { SavedMeetupEvent } from "../src/saved-meetup-event.js";
 import { cover, coverForm, coverImage, coverJournal } from "./cover-fixture.js";
+import { fieldsForm, leadershipPage } from "./meetup-fields-fixture.js";
 
 export const groupUrl = "https://www.meetup.com/example-group/";
 export const eventUrl = `${groupUrl}events/12345/`;
@@ -32,6 +34,7 @@ function editor(
 	announcementCount: number,
 	photoId: string | undefined,
 	hydrationDelay: number,
+	fields: string,
 ) {
 	const value = event ?? {
 		...desiredEvent,
@@ -55,6 +58,7 @@ ${coverForm(photoId, hydrationDelay * 2)}
 <button id="change" hidden onclick="document.getElementById('venue-heading').hidden=true">Change</button>
 <input placeholder="Search or add location..." oninput="document.getElementById('venue-search-dropdown').hidden=false">
 <div id="venue-search-dropdown" hidden><ul><li onclick="document.getElementById('venue-heading').hidden=false;document.getElementById('change').hidden=false;document.getElementById('venue-search-dropdown').hidden=true"><span>Example Venue</span><span>Example City</span></li></ul></div>
+${fields}
 ${
 	status === "draft"
 		? `<button data-testid="event-save-draft-btn">Save as draft</button>
@@ -84,7 +88,7 @@ function selectDate(date) { if(mode==='start') selectedDate=date; else endDate=d
 document.addEventListener('keydown', event => { if(event.key==='Escape') document.getElementById('calendar').hidden=true; });
 async function save(status) {
 await fetch('/__synthetic-save', {method:'POST',body:JSON.stringify({
-status, photoId, title:document.querySelector('[data-testid=event-name-input]').value,
+status, photoId, hosts:selectedHosts, topics:selectedTopics, title:document.querySelector('[data-testid=event-name-input]').value,
 description:document.querySelector('[contenteditable=true]').innerText,
 date:selectedDate, endDate,
 startTime:document.querySelector('[aria-label="Edit start time"]').value,
@@ -101,6 +105,13 @@ export async function editorFixture(
 	status: SavedMeetupEvent["status"] = "draft",
 ) {
 	const state = {
+		leaders: ["First Leader", "Second Leader"],
+		hosts: existing ? ["First Leader", "Second Leader"] : ["First Leader"],
+		topics: existing ? ["Cloud Computing", "Containers"] : ([] as string[]),
+		candidates: ["Gardening", "Cloud Computing", "Containers"],
+		leaderPageSize: 20,
+		corruptHosts: false,
+		corruptTopics: false,
 		event: existing,
 		photoId: existing ? "101" : (undefined as string | undefined),
 		uploads: 0,
@@ -130,11 +141,22 @@ export async function editorFixture(
 			if (saved.status === "published" && state.status === "draft")
 				state.publishClicks++;
 			state.status = saved.status;
+			state.hosts = state.corruptHosts ? saved.hosts.slice(0, 1) : saved.hosts;
+			state.topics = state.corruptTopics
+				? saved.topics.slice(0, 1)
+				: saved.topics;
 			state.event = { ...saved, cover };
 			state.photoId = state.corruptCover ? "999" : saved.photoId;
 			if (state.corruptSaved && state.event)
 				state.event = { ...state.event, ...state.corruptSaved };
 			await route.fulfill({ status: 200, body: "{}" });
+			return;
+		}
+		if (url.pathname.endsWith("/members/")) {
+			await route.fulfill({
+				contentType: "text/html",
+				body: leadershipPage(state.leaders, state.leaderPageSize),
+			});
 			return;
 		}
 		if (
@@ -151,6 +173,12 @@ export async function editorFixture(
 					state.announcementCount,
 					state.photoId,
 					state.hydrationDelay,
+					fieldsForm(
+						state.hosts,
+						state.topics,
+						state.candidates,
+						state.leaders,
+					),
 				),
 			});
 			return;
@@ -180,10 +208,14 @@ export async function editorFixture(
 			? { groupUrl, fingerprint: existing.cover.fingerprint, photoId: "101" }
 			: undefined,
 	);
+	const topicSelection = {
+		select: vi.fn().mockResolvedValue(["Cloud Computing", "Containers"]),
+	};
 	const composition = new MeetupEventGatewayComposition(
 		"en",
 		{ load: async () => coverImage },
 		journal,
+		topicSelection,
 	);
-	return Object.assign(state, { composition, journal });
+	return Object.assign(state, { composition, journal, topicSelection });
 }

@@ -40,9 +40,11 @@ export class MeetupEventPublisher {
 		const verification = this.collaborators.createMeetupEventVerification(
 			this.page,
 		);
-		const current = await verification.verify(event, identity).catch(() => {
-			throw new ScheduledEventError("verification");
-		});
+		const current = await verification
+			.verify(event, identity, undefined)
+			.catch(() => {
+				throw new ScheduledEventError("verification");
+			});
 		if (!current.matches) throw new ScheduledEventError("verification");
 		if (current.status === "published") return { url, status: "published" };
 		const publish = this.page
@@ -67,7 +69,7 @@ export class MeetupEventPublisher {
 			throw new ScheduledEventError("uncertain");
 		}
 		const saved = await verification
-			.verify(event, identity)
+			.verify(event, identity, undefined)
 			.catch(() => undefined);
 		if (!saved?.matches || saved.status !== "published")
 			throw new ScheduledEventError("verification");

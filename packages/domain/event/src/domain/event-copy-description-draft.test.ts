@@ -28,7 +28,7 @@ describe("event description brief", () => {
 			const description = new EventCopyDescriptionDraft(new EventCopyAgenda());
 			const text = "a".repeat(length);
 			// Act
-			const valid = description.valid(facts, text);
+			const valid = description.valid(text);
 			// Assert
 			expect(valid).toBe(expected);
 		},
@@ -47,7 +47,6 @@ describe("event description brief", () => {
 		// Assert
 		expect(brief.facts).toEqual(facts);
 		expect(brief.instructions.join(" ")).toContain("only when aperitif=true");
-		expect(brief.instructions.join(" ")).toContain("publication appends them");
 		expect(brief.instructions.join(" ")).toContain("actual line breaks");
 		expect(brief.instructions.join(" ")).toContain("with a blank line");
 	});
