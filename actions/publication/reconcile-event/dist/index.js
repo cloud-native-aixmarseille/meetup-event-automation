@@ -73152,7 +73152,7 @@ var HttpsAssetImageRepository = class {
   async validate(source) {
     try {
       if (!source.description?.trim()) throw new ContentError("image");
-      const result = await this.download.get(source.url);
+      const result = await this.compatibleImage(source.url);
       const size = imageSize(result.bytes);
       const mimeTypes = {
         png: "image/png",
@@ -73168,6 +73168,13 @@ var HttpsAssetImageRepository = class {
     } catch {
       throw new ContentError("image");
     }
+  }
+  async compatibleImage(url) {
+    const result = await this.download.get(url);
+    if (result.mediaType !== "image/webp" || imageSize(result.bytes).type !== "webp")
+      return result;
+    const compatibleUrl = this.collaborators.wixImageUrl.png(result.url);
+    return compatibleUrl ? this.download.get(compatibleUrl) : result;
   }
   async observe(url) {
     try {
@@ -73221,6 +73228,19 @@ var PublicImageUrl = class {
   }
 };
 
+// packages/adapter/publication/https-asset-image-repository/src/wix-image-url.ts
+var WixImageUrl = class {
+  png(value) {
+    const url = new URL(value);
+    if (url.origin !== "https://static.wixstatic.com" || url.username || url.password || url.search || url.hash || !/^\/media\/[^/]+\/v1\/(?:fit|fill|crop)\/[^/]+\/[^/]+\.webp$/.test(
+      url.pathname
+    ))
+      return void 0;
+    url.pathname = url.pathname.replace(/\.webp$/, ".png");
+    return url.href;
+  }
+};
+
 // packages/adapter/publication/https-asset-image-repository/src/dependency-composition.ts
 var HttpsAssetImageRepositoryComposition = class {
   contentImageLoader() {
@@ -73236,7 +73256,8 @@ var HttpsAssetImageRepositoryComposition = class {
   httpsAssetImageRepository() {
     return new HttpsAssetImageRepository(
       {
-        contentFingerprint: new PublicationDomainComposition().contentFingerprint()
+        contentFingerprint: new PublicationDomainComposition().contentFingerprint(),
+        wixImageUrl: new WixImageUrl()
       },
       this.boundedImageDownload()
     );

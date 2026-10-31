@@ -146,6 +146,9 @@ rejects non-public network addresses and credential-bearing URLs, and forwards
 no integration credentials. Media type and dimensions are checked before
 mutation. Keep source images available to Google after preflight. Prefer stable
 public URLs; changing bytes at the same URL is detected on reconciliation.
+Wix image transformation URLs that return WebP are requested again as PNG,
+preserving their crop and dimensions. The returned PNG passes the same URL,
+format and size checks. Other unsupported image sources use the generic fallback.
 
 Slides fits host logos with `CENTER_INSIDE`; portraits and covers use
 `CENTER_CROP`. Docs uses `CENTER_CROP` for all images, so pad logos when necessary.

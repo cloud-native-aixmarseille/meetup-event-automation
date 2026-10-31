@@ -5,6 +5,7 @@ import { BoundedImageDownload } from "./bounded-image-download.js";
 import { HttpsAssetImageRepository } from "./https-asset-image-repository.js";
 import { HttpsContentImageLoader } from "./https-content-image-loader.js";
 import { PublicImageUrl } from "./public-image-url.js";
+import { WixImageUrl } from "./wix-image-url.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class HttpsAssetImageRepositoryComposition {
 	contentImageLoader(): HttpsContentImageLoader {
@@ -25,6 +26,7 @@ export class HttpsAssetImageRepositoryComposition {
 			{
 				contentFingerprint:
 					new PublicationDomainComposition().contentFingerprint(),
+				wixImageUrl: new WixImageUrl(),
 			},
 			this.boundedImageDownload(),
 		);
