@@ -4,6 +4,7 @@ export const TEXT_TOKENS = [
 	"event.date.month",
 	"event.date.numeric",
 	"event.date.weekday",
+	"event.start_time",
 	"host.name",
 	"host.address",
 	"host.postal_code",

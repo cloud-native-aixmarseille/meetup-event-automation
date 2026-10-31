@@ -65023,6 +65023,7 @@ var TEXT_TOKENS = [
   "event.date.month",
   "event.date.numeric",
   "event.date.weekday",
+  "event.start_time",
   "host.name",
   "host.address",
   "host.postal_code",
@@ -69915,15 +69916,17 @@ var JourneyPolicyComposition = class {
 
 // packages/application/journey/src/use-cases/asset-render-projection.ts
 var AssetRenderProjection = class {
-  constructor(collaborators, presenter, repository, nextEvent) {
+  constructor(collaborators, presenter, repository, startTime, nextEvent) {
     this.collaborators = collaborators;
     this.presenter = presenter;
     this.repository = repository;
+    this.startTime = startTime;
     this.nextEvent = nextEvent;
   }
   collaborators;
   presenter;
   repository;
+  startTime;
   nextEvent;
   async create(event, diagnostics, usesNextEvent) {
     const catalog = await this.collaborators.createValidateReferentialCatalog(this.repository).execute();
@@ -69940,6 +69943,7 @@ var AssetRenderProjection = class {
         (item) => item.severity === "error" && /title/.test(item.code)
       ) ? void 0 : event.eventTitle,
       date: event.date,
+      startTime: this.startTime,
       timeZone: event.timeZone,
       hostName: event.host?.displayName,
       hostLogo: host?.logo && this.collaborators.publicAssetUrl.valid(host.logo.url) ? { ...host.logo, hostId: host.id } : void 0,
@@ -75392,6 +75396,7 @@ var AssetRenderPresenterImpl = class {
       },
       text: {
         "event.title": input.title,
+        "event.start_time": input.startTime,
         "event.date": date.format(input.date, input.timeZone),
         "event.date.month": date.format(input.date, input.timeZone, "month"),
         "event.date.numeric": date.format(
@@ -80297,6 +80302,7 @@ var DocumentAction = class {
         `${owner}/${repo}#${issueNumber}`
       ),
       locale: messages3.locale,
+      startTime: (await this.collaborators.publicationConfiguration.load(process.cwd())).schedule.startTime,
       issueNumber,
       commentAuthorLogin: getInput("managed-comment-author", {
         required: true
@@ -100894,6 +100900,7 @@ var DocumentComposition = class _DocumentComposition {
             new GithubActionsComposition().assetMessages(input.locale)
           ),
           context3.get(SERVICES.referentialRepository),
+          input.startTime,
           new JourneyComposition().findNextAssetEvent(
             new PublicationPolicyComposition().meetupEventUrlPolicy(
               input.meetupEventUrlPrefix
@@ -100951,6 +100958,7 @@ var DocumentActionComposition = class {
       ),
       runtimeInput: this.runtime.runtimeInput(),
       assetRecoveryInput: this.runtime.assetRecoveryInput(),
+      publicationConfiguration: this.runtime.eventPublicationConfiguration(),
       conferenceHallInput: this.runtime.conferenceHallInput(),
       actionOutput: this.runtime.actionOutput()
     });

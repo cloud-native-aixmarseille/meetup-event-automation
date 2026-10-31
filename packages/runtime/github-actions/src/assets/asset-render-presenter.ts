@@ -27,6 +27,7 @@ export class AssetRenderPresenterImpl implements AssetRenderPresenter {
 			},
 			text: {
 				"event.title": input.title,
+				"event.start_time": input.startTime,
 				"event.date": date.format(input.date, input.timeZone),
 				"event.date.month": date.format(input.date, input.timeZone, "month"),
 				"event.date.numeric": date.format(

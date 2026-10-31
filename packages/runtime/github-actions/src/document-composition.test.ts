@@ -18,6 +18,7 @@ import {
 
 const input = {
 	locale: "en" as const,
+	startTime: "19:15",
 	recovery: {},
 	...eventPublicationSettings,
 	conferenceHallEvent: "example-cfp",

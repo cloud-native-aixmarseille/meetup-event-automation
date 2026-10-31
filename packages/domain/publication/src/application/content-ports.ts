@@ -49,6 +49,7 @@ export interface AssetRenderPresenter {
 	format(input: {
 		title?: string;
 		date?: string;
+		startTime: string;
 		timeZone: string;
 		hostName?: string;
 		hostLogo?: PublicAssetModel["hostLogo"];

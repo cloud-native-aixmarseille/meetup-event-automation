@@ -18,6 +18,19 @@ function subject() {
 }
 
 describe("template field policy", () => {
+	it("recognizes event start time as a required scalar template field", () => {
+		// Arrange
+		const fields = subject();
+
+		// Act
+		const field = fields.text("event.start_time", undefined, defaults);
+		const parsed = fields.contract("slides", mimeType, [field]);
+
+		// Assert
+		expect(parsed?.fields).toEqual([
+			{ type: "text", token: "event.start_time", required: true },
+		]);
+	});
 	it.each<TextField | ImageField>([
 		{ type: "text", token: "speaker.name", slot: "portrait-a", required: true },
 		{

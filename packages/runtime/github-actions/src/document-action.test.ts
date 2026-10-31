@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 	setSecret: vi.fn(),
 	createAssets: vi.fn(),
 	execute: vi.fn(),
+	publication: vi.fn(),
 	dependencies: undefined as
 		| ConstructorParameters<typeof ReconcileMeetupDocuments>[0]
 		| undefined,
@@ -29,6 +30,10 @@ vi.mock("@actions/github", () => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	mocks.publication.mockResolvedValue({
+		schedule: { startTime: "19:15", endTime: "22:00", venues: {} },
+		destinations: [],
+	});
 	for (const [name, value] of Object.entries({
 		...publicationUrlInputs,
 		"conference-hall-event": "example-cfp",
@@ -58,6 +63,39 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("publication action boundary", () => {
+	it.each(["17:30", "20:00"])(
+		"uses the configured start time %s for assets",
+		async (startTime) => {
+			// Arrange
+			mocks.publication.mockResolvedValue({
+				schedule: { startTime, endTime: "22:00", venues: {} },
+				destinations: [],
+			});
+
+			// Act
+			await subject().run(new GithubActionsComposition().actionMessages("en"));
+
+			// Assert
+			expect(mocks.publication).toHaveBeenCalledExactlyOnceWith(process.cwd());
+			expect(mocks.createAssets).toHaveBeenCalledWith(
+				expect.objectContaining({ startTime }),
+			);
+		},
+	);
+	it("rejects invalid schedule configuration before reconciling assets", async () => {
+		// Arrange
+		mocks.publication.mockRejectedValue(new Error("Invalid event schedule"));
+
+		// Act
+		const operation = subject().run(
+			new GithubActionsComposition().actionMessages("en"),
+		);
+
+		// Assert
+		await expect(operation).rejects.toThrow("Invalid event schedule");
+		expect(mocks.createAssets).not.toHaveBeenCalled();
+		expect(mocks.execute).not.toHaveBeenCalled();
+	});
 	it("retains the stable slides URL while reporting conflicted content as unready", async () => {
 		// Arrange
 		const url = "https://docs.google.com/presentation/d/stable-slides";
@@ -180,6 +218,7 @@ function subject() {
 		createJourney: mocks.createAssets,
 		runtimeInput: composition.runtimeInput(),
 		assetRecoveryInput: composition.assetRecoveryInput(),
+		publicationConfiguration: { load: mocks.publication },
 		conferenceHallInput: composition.conferenceHallInput(),
 		actionOutput: composition.actionOutput(),
 	});
