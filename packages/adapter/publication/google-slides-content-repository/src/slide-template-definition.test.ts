@@ -17,6 +17,36 @@ function definition() {
 }
 
 describe("Slides template discovery", () => {
+	it.each(["{{event.start_time}}", "[EVENT_START_TIME]"])(
+		"discovers %s independently of a neighboring static label",
+		(expression) => {
+			// Arrange
+			const f = slidesFixture();
+			f.page.pageElements = [
+				{
+					objectId: "start-time",
+					shape: {
+						text: {
+							textElements: [{ textRun: { content: `${expression}\n` } }],
+						},
+					},
+				},
+				{
+					objectId: "separator",
+					shape: { text: { textElements: [{ textRun: { content: "à\n" } }] } },
+				},
+			];
+			const subject = definition();
+
+			// Act
+			const contract = subject.read(f.presentation, "slides", templateDefaults);
+
+			// Assert
+			expect(contract?.fields).toEqual([
+				{ type: "text", token: "event.start_time", required: true },
+			]);
+		},
+	);
 	it("discovers text and repeated image selectors directly from native elements", () => {
 		// Arrange
 		const f = slidesFixture();

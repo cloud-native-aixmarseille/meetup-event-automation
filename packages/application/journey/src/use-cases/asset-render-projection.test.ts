@@ -54,6 +54,7 @@ describe("asset public projection", () => {
 							},
 				),
 			},
+			"19:15",
 		);
 		const host =
 			reason === "removed"
@@ -113,6 +114,7 @@ describe("asset public projection", () => {
 							: catalog,
 					),
 				},
+				"19:15",
 				nextEvent,
 			);
 
@@ -182,6 +184,7 @@ describe("asset public projection", () => {
 					})),
 				})),
 			},
+			"19:15",
 			{ find: vi.fn(async () => next) },
 		);
 
@@ -190,6 +193,7 @@ describe("asset public projection", () => {
 		const payload = vi.mocked(presenter.format).mock.calls[0][0];
 
 		// Assert
+		expect(payload.startTime).toBe("19:15");
 		expect(payload.venue).toEqual(venue);
 		expect(payload.nextEvent).toEqual(next);
 		expect(payload.talks?.["1"]).toMatchObject({
@@ -224,6 +228,7 @@ describe("asset public projection", () => {
 			},
 			presenter,
 			{ load: vi.fn(async () => source) },
+			"19:15",
 		);
 
 		// Act
@@ -247,6 +252,7 @@ describe("asset public projection", () => {
 			"nextEvent",
 			"pictures",
 			"speakers",
+			"startTime",
 			"talks",
 			"timeZone",
 			"title",
@@ -275,6 +281,7 @@ describe("asset public projection", () => {
 			},
 			presenter,
 			{ load: vi.fn(async () => catalog) },
+			"19:15",
 		);
 
 		// Act

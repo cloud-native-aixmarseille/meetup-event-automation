@@ -25,6 +25,7 @@ describe("asset public presentation", () => {
 		// Act
 		const result = presenter.format({
 			date: "2026-10-15",
+			startTime: "19:15",
 			timeZone: "Europe/Paris",
 			agenda: [],
 			pictures: {},
@@ -48,6 +49,7 @@ describe("asset public presentation", () => {
 		// Assert
 		expect(result.hostLogo).toEqual(hostLogo);
 		expect(result.text).toMatchObject({
+			"event.start_time": "19:15",
 			"event.date.month": "octobre",
 			"event.date.numeric": "15/10/2026",
 			"event.date.weekday": "jeudi 15 octobre 2026",
@@ -84,6 +86,7 @@ describe("asset public presentation", () => {
 		const result = presenter.format({
 			title: "Public title",
 			date: "2026-10-15",
+			startTime: "19:15",
 			timeZone: "Pacific/Kiritimati",
 			hostName: "Public host",
 			agenda: [{ title: "Talk", speakers: ["Example", "Other"] }],

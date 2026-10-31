@@ -67,6 +67,7 @@ the Google file. For example, `{{event.title}}`, `{{event.date:D MMMM YYYY}}`,
 | `event.date.month`                              | Localized month name.                                                       |
 | `event.date.numeric`                            | Event date as `DD/MM/YYYY`.                                                 |
 | `event.date.weekday`                            | Localized weekday and full event date.                                      |
+| `event.start_time`                              | Configured local event start time as `HH:mm`.                               |
 | `host.name`                                     | Resolved host display name.                                                 |
 | `host.address`, `host.postal_code`, `host.city` | Explicit public venue fields.                                               |
 | `agenda`                                        | Ordered talk titles and all public co-speaker names.                        |
@@ -95,6 +96,10 @@ the file pending before copying or writing content.
 Public venue fields come from `venue_address`, `venue_postal_code`, and
 `venue_city` in the [host referential](../reference/referentials.md#hosts).
 Contact names, emails, and phone numbers never supply public template values.
+
+`event.start_time` uses `startTime` from `.github/event-publication.json`, shared
+with event publication and content generation. Use `{{event.start_time}}` in its
+own text shape in Slides; place surrounding text such as "à" in a separate shape.
 
 Next-event lookup runs only for templates using `next_event.*`. It selects the
 earliest strictly later open, scheduled event under the configured event label,

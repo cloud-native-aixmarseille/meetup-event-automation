@@ -14,6 +14,7 @@ export class DocumentActionComposition {
 				),
 			runtimeInput: this.runtime.runtimeInput(),
 			assetRecoveryInput: this.runtime.assetRecoveryInput(),
+			publicationConfiguration: this.runtime.eventPublicationConfiguration(),
 			conferenceHallInput: this.runtime.conferenceHallInput(),
 			actionOutput: this.runtime.actionOutput(),
 		});

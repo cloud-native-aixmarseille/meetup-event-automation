@@ -44,6 +44,7 @@ type PublicationInput = EventCompositionInput & {
 	readonly parentFolderId: string;
 	readonly templateFolderId: string;
 	readonly recovery: Readonly<Record<string, ContentRecovery>>;
+	readonly startTime: string;
 };
 
 export class DocumentComposition {
@@ -88,6 +89,7 @@ export class DocumentComposition {
 						new GithubActionsComposition().assetMessages(input.locale),
 					),
 					context.get<ReferentialRepository>(SERVICES.referentialRepository),
+					input.startTime,
 					new JourneyComposition().findNextAssetEvent(
 						new PublicationPolicyComposition().meetupEventUrlPolicy(
 							input.meetupEventUrlPrefix,

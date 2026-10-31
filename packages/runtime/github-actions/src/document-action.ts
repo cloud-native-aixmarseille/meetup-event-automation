@@ -6,6 +6,7 @@ import type { ActionReportData } from "./action-report.js";
 import type { AssetRecoveryInput } from "./assets/asset-recovery-input.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { DocumentComposition } from "./document-composition.js";
+import type { EventPublicationConfiguration } from "./event-publication-configuration.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
 import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
@@ -22,6 +23,7 @@ export interface DocumentActionCollaborators {
 	) => Pick<ReconcileMeetupDocuments, "execute">;
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
 	readonly assetRecoveryInput: Pick<AssetRecoveryInput, "load">;
+	readonly publicationConfiguration: Pick<EventPublicationConfiguration, "load">;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
 	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
 }
@@ -52,6 +54,9 @@ export class DocumentAction {
 				`${owner}/${repo}#${issueNumber}`,
 			),
 			locale: messages.locale,
+			startTime: (
+				await this.collaborators.publicationConfiguration.load(process.cwd())
+			).schedule.startTime,
 			issueNumber,
 			commentAuthorLogin: core.getInput("managed-comment-author", {
 				required: true,

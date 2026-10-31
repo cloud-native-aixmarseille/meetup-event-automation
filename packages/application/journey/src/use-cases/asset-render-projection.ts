@@ -29,6 +29,7 @@ export class AssetRenderProjection {
 		private readonly collaborators: AssetRenderProjectionCollaborators,
 		private readonly presenter: AssetRenderPresenter,
 		private readonly repository: ReferentialRepository,
+		private readonly startTime: string,
 		private readonly nextEvent?: Pick<FindNextAssetEvent, "find">,
 	) {}
 
@@ -64,6 +65,7 @@ export class AssetRenderProjection {
 				? undefined
 				: event.eventTitle,
 			date: event.date,
+			startTime: this.startTime,
 			timeZone: event.timeZone,
 			hostName: event.host?.displayName,
 			hostLogo:
