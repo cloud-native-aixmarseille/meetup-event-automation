@@ -124,7 +124,7 @@ both for manual image imports and media verification; it accepts no AI inputs.
 | Target                           | Proposal                                                                                             |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `title`                          | One clear event headline expressing the main idea or practical benefit, at most 80 characters.       |
-| `description`                    | Practical details first, ordered talk teasers, and a friendly invitation, separated by empty lines. |
+| `description`                    | Practical details first, ordered talk teasers, and a friendly invitation, separated by empty lines.  |
 | `cover`                          | Four separate image candidates, generated sequentially.                                              |
 | `<destination-key>:announcement` | One announcement using the configured provider's format.                                             |
 | `<destination-key>:d7`           | One reminder seven calendar days before the event.                                                   |
