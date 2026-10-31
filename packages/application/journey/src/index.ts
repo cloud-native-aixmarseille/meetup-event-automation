@@ -127,6 +127,7 @@ export {
 	type ReconcileSourceSpeakersArguments,
 } from "./use-cases/reconcile-source-speakers.js";
 export type { ScheduledEventSettings } from "./use-cases/scheduled-event-projection.js";
+export { SelectMeetupTopics } from "./use-cases/select-meetup-topics.js";
 export { SpeakerSynchronizationError } from "./use-cases/speaker-synchronization-error.js";
 export type {
 	ValidateMeetupReferentialsDependencies,

@@ -22,6 +22,8 @@ export type {
 	FeedbackTalkResultsGateway,
 } from "./application/feedback-talk-results.js";
 export type * from "./application/meetup-cover-ports.js";
+export type { MeetupTopicSelection } from "./application/meetup-topic-selection.js";
+export { MeetupTopicPolicy } from "./domain/meetup-topic-policy.js";
 export type * from "./application/pdf-export-ports.js";
 export type {
 	AssetContainer,

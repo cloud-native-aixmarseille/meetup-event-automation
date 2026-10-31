@@ -103,7 +103,7 @@ the enabled providers. For both adapters:
     "password": "REPLACE_WITH_MEETUP_PASSWORD",
     "ai": {
       "provider": "gemini",
-      "model": "REPLACE_WITH_IMAGE_CAPABLE_MODEL",
+      "model": "REPLACE_WITH_TEXT_AND_IMAGE_CAPABLE_MODEL",
       "apiKey": "REPLACE_WITH_AI_API_KEY"
     }
   },
@@ -121,7 +121,8 @@ credentials. Disabled providers must be absent from the secret; an empty
 collection uses `{}` if the publication workflow is invoked.
 
 Meetup's `ai` object follows the shared [AI contract](../reference/configuration.md#ai-configuration).
-Its model must support image input and structured output for challenge handling.
+Its model must support image input and structured output for challenge handling,
+and text generation for selecting relevant event topics.
 An OCGroups-only collection requires no Meetup or AI credentials and installs no
 Python challenge solver. OCGroups SSO, MFA, CAPTCHA, unavailable password login,
 and unexpected pages block login with organizer guidance.
@@ -157,6 +158,10 @@ Closed, cancelled, postponed, and held events are skipped by event editing.
 Post-event attendee messaging follows the separate policy below. Incomplete or stale
 source data blocks synchronization before browser access.
 
+The event description is exactly the approved **Event Description** copy, with
+its line breaks. Publication does not append talk abstracts, speaker names, or
+the issue's agenda to that text.
+
 The workflow processes destinations in configuration order. Pending approval or
 a provider failure does not prevent a ready destination from proceeding. OCGroups
 requires **Meetup Link**, so place Meetup first when both are automated. When only OCGroups is configured, supply the existing Meetup event link first. A
@@ -191,6 +196,24 @@ changes**. The adapter waits for the saved event values to load before comparing
 or editing them, and verifies all managed fields by reopening the editor.
 For new drafts, it selects **Start from scratch** when the template dialog is
 shown and dismisses organizer announcements before filling fields.
+
+Meetup adds every member of the group's **Leadership team** as an event host,
+while preserving additional hosts selected by organizers. It reads the full
+leadership list, including subsequent pages, rather than the editor's short list
+of active members. An incomplete list or ambiguous display names blocks saving.
+
+If no topics are selected, the configured AI model uses the approved title and
+description to select one to five relevant topics from the suggestions displayed
+by Meetup. Those suggestions come from the group's topics; they are not an
+event-specific ranking. Only exact suggested names are accepted. Missing
+suggestions or invalid generation blocks saving. Existing selected topics are
+preserved, so organizers can refine them directly in the draft without having
+them overwritten on the next run.
+
+The adapter reopens the saved editor to verify all selected hosts and topics.
+Before publication it checks that every current leader is present and that one
+to five topics remain selected. These provider-side choices are reviewed in the
+linked draft; they are not included in the source-content approval fingerprint.
 
 Meetup also requires current approved cover artwork from
 [content review](content.md). It uploads the reviewed PNG or JPEG, confirms the

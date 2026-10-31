@@ -9,10 +9,19 @@ import type {
 	MeetupCalendarArguments,
 } from "./meetup-calendar.js";
 import type { MeetupCover } from "./meetup-cover.js";
+import type { MeetupHosts } from "./meetup-hosts.js";
+import type { MeetupTopics } from "./meetup-topics.js";
 import type { MeetupVenue, MeetupVenueArguments } from "./meetup-venue.js";
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
+export type MeetupEditorSelections = Readonly<{
+	hosts: readonly string[];
+	topics: readonly string[];
+}>;
+
 export interface MeetupEventVerificationCollaborators {
+	readonly createHosts: (page: Page) => Pick<MeetupHosts, "matches">;
+	readonly createTopics: (page: Page) => Pick<MeetupTopics, "matches">;
 	readonly createCover: (page: Page) => Pick<MeetupCover, "matches">;
 	readonly meetupBrowserRoutes: Pick<
 		MeetupBrowserRoutes,
@@ -33,6 +42,7 @@ export class MeetupEventVerification {
 	async verify(
 		event: MeetupPublicationEvent,
 		url: MeetupEventUrl,
+		selections: MeetupEditorSelections | undefined,
 	): Promise<{
 		matches: boolean;
 		status: SavedMeetupEvent["status"];
@@ -68,7 +78,13 @@ export class MeetupEventVerification {
 				.matches(event.date, event.startTime, event.endTime)) &&
 			(await this.collaborators
 				.createCover(this.page)
-				.matches(event.cover, url.group));
+				.matches(event.cover, url.group)) &&
+			(await this.collaborators
+				.createTopics(this.page)
+				.matches(selections?.topics)) &&
+			(await this.collaborators
+				.createHosts(this.page)
+				.matches(url.group, selections?.hosts));
 		return { matches, status };
 	}
 

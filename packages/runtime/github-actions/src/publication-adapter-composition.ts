@@ -6,6 +6,7 @@ import {
 	EventDomainComposition,
 	type EventRepository,
 } from "@meetup-automation/event";
+import { GeminiGenerationGatewayComposition } from "@meetup-automation/gemini-generation-gateway";
 import { GithubDeliveryLedgerComposition } from "@meetup-automation/github-delivery-ledger";
 import { GithubPublicationJournalComposition } from "@meetup-automation/github-publication-journal";
 import { HcaptchaCaptchaResolverComposition } from "@meetup-automation/hcaptcha-captcha-resolver";
@@ -15,6 +16,7 @@ import {
 	type OrganizerApproval,
 	PublicationDestinationComposition,
 	ReconcileMeetupSlidesDelivery,
+	SelectMeetupTopics,
 } from "@meetup-automation/journey";
 import { MeetupEventGatewayComposition } from "@meetup-automation/meetup-event-gateway";
 import { OcgroupsEventGatewayComposition } from "@meetup-automation/ocgroups-event-gateway";
@@ -22,6 +24,7 @@ import {
 	CommunityGroupUrl,
 	MeetupEventIdentityPolicy,
 	MeetupGroupUrl,
+	MeetupTopicPolicy,
 	PresentationFileUrl,
 } from "@meetup-automation/publication";
 import type { EventCompositionInput } from "./composition.js";
@@ -123,6 +126,10 @@ export class PublicationAdapterComposition {
 			input.locale,
 			new HttpsAssetImageRepositoryComposition().contentImageLoader(),
 			this.journal(input),
+			new SelectMeetupTopics(
+				new GeminiGenerationGatewayComposition().text(ai.model, ai.apiKey),
+				new MeetupTopicPolicy(),
+			),
 		)
 			.meetupEventGatewayFactory()
 			.create({ email, password }, resolver, group.value);

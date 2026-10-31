@@ -19,6 +19,7 @@ function fixture(configuredGroup = groupUrl) {
 		"en",
 		{ load: async () => coverImage },
 		coverJournal(),
+		{ select: vi.fn() },
 	);
 	const page = {
 		setDefaultTimeout: vi.fn(),
