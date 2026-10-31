@@ -44,11 +44,15 @@ on:
 permissions: {}
 jobs:
   event-reconcile-active:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile-active.yml@4f7ea7fba73f31503043176bbe12d8c7170150ab # 6.0.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile-active.yml@d5b385f313ffa26ef0e4e1a893dc3a136cf8b77b # 7.1.2
     permissions:
       contents: read
       issues: read
     secrets:
+      # JSON credentials for the configured publication providers, including AI settings for Meetup.
+      # This input is required.
+      publication-credentials: ""
+
       # API key authorized for automatic text and cover generation.
       # This input is required.
       ai-api-key: ""
@@ -175,6 +179,7 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                                             | **Required** |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| **`publication-credentials`** | JSON credentials for the configured publication providers, including AI settings for Meetup.                                                | **true**     |
 | **`ai-api-key`**              | API key authorized for automatic text and cover generation.                                                                                 | **true**     |
 | **`openfeedback-api-key`**    | OpenFeedback organization API key (`oforg_`) used to create and update events.                                                              | **true**     |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |

@@ -30,7 +30,7 @@ Reconcile configured publication destinations and publish each event after its v
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-event@4f7ea7fba73f31503043176bbe12d8c7170150ab # 6.0.0
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-event@d5b385f313ffa26ef0e4e1a893dc3a136cf8b77b # 7.1.2
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
@@ -105,6 +105,13 @@ Reconcile configured publication destinations and publish each event after its v
 <!-- secrets:start -->
 <!-- secrets:end -->
 <!-- outputs:start -->
+
+## Outputs
+
+| **Output**        | **Description**                                                |
+| ----------------- | -------------------------------------------------------------- |
+| **`diagnostics`** | JSON diagnostics consumed by consolidated organizer reporting. |
+
 <!-- outputs:end -->
 <!-- examples:start -->
 <!-- examples:end -->
