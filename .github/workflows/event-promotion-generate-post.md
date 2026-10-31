@@ -21,10 +21,10 @@
 
 ## Overview
 
-Goal: Prepare a public announcement or reminder for one destination.
-Behavior: Generate a Slack or LinkedIn announcement, D-7 reminder or D0 reminder,
-then review and report it under the event lock. Promotion reconciliation publishes
-posts after their separate publication approvals.
+Goal: Prepare public announcements or reminders for configured destinations.
+Behavior: Resolve one destination or all destinations from meetup-social.json,
+then generate, review and report each draft sequentially under one event lock.
+Promotion reconciliation publishes posts after separate publication approvals.
 
 ### Permissions
 
@@ -44,7 +44,7 @@ on:
 permissions: {}
 jobs:
   event-promotion-generate-post:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@757dc68926b7cc4b76100b6c28fd156d744c2b7c # 5.1.2
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@a6ab6e4c17b74f2b87053aa0b7c48149b8fea8db # 7.0.1
     permissions:
       contents: read
     secrets:
@@ -100,7 +100,7 @@ jobs:
       # This input is required.
       slack-organizer-channel-id: ""
 
-      # Draft target: configured destination key followed by :announcement, :d7, or :d0.
+      # Draft selector: a configured destination key or * for all destinations, followed by :announcement, :d7, or :d0.
       # This input is required.
       target: ""
 
@@ -134,7 +134,7 @@ jobs:
 | **`conference-hall-event`**         | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | **string** | -           |
 | **`google-drive-public-folder-id`** | Public Drive root ID containing the tmp-covers subfolder for content images.                                                       | **true**     | **string** | -           |
 | **`slack-organizer-channel-id`**    | Internal organizer channel receiving content reviews.                                                                              | **true**     | **string** | -           |
-| **`target`**                        | Draft target: configured destination key followed by :announcement, :d7, or :d0.                                                   | **true**     | **string** | -           |
+| **`target`**                        | Draft selector: a configured destination key or * for all destinations, followed by :announcement, :d7, or :d0.                    | **true**     | **string** | -           |
 | **`ai-provider`**                   | AI provider identifier (gemini).                                                                                                   | **true**     | **string** | -           |
 | **`ai-model`**                      | Supported structured-text model.                                                                                                   | **true**     | **string** | -           |
 | **`github-app-client-id`**          | GitHub App client ID for the consumer repository.                                                                                  | **true**     | **string** | -           |
