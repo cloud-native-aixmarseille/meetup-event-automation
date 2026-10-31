@@ -1,0 +1,177 @@
+# Goal: Generate and review one selected promotion draft.
+# Behavior: Run inside the event lock held by event-promotion-generate-post.
+# Keep review and reporting independent of generation failures.
+
+name: Internal / Promotion / Generate selected post
+on:
+  workflow_call:
+    inputs:
+      meetup-event-url-prefix:
+        description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+        required: true
+        type: string
+      community-event-url-prefixes:
+        description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+        required: true
+        type: string
+      asset-folder-url-prefix:
+        description: HTTPS prefix accepted for event asset folder URLs.
+        required: true
+        type: string
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: true
+        type: string
+      issue-number:
+        description: Meetup issue number.
+        required: true
+        type: number
+      conference-hall-event:
+        description: Conference Hall CFP slug for live linked profiles and selected proposals.
+        required: true
+        type: string
+      google-drive-public-folder-id:
+        description: Public Drive root ID containing the tmp-covers subfolder for content images.
+        required: true
+        type: string
+      slack-organizer-channel-id:
+        description: Internal organizer channel receiving content reviews.
+        required: true
+        type: string
+      target:
+        description: "Draft target: configured destination key followed by :announcement, :d7, or :d0."
+        required: true
+        type: string
+      provider:
+        description: Provider selected from the consumer destination configuration (slack or linkedin).
+        required: true
+        type: string
+      ai-provider:
+        description: AI provider identifier (gemini).
+        required: true
+        type: string
+      ai-model:
+        description: Supported structured-text model.
+        required: true
+        type: string
+      github-app-client-id:
+        description: GitHub App client ID for the consumer repository.
+        required: true
+        type: string
+    secrets:
+      conference-hall-api-key:
+        description: Read-only Conference Hall event API key.
+        required: true
+      google-credentials:
+        description: Google service-account JSON for immutable public content media.
+        required: true
+      slack-token:
+        description: Slack bot token for organizer review requests and decision reactions.
+        required: true
+      ai-api-key:
+        description: API key for the selected AI provider.
+        required: true
+      github-app-private-key:
+        description: GitHub App private key.
+        required: true
+permissions: {}
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Create narrowly scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-issues: write
+      - name: Checkout consumer repository
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Generate Slack post
+        id: slack
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && inputs.provider == 'slack' }}
+        uses: $/actions/communication/generate-slack-post
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          target: ${{ inputs.target }}
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      - name: Generate LinkedIn post
+        id: linkedin
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && inputs.provider == 'linkedin' }}
+        uses: $/actions/communication/generate-linkedin-post
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          target: ${{ inputs.target }}
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      - name: Review drafts
+        id: review
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/organizer/review-drafts
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+    outputs:
+      initialized: ${{ steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+      slack-report: ${{ inputs.provider == 'slack' && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.slack.outcome), toJSON(steps.slack.outputs.diagnostics)) || '' }}
+      linkedin-report: ${{ inputs.provider == 'linkedin' && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.linkedin.outcome), toJSON(steps.linkedin.outputs.diagnostics)) || '' }}
+      review-outcome: ${{ steps.review.outcome }}
+      review-diagnostics: ${{ steps.review.outputs.diagnostics }}
+  report:
+    needs: generate
+    if: ${{ always() && needs.generate.outputs.initialized == 'true' }}
+    uses: $/.github/workflows/__organizer-reconcile-reporting.yml
+    permissions:
+      contents: read
+    with:
+      meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+      community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+      asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+      locale: ${{ inputs.locale }}
+      github-app-client-id: ${{ inputs.github-app-client-id }}
+      slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+      issue-number: ${{ inputs.issue-number }}
+      stage-results: '{"content":[${{ needs.generate.outputs.slack-report }}${{ needs.generate.outputs.linkedin-report }}{"outcome":${{ toJSON(needs.generate.outputs.review-outcome) }},"diagnostics":${{ toJSON(needs.generate.outputs.review-diagnostics) }}}]}'
+    secrets:
+      github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials

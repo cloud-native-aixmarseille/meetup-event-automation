@@ -43,7 +43,10 @@ rejected. The list supports up to 50 destinations and at most one LinkedIn Page.
 Slack channels may span multiple workspaces. Only channels in this list can be
 selected or published to; there is no predefined community list or fallback.
 
-Use `<key>:announcement`, `<key>:d7`, or `<key>:d0` as a draft target. Adding or
+Use `<key>:announcement`, `<key>:d7`, or `<key>:d0` as a draft target. To generate
+for every configured destination, use `*:announcement`, `*:d7`, or `*:d0`.
+The [promotion generation workflow](content.md#generate-a-proposal) owns destination
+selection and sequential execution; consumers only forward the selector. Adding or
 replacing a destination requires a new content review and publication approval.
 Removing it blocks pending sends. Renaming a key or label changes the review but
 preserves the delivery identity for the same remote channel or Page.

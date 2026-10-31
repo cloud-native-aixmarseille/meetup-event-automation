@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { operationalWorkflows } from "./action-interface-usage.js";
 import {
 	type ActionManifest,
 	readYaml,
@@ -91,16 +92,20 @@ describe("shared AI action configuration", () => {
 				.map(({ action }) => action),
 		);
 		const paths = (await readdir(join(root, ".github/workflows"))).filter(
-			(path) => path.endsWith(".yml") && !path.startsWith("__"),
+			(path) => path.endsWith(".yml"),
 		);
 
 		// Act
-		const workflows = await Promise.all(
+		const catalog = await Promise.all(
 			paths.map(async (path) => ({
 				path,
 				workflow: await readYaml<Workflow>(`.github/workflows/${path}`),
 			})),
 		);
+		const operational = operationalWorkflows(
+			new Map(catalog.map(({ path, workflow }) => [path, workflow])),
+		);
+		const workflows = catalog.filter(({ path }) => operational.has(path));
 
 		// Assert
 		for (const { path, workflow } of workflows) {
@@ -164,11 +169,10 @@ describe("shared AI action configuration", () => {
 			for (const step of steps.filter((step) => !aiSteps.includes(step)))
 				expect(JSON.stringify(step), path).not.toContain("secrets.ai-api-key");
 			for (const call of aiCalls) {
-				expect(call.with, path).toMatchObject({
-					"ai-provider": workflowExpression("inputs.ai-provider"),
-					"ai-text-model": workflowExpression("inputs.ai-text-model"),
-					"ai-image-model": workflowExpression("inputs.ai-image-model"),
-				});
+				for (const input of inputs)
+					expect(call.with?.[input], path).toBe(
+						workflowExpression(`inputs.${input}`),
+					);
 				expect(call.secrets?.["ai-api-key"], path).toBe(
 					workflowExpression("secrets.ai-api-key"),
 				);

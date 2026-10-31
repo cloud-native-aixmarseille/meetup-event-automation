@@ -1,7 +1,7 @@
-# Goal: Prepare a public announcement or reminder for one destination.
-# Behavior: Generate a Slack or LinkedIn announcement, D-7 reminder or D0 reminder,
-# then review and report it under the event lock. Promotion reconciliation publishes
-# posts after their separate publication approvals.
+# Goal: Prepare public announcements or reminders for configured destinations.
+# Behavior: Resolve one destination or all destinations from meetup-social.json,
+# then generate, review and report each draft sequentially under one event lock.
+# Promotion reconciliation publishes posts after separate publication approvals.
 
 name: Event / Promotion / Generate post
 on:
@@ -40,7 +40,7 @@ on:
         required: true
         type: string
       target:
-        description: "Draft target: configured destination key followed by :announcement, :d7, or :d0."
+        description: "Draft selector: a configured destination key or * for all destinations, followed by :announcement, :d7, or :d0."
         required: true
         type: string
       ai-provider:
@@ -73,110 +73,52 @@ on:
         required: true
 permissions: {}
 jobs:
-  generate:
+  destinations:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      targets: ${{ steps.selection.outputs.targets }}
     steps:
-      - name: Create narrowly scoped GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ inputs.github-app-client-id }}
-          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: read
-          permission-issues: write
       - name: Checkout consumer repository
-        id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Validate requested promotion draft
+      - name: Select configured promotion drafts
         id: selection
         env:
           REQUESTED_TARGET: ${{ inputs.target }}
         run: |
           node <<'NODE'
           const { appendFileSync, readFileSync } = require('node:fs');
-          const target = process.env.REQUESTED_TARGET;
-          if (!/^[a-z][a-z0-9-]{0,63}:(announcement|d7|d0)$/.test(target)) throw new Error('Unsupported promotion draft target');
+          const selector = process.env.REQUESTED_TARGET;
+          if (!/^(\*|[a-z][a-z0-9-]{0,63}):(announcement|d7|d0)$/.test(selector)) throw new Error('Unsupported promotion draft target');
           let configuration;
           try { configuration = JSON.parse(readFileSync('.github/meetup-social.json', 'utf8')); }
           catch { throw new Error('Invalid social publication configuration'); }
-          const destinations = configuration.destinations;
-          if (configuration.version !== 1 || !Array.isArray(destinations)) throw new Error('Invalid social publication configuration');
-          const selected = destinations.filter(destination => destination.key === target.split(':')[0]);
-          if (selected.length !== 1 || !['slack', 'linkedin'].includes(selected[0].provider)) throw new Error('Unsupported promotion draft target');
-          const operation = selected[0].provider;
-          appendFileSync(process.env.GITHUB_OUTPUT, 'operations=' + JSON.stringify([operation]) + '\n');
+          const destinations = configuration?.destinations;
+          if (configuration?.version !== 1 || !Array.isArray(destinations) || destinations.length > 50) throw new Error('Invalid social publication configuration');
+          const keys = new Set();
+          for (const destination of destinations) {
+            if (!destination || typeof destination.key !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(destination.key) || !['slack', 'linkedin'].includes(destination.provider) || keys.has(destination.key)) throw new Error('Invalid or duplicate promotion destination');
+            keys.add(destination.key);
+          }
+          const [key, purpose] = selector.split(':');
+          const selected = key === '*' ? destinations : destinations.filter(destination => destination.key === key);
+          if (key !== '*' && selected.length !== 1) throw new Error('Unsupported promotion draft target');
+          const targets = selected.map(destination => ({ target: `${destination.key}:${purpose}`, provider: destination.provider }));
+          appendFileSync(process.env.GITHUB_OUTPUT, 'targets=' + JSON.stringify(targets) + '\n');
           NODE
-      - name: Generate Slack post
-        id: slack
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'slack') }}
-        uses: $/actions/communication/generate-slack-post
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          locale: ${{ inputs.locale }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          issue-number: ${{ inputs.issue-number }}
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          target: ${{ inputs.target }}
-          ai-provider: ${{ inputs.ai-provider }}
-          ai-model: ${{ inputs.ai-model }}
-          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-      - name: Generate LinkedIn post
-        id: linkedin
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'linkedin') }}
-        uses: $/actions/communication/generate-linkedin-post
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          locale: ${{ inputs.locale }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          issue-number: ${{ inputs.issue-number }}
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          target: ${{ inputs.target }}
-          ai-provider: ${{ inputs.ai-provider }}
-          ai-model: ${{ inputs.ai-model }}
-          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-      - name: Review drafts
-        id: review
-        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
-        uses: $/actions/organizer/review-drafts
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          locale: ${{ inputs.locale }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          issue-number: ${{ inputs.issue-number }}
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
-          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
-    outputs:
-      initialized: ${{ steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
-      slack-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'slack') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.slack.outcome), toJSON(steps.slack.outputs.diagnostics)) || '' }}
-      linkedin-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'linkedin') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.linkedin.outcome), toJSON(steps.linkedin.outputs.diagnostics)) || '' }}
-      review-outcome: ${{ steps.review.outcome }}
-      review-diagnostics: ${{ steps.review.outputs.diagnostics }}
-  report:
-    needs: generate
-    if: ${{ always() && needs.generate.outputs.initialized == 'true' }}
-    uses: $/.github/workflows/__organizer-reconcile-reporting.yml
+  generate:
+    needs: destinations
+    if: ${{ needs.destinations.outputs.targets != '[]' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.destinations.outputs.targets) }}
+    uses: $/.github/workflows/__event-promotion-generate-post.yml
     permissions:
       contents: read
     with:
@@ -184,13 +126,21 @@ jobs:
       community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
       asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
       locale: ${{ inputs.locale }}
-      github-app-client-id: ${{ inputs.github-app-client-id }}
-      slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       issue-number: ${{ inputs.issue-number }}
-      stage-results: '{"content":[${{ needs.generate.outputs.slack-report }}${{ needs.generate.outputs.linkedin-report }}{"outcome":${{ toJSON(needs.generate.outputs.review-outcome) }},"diagnostics":${{ toJSON(needs.generate.outputs.review-diagnostics) }}}]}'
+      conference-hall-event: ${{ inputs.conference-hall-event }}
+      google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+      slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+      target: ${{ matrix.target }}
+      ai-provider: ${{ inputs.ai-provider }}
+      ai-model: ${{ inputs.ai-model }}
+      github-app-client-id: ${{ inputs.github-app-client-id }}
+      provider: ${{ matrix.provider }}
     secrets:
-      github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
 concurrency:
   group: ${{ format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number) }}
   cancel-in-progress: false
