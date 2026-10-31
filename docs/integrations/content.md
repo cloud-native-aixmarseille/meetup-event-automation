@@ -121,14 +121,14 @@ generation needs Google credentials to verify its announcement image, and cover
 generation also needs the public media folder. The shared review action needs
 both for manual image imports and media verification; it accepts no AI inputs.
 
-| Target                           | Proposal                                                                                             |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `title`                          | One clear event headline expressing the main idea or practical benefit, at most 80 characters.       |
-| `description`                    | Practical details first, ordered talk teasers, and a friendly invitation, separated by empty lines.  |
-| `cover`                          | Four separate image candidates, generated sequentially.                                              |
-| `<destination-key>:announcement` | One announcement using the configured provider's format.                                             |
-| `<destination-key>:d7`           | One reminder seven calendar days before the event.                                                   |
-| `<destination-key>:d0`           | One reminder on the event day.                                                                       |
+| Target                           | Proposal                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `title`                          | One clear event headline expressing the main idea or practical benefit, at most 80 characters.      |
+| `description`                    | Practical details first, ordered talk teasers, and a friendly invitation, separated by empty lines. |
+| `cover`                          | Four separate image candidates, generated sequentially.                                             |
+| `<destination-key>:announcement` | One announcement using the configured provider's format.                                            |
+| `<destination-key>:d7`           | One reminder seven calendar days before the event.                                                  |
+| `<destination-key>:d0`           | One reminder on the event day.                                                                      |
 
 Slack uses emoji aliases. LinkedIn uses Unicode emoji, hashtags, a public mention
 footer, and the verified announcement image. Each configured Slack channel has
