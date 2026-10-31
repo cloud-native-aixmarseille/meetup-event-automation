@@ -38,6 +38,8 @@ const actionWiring = {
 			"organizer/review-drafts",
 			"assets/reconcile-documents",
 			"assets/reconcile-slides-pdf",
+			"publication/prepare-runtime",
+			"publication/reconcile-event",
 			"event/reconcile",
 			"communication/reconcile-email",
 		],
@@ -57,9 +59,6 @@ const actionWiring = {
 	},
 	"referential-reconcile-speakers": {
 		synchronize: ["referential/reconcile-speakers", "issue-form/reconcile"],
-	},
-	"event-publication-reconcile": {
-		publish: ["publication/prepare-runtime", "publication/reconcile-event"],
 	},
 };
 
@@ -325,7 +324,6 @@ describe("event lifecycle entry points", () => {
 			"event-promotion-reconcile-active.yml",
 			"event-promotion-reconcile.yml",
 			"event-promotion-recover.yml",
-			"event-publication-reconcile.yml",
 			"event-reconcile-active.yml",
 			"event-reconcile.yml",
 			"issue-form-reconcile.yml",

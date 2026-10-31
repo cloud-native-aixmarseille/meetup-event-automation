@@ -119,7 +119,7 @@ describe("GitHub attention presentation", () => {
 			episodes: [
 				episode("required-data", "event"),
 				episode("host-confirmation", "host"),
-				episode("manual-publication", "publish-meetup-event"),
+				episode("manual-publication", "publish-community-event"),
 			],
 		};
 
@@ -129,7 +129,7 @@ describe("GitHub attention presentation", () => {
 		// Assert
 		expect(body.startsWith(prefix)).toBe(true);
 		expect(body.match(/Confirmez/g)).toHaveLength(1);
-		expect(body).toContain("Approuver la publication Meetup.");
+		expect(body).toContain("Publiez sur la plateforme CNCF.");
 	});
 	it("shows pending notification recovery without claiming the event is clear", () => {
 		// Arrange

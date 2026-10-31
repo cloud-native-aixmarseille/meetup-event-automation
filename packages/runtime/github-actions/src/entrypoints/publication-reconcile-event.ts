@@ -7,5 +7,5 @@ const action = new EventPublicationActionComposition().action();
 await runner.run(
 	"action.publication.reconcile-event",
 	action.run.bind(action),
-	false,
+	true,
 );

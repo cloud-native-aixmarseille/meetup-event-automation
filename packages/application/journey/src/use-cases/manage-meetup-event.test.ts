@@ -152,12 +152,6 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 					(item) => item.code === "publication.meetup.unpublished",
 				),
 			).toBe(!completed);
-			expect(result.manualPublicationTasks).toContainEqual(
-				expect.objectContaining({
-					kind: "publish-meetup-event",
-					status: completed ? "completed" : "pending",
-				}),
-			);
 		},
 	);
 
@@ -280,10 +274,6 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			throw new Error("Expected the meetup event to be managed");
 		}
 		expect(result.manualPublicationTasks).toEqual([
-			expect.objectContaining({
-				kind: "publish-meetup-event",
-				status: "completed",
-			}),
 			expect.objectContaining({
 				kind: "publish-community-event",
 				status: "completed",

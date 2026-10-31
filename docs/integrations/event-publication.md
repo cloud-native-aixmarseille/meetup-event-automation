@@ -1,6 +1,8 @@
 # Publish events to Meetup and OCGroups
 
-The [publication workflow](../../.github/workflows/event-publication-reconcile.yml)
+The [event reconciliation workflow](../../.github/workflows/event-reconcile.yml)
+creates publication drafts automatically after event copy and cover approval.
+A separate organizer approval authorizes publication. The same workflow
 reconciles one issue across its configured destinations. Meetup.com and CNCF Open
 Community Groups (OCGroups) are adapters of the same process: recover an existing
 event, save a draft, request organizer approval, publish the approved revision,
@@ -129,50 +131,16 @@ Also configure the existing GitHub App, Conference Hall, Slack, and three
 All three URL inputs remain required for shared event readiness evaluation.
 Keep `.github/meetup-content.json` for content review.
 
-## Add the workflow caller
+## Connect event reconciliation
 
-Use the same caller for one or both destinations. Replace `RELEASE_SHA` with a
-published full automation commit SHA that includes this contract. Keep all
-consumer automation callers on that revision so shared approvals and reminders
-understand both publication kinds.
+Use the [normal event callers](../usage/setup.md#3-add-workflow-callers) for
+issue edits, approval decisions, and the scheduled active-event audit. Supply
+`publication-credentials: ${{ secrets.PUBLICATION_CREDENTIALS }}` in both callers.
+Keep every automation caller pinned to the same published revision.
 
-```yaml
-name: Synchronize event publications
-on:
-  issues:
-    types: [opened, edited, reopened, labeled, unlabeled]
-  issue_comment:
-    types: [edited]
-  workflow_dispatch:
-    inputs:
-      issue-number:
-        description: Meetup issue number.
-        required: true
-        type: number
-permissions:
-  contents: read
-jobs:
-  synchronize:
-    if: >-
-      ${{ github.event_name == 'workflow_dispatch' ||
-          (!github.event.issue.pull_request && github.event.issue.state == 'open' &&
-           contains(github.event.issue.labels.*.name, 'meetup')) }}
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-publication-reconcile.yml@RELEASE_SHA
-    with:
-      issue-number: ${{ github.event.issue.number || inputs.issue-number }}
-      locale: fr
-      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
-      conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
-      meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
-      community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
-      asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
-      slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
-    secrets:
-      github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
-      conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
-      publication-credentials: ${{ secrets.PUBLICATION_CREDENTIALS }}
-      slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
-```
+Content review, draft preparation, publication approval handling, and organizer
+reporting run in sequence under one event lock. There is no separate publication
+workflow to trigger. The audit also resumes pending work without an issue edit.
 
 The workflow installs Chromium from its pinned automation revision and prepares
 extra runtime dependencies only for adapters that need them. It holds
@@ -191,8 +159,7 @@ source data blocks synchronization before browser access.
 
 The workflow processes destinations in configuration order. Pending approval or
 a provider failure does not prevent a ready destination from proceeding. OCGroups
-requires **Meetup Link**, so place Meetup first when both are automated. With
-manual Meetup publication, supply its event link before running OCGroups. A
+requires **Meetup Link**, so place Meetup first when both are automated. When only OCGroups is configured, supply the existing Meetup event link first. A
 changed issue or invalidated content review stops further effects. Successful
 operations remain durable even when another provider fails. The summary reports
 status and review URL per destination, with localized diagnostics.
@@ -323,8 +290,9 @@ the audience to all members or everyone who RSVP'd.
 Keep the issue open. Delivery is eligible when the event is marked `held`, or
 when a scheduled event's local date has ended. Cancelled, postponed and unknown
 occurrences are skipped. [PDF export](assets.md#export-the-presentation-pdf)
-verifies public placement and adds **Slides PDF** to the issue. That issue edit
-triggers the publication caller above. No manual sharing checkbox is required.
+verifies public placement and adds **Slides PDF** to the issue. Publication
+processes the PDF later in the same reconciliation run; the scheduled audit
+resumes pending work. No manual sharing checkbox is required.
 
 For `locale: fr`, the message is:
 

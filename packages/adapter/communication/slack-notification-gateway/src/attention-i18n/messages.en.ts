@@ -36,7 +36,6 @@ export const messages = {
 	"task.delivery": "delivery recovery",
 
 	"attention.clear": "No pending tasks.",
-	"task.publish-meetup-event": "Approve Meetup publication",
 	"task.publish-community-event": "Publish on the CNCF platform",
 	"task.create-asset-folder": "Prepare the asset folder",
 	"task.thank-host": "Thank the host",

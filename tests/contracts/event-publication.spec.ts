@@ -8,11 +8,11 @@ describe("event publication workflow", () => {
 			"steps.publication-runtime.outputs.runtime-directory",
 		);
 		const workflow = await readYaml<Workflow>(
-			".github/workflows/event-publication-reconcile.yml",
+			".github/workflows/event-reconcile.yml",
 		);
 
 		// Act
-		const steps = workflow.jobs?.publish?.steps ?? [];
+		const steps = workflow.jobs?.manage?.steps ?? [];
 		const prepare = steps.findIndex(
 			(step) => step.id === "publication-runtime",
 		);
@@ -25,65 +25,86 @@ describe("event publication workflow", () => {
 			step.run?.includes("playwright-core install"),
 		);
 		const python = steps.findIndex((step) => step.run?.includes("pip install"));
+		const publication = steps.findIndex((step) => step.id === "publication");
 
 		// Assert
-		expect(prepare).toBeGreaterThanOrEqual(0);
+		expect(prepare).toBeGreaterThan(
+			steps.findIndex((step) => step.id === "content"),
+		);
 		expect(node).toBeGreaterThan(prepare);
 		expect(browser).toBeGreaterThan(node);
 		expect(python).toBeGreaterThan(prepare);
+		expect(publication).toBeGreaterThan(python);
+		expect(steps.findIndex((step) => step.id === "event")).toBeGreaterThan(
+			publication,
+		);
+		expect(
+			steps.findIndex((step) => step.id === "communications"),
+		).toBeGreaterThan(publication);
 		expect(steps[node].with?.["working-directory"]).toBe(runtimeDirectory);
 		expect(steps[browser]["working-directory"]).toBe(runtimeDirectory);
 		expect(steps[python]["working-directory"]).toBe(
 			`${runtimeDirectory}/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python`,
 		);
-		expect(steps.at(-1)?.uses).toBe("$/actions/publication/reconcile-event");
+		expect(steps.find((step) => step.id === "publication")?.uses).toBe(
+			"$/actions/publication/reconcile-event",
+		);
 	});
 	it("serializes all issue writes with the existing event workflows and scopes the App token", async () => {
 		// Arrange
-		const path = ".github/workflows/event-publication-reconcile.yml";
+		const path = ".github/workflows/event-reconcile.yml";
 
 		// Act
 		const workflow = await readYaml<Workflow>(path);
-		const job = workflow.jobs?.publish;
+		const job = workflow.jobs?.manage;
 		const steps = job?.steps ?? [];
 		const token = steps.find((step) => step.id === "app-token");
 
 		// Assert
-		expect(job?.concurrency).toEqual({
-			group: `meetup-event-${workflowExpression("github.repository_id")}-${workflowExpression("inputs.issue-number")}`,
+		expect(workflow.concurrency).toEqual({
+			group: workflowExpression(
+				"format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number)",
+			),
 			"cancel-in-progress": false,
 		});
 		expect(job?.if).toContain("github.event.action == 'edited'");
-		expect(job?.if).toContain('"kind":"meetup-publication"');
-		expect(job?.if).toContain('"kind":"community-publication"');
-		expect(steps.at(-1)?.with).toMatchObject({
-			"slack-organizer-channel-id": workflowExpression(
-				"inputs.slack-organizer-channel-id",
-			),
-			"slack-token": workflowExpression("secrets.slack-token"),
-			"publication-credentials": workflowExpression(
-				"secrets.publication-credentials",
-			),
-		});
+		expect(job?.if).toContain(
+			"startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '",
+		);
+		expect(job?.if).not.toContain('"kind":');
+		expect(job?.concurrency).toBeUndefined();
+		expect(steps.find((step) => step.id === "publication")?.with).toMatchObject(
+			{
+				"slack-organizer-channel-id": workflowExpression(
+					"inputs.slack-organizer-channel-id",
+				),
+				"slack-token": workflowExpression("secrets.slack-token"),
+				"publication-credentials": workflowExpression(
+					"secrets.publication-credentials",
+				),
+			},
+		);
 		expect(job?.permissions).toEqual({ contents: "read" });
 		expect(token?.with).toMatchObject({
 			"permission-contents": "read",
 			"permission-issues": "write",
 		});
-		expect(steps.at(-1)?.uses).toBe("$/actions/publication/reconcile-event");
+		expect(steps.find((step) => step.id === "publication")?.uses).toBe(
+			"$/actions/publication/reconcile-event",
+		);
 		expect(
 			steps.filter((step) =>
 				/secrets\.publication-credentials/.test(JSON.stringify(step)),
 			),
-		).toEqual([steps.at(-1)]);
+		).toEqual([steps.find((step) => step.id === "publication")]);
 		expect(JSON.stringify(steps)).not.toMatch(/upload-artifact|save-cache/);
 	});
 	it("installs Chrome and the challenge solver only for Meetup", async () => {
 		// Arrange
-		const path = ".github/workflows/event-publication-reconcile.yml";
+		const path = ".github/workflows/event-reconcile.yml";
 		// Act
 		const workflow = await readYaml<Workflow>(path);
-		const steps = workflow.jobs?.publish?.steps ?? [];
+		const steps = workflow.jobs?.manage?.steps ?? [];
 		const prepare = steps.findIndex(
 			(step) => step.id === "publication-runtime",
 		);

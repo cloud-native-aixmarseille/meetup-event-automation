@@ -85,8 +85,8 @@ OCGroups projects only verified published URLs into CNCF Link. The collection
 rejects duplicate destinations and destinations that would write the same issue
 field. The supported issue model has one destination for each provider.
 
-Use one `publication/reconcile-event` action and one
-`event-publication-reconcile.yml` workflow for the collection. Read the common
+Run one `publication/reconcile-event` action within `event-reconcile.yml` for
+the collection, after content review and before event readiness reporting. Read the common
 schedule and public venue mapping once per configuration load from
 `.github/event-publication.json`; content review uses that same schedule.
 `destinations` selects Meetup, OCGroups, or both, with at most one of each.
@@ -319,6 +319,20 @@ Set the event timezone in the browser process environment. A detached CDP
 emulation override did not survive navigation in the diagnostic. Regression
 coverage verifies navigation, a second CDP connection, and fresh cookie state.
 OCGroups retains its existing browser runtime. No public inputs or secrets change.
+
+### 2026-10-31: integrate publication into event reconciliation
+
+Supersede the standalone `event-publication-reconcile.yml` entry point. Content
+approvals previously completed without invoking publication in a consumer that
+only connected event reconciliation. Run publication in the normal pipeline and
+active-event audit, under the existing workflow-level issue lock. This avoids a
+second caller and a nested lock while retaining domain-owned eligibility,
+separate publication approval, source verification, and creation journals.
+
+Remove the manual Meetup publication task: the actual draft approval request
+owns that decision. Keep CNCF manual tasks for consumers without its destination.
+Forward publication diagnostics into the event reporting stage; a skipped or
+failed publication action must preserve unresolved organizer tasks.
 
 ## Supporting evidence
 

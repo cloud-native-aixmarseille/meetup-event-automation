@@ -73,8 +73,9 @@ Meetup/CNCF/Drive links, a checked **Meetup event published** task in
 **Communication**, and no blocking diagnostics. **OpenFeedback Link** appears
 when automation creates the feedback event.
 
-Use [event publication synchronization](../integrations/event-publication.md) for
-Meetup and CNCF / OCGroups. Review each destination's draft through its approval
+After title, description, and cover approval, event reconciliation creates a
+draft for each configured [publication destination](../integrations/event-publication.md).
+Review each destination's draft through its approval
 comment or Slack link, then approve publication. Each destination requires its
 own approval. Automation fills **Meetup Link** with the verified draft or
 published URL and **CNCF Link** with the verified published URL. It also checks

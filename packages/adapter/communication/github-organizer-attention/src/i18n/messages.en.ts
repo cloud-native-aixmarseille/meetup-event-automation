@@ -35,7 +35,6 @@ export const messages = {
 	"attention.clear": "No pending tasks.",
 	"attention.pending":
 		"Verify the Slack post before retrying: delivery is unconfirmed.",
-	"task.publish-meetup-event": "Approve Meetup publication",
 	"task.publish-community-event": "Publish on the CNCF platform",
 	"task.create-asset-folder": "Prepare the asset folder",
 	"task.thank-host": "Thank the host",

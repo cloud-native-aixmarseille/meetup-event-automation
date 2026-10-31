@@ -95,8 +95,6 @@ export class EventPublicationEvaluation {
 				timeZone: event.timeZone,
 				occurrenceStatus: event.occurrenceStatus,
 				references: event.publicationLinks,
-				meetupPublished:
-					this.collaborators.meetupPublicationChecklist.isPublished(event),
 				attendanceImported: this.checklistTaskIsCompleted(
 					event.operationalChecklists.postEvent,
 					POST_EVENT_TASK_NAMES.importAttendance,

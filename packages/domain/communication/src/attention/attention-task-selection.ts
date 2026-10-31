@@ -92,7 +92,6 @@ export class AttentionTaskSelection {
 		["speaker-confirmation", ["speaker-confirmation"]],
 	]);
 	private static readonly RESOURCE_FIELDS = new Map([
-		["publish-meetup-event", ["meetup"]],
 		["publish-community-event", ["community"]],
 	]);
 }
