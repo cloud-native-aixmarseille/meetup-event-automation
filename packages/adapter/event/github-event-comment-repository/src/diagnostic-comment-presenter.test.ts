@@ -36,7 +36,7 @@ describe("renderDiagnosticComment", () => {
 		["fr", "authentication-captcha-rejected", "réponse au CAPTCHA"],
 		["fr", "authentication-rate-limited", "HTTP 429"],
 		["en", "uncertain", "Check the existing event before retrying"],
-		["fr", "uncertain", "Vérifiez l'événement existant avant de relancer"],
+		["fr", "uncertain", "Vérifiez l'événement existant avant de relancer"], // codespell:ignore existant
 	])("names a Meetup block in %s: %s", (locale, code, expected) => {
 		// Arrange
 		const diagnostic: EventDiagnostic = {
