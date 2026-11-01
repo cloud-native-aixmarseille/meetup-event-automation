@@ -1,4 +1,6 @@
 export const STAGE_MESSAGES_FR = {
+	"comment.guidance.meetup.uncertain":
+		"Meetup n'a pas confirmé l'enregistrement. Vérifiez l'événement existant avant de relancer ; le clic d'enregistrement n'a pas été répété.",
 	"comment.guidance.meetup.authentication-configuration":
 		"Les identifiants Meetup manquent dans la configuration de l'automatisation. Vérifiez PUBLICATION_CREDENTIALS.",
 	"comment.guidance.meetup.authentication-captcha-required":

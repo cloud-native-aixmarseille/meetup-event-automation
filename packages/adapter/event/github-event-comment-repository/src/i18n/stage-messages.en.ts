@@ -1,4 +1,6 @@
 export const STAGE_MESSAGES_EN = {
+	"comment.guidance.meetup.uncertain":
+		"Meetup did not confirm the event save. Check the existing event before retrying; the save click was not repeated.",
 	"comment.guidance.meetup.authentication-configuration":
 		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
 	"comment.guidance.meetup.authentication-captcha-required":

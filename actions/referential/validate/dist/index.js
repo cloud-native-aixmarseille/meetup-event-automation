@@ -39660,7 +39660,8 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       "publication.community.approval-pending",
       "publication.meetup.approval-pending",
       "publication.community.approval-rejected",
-      "publication.meetup.approval-rejected"
+      "publication.meetup.approval-rejected",
+      "publication.meetup.uncertain"
     ].includes(item.code);
   }
   eventPrerequisite(code, owner, eventDiagnostics) {
@@ -49421,6 +49422,10 @@ var FIELD_ORDER = [
 var GUIDANCE = new Map([
   ...STAGE_GUIDANCE,
   [
+    "publication.meetup.uncertain",
+    ["Meetup Link", "comment.guidance.meetup.uncertain"]
+  ],
+  [
     "event.proposals.invalid-selection",
     ["Agenda", "comment.guidance.proposals.invalid-selection"]
   ],
@@ -50226,6 +50231,7 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.guidance.meetup.uncertain": "Meetup did not confirm the event save. Check the existing event before retrying; the save click was not repeated.",
   "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -50292,6 +50298,7 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.guidance.meetup.uncertain": "Meetup n'a pas confirm\xE9 l'enregistrement. V\xE9rifiez l'\xE9v\xE9nement existant avant de relancer ; le clic d'enregistrement n'a pas \xE9t\xE9 r\xE9p\xE9t\xE9.",
   "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",

@@ -248,13 +248,35 @@ describe("Meetup login page", () => {
 		expect(result).toBe("account-mismatch");
 	});
 
-	it("reports a login redirect as an unusable session", async () => {
+	it.each(["clear", "required"] as const)(
+		"reports a login redirect as an unusable session with CAPTCHA %s",
+		async (challenge) => {
+			// Arrange
+			const { login, page, redirect, email, solver } = fixture();
+			solver.inspect.mockResolvedValue(challenge);
+			vi.mocked(page.goto).mockImplementation(async () => {
+				redirect(
+					"https://events.example.test:8443/login/?returnUri=%2Faccount%2F",
+				);
+				return null;
+			});
+
+			// Act
+			const result = await login.verifyAccount("organizer@example.test");
+
+			// Assert
+			expect(result).toBe("session-not-reusable");
+			expect(email.inputValue).not.toHaveBeenCalled();
+			expect(solver.resolve).not.toHaveBeenCalled();
+		},
+	);
+
+	it("retains one-time-code verification when redirected to login", async () => {
 		// Arrange
-		const { login, page, redirect, email } = fixture();
+		const { login, page, redirect, oneTimeCode, solver, email } = fixture();
+		oneTimeCode.isVisible.mockResolvedValue(true);
 		vi.mocked(page.goto).mockImplementation(async () => {
-			redirect(
-				"https://events.example.test:8443/login/?returnUri=%2Faccount%2F",
-			);
+			redirect("https://events.example.test:8443/login/");
 			return null;
 		});
 
@@ -262,8 +284,23 @@ describe("Meetup login page", () => {
 		const result = await login.verifyAccount("organizer@example.test");
 
 		// Assert
-		expect(result).toBe("session-not-reusable");
-		expect(email.inputValue).not.toHaveBeenCalled();
+		expect(result).toBe("one-time-code");
+		expect(solver.resolve).not.toHaveBeenCalled();
+		expect(email.fill).not.toHaveBeenCalled();
+	});
+
+	it("does not treat an account-page challenge as an expired session", async () => {
+		// Arrange
+		const { login, solver, email } = fixture();
+		solver.inspect.mockResolvedValue("required");
+
+		// Act
+		const result = await login.verifyAccount("organizer@example.test");
+
+		// Assert
+		expect(result).toBe("captcha-required");
+		expect(solver.resolve).not.toHaveBeenCalled();
+		expect(email.fill).not.toHaveBeenCalled();
 	});
 
 	it("reports a challenge appearing after submission without resubmitting", async () => {

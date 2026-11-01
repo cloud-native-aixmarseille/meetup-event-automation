@@ -78,8 +78,10 @@ export class MeetupLoginPage {
 			);
 			if (response?.status() === 429) return "rate-limited";
 			const challenge = await this.challengeStatus();
-			if (challenge) return challenge;
+			if (challenge === "one-time-code") return challenge;
+			// An expired session can return to a login form that already has a CAPTCHA.
 			if (this.isMeetupPath("/login")) return "session-not-reusable";
+			if (challenge) return challenge;
 			if (!this.isMeetupPath("/account/management")) return "unexpected-page";
 			const accountEmail = this.page.locator('input[name="email"]');
 			await accountEmail.waitFor();

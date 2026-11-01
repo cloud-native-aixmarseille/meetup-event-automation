@@ -353,7 +353,9 @@ removed after each operation. OCGroups uses headless Chromium. Direct action
 callers must provide the required browsers and `xvfb-run`.
 
 Before signing in, Meetup restores any saved session and checks the account email
-on the account management page. An expired session falls back to password login. A temporary verification failure
+on the account management page. A redirect to login expires the saved session,
+including when the login form displays a CAPTCHA, and falls back to password
+login. A one-time-code request still stops authentication. A temporary verification failure
 retries the restored snapshot without discarding it or resubmitting credentials.
 A different account, unexpected origin, one-time-code request, explicit credential
 rejection, or HTTP 429 stops authentication without further submissions.
