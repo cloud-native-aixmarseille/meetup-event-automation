@@ -73973,6 +73973,9 @@ var MeetupAuthentication = class {
   collaborators;
   credentials;
   async open(timezoneId) {
+    const candidate = {
+      state: await this.collaborators.store.load().catch(() => void 0)
+    };
     let failure = "authentication-browser";
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0)
@@ -73980,7 +73983,7 @@ var MeetupAuthentication = class {
       const session = this.collaborators.createSession();
       try {
         const { page, endpoint: endpoint2 } = await session.open(timezoneId);
-        const status = await this.authenticate(page, endpoint2);
+        const status = await this.authenticate(page, endpoint2, candidate);
         if (status === "verified") {
           await page.context().storageState().then((state) => this.collaborators.store.save(state)).catch(() => void 0);
           return { page, session };
@@ -74004,25 +74007,21 @@ var MeetupAuthentication = class {
     }
     throw new ScheduledEventError(failure);
   }
-  async authenticate(page, endpoint2) {
+  async authenticate(page, endpoint2, candidate) {
     const login = this.collaborators.createLogin(page, endpoint2);
-    const stored = await this.collaborators.store.load().catch(() => void 0);
-    if (stored) {
+    if (candidate.state) {
       try {
-        await page.context().setStorageState(stored);
-        const status = await login.verifyAccount(this.credentials.email);
-        if (status === "verified") return status;
-        if ([
-          "one-time-code",
-          "account-mismatch",
-          "unexpected-page",
-          "rate-limited"
-        ].includes(status))
-          return status;
+        await page.context().setStorageState(candidate.state);
       } catch {
+        candidate.state = void 0;
       }
+      if (candidate.state) {
+        const status = await login.verifyAccount(this.credentials.email);
+        if (status !== "session-not-reusable") return status;
+      }
+      candidate.state = void 0;
       await page.context().setStorageState({ cookies: [], origins: [] });
-      await this.collaborators.store.clear();
+      await this.collaborators.store.clear().catch(() => void 0);
     }
     return login.login(this.credentials.email, this.credentials.password);
   }

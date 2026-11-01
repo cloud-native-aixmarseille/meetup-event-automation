@@ -6,7 +6,10 @@ import type { Page } from "playwright-core";
 import type { MeetupBrowserSession } from "./meetup-browser-session.js";
 import type { MeetupLoginPage } from "./meetup-login-page.js";
 import type { PublicationAuthenticationStatus } from "./meetup-session-status.js";
-import type { MeetupSessionStore } from "./meetup-session-store.js";
+import type {
+	MeetupSessionStore,
+	MeetupStorageState,
+} from "./meetup-session-store.js";
 
 type Session = Pick<MeetupBrowserSession, "open" | "close">;
 export interface MeetupAuthenticationCollaborators {
@@ -30,6 +33,9 @@ export class MeetupAuthentication {
 	}
 
 	async open(timezoneId: string): Promise<{ page: Page; session: Session }> {
+		const candidate = {
+			state: await this.collaborators.store.load().catch(() => undefined),
+		};
 		let failure: ScheduledEventFailure = "authentication-browser";
 		for (let attempt = 0; attempt < 3; attempt++) {
 			if (attempt > 0)
@@ -37,7 +43,7 @@ export class MeetupAuthentication {
 			const session = this.collaborators.createSession();
 			try {
 				const { page, endpoint } = await session.open(timezoneId);
-				const status = await this.authenticate(page, endpoint);
+				const status = await this.authenticate(page, endpoint, candidate);
 				if (status === "verified") {
 					await page
 						.context()
@@ -71,28 +77,22 @@ export class MeetupAuthentication {
 	private async authenticate(
 		page: Page,
 		endpoint: string,
+		candidate: { state: MeetupStorageState | undefined },
 	): Promise<PublicationAuthenticationStatus> {
 		const login = this.collaborators.createLogin(page, endpoint);
-		const stored = await this.collaborators.store.load().catch(() => undefined);
-		if (stored) {
+		if (candidate.state) {
 			try {
-				await page.context().setStorageState(stored);
-				const status = await login.verifyAccount(this.credentials.email);
-				if (status === "verified") return status;
-				if (
-					[
-						"one-time-code",
-						"account-mismatch",
-						"unexpected-page",
-						"rate-limited",
-					].includes(status)
-				)
-					return status;
+				await page.context().setStorageState(candidate.state);
 			} catch {
-				/* An unusable snapshot cannot authorize an operation. */
+				candidate.state = undefined;
 			}
+			if (candidate.state) {
+				const status = await login.verifyAccount(this.credentials.email);
+				if (status !== "session-not-reusable") return status;
+			}
+			candidate.state = undefined;
 			await page.context().setStorageState({ cookies: [], origins: [] });
-			await this.collaborators.store.clear();
+			await this.collaborators.store.clear().catch(() => undefined);
 		}
 		return login.login(this.credentials.email, this.credentials.password);
 	}

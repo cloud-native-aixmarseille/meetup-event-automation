@@ -169,3 +169,54 @@ describe("Meetup authentication", () => {
 		expect(store.save).not.toHaveBeenCalled();
 	});
 });
+
+it("retries temporary account verification failures without a fresh password login", async () => {
+	// Arrange
+	const { authentication, login, store, state, context, delay } = fixture();
+	await store.save(state);
+	login.verifyAccount.mockResolvedValueOnce("account-unavailable");
+
+	// Act
+	await authentication.open("UTC");
+
+	// Assert
+	expect(store.load).toHaveBeenCalledOnce();
+	expect(login.verifyAccount).toHaveBeenCalledTimes(2);
+	expect(login.login).not.toHaveBeenCalled();
+	expect(context.setStorageState.mock.calls).toEqual([[state], [state]]);
+	expect(delay).toHaveBeenCalledExactlyOnceWith(2_000);
+});
+
+it("reports exhausted session checks without needlessly submitting credentials", async () => {
+	// Arrange
+	const { authentication, login, store, state } = fixture();
+	await store.save(state);
+	login.verifyAccount.mockResolvedValue("account-unavailable");
+
+	// Act
+	const result = authentication.open("UTC");
+
+	// Assert
+	await expect(result).rejects.toMatchObject({
+		kind: "authentication-account-unavailable",
+	});
+	expect(login.verifyAccount).toHaveBeenCalledTimes(3);
+	expect(login.login).not.toHaveBeenCalled();
+	expect(store.save).toHaveBeenCalledOnce();
+});
+
+it("does not restore an explicitly expired session during subsequent login retries", async () => {
+	// Arrange
+	const { authentication, login, store, state } = fixture();
+	await store.save(state);
+	login.verifyAccount.mockResolvedValue("session-not-reusable");
+	login.login.mockResolvedValueOnce("login-page-unavailable");
+
+	// Act
+	await authentication.open("UTC");
+
+	// Assert
+	expect(login.verifyAccount).toHaveBeenCalledOnce();
+	expect(login.login).toHaveBeenCalledTimes(2);
+	expect(store.clear).toHaveBeenCalledOnce();
+});

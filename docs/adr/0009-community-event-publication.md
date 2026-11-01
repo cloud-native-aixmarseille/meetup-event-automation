@@ -483,7 +483,9 @@ secret, binding it to the repository, group, account and password. This avoids a
 extra consumer secret and a new storage service. Secret rotation intentionally
 invalidates sessions. Plaintext cookies never enter the GitHub cache, which is
 readable by pull requests. Session reuse always requires fresh identity verification;
-cache corruption, expiry and misses fall back to login.
+cache corruption, expiry and misses fall back to login. Transient verification
+failures retain the restored snapshot for bounded retries without resubmitting
+credentials. Only an explicit login redirect invalidates a restorable session.
 
 Authentication has three attempts with two/five-second backoff and at most two
 bounded solver calls. Explicit credential rejection, one-time codes, unexpected
