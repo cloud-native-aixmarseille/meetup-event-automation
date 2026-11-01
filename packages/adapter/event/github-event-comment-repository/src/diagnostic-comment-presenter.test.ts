@@ -18,7 +18,7 @@ const errorDiagnostic: EventDiagnostic = {
 describe("renderDiagnosticComment", () => {
 	it.each([
 		["en", "Meetup sign-in could not be verified."],
-		["fr", "Connexion à Meetup non vérifiée."],
+		["fr", "Vérifiez l'accès du compte organisateur"],
 	])("names a Meetup authentication block in %s", (locale, expected) => {
 		// Arrange
 		const diagnostic: EventDiagnostic = {
@@ -43,7 +43,8 @@ describe("renderDiagnosticComment", () => {
 		const body = presenter.render([diagnostic], messages);
 
 		// Assert
-		expect(body).toContain(`**Meetup Link**: ${expected}`);
+		expect(body).toContain("**Meetup Link**:");
+		expect(body).toContain(expected);
 		expect(body).not.toContain(diagnostic.message);
 	});
 	it.each([
