@@ -348,7 +348,8 @@ confirmation using synthetic controls matching the Meetup form.
 Browser operations use fresh sessions and close them after use. Meetup starts
 Google Chrome in an isolated Xvfb display and connects through a loopback-only
 debugging endpoint. Its private profile and display files are removed after each
-operation. The browser process uses the event timezone across navigation and
+operation. All tabs share authentication within that disposable profile. The
+browser process uses the event timezone across navigation and
 challenge solving. OCGroups uses headless Chromium. The workflow installs the
 required browsers and display dependencies; direct action callers must provide
 Google Chrome and `xvfb-run` for Meetup. The 15-minute job uploads no artifacts and persists no browser sessions, page dumps,

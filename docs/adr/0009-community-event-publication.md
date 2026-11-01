@@ -257,6 +257,17 @@ remain unverified.
 
 ## Decision history
 
+### 2026-11-01: share authentication across Meetup tabs
+
+Use the disposable Chrome profile without the additional incognito window.
+With the external incognito startup and CDP attachment, a page opened through
+the attached context did not share the initial page's authenticated session.
+A live read reached the account page but redirected the leadership tab to
+login; a synthetic browser regression reproduced the missing cookie across
+tabs. The profile remains unique to each operation and is removed on cleanup.
+Read the visible leadership counter because desktop and mobile navigation
+render separate copies. Cover both responsive layouts and paginated rosters.
+
 ### 2026-10-31: preserve approved event copy during publication
 
 The scheduled-event projection passes the approved description unchanged to

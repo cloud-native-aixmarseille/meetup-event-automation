@@ -73757,7 +73757,6 @@ var MeetupChromeProcess = class {
           "--remote-debugging-address=127.0.0.1",
           "--no-first-run",
           "--no-default-browser-check",
-          "--incognito",
           "about:blank"
         ],
         {

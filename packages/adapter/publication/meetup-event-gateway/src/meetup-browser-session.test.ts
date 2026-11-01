@@ -5,6 +5,38 @@ import { MeetupBrowserSession } from "./meetup-browser-session.js";
 import { MeetupChromeProcess } from "./meetup-chrome-process.js";
 
 describe("Meetup browser session", () => {
+	it("shares authentication with additional pages in the disposable profile", async () => {
+		// Arrange
+		const session = new MeetupBrowserSession(
+			chromium,
+			new MeetupChromeProcess(spawnTestChromium, chromium.executablePath()),
+		);
+		let sharedCookie = "";
+
+		// Act
+		try {
+			const { page } = await session.open("UTC");
+			await page.context().route("https://example.test/**", (route) =>
+				route.fulfill({
+					contentType: "text/html",
+					body: "<html><body>synthetic page</body></html>",
+				}),
+			);
+			await page.goto("https://example.test/account");
+			await page.evaluate(() => {
+				document.cookie = "synthetic-session=private; path=/; secure";
+			});
+			const roster = await page.context().newPage();
+			await roster.goto("https://example.test/members");
+			sharedCookie = await roster.evaluate(() => document.cookie);
+		} finally {
+			await session.close();
+		}
+
+		// Assert
+		expect(sharedCookie).toBe("synthetic-session=private");
+	}, 30_000);
+
 	it("applies the event timezone and discards authentication state between sessions", async () => {
 		// Arrange
 		const first = new MeetupBrowserSession(
