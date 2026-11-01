@@ -210,6 +210,38 @@ describe("actionable attention conditions", () => {
 			{ code: "missing-date", policy: "weekly" },
 		]);
 	});
+	it("keeps the classified failure under its evaluated stage owner", () => {
+		// Arrange
+		const input = facts({
+			stages: [
+				{
+					owner: "event",
+					outcome: "failure",
+					blocked: true,
+					failureResource:
+						"publication.meetup.authentication-account-unavailable",
+				},
+			],
+		});
+		const evaluation = new EvaluateAttention({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+		});
+
+		// Act
+		const result = evaluation.execute(input, new Date("2099-06-01T10:00:00Z"));
+
+		// Assert
+		expect(result.conditions).toMatchObject([
+			{
+				code: "integration-failure",
+				owner: "event",
+				resource: "publication.meetup.authentication-account-unavailable",
+			},
+		]);
+		expect(result.evaluated).toContain("event");
+	});
+
 	it("distinguishes failed integrations from unexecuted stages and missing evidence", () => {
 		// Arrange
 		const input = facts({

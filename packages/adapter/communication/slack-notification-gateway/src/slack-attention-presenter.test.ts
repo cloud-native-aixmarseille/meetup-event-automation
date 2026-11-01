@@ -27,6 +27,32 @@ function attentionFixture(
 	);
 }
 describe("Slack attention presentation", () => {
+	it.each([
+		[
+			"publication.meetup.authentication-account-unavailable",
+			"Le compte connecté n'a pas pu être vérifié malgré les retries.",
+		],
+		[
+			"publication.meetup.editor",
+			"Le chargement ou la préparation de l'éditeur Meetup a échoué.",
+		],
+	])("shows the classified failure and its run: %s", (resource, message) => {
+		// Arrange
+		const presenter = attentionFixture("fr");
+		const failure = {
+			...episode("integration-failure", resource),
+			runId: "1234",
+		};
+		failure.condition = { ...failure.condition, owner: "event" };
+
+		// Act
+		const body = presenter.render({ state: state(), conditions: [failure] });
+
+		// Assert
+		expect(body).toContain(message);
+		expect(body).toContain("/actions/runs/1234");
+		expect(body).not.toContain("La mise à jour du ticket a échoué.");
+	});
 	it("keeps the original failure link when another workflow reports", () => {
 		// Arrange
 		const presenter = attentionFixture();
