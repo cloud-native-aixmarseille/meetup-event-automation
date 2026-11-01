@@ -26744,13 +26744,13 @@ var ActionOutput = class {
 
 // packages/runtime/github-actions/src/action-report.ts
 var ActionReport = class {
-  async write(title, report, messages3) {
+  async write(title, report, messages5) {
     const lines = new Set(report.details);
     for (const item of report.diagnostics) {
       lines.add(this.diagnosticMessage(item));
     }
     if (report.failure)
-      lines.add(messages3.t("report.failed", { reason: report.failure }));
+      lines.add(messages5.t("report.failed", { reason: report.failure }));
     for (const line of lines) {
       info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
     }
@@ -26760,7 +26760,7 @@ var ActionReport = class {
 `).write();
     } catch {
       summary.clear();
-      warning(messages3.t("report.summary-unavailable"));
+      warning(messages5.t("report.summary-unavailable"));
     }
   }
   diagnosticMessage(item) {
@@ -28224,20 +28224,20 @@ var ActionRunner = class {
   }
   collaborators;
   async run(title, operation, diagnosticsOutput) {
-    let messages3 = this.collaborators.createActionMessages("en");
+    let messages5 = this.collaborators.createActionMessages("en");
     let report;
     try {
-      messages3 = this.collaborators.createActionMessages(
+      messages5 = this.collaborators.createActionMessages(
         getInput("locale", { required: true })
       );
-      report = await operation(messages3);
+      report = await operation(messages5);
       const failures = report.diagnostics.filter(
         (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
       ).map((item) => item.code);
       if (!report.failure && failures.length > 0) {
         report = {
           ...report,
-          failure: messages3.t("report.technical-failure", {
+          failure: messages5.t("report.technical-failure", {
             codes: [...new Set(failures)].join(", ")
           })
         };
@@ -28261,7 +28261,7 @@ var ActionRunner = class {
           diagnostics: [
             { code: "action.execution.failed", severity: "error", message }
           ],
-          failure: messages3.error(
+          failure: messages5.error(
             error2 instanceof Error ? error2.name : "",
             message
           )
@@ -28269,9 +28269,9 @@ var ActionRunner = class {
       }
     }
     await this.collaborators.actionReport.write(
-      messages3.t(title),
+      messages5.t(title),
       report,
-      messages3
+      messages5
     );
     if (report.failure) setFailed(report.failure);
     if (diagnosticsOutput)
@@ -28428,6 +28428,16 @@ var ApprovalRequestPolicy = class {
     if (request2.kind === "social-publication")
       return `social:${request2.social.intentId}:${request2.social.recovery ? "recovery" : "publication"}`;
     return request2.kind;
+  }
+  resolved(facts) {
+    if (facts.attentionPending) return false;
+    if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
+      return false;
+    return this.reviewPhase({
+      recipientCount: facts.recipientCount,
+      followUpActive: facts.followUp?.active,
+      decided: facts.decided
+    }) !== "pending";
   }
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
@@ -30910,6 +30920,9 @@ var AttentionPolicy = class {
       return `${policy}:${elapsed >= 7 ? 7 : 1}`;
     return void 0;
   }
+  resolved(state) {
+    return this.view(state).conditions.length === 0 && state.post?.status !== "pending";
+  }
   view(state) {
     return {
       state,
@@ -31158,6 +31171,21 @@ var EvaluateAttention = class {
     };
   }
 };
+
+// packages/domain/communication/src/attention/model.ts
+var ATTENTION_CODES = [
+  "missing-date",
+  "required-data",
+  "host-confirmation",
+  "speaker-confirmation",
+  "manual-publication",
+  "approval-pending",
+  "integration-failure",
+  "delivery-recovery",
+  "occurrence-decision",
+  "follow-up",
+  "stage-unknown"
+];
 
 // packages/domain/communication/src/attention/reconcile-attention.ts
 var ReconcileAttention = class {
@@ -31726,7 +31754,7 @@ var CommunicationIdempotency = class {
 import { createHash as createHash2 } from "node:crypto";
 var MailBatchFingerprint = class {
   create(eventDate, timeZone, intents) {
-    const messages3 = intents.map((intent) => ({
+    const messages5 = intents.map((intent) => ({
       id: intent.idempotencyKey,
       destination: intent.recipient.email,
       template: intent.templateName,
@@ -31735,7 +31763,7 @@ var MailBatchFingerprint = class {
         typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
       ])
     })).sort((a, b) => a.id.localeCompare(b.id));
-    return createHash2("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages3 })).digest("hex");
+    return createHash2("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages5 })).digest("hex");
   }
 };
 
@@ -36047,12 +36075,12 @@ var PublicationUrlInput = class {
 
 // packages/runtime/github-actions/src/referential-action-report.ts
 var ReferentialActionReport = class {
-  validation(result, diagnostics, messages3) {
+  validation(result, diagnostics, messages5) {
     const details = [
-      messages3.t(
+      messages5.t(
         result.isValid ? "report.referential.valid" : "report.referential.invalid"
       ),
-      messages3.t("report.referential.counts", {
+      messages5.t("report.referential.counts", {
         hosts: result.hostCount,
         speakers: result.speakerCount
       })
@@ -36062,19 +36090,19 @@ var ReferentialActionReport = class {
       diagnostics
     };
   }
-  issueForm(mode, result, messages3) {
+  issueForm(mode, result, messages5) {
     const details = [];
     if (result.diagnostics.some((item) => item.severity === "error")) {
-      details.push(messages3.t("report.issue-form.blocked"));
+      details.push(messages5.t("report.issue-form.blocked"));
     } else if (result.changed) {
       details.push(
-        mode === "check" ? messages3.t("report.issue-form.stale") : messages3.t("report.issue-form.updated"),
-        messages3.t("report.issue-form.files", {
+        mode === "check" ? messages5.t("report.issue-form.stale") : messages5.t("report.issue-form.updated"),
+        messages5.t("report.issue-form.files", {
           files: result.changedFiles.join(", ")
         })
       );
     } else {
-      details.push(messages3.t("report.issue-form.current"));
+      details.push(messages5.t("report.issue-form.current"));
     }
     return { details, diagnostics: result.diagnostics };
   }
@@ -39283,7 +39311,7 @@ Message Descriptor: ${JSON.stringify(messageDescriptor)}`;
     return "";
   }
 }
-var formatMessage = ({ locale, formats, messages: messages3, defaultLocale, defaultFormats, fallbackOnEmptyString, onError, timeZone, defaultRichTextElements }, state, messageDescriptor = { id: "" }, values, opts) => {
+var formatMessage = ({ locale, formats, messages: messages5, defaultLocale, defaultFormats, fallbackOnEmptyString, onError, timeZone, defaultRichTextElements }, state, messageDescriptor = { id: "" }, values, opts) => {
   const { id: msgId, defaultMessage } = messageDescriptor;
   if (!msgId) invariant(false, `[@formatjs/intl] An \`id\` must be provided to format a message. You can either:
 1. Configure your build toolchain with [babel-plugin-formatjs](https://formatjs.github.io/docs/tooling/babel-plugin)
@@ -39291,7 +39319,7 @@ or [@formatjs/ts-transformer](https://formatjs.github.io/docs/tooling/ts-transfo
 2. Configure your \`eslint\` config to include [eslint-plugin-formatjs](https://formatjs.github.io/docs/tooling/linter#enforce-id)
 to autofix this issue${getMessageDescriptorContext(messageDescriptor)}`);
   const id = String(msgId);
-  const message = messages3 && Object.prototype.hasOwnProperty.call(messages3, id) && messages3[id];
+  const message = messages5 && Object.prototype.hasOwnProperty.call(messages5, id) && messages5[id];
   if (Array.isArray(message) && message.length === 1 && message[0].type === TYPE.literal) return message[0].value;
   values = {
     ...defaultRichTextElements,
@@ -39589,8 +39617,8 @@ function formatNumberToParts(config, getNumberFormat, value, options = {}) {
   }
   return [];
 }
-function messagesContainString(messages3) {
-  return typeof (messages3 ? messages3[Object.keys(messages3)[0]] : void 0) === "string";
+function messagesContainString(messages5) {
+  return typeof (messages5 ? messages5[Object.keys(messages5)[0]] : void 0) === "string";
 }
 function verifyConfigMessages(config) {
   if (config.onWarn && config.defaultRichTextElements && messagesContainString(config.messages || {})) config.onWarn(`[@formatjs/intl] "defaultRichTextElements" was specified but "message" was not pre-compiled. 
@@ -39887,9 +39915,9 @@ var AssetMessages = class extends MessageLocalizer {
 
 // packages/runtime/github-actions/src/assets/asset-render-presenter.ts
 var AssetRenderPresenterImpl = class {
-  constructor(collaborators, messages3) {
+  constructor(collaborators, messages5) {
     this.collaborators = collaborators;
-    this.messages = messages3;
+    this.messages = messages5;
   }
   collaborators;
   messages;
@@ -40408,19 +40436,19 @@ var SpeakerSyncFailureReport = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  create(error2, messages3) {
+  create(error2, messages5) {
     const failure = error2 instanceof SpeakerSynchronizationError ? error2 : void 0;
     const cause = failure?.cause ?? error2;
     const diagnostics = failure?.diagnostics.length ? failure.diagnostics : [this.diagnostic(cause)];
-    const stage = messages3.t(
+    const stage = messages5.t(
       `report.speaker-sync.stage.${failure?.stage ?? "unknown"}`
     );
     const guidance = diagnostics.map(
-      (item) => `- ${item.field ? `${item.field}: ` : ""}${messages3.diagnostic(item.code, item.message)}`
+      (item) => `- ${item.field ? `${item.field}: ` : ""}${messages5.diagnostic(item.code, item.message)}`
     ).join("\n");
     return {
       report: {
-        details: [messages3.t("report.speaker-sync.failed", { stage })],
+        details: [messages5.t("report.speaker-sync.failed", { stage })],
         diagnostics
       },
       prBody: guidance
@@ -44788,7 +44816,7 @@ var SocialRecoveryAction = class {
     this.dependencies = dependencies;
   }
   dependencies;
-  async run(messages3) {
+  async run(messages5) {
     const recovery = this.input();
     const journey = this.dependencies.compose({
       ...context2.repo,
@@ -44797,7 +44825,7 @@ var SocialRecoveryAction = class {
         getInput("issue-number", { required: true })
       ),
       client: getOctokit(this.secret("github-token")),
-      locale: messages3.locale,
+      locale: messages5.locale,
       commentAuthorLogin: getInput("managed-comment-author", {
         required: true
       }),
@@ -44808,7 +44836,7 @@ var SocialRecoveryAction = class {
     });
     const status = await journey.execute(recovery);
     return {
-      details: [messages3.t("report.social.recovery", { status })],
+      details: [messages5.t("report.social.recovery", { status })],
       diagnostics: []
     };
   }
@@ -45490,8 +45518,8 @@ var ApprovalCommentCodec = class {
 
 // packages/adapter/journey/github-organizer-approval/src/approval-details-presenter.ts
 var ApprovalDetailsPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   render(details) {
@@ -45771,8 +45799,8 @@ var ApprovalSchema = class {
 
 // packages/adapter/journey/github-organizer-approval/src/community-approval-presenter.ts
 var CommunityApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   issue(record, decision) {
@@ -45804,8 +45832,8 @@ var CommunityApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/content-approval-presenter.ts
 var ContentApprovalPresenter = class {
-  constructor(messages3, textPreview) {
-    this.messages = messages3;
+  constructor(messages5, textPreview) {
+    this.messages = messages5;
     this.textPreview = textPreview;
   }
   messages;
@@ -45935,9 +45963,9 @@ var EmailApprovalDetailsSchema = class {
 
 // packages/adapter/journey/github-organizer-approval/src/email-approval-presenter.ts
 var EmailApprovalPresenter = class {
-  constructor(collaborators, messages3) {
+  constructor(collaborators, messages5) {
     this.collaborators = collaborators;
-    this.messages = messages3;
+    this.messages = messages5;
   }
   collaborators;
   messages;
@@ -45982,14 +46010,20 @@ var EmailApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/finalize-approval-decision.ts
 var FinalizeApprovalDecision = class {
-  constructor(decisions, repository, notifications) {
+  constructor(collaborators, decisions, repository, notifications, visibility, attentionCodec) {
+    this.collaborators = collaborators;
     this.decisions = decisions;
     this.repository = repository;
     this.notifications = notifications;
+    this.visibility = visibility;
+    this.attentionCodec = attentionCodec;
   }
+  collaborators;
   decisions;
   repository;
   notifications;
+  visibility;
+  attentionCodec;
   async execute(state, validateText) {
     const { record, comment } = state;
     const decision = await this.decisions.execute(record, comment);
@@ -46012,20 +46046,34 @@ var FinalizeApprovalDecision = class {
         ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
       };
     }
-    await this.repository.save(record, state);
+    const persisted = await this.repository.save(record, state);
+    await this.refreshVisibility(persisted);
     return {
       status: decision.status,
       ...record.kind === "content-review" ? decision : {},
       notificationFailed: await this.notifications.react(record, comment.id)
     };
   }
+  async refreshVisibility(state) {
+    const { record, comment } = state;
+    const attention = record.followUp?.attention;
+    const resolved = this.collaborators.approvalRequestPolicy.resolved({
+      decided: record.decision !== void 0,
+      recipientCount: record.recipientCount,
+      followUp: record.followUp,
+      attentionPending: attention !== void 0 && !this.collaborators.attentionPolicy.resolved(
+        this.attentionCodec.read(attention)
+      )
+    });
+    await this.visibility.synchronize(comment.id, comment.body ?? "", resolved);
+  }
 };
 
 // packages/adapter/journey/github-organizer-approval/src/follow-up-presenter.ts
 var FollowUpPresenter = class {
-  constructor(policy, messages3) {
+  constructor(policy, messages5) {
     this.policy = policy;
-    this.messages = messages3;
+    this.messages = messages5;
   }
   policy;
   messages;
@@ -46074,6 +46122,11 @@ var GithubApprovalAttentionSource = class {
   finalizer;
   async synchronizeApprovals() {
     const result = [];
+    for (const state of await this.repository.states()) {
+      if (!state.record.decision) continue;
+      const persisted = await this.repository.save(state.record, state);
+      await this.finalizer.refreshVisibility(persisted);
+    }
     for (const state of await this.repository.activeStates()) {
       if (state.record.recipientCount === 0) continue;
       const decision = await this.finalizer.execute(state);
@@ -46413,6 +46466,7 @@ var GithubOrganizerApproval = class {
     if (followUp)
       record.followUp = { ...existing?.record.followUp, ...followUp };
     const state = await this.repository.save(record, existing);
+    await this.finalizer.refreshVisibility(state);
     return {
       status: "pending",
       notificationFailed: await this.notifications.send(
@@ -46466,6 +46520,7 @@ var GithubOrganizerFollowUp = class {
       attentionDetails
     };
     const state = await this.repository.save(record, existing);
+    await this.finalizer.refreshVisibility(state);
     return state.comment.id;
   }
   async followUpAttention() {
@@ -46486,7 +46541,8 @@ var GithubOrganizerFollowUp = class {
       attention: body,
       attentionDetails: details
     };
-    await this.repository.save(state.record, state);
+    const persisted = await this.repository.save(state.record, state);
+    await this.finalizer.refreshVisibility(persisted);
   }
 };
 
@@ -46514,8 +46570,8 @@ var MeetupApprovalDetailsSchema = class {
 
 // packages/adapter/journey/github-organizer-approval/src/meetup-approval-presenter.ts
 var MeetupApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   issue(record, decision) {
@@ -46571,8 +46627,8 @@ var ResolveApprovalDecision = class {
 
 // packages/adapter/journey/github-organizer-approval/src/social-publication-approval-presenter.ts
 var SocialPublicationApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   issue(record, decision) {
@@ -46737,19 +46793,19 @@ var GithubOrganizerApprovalComposition = class {
   approvalNotifications(...args) {
     return new ApprovalNotifications(...args);
   }
-  approvalPresenter(messages3) {
-    const email = this.emailApprovalPresenter(messages3);
+  approvalPresenter(messages5) {
+    const email = this.emailApprovalPresenter(messages5);
     return new ApprovalPresenter(this.approvalCommentCodec(), {
       "email-introduction": email,
       "email-thanks": email,
-      "meetup-publication": this.meetupApprovalPresenter(messages3),
-      "community-publication": new CommunityApprovalPresenter(messages3),
-      "content-review": this.contentApprovalPresenter(messages3),
-      "social-publication": new SocialPublicationApprovalPresenter(messages3)
+      "meetup-publication": this.meetupApprovalPresenter(messages5),
+      "community-publication": new CommunityApprovalPresenter(messages5),
+      "content-review": this.contentApprovalPresenter(messages5),
+      "social-publication": new SocialPublicationApprovalPresenter(messages5)
     });
   }
-  contentApprovalPresenter(messages3) {
-    return new ContentApprovalPresenter(messages3, new ContentTextPreview());
+  contentApprovalPresenter(messages5) {
+    return new ContentApprovalPresenter(messages5, new ContentTextPreview());
   }
   approvalPresenterFactory() {
     return new ApprovalPresenterFactory({
@@ -46794,7 +46850,13 @@ var GithubOrganizerApprovalComposition = class {
     );
   }
   finalizeApprovalDecision(...args) {
-    return new FinalizeApprovalDecision(...args);
+    return new FinalizeApprovalDecision(
+      {
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
+      },
+      ...args
+    );
   }
   followUpPresenter(...args) {
     return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
@@ -47976,11 +48038,11 @@ var SlackAttentionNotification = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-attention-presenter.ts
 var SlackAttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, messages3, checklist) {
+  constructor(collaborators, repository, issueNumber, messages5, checklist) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.issueNumber = issueNumber;
-    this.messages = messages3;
+    this.messages = messages5;
     this.checklist = checklist;
     if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
       throw new Error("Invalid attention issue identity");
@@ -48090,8 +48152,8 @@ var SlackAttentionPresenter = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-community-approval-presenter.ts
 var SlackCommunityApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   render(request2) {
@@ -48104,8 +48166,8 @@ var SlackCommunityApprovalPresenter = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-content-approval-presenter.ts
 var SlackContentApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   render(request2) {
@@ -48119,8 +48181,8 @@ var SlackContentApprovalPresenter = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-email-approval-presenter.ts
 var SlackEmailApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   render(request2) {
@@ -48134,8 +48196,8 @@ var SlackEmailApprovalPresenter = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
 var SlackMeetupApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   render(request2) {
@@ -48161,8 +48223,8 @@ var SlackMessageReference = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-social-publication-approval-presenter.ts
 var SlackSocialPublicationApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   render(request2) {
@@ -48195,14 +48257,14 @@ var SlackNotificationGatewayComposition = class {
     );
   }
   slackApprovalPresenter(locale) {
-    const messages3 = this.slackApprovalMessages(locale);
+    const messages5 = this.slackApprovalMessages(locale);
     return new SlackApprovalPresenter({
-      "email-introduction": new SlackEmailApprovalPresenter(messages3),
-      "meetup-publication": new SlackMeetupApprovalPresenter(messages3),
-      "community-publication": new SlackCommunityApprovalPresenter(messages3),
-      "content-review": new SlackContentApprovalPresenter(messages3),
+      "email-introduction": new SlackEmailApprovalPresenter(messages5),
+      "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
+      "community-publication": new SlackCommunityApprovalPresenter(messages5),
+      "content-review": new SlackContentApprovalPresenter(messages5),
       "social-publication": new SlackSocialPublicationApprovalPresenter(
-        messages3
+        messages5
       )
     });
   }
@@ -48241,8 +48303,2256 @@ var SlackNotificationGatewayComposition = class {
 
 // packages/runtime/github-actions/src/organizer-approval-composition.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+var DiagnosticCommentPresenter = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  render(diagnostics, messages5) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (this.collaborators.organizerDiagnosticPolicy.suppressed(
+        item,
+        diagnostics
+      )) {
+        continue;
+      }
+      const presentation = this.collaborators.diagnosticPresenter.presentDiagnostic(
+        item,
+        messages5
+      );
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
+    }
+    if (actionable.size === 0) {
+      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+${messages5.t("comment.resolved")}`;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
+        numeric: true
+      }) || left.message.localeCompare(right.message, messages5.locale)
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-sections.ts
+var SOCIAL_DIAGNOSTIC_START = "<!-- meetup-automation:social-diagnostics:v1 -->";
+var SOCIAL_DIAGNOSTIC_END = "<!-- /meetup-automation:social-diagnostics:v1 -->";
+var DiagnosticCommentSections = class {
+  merge(previous, rendered, scope) {
+    const current = this.read(previous);
+    if (!scope && !current.social) return rendered;
+    const base = this.tasks(scope === "social" ? current.base : rendered);
+    const social = this.tasks(
+      scope === "social" ? rendered : current.social
+    ).filter((line) => !base.includes(line));
+    if (!base.length && !social.length) return rendered;
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      ...base,
+      ...social.length ? [SOCIAL_DIAGNOSTIC_START, ...social, SOCIAL_DIAGNOSTIC_END] : []
+    ].join("\n");
+  }
+  hasSocial(body) {
+    return Boolean(this.read(body).social);
+  }
+  read(body) {
+    if (!body.includes("meetup-automation:social-diagnostics:"))
+      return { base: body, social: "" };
+    const start = body.indexOf(SOCIAL_DIAGNOSTIC_START);
+    const end = body.indexOf(SOCIAL_DIAGNOSTIC_END);
+    if (start < 0 || end < start || body.split(SOCIAL_DIAGNOSTIC_START).length !== 2 || body.split(SOCIAL_DIAGNOSTIC_END).length !== 2)
+      throw new Error("Invalid social diagnostic section");
+    return {
+      base: body.slice(0, start) + body.slice(end + SOCIAL_DIAGNOSTIC_END.length),
+      social: body.slice(start + SOCIAL_DIAGNOSTIC_START.length, end)
+    };
+  }
+  tasks(body) {
+    return [
+      ...new Set(
+        body.split("\n").filter((line) => /^- \[[ x]\] \*\*.+?\*\*: .+$/.test(line))
+      )
+    ];
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
+var STAGE_GUIDANCE = [
+  [
+    "publication.content.invalid",
+    ["Event materials", "comment.guidance.content.invalid"]
+  ],
+  [
+    "communication.social.evaluation-failed",
+    ["Communication", "comment.guidance.social.evaluation-failed"]
+  ],
+  [
+    "communication.social.pending",
+    ["Communication", "comment.guidance.social.pending"]
+  ],
+  [
+    "communication.social.blocked",
+    ["Communication", "comment.guidance.social.blocked"]
+  ],
+  [
+    "communication.social.uncertain",
+    ["Communication", "comment.guidance.social.uncertain"]
+  ],
+  [
+    "communication.social.expired",
+    ["Communication", "comment.guidance.social.expired"]
+  ],
+  [
+    "publication.meetup.slides-source",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
+  ],
+  [
+    "publication.meetup.slides-link",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-link"]
+  ],
+  [
+    "publication.meetup.slides-pdf-pending",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"]
+  ],
+  [
+    "publication.meetup.slides-delivery-recovery",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-delivery-recovery"
+    ]
+  ],
+  [
+    "publication.meetup.slides-form-unavailable",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.slides-source-changed",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-source-changed"
+    ]
+  ],
+  [
+    "publication.content.prerequisites",
+    ["Event materials", "comment.guidance.content.prerequisites"]
+  ],
+  [
+    "publication.content.pending",
+    ["Event materials", "comment.guidance.content.pending"]
+  ],
+  [
+    "publication.content.rejected",
+    ["Event materials", "comment.guidance.content.rejected"]
+  ],
+  [
+    "publication.content.iteration-requested",
+    ["Event materials", "comment.guidance.content.iteration-requested"]
+  ],
+  [
+    "publication.content.recovery",
+    ["Event materials", "comment.guidance.content.recovery"]
+  ],
+  [
+    "publication.content.stale",
+    ["Event materials", "comment.guidance.content.stale"]
+  ],
+  [
+    "publication.content.title-review",
+    ["Event materials", "comment.guidance.content.title-review"]
+  ],
+  [
+    "publication.content.description-review",
+    ["Event materials", "comment.guidance.content.description-review"]
+  ],
+  [
+    "publication.meetup.content-review",
+    ["Event materials", "comment.guidance.content.review"]
+  ],
+  [
+    "communication.content-review",
+    ["Event materials", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.assets.pdf.source",
+    ["Event materials", "comment.guidance.pdf.source"]
+  ],
+  [
+    "publication.assets.pdf.source-pending",
+    ["Event materials", "comment.guidance.pdf.source-pending"]
+  ],
+  [
+    "publication.assets.pdf.revision",
+    ["Event materials", "comment.guidance.pdf.revision"]
+  ],
+  [
+    "publication.assets.pdf.conflict",
+    ["Event materials", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.recovery",
+    ["Event materials", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.limit",
+    ["Event materials", "comment.guidance.pdf.limit"]
+  ],
+  [
+    "publication.assets.pdf.sharing",
+    ["Event materials", "comment.guidance.pdf.sharing"]
+  ],
+  [
+    "publication.assets.pdf.invalid",
+    ["Event materials", "comment.guidance.pdf.invalid"]
+  ],
+  [
+    "communication.checklist-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent-checklist"]
+  ],
+  [
+    "publication.feedback.conflict",
+    ["OpenFeedback Link", "comment.guidance.feedback.conflict"]
+  ],
+  [
+    "communication.feedback-unavailable",
+    ["OpenFeedback Link", "comment.guidance.feedback.results"]
+  ],
+  [
+    "communication.feedback-fetch-failed",
+    ["OpenFeedback Link", "comment.guidance.feedback.access"]
+  ],
+  [
+    "communication.slides-unavailable",
+    ["Event materials", "comment.guidance.assets.slides"]
+  ],
+  [
+    "communication.approval-pending",
+    ["Communication", "comment.guidance.communication.approval"]
+  ],
+  [
+    "communication.approval-rejected",
+    ["Communication", "comment.guidance.communication.rejected"]
+  ],
+  [
+    "communication.approval-unavailable",
+    ["Communication", "comment.guidance.communication.approval-unavailable"]
+  ],
+  [
+    "communication.approval-notification-failed",
+    ["Communication", "comment.guidance.communication.approval-notification"]
+  ],
+  [
+    "communication.gateway-delivery-uncertain",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-threw-ambiguous-error",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.ledger-status-write-failed",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-delivery-rejected",
+    ["Communication", "comment.guidance.communication.delivery-rejected"]
+  ],
+  [
+    "communication.gateway-delivery-deferred",
+    ["Communication", "comment.guidance.communication.delivery-deferred"]
+  ],
+  [
+    "communication.invalid-clock",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-identifier",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-time-zone",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.ledger-read-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.ledger-reservation-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.missing-mail-destination",
+    ["Communication", "comment.guidance.communication.destination"]
+  ],
+  [
+    "communication.checklist-update-failed",
+    ["Communication", "comment.guidance.communication.checklist"]
+  ],
+  [
+    "communication.event-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent"]
+  ],
+  [
+    "communication.event-references-unresolved",
+    ["Agenda", "comment.guidance.communication.references"]
+  ],
+  [
+    "communication.referential-catalog-invalid",
+    ["Referentials", "comment.guidance.communication.catalog"]
+  ],
+  [
+    "publication.feedback.agenda",
+    ["Agenda", "comment.guidance.feedback.agenda"]
+  ],
+  [
+    "publication.feedback.prerequisites",
+    ["OpenFeedback Link", "comment.guidance.feedback.prerequisites"]
+  ],
+  [
+    "publication.feedback-link.prerequisites",
+    ["Meetup issue", "comment.guidance.feedback-link.prerequisites"]
+  ],
+  [
+    "publication.feedback-link.ambiguous-date",
+    ["Meetup issue", "comment.guidance.feedback-link.ambiguous-date"]
+  ],
+  [
+    "publication.assets.prerequisites",
+    ["Drive Link", "comment.guidance.assets.prerequisites"]
+  ],
+  [
+    "publication.assets.file.drift",
+    ["Event materials", "comment.guidance.assets.drift"]
+  ],
+  [
+    "publication.assets.content.contract",
+    ["Event materials", "comment.guidance.assets.template"]
+  ],
+  [
+    "publication.assets.content.location",
+    ["Event materials", "comment.guidance.assets.template"]
+  ],
+  [
+    "publication.assets.content.missing",
+    ["Event materials", "comment.guidance.assets.missing"]
+  ],
+  [
+    "publication.assets.content.conflict",
+    ["Event materials", "comment.guidance.assets.recovery"]
+  ],
+  [
+    "publication.assets.content.recovery",
+    ["Event materials", "comment.guidance.assets.recovery"]
+  ],
+  [
+    "publication.assets.content.revision",
+    ["Event materials", "comment.guidance.assets.revision"]
+  ],
+  [
+    "publication.assets.content.image",
+    ["Event materials", "comment.guidance.assets.image"]
+  ],
+  [
+    "publication.assets.content.fallback",
+    ["Event materials", "comment.guidance.assets.fallback"]
+  ],
+  [
+    "communication.invalid-event-date",
+    ["Event Date", "comment.guidance.event.date.invalid"]
+  ],
+  [
+    "communication.occurrence-status-unknown",
+    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.ts
+var FIELD_ORDER = [
+  "Event Title",
+  "Event Date",
+  "Hoster",
+  "Event Description",
+  "Agenda",
+  "Meetup Link",
+  "CNCF Link",
+  "Drive Link",
+  "OpenFeedback Link",
+  "Event materials",
+  "Communication",
+  "Automated introduction emails",
+  "Aperitif",
+  "Restaurant / Bar",
+  "Post event",
+  "Automated thank-you emails",
+  "Speaker confirmation",
+  "Event Status",
+  "Issue format",
+  "Referentials",
+  "Meetup issue"
+];
+var GUIDANCE = new Map([
+  ...STAGE_GUIDANCE,
+  [
+    "event.proposals.invalid-selection",
+    ["Agenda", "comment.guidance.proposals.invalid-selection"]
+  ],
+  [
+    "event.proposals.not-found",
+    ["Agenda", "comment.guidance.proposals.not-found"]
+  ],
+  [
+    "event.proposals.not-accepted",
+    ["Agenda", "comment.guidance.proposals.not-accepted"]
+  ],
+  [
+    "referential.source.unavailable",
+    ["Agenda", "comment.guidance.proposals.unavailable"]
+  ],
+  [
+    "referential.source.invalid",
+    ["Agenda", "comment.guidance.proposals.invalid"]
+  ],
+  [
+    "referential.source.rate-limited",
+    ["Agenda", "comment.guidance.proposals.rate-limited"]
+  ],
+  [
+    "referential.source.mapping-required",
+    ["Agenda", "comment.guidance.proposals.mapping-required"]
+  ],
+  [
+    "referential.source.conflict",
+    ["Agenda", "comment.guidance.proposals.conflict"]
+  ],
+  [
+    "event.proposals.unavailable",
+    ["Agenda", "comment.guidance.proposals.unavailable"]
+  ],
+  ["event.proposals.invalid", ["Agenda", "comment.guidance.proposals.invalid"]],
+  [
+    "event.proposals.rate-limited",
+    ["Agenda", "comment.guidance.proposals.rate-limited"]
+  ],
+  [
+    "event.proposals.mapping-required",
+    ["Agenda", "comment.guidance.proposals.mapping-required"]
+  ],
+  [
+    "event.proposals.conflict",
+    ["Agenda", "comment.guidance.proposals.conflict"]
+  ],
+  [
+    "event.title.missing",
+    ["Event Title", "comment.guidance.event.title.missing"]
+  ],
+  ["event.date.missing", ["Event Date", "comment.guidance.event.date.missing"]],
+  ["event.date.invalid", ["Event Date", "comment.guidance.event.date.invalid"]],
+  [
+    "event.description.missing",
+    ["Event Description", "comment.guidance.event.description.missing"]
+  ],
+  ["event.hoster.missing", ["Hoster", "comment.guidance.event.hoster.missing"]],
+  ["event.hoster.invalid", ["Hoster", "comment.guidance.event.hoster.invalid"]],
+  [
+    "event.hoster.multiple",
+    ["Hoster", "comment.guidance.event.hoster.multiple"]
+  ],
+  ["event.agenda.missing", ["Agenda", "comment.guidance.event.agenda.missing"]],
+  [
+    "event.agenda.legacy-line-invalid",
+    ["Agenda", "comment.guidance.event.agenda.legacy-line-invalid"]
+  ],
+  [
+    "event.agenda.speaker.missing",
+    ["Agenda", "comment.guidance.event.agenda.speaker.missing"]
+  ],
+  [
+    "event.agenda.speaker.invalid",
+    ["Agenda", "comment.guidance.event.agenda.speaker.invalid"]
+  ],
+  [
+    "event.agenda.description.missing",
+    ["Agenda", "comment.guidance.event.agenda.description.missing"]
+  ],
+  [
+    "publication.meetup.unpublished",
+    ["Meetup Link", "comment.guidance.publication.meetup.unpublished"]
+  ],
+  [
+    "publication.meetup.missing",
+    ["Meetup Link", "comment.guidance.publication.meetup.missing"]
+  ],
+  [
+    "publication.community.missing",
+    ["CNCF Link", "comment.guidance.publication.community.missing"]
+  ],
+  [
+    "publication.assets.missing",
+    ["Drive Link", "comment.guidance.publication.assets.missing"]
+  ],
+  [
+    "event.link.meetup.invalid",
+    ["Meetup Link", "comment.guidance.event.link.meetup.invalid"]
+  ],
+  [
+    "event.link.community.invalid",
+    ["CNCF Link", "comment.guidance.event.link.community.invalid"]
+  ],
+  [
+    "event.link.feedback.invalid",
+    ["OpenFeedback Link", "comment.guidance.event.link.feedback.invalid"]
+  ],
+  [
+    "event.link.assets.invalid",
+    ["Drive Link", "comment.guidance.event.link.assets.invalid"]
+  ],
+  [
+    "publication.meetup-url.invalid",
+    ["Meetup Link", "comment.guidance.publication.meetup-url.invalid"]
+  ],
+  [
+    "publication.community-url.invalid",
+    ["CNCF Link", "comment.guidance.publication.community-url.invalid"]
+  ],
+  [
+    "publication.asset-url.invalid",
+    ["Drive Link", "comment.guidance.publication.asset-url.invalid"]
+  ],
+  [
+    "event.confirmation.speakers.missing",
+    [
+      "Speaker confirmation",
+      "comment.guidance.event.confirmation.speakers.missing"
+    ]
+  ],
+  [
+    "event.logistics.intent.invalid",
+    ["Logistics", "comment.guidance.event.logistics.intent.invalid"]
+  ],
+  [
+    "event.occurrence-status.invalid",
+    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
+  ],
+  [
+    "event.occurrence-status.label-conflict",
+    ["Event Status", "comment.guidance.event.occurrence-status.label-conflict"]
+  ],
+  [
+    "event.document.heading.missing",
+    ["Issue format", "comment.guidance.event.document.heading.missing"]
+  ],
+  [
+    "event.document.heading.duplicate",
+    ["Issue format", "comment.guidance.event.document.heading.duplicate"]
+  ],
+  [
+    "event.document.checkbox.invalid",
+    ["Issue format", "comment.guidance.event.document.checkbox.invalid"]
+  ],
+  [
+    "event.document.invalid-field-type",
+    ["Issue format", "comment.guidance.event.document.invalid-field-type"]
+  ],
+  [
+    "event.document.invalid-hoster-type",
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-type"]
+  ],
+  [
+    "event.document.invalid-hoster-entry",
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-entry"]
+  ],
+  [
+    "event.document.invalid-agenda-type",
+    ["Agenda", "comment.guidance.event.document.invalid-agenda-type"]
+  ],
+  [
+    "event.document.schema-marker.duplicate",
+    ["Issue format", "comment.guidance.event.document.schema-marker.duplicate"]
+  ],
+  [
+    "event.document.schema-version.unsupported",
+    [
+      "Issue format",
+      "comment.guidance.event.document.schema-version.unsupported"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.missing",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.missing"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.duplicate",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.duplicate"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.invalid",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.invalid"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.legacy",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.legacy"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.stale",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.stale"
+    ]
+  ],
+  [
+    "referential.reference.host.unknown",
+    ["Hoster", "comment.guidance.referential.reference.host.unknown"]
+  ],
+  [
+    "referential.reference.host.ambiguous",
+    ["Hoster", "comment.guidance.referential.reference.host.ambiguous"]
+  ],
+  [
+    "referential.reference.host.display-name-mismatch",
+    [
+      "Hoster",
+      "comment.guidance.referential.reference.host.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.host.invalid",
+    ["Hoster", "comment.guidance.referential.reference.host.invalid"]
+  ],
+  [
+    "referential.reference.speaker.unknown",
+    ["Agenda", "comment.guidance.referential.reference.speaker.unknown"]
+  ],
+  [
+    "referential.reference.speaker.ambiguous",
+    ["Agenda", "comment.guidance.referential.reference.speaker.ambiguous"]
+  ],
+  [
+    "referential.reference.speaker.display-name-mismatch",
+    [
+      "Agenda",
+      "comment.guidance.referential.reference.speaker.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.speaker.invalid",
+    ["Agenda", "comment.guidance.referential.reference.speaker.invalid"]
+  ]
+]);
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-presentation.ts
+var DiagnosticPresenter = class {
+  FIELD_ALIASES = new Map([
+    ...FIELD_ORDER.map((field) => [field, field]),
+    ["Slides & Content", "Event materials"],
+    ["eventTitle", "Event Title"],
+    ["event_title", "Event Title"],
+    ["date", "Event Date"],
+    ["event_date", "Event Date"],
+    ["host", "Hoster"],
+    ["hoster", "Hoster"],
+    ["hostReference", "Hoster"],
+    ["description", "Event Description"],
+    ["event_description", "Event Description"],
+    ["agenda", "Agenda"],
+    ["publicationLinks.meetup", "Meetup Link"],
+    ["meetup_link", "Meetup Link"],
+    ["publicationLinks.community", "CNCF Link"],
+    ["cncf_link", "CNCF Link"],
+    ["publicationLinks.assets", "Drive Link"],
+    ["drive_link", "Drive Link"],
+    ["publicationLinks.feedback", "OpenFeedback Link"],
+    ["openfeedback_link", "OpenFeedback Link"],
+    ["confirmations.speakers", "Speaker confirmation"],
+    ["occurrenceStatus", "Event Status"],
+    ["event_status", "Event Status"]
+  ]);
+  presentDiagnostic(item, messages5) {
+    const guidance = GUIDANCE.get(item.code);
+    const referential = /^referential\.(host|contact|speaker)\./.test(
+      item.code
+    );
+    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
+    const [field, section] = this.publicField(item.field, fallback, messages5);
+    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
+    const order = FIELD_ORDER.indexOf(section);
+    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  /** Only known issue headings and numeric agenda positions can reach Markdown. */
+  publicField(field, fallback, messages5) {
+    const social = field?.match(
+      /^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/
+    );
+    if (social)
+      return [
+        messages5.t("comment.social.target", {
+          destination: social[1],
+          purpose: social[2]
+        }),
+        "Communication"
+      ];
+    const known = this.FIELD_ALIASES.get(field ?? "");
+    if (known) return [known, known];
+    const agenda = field?.match(
+      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
+    );
+    if (agenda) {
+      const entry = Number(agenda[1]) + 1;
+      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
+        speaker: Number(agenda[3]) + 1
+      });
+      return [
+        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
+        "Agenda"
+      ];
+    }
+    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
+    if (speaker)
+      return [
+        messages5.t("comment.agenda.speaker", {
+          speaker: Number(speaker[1]) + 1
+        }),
+        "Agenda"
+      ];
+    return [fallback, fallback];
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-comment-visibility.ts
+var GitHubCommentVisibility = class {
+  constructor(api, owner, repo) {
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+  }
+  api;
+  owner;
+  repo;
+  async synchronize(commentId, expectedBody, resolved) {
+    const { data } = await this.api.rest.issues.getComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+    if (!data.node_id || data.body !== expectedBody)
+      throw new Error("Comment changed before visibility update");
+    const response = await this.api.graphql(
+      `query CommentVisibility($id: ID!) {
+				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
+			}`,
+      { id: data.node_id }
+    );
+    if (!this.object(response) || !this.object(response.node))
+      throw new Error("Invalid comment visibility response");
+    const comment = response.node;
+    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
+      throw new Error("Comment changed before visibility update");
+    if (resolved === comment.isMinimized) return;
+    if (!resolved && comment.minimizedReason !== "resolved") return;
+    await this.change(data.node_id, resolved);
+  }
+  async change(id, resolved) {
+    const mutation = resolved ? `mutation ResolveComment($id: ID!) {
+				minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
+					minimizedComment { isMinimized }
+				}
+			}` : `mutation ReopenComment($id: ID!) {
+				unminimizeComment(input: { subjectId: $id }) {
+					unminimizedComment { isMinimized }
+				}
+			}`;
+    const response = await this.api.graphql(mutation, { id });
+    const result = this.object(response) ? response[resolved ? "minimizeComment" : "unminimizeComment"] : void 0;
+    const comment = this.object(result) ? result[resolved ? "minimizedComment" : "unminimizedComment"] : void 0;
+    if (!this.object(comment) || comment.isMinimized !== resolved)
+      throw new Error("Comment visibility update was not confirmed");
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
+var GitHubEventCommentRepositoryConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryConfigurationError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
+var GitHubEventCommentRepositoryResponseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryResponseError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
+var GitHubEventCommentRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(
+      `GitHub event comment repository is scoped to ${expected}, not ${received}`
+    );
+    this.name = "GitHubEventCommentRepositoryScopeError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository.ts
+var GitHubEventCommentRepository = class {
+  constructor(collaborators, client, options) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.options = options;
+    this.messages = this.collaborators.createEventCommentMessages(
+      options.locale
+    );
+    this.owner = this.requireRepositoryPart(options.owner, "owner");
+    this.repo = this.requireRepositoryPart(options.repo, "repo");
+    this.repositoryName = `${this.owner}/${this.repo}`;
+    this.authorLogin = options.authorLogin.trim();
+    if (!this.authorLogin)
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        "Managed comment author is required"
+      );
+  }
+  collaborators;
+  client;
+  options;
+  messages;
+  owner;
+  repo;
+  repositoryName;
+  authorLogin;
+  async reconcileDiagnostics(identity, diagnostics, scope) {
+    this.assertScope(identity.repository);
+    const managedComments = await this.listManagedComments(
+      identity.issueNumber
+    );
+    const retired = managedComments.filter(
+      (comment) => comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
+    );
+    const [canonical, ...duplicates] = managedComments.filter(
+      (comment) => !retired.includes(comment)
+    );
+    let changed = await this.retireComments(identity.issueNumber, duplicates);
+    const body = await this.body(
+      identity.issueNumber,
+      canonical,
+      diagnostics,
+      scope
+    );
+    if (!canonical) {
+      if ((!retired.length || scope === "social") && !diagnostics.some((item) => item.severity !== "info")) {
+        return { changed };
+      }
+      await this.client.rest.issues.createComment({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber,
+        body
+      });
+      if (!scope)
+        await this.retireComments(identity.issueNumber, retired, true);
+      return { changed: true };
+    }
+    if (canonical.body !== body) {
+      await this.updateComment(canonical.id, body);
+      changed = true;
+    }
+    if (scope) return { changed };
+    const retiredChanged = await this.retireComments(
+      identity.issueNumber,
+      retired,
+      true
+    );
+    return { changed: changed || retiredChanged };
+  }
+  async body(issueNumber, canonical, diagnostics, scope) {
+    const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
+      issueNumber,
+      canonical.id,
+      canonical.body
+    ) : { body: canonical?.body ?? "", retained: "" };
+    const rendered = this.collaborators.diagnosticCommentPresenter.render(
+      diagnostics,
+      this.messages
+    );
+    const body = this.collaborators.diagnosticCommentSections.merge(
+      previous.body,
+      rendered,
+      scope
+    );
+    return previous.retained ? `${body}
+
+${previous.retained}` : body;
+  }
+  async listManagedComments(issueNumber) {
+    const comments = [];
+    let page = 1;
+    let hasNextPage = true;
+    while (hasNextPage) {
+      const response = await this.client.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: issueNumber,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data)) {
+        throw new GitHubEventCommentRepositoryResponseError(
+          "GitHub comment list response must contain an array"
+        );
+      }
+      for (const rawComment of response.data) {
+        const comment = this.mapComment(rawComment);
+        if (comment && this.isManagedComment(comment)) {
+          comments.push(comment);
+        }
+      }
+      const linkHeader = this.readHeader(response.headers, "link");
+      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+      page += 1;
+    }
+    return comments.sort((left, right) => left.id - right.id);
+  }
+  isManagedComment(comment) {
+    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
+      return false;
+    }
+    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
+  }
+  async retireComments(issueNumber, duplicates, deleteReports = false) {
+    for (const duplicate of duplicates) {
+      const previous = this.options.retainedContent ? await this.options.retainedContent.load(
+        issueNumber,
+        duplicate.id,
+        duplicate.body
+      ) : void 0;
+      if (previous?.retained || this.collaborators.diagnosticCommentSections.hasSocial(
+        previous?.body ?? duplicate.body
+      ))
+        throw new Error("Duplicate diagnostic comment contains managed state");
+      if (deleteReports && this.client.rest.issues.deleteComment) {
+        await this.client.rest.issues.deleteComment({
+          owner: this.owner,
+          repo: this.repo,
+          comment_id: duplicate.id
+        });
+        continue;
+      }
+      await this.updateComment(
+        duplicate.id,
+        `${DUPLICATE_COMMENT_MARKER}
+
+${this.messages.t("comment.duplicate")}`
+      );
+      if (this.client.minimizeComment) {
+        await this.client.minimizeComment({
+          commentId: duplicate.id,
+          classifier: "OUTDATED"
+        });
+      }
+    }
+    return duplicates.length > 0;
+  }
+  async updateComment(commentId, body) {
+    await this.client.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventCommentRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  mapComment(data) {
+    if (!this.isRecord(data)) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment must be an object"
+      );
+    }
+    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment identifier must be a positive integer"
+      );
+    }
+    if (data.body === null) {
+      return null;
+    }
+    if (typeof data.body !== "string") {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment body must be a string or null"
+      );
+    }
+    const user = this.isRecord(data.user) ? data.user : void 0;
+    return {
+      id: Number(data.id),
+      body: data.body,
+      authorLogin: typeof user?.login === "string" ? user.login : void 0,
+      authorType: typeof user?.type === "string" ? user.type : void 0
+    };
+  }
+  requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
+var EN_MESSAGES5 = {
+  "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
+  "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
+  "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+  "comment.guidance.content.stale": "The event changed. Generate and review a new proposal.",
+  "comment.guidance.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
+  "comment.guidance.content.iteration-requested": "A new proposal was requested. Run generation again.",
+  "comment.guidance.content.rejected": "Content rejected. Submit a replacement for review.",
+  "comment.guidance.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
+  "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
+  "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
+  "comment.guidance.content.review": "Review the title, description, and cover in their proposal comments.",
+  "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
+  "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
+  "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
+  "comment.guidance.proposals.rate-limited": "Conference Hall rate limit reached. Wait before retrying.",
+  "comment.guidance.proposals.mapping-required": "Synchronize Conference Hall speakers and merge their identity mappings, then retry.",
+  "comment.guidance.proposals.conflict": "Conflicting Conference Hall identifiers. Check the proposal and speaker mappings.",
+  "comment.guidance.proposals.not-found": "Proposal number not found in this CFP. Check its Conference Hall URL.",
+  "comment.guidance.proposals.not-accepted": "Accept the selected proposal in Conference Hall and check that the speaker has not declined.",
+  "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
+  "comment.resolved": "\u2705 Event details complete.",
+  "comment.duplicate": "Superseded duplicate automation comment.",
+  "comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
+  "comment.referential": "Ask a maintainer to correct the host or speaker catalog.",
+  "comment.agenda.item": "Agenda (item {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", speaker {speaker}",
+  "comment.agenda.speaker": "Agenda (speaker {speaker})",
+  "comment.guidance.event.title.missing": "Edit and approve the proposed title.",
+  "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
+  "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
+  "comment.guidance.event.description.missing": "Edit and approve the proposed description.",
+  "comment.guidance.event.hoster.missing": "Select a host from the host list.",
+  "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
+  "comment.guidance.event.agenda.missing": "Add at least one talk using `- Speaker: Talk description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Use `- Speaker: Talk description` for each agenda line.",
+  "comment.guidance.event.agenda.speaker.missing": "Add at least one speaker for this talk.",
+  "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
+  "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
+  "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
+  "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
+  "comment.guidance.publication.community.missing": "Sync publications, then approve the OCGroups draft. The public link is added automatically.",
+  "comment.guidance.publication.assets.missing": "Sync assets to create the event Drive folder.",
+  "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
+  "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
+  "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
+  "comment.guidance.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
+  "comment.guidance.publication.community-url.invalid": "Use this group's CNCF / OCGroups event URL.",
+  "comment.guidance.publication.asset-url.invalid": "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirm the speakers, then add the `speakers:confirmed` label.",
+  "comment.guidance.event.logistics.intent.invalid": "Choose `Yes` or `No`, or leave the response empty if undecided.",
+  "comment.guidance.event.occurrence-status.invalid": "Use `scheduled`, `postponed`, `held`, or `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "Restore this section heading from the meetup issue template.",
+  "comment.guidance.event.document.heading.duplicate": "Keep a single section with this heading and merge its content.",
+  "comment.guidance.event.document.checkbox.invalid": "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks.",
+  "comment.guidance.event.document.invalid-field-type": "Enter a text response in this field.",
+  "comment.guidance.event.document.invalid-hoster-type": "Select one host from the host list.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.document.invalid-agenda-type": "Write the agenda as a list of `- Speaker: Talk description` lines.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Ask a maintainer to repair the duplicate automation metadata in the issue description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Ask a maintainer to update the automation to support this issue format.",
+  "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.event.document.reference-metadata.stale": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.referential.reference.host.unknown": "Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
+  "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
+var FR_MESSAGES5 = {
+  "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
+  "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
+  "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+  "comment.guidance.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
+  "comment.guidance.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
+  "comment.guidance.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
+  "comment.guidance.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
+  "comment.guidance.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
+  "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
+  "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
+  "comment.guidance.content.review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
+  "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
+  "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
+  "comment.guidance.proposals.rate-limited": "Limite API Conference Hall atteinte. Patientez avant de r\xE9essayer.",
+  "comment.guidance.proposals.mapping-required": "Synchronisez les intervenants Conference Hall et fusionnez leurs identit\xE9s, puis r\xE9essayez.",
+  "comment.guidance.proposals.conflict": "Identifiants Conference Hall en conflit. V\xE9rifiez les propositions et les identit\xE9s des intervenants.",
+  "comment.guidance.proposals.not-found": "Num\xE9ro de proposition introuvable dans ce CFP. V\xE9rifiez son URL Conference Hall.",
+  "comment.guidance.proposals.not-accepted": "Acceptez la proposition dans Conference Hall et v\xE9rifiez que l'intervenant ne l'a pas refus\xE9e.",
+  "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
+  "comment.resolved": "\u2705 Informations compl\xE8tes.",
+  "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
+  "comment.unknown": "Demandez \xE0 un responsable de consulter les diagnostics du workflow.",
+  "comment.referential": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
+  "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", intervenant {speaker}",
+  "comment.agenda.speaker": "Programme (intervenant {speaker})",
+  "comment.guidance.event.title.missing": "Modifiez et validez le titre propos\xE9.",
+  "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
+  "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
+  "comment.guidance.event.description.missing": "Modifiez et validez la description propos\xE9e.",
+  "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
+  "comment.guidance.event.agenda.missing": "Ajoutez au moins une conf\xE9rence au format `- Intervenant: Description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Utilisez `- Intervenant: Description` pour chaque ligne du programme.",
+  "comment.guidance.event.agenda.speaker.missing": "Ajoutez au moins un intervenant pour cette conf\xE9rence.",
+  "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
+  "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
+  "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
+  "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
+  "comment.guidance.publication.community.missing": "Synchronisez les publications, puis validez le brouillon OCGroups. Le lien public sera ajout\xE9 automatiquement.",
+  "comment.guidance.publication.assets.missing": "Synchronisez les fichiers pour cr\xE9er le dossier Drive du meetup.",
+  "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
+  "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
+  "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.meetup-url.invalid": "Utilisez l'URL Meetup de ce groupe, termin\xE9e par l'identifiant num\xE9rique de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.community-url.invalid": "Utilisez l'URL CNCF / OCGroups de ce groupe.",
+  "comment.guidance.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
+  "comment.guidance.event.logistics.intent.invalid": "Choisissez `Yes` ou `No`, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
+  "comment.guidance.event.occurrence-status.invalid": "Utilisez `scheduled`, `postponed`, `held` ou `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Conservez un seul label de statut : `event:postponed`, `event:held` ou `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "R\xE9tablissez cet en-t\xEAte de section \xE0 partir du mod\xE8le d'issue.",
+  "comment.guidance.event.document.heading.duplicate": "Conservez une seule section avec cet en-t\xEAte et fusionnez son contenu.",
+  "comment.guidance.event.document.checkbox.invalid": "Utilisez `- [ ] T\xE2che` pour les t\xE2ches \xE0 faire et `- [x] T\xE2che` pour les t\xE2ches termin\xE9es.",
+  "comment.guidance.event.document.invalid-field-type": "Saisissez une r\xE9ponse textuelle dans ce champ.",
+  "comment.guidance.event.document.invalid-hoster-type": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.document.invalid-agenda-type": "R\xE9digez le programme sous forme de lignes `- Intervenant: Description`.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es d'automatisation en double dans la description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Demandez \xE0 un responsable de mettre \xE0 jour l'automatisation pour prendre en charge ce format d'issue.",
+  "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.referential.reference.host.unknown": "H\xF4te introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
+  "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Intervenant introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
+var STAGE_MESSAGES_EN = {
+  "comment.social.target": "Post ({destination}, {purpose})",
+  "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
+  "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
+  "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
+  "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
+  "comment.guidance.social.evaluation-failed": "Could not check publication. Check source access and delivery records before retrying.",
+  "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
+  "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
+  "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
+  "comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
+  "comment.guidance.assets.slides": "Complete the presentation and its public link before sending emails.",
+  "comment.guidance.communication.approval": "Approve or reject the emails.",
+  "comment.guidance.communication.rejected": "Emails rejected. Change their content to request a new approval.",
+  "comment.guidance.communication.approval-unavailable": "Approval could not be verified. Check the approval request, then retry.",
+  "comment.guidance.communication.approval-notification": "Slack notification failed. Review the email approval comment in this issue.",
+  "comment.guidance.communication.delivery-uncertain": "Verify delivery before retrying.",
+  "comment.guidance.communication.delivery-rejected": "Delivery rejected. Check the mail gateway before retrying.",
+  "comment.guidance.communication.delivery-deferred": "Delivery deferred; the next run will retry.",
+  "comment.guidance.communication.configuration": "Ask a maintainer to check the communication workflow configuration.",
+  "comment.guidance.communication.ledger": "Check the delivery ledger before retrying.",
+  "comment.guidance.communication.destination": "Add an email address for each recipient.",
+  "comment.guidance.communication.content": "Complete the notification content before retrying.",
+  "comment.guidance.communication.checklist": "Sync again to mark completed email tasks.",
+  "comment.guidance.communication.concurrent": "The issue changed during processing. Retry after editing.",
+  "comment.guidance.communication.references": "Select known hosts and speakers before sending emails.",
+  "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
+  "comment.guidance.feedback.agenda": "Complete talk subjects and speakers before synchronizing OpenFeedback.",
+  "comment.guidance.feedback.prerequisites": "Complete the title, date and OpenFeedback link.",
+  "comment.guidance.feedback-link.prerequisites": "Check the active meetup selected for the shared link and complete its OpenFeedback URL.",
+  "comment.guidance.feedback-link.ambiguous-date": "Several active meetups share the selected date. Select the shared feedback target manually.",
+  "comment.guidance.assets.prerequisites": "Select the host and date before preparing Drive files.",
+  "comment.guidance.assets.drift": "Restore the missing Drive file or its expected template metadata.",
+  "comment.guidance.assets.template": "Fix the template tokens, image slots or supported document structure.",
+  "comment.guidance.assets.missing": "Complete the required text and links for the presentation.",
+  "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
+  "comment.guidance.assets.revision": "The document changed. Retry after editing.",
+  "comment.guidance.assets.image": "Use a public HTTPS PNG, JPEG or GIF image under 50 MB and 25 megapixels.",
+  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
+  "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
+  "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
+  "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
+  "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
+  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 50 MB limit.",
+  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
+  "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
+var STAGE_MESSAGES_FR = {
+  "comment.social.target": "Publication ({destination}, {purpose})",
+  "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
+  "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
+  "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
+  "comment.guidance.social.evaluation-failed": "Publication non v\xE9rifiable. V\xE9rifiez les acc\xE8s aux sources et le registre des envois avant de relancer.",
+  "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
+  "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
+  "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
+  "comment.guidance.feedback.access": "V\xE9rifiez les acc\xE8s OpenFeedback, puis r\xE9essayez.",
+  "comment.guidance.assets.slides": "Compl\xE9tez la pr\xE9sentation et son lien public avant les envois.",
+  "comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
+  "comment.guidance.communication.rejected": "Emails refus\xE9s. Modifiez leur contenu pour demander une nouvelle validation.",
+  "comment.guidance.communication.approval-unavailable": "Approbation non v\xE9rifiable. V\xE9rifiez la demande d'approbation, puis r\xE9essayez.",
+  "comment.guidance.communication.approval-notification": "La notification Slack a \xE9chou\xE9. Validez les emails dans le commentaire de cette issue.",
+  "comment.guidance.communication.delivery-uncertain": "V\xE9rifiez l'envoi avant toute reprise.",
+  "comment.guidance.communication.delivery-rejected": "Envoi refus\xE9. V\xE9rifiez la passerelle d'envoi avant de r\xE9essayer.",
+  "comment.guidance.communication.delivery-deferred": "Envoi diff\xE9r\xE9 ; la prochaine ex\xE9cution r\xE9essaiera.",
+  "comment.guidance.communication.configuration": "Demandez \xE0 un responsable de v\xE9rifier la configuration des communications.",
+  "comment.guidance.communication.ledger": "V\xE9rifiez le registre des envois avant de r\xE9essayer.",
+  "comment.guidance.communication.destination": "Ajoutez une adresse email pour chaque destinataire.",
+  "comment.guidance.communication.content": "Compl\xE9tez le contenu de la notification avant de r\xE9essayer.",
+  "comment.guidance.communication.checklist": "Relancez pour cocher les t\xE2ches d'email termin\xE9es.",
+  "comment.guidance.communication.concurrent": "Le ticket a chang\xE9 pendant le traitement. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.communication.references": "S\xE9lectionnez des h\xF4tes et intervenants connus avant les envois.",
+  "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
+  "comment.guidance.feedback.agenda": "Compl\xE9tez les sujets et intervenants avant de synchroniser OpenFeedback.",
+  "comment.guidance.feedback.prerequisites": "Compl\xE9tez le titre, la date et le lien OpenFeedback.",
+  "comment.guidance.feedback-link.prerequisites": "V\xE9rifiez le meetup actif s\xE9lectionn\xE9 pour le lien partag\xE9 et compl\xE9tez son URL OpenFeedback.",
+  "comment.guidance.feedback-link.ambiguous-date": "Plusieurs meetups actifs ont la date s\xE9lectionn\xE9e. Choisissez manuellement la cible du lien partag\xE9.",
+  "comment.guidance.assets.prerequisites": "S\xE9lectionnez l'h\xF4te et la date avant de pr\xE9parer les fichiers Drive.",
+  "comment.guidance.assets.drift": "Restaurez le fichier Drive manquant ou ses m\xE9tadonn\xE9es de mod\xE8le.",
+  "comment.guidance.assets.template": "Corrigez les variables, emplacements d'images ou la structure du mod\xE8le.",
+  "comment.guidance.assets.missing": "Compl\xE9tez les textes et liens requis pour la pr\xE9sentation.",
+  "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
+  "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.assets.image": "Utilisez une image PNG, JPEG ou GIF publique en HTTPS, de moins de 50 Mo et 25 m\xE9gapixels.",
+  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
+  "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
+  "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
+  "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
+  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 50 Mo.",
+  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
+  "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
+var CATALOGS6 = {
+  en: { ...EN_MESSAGES5, ...STAGE_MESSAGES_EN },
+  fr: { ...FR_MESSAGES5, ...STAGE_MESSAGES_FR }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
+var EventCommentMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS6, locale);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
+var GithubEventCommentRepositoryComposition = class {
+  githubCommentVisibility(...args) {
+    return new GitHubCommentVisibility(...args);
+  }
+  diagnosticCommentSections() {
+    return new DiagnosticCommentSections();
+  }
+  diagnosticCommentPresenter() {
+    return new DiagnosticCommentPresenter({
+      organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+      diagnosticPresenter: this.diagnosticPresenter()
+    });
+  }
+  diagnosticPresenter() {
+    return new DiagnosticPresenter();
+  }
+  eventCommentMessages(...args) {
+    return new EventCommentMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  gitHubEventCommentRepository(...args) {
+    return new GitHubEventCommentRepository(
+      {
+        diagnosticCommentSections: this.diagnosticCommentSections(),
+        diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
+        createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
+      },
+      ...args
+    );
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-record.ts
+var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
+var AttentionRecord = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body) {
+    const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
+    const line = lines[0];
+    if (lines.length !== 1 || !line?.endsWith(" -->"))
+      throw new Error("Invalid attention record");
+    const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
+    return this.decode(input);
+  }
+  marker(state) {
+    const safe = this.decode({ ...state, version: 1 });
+    return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
+  }
+  decode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    if (!Array.isArray(data.episodes) || data.episodes.length > 300)
+      throw new Error("Invalid attention episodes");
+    this.collaborators.attentionRecordFields.choice(data.version, [1]);
+    const state = {
+      eventDate: this.collaborators.attentionRecordFields.text(
+        data.eventDate,
+        /^(?:\d{4}-\d{2}-\d{2})?$/
+      ),
+      stopped: this.collaborators.attentionRecordFields.choice(data.stopped, [
+        true,
+        false
+      ]),
+      episodes: data.episodes.map(this.episode.bind(this)),
+      post: data.post === void 0 ? void 0 : this.post(data.post),
+      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      )
+    };
+    this.collaborators.attentionStateRules.validate(state);
+    return state;
+  }
+  episode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      condition: this.condition(data.condition),
+      episode: this.collaborators.attentionRecordFields.integer(
+        data.episode,
+        true
+      ),
+      openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
+        "active",
+        "unknown",
+        "resolved",
+        "stopped"
+      ]),
+      lastWindow: data.lastWindow === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
+        data.lastWindow,
+        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
+      )
+    };
+  }
+  condition(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      key: this.collaborators.attentionRecordFields.text(
+        data.key,
+        /^[a-z0-9:-]{1,180}$/
+      ),
+      code: this.collaborators.attentionRecordFields.choice(
+        data.code,
+        ATTENTION_CODES
+      ),
+      owner: this.collaborators.attentionRecordFields.choice(data.owner, [
+        "event",
+        "assets",
+        "feedback",
+        "communications",
+        "social",
+        "content",
+        "approvals",
+        "delivery"
+      ]),
+      resource: this.collaborators.attentionRecordFields.text(
+        data.resource,
+        /^[a-z0-9:-]{1,128}$/
+      ),
+      severity: this.collaborators.attentionRecordFields.choice(data.severity, [
+        "warning",
+        "error"
+      ]),
+      policy: this.collaborators.attentionRecordFields.choice(data.policy, [
+        "preparation",
+        "daily",
+        "weekly",
+        "approval",
+        "occurrence",
+        "follow-up",
+        "none"
+      ]),
+      since: data.since === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.since),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      ),
+      recovery: data.recovery === void 0 ? void 0 : this.collaborators.attentionRecordFields.choice(data.recovery, [
+        true
+      ])
+    };
+  }
+  post(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      reservationId: this.collaborators.attentionRecordFields.text(
+        data.reservationId,
+        /^attention:\d+:\d+$/
+      ),
+      day: this.collaborators.attentionRecordFields.integer(data.day),
+      reservedAt: this.collaborators.attentionRecordFields.instant(
+        data.reservedAt
+      ),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
+        "pending",
+        "accepted",
+        "retry"
+      ]),
+      retryAt: data.retryAt === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.retryAt),
+      fingerprint: data.fingerprint === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
+        data.fingerprint,
+        /^[a-f0-9]{64}$/
+      ),
+      message: data.message === void 0 ? void 0 : this.message(data.message)
+    };
+  }
+  message(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      destination: this.collaborators.attentionRecordFields.text(
+        data.destination,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      ),
+      messageId: this.collaborators.attentionRecordFields.text(
+        data.messageId,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      )
+    };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-comment-retention.ts
+var AttentionCommentRetention = class {
+  constructor(collaborators, api, owner, repo, author) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.author = author;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  author;
+  async load(issueNumber, commentId, before) {
+    const client = this.collaborators.createGithubAttentionClient(
+      this.api,
+      this.owner,
+      this.repo,
+      issueNumber
+    );
+    const comment = (await client.list()).find((item) => item.id === commentId);
+    if (!comment || comment.body !== before)
+      throw new Error("Diagnostic comment changed before persistence");
+    const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
+    const offset = body.indexOf(ATTENTION_MARKER);
+    if (offset < 0) return { body, retained: "" };
+    this.collaborators.attentionRecord.read(body);
+    return {
+      body: body.slice(0, offset).trimEnd(),
+      retained: body.slice(offset)
+    };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-diagnostic-checklist.ts
+var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  body = "";
+  commentId;
+  set(commentId, body) {
+    if (!body.startsWith(DIAGNOSTIC_MARKER) || !Number.isSafeInteger(commentId) || commentId < 1)
+      throw new Error("Invalid diagnostic checklist");
+    this.commentId = commentId;
+    this.body = body.split(ATTENTION_MARKER, 1)[0].trim();
+  }
+  prefix() {
+    return this.body;
+  }
+  read() {
+    const entries = [...new Set(this.body.split("\n"))].flatMap((line) => {
+      const match = /^- \[ \] \*\*(.+?)\*\*: (.+)$/.exec(line);
+      if (!match) return [];
+      const [, label, description] = match;
+      return [
+        {
+          label,
+          description,
+          field: _AttentionDiagnosticChecklist.FIELDS.get(label) ?? "other",
+          action: this.action(description)
+        }
+      ];
+    });
+    return { commentId: this.commentId, entries };
+  }
+  action(description) {
+    for (const locale of ["en", "fr"]) {
+      const messages5 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages5.t("action.content-approval-pending"))
+        return "content-approval";
+      if (description === messages5.t("action.social-approval-pending"))
+        return "social-approval";
+      if (description === messages5.t("action.approval-pending"))
+        return "email-approval";
+      if (description === messages5.t("action.community-approval-pending"))
+        return "community-approval";
+      if (description === messages5.t("action.meetup-approval-pending"))
+        return "meetup-approval";
+      if (description === messages5.t("action.delivery-recovery"))
+        return "delivery-recovery";
+    }
+    return void 0;
+  }
+  static FIELDS = /* @__PURE__ */ new Map([
+    ["Event Date", "date"],
+    ["Hoster", "host"],
+    ["Host confirmation", "host-confirmation"],
+    ["Speaker confirmation", "speaker-confirmation"],
+    ["Meetup Link", "meetup"],
+    ["CNCF Link", "community"],
+    ["Agenda", "agenda"]
+  ]);
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-presenter.ts
+var AttentionPresenter = class {
+  constructor(collaborators, repository, issueNumber, diagnostics, messages5) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.diagnostics = diagnostics;
+    this.messages = messages5;
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      throw new Error("Invalid attention issue identity");
+    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
+  }
+  collaborators;
+  repository;
+  diagnostics;
+  messages;
+  issueUrl;
+  retired(commentId) {
+    return [this.diagnostics.prefix(), this.redirect(commentId)].filter(Boolean).join("\n\n");
+  }
+  redirect(commentId) {
+    return this.messages.t("attention.redirect", {
+      url: `${this.issueUrl}#issuecomment-${commentId}`
+    });
+  }
+  issue(state, metadata) {
+    return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
+  }
+  resolved(state) {
+    return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
+  }
+  details(state) {
+    const view = this.collaborators.attentionPolicy.view(state);
+    const lines = this.status(state);
+    for (const episode of this.collaborators.attentionTaskSelection.select(
+      view,
+      this.diagnostics.read()
+    ).details) {
+      const url = this.url(episode, state);
+      const link = url === this.overviewUrl(state) ? "" : ` ([${this.messages.t("attention.review")}](${url}))`;
+      lines.push(`- [ ] ${this.text(episode)}${link}`);
+    }
+    if (!view.conditions.length && !this.diagnostics.prefix() && !lines.length)
+      lines.push(this.messages.t("attention.clear"));
+    return [...new Set(lines)].join("\n");
+  }
+  status(state) {
+    return state.post?.status === "pending" ? [`- [ ] ${this.messages.t("attention.pending")}`] : [];
+  }
+  text(episode) {
+    const text = this.action(episode);
+    return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
+  }
+  action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
+      return this.messages.t("action.content-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
+      return this.messages.t("action.social-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
+      return this.messages.t("action.meetup-approval-pending");
+    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+  }
+  url(episode, state) {
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
+      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
+    if (["integration-failure", "stage-unknown"].includes(
+      episode.condition.code
+    ) && state.runId && /^\d+$/.test(state.runId))
+      return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
+    return this.overviewUrl(state);
+  }
+  overviewUrl(state) {
+    const commentId = state.commentId ?? this.diagnostics.read().commentId;
+    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-record-fields.ts
+var AttentionRecordFields = class {
+  record(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      throw new Error("Invalid attention record object");
+    return value;
+  }
+  text(value, pattern) {
+    if (typeof value !== "string" || !pattern.test(value))
+      throw new Error("Invalid attention record text");
+    return value;
+  }
+  integer(value, positive = false) {
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
+      throw new Error("Invalid attention record integer");
+    return value;
+  }
+  choice(value, values) {
+    const found = values.find((candidate) => candidate === value);
+    if (found === void 0)
+      throw new Error("Invalid attention record variant");
+    return found;
+  }
+  instant(value) {
+    const text = this.text(value, /^\d{4}-\d{2}-\d{2}T/);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid attention record timestamp");
+    return text;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-client.ts
+var GithubAttentionClient = class {
+  constructor(collaborators, api, owner, repo, issue2) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.issue = issue2;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  issue;
+  async list() {
+    const comments = [];
+    let page = 1;
+    while (page <= 20) {
+      const response = await this.api.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issue,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data))
+        throw new Error("Invalid attention comment response");
+      comments.push(
+        ...response.data.map(
+          this.collaborators.githubAttentionResponse.comment.bind(
+            this.collaborators.githubAttentionResponse
+          )
+        )
+      );
+      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!next) return comments;
+      page += 1;
+    }
+    throw new Error("Attention comment limit exceeded");
+  }
+  async create(body) {
+    const response = await this.api.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issue,
+      body
+    });
+    if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    return response.data.id;
+  }
+  async update(commentId, body) {
+    await this.api.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  async replace(commentId, before, after) {
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Attention comment changed before persistence");
+    await this.update(commentId, after);
+  }
+  async remove(commentId, before) {
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Attention comment changed before removal");
+    await this.api.rest.issues.deleteComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+  }
+  async edit(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing attention comment node identity");
+    const result = await this.api.graphql(
+      `query AttentionCommentEditor($id: ID!) {
+				node(id: $id) {
+					... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					}
+				}
+			}`,
+      { id: comment.node_id }
+    );
+    return this.collaborators.githubAttentionResponse.current(result, comment);
+  }
+  checkHistoryLimit(count) {
+    if (count > 2e3) throw new Error("Attention history limit exceeded");
+  }
+  async history(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing attention comment node identity");
+    const edits = [];
+    let after;
+    do {
+      const response = await this.api.graphql(
+        `query AttentionCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+        { id: comment.node_id, ...after ? { after } : {} }
+      );
+      const history = this.collaborators.githubAttentionResponse.history(
+        response,
+        comment
+      );
+      edits.push(...history.nodes);
+      this.checkHistoryLimit(edits.length);
+      if (!history.hasNextPage) return edits;
+      const next = history.endCursor;
+      if (!next || next === after)
+        throw new Error("Invalid attention history cursor");
+      after = next;
+    } while (after);
+    return edits;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
+var GithubAttentionRepository = class {
+  constructor(collaborators, client, author, presenter, checklist, visibility) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.author = author;
+    this.presenter = presenter;
+    this.checklist = checklist;
+    this.visibility = visibility;
+  }
+  collaborators;
+  client;
+  author;
+  presenter;
+  checklist;
+  visibility;
+  snapshot;
+  obsolete;
+  previous;
+  loaded = false;
+  async load() {
+    const trusted = this.collaborators.createTrustedAttentionState(
+      this.client,
+      this.author
+    );
+    const records = [];
+    let diagnostic;
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const body = await trusted.body(comment);
+      const snapshot = { id: comment.id, body: comment.body ?? "" };
+      if (body.startsWith(DIAGNOSTIC_MARKER) && !diagnostic) {
+        diagnostic = snapshot;
+        this.checklist.set(comment.id, body);
+      }
+      if (body.includes(ATTENTION_MARKER))
+        records.push({
+          snapshot,
+          state: this.collaborators.attentionRecord.read(body),
+          diagnostic: body.startsWith(DIAGNOSTIC_MARKER)
+        });
+    }
+    this.select(records, diagnostic);
+    this.loaded = true;
+    return this.previous;
+  }
+  select(records, diagnostic) {
+    const canonical = records.find((item) => item.diagnostic) ?? records[0];
+    if (records.length > 1 && (records.length !== 2 || !canonical?.diagnostic || records.every((item) => item.diagnostic) || records.some(
+      (item) => !this.collaborators.attentionStateEquality.equal(
+        item.state,
+        canonical.state
+      )
+    )))
+      throw new Error("Multiple attention records");
+    this.snapshot = diagnostic ?? canonical?.snapshot;
+    this.previous = canonical?.state;
+    this.obsolete = records.find(
+      (item) => item.snapshot.id !== this.snapshot?.id
+    )?.snapshot;
+  }
+  async save(state) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before writing");
+    await this.consolidate();
+    const body = this.presenter.issue(
+      state,
+      this.collaborators.attentionRecord.marker(state)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    if (this.snapshot) {
+      if (this.snapshot.body !== body)
+        await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    } else {
+      if ((await this.client.list()).some(
+        (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
+      ))
+        throw new Error("Attention state changed before creation");
+      const id = await this.client.create(body);
+      this.snapshot = { id, body };
+    }
+    this.snapshot.body = body;
+    await this.visibility.synchronize(
+      this.snapshot.id,
+      body,
+      this.presenter.resolved(state)
+    );
+  }
+  async consolidate() {
+    if (!this.obsolete || !this.snapshot || !this.previous) return;
+    const body = this.presenter.issue(
+      this.previous,
+      this.collaborators.attentionRecord.marker(this.previous)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    this.snapshot.body = body;
+    await this.client.remove(this.obsolete.id, this.obsolete.body);
+    this.obsolete = void 0;
+  }
+  async retire(commentId) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before retiring");
+    if (!this.snapshot) return;
+    await this.consolidate();
+    await this.client.replace(
+      this.snapshot.id,
+      this.snapshot.body,
+      this.presenter.retired(commentId)
+    );
+    this.snapshot = void 0;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-response.ts
+var GithubAttentionResponse = class {
+  record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("Invalid attention API object");
+    return value;
+  }
+  comment(value) {
+    const data = this.record(value);
+    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
+      throw new Error("Invalid attention comment body");
+    if (data.node_id !== void 0 && typeof data.node_id !== "string")
+      throw new Error("Invalid attention comment node");
+    let user;
+    if (data.user !== null && data.user !== void 0) {
+      const actor = this.record(data.user);
+      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
+        throw new Error("Invalid attention comment author");
+      user = { login: actor.login, type: actor.type };
+    }
+    return { id: data.id, body: data.body, node_id: data.node_id, user };
+  }
+  current(value, comment) {
+    const node = this.node(value, comment);
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: this.nullableText(node.lastEditedAt),
+      editor: this.editor(node.editor)
+    };
+  }
+  history(value, comment) {
+    const node = this.node(value, comment);
+    const edits = this.record(node.userContentEdits);
+    const page = this.record(edits.pageInfo);
+    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
+      throw new Error("Attention history is unavailable");
+    return {
+      nodes: edits.nodes.map(this.edit.bind(this)),
+      hasNextPage: page.hasNextPage,
+      endCursor: this.nullableText(page.endCursor)
+    };
+  }
+  node(value, comment) {
+    const result = this.record(value);
+    const node = this.record(result.node);
+    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
+      throw new Error("Attention comment changed during verification");
+    return { ...node, id: node.id, body: node.body };
+  }
+  edit(value) {
+    const data = this.record(value);
+    return {
+      diff: this.nullableText(data.diff),
+      deletedAt: this.nullableText(data.deletedAt),
+      editor: this.editor(data.editor)
+    };
+  }
+  nullableText(value) {
+    if (value !== null && typeof value !== "string")
+      throw new Error("Invalid attention API text");
+    return value;
+  }
+  editor(value) {
+    if (value === null) return null;
+    const actor = this.record(value);
+    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
+      throw new Error("Invalid attention editor");
+    return { login: actor.login, __typename: actor.__typename };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
+var messages3 = {
+  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
+  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
+  "failure.social": "Posting failed.",
+  "task.social": "social posts",
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
+  "failure.communications": "Email preparation or sending failed.",
+  "failure.feedback": "OpenFeedback synchronization failed.",
+  "failure.assets": "Drive file preparation failed.",
+  "failure.event": "Meetup issue update failed.",
+  "task.event-data": "meetup details",
+  "attention.redirect": "[Post-event tasks and approvals]({url})",
+  "attention.review": "Review details",
+  "attention.unknown": "status unverified",
+  "action.missing-date": "Set the event date.",
+  "action.required-data": "Complete the event details.",
+  "action.host-confirmation": "Select a host in the meetup form.",
+  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.approval-pending": "Approve or reject the emails.",
+  "action.integration-failure": "Automation failed: {task}.",
+  "action.delivery-recovery": "Verify delivery before retrying.",
+  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "Check the incomplete stage: {task}.",
+  "task.approvals": "email approval",
+  "task.delivery": "delivery recovery",
+  "attention.clear": "No pending tasks.",
+  "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
+  "task.publish-community-event": "Publish on the CNCF platform",
+  "task.create-asset-folder": "Prepare the asset folder",
+  "task.thank-host": "Thank the host",
+  "task.thank-speakers": "Thank the speakers",
+  "task.share-slides": "Share slides",
+  "task.import-attendance": "Import attendance",
+  "task.share-social": "Post a meetup recap on LinkedIn",
+  "task.event": "event validation",
+  "task.assets": "assets",
+  "task.feedback": "feedback",
+  "task.content": "content",
+  "task.communications": "communications",
+  "task.unknown": "review the issue"
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
+var messages4 = {
+  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "failure.social": "La publication a \xE9chou\xE9.",
+  "task.social": "publications sur les r\xE9seaux",
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
+  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
+  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
+  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
+  "task.event-data": "informations du meetup",
+  "attention.redirect": "[T\xE2ches et approbations apr\xE8s le meetup]({url})",
+  "attention.review": "Voir les d\xE9tails",
+  "attention.unknown": "statut non v\xE9rifi\xE9",
+  "action.missing-date": "Renseignez la date du meetup.",
+  "action.required-data": "Compl\xE9tez les informations du meetup.",
+  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
+  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.approval-pending": "Approuvez ou refusez les emails.",
+  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
+  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
+  "task.approvals": "validation des emails",
+  "task.delivery": "reprise des envois",
+  "attention.clear": "Aucune t\xE2che en attente.",
+  "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
+  "task.publish-community-event": "Publiez sur la plateforme CNCF",
+  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
+  "task.thank-host": "Remerciez l'h\xF4te",
+  "task.thank-speakers": "Remerciez les intervenants",
+  "task.share-slides": "Partagez les pr\xE9sentations",
+  "task.import-attendance": "Importez les pr\xE9sences",
+  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
+  "task.event": "validation du meetup",
+  "task.assets": "ressources",
+  "task.feedback": "\xE9valuations",
+  "task.content": "contenu",
+  "task.communications": "communications",
+  "task.unknown": "consulter le ticket"
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
+var CATALOGS7 = { en: messages3, fr: messages4 };
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
+var AttentionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS7, locale);
+  }
+  failure(resource) {
+    const key = `failure.${resource}`;
+    return Object.hasOwn(CATALOGS7.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+  }
+  task(resource) {
+    const key = `task.${resource}`;
+    return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/trusted-attention-state.ts
+var TrustedAttentionState = class {
+  constructor(client, author) {
+    this.client = client;
+    this.author = author;
+  }
+  client;
+  author;
+  async body(comment) {
+    if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+      throw new Error("Untrusted attention author");
+    const current = await this.client.edit(comment);
+    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
+      return current.body;
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Attention history was deleted");
+      if (this.isAuthor(edit.editor)) {
+        if (edit.diff === null)
+          throw new Error("Attention history is unavailable");
+        return edit.diff;
+      }
+    }
+    throw new Error("Trusted attention history is unavailable");
+  }
+  isAuthor(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
+var GithubOrganizerAttentionComposition = class {
+  attentionRecordFields() {
+    return new AttentionRecordFields();
+  }
+  attentionCommentRetention(...args) {
+    return new AttentionCommentRetention(
+      {
+        attentionRecord: this.attentionRecord(),
+        createGithubAttentionClient: (...args2) => this.githubAttentionClient(...args2),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
+      },
+      ...args
+    );
+  }
+  attentionDiagnosticChecklist() {
+    return new AttentionDiagnosticChecklist({
+      createAttentionMessages: (...args) => this.attentionMessages(...args)
+    });
+  }
+  attentionMessages(...args) {
+    return new AttentionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  attentionPresenter(...args) {
+    return new AttentionPresenter(
+      {
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection()
+      },
+      ...args
+    );
+  }
+  attentionRecord() {
+    return new AttentionRecord({
+      attentionRecordFields: this.attentionRecordFields(),
+      attentionStateRules: new CommunicationDomainComposition().attentionStateRules()
+    });
+  }
+  githubAttentionClient(...args) {
+    return new GithubAttentionClient(
+      { githubAttentionResponse: this.githubAttentionResponse() },
+      ...args
+    );
+  }
+  githubAttentionRepository(...args) {
+    return new GithubAttentionRepository(
+      {
+        attentionRecord: this.attentionRecord(),
+        attentionStateEquality: new CommunicationDomainComposition().attentionStateEquality(),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
+      },
+      ...args
+    );
+  }
+  githubAttentionResponse() {
+    return new GithubAttentionResponse();
+  }
+  trustedAttentionState(...args) {
+    return new TrustedAttentionState(...args);
+  }
+};
+
+// packages/runtime/github-actions/src/organizer-approval-composition.ts
 var OrganizerApprovalComposition = class {
-  static create(client, authorLogin, presenter, notificationPort, organizerChannelId) {
+  static visibility(input) {
+    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
+      input.client,
+      input.owner,
+      input.repo
+    );
+  }
+  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
     const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
       randomUUID2
     );
@@ -48270,7 +50580,9 @@ var OrganizerApprovalComposition = class {
         )
       ),
       repository,
-      notifications
+      notifications,
+      visibility,
+      new GithubOrganizerAttentionComposition().attentionRecord()
     );
     return {
       approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
@@ -48312,7 +50624,8 @@ var SocialRecoveryComposition = class {
         input.slackToken,
         slack.slackApprovalPresenter(input.locale)
       ),
-      input.slackOrganizerChannelId
+      input.slackOrganizerChannelId,
+      OrganizerApprovalComposition.visibility(input)
     ).approval;
     const fingerprints = new DraftProposalComposition().fingerprints();
     return new RecoverSocialPublication(

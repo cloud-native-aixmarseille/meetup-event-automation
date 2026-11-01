@@ -32,6 +32,11 @@ reverse that decision for the same semantic revision; recover trusted state
 from bot-authored history and fail closed when it is unavailable. Recheck the
 recorded organizer's permission before using an approval.
 
+Collapse completed review comments as resolved after persisting the verified
+decision. Retain their content and history. Keep shared follow-up comments visible
+until their tasks and uncertain notifications are resolved. Reopen reused
+comments when new work appears, preserving unrelated moderation decisions.
+
 ### Email batches and completion
 
 Introduction and thank-you batches require independent decisions. Fingerprints
@@ -83,6 +88,10 @@ compare-and-set writes; source rereads and workflow locks reduce, but cannot
 eliminate, a final concurrent human edit.
 
 ## Decision history
+
+- 2026-11-01: Final decisions remain in their original comments, now collapsed
+  as resolved instead of left expanded. This refines presentation only; persisted
+  approval authority and delivery reservations are unchanged.
 
 | Original record                                                              | Retained decision or later refinement                                                                                                 |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |

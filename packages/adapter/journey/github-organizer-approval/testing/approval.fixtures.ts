@@ -1,3 +1,4 @@
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import {
 	ApprovalNotificationPolicy,
@@ -76,17 +77,34 @@ export function fixture(locale = "en") {
 				),
 		},
 	);
-	const graphql = vi.fn().mockImplementation(async (_query, variables) => ({
-		node: edits.has(variables.id)
-			? {
-					...edits.get(variables.id),
-					userContentEdits: {
-						nodes: history.get(variables.id) ?? [],
-						pageInfo: { hasNextPage: false, endCursor: null },
-					},
-				}
-			: null,
-	}));
+	const minimized = new Set<string>();
+	const graphql = vi
+		.fn()
+		.mockImplementation(async (query: string, variables: { id: string }) => {
+			if (query.includes("mutation ResolveComment")) {
+				minimized.add(variables.id);
+				return { minimizeComment: { minimizedComment: { isMinimized: true } } };
+			}
+			if (query.includes("mutation ReopenComment")) {
+				minimized.delete(variables.id);
+				return {
+					unminimizeComment: { unminimizedComment: { isMinimized: false } },
+				};
+			}
+			return {
+				node: edits.has(variables.id)
+					? {
+							...edits.get(variables.id),
+							isMinimized: minimized.has(variables.id),
+							minimizedReason: minimized.has(variables.id) ? "resolved" : null,
+							userContentEdits: {
+								nodes: history.get(variables.id) ?? [],
+								pageInfo: { hasNextPage: false, endCursor: null },
+							},
+						}
+					: null,
+			};
+		});
 	const permission = vi
 		.fn()
 		.mockResolvedValue({ data: { permission: "write" } });
@@ -144,6 +162,9 @@ export function fixture(locale = "en") {
 		graphql,
 		rest: {
 			issues: {
+				getComment: vi.fn(async ({ comment_id }: { comment_id: number }) => ({
+					data: comments.find(({ id }) => id === comment_id),
+				})),
 				listComments: list,
 				createComment: create,
 				updateComment: update,
@@ -171,6 +192,7 @@ export function fixture(locale = "en") {
 		react,
 	});
 	return {
+		minimized,
 		api,
 		presenter,
 		graphql,
@@ -311,7 +333,20 @@ export function approvalDependencies(
 		"automation[bot]",
 		presenter,
 	);
+	const visibility = { synchronize: vi.fn().mockResolvedValue(undefined) };
+	const attentionCodec = {
+		read: vi.fn().mockReturnValue({
+			eventDate: request.eventDate,
+			stopped: false,
+			episodes: [],
+		}),
+	};
 	const finalizer = new FinalizeApprovalDecision(
+		{
+			approvalRequestPolicy:
+				new JourneyPolicyComposition().approvalRequestPolicy(),
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		},
 		new ResolveApprovalDecision(
 			client,
 			new ApprovalDecisionParser(
@@ -326,12 +361,16 @@ export function approvalDependencies(
 		),
 		repository,
 		notifications,
+		visibility,
+		attentionCodec,
 	);
 	return {
 		repository,
 		records,
 		finalizer,
 		notifications,
+		visibility,
+		attentionCodec,
 	};
 }
 

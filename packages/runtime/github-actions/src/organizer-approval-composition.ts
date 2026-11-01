@@ -1,9 +1,14 @@
 import { randomUUID } from "node:crypto";
 import {
+	type GitHubCommentVisibility,
+	GithubEventCommentRepositoryComposition,
+} from "@meetup-automation/github-event-comment-repository";
+import {
 	type ApprovalPresenter,
 	type GithubApprovalClient,
 	GithubOrganizerApprovalComposition,
 } from "@meetup-automation/github-organizer-approval";
+import { GithubOrganizerAttentionComposition } from "@meetup-automation/github-organizer-attention";
 import {
 	ApprovalNotificationPolicy,
 	type OrganizerApprovalNotification,
@@ -11,12 +16,24 @@ import {
 
 /** Wire independent approval, follow-up, and attention capabilities per invocation. */
 export class OrganizerApprovalComposition {
+	static visibility(input: {
+		readonly client: ConstructorParameters<typeof GitHubCommentVisibility>[0];
+		readonly owner: string;
+		readonly repo: string;
+	}): GitHubCommentVisibility {
+		return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
+			input.client,
+			input.owner,
+			input.repo,
+		);
+	}
 	static create(
 		client: GithubApprovalClient,
 		authorLogin: string,
 		presenter: ApprovalPresenter,
 		notificationPort: OrganizerApprovalNotification,
 		organizerChannelId: string,
+		visibility: GitHubCommentVisibility,
 	) {
 		const records =
 			new GithubOrganizerApprovalComposition().approvalRecordFactory(
@@ -52,6 +69,8 @@ export class OrganizerApprovalComposition {
 				),
 				repository,
 				notifications,
+				visibility,
+				new GithubOrganizerAttentionComposition().attentionRecord(),
 			);
 		return {
 			approval:

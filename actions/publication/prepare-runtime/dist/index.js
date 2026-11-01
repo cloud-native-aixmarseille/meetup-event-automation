@@ -27525,6 +27525,16 @@ var ApprovalRequestPolicy = class {
       return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
     return request.kind;
   }
+  resolved(facts) {
+    if (facts.attentionPending) return false;
+    if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
+      return false;
+    return this.reviewPhase({
+      recipientCount: facts.recipientCount,
+      followUpActive: facts.followUp?.active,
+      decided: facts.decided
+    }) !== "pending";
+  }
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -29849,6 +29859,9 @@ var AttentionPolicy = class {
     if ((policy === "occurrence" || policy === "follow-up") && elapsed >= 1)
       return `${policy}:${elapsed >= 7 ? 7 : 1}`;
     return void 0;
+  }
+  resolved(state) {
+    return this.view(state).conditions.length === 0 && state.post?.status !== "pending";
   }
   view(state) {
     return {

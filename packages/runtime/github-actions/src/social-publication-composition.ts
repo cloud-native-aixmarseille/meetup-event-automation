@@ -52,6 +52,7 @@ export class SocialPublicationComposition {
 				slack.slackApprovalPresenter(input.locale),
 			),
 			input.slackOrganizerChannelId,
+			OrganizerApprovalComposition.visibility(input),
 		).approval;
 		const settings = new SocialPublicationConfiguration(new RuntimeInput());
 		const configuration = async () =>

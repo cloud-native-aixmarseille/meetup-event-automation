@@ -83,6 +83,7 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 			record.followUp = { ...existing?.record.followUp, ...followUp };
 
 		const state = await this.repository.save(record, existing);
+		await this.finalizer.refreshVisibility(state);
 		return {
 			status: "pending",
 			notificationFailed: await this.notifications.send(

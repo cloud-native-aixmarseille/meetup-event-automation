@@ -3,6 +3,7 @@ import { LocalizationComposition } from "@meetup-automation/localization";
 import { DiagnosticCommentPresenter } from "./diagnostic-comment-presenter.js";
 import { DiagnosticCommentSections } from "./diagnostic-comment-sections.js";
 import { DiagnosticPresenter } from "./diagnostic-presentation.js";
+import { GitHubCommentVisibility } from "./github-comment-visibility.js";
 import {
 	GitHubEventCommentRepository,
 	type GitHubEventCommentRepositoryArguments,
@@ -13,6 +14,11 @@ import {
 } from "./i18n/event-comment-messages.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class GithubEventCommentRepositoryComposition {
+	githubCommentVisibility(
+		...args: ConstructorParameters<typeof GitHubCommentVisibility>
+	): GitHubCommentVisibility {
+		return new GitHubCommentVisibility(...args);
+	}
 	diagnosticCommentSections(): DiagnosticCommentSections {
 		return new DiagnosticCommentSections();
 	}

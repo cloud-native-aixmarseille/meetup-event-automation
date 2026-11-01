@@ -189,6 +189,7 @@ describe("single organizer checklist across event and attention runs", () => {
 			"automation[bot]",
 			f.presenter,
 			f.checklist,
+			f.visibility,
 		);
 		const loaded = await retry.load();
 		if (!loaded) throw new Error("Missing attention state");

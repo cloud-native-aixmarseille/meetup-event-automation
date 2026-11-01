@@ -35,6 +35,13 @@ export class GithubAttentionRepository implements AttentionRepository {
 		private readonly author: string,
 		private readonly presenter: AttentionPresenter,
 		private readonly checklist: AttentionDiagnosticChecklist,
+		private readonly visibility: {
+			synchronize(
+				commentId: number,
+				body: string,
+				resolved: boolean,
+			): Promise<void>;
+		},
 	) {}
 	async load(): Promise<AttentionState | undefined> {
 		const trusted = this.collaborators.createTrustedAttentionState(
@@ -109,8 +116,8 @@ export class GithubAttentionRepository implements AttentionRepository {
 		);
 		if (body.length > 60000) throw new Error("Attention record limit exceeded");
 		if (this.snapshot) {
-			if (this.snapshot.body === body) return;
-			await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+			if (this.snapshot.body !== body)
+				await this.client.replace(this.snapshot.id, this.snapshot.body, body);
 		} else {
 			if (
 				(await this.client.list()).some(
@@ -125,6 +132,11 @@ export class GithubAttentionRepository implements AttentionRepository {
 			this.snapshot = { id, body };
 		}
 		this.snapshot.body = body;
+		await this.visibility.synchronize(
+			this.snapshot.id,
+			body,
+			this.presenter.resolved(state),
+		);
 	}
 	private async consolidate(): Promise<void> {
 		if (!this.obsolete || !this.snapshot || !this.previous) return;

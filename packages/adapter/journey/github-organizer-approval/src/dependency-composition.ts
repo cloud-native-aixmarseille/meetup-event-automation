@@ -1,3 +1,4 @@
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import {
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
@@ -191,7 +192,14 @@ export class GithubOrganizerApprovalComposition {
 	finalizeApprovalDecision(
 		...args: FinalizeApprovalDecisionArguments
 	): FinalizeApprovalDecision {
-		return new FinalizeApprovalDecision(...args);
+		return new FinalizeApprovalDecision(
+			{
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			},
+			...args,
+		);
 	}
 	followUpPresenter(...args: FollowUpPresenterArguments): FollowUpPresenter {
 		return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);

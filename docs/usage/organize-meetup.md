@@ -120,7 +120,10 @@ No email checkbox is needed in the form.
 
 Check **Reject sending this batch** to refuse sending. Once processed, either
 choice is final: the same comment shows the decision and organizer, with no
-checkboxes. The original Slack message receives ✅ for approval or ❌ for
+checkboxes. Completed review comments are collapsed as "resolved". Expand them
+to read the proposal and decision. A new request reopens a reused comment;
+follow-up comments stay visible while tasks or uncertain deliveries remain.
+The original Slack message receives ✅ for approval or ❌ for
 rejection. See [batch confirmation](../integrations/communications.md#confirm-an-email-batch)
 for permissions, changed batches and notification recovery.
 

@@ -1,6 +1,6 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { describe, expect, it } from "vitest";
-import { fixture, state } from "../testing/attention.fixtures.js";
+import { episode, fixture, state } from "../testing/attention.fixtures.js";
 import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 import { GithubAttentionRepository } from "./github-attention-repository.js";
 
@@ -171,6 +171,7 @@ describe("trusted durable attention repository", () => {
 			"automation[bot]",
 			f.presenter,
 			f.checklist,
+			f.visibility,
 		);
 
 		// Act
@@ -178,5 +179,69 @@ describe("trusted durable attention repository", () => {
 
 		// Assert
 		await expect(load).rejects.toThrow("Multiple attention records");
+	});
+});
+
+describe("attention comment resolution", () => {
+	it("hides completed status and restores the same comment for new work", async () => {
+		// Arrange
+		const f = fixture();
+		const value = { ...state(), post: undefined };
+		await f.repository.load();
+
+		// Act
+		await f.repository.save(value);
+		await f.repository.save({ ...value, episodes: [episode()] });
+
+		// Assert
+		expect(
+			f.visibility.synchronize.mock.calls.map(([id, , resolved]) => [
+				id,
+				resolved,
+			]),
+		).toEqual([
+			[100, true],
+			[100, false],
+		]);
+		expect(f.create).toHaveBeenCalledTimes(1);
+		expect(f.comments[0].body).toContain("meetup-organizer-attention:v1");
+	});
+	it("retries visibility after persistence already succeeded", async () => {
+		// Arrange
+		const f = fixture();
+		const value = { ...state(), post: undefined };
+		await f.repository.load();
+		f.visibility.synchronize.mockRejectedValueOnce(new Error("Unavailable"));
+
+		// Act
+		const first = await f.repository
+			.save(value)
+			.catch((error: Error) => error.message);
+		await f.repository.save(value);
+
+		// Assert
+		expect(first).toBe("Unavailable");
+		expect(f.visibility.synchronize).toHaveBeenCalledTimes(2);
+		expect(f.create).toHaveBeenCalledTimes(1);
+		expect(f.update).not.toHaveBeenCalled();
+	});
+	it("keeps unresolved diagnostic tasks visible even with no active episodes", async () => {
+		// Arrange
+		const f = fixture();
+		f.checklist.set(
+			100,
+			"<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Agenda**: Add a speaker.",
+		);
+		await f.repository.load();
+
+		// Act
+		await f.repository.save({ ...state(), post: undefined });
+
+		// Assert
+		expect(f.visibility.synchronize).toHaveBeenLastCalledWith(
+			100,
+			expect.any(String),
+			false,
+		);
 	});
 });

@@ -46,17 +46,32 @@ export function fixture() {
 		checklist,
 		new GithubOrganizerAttentionComposition().attentionMessages("en"),
 	);
+	const minimized = new Set<string>();
 	const graphql = vi
 		.fn()
-		.mockImplementation(async (_query: string, variables: { id: string }) => ({
-			node: {
-				...edits.get(variables.id),
-				userContentEdits: {
-					nodes: histories.get(variables.id) ?? [],
-					pageInfo: { hasNextPage: false, endCursor: null },
+		.mockImplementation(async (query: string, variables: { id: string }) => {
+			if (query.includes("mutation ResolveComment")) {
+				minimized.add(variables.id);
+				return { minimizeComment: { minimizedComment: { isMinimized: true } } };
+			}
+			if (query.includes("mutation ReopenComment")) {
+				minimized.delete(variables.id);
+				return {
+					unminimizeComment: { unminimizedComment: { isMinimized: false } },
+				};
+			}
+			return {
+				node: {
+					...edits.get(variables.id),
+					isMinimized: minimized.has(variables.id),
+					minimizedReason: minimized.has(variables.id) ? "resolved" : null,
+					userContentEdits: {
+						nodes: histories.get(variables.id) ?? [],
+						pageInfo: { hasNextPage: false, endCursor: null },
+					},
 				},
-			},
-		}));
+			};
+		});
 	const list = vi.fn(async () => ({ data: [...comments], headers: {} }));
 	const create = vi.fn(async ({ body }: { body: string }) => {
 		const id = comments.length + 100;
@@ -86,10 +101,14 @@ export function fixture() {
 			});
 		},
 	);
+	const visibility = { synchronize: vi.fn().mockResolvedValue(undefined) };
 	const api = {
 		graphql,
 		rest: {
 			issues: {
+				getComment: vi.fn(async ({ comment_id }: { comment_id: number }) => ({
+					data: comments.find(({ id }) => id === comment_id),
+				})),
 				deleteComment: vi.fn(async ({ comment_id }: { comment_id: number }) => {
 					const index = comments.findIndex(
 						(comment) => comment.id === comment_id,
@@ -113,6 +132,8 @@ export function fixture() {
 		42,
 	);
 	return {
+		visibility,
+		minimized,
 		api,
 		comments,
 		edits,
@@ -139,6 +160,7 @@ export function fixture() {
 			"automation[bot]",
 			presenter,
 			checklist,
+			visibility,
 		),
 	};
 }

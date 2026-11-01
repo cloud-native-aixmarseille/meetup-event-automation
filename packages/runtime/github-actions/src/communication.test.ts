@@ -1281,6 +1281,7 @@ describe("organizer approval for email batches", () => {
 			}).runCommunicationReconcile(f.input);
 			const pendingBody = f.issue.body;
 			const callsBeforeApproval = f.createDispatchEvent.mock.calls.length;
+			const hiddenBeforeApproval = f.minimized.size;
 			await new CommunicationRuntime({
 				createJourney: (input) =>
 					CommunicationComposition.createCommunicationContainer(input).get(
@@ -1319,6 +1320,7 @@ describe("organizer approval for email batches", () => {
 				severity: "warning",
 			});
 			expect(callsBeforeApproval).toBe(0);
+			expect(hiddenBeforeApproval).toBe(0);
 			expect(pendingBody.includes("- [ ] Mail introduction")).toBe(withTask);
 			expect(approved.counts.accepted).toBe(2);
 			expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
@@ -1337,6 +1339,7 @@ describe("organizer approval for email batches", () => {
 				"https://github.com/organization/meetups/issues/42#issuecomment-",
 			);
 			expect(f.comments[0]?.body).toContain("✅ Approved by @organizer");
+			expect([...f.minimized]).toContain(f.comments[0]?.node_id);
 			expect(f.comments[0]?.body).not.toContain("- [");
 			expect(fetch).toHaveBeenCalledWith(
 				"https://slack.com/api/reactions.add",

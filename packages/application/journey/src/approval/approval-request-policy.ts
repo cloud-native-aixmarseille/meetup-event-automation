@@ -14,6 +14,27 @@ export class ApprovalRequestPolicy {
 			return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
 		return request.kind;
 	}
+	resolved(facts: {
+		readonly decided: boolean;
+		readonly recipientCount?: number;
+		readonly followUp?: {
+			readonly active: boolean;
+			readonly pendingTasks: readonly string[];
+		};
+		readonly attentionPending: boolean;
+	}): boolean {
+		if (facts.attentionPending) return false;
+		if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
+			return false;
+		return (
+			this.reviewPhase({
+				recipientCount: facts.recipientCount,
+				followUpActive: facts.followUp?.active,
+				decided: facts.decided,
+			}) !== "pending"
+		);
+	}
+
 	reviewPhase(facts: {
 		readonly recipientCount?: number;
 		readonly followUpActive?: boolean;

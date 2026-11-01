@@ -94,6 +94,15 @@ communication report. Existing bot-state verification, pending delivery
 reservations and post-event approval controls remain authoritative. Failed
 comment persistence prevents a new Slack notification and fails the action.
 
+After durable persistence, completed approval and attention comments are minimized
+with GitHub's `RESOLVED` classifier. Their bodies, decisions, and history remain
+intact. Outstanding checklist entries, active or unknown attention, and pending
+notification reservations prevent resolution. Historical finalized proposals are
+also reconciled. Reused comments are unminimized when new work appears, unless
+they were minimized for another moderation reason. The visibility adapter
+rechecks the current body before changing visibility; a concurrent edit or
+unconfirmed mutation fails the operation and can be retried.
+
 Workflow stage results carry the consumed diagnostic outputs. Stages that did
 not execute remain unknown, and dependent blockage cannot resolve an earlier
 unverified technical failure. The reporting job runs after earlier failures when

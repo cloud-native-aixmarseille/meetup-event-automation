@@ -37,6 +37,8 @@ describe("attention runtime composition", () => {
 		// Arrange
 		const f = fixture();
 		const client = getOctokit("synthetic-token");
+		client.rest.issues.getComment = f.api.rest.issues
+			.getComment as unknown as typeof client.rest.issues.getComment;
 		client.rest.issues.listComments =
 			f.list as unknown as typeof client.rest.issues.listComments;
 		client.rest.issues.createComment =
