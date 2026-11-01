@@ -83,6 +83,11 @@ export class AttentionEpisodes {
 			return episode.status;
 		if (observation.evaluated.includes(episode.condition.owner))
 			return "resolved";
+		if (
+			episode.condition.code === "stage-unknown" &&
+			observation.reported.includes(episode.condition.owner)
+		)
+			return "resolved";
 		return episode.status === "active" ? "unknown" : episode.status;
 	}
 	due(state: AttentionState, now: Date): AttentionEpisode[] {

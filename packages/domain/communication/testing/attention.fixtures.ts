@@ -28,6 +28,7 @@ export function observation(
 		eventDate: "2099-06-08",
 		stopped: false,
 		conditions: [condition()],
+		reported: [],
 		scope: [
 			"event",
 			"assets",

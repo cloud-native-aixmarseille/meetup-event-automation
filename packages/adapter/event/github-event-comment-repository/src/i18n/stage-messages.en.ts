@@ -1,4 +1,6 @@
 export const STAGE_MESSAGES_EN = {
+	"comment.guidance.meetup.authentication":
+		"Meetup sign-in could not be verified. Check the organizer account's access, then retry synchronization.",
 	"comment.social.target": "Post ({destination}, {purpose})",
 	"comment.guidance.social.pending":
 		"Review the announcement and approve publication for this destination.",

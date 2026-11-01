@@ -17,6 +17,36 @@ const errorDiagnostic: EventDiagnostic = {
 
 describe("renderDiagnosticComment", () => {
 	it.each([
+		["en", "Meetup sign-in could not be verified."],
+		["fr", "Connexion à Meetup non vérifiée."],
+	])("names a Meetup authentication block in %s", (locale, expected) => {
+		// Arrange
+		const diagnostic: EventDiagnostic = {
+			code: "publication.meetup.authentication",
+			severity: "warning",
+			category: "incomplete",
+			field: "publicationLinks.meetup",
+			message: "private account detail",
+		};
+		const presenter = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+		});
+		const messages =
+			new GithubEventCommentRepositoryComposition().eventCommentMessages(
+				locale,
+			);
+
+		// Act
+		const body = presenter.render([diagnostic], messages);
+
+		// Assert
+		expect(body).toContain(`**Meetup Link**: ${expected}`);
+		expect(body).not.toContain(diagnostic.message);
+	});
+	it.each([
 		[
 			"en",
 			"invalid-selection",

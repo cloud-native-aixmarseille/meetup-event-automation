@@ -30005,6 +30005,7 @@ var EvaluateAttention = class {
         commentId: item.commentId
       });
     return {
+      reported: facts.stages.filter((stage) => stage.outcome !== "unknown").map((stage) => stage.owner),
       scope: [
         ...facts.stages.map((stage) => stage.owner),
         "approvals",
@@ -30271,6 +30272,8 @@ var AttentionEpisodes = class {
     if (!observation.scope.includes(episode.condition.owner))
       return episode.status;
     if (observation.evaluated.includes(episode.condition.owner))
+      return "resolved";
+    if (episode.condition.code === "stage-unknown" && observation.reported.includes(episode.condition.owner))
       return "resolved";
     return episode.status === "active" ? "unknown" : episode.status;
   }

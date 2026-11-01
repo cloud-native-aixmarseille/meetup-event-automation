@@ -31065,6 +31065,7 @@ var EvaluateAttention = class {
         commentId: item.commentId
       });
     return {
+      reported: facts.stages.filter((stage) => stage.outcome !== "unknown").map((stage) => stage.owner),
       scope: [
         ...facts.stages.map((stage) => stage.owner),
         "approvals",
@@ -31346,6 +31347,8 @@ var AttentionEpisodes = class {
     if (!observation.scope.includes(episode.condition.owner))
       return episode.status;
     if (observation.evaluated.includes(episode.condition.owner))
+      return "resolved";
+    if (episode.condition.code === "stage-unknown" && observation.reported.includes(episode.condition.owner))
       return "resolved";
     return episode.status === "active" ? "unknown" : episode.status;
   }
@@ -48477,6 +48480,10 @@ var DiagnosticCommentSections = class {
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.meetup.authentication",
+    ["Meetup Link", "comment.guidance.meetup.authentication"]
+  ],
+  [
     "publication.content.invalid",
     ["Event materials", "comment.guidance.content.invalid"]
   ],
@@ -49599,6 +49606,7 @@ var FR_MESSAGES5 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.guidance.meetup.authentication": "Meetup sign-in could not be verified. Check the organizer account's access, then retry synchronization.",
   "comment.social.target": "Post ({destination}, {purpose})",
   "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
   "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
@@ -49648,6 +49656,7 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.guidance.meetup.authentication": "Connexion \xE0 Meetup non v\xE9rifi\xE9e. V\xE9rifiez l'acc\xE8s du compte organisateur, puis relancez la synchronisation.",
   "comment.social.target": "Publication ({destination}, {purpose})",
   "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",

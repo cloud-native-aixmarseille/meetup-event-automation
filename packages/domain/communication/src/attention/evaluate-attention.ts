@@ -62,6 +62,9 @@ export class EvaluateAttention {
 				commentId: item.commentId,
 			});
 		return {
+			reported: facts.stages
+				.filter((stage) => stage.outcome !== "unknown")
+				.map((stage) => stage.owner),
 			scope: [
 				...facts.stages.map((stage) => stage.owner),
 				"approvals",

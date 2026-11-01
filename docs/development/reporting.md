@@ -120,6 +120,9 @@ remain publication tasks rather than duplicate generic data warnings.
 Publication readiness and pending or rejected approvals do not invalidate an
 otherwise completed audit. Actual prerequisite failures still preserve earlier
 unverified integration failures.
+A reported prerequisite block replaces a stale unknown-stage alert with its
+concrete diagnostic. It does not resolve earlier integration failures until the
+blocked integration can actually be evaluated.
 
 ## Validation
 
