@@ -57,6 +57,12 @@ export class AttentionPolicy {
 			return `${policy}:${elapsed >= 7 ? 7 : 1}`;
 		return undefined;
 	}
+	resolved(state: import("./model.js").AttentionState): boolean {
+		return (
+			this.view(state).conditions.length === 0 &&
+			state.post?.status !== "pending"
+		);
+	}
 	view(state: import("./model.js").AttentionState) {
 		return {
 			state,

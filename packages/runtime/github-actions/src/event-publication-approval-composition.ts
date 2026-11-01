@@ -29,6 +29,7 @@ export class EventPublicationApprovalComposition {
 				),
 			),
 			input.slackOrganizerChannelId,
+			OrganizerApprovalComposition.visibility(input),
 		).approval;
 	}
 }

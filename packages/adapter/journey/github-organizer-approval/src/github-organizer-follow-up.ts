@@ -36,6 +36,7 @@ export class GithubOrganizerFollowUp implements OrganizerFollowUp {
 			attentionDetails,
 		};
 		const state = await this.repository.save(record, existing);
+		await this.finalizer.refreshVisibility(state);
 		return state.comment.id;
 	}
 	async followUpAttention(): Promise<
@@ -60,7 +61,8 @@ export class GithubOrganizerFollowUp implements OrganizerFollowUp {
 			attention: body,
 			attentionDetails: details,
 		};
-		await this.repository.save(state.record, state);
+		const persisted = await this.repository.save(state.record, state);
+		await this.finalizer.refreshVisibility(persisted);
 	}
 }
 export type GithubOrganizerFollowUpArguments =

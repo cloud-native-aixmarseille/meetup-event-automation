@@ -2,7 +2,58 @@ import { describe, expect, it } from "vitest";
 import { condition } from "../../testing/attention.fixtures.js";
 import { CommunicationDomainComposition } from "../dependency-composition.js";
 import { AttentionPolicy } from "./attention-policy.js";
-import type { AttentionEpisode } from "./model.js";
+import type { AttentionEpisode, AttentionState } from "./model.js";
+
+describe("attention completion", () => {
+	it.each([
+		["active", false],
+		["unknown", false],
+		["resolved", true],
+		["stopped", true],
+	] as const)("handles %s evidence", (status, expected) => {
+		// Arrange
+		const policy = new CommunicationDomainComposition().attentionPolicy();
+		const state: AttentionState = {
+			eventDate: "2099-06-08",
+			stopped: false,
+			episodes: [
+				{
+					condition: condition(),
+					episode: 1,
+					openedAt: "2099-06-01T10:00:00Z",
+					status,
+				},
+			],
+		};
+
+		// Act
+		const resolved = policy.resolved(state);
+
+		// Assert
+		expect(resolved).toBe(expected);
+	});
+	it("keeps an uncertain notification visible after its tasks are complete", () => {
+		// Arrange
+		const policy = new CommunicationDomainComposition().attentionPolicy();
+		const state: AttentionState = {
+			eventDate: "2099-06-08",
+			stopped: false,
+			episodes: [],
+			post: {
+				reservationId: "notification-1",
+				day: 1,
+				reservedAt: "2099-06-01T10:00:00Z",
+				status: "pending",
+			},
+		};
+
+		// Act
+		const resolved = policy.resolved(state);
+
+		// Assert
+		expect(resolved).toBe(false);
+	});
+});
 
 describe("attention reminder policy", () => {
 	it.each([

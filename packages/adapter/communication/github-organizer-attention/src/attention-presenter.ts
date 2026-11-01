@@ -7,7 +7,7 @@ import type {
 import type { AttentionDiagnosticChecklist } from "./attention-diagnostic-checklist.js";
 import type { AttentionMessages } from "./i18n/attention-messages.js";
 export interface AttentionPresenterCollaborators {
-	readonly attentionPolicy: Pick<AttentionPolicy, "view">;
+	readonly attentionPolicy: Pick<AttentionPolicy, "view" | "resolved">;
 	readonly attentionTaskSelection: Pick<
 		AttentionTaskSelection,
 		"select" | "actionFor"
@@ -51,6 +51,12 @@ export class AttentionPresenter {
 		return [this.diagnostics.prefix(), metadata, this.details(state)]
 			.filter(Boolean)
 			.join("\n\n");
+	}
+	resolved(state: AttentionState): boolean {
+		return (
+			this.collaborators.attentionPolicy.resolved(state) &&
+			this.diagnostics.read().entries.length === 0
+		);
 	}
 	details(state: AttentionState): string {
 		const view = this.collaborators.attentionPolicy.view(state);

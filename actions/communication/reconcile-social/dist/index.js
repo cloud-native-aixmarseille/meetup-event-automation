@@ -63590,6 +63590,16 @@ var ApprovalRequestPolicy = class {
       return `social:${request3.social.intentId}:${request3.social.recovery ? "recovery" : "publication"}`;
     return request3.kind;
   }
+  resolved(facts) {
+    if (facts.attentionPending) return false;
+    if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
+      return false;
+    return this.reviewPhase({
+      recipientCount: facts.recipientCount,
+      followUpActive: facts.followUp?.active,
+      decided: facts.decided
+    }) !== "pending";
+  }
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -66074,6 +66084,9 @@ var AttentionPolicy = class {
     if ((policy === "occurrence" || policy === "follow-up") && elapsed >= 1)
       return `${policy}:${elapsed >= 7 ? 7 : 1}`;
     return void 0;
+  }
+  resolved(state) {
+    return this.view(state).conditions.length === 0 && state.post?.status !== "pending";
   }
   view(state) {
     return {
@@ -82120,14 +82133,20 @@ var EmailApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/finalize-approval-decision.ts
 var FinalizeApprovalDecision = class {
-  constructor(decisions, repository, notifications) {
+  constructor(collaborators, decisions, repository, notifications, visibility, attentionCodec) {
+    this.collaborators = collaborators;
     this.decisions = decisions;
     this.repository = repository;
     this.notifications = notifications;
+    this.visibility = visibility;
+    this.attentionCodec = attentionCodec;
   }
+  collaborators;
   decisions;
   repository;
   notifications;
+  visibility;
+  attentionCodec;
   async execute(state, validateText) {
     const { record, comment } = state;
     const decision = await this.decisions.execute(record, comment);
@@ -82150,12 +82169,26 @@ var FinalizeApprovalDecision = class {
         ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
       };
     }
-    await this.repository.save(record, state);
+    const persisted = await this.repository.save(record, state);
+    await this.refreshVisibility(persisted);
     return {
       status: decision.status,
       ...record.kind === "content-review" ? decision : {},
       notificationFailed: await this.notifications.react(record, comment.id)
     };
+  }
+  async refreshVisibility(state) {
+    const { record, comment } = state;
+    const attention = record.followUp?.attention;
+    const resolved = this.collaborators.approvalRequestPolicy.resolved({
+      decided: record.decision !== void 0,
+      recipientCount: record.recipientCount,
+      followUp: record.followUp,
+      attentionPending: attention !== void 0 && !this.collaborators.attentionPolicy.resolved(
+        this.attentionCodec.read(attention)
+      )
+    });
+    await this.visibility.synchronize(comment.id, comment.body ?? "", resolved);
   }
 };
 
@@ -82212,6 +82245,11 @@ var GithubApprovalAttentionSource = class {
   finalizer;
   async synchronizeApprovals() {
     const result = [];
+    for (const state of await this.repository.states()) {
+      if (!state.record.decision) continue;
+      const persisted = await this.repository.save(state.record, state);
+      await this.finalizer.refreshVisibility(persisted);
+    }
     for (const state of await this.repository.activeStates()) {
       if (state.record.recipientCount === 0) continue;
       const decision = await this.finalizer.execute(state);
@@ -82551,6 +82589,7 @@ var GithubOrganizerApproval = class {
     if (followUp)
       record.followUp = { ...existing?.record.followUp, ...followUp };
     const state = await this.repository.save(record, existing);
+    await this.finalizer.refreshVisibility(state);
     return {
       status: "pending",
       notificationFailed: await this.notifications.send(
@@ -82604,6 +82643,7 @@ var GithubOrganizerFollowUp = class {
       attentionDetails
     };
     const state = await this.repository.save(record, existing);
+    await this.finalizer.refreshVisibility(state);
     return state.comment.id;
   }
   async followUpAttention() {
@@ -82624,7 +82664,8 @@ var GithubOrganizerFollowUp = class {
       attention: body,
       attentionDetails: details
     };
-    await this.repository.save(state.record, state);
+    const persisted = await this.repository.save(state.record, state);
+    await this.finalizer.refreshVisibility(persisted);
   }
 };
 
@@ -82932,7 +82973,13 @@ var GithubOrganizerApprovalComposition = class {
     );
   }
   finalizeApprovalDecision(...args) {
-    return new FinalizeApprovalDecision(...args);
+    return new FinalizeApprovalDecision(
+      {
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
+      },
+      ...args
+    );
   }
   followUpPresenter(...args) {
     return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
@@ -89122,6 +89169,60 @@ var DiagnosticPresenter = class {
   }
 };
 
+// packages/adapter/event/github-event-comment-repository/src/github-comment-visibility.ts
+var GitHubCommentVisibility = class {
+  constructor(api, owner, repo) {
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+  }
+  api;
+  owner;
+  repo;
+  async synchronize(commentId, expectedBody, resolved) {
+    const { data } = await this.api.rest.issues.getComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+    if (!data.node_id || data.body !== expectedBody)
+      throw new Error("Comment changed before visibility update");
+    const response = await this.api.graphql(
+      `query CommentVisibility($id: ID!) {
+				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
+			}`,
+      { id: data.node_id }
+    );
+    if (!this.object(response) || !this.object(response.node))
+      throw new Error("Invalid comment visibility response");
+    const comment = response.node;
+    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
+      throw new Error("Comment changed before visibility update");
+    if (resolved === comment.isMinimized) return;
+    if (!resolved && comment.minimizedReason !== "resolved") return;
+    await this.change(data.node_id, resolved);
+  }
+  async change(id, resolved) {
+    const mutation = resolved ? `mutation ResolveComment($id: ID!) {
+				minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
+					minimizedComment { isMinimized }
+				}
+			}` : `mutation ReopenComment($id: ID!) {
+				unminimizeComment(input: { subjectId: $id }) {
+					unminimizedComment { isMinimized }
+				}
+			}`;
+    const response = await this.api.graphql(mutation, { id });
+    const result = this.object(response) ? response[resolved ? "minimizeComment" : "unminimizeComment"] : void 0;
+    const comment = this.object(result) ? result[resolved ? "minimizedComment" : "unminimizedComment"] : void 0;
+    if (!this.object(comment) || comment.isMinimized !== resolved)
+      throw new Error("Comment visibility update was not confirmed");
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
 // packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
 var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   constructor(message) {
@@ -89648,6 +89749,9 @@ var EventCommentMessages = class extends MessageLocalizer {
 
 // packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
 var GithubEventCommentRepositoryComposition = class {
+  githubCommentVisibility(...args) {
+    return new GitHubCommentVisibility(...args);
+  }
   diagnosticCommentSections() {
     return new DiagnosticCommentSections();
   }
@@ -91891,6 +91995,9 @@ var AttentionPresenter = class {
   issue(state, metadata) {
     return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
   }
+  resolved(state) {
+    return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
+  }
   details(state) {
     const view = this.collaborators.attentionPolicy.view(state);
     const lines = this.status(state);
@@ -92104,18 +92211,20 @@ var GithubAttentionClient = class {
 
 // packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
 var GithubAttentionRepository = class {
-  constructor(collaborators, client, author, presenter, checklist) {
+  constructor(collaborators, client, author, presenter, checklist, visibility) {
     this.collaborators = collaborators;
     this.client = client;
     this.author = author;
     this.presenter = presenter;
     this.checklist = checklist;
+    this.visibility = visibility;
   }
   collaborators;
   client;
   author;
   presenter;
   checklist;
+  visibility;
   snapshot;
   obsolete;
   previous;
@@ -92172,8 +92281,8 @@ var GithubAttentionRepository = class {
     );
     if (body.length > 6e4) throw new Error("Attention record limit exceeded");
     if (this.snapshot) {
-      if (this.snapshot.body === body) return;
-      await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+      if (this.snapshot.body !== body)
+        await this.client.replace(this.snapshot.id, this.snapshot.body, body);
     } else {
       if ((await this.client.list()).some(
         (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
@@ -92183,6 +92292,11 @@ var GithubAttentionRepository = class {
       this.snapshot = { id, body };
     }
     this.snapshot.body = body;
+    await this.visibility.synchronize(
+      this.snapshot.id,
+      body,
+      this.presenter.resolved(state)
+    );
   }
   async consolidate() {
     if (!this.obsolete || !this.snapshot || !this.previous) return;
@@ -100316,7 +100430,14 @@ var DraftWorkspaceComposition = class {
 // packages/runtime/github-actions/src/organizer-approval-composition.ts
 import { randomUUID as randomUUID3 } from "node:crypto";
 var OrganizerApprovalComposition = class {
-  static create(client, authorLogin, presenter, notificationPort, organizerChannelId) {
+  static visibility(input) {
+    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
+      input.client,
+      input.owner,
+      input.repo
+    );
+  }
+  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
     const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
       randomUUID3
     );
@@ -100344,7 +100465,9 @@ var OrganizerApprovalComposition = class {
         )
       ),
       repository,
-      notifications
+      notifications,
+      visibility,
+      new GithubOrganizerAttentionComposition().attentionRecord()
     );
     return {
       approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
@@ -100892,7 +101015,8 @@ var SocialPublicationComposition2 = class {
         input.slackToken,
         slack.slackApprovalPresenter(input.locale)
       ),
-      input.slackOrganizerChannelId
+      input.slackOrganizerChannelId,
+      OrganizerApprovalComposition.visibility(input)
     ).approval;
     const settings = new SocialPublicationConfiguration(new RuntimeInput());
     const configuration = async () => (await settings.load(process.cwd())).destinations;

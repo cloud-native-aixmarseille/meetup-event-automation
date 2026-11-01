@@ -34860,6 +34860,16 @@ var ApprovalRequestPolicy = class {
       return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
     return request.kind;
   }
+  resolved(facts) {
+    if (facts.attentionPending) return false;
+    if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
+      return false;
+    return this.reviewPhase({
+      recipientCount: facts.recipientCount,
+      followUpActive: facts.followUp?.active,
+      decided: facts.decided
+    }) !== "pending";
+  }
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -37184,6 +37194,9 @@ var AttentionPolicy = class {
     if ((policy === "occurrence" || policy === "follow-up") && elapsed >= 1)
       return `${policy}:${elapsed >= 7 ? 7 : 1}`;
     return void 0;
+  }
+  resolved(state) {
+    return this.view(state).conditions.length === 0 && state.post?.status !== "pending";
   }
   view(state) {
     return {
@@ -49536,6 +49549,60 @@ var DiagnosticPresenter = class {
   }
 };
 
+// packages/adapter/event/github-event-comment-repository/src/github-comment-visibility.ts
+var GitHubCommentVisibility = class {
+  constructor(api, owner, repo) {
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+  }
+  api;
+  owner;
+  repo;
+  async synchronize(commentId, expectedBody, resolved) {
+    const { data } = await this.api.rest.issues.getComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+    if (!data.node_id || data.body !== expectedBody)
+      throw new Error("Comment changed before visibility update");
+    const response = await this.api.graphql(
+      `query CommentVisibility($id: ID!) {
+				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
+			}`,
+      { id: data.node_id }
+    );
+    if (!this.object(response) || !this.object(response.node))
+      throw new Error("Invalid comment visibility response");
+    const comment = response.node;
+    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
+      throw new Error("Comment changed before visibility update");
+    if (resolved === comment.isMinimized) return;
+    if (!resolved && comment.minimizedReason !== "resolved") return;
+    await this.change(data.node_id, resolved);
+  }
+  async change(id, resolved) {
+    const mutation = resolved ? `mutation ResolveComment($id: ID!) {
+				minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
+					minimizedComment { isMinimized }
+				}
+			}` : `mutation ReopenComment($id: ID!) {
+				unminimizeComment(input: { subjectId: $id }) {
+					unminimizedComment { isMinimized }
+				}
+			}`;
+    const response = await this.api.graphql(mutation, { id });
+    const result = this.object(response) ? response[resolved ? "minimizeComment" : "unminimizeComment"] : void 0;
+    const comment = this.object(result) ? result[resolved ? "minimizedComment" : "unminimizedComment"] : void 0;
+    if (!this.object(comment) || comment.isMinimized !== resolved)
+      throw new Error("Comment visibility update was not confirmed");
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
 // packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
 var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   constructor(message) {
@@ -50062,6 +50129,9 @@ var EventCommentMessages = class extends MessageLocalizer {
 
 // packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
 var GithubEventCommentRepositoryComposition = class {
+  githubCommentVisibility(...args) {
+    return new GitHubCommentVisibility(...args);
+  }
   diagnosticCommentSections() {
     return new DiagnosticCommentSections();
   }
@@ -52305,6 +52375,9 @@ var AttentionPresenter = class {
   issue(state, metadata) {
     return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
   }
+  resolved(state) {
+    return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
+  }
   details(state) {
     const view = this.collaborators.attentionPolicy.view(state);
     const lines = this.status(state);
@@ -52518,18 +52591,20 @@ var GithubAttentionClient = class {
 
 // packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
 var GithubAttentionRepository = class {
-  constructor(collaborators, client, author, presenter, checklist) {
+  constructor(collaborators, client, author, presenter, checklist, visibility) {
     this.collaborators = collaborators;
     this.client = client;
     this.author = author;
     this.presenter = presenter;
     this.checklist = checklist;
+    this.visibility = visibility;
   }
   collaborators;
   client;
   author;
   presenter;
   checklist;
+  visibility;
   snapshot;
   obsolete;
   previous;
@@ -52586,8 +52661,8 @@ var GithubAttentionRepository = class {
     );
     if (body.length > 6e4) throw new Error("Attention record limit exceeded");
     if (this.snapshot) {
-      if (this.snapshot.body === body) return;
-      await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+      if (this.snapshot.body !== body)
+        await this.client.replace(this.snapshot.id, this.snapshot.body, body);
     } else {
       if ((await this.client.list()).some(
         (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
@@ -52597,6 +52672,11 @@ var GithubAttentionRepository = class {
       this.snapshot = { id, body };
     }
     this.snapshot.body = body;
+    await this.visibility.synchronize(
+      this.snapshot.id,
+      body,
+      this.presenter.resolved(state)
+    );
   }
   async consolidate() {
     if (!this.obsolete || !this.snapshot || !this.previous) return;

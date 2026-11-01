@@ -179,3 +179,34 @@ describe("approval request identity", () => {
 		expect(validate).toThrow();
 	});
 });
+
+describe("approval comment completion", () => {
+	it.each([
+		[false, undefined, undefined, false, false],
+		[true, undefined, undefined, false, true],
+		[true, 1, { active: true, pendingTasks: ["share-slides"] }, false, false],
+		[true, 1, { active: true, pendingTasks: [] }, false, true],
+		[false, 0, { active: true, pendingTasks: [] }, false, true],
+		[false, 0, { active: true, pendingTasks: [] }, true, false],
+		[true, 1, { active: false, pendingTasks: ["share-slides"] }, true, false],
+	])(
+		"keeps unfinished approval or follow-up work visible %#",
+		(decided, recipientCount, followUp, attentionPending, expected) => {
+			// Arrange
+			const policy = new ApprovalRequestPolicy(
+				new DraftProposalComposition().fingerprints(),
+			);
+
+			// Act
+			const resolved = policy.resolved({
+				decided,
+				recipientCount,
+				followUp,
+				attentionPending,
+			});
+
+			// Assert
+			expect(resolved).toBe(expected);
+		},
+	);
+});

@@ -45,6 +45,7 @@ export class SocialRecoveryComposition {
 				slack.slackApprovalPresenter(input.locale),
 			),
 			input.slackOrganizerChannelId,
+			OrganizerApprovalComposition.visibility(input),
 		).approval;
 		const fingerprints = new DraftProposalComposition().fingerprints();
 		return new RecoverSocialPublication(

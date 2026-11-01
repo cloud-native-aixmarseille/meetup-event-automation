@@ -168,6 +168,7 @@ export class CommunicationComposition {
 						),
 					),
 					input.slackOrganizerChannelId,
+					OrganizerApprovalComposition.visibility(input),
 				).approval,
 				config: context.get<AutomationConfig>(SERVICES.config),
 				eventRepository: context.get<EventRepository>(SERVICES.eventRepository),

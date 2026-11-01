@@ -1584,3 +1584,60 @@ describe("organizer text replacement", () => {
 		expect(record?.decision).toBeUndefined();
 	});
 });
+
+describe("completed approval comment visibility", () => {
+	it("hides a persisted decision and restores a reused comment for a new revision", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+
+		// Act
+		await approvals.request(request);
+		decision(f);
+		await approvals.request(request);
+		await approvals.request({ ...request, revision: "c".repeat(64) });
+
+		// Assert
+		expect(
+			f.visibility.synchronize.mock.calls.map(([id, , resolved]) => [
+				id,
+				resolved,
+			]),
+		).toEqual([
+			[100, false],
+			[100, true],
+			[100, false],
+		]);
+		expect(f.create).toHaveBeenCalledTimes(1);
+	});
+	it("keeps a human decision visible when bot persistence fails", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+		await approvals.request(request);
+		decision(f);
+		f.visibility.synchronize.mockClear();
+		f.update.mockRejectedValueOnce(new Error("Unavailable"));
+
+		// Act
+		const result = approvals.request(request);
+
+		// Assert
+		await expect(result).rejects.toThrow("Unavailable");
+		expect(f.visibility.synchronize).not.toHaveBeenCalled();
+	});
+});

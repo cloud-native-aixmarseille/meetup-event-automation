@@ -92,6 +92,7 @@ export class AttentionComposition {
 						input.commentAuthorLogin,
 						presenter,
 						checklist,
+						OrganizerApprovalComposition.visibility(input),
 					),
 					new GithubOrganizerAttentionComposition().attentionRecord(),
 					presenter,
@@ -147,6 +148,7 @@ export class AttentionComposition {
 				),
 			),
 			input.slackOrganizerChannelId,
+			OrganizerApprovalComposition.visibility(input),
 		);
 	}
 	private static bindJourney(

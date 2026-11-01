@@ -70,6 +70,7 @@ export class DraftReviewComposition {
 				slack.slackApprovalPresenter(input.locale),
 			),
 			channelId,
+			OrganizerApprovalComposition.visibility(input),
 		).approval;
 		const review = new ContentReview(base.store, approvals, media, base.policy);
 		return new ManageContentReview(
