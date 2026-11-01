@@ -1,5 +1,37 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"diagnostic.publication.meetup.authentication-configuration":
+		"Les identifiants Meetup manquent dans la configuration de l'automatisation. Vérifiez PUBLICATION_CREDENTIALS.",
+	"diagnostic.publication.meetup.authentication-captcha-required":
+		"Meetup demande un CAPTCHA que l'automatisation n'a pas pu résoudre. Publication suspendue.",
+	"diagnostic.publication.meetup.authentication-captcha-rejected":
+		"Meetup a refusé la réponse au CAPTCHA. Les retries sont épuisés ; relancez la synchronisation plus tard.",
+	"diagnostic.publication.meetup.authentication-captcha-unavailable":
+		"Le solveur de CAPTCHA a échoué avant la fin de la connexion. Vérifiez sa disponibilité et relancez la synchronisation.",
+	"diagnostic.publication.meetup.authentication-one-time-code":
+		"Meetup demande un code à usage unique. La connexion automatique s'est arrêtée sans nouvel envoi des identifiants.",
+	"diagnostic.publication.meetup.authentication-credentials-rejected":
+		"Meetup a explicitement refusé les identifiants envoyés. Vérifiez PUBLICATION_CREDENTIALS avant de relancer.",
+	"diagnostic.publication.meetup.authentication-session-not-reusable":
+		"Meetup renvoie la vérification du compte vers la connexion malgré les retries. La session n'a pas été conservée ; relancez la synchronisation.",
+	"diagnostic.publication.meetup.authentication-login-page-unavailable":
+		"La page de connexion Meetup n'a pas pu être chargée malgré les retries. Relancez la synchronisation plus tard.",
+	"diagnostic.publication.meetup.authentication-login-form-unavailable":
+		"Le formulaire email/mot de passe Meetup n'a pas pu être rempli malgré les retries. Vérifiez les sélecteurs du formulaire.",
+	"diagnostic.publication.meetup.authentication-submit-unavailable":
+		"Le bouton de connexion Meetup n'a pas pu être activé malgré les retries. Vérifiez les contrôles de la page de connexion.",
+	"diagnostic.publication.meetup.authentication-redirect-timeout":
+		"Meetup n'a pas terminé la redirection après connexion malgré les retries. Aucun refus des identifiants n'a été détecté ; relancez plus tard.",
+	"diagnostic.publication.meetup.authentication-account-unavailable":
+		"Le compte connecté n'a pas pu être vérifié malgré les retries. Vérifiez le chargement et les sélecteurs de la page du compte.",
+	"diagnostic.publication.meetup.authentication-account-mismatch":
+		"Le compte connecté sur Meetup ne correspond pas au compte configuré. La session a été écartée.",
+	"diagnostic.publication.meetup.authentication-unexpected-page":
+		"La connexion Meetup a abouti à une page inattendue. L'authentification s'est arrêtée ; vérifiez le parcours avant de relancer.",
+	"diagnostic.publication.meetup.authentication-rate-limited":
+		"Meetup a renvoyé HTTP 429 pendant l'authentification. Les retries sont arrêtés ; attendez avant de relancer la synchronisation.",
+	"diagnostic.publication.meetup.authentication-browser":
+		"Chrome n'a pas démarré ou sa connexion d'authentification a échoué malgré les retries. Vérifiez le runtime du navigateur.",
 	"diagnostic.publication.content.invalid":
 		"Corrigez le texte du commentaire : titre sur une ligne de 80 caractères maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
 	"action.communication.recover-social": "Reprendre une publication",
@@ -130,7 +162,7 @@ export const FR_MESSAGES = {
 	"diagnostic.publication.meetup.uncertain":
 		"Synchronisation interrompue. Vérifiez l'événement et la photothèque avant de relancer. Rétablissez l'URL vérifiée dans Meetup Link et récupérez toute photo de couverture en attente ou détachée dans le journal de confiance. Laissez Meetup event published décoché tant que la publication n'est pas confirmée. Préservez les identifiants de l'événement et de la photo ; ne supprimez un état incertain qu'après avoir vérifié ce que Meetup a accepté.",
 	"diagnostic.publication.meetup.authentication":
-		"Connexion organisateur non vérifiée. Vérifiez le compte, les identifiants et la configuration IA ; terminez manuellement toute vérification non prise en charge.",
+		"Connexion automatique Meetup interrompue sans étape précise dans ce rapport. Relancez pour obtenir le diagnostic détaillé.",
 	"diagnostic.publication.meetup.editor":
 		"Impossible de préparer l'éditeur Meetup. Vérifiez les droits organisateur, le lieu configuré et les sélecteurs du navigateur.",
 	"diagnostic.publication.meetup.verification":

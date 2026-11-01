@@ -1,6 +1,38 @@
 export const STAGE_MESSAGES_EN = {
+	"comment.guidance.meetup.authentication-configuration":
+		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+	"comment.guidance.meetup.authentication-captcha-required":
+		"Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+	"comment.guidance.meetup.authentication-captcha-rejected":
+		"Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+	"comment.guidance.meetup.authentication-captcha-unavailable":
+		"The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+	"comment.guidance.meetup.authentication-one-time-code":
+		"Meetup requests a one-time code. Automatic login stopped without further submissions.",
+	"comment.guidance.meetup.authentication-credentials-rejected":
+		"Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+	"comment.guidance.meetup.authentication-session-not-reusable":
+		"Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+	"comment.guidance.meetup.authentication-login-page-unavailable":
+		"The Meetup login page could not load after retries. Retry synchronization later.",
+	"comment.guidance.meetup.authentication-login-form-unavailable":
+		"The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+	"comment.guidance.meetup.authentication-submit-unavailable":
+		"The Meetup login button could not be activated after retries. Check the login page controls.",
+	"comment.guidance.meetup.authentication-redirect-timeout":
+		"Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+	"comment.guidance.meetup.authentication-account-unavailable":
+		"The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+	"comment.guidance.meetup.authentication-account-mismatch":
+		"The authenticated Meetup account does not match the configured account. The session was discarded.",
+	"comment.guidance.meetup.authentication-unexpected-page":
+		"Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+	"comment.guidance.meetup.authentication-rate-limited":
+		"Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+	"comment.guidance.meetup.authentication-browser":
+		"Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
 	"comment.guidance.meetup.authentication":
-		"Meetup sign-in could not be verified. Check the organizer account's access, then retry synchronization.",
+		"Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
 	"comment.social.target": "Post ({destination}, {purpose})",
 	"comment.guidance.social.pending":
 		"Review the announcement and approve publication for this destination.",

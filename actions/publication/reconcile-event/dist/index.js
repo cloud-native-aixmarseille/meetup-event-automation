@@ -41819,6 +41819,8 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.assets.pdf.limit",
   "publication.assets.pdf.sharing",
   "publication.meetup.authentication",
+  "publication.meetup.authentication-one-time-code",
+  "publication.meetup.authentication-credentials-rejected",
   "publication.meetup.prerequisites",
   "publication.meetup.link",
   "publication.meetup.conflict",
@@ -43952,7 +43954,10 @@ var EventPublicationResults = class {
       diagnostics: [
         {
           code: `publication.${this.field}.${code}`,
-          severity: [
+          severity: code.startsWith("authentication-") && ![
+            "authentication-one-time-code",
+            "authentication-credentials-rejected"
+          ].includes(code) || [
             "editor",
             "verification",
             "source",
@@ -49034,6 +49039,22 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "diagnostic.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "diagnostic.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "diagnostic.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "diagnostic.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "diagnostic.publication.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
+  "diagnostic.publication.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+  "diagnostic.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "diagnostic.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "diagnostic.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "diagnostic.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "diagnostic.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "diagnostic.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "diagnostic.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "diagnostic.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "diagnostic.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "diagnostic.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
   "diagnostic.publication.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
   "action.communication.recover-social": "Recover a social post",
   "report.social.recovery": "social_recovery={status}",
@@ -49103,7 +49124,7 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
   "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
   "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check the event and cover photo library before retrying. Restore the verified event URL in Meetup Link and recover any pending or detached cover photo in the trusted journal. Leave Meetup event published unchecked until publication is confirmed. Preserve event and photo identities; clear uncertain state only after checking what Meetup accepted.",
-  "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and AI configuration; complete any unsupported challenge interactively.",
+  "diagnostic.publication.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
   "diagnostic.publication.meetup.editor": "The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
   "diagnostic.publication.meetup.verification": "Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
@@ -49192,6 +49213,22 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "diagnostic.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "diagnostic.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "diagnostic.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "diagnostic.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "diagnostic.publication.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
+  "diagnostic.publication.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
+  "diagnostic.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "diagnostic.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "diagnostic.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "diagnostic.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "diagnostic.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "diagnostic.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "diagnostic.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "diagnostic.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "diagnostic.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "diagnostic.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
   "diagnostic.publication.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
   "action.communication.recover-social": "Reprendre une publication",
   "report.social.recovery": "reprise_sociale={status}",
@@ -49261,7 +49298,7 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
   "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
   "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez l'\xE9v\xE9nement et la phototh\xE8que avant de relancer. R\xE9tablissez l'URL v\xE9rifi\xE9e dans Meetup Link et r\xE9cup\xE9rez toute photo de couverture en attente ou d\xE9tach\xE9e dans le journal de confiance. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Pr\xE9servez les identifiants de l'\xE9v\xE9nement et de la photo ; ne supprimez un \xE9tat incertain qu'apr\xE8s avoir v\xE9rifi\xE9 ce que Meetup a accept\xE9.",
-  "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et la configuration IA ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez pour obtenir le diagnostic d\xE9taill\xE9.",
   "diagnostic.publication.meetup.editor": "Impossible de pr\xE9parer l'\xE9diteur Meetup. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
   "diagnostic.publication.meetup.verification": "Les champs enregistr\xE9s sur Meetup ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
@@ -56317,12 +56354,102 @@ var DiagnosticCommentSections = class {
   }
 };
 
-// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
-var STAGE_GUIDANCE = [
+// packages/adapter/event/github-event-comment-repository/src/authentication-diagnostic-guidance.ts
+var AUTHENTICATION_GUIDANCE = [
   [
     "publication.meetup.authentication",
     ["Meetup Link", "comment.guidance.meetup.authentication"]
   ],
+  [
+    "publication.meetup.authentication-configuration",
+    ["Meetup Link", "comment.guidance.meetup.authentication-configuration"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-required",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-required"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-rejected",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-rejected"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-captcha-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-one-time-code",
+    ["Meetup Link", "comment.guidance.meetup.authentication-one-time-code"]
+  ],
+  [
+    "publication.meetup.authentication-credentials-rejected",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-credentials-rejected"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-session-not-reusable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-session-not-reusable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-page-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-page-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-form-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-submit-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-submit-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-redirect-timeout",
+    ["Meetup Link", "comment.guidance.meetup.authentication-redirect-timeout"]
+  ],
+  [
+    "publication.meetup.authentication-account-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-account-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-account-mismatch",
+    ["Meetup Link", "comment.guidance.meetup.authentication-account-mismatch"]
+  ],
+  [
+    "publication.meetup.authentication-unexpected-page",
+    ["Meetup Link", "comment.guidance.meetup.authentication-unexpected-page"]
+  ],
+  [
+    "publication.meetup.authentication-rate-limited",
+    ["Meetup Link", "comment.guidance.meetup.authentication-rate-limited"]
+  ],
+  [
+    "publication.meetup.authentication-browser",
+    ["Meetup Link", "comment.guidance.meetup.authentication-browser"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
+var STAGE_GUIDANCE = [
+  ...AUTHENTICATION_GUIDANCE,
   [
     "publication.content.invalid",
     ["Event materials", "comment.guidance.content.invalid"]
@@ -57446,7 +57573,23 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
-  "comment.guidance.meetup.authentication": "Meetup sign-in could not be verified. Check the organizer account's access, then retry synchronization.",
+  "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "comment.guidance.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "comment.guidance.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "comment.guidance.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
   "comment.social.target": "Post ({destination}, {purpose})",
   "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
   "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
@@ -57496,7 +57639,23 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
-  "comment.guidance.meetup.authentication": "Connexion \xE0 Meetup non v\xE9rifi\xE9e. V\xE9rifiez l'acc\xE8s du compte organisateur, puis relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "comment.guidance.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "comment.guidance.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "comment.guidance.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
   "comment.social.target": "Publication ({destination}, {purpose})",
   "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
@@ -71395,6 +71554,8 @@ var EventPublicationApprovalComposition = class {
 };
 
 // packages/runtime/github-actions/src/publication-adapter-composition.ts
+import { tmpdir as tmpdir3 } from "node:os";
+import { join as join7 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // packages/adapter/generation/gemini-generation-gateway/src/gemini-generation-http.ts
@@ -72425,10 +72586,10 @@ var HcaptchaChallenge = class {
   process;
   apiKey;
   model;
-  attempted = false;
+  attempts = 0;
   async solve(page, endpoint2) {
-    if (this.attempted) return false;
-    this.attempted = true;
+    if (this.attempts >= 2) return false;
+    this.attempts++;
     const targetUrl = page.url();
     const result = await this.process.run({
       endpoint: endpoint2,
@@ -73799,6 +73960,75 @@ var HttpsAssetImageRepositoryComposition = class {
 };
 
 // packages/adapter/publication/meetup-event-gateway/src/dependency-composition.ts
+import { setTimeout as setTimeout2 } from "node:timers/promises";
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-authentication.ts
+var MeetupAuthentication = class {
+  constructor(collaborators, credentials) {
+    this.collaborators = collaborators;
+    this.credentials = credentials;
+    if (!credentials.email.trim() || !credentials.password)
+      throw new ScheduledEventError("authentication-configuration");
+  }
+  collaborators;
+  credentials;
+  async open(timezoneId) {
+    let failure = "authentication-browser";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0)
+        await this.collaborators.delay(attempt === 1 ? 2e3 : 5e3);
+      const session = this.collaborators.createSession();
+      try {
+        const { page, endpoint: endpoint2 } = await session.open(timezoneId);
+        const status = await this.authenticate(page, endpoint2);
+        if (status === "verified") {
+          await page.context().storageState().then((state) => this.collaborators.store.save(state)).catch(() => void 0);
+          return { page, session };
+        }
+        failure = `authentication-${status}`;
+        if ([
+          "credentials-rejected",
+          "one-time-code",
+          "account-mismatch",
+          "unexpected-page",
+          "rate-limited"
+        ].includes(status))
+          throw new ScheduledEventError(failure);
+      } catch (error2) {
+        await session.close().catch(() => void 0);
+        if (error2 instanceof ScheduledEventError) throw error2;
+        failure = "authentication-browser";
+        continue;
+      }
+      await session.close().catch(() => void 0);
+    }
+    throw new ScheduledEventError(failure);
+  }
+  async authenticate(page, endpoint2) {
+    const login = this.collaborators.createLogin(page, endpoint2);
+    const stored = await this.collaborators.store.load().catch(() => void 0);
+    if (stored) {
+      try {
+        await page.context().setStorageState(stored);
+        const status = await login.verifyAccount(this.credentials.email);
+        if (status === "verified") return status;
+        if ([
+          "one-time-code",
+          "account-mismatch",
+          "unexpected-page",
+          "rate-limited"
+        ].includes(status))
+          return status;
+      } catch {
+      }
+      await page.context().setStorageState({ cookies: [], origins: [] });
+      await this.collaborators.store.clear();
+    }
+    return login.login(this.credentials.email, this.credentials.password);
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/dependency-composition.ts
 import { spawn as spawn2 } from "node:child_process";
 import { chromium } from "playwright-core";
 
@@ -74381,17 +74611,13 @@ var MeetupEventEditor = class {
 
 // packages/adapter/publication/meetup-event-gateway/src/meetup-event-gateway.ts
 var MeetupEventGateway = class {
-  constructor(collaborators, credentials, createCaptchaResolver, groupUrl) {
+  constructor(collaborators, groupUrl) {
     this.collaborators = collaborators;
-    this.credentials = credentials;
-    this.createCaptchaResolver = createCaptchaResolver;
     const group = MeetupGroupUrl.parse(groupUrl);
     if (!group) throw new ScheduledEventError("editor");
     this.group = group;
   }
   collaborators;
-  credentials;
-  createCaptchaResolver;
   group;
   async inspect(reference) {
     return this.withPublication(
@@ -74439,22 +74665,8 @@ var MeetupEventGateway = class {
     return { identity: this.identity(saved.url), status: saved.status };
   }
   async withSession(timezoneId, operation) {
-    if (!this.credentials.email.trim() || !this.credentials.password)
-      throw new ScheduledEventError("authentication");
-    const session = this.collaborators.createBrowserSession();
+    const { page, session } = await this.collaborators.authentication.open(timezoneId);
     try {
-      const { page, endpoint: endpoint2 } = await session.open(timezoneId).catch(() => {
-        throw new ScheduledEventError("unavailable");
-      });
-      const status = await this.collaborators.createMeetupLoginPage(
-        page,
-        this.createCaptchaResolver(page, endpoint2),
-        this.group.origin
-      ).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
-      if (status !== "verified")
-        throw new ScheduledEventError(
-          ["unavailable", "unexpected-page"].includes(status) ? "unavailable" : "authentication"
-        );
       return await operation(page);
     } finally {
       await session.close().catch(() => void 0);
@@ -74676,81 +74888,102 @@ var MeetupLoginPage = class {
   captcha;
   origin;
   async login(email, password) {
-    await this.page.goto(
-      this.collaborators.meetupBrowserRoutes.login(this.origin),
-      {
-        waitUntil: "domcontentloaded"
-      }
-    );
-    await this.dismissCookieNotice();
-    if (!this.isMeetupPath("/login")) return "unexpected-page";
-    await this.page.locator('input[name="email"]').waitFor();
-    const challengeStatus = await this.prepareChallenge();
-    if (challengeStatus) return challengeStatus;
-    await this.page.locator('input[name="email"]').fill(email);
-    await this.page.locator('input[name="current-password"]').fill(password);
-    const submit = this.page.getByRole("button", {
-      name: "Log in",
-      exact: true
-    });
-    if (!await submit.isEnabled())
-      return await this.hasChallenge() ? "challenge-required" : "unexpected-page";
-    await submit.click();
+    try {
+      const response = await this.page.goto(
+        this.collaborators.meetupBrowserRoutes.login(this.origin),
+        { waitUntil: "domcontentloaded" }
+      );
+      if (response?.status() === 429) return "rate-limited";
+      await this.dismissCookieNotice();
+    } catch {
+      return "login-page-unavailable";
+    }
+    if (!this.isMeetupPath("/login")) {
+      if (!this.isMeetupLocation()) return "unexpected-page";
+      return this.verifyAccount(email);
+    }
+    const challenge = await this.prepareChallenge();
+    if (challenge) return challenge;
+    try {
+      await this.page.locator('input[name="email"]').fill(email);
+      await this.page.locator('input[name="current-password"]').fill(password);
+    } catch {
+      return "login-form-unavailable";
+    }
+    try {
+      await this.page.getByRole("button", { name: "Log in", exact: true }).click();
+    } catch {
+      return await this.challengeStatus() ?? "submit-unavailable";
+    }
     try {
       await this.page.waitForURL(
         (url) => this.collaborators.meetupBrowserRoutes.isMeetupLocation(
           url,
           this.origin
         ) && !url.pathname.startsWith("/login"),
-        { timeout: 15e3, waitUntil: "domcontentloaded" }
+        { timeout: 3e4, waitUntil: "domcontentloaded" }
       );
     } catch {
-      if (await this.hasChallenge()) return "challenge-required";
-      if (await this.hasRejectedCredentials()) return "credentials-rejected";
-      return "unexpected-page";
+      return this.submissionFailure();
     }
     return this.verifyAccount(email);
   }
   async verifyAccount(email) {
-    await this.page.goto(
-      this.collaborators.meetupBrowserRoutes.account(this.origin),
-      {
-        waitUntil: "domcontentloaded"
-      }
+    try {
+      const response = await this.page.goto(
+        this.collaborators.meetupBrowserRoutes.account(this.origin),
+        { waitUntil: "domcontentloaded" }
+      );
+      if (response?.status() === 429) return "rate-limited";
+      const challenge = await this.challengeStatus();
+      if (challenge) return challenge;
+      if (this.isMeetupPath("/login")) return "session-not-reusable";
+      if (!this.isMeetupPath("/account/management")) return "unexpected-page";
+      const accountEmail = this.page.locator('input[name="email"]');
+      await accountEmail.waitFor();
+      return (await accountEmail.inputValue()).toLowerCase() === email.toLowerCase() ? "verified" : "account-mismatch";
+    } catch {
+      return "account-unavailable";
+    }
+  }
+  async submissionFailure() {
+    if (!this.isMeetupLocation()) return "unexpected-page";
+    if (await this.page.getByText(
+      /invalid_captcha_error|invalid captcha|captcha.*(invalid|expired)/i
+    ).first().isVisible())
+      return "captcha-rejected";
+    if (await this.page.getByText(/incorrect (email|password)|invalid (email|password)/i).first().isVisible())
+      return "credentials-rejected";
+    return await this.challengeStatus() ?? "redirect-timeout";
+  }
+  isMeetupLocation() {
+    return this.collaborators.meetupBrowserRoutes.isMeetupLocation(
+      new URL(this.page.url()),
+      this.origin
     );
-    if (await this.hasChallenge()) return "challenge-required";
-    if (this.isMeetupPath("/login")) return "session-not-reusable";
-    if (!this.isMeetupPath("/account/management")) return "unexpected-page";
-    const accountEmail = this.page.locator('input[name="email"]');
-    await accountEmail.waitFor();
-    return (await accountEmail.inputValue()).toLowerCase() === email.toLowerCase() ? "verified" : "unexpected-page";
   }
   isMeetupPath(path) {
-    const url = new URL(this.page.url());
     return this.collaborators.meetupBrowserRoutes.isPath(
-      url,
+      new URL(this.page.url()),
       path,
       this.origin
     );
   }
-  async hasChallenge() {
-    return await this.hasOneTimeCode() || await this.captcha.inspect() === "required";
+  async challengeStatus() {
+    for (const input of await this.page.locator('input[autocomplete="one-time-code"]').all())
+      if (await input.isVisible()) return "one-time-code";
+    return await this.captcha.inspect() === "required" ? "captcha-required" : null;
   }
   async prepareChallenge() {
-    if (!await this.hasChallenge()) return null;
-    if (await this.hasOneTimeCode() || await this.captcha.resolve() !== "clear")
-      return "challenge-required";
-    if (!this.isMeetupPath("/login")) return "unexpected-page";
-    if (await this.hasChallenge()) return "challenge-required";
-    return null;
-  }
-  async hasOneTimeCode() {
-    for (const input of await this.page.locator('input[autocomplete="one-time-code"]').all())
-      if (await input.isVisible()) return true;
-    return false;
-  }
-  async hasRejectedCredentials() {
-    return this.page.getByText(/incorrect (email|password)|invalid (email|password)/i).first().isVisible();
+    try {
+      const status = await this.challengeStatus();
+      if (status !== "captcha-required") return status;
+      if (await this.captcha.resolve() !== "clear") return "captcha-required";
+      if (!this.isMeetupPath("/login")) return "unexpected-page";
+      return this.challengeStatus();
+    } catch {
+      return "captcha-unavailable";
+    }
   }
   async dismissCookieNotice() {
     const decline = this.page.getByRole("button", {
@@ -74843,16 +75076,18 @@ var MeetupVenue = class {
 
 // packages/adapter/publication/meetup-event-gateway/src/dependency-composition.ts
 var MeetupEventGatewayComposition = class {
-  constructor(locale, images, covers, topics) {
+  constructor(locale, images, covers, topics, sessions) {
     this.locale = locale;
     this.images = images;
     this.covers = covers;
     this.topics = topics;
+    this.sessions = sessions;
   }
   locale;
   images;
   covers;
   topics;
+  sessions;
   meetupBrowserSession() {
     return new MeetupBrowserSession(
       chromium,
@@ -74887,10 +75122,22 @@ var MeetupEventGatewayComposition = class {
       ...args
     );
   }
-  meetupEventGateway(...args) {
+  meetupEventGateway(credentials, createCaptchaResolver, groupUrl) {
     return new MeetupEventGateway(
       {
-        createBrowserSession: () => this.meetupBrowserSession(),
+        authentication: new MeetupAuthentication(
+          {
+            createSession: () => this.meetupBrowserSession(),
+            createLogin: (page, endpoint2) => this.meetupLoginPage(
+              page,
+              createCaptchaResolver(page, endpoint2),
+              new URL(groupUrl).origin
+            ),
+            store: this.sessions,
+            delay: setTimeout2
+          },
+          credentials
+        ),
         createAttendeeMessage: (page, group) => new MeetupAttendeeMessage(
           new AttendeeMessages(
             {
@@ -74901,11 +75148,10 @@ var MeetupEventGatewayComposition = class {
           page,
           group
         ),
-        createMeetupEventEditor: (...args2) => this.meetupEventEditor(...args2),
-        createMeetupEventPublisher: (...args2) => this.meetupEventPublisher(...args2),
-        createMeetupLoginPage: (...args2) => this.meetupLoginPage(...args2)
+        createMeetupEventEditor: (...args) => this.meetupEventEditor(...args),
+        createMeetupEventPublisher: (...args) => this.meetupEventPublisher(...args)
       },
-      ...args
+      groupUrl
     );
   }
   meetupEventGatewayFactory() {
@@ -74949,6 +75195,115 @@ var MeetupEventGatewayComposition = class {
   }
   meetupTopics(page) {
     return new MeetupTopics(page, this.topics);
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/encrypted-meetup-session-store.ts
+import { mkdir as mkdir2, readFile as readFile7, rename as rename2, rm as rm4, stat as stat3, writeFile as writeFile4 } from "node:fs/promises";
+import { dirname } from "node:path";
+var EncryptedMeetupSessionStore = class {
+  constructor(codec, path) {
+    this.codec = codec;
+    this.path = path;
+  }
+  codec;
+  path;
+  async load() {
+    try {
+      const state = (await stat3(this.path)).size > 2e6 ? void 0 : this.codec.decode(await readFile7(this.path));
+      await this.clear();
+      return state;
+    } catch {
+      return void 0;
+    }
+  }
+  async save(state) {
+    const ciphertext = this.codec.encode(state);
+    await mkdir2(dirname(this.path), { recursive: true, mode: 448 });
+    await writeFile4(`${this.path}.tmp`, ciphertext, { mode: 384 });
+    await rename2(`${this.path}.tmp`, this.path);
+  }
+  async clear() {
+    await rm4(this.path, { force: true });
+  }
+};
+
+// packages/adapter/publication/meetup-event-gateway/src/meetup-session-codec.ts
+import {
+  createCipheriv,
+  createDecipheriv,
+  hkdfSync,
+  randomBytes
+} from "node:crypto";
+var MeetupSessionCodec = class {
+  constructor(secret, scope, origin, now2) {
+    this.origin = origin;
+    this.now = now2;
+    this.key = Buffer.from(
+      hkdfSync("sha256", secret, scope, "meetup-browser-session-v1", 32)
+    );
+  }
+  origin;
+  now;
+  key;
+  encode(state) {
+    const filtered = {
+      cookies: state.cookies.filter(
+        (cookie) => this.allowedDomain(cookie.domain)
+      ),
+      origins: state.origins.filter((entry) => entry.origin === this.origin)
+    };
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", this.key, iv);
+    const data = Buffer.from(
+      JSON.stringify({ version: 1, savedAt: this.now(), state: filtered })
+    );
+    const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
+    return Buffer.concat([iv, cipher.getAuthTag(), encrypted]);
+  }
+  decode(data) {
+    try {
+      if (data.length < 29 || data.length > 2e6) return void 0;
+      const decipher = createDecipheriv(
+        "aes-256-gcm",
+        this.key,
+        data.subarray(0, 12)
+      );
+      decipher.setAuthTag(data.subarray(12, 28));
+      const value = JSON.parse(
+        Buffer.concat([
+          decipher.update(data.subarray(28)),
+          decipher.final()
+        ]).toString("utf8")
+      );
+      if (!this.record(value) || value.version !== 1 || typeof value.savedAt !== "number" || !Number.isFinite(value.savedAt))
+        return void 0;
+      const age = this.now() - value.savedAt;
+      if (age < 0 || age > 7 * 24 * 60 * 60 * 1e3 || !this.validState(value.state))
+        return void 0;
+      return value.state;
+    } catch {
+      return void 0;
+    }
+  }
+  validState(value) {
+    return this.record(value) && Array.isArray(value.cookies) && Array.isArray(value.origins) && value.cookies.every((cookie) => this.validCookie(cookie)) && value.origins.every(
+      (entry) => this.record(entry) && entry.origin === this.origin && Array.isArray(entry.localStorage) && entry.localStorage.every(
+        (item) => this.record(item) && typeof item.name === "string" && typeof item.value === "string"
+      )
+    );
+  }
+  validCookie(value) {
+    return this.record(value) && typeof value.name === "string" && typeof value.value === "string" && typeof value.domain === "string" && this.allowedDomain(value.domain) && typeof value.path === "string" && value.path.startsWith("/") && typeof value.expires === "number" && Number.isFinite(value.expires) && typeof value.httpOnly === "boolean" && typeof value.secure === "boolean" && ["Strict", "Lax", "None"].includes(String(value.sameSite));
+  }
+  allowedDomain(domain) {
+    const host = new URL(this.origin).hostname;
+    return [host, host.replace(/^www\./, "")].includes(
+      domain.replace(/^\./, "")
+    );
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 };
 
@@ -75799,6 +76154,21 @@ var PublicationAdapterComposition = class {
       new SelectMeetupTopics(
         new GeminiGenerationGatewayComposition().text(ai3.model, ai3.apiKey),
         new MeetupTopicPolicy()
+      ),
+      new EncryptedMeetupSessionStore(
+        new MeetupSessionCodec(
+          ai3.apiKey,
+          JSON.stringify([
+            input.owner,
+            input.repo,
+            group.value,
+            email.toLowerCase(),
+            password
+          ]),
+          group.origin,
+          Date.now
+        ),
+        join7(process.env.RUNNER_TEMP || tmpdir3(), "meetup-session.enc")
       )
     ).meetupEventGatewayFactory().create({ email, password }, resolver, group.value);
   }

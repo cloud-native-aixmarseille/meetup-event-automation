@@ -292,6 +292,17 @@ jobs:
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt
 
+      # Only an authenticated encrypted snapshot enters this cache; never a Chrome profile.
+      - name: Restore encrypted Meetup session
+        id: meetup-session
+        continue-on-error: true
+        if: ${{ steps.publication-runtime.outputs.requires-challenge-solver == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/meetup-session.enc
+          key: meetup-session-v1-${{ github.repository_id }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.issue-number }}
+          restore-keys: meetup-session-v1-${{ github.repository_id }}-
+
       - name: Reconcile event publication
         id: publication
         uses: $/actions/publication/reconcile-event
@@ -308,6 +319,14 @@ jobs:
           publication-credentials: ${{ secrets.publication-credentials }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+      - name: Save encrypted Meetup session
+        continue-on-error: true
+        if: ${{ !cancelled() && steps.publication.outcome != 'skipped' && steps.meetup-session.outcome == 'success' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/meetup-session.enc
+          key: ${{ steps.meetup-session.outputs.cache-primary-key }}
+
       - name: Reconcile event
         id: event
         if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}

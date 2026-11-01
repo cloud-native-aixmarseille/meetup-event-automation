@@ -1,4 +1,3 @@
-import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import {
 	type EventPublicationGateway,
 	type PublicationWriteGuard,
@@ -11,7 +10,7 @@ import {
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
 import type { MeetupAttendeeMessage } from "./meetup-attendee-message.js";
-import type { MeetupBrowserSession } from "./meetup-browser-session.js";
+import type { MeetupAuthentication } from "./meetup-authentication.js";
 import type {
 	MeetupEventEditor,
 	MeetupEventEditorArguments,
@@ -20,17 +19,10 @@ import type {
 	MeetupEventPublisher,
 	MeetupEventPublisherArguments,
 } from "./meetup-event-publisher.js";
-import type {
-	MeetupLoginPage,
-	MeetupLoginPageArguments,
-} from "./meetup-login-page.js";
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventGatewayCollaborators {
-	readonly createBrowserSession: () => Pick<
-		MeetupBrowserSession,
-		"open" | "close"
-	>;
+	readonly authentication: Pick<MeetupAuthentication, "open">;
 	readonly createAttendeeMessage: (
 		page: Page,
 		group: MeetupGroupUrl,
@@ -41,9 +33,6 @@ export interface MeetupEventGatewayCollaborators {
 	readonly createMeetupEventPublisher: (
 		...args: MeetupEventPublisherArguments
 	) => MeetupEventPublisher;
-	readonly createMeetupLoginPage: (
-		...args: MeetupLoginPageArguments
-	) => MeetupLoginPage;
 }
 
 export class MeetupEventGateway
@@ -53,11 +42,6 @@ export class MeetupEventGateway
 
 	constructor(
 		private readonly collaborators: MeetupEventGatewayCollaborators,
-		private readonly credentials: { email: string; password: string },
-		private readonly createCaptchaResolver: (
-			page: Page,
-			endpoint: string,
-		) => CaptchaResolver,
 		groupUrl: string,
 	) {
 		const group = MeetupGroupUrl.parse(groupUrl);
@@ -142,27 +126,9 @@ export class MeetupEventGateway
 		timezoneId: string,
 		operation: (page: Page) => Promise<Result>,
 	): Promise<Result> {
-		if (!this.credentials.email.trim() || !this.credentials.password)
-			throw new ScheduledEventError("authentication");
-		const session = this.collaborators.createBrowserSession();
+		const { page, session } =
+			await this.collaborators.authentication.open(timezoneId);
 		try {
-			const { page, endpoint } = await session.open(timezoneId).catch(() => {
-				throw new ScheduledEventError("unavailable");
-			});
-			const status = await this.collaborators
-				.createMeetupLoginPage(
-					page,
-					this.createCaptchaResolver(page, endpoint),
-					this.group.origin,
-				)
-				.login(this.credentials.email, this.credentials.password)
-				.catch(() => "unavailable");
-			if (status !== "verified")
-				throw new ScheduledEventError(
-					["unavailable", "unexpected-page"].includes(status)
-						? "unavailable"
-						: "authentication",
-				);
 			return await operation(page);
 		} finally {
 			// Do not let cleanup replace a publication result or its recovery state.
@@ -170,10 +136,3 @@ export class MeetupEventGateway
 		}
 	}
 }
-export type MeetupEventGatewayArguments =
-	ConstructorParameters<typeof MeetupEventGateway> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

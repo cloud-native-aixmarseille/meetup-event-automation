@@ -4,7 +4,7 @@ import { HcaptchaCaptchaResolverComposition } from "./dependency-composition.js"
 import { HcaptchaChallenge } from "./hcaptcha-challenge.js";
 
 describe("hCaptcha resolver lifetime", () => {
-	it("binds separate pages while sharing one attempt budget per invocation", async () => {
+	it("binds separate pages while sharing a two-attempt budget per invocation", async () => {
 		// Arrange
 		const first = captchaPageFixture();
 		const second = captchaPageFixture();
@@ -34,6 +34,7 @@ describe("hCaptcha resolver lifetime", () => {
 		const results = [
 			await firstResolver.resolve(),
 			await secondResolver.resolve(),
+			await firstResolver.resolve(),
 		];
 		second.visible.hcaptcha = false;
 		const states = [
@@ -42,12 +43,12 @@ describe("hCaptcha resolver lifetime", () => {
 		];
 
 		// Assert
-		expect(results).toEqual(["required", "required"]);
+		expect(results).toEqual(["required", "required", "required"]);
 		expect(states).toEqual(["required", "clear"]);
-		expect(run).toHaveBeenCalledExactlyOnceWith(
-			expect.objectContaining({
-				endpoint: "ws://127.0.0.1:1234/devtools/browser/abc",
-			}),
-		);
+		expect(run).toHaveBeenCalledTimes(2);
+		expect(run.mock.calls.map(([input]) => input.endpoint)).toEqual([
+			"ws://127.0.0.1:1234/devtools/browser/abc",
+			"ws://127.0.0.1:2345/devtools/browser/def",
+		]);
 	});
 });

@@ -20,7 +20,7 @@ function fixture() {
 afterEach(() => vi.restoreAllMocks());
 
 describe("hCaptcha challenge", () => {
-	it("makes a single configured solver attempt per authentication check", async () => {
+	it("bounds solver work to two attempts across authentication sessions", async () => {
 		// Arrange
 		const { challenge, page, run } = fixture();
 
@@ -34,10 +34,16 @@ describe("hCaptcha challenge", () => {
 			"ws://127.0.0.1:1234/devtools/browser/abc",
 		);
 
+		const third = await challenge.solve(
+			page,
+			"ws://127.0.0.1:1234/devtools/browser/abc",
+		);
 		// Assert
 		expect(first).toBe(true);
-		expect(second).toBe(false);
-		expect(run).toHaveBeenCalledExactlyOnceWith({
+		expect(second).toBe(true);
+		expect(third).toBe(false);
+		expect(run).toHaveBeenCalledTimes(2);
+		expect(run).toHaveBeenCalledWith({
 			endpoint: "ws://127.0.0.1:1234/devtools/browser/abc",
 			targetUrl: "https://events.example.test/sign-in",
 			apiKey: "synthetic-key",

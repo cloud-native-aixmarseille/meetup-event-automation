@@ -131,3 +131,34 @@ describe("event publication workflow", () => {
 		).toEqual(expect.objectContaining({ required: true }));
 	});
 });
+
+it("caches only encrypted session state on the default branch around publication", async () => {
+	// Arrange
+	const workflow = await readYaml<Workflow>(
+		".github/workflows/event-reconcile.yml",
+	);
+
+	// Act
+	const steps = workflow.jobs?.manage?.steps ?? [];
+	const restore = steps.findIndex((step) =>
+		step.uses?.startsWith("actions/cache/restore@"),
+	);
+	const save = steps.findIndex((step) =>
+		step.uses?.startsWith("actions/cache/save@"),
+	);
+	const publication = steps.findIndex((step) => step.id === "publication");
+
+	// Assert
+	expect(restore).toBeLessThan(publication);
+	expect(save).toBeGreaterThan(publication);
+	expect(steps[restore].if).toContain("github.event.repository.default_branch");
+	expect(steps[restore].with?.path).toBe(
+		`${workflowExpression("runner.temp")}/meetup-session.enc`,
+	);
+	expect(steps[save].with?.path).toBe(steps[restore].with?.path);
+	expect(steps[save].if).toContain("steps.meetup-session.outcome == 'success'");
+	expect(steps[save].if).toContain("!cancelled()");
+	expect(JSON.stringify([steps[restore], steps[save]])).not.toContain(
+		"secrets.",
+	);
+});

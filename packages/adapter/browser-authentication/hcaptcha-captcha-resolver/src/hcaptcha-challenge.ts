@@ -2,7 +2,7 @@ import type { Page } from "playwright-core";
 import type { HcaptchaProcess } from "./hcaptcha-process.js";
 
 export class HcaptchaChallenge {
-	private attempted = false;
+	private attempts = 0;
 
 	constructor(
 		private readonly process: Pick<HcaptchaProcess, "run">,
@@ -14,8 +14,8 @@ export class HcaptchaChallenge {
 	}
 
 	async solve(page: Page, endpoint: string): Promise<boolean> {
-		if (this.attempted) return false;
-		this.attempted = true;
+		if (this.attempts >= 2) return false;
+		this.attempts++;
 		const targetUrl = page.url();
 		const result = await this.process.run({
 			endpoint,

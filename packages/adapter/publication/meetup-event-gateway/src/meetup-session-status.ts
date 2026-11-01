@@ -1,7 +1,16 @@
 export type PublicationAuthenticationStatus =
 	| "verified"
-	| "challenge-required"
+	| "captcha-required"
+	| "captcha-unavailable"
+	| "captcha-rejected"
+	| "one-time-code"
 	| "credentials-rejected"
 	| "session-not-reusable"
+	| "login-page-unavailable"
+	| "login-form-unavailable"
+	| "submit-unavailable"
+	| "redirect-timeout"
+	| "account-unavailable"
+	| "account-mismatch"
 	| "unexpected-page"
-	| "unavailable";
+	| "rate-limited";

@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import {
@@ -18,7 +20,11 @@ import {
 	ReconcileMeetupSlidesDelivery,
 	SelectMeetupTopics,
 } from "@meetup-automation/journey";
-import { MeetupEventGatewayComposition } from "@meetup-automation/meetup-event-gateway";
+import {
+	EncryptedMeetupSessionStore,
+	MeetupSessionCodec,
+	MeetupEventGatewayComposition,
+} from "@meetup-automation/meetup-event-gateway";
 import { OcgroupsEventGatewayComposition } from "@meetup-automation/ocgroups-event-gateway";
 import {
 	CommunityGroupUrl,
@@ -129,6 +135,21 @@ export class PublicationAdapterComposition {
 			new SelectMeetupTopics(
 				new GeminiGenerationGatewayComposition().text(ai.model, ai.apiKey),
 				new MeetupTopicPolicy(),
+			),
+			new EncryptedMeetupSessionStore(
+				new MeetupSessionCodec(
+					ai.apiKey,
+					JSON.stringify([
+						input.owner,
+						input.repo,
+						group.value,
+						email.toLowerCase(),
+						password,
+					]),
+					group.origin,
+					Date.now,
+				),
+				join(process.env.RUNNER_TEMP || tmpdir(), "meetup-session.enc"),
 			),
 		)
 			.meetupEventGatewayFactory()

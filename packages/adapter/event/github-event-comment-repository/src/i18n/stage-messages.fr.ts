@@ -1,6 +1,38 @@
 export const STAGE_MESSAGES_FR = {
+	"comment.guidance.meetup.authentication-configuration":
+		"Les identifiants Meetup manquent dans la configuration de l'automatisation. Vérifiez PUBLICATION_CREDENTIALS.",
+	"comment.guidance.meetup.authentication-captcha-required":
+		"Meetup demande un CAPTCHA que l'automatisation n'a pas pu résoudre. Publication suspendue.",
+	"comment.guidance.meetup.authentication-captcha-rejected":
+		"Meetup a refusé la réponse au CAPTCHA. Les retries sont épuisés ; relancez la synchronisation plus tard.",
+	"comment.guidance.meetup.authentication-captcha-unavailable":
+		"Le solveur de CAPTCHA a échoué avant la fin de la connexion. Vérifiez sa disponibilité et relancez la synchronisation.",
+	"comment.guidance.meetup.authentication-one-time-code":
+		"Meetup demande un code à usage unique. La connexion automatique s'est arrêtée sans nouvel envoi des identifiants.",
+	"comment.guidance.meetup.authentication-credentials-rejected":
+		"Meetup a explicitement refusé les identifiants envoyés. Vérifiez PUBLICATION_CREDENTIALS avant de relancer.",
+	"comment.guidance.meetup.authentication-session-not-reusable":
+		"Meetup renvoie la vérification du compte vers la connexion malgré les retries. La session n'a pas été conservée ; relancez la synchronisation.",
+	"comment.guidance.meetup.authentication-login-page-unavailable":
+		"La page de connexion Meetup n'a pas pu être chargée malgré les retries. Relancez la synchronisation plus tard.",
+	"comment.guidance.meetup.authentication-login-form-unavailable":
+		"Le formulaire email/mot de passe Meetup n'a pas pu être rempli malgré les retries. Vérifiez les sélecteurs du formulaire.",
+	"comment.guidance.meetup.authentication-submit-unavailable":
+		"Le bouton de connexion Meetup n'a pas pu être activé malgré les retries. Vérifiez les contrôles de la page de connexion.",
+	"comment.guidance.meetup.authentication-redirect-timeout":
+		"Meetup n'a pas terminé la redirection après connexion malgré les retries. Aucun refus des identifiants n'a été détecté ; relancez plus tard.",
+	"comment.guidance.meetup.authentication-account-unavailable":
+		"Le compte connecté n'a pas pu être vérifié malgré les retries. Vérifiez le chargement et les sélecteurs de la page du compte.",
+	"comment.guidance.meetup.authentication-account-mismatch":
+		"Le compte connecté sur Meetup ne correspond pas au compte configuré. La session a été écartée.",
+	"comment.guidance.meetup.authentication-unexpected-page":
+		"La connexion Meetup a abouti à une page inattendue. L'authentification s'est arrêtée ; vérifiez le parcours avant de relancer.",
+	"comment.guidance.meetup.authentication-rate-limited":
+		"Meetup a renvoyé HTTP 429 pendant l'authentification. Les retries sont arrêtés ; attendez avant de relancer la synchronisation.",
+	"comment.guidance.meetup.authentication-browser":
+		"Chrome n'a pas démarré ou sa connexion d'authentification a échoué malgré les retries. Vérifiez le runtime du navigateur.",
 	"comment.guidance.meetup.authentication":
-		"Connexion à Meetup non vérifiée. Vérifiez l'accès du compte organisateur, puis relancez la synchronisation.",
+		"Connexion automatique Meetup interrompue sans étape précise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic détaillé.",
 	"comment.social.target": "Publication ({destination}, {purpose})",
 	"comment.guidance.social.pending":
 		"Vérifiez l'annonce et approuvez sa publication pour cette destination.",

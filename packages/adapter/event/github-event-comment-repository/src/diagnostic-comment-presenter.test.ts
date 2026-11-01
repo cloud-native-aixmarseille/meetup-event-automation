@@ -17,36 +17,55 @@ const errorDiagnostic: EventDiagnostic = {
 
 describe("renderDiagnosticComment", () => {
 	it.each([
-		["en", "Meetup sign-in could not be verified."],
-		["fr", "Vérifiez l'accès du compte organisateur"],
-	])("names a Meetup authentication block in %s", (locale, expected) => {
-		// Arrange
-		const diagnostic: EventDiagnostic = {
-			code: "publication.meetup.authentication",
-			severity: "warning",
-			category: "incomplete",
-			field: "publicationLinks.meetup",
-			message: "private account detail",
-		};
-		const presenter = new DiagnosticCommentPresenter({
-			organizerDiagnosticPolicy:
-				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
-			diagnosticPresenter:
-				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
-		});
-		const messages =
-			new GithubEventCommentRepositoryComposition().eventCommentMessages(
-				locale,
-			);
+		[
+			"en",
+			"authentication",
+			"Retry synchronization for a detailed diagnostic.",
+		],
+		[
+			"fr",
+			"authentication",
+			"Relancez la synchronisation pour obtenir le diagnostic",
+		],
+		[
+			"en",
+			"authentication-redirect-timeout",
+			"No credential rejection was detected",
+		],
+		["en", "authentication-credentials-rejected", "explicitly rejected"],
+		["fr", "authentication-captcha-rejected", "réponse au CAPTCHA"],
+		["fr", "authentication-rate-limited", "HTTP 429"],
+	])(
+		"names a Meetup authentication block in %s: %s",
+		(locale, code, expected) => {
+			// Arrange
+			const diagnostic: EventDiagnostic = {
+				code: `publication.meetup.${code}`,
+				severity: "warning",
+				category: "incomplete",
+				field: "publicationLinks.meetup",
+				message: "private account detail",
+			};
+			const presenter = new DiagnosticCommentPresenter({
+				organizerDiagnosticPolicy:
+					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+				diagnosticPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			});
+			const messages =
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					locale,
+				);
 
-		// Act
-		const body = presenter.render([diagnostic], messages);
+			// Act
+			const body = presenter.render([diagnostic], messages);
 
-		// Assert
-		expect(body).toContain("**Meetup Link**:");
-		expect(body).toContain(expected);
-		expect(body).not.toContain(diagnostic.message);
-	});
+			// Assert
+			expect(body).toContain("**Meetup Link**:");
+			expect(body).toContain(expected);
+			expect(body).not.toContain(diagnostic.message);
+		},
+	);
 	it.each([
 		[
 			"en",

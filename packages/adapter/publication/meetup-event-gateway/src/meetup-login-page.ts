@@ -3,7 +3,6 @@ import type { Page } from "playwright-core";
 import type { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 import type { PublicationAuthenticationStatus } from "./meetup-session-status.js";
 
-/** All reads are bounded; provider text and account details never leave this class. */
 export interface MeetupLoginPageCollaborators {
 	readonly meetupBrowserRoutes: Pick<
 		MeetupBrowserRoutes,
@@ -11,6 +10,7 @@ export interface MeetupLoginPageCollaborators {
 	>;
 }
 
+/** Only bounded, allowlisted failure categories leave the browser boundary. */
 export class MeetupLoginPage {
 	constructor(
 		private readonly collaborators: MeetupLoginPageCollaborators,
@@ -26,28 +26,35 @@ export class MeetupLoginPage {
 		email: string,
 		password: string,
 	): Promise<PublicationAuthenticationStatus> {
-		await this.page.goto(
-			this.collaborators.meetupBrowserRoutes.login(this.origin),
-			{
-				waitUntil: "domcontentloaded",
-			},
-		);
-		await this.dismissCookieNotice();
-		if (!this.isMeetupPath("/login")) return "unexpected-page";
-		await this.page.locator('input[name="email"]').waitFor();
-		const challengeStatus = await this.prepareChallenge();
-		if (challengeStatus) return challengeStatus;
-		await this.page.locator('input[name="email"]').fill(email);
-		await this.page.locator('input[name="current-password"]').fill(password);
-		const submit = this.page.getByRole("button", {
-			name: "Log in",
-			exact: true,
-		});
-		if (!(await submit.isEnabled()))
-			return (await this.hasChallenge())
-				? "challenge-required"
-				: "unexpected-page";
-		await submit.click();
+		try {
+			const response = await this.page.goto(
+				this.collaborators.meetupBrowserRoutes.login(this.origin),
+				{ waitUntil: "domcontentloaded" },
+			);
+			if (response?.status() === 429) return "rate-limited";
+			await this.dismissCookieNotice();
+		} catch {
+			return "login-page-unavailable";
+		}
+		if (!this.isMeetupPath("/login")) {
+			if (!this.isMeetupLocation()) return "unexpected-page";
+			return this.verifyAccount(email);
+		}
+		const challenge = await this.prepareChallenge();
+		if (challenge) return challenge;
+		try {
+			await this.page.locator('input[name="email"]').fill(email);
+			await this.page.locator('input[name="current-password"]').fill(password);
+		} catch {
+			return "login-form-unavailable";
+		}
+		try {
+			await this.page
+				.getByRole("button", { name: "Log in", exact: true })
+				.click();
+		} catch {
+			return (await this.challengeStatus()) ?? "submit-unavailable";
+		}
 		try {
 			await this.page.waitForURL(
 				(url) =>
@@ -55,77 +62,91 @@ export class MeetupLoginPage {
 						url,
 						this.origin,
 					) && !url.pathname.startsWith("/login"),
-				{ timeout: 15_000, waitUntil: "domcontentloaded" },
+				{ timeout: 30_000, waitUntil: "domcontentloaded" },
 			);
 		} catch {
-			if (await this.hasChallenge()) return "challenge-required";
-			if (await this.hasRejectedCredentials()) return "credentials-rejected";
-			return "unexpected-page";
+			return this.submissionFailure();
 		}
 		return this.verifyAccount(email);
 	}
 
 	async verifyAccount(email: string): Promise<PublicationAuthenticationStatus> {
-		await this.page.goto(
-			this.collaborators.meetupBrowserRoutes.account(this.origin),
-			{
-				waitUntil: "domcontentloaded",
-			},
-		);
-		if (await this.hasChallenge()) return "challenge-required";
-		if (this.isMeetupPath("/login")) return "session-not-reusable";
-		if (!this.isMeetupPath("/account/management")) return "unexpected-page";
-		// A URL change alone is not authentication evidence. Confirm the account
-		// email in the settings form; a changed UI fails closed.
-		const accountEmail = this.page.locator('input[name="email"]');
-		await accountEmail.waitFor();
-		return (await accountEmail.inputValue()).toLowerCase() ===
-			email.toLowerCase()
-			? "verified"
-			: "unexpected-page";
+		try {
+			const response = await this.page.goto(
+				this.collaborators.meetupBrowserRoutes.account(this.origin),
+				{ waitUntil: "domcontentloaded" },
+			);
+			if (response?.status() === 429) return "rate-limited";
+			const challenge = await this.challengeStatus();
+			if (challenge) return challenge;
+			if (this.isMeetupPath("/login")) return "session-not-reusable";
+			if (!this.isMeetupPath("/account/management")) return "unexpected-page";
+			const accountEmail = this.page.locator('input[name="email"]');
+			await accountEmail.waitFor();
+			return (await accountEmail.inputValue()).toLowerCase() ===
+				email.toLowerCase()
+				? "verified"
+				: "account-mismatch";
+		} catch {
+			return "account-unavailable";
+		}
 	}
 
+	private async submissionFailure(): Promise<PublicationAuthenticationStatus> {
+		if (!this.isMeetupLocation()) return "unexpected-page";
+		if (
+			await this.page
+				.getByText(
+					/invalid_captcha_error|invalid captcha|captcha.*(invalid|expired)/i,
+				)
+				.first()
+				.isVisible()
+		)
+			return "captcha-rejected";
+		if (
+			await this.page
+				.getByText(/incorrect (email|password)|invalid (email|password)/i)
+				.first()
+				.isVisible()
+		)
+			return "credentials-rejected";
+		return (await this.challengeStatus()) ?? "redirect-timeout";
+	}
+
+	private isMeetupLocation(): boolean {
+		return this.collaborators.meetupBrowserRoutes.isMeetupLocation(
+			new URL(this.page.url()),
+			this.origin,
+		);
+	}
 	private isMeetupPath(path: string): boolean {
-		const url = new URL(this.page.url());
 		return this.collaborators.meetupBrowserRoutes.isPath(
-			url,
+			new URL(this.page.url()),
 			path,
 			this.origin,
 		);
 	}
 
-	private async hasChallenge(): Promise<boolean> {
-		return (
-			(await this.hasOneTimeCode()) ||
-			(await this.captcha.inspect()) === "required"
-		);
-	}
-
-	private async prepareChallenge(): Promise<PublicationAuthenticationStatus | null> {
-		if (!(await this.hasChallenge())) return null;
-		if (
-			(await this.hasOneTimeCode()) ||
-			(await this.captcha.resolve()) !== "clear"
-		)
-			return "challenge-required";
-		if (!this.isMeetupPath("/login")) return "unexpected-page";
-		if (await this.hasChallenge()) return "challenge-required";
-		return null;
-	}
-
-	private async hasOneTimeCode(): Promise<boolean> {
+	private async challengeStatus(): Promise<PublicationAuthenticationStatus | null> {
 		for (const input of await this.page
 			.locator('input[autocomplete="one-time-code"]')
 			.all())
-			if (await input.isVisible()) return true;
-		return false;
+			if (await input.isVisible()) return "one-time-code";
+		return (await this.captcha.inspect()) === "required"
+			? "captcha-required"
+			: null;
 	}
 
-	private async hasRejectedCredentials(): Promise<boolean> {
-		return this.page
-			.getByText(/incorrect (email|password)|invalid (email|password)/i)
-			.first()
-			.isVisible();
+	private async prepareChallenge(): Promise<PublicationAuthenticationStatus | null> {
+		try {
+			const status = await this.challengeStatus();
+			if (status !== "captcha-required") return status;
+			if ((await this.captcha.resolve()) !== "clear") return "captcha-required";
+			if (!this.isMeetupPath("/login")) return "unexpected-page";
+			return this.challengeStatus();
+		} catch {
+			return "captcha-unavailable";
+		}
 	}
 
 	private async dismissCookieNotice(): Promise<void> {

@@ -1,3 +1,7 @@
+import { setTimeout } from "node:timers/promises";
+import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
+import { MeetupAuthentication } from "./meetup-authentication.js";
+import type { MeetupSessionStore } from "./meetup-session-store.js";
 import { spawn } from "node:child_process";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import type {
@@ -22,10 +26,7 @@ import {
 	MeetupEventEditor,
 	type MeetupEventEditorArguments,
 } from "./meetup-event-editor.js";
-import {
-	MeetupEventGateway,
-	type MeetupEventGatewayArguments,
-} from "./meetup-event-gateway.js";
+import { MeetupEventGateway } from "./meetup-event-gateway.js";
 import { MeetupEventGatewayFactory } from "./meetup-event-gateway-factory.js";
 import {
 	MeetupEventPublisher,
@@ -50,6 +51,7 @@ export class MeetupEventGatewayComposition {
 		private readonly images: ContentImageLoader,
 		private readonly covers: MeetupCoverJournal,
 		private readonly topics: MeetupTopicSelection,
+		private readonly sessions: MeetupSessionStore,
 	) {}
 	meetupBrowserSession(): MeetupBrowserSession {
 		return new MeetupBrowserSession(
@@ -86,10 +88,27 @@ export class MeetupEventGatewayComposition {
 			...args,
 		);
 	}
-	meetupEventGateway(...args: MeetupEventGatewayArguments): MeetupEventGateway {
+	meetupEventGateway(
+		credentials: { email: string; password: string },
+		createCaptchaResolver: (page: Page, endpoint: string) => CaptchaResolver,
+		groupUrl: string,
+	): MeetupEventGateway {
 		return new MeetupEventGateway(
 			{
-				createBrowserSession: () => this.meetupBrowserSession(),
+				authentication: new MeetupAuthentication(
+					{
+						createSession: () => this.meetupBrowserSession(),
+						createLogin: (page, endpoint) =>
+							this.meetupLoginPage(
+								page,
+								createCaptchaResolver(page, endpoint),
+								new URL(groupUrl).origin,
+							),
+						store: this.sessions,
+						delay: setTimeout,
+					},
+					credentials,
+				),
 				createAttendeeMessage: (page, group) =>
 					new MeetupAttendeeMessage(
 						new AttendeeMessages(
@@ -104,9 +123,8 @@ export class MeetupEventGatewayComposition {
 				createMeetupEventEditor: (...args) => this.meetupEventEditor(...args),
 				createMeetupEventPublisher: (...args) =>
 					this.meetupEventPublisher(...args),
-				createMeetupLoginPage: (...args) => this.meetupLoginPage(...args),
 			},
-			...args,
+			groupUrl,
 		);
 	}
 	meetupEventGatewayFactory(): MeetupEventGatewayFactory {

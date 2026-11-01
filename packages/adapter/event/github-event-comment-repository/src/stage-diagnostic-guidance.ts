@@ -1,10 +1,8 @@
+import { AUTHENTICATION_GUIDANCE } from "./authentication-diagnostic-guidance.js";
 import type { MessageId } from "./i18n/catalog.js";
 
 export const STAGE_GUIDANCE = [
-	[
-		"publication.meetup.authentication",
-		["Meetup Link", "comment.guidance.meetup.authentication"],
-	],
+	...AUTHENTICATION_GUIDANCE,
 	[
 		"publication.content.invalid",
 		["Event materials", "comment.guidance.content.invalid"],

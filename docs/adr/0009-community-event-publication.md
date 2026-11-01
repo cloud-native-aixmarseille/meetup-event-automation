@@ -466,3 +466,27 @@ and approved host sponsor with its level. A fresh reconciliation reopened the
 draft and made zero writes. The event remained unpublished. This validates the
 form in that authenticated session; it does not validate unattended OCGroups
 login, GitHub approval/journal delivery, publication, or native notifications.
+
+### 2026-11-01: Verified session reuse and bounded authentication retries
+
+Accepted. This supersedes the fresh-login-only and single solver attempt choices
+in the earlier Meetup authentication/runtime decisions; their validation evidence
+remains historical.
+
+Meetup authentication owns session verification and bounded retries before event
+effects. The gateway performs each event operation once. Provider failure codes
+remain distinct through application diagnostics and the shared presenters.
+
+The default-branch workflow persists an encrypted storage-state snapshot between
+runs. HKDF derives a scoped AES-GCM key from the existing high-entropy AI API
+secret, binding it to the repository, group, account and password. This avoids an
+extra consumer secret and a new storage service. Secret rotation intentionally
+invalidates sessions. Plaintext cookies never enter the GitHub cache, which is
+readable by pull requests. Session reuse always requires fresh identity verification;
+cache corruption, expiry and misses fall back to login.
+
+Authentication has three attempts with two/five-second backoff and at most two
+bounded solver calls. Explicit credential rejection, one-time codes, unexpected
+pages/accounts and HTTP 429 stop immediately. No publication or email operation
+is included in the retry loop. Synthetic validation and live results belong in
+the change review; this decision does not assert unattended provider availability.

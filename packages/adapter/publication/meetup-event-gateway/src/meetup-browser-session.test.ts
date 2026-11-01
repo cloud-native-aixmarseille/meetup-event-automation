@@ -1,3 +1,4 @@
+import { MeetupSessionCodec } from "./meetup-session-codec.js";
 import { type Browser, chromium } from "playwright-core";
 import { describe, expect, it, vi } from "vitest";
 import { spawnTestChromium } from "../testing/chromium-process.js";
@@ -144,3 +145,72 @@ describe("Meetup browser session", () => {
 		expect(process.close).toHaveBeenCalledOnce();
 	});
 });
+
+it("restores verified cookies and local storage into a fresh browser profile", async () => {
+	// Arrange
+	const first = new MeetupBrowserSession(
+		chromium,
+		new MeetupChromeProcess(spawnTestChromium, chromium.executablePath()),
+	);
+	const second = new MeetupBrowserSession(
+		chromium,
+		new MeetupChromeProcess(spawnTestChromium, chromium.executablePath()),
+	);
+	const codec = new MeetupSessionCodec(
+		"synthetic-api-secret",
+		"repo/account/password",
+		"https://example.test",
+		Date.now,
+	);
+	let cookie = "";
+	let token = "";
+
+	// Act
+	try {
+		const initial = await first.open("UTC");
+		await initial.page.route("https://example.test/**", (route) =>
+			route.fulfill({
+				contentType: "text/html",
+				body: "<html>synthetic account</html>",
+			}),
+		);
+		await initial.page.goto("https://example.test/account");
+		await initial.page.context().addCookies([
+			{
+				name: "session",
+				value: "synthetic-cookie",
+				domain: "example.test",
+				path: "/",
+				httpOnly: true,
+				secure: true,
+			},
+		]);
+		await initial.page.evaluate(() =>
+			localStorage.setItem("account-token", "synthetic-token"),
+		);
+		const encrypted = codec.encode(await initial.page.context().storageState());
+		await first.close();
+		const restored = codec.decode(encrypted);
+		if (!restored) throw new Error("Synthetic session was not decoded");
+		const next = await second.open("Europe/Paris");
+		await next.page.context().setStorageState(restored);
+		await next.page.route("https://example.test/**", (route) => {
+			cookie = route.request().headers().cookie ?? "";
+			return route.fulfill({
+				contentType: "text/html",
+				body: "<html>synthetic account</html>",
+			});
+		});
+		await next.page.goto("https://example.test/account");
+		token = await next.page.evaluate(
+			() => localStorage.getItem("account-token") ?? "",
+		);
+	} finally {
+		await first.close();
+		await second.close();
+	}
+
+	// Assert
+	expect(cookie).toBe("session=synthetic-cookie");
+	expect(token).toBe("synthetic-token");
+}, 30_000);

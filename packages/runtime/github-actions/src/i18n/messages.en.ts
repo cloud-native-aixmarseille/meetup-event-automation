@@ -1,4 +1,36 @@
 export const EN_MESSAGES = {
+	"diagnostic.publication.meetup.authentication-configuration":
+		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+	"diagnostic.publication.meetup.authentication-captcha-required":
+		"Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+	"diagnostic.publication.meetup.authentication-captcha-rejected":
+		"Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+	"diagnostic.publication.meetup.authentication-captcha-unavailable":
+		"The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+	"diagnostic.publication.meetup.authentication-one-time-code":
+		"Meetup requests a one-time code. Automatic login stopped without further submissions.",
+	"diagnostic.publication.meetup.authentication-credentials-rejected":
+		"Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+	"diagnostic.publication.meetup.authentication-session-not-reusable":
+		"Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+	"diagnostic.publication.meetup.authentication-login-page-unavailable":
+		"The Meetup login page could not load after retries. Retry synchronization later.",
+	"diagnostic.publication.meetup.authentication-login-form-unavailable":
+		"The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+	"diagnostic.publication.meetup.authentication-submit-unavailable":
+		"The Meetup login button could not be activated after retries. Check the login page controls.",
+	"diagnostic.publication.meetup.authentication-redirect-timeout":
+		"Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+	"diagnostic.publication.meetup.authentication-account-unavailable":
+		"The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+	"diagnostic.publication.meetup.authentication-account-mismatch":
+		"The authenticated Meetup account does not match the configured account. The session was discarded.",
+	"diagnostic.publication.meetup.authentication-unexpected-page":
+		"Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+	"diagnostic.publication.meetup.authentication-rate-limited":
+		"Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+	"diagnostic.publication.meetup.authentication-browser":
+		"Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
 	"diagnostic.publication.content.invalid":
 		"Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
 	"action.communication.recover-social": "Recover a social post",
@@ -124,7 +156,7 @@ export const EN_MESSAGES = {
 	"diagnostic.publication.meetup.uncertain":
 		"Synchronization was interrupted. Check the event and cover photo library before retrying. Restore the verified event URL in Meetup Link and recover any pending or detached cover photo in the trusted journal. Leave Meetup event published unchecked until publication is confirmed. Preserve event and photo identities; clear uncertain state only after checking what Meetup accepted.",
 	"diagnostic.publication.meetup.authentication":
-		"Organizer login could not be verified. Check the account, credentials, and AI configuration; complete any unsupported challenge interactively.",
+		"Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
 	"diagnostic.publication.meetup.editor":
 		"The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
 	"diagnostic.publication.meetup.verification":
