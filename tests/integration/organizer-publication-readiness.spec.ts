@@ -9,6 +9,51 @@ import {
 } from "../../packages/domain/communication/testing/attention.fixtures.js";
 
 describe("organizer publication readiness", () => {
+	it("replaces missing evidence with a known login block without declaring a previous integration failure resolved", () => {
+		// Arrange
+		const domain = new CommunicationDomainComposition();
+		const evaluation =
+			new JourneyPolicyComposition().attentionStageEvaluation();
+		const now = new Date("2099-06-01T10:00:00Z");
+		const previous = domain.attentionEpisodes().reconcile(
+			undefined,
+			observation({
+				conditions: (["stage-unknown", "integration-failure"] as const).map(
+					(code) =>
+						condition({ code, key: `${code}:event`, resource: "event" }),
+				),
+			}),
+			now,
+		);
+		const stages = evaluation.evaluate(
+			attentionReports({
+				event: {
+					diagnostics: [
+						{
+							code: "publication.meetup.authentication",
+							severity: "warning",
+							message: "Login unverified.",
+						},
+					],
+				},
+			}),
+		);
+
+		// Act
+		const result = domain
+			.attentionEpisodes()
+			.reconcile(
+				previous,
+				domain.evaluateAttention().execute(facts({ stages }), now),
+				now,
+			);
+
+		// Assert
+		expect(result.episodes.map((episode) => episode.status)).toEqual([
+			"resolved",
+			"unknown",
+		]);
+	});
 	it("clears stale audit warnings while preserving the pending publication task through a social audit", () => {
 		// Arrange
 		const domain = new CommunicationDomainComposition();

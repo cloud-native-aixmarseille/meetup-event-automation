@@ -4,6 +4,42 @@ import { CommunicationDomainComposition } from "../dependency-composition.js";
 import { AttentionEpisodes } from "./attention-episodes.js";
 
 describe("attention episodes", () => {
+	it.each([true, false])(
+		"resolves an unknown stage only with a known outcome, preserving earlier failures: %s",
+		(reported) => {
+			// Arrange
+			const episodes = new CommunicationDomainComposition().attentionEpisodes();
+			const now = new Date("2099-06-01T10:00:00Z");
+			const previous = episodes.reconcile(
+				undefined,
+				observation({
+					conditions: (["stage-unknown", "integration-failure"] as const).map(
+						(code) =>
+							condition({ code, key: `${code}:event`, resource: "event" }),
+					),
+				}),
+				now,
+			);
+
+			// Act
+			const result = episodes.reconcile(
+				previous,
+				observation({
+					conditions: [],
+					scope: ["event"],
+					evaluated: [],
+					reported: reported ? ["event"] : [],
+				}),
+				now,
+			);
+
+			// Assert
+			expect(result.episodes.map((episode) => episode.status)).toEqual([
+				reported ? "resolved" : "unknown",
+				"unknown",
+			]);
+		},
+	);
 	it("keeps an unrelated failure and its original run during a social audit", () => {
 		// Arrange
 		const policy = new CommunicationDomainComposition().attentionEpisodes();

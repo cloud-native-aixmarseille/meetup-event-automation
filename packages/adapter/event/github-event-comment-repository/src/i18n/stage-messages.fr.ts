@@ -1,4 +1,6 @@
 export const STAGE_MESSAGES_FR = {
+	"comment.guidance.meetup.authentication":
+		"Connexion à Meetup non vérifiée. Vérifiez l'accès du compte organisateur, puis relancez la synchronisation.",
 	"comment.social.target": "Publication ({destination}, {purpose})",
 	"comment.guidance.social.pending":
 		"Vérifiez l'annonce et approuvez sa publication pour cette destination.",

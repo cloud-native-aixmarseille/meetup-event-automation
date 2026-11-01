@@ -44,6 +44,8 @@ export interface AttentionCondition {
 export interface AttentionObservation {
 	/** Owners included in this evaluation; omitted owners keep their prior evidence. */
 	readonly scope: readonly AttentionOwner[];
+	/** Known stage outcomes, including reported prerequisite blocks. */
+	readonly reported: readonly AttentionOwner[];
 	readonly commentId?: number;
 	readonly conditions: readonly AttentionCondition[];
 	readonly evaluated: readonly AttentionOwner[];

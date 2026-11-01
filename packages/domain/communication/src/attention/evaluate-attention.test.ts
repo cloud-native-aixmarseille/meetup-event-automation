@@ -268,5 +268,6 @@ describe("actionable attention conditions", () => {
 		expect(result.conditions).toHaveLength(1);
 		expect(result.evaluated).not.toContain("communications");
 		expect(result.evaluated).not.toContain("feedback");
+		expect(result.reported).toEqual(["event", "communications", "feedback"]);
 	});
 });
