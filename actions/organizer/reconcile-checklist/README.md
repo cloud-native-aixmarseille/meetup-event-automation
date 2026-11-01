@@ -30,7 +30,7 @@ Merge complete stage evidence into the diagnostic checklist. Incomplete evidence
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/organizer/reconcile-checklist@e705a2f66c8c7055357b90cb02206992ad18a8b1 # 8.0.10
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/organizer/reconcile-checklist@f67f05dc2288071f070e23bfe9be50714a26c3a6 # 8.0.11
   with:
     # Language for generated reports (en or fr).
     # This input is required.

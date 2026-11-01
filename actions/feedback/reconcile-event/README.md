@@ -63,7 +63,7 @@ Reconcile one OpenFeedback event, its talks and speakers, and the issue feedback
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/feedback/reconcile-event@e705a2f66c8c7055357b90cb02206992ad18a8b1 # 8.0.10
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/feedback/reconcile-event@f67f05dc2288071f070e23bfe9be50714a26c3a6 # 8.0.11
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
