@@ -2,16 +2,18 @@ import type { MeetupGroupUrl } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
 import type { MeetupLeadership } from "./meetup-leadership.js";
 
-/** Adds every group leader without removing organizer-selected event hosts. */
+/** Fills the five Meetup host slots while preserving organizer selections. */
 export class MeetupHosts {
 	constructor(
 		private readonly page: Page,
 		private readonly leadership: Pick<MeetupLeadership, "members">,
 	) {}
 	async select(group: MeetupGroupUrl): Promise<readonly string[]> {
-		const leaders = await this.leadership.members(group);
 		const selected = await this.selected();
-		for (const name of leaders) {
+		if (selected.length > 5 || new Set(selected).size !== selected.length)
+			throw new Error("Invalid existing Meetup host selection");
+		const required = await this.requiredHosts(group, selected);
+		for (const name of required) {
 			if (selected.includes(name)) continue;
 			await this.page
 				.getByPlaceholder("Search hosts...", { exact: true })
@@ -27,15 +29,29 @@ export class MeetupHosts {
 				.getByRole("button", { name: `Remove ${name} as host`, exact: true })
 				.waitFor();
 		}
-		return [...new Set([...selected, ...leaders])];
+		return required;
 	}
 	async matches(
 		group: MeetupGroupUrl,
 		expected: readonly string[] | undefined,
 	): Promise<boolean> {
 		const selected = await this.selected();
-		const required = expected ?? (await this.leadership.members(group));
+		if (
+			!selected.length ||
+			selected.length > 5 ||
+			new Set(selected).size !== selected.length
+		)
+			return false;
+		const required = expected ?? (await this.requiredHosts(group, selected));
 		return required.every((name) => selected.includes(name));
+	}
+	private async requiredHosts(
+		group: MeetupGroupUrl,
+		selected: readonly string[],
+	): Promise<readonly string[]> {
+		if (selected.length === 5) return selected;
+		const leaders = await this.leadership.members(group);
+		return [...new Set([...selected, ...leaders])].slice(0, 5);
 	}
 	private async selected(): Promise<readonly string[]> {
 		const hosts = this.page.locator("#hosts");

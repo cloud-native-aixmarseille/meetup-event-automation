@@ -74306,9 +74306,11 @@ var MeetupHosts = class {
   page;
   leadership;
   async select(group) {
-    const leaders = await this.leadership.members(group);
     const selected = await this.selected();
-    for (const name of leaders) {
+    if (selected.length > 5 || new Set(selected).size !== selected.length)
+      throw new Error("Invalid existing Meetup host selection");
+    const required = await this.requiredHosts(group, selected);
+    for (const name of required) {
       if (selected.includes(name)) continue;
       await this.page.getByPlaceholder("Search hosts...", { exact: true }).fill(name);
       const candidate = this.page.locator("#host-search-dropdown li").filter({ has: this.page.getByText(name, { exact: true }) });
@@ -74318,12 +74320,19 @@ var MeetupHosts = class {
       await candidate.click();
       await this.page.getByRole("button", { name: `Remove ${name} as host`, exact: true }).waitFor();
     }
-    return [.../* @__PURE__ */ new Set([...selected, ...leaders])];
+    return required;
   }
   async matches(group, expected) {
     const selected = await this.selected();
-    const required = expected ?? await this.leadership.members(group);
+    if (!selected.length || selected.length > 5 || new Set(selected).size !== selected.length)
+      return false;
+    const required = expected ?? await this.requiredHosts(group, selected);
     return required.every((name) => selected.includes(name));
+  }
+  async requiredHosts(group, selected) {
+    if (selected.length === 5) return selected;
+    const leaders = await this.leadership.members(group);
+    return [.../* @__PURE__ */ new Set([...selected, ...leaders])].slice(0, 5);
   }
   async selected() {
     const hosts = this.page.locator("#hosts");

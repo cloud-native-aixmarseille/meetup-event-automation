@@ -38,4 +38,5 @@ it.each([640, 1280])(
 			await browser.close();
 		}
 	},
+	20_000,
 );

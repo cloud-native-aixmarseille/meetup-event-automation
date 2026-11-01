@@ -197,10 +197,12 @@ or editing them, and verifies all managed fields by reopening the editor.
 For new drafts, it selects **Start from scratch** when the template dialog is
 shown and dismisses organizer announcements before filling fields.
 
-Meetup adds every member of the group's **Leadership team** as an event host,
-while preserving additional hosts selected by organizers. It reads the full
-leadership list, including subsequent pages, rather than the editor's short list
-of active members. An incomplete list or ambiguous display names blocks saving.
+Meetup allows at most five event hosts. The adapter preserves existing hosts,
+then fills available slots from the group's **Leadership team**, in the order
+shown by Meetup. It reads the full leadership list, including subsequent pages,
+rather than the editor's short list of active members. An incomplete list or
+ambiguous display names blocks saving. A full selection is preserved even when
+the group has more leaders.
 
 If no topics are selected, the configured AI model uses the approved title and
 description to select one to five relevant topics from the suggestions displayed
@@ -211,8 +213,8 @@ preserved, so organizers can refine them directly in the draft without having
 them overwritten on the next run.
 
 The adapter reopens the saved editor to verify all selected hosts and topics.
-Before publication it checks that every current leader is present and that one
-to five topics remain selected. These provider-side choices are reviewed in the
+Before publication it checks that host slots are complete according to this rule
+and that one to five topics remain selected. These provider-side choices are reviewed in the
 linked draft; they are not included in the source-content approval fingerprint.
 
 Meetup also requires current approved cover artwork from

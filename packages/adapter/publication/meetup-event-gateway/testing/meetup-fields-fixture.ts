@@ -18,6 +18,7 @@ function renderTopics(){
  }
 }
 function renderHosts(){
+ document.querySelector('[placeholder="Search hosts..."]').disabled=selectedHosts.length>=5;
  const parent=document.getElementById('selected-hosts');parent.replaceChildren();
  for(const name of selectedHosts){
   const chip=document.createElement('div'), info=document.createElement('div'), label=document.createElement('p');label.textContent=name;info.append(label);chip.append(info);
@@ -40,10 +41,10 @@ export function leadershipPage(
 	pageSize: number,
 ): string {
 	return `<style>.mobile-tabs{display:none}@media(max-width:767px){.desktop-tabs{display:none}.mobile-tabs{display:block}}</style>
-<main><div class="desktop-tabs"><a href="?op=leaders">${leaders.length} leadership team</a></div><div class="mobile-tabs"><a href="?op=leaders">${leaders.length} leadership team</a></div><div id="members"></div><div style="height:1600px"></div></main>
+<main><div class="desktop-tabs"><a href="?op=leaders">${leaders.length} leadership team</a></div><div class="mobile-tabs"><a href="?op=leaders">${leaders.length} leadership team</a></div><div id="members"></div><div id="load-more" style="height:1px"></div></main>
 <script>
 const names=${JSON.stringify(leaders).replaceAll("<", "\\u003c")};let shown=0;
 function append(){for(let i=0;i<${pageSize}&&shown<names.length;i++,shown++){const card=document.createElement('div');card.setAttribute('role','link');card.style.height='300px';const link=document.createElement('a');link.href='/members/'+(shown+1)+'/';link.textContent=names[shown];card.append(link);document.getElementById('members').append(card);}}
-append();window.addEventListener('scroll',()=>setTimeout(append,25));
+append();new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting))setTimeout(append,25);}).observe(document.getElementById('load-more'));
 </script>`;
 }

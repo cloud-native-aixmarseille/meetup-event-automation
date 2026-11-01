@@ -122,8 +122,9 @@ credentials only to the reconciliation action. OCGroups-only callers need no AI 
    and other required choices; never derive them from private host addresses or
    silently enable paid tickets, recurring events, or automatic meetings.
    Preserve unmanaged settings, registrations, and attendee records on updates.
-   For Meetup, require every current group leader as an event host and fill empty
-   topic selections from relevant provider suggestions. Preserve additional hosts
+   For Meetup, retain current hosts and fill available slots from the leadership
+   list, up to the provider's five-host limit. Fill empty topic selections from
+   relevant provider suggestions. Preserve additional hosts
    and organizer-selected topics. Verify these provider-side choices after saving
    and before publication; they are not source-projected approval fields.
 3. Reserve creation in a trusted bot-authored journal before saving. Save one
@@ -256,6 +257,16 @@ unattended Meetup login and draft editing. Publication and native notifications
 remain unverified.
 
 ## Decision history
+
+### 2026-11-01: respect the Meetup five-host limit
+
+Supersede the requirement below to add every leader when that exceeds five
+hosts. The deployed Meetup editor limits host selection to five; the live
+group roster contains six leaders. Organizers chose to preserve existing hosts
+and fill remaining slots from the complete leadership list in Meetup's display
+order. A full selection needs no further additions. Verify this same rule on
+reruns and before publication; do not delete manually selected hosts to make
+room for another leader.
 
 ### 2026-11-01: share authentication across Meetup tabs
 
