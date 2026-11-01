@@ -43,6 +43,12 @@ referential/form validation workflow requires no credentials.
 Pass inputs and secrets explicitly in each caller. Defining a repository secret
 does not forward it to a reusable workflow.
 
+Store JSON credentials on a single line, including Google service-account and
+publication credentials. Preserve newlines inside string values as JSON escapes.
+GitHub masks each line of a multiline secret; an isolated brace can therefore
+suppress unrelated JSON job outputs. Compact the JSON before saving it as a
+secret, without changing its parsed values. Never print credentials to logs.
+
 ## Event publication
 
 The [publication workflow](../../.github/workflows/event-reconcile.yml)

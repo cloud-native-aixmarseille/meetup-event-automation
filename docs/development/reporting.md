@@ -117,6 +117,9 @@ Each attention episode retains its source run, so an unrelated successful audit
 cannot replace a failure's details link. Missing-data guidance identifies the
 affected public fields. Missing publication links and unpublished Meetup drafts
 remain publication tasks rather than duplicate generic data warnings.
+Publication readiness and pending or rejected approvals do not invalidate an
+otherwise completed audit. Actual prerequisite failures still preserve earlier
+unverified integration failures.
 
 ## Validation
 

@@ -81,3 +81,37 @@ describe("attention stage evidence policy", () => {
 		).toMatchObject({ blocked: true });
 	});
 });
+
+describe("publication readiness evidence", () => {
+	it.each([
+		"publication.community.missing",
+		"publication.meetup.missing",
+		"publication.assets.missing",
+		"publication.community.unpublished",
+		"publication.meetup.unpublished",
+		"publication.community.approval-pending",
+		"publication.meetup.approval-pending",
+		"publication.community.approval-rejected",
+		"publication.meetup.approval-rejected",
+	])("keeps a completed audit verifiable when %s remains", (code) => {
+		// Arrange
+		const composition = new JourneyPolicyComposition();
+		const evaluation = new AttentionStageEvaluation({
+			diagnosticPolicy: composition.diagnosticPolicy(),
+			organizerDiagnosticPolicy: composition.organizerDiagnosticPolicy(),
+		});
+		const reports = attentionReports({
+			event: { diagnostics: [{ code, severity: "warning", message: code }] },
+		});
+
+		// Act
+		const stages = evaluation.evaluate(reports);
+
+		// Assert
+		expect(stages.find((stage) => stage.owner === "event")).toEqual({
+			owner: "event",
+			outcome: "success",
+			blocked: false,
+		});
+	});
+});
