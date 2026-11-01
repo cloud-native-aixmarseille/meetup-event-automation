@@ -44,7 +44,7 @@ on:
 permissions: {}
 jobs:
   event-preparation-generate-drafts:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-preparation-generate-drafts.yml@3c26f9786c6654480f2125d129e1c4c8eeeb030c # 3.0.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-preparation-generate-drafts.yml@1393eaa81a4f840d893908ffdfd0cb8d2a87fe82 # 8.0.4
     permissions:
       contents: read
     secrets:
