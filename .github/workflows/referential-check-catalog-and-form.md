@@ -44,7 +44,7 @@ on:
 permissions: {}
 jobs:
   referential-check-catalog-and-form:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/referential-check-catalog-and-form.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/referential-check-catalog-and-form.yml@1393eaa81a4f840d893908ffdfd0cb8d2a87fe82 # 8.0.4
     permissions:
       contents: read
     with:
