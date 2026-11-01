@@ -12,7 +12,9 @@ export class MeetupLeadership {
 			await roster.goto(`${group.value}members/?op=leaders`, {
 				waitUntil: "domcontentloaded",
 			});
-			const count = roster.getByText(/^\d+ leadership team$/).first();
+			const count = roster
+				.getByText(/^\d+ leadership team$/)
+				.filter({ visible: true });
 			await count.waitFor();
 			const expected = Number.parseInt(await count.innerText(), 10);
 			if (!Number.isSafeInteger(expected) || expected < 1 || expected > 1000)
