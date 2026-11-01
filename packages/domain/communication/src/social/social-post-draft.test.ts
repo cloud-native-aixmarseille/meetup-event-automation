@@ -39,7 +39,9 @@ describe("social post brief", () => {
 			expect(brief.instructions.join(" ")).toContain("only when aperitif=true");
 			expect(brief.facts).not.toHaveProperty("privateEmail");
 			expect(brief.facts.mentions).toEqual(
-				channel === "linkedin" ? source.mentions : undefined,
+				channel === "linkedin"
+					? ["@Example Host", "@Example Speaker", "@Example Organizer"]
+					: undefined,
 			);
 		},
 	);
@@ -94,7 +96,7 @@ describe("social post brief", () => {
 		},
 	);
 	it.each(["slack", "linkedin"] as const)(
-		"accepts plain %s text with ordinary names and emoji",
+		"accepts %s text with the registration link and public mentions",
 		(channel) => {
 			// Arrange
 			const posts = new SocialPostDraft();
@@ -106,11 +108,92 @@ describe("social post brief", () => {
 			// Act
 			const valid = posts.valid(
 				source,
-				`:rocket: Meet Example Speaker 🚀 ${source.registrationUrl}`,
+				`:rocket: Meet @Example Speaker 🚀 chez @Example Host ${source.registrationUrl}`,
 				channel,
 			);
 			// Assert
 			expect(valid).toBe(true);
+		},
+	);
+	it("includes every speaker and organizer once in agenda order", () => {
+		// Arrange
+		const posts = new SocialPostDraft();
+		const source = {
+			...facts,
+			talks: [
+				talk,
+				{
+					...talk,
+					id: "talk-two",
+					speakers: [
+						...talk.speakers,
+						{ id: "speaker-two", name: "Second Speaker" },
+					],
+				},
+			],
+			registrationUrl: "https://www.meetup.com/example/events/123/",
+			mentions: ["Example Speaker", "@Example Organizer", "Example Organizer"],
+		};
+		// Act
+		const brief = posts.brief(source, "linkedin", "announcement", "fr", "");
+		// Assert
+		expect(brief.facts.mentions).toEqual([
+			"@Example Host",
+			"@Example Speaker",
+			"@Second Speaker",
+			"@Example Organizer",
+		]);
+	});
+	it.each(["@Example Host", "@Example Speaker", "@Example Organizer"])(
+		"rejects LinkedIn copy missing the complete %s mention",
+		(missing) => {
+			// Arrange
+			const posts = new SocialPostDraft();
+			const source = {
+				...facts,
+				registrationUrl: "https://www.meetup.com/example/events/123/",
+				mentions: ["Example Organizer"],
+			};
+			const text = `${source.registrationUrl}\n@Example Host - @Example Speaker - @Example Organizer`;
+			// Act
+			const absent = posts.valid(
+				source,
+				text.replace(missing, missing.slice(1)),
+				"linkedin",
+			);
+			const differentName = posts.valid(
+				source,
+				text.replace(missing, `${missing}son`),
+				"linkedin",
+			);
+			// Assert
+			expect(absent).toBe(false);
+			expect(differentName).toBe(false);
+		},
+	);
+	it.each(["slack", "linkedin"] as const)(
+		"rejects %s copy without the exact Meetup registration URL",
+		(channel) => {
+			// Arrange
+			const posts = new SocialPostDraft();
+			const source = {
+				...facts,
+				registrationUrl: "https://www.meetup.com/example/events/123/",
+				mentions: [],
+			};
+			const mentions = "@Example Host - @Example Speaker";
+			const links = [
+				"",
+				"https://example.test/register",
+				`${source.registrationUrl}?tracking=1`,
+				`https://example.test/${source.registrationUrl}`,
+			];
+			// Act
+			const results = links.map((url) =>
+				posts.valid(source, `${mentions}\nInscription : ${url}`, channel),
+			);
+			// Assert
+			expect(results).toEqual([false, false, false, false]);
 		},
 	);
 });

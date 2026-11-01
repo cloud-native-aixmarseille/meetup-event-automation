@@ -2,6 +2,25 @@ import { describe, expect, it } from "vitest";
 import { contentFixture } from "../../testing/promotional-content.fixtures.js";
 
 describe("content revision identity", () => {
+	it.each(["linkedin:announcement", "slack-engineering:announcement"] as const)(
+		"binds organizer mentions only to LinkedIn for %s",
+		(target) => {
+			// Arrange
+			const fixture = contentFixture(target);
+			// Act
+			const changed = fixture.plans.create(
+				target,
+				"fr",
+				{ ...fixture.plan.facts, mentions: ["Another Organizer"] },
+				"09:00",
+				fixture.plan.destination,
+			);
+			// Assert
+			expect(changed.sourceFingerprint === fixture.plan.sourceFingerprint).toBe(
+				target.startsWith("slack-"),
+			);
+		},
+	);
 	it.each(["cover", "title", "description"] as const)(
 		"binds event description context only to the cover source for %s",
 		(target) => {

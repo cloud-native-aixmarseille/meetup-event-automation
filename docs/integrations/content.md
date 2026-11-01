@@ -131,7 +131,16 @@ both for manual image imports and media verification; it accepts no AI inputs.
 | `<destination-key>:d0`           | One reminder on the event day.                                                                      |
 
 Slack uses emoji aliases. LinkedIn uses Unicode emoji, hashtags, a public mention
-footer, and the verified announcement image. Each configured Slack channel has
+footer, and the verified announcement image. Both formats include an explicit
+Meetup.com registration line with the exact event URL, including reminders.
+Shortened links, other registration destinations, and added tracking parameters
+cannot replace that URL.
+
+The LinkedIn footer includes `@Name` for the host, every speaker in agenda order,
+and every organizer in `mentions`. Duplicate names appear once. Review rejects
+text missing a required mention. Select the matching profiles and company page
+manually when publishing on LinkedIn: these names are not API mentions.
+Each configured Slack channel has
 its own proposal and stable target key; there is no fixed destination count.
 
 Each target has its own proposal and approval. Titles and descriptions can be
