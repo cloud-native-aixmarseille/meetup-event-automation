@@ -30,7 +30,7 @@ Publish exact approved social announcements and reminders to configured destinat
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile-social@c2ad036fdecace0ce967f6c2d3ba9a3e678ac1b6 # 8.0.6
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile-social@8a789a3fee0b2a06a572aca689b047ea61a441d9 # 8.0.7
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
