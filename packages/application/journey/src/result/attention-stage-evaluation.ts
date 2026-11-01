@@ -110,6 +110,15 @@ export class AttentionStageEvaluation {
 				"communication.social.blocked",
 				"communication.social.uncertain",
 				"communication.social.expired",
+				"publication.community.missing",
+				"publication.meetup.missing",
+				"publication.assets.missing",
+				"publication.community.unpublished",
+				"publication.meetup.unpublished",
+				"publication.community.approval-pending",
+				"publication.meetup.approval-pending",
+				"publication.community.approval-rejected",
+				"publication.meetup.approval-rejected",
 			].includes(item.code)
 		);
 	}

@@ -86,7 +86,7 @@ export const EN_MESSAGES = {
 	"comment.guidance.publication.meetup.missing":
 		"Run event publication synchronization to populate the verified Meetup link.",
 	"comment.guidance.publication.community.missing":
-		"Sync publications, then approve the OCGroups draft. The public link is added automatically.",
+		"Publish the CNCF event and fill in its public link.",
 	"comment.guidance.publication.assets.missing":
 		"Sync assets to create the event Drive folder.",
 	"comment.guidance.event.link.meetup.invalid":

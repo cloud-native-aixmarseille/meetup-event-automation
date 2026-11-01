@@ -89,7 +89,7 @@ export const FR_MESSAGES = {
 	"comment.guidance.publication.meetup.missing":
 		"Lancez la synchronisation des publications pour renseigner le lien Meetup vérifié.",
 	"comment.guidance.publication.community.missing":
-		"Synchronisez les publications, puis validez le brouillon OCGroups. Le lien public sera ajouté automatiquement.",
+		"Publiez l'événement CNCF et renseignez son lien public.",
 	"comment.guidance.publication.assets.missing":
 		"Synchronisez les fichiers pour créer le dossier Drive du meetup.",
 	"comment.guidance.event.link.meetup.invalid":
