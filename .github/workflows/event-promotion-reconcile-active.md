@@ -44,7 +44,7 @@ on:
 permissions: {}
 jobs:
   event-promotion-reconcile-active:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-reconcile-active.yml@8a789a3fee0b2a06a572aca689b047ea61a441d9 # 8.0.7
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-reconcile-active.yml@94fb167f182d77a4a98fb348390767ea699fd514 # 8.0.8
     permissions:
       contents: read
       issues: read

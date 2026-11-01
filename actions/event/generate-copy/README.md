@@ -30,7 +30,7 @@ Generate an AI draft of the meetup title or description using public event detai
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/generate-copy@8a789a3fee0b2a06a572aca689b047ea61a441d9 # 8.0.7
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/generate-copy@94fb167f182d77a4a98fb348390767ea699fd514 # 8.0.8
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
