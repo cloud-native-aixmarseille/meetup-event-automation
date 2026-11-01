@@ -72,6 +72,8 @@ export class AttentionTaskSelection {
 	): boolean {
 		if (!entries.length) return false;
 		const { code, resource } = episode.condition;
+		if (code === "required-data" && resource !== "event")
+			return entries.some((entry) => entry.field === resource.split("-")[0]);
 		if (
 			code === "required-data" ||
 			(code === "integration-failure" && resource === "event-data")

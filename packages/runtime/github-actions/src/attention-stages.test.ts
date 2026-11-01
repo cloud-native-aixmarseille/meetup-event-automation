@@ -4,6 +4,38 @@ import { AttentionStages } from "./attention-stages.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 
 describe("typed attention stage boundary", () => {
+	it("limits an independent social audit to its reported stage", () => {
+		// Arrange
+		const input = JSON.stringify({
+			social: [{ outcome: "success", diagnostics: "[]" }],
+		});
+		const parser = new GithubActionsComposition().attentionStages();
+
+		// Act
+		const stages = parser.parse(input);
+		const complete = parser.hasCompleteReports(input);
+
+		// Assert
+		expect(stages).toEqual([
+			{ owner: "social", outcome: "success", blocked: false },
+		]);
+		expect(complete).toBe(false);
+	});
+	it("does not treat a successful step with a missing report as evaluated", () => {
+		// Arrange
+		const input = JSON.stringify({
+			assets: { outcome: "success", diagnostics: null },
+		});
+		const parser = new GithubActionsComposition().attentionStages();
+
+		// Act
+		const stages = parser.parse(input);
+
+		// Assert
+		expect(stages).toEqual([
+			{ owner: "assets", outcome: "unknown", blocked: false },
+		]);
+	});
 	it.each(["skipped", "cancelled", "", undefined])(
 		"marks %s stages unknown",
 		(outcome) => {

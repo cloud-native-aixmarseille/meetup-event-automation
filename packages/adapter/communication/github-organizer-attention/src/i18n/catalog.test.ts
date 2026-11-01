@@ -4,6 +4,7 @@ import type { MessageParameters } from "./attention-messages.js";
 import { CATALOGS } from "./catalog.js";
 
 const parameters = {
+	"action.required-data": { task: "agenda" },
 	"attention.redirect": {
 		url: "https://github.com/example/meetups/issues/42#issuecomment-100",
 	},

@@ -5,6 +5,25 @@ import type { AttentionFacts } from "./evaluate-attention.js";
 import { EvaluateAttention } from "./evaluate-attention.js";
 
 describe("actionable attention conditions", () => {
+	it("names missing fields without duplicating the date or host tasks", () => {
+		// Arrange
+		const input = facts({
+			eventDate: "",
+			hostConfirmed: false,
+			requiredDataFields: ["date", "host", "agenda-descriptions"],
+		});
+		const policy = new CommunicationDomainComposition().evaluateAttention();
+
+		// Act
+		const result = policy.execute(input, new Date("2099-06-01T10:00:00Z"));
+
+		// Assert
+		expect(result.conditions.map(({ key }) => key)).toEqual([
+			"missing-date:date",
+			"host-confirmation:host",
+			"required-data:agenda-descriptions",
+		]);
+	});
 	it("links pending content approval separately from publication authority", () => {
 		// Arrange
 		const input = facts({

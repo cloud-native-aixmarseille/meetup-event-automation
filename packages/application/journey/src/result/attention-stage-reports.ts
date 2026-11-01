@@ -13,5 +13,5 @@ export interface AttentionStageReport {
 	readonly reported: boolean;
 }
 export type AttentionStageReports = Readonly<
-	Record<(typeof ATTENTION_STAGE_OWNERS)[number], AttentionStageReport>
+	Partial<Record<(typeof ATTENTION_STAGE_OWNERS)[number], AttentionStageReport>>
 > & { readonly social?: AttentionStageReport };

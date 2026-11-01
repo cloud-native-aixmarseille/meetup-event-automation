@@ -10,6 +10,34 @@ import { JourneyPolicyComposition } from "../policy-composition.js";
 import { AttentionEventFacts } from "./attention-event-facts.js";
 
 describe("public attention event facts", () => {
+	it("uses the CNCF publication task instead of a missing-data reminder for an absent link", () => {
+		// Arrange
+		const event = createTestEvent({
+			publicationLinks: {
+				...publishedEvent.publicationLinks,
+				community: undefined,
+			},
+		});
+		const facts = new AttentionEventFacts({
+			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+			eventPublicationEvaluation:
+				new JourneyPolicyComposition().eventPublicationEvaluation(
+					createPublicationUrlPolicyEngine(),
+				),
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			communicationChecklist:
+				new JourneyPolicyComposition().communicationChecklist(),
+			createEventRuleEngine: (...args) =>
+				new EventDomainComposition().eventRuleEngine(...args),
+		});
+
+		// Act
+		const result = facts.create({ event, diagnostics: [] });
+
+		// Assert
+		expect(result.requiredDataFields).toEqual([]);
+		expect(result.publicationPending).toEqual(["publish-community-event"]);
+	});
 	it.each([true, false])(
 		"uses supplied publication URL rules for missing-data attention: %s",
 		(allowed) => {
@@ -37,7 +65,7 @@ describe("public attention event facts", () => {
 			}).create({ event, diagnostics: [] });
 
 			// Assert
-			expect(result.requiredDataMissing).toBe(!allowed);
+			expect(result.requiredDataFields).toEqual(allowed ? [] : ["meetup-link"]);
 		},
 	);
 
@@ -140,6 +168,6 @@ describe("public attention event facts", () => {
 
 		// Assert
 		expect(result.eventDate).toBe("");
-		expect(result.requiredDataMissing).toBe(true);
+		expect(result.requiredDataFields).toEqual(["date"]);
 	});
 });

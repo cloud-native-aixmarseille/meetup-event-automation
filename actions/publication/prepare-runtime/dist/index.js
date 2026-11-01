@@ -29965,6 +29965,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
   covered(episode, entries) {
     if (!entries.length) return false;
     const { code, resource } = episode.condition;
+    if (code === "required-data" && resource !== "event")
+      return entries.some((entry) => entry.field === resource.split("-")[0]);
     if (code === "required-data" || code === "integration-failure" && resource === "event-data")
       return true;
     const fields = code === "manual-publication" ? _AttentionTaskSelection.RESOURCE_FIELDS.get(resource) : _AttentionTaskSelection.CONDITION_FIELDS.get(code);
@@ -30003,6 +30005,11 @@ var EvaluateAttention = class {
         commentId: item.commentId
       });
     return {
+      scope: [
+        ...facts.stages.map((stage) => stage.owner),
+        "approvals",
+        "delivery"
+      ],
       conditions,
       evaluated,
       verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
@@ -30076,29 +30083,30 @@ var EvaluateAttention = class {
     }
   }
   preparation(facts, eventDay, day, conditions) {
-    if (facts.occurrence === "scheduled" && (eventDay === void 0 || day <= eventDay)) {
-      if (!facts.hostConfirmed)
+    if (facts.occurrence !== "scheduled" || eventDay !== void 0 && day > eventDay)
+      return;
+    if (!facts.hostConfirmed)
+      conditions.push(
+        this.condition("host-confirmation", "event", "host", "preparation")
+      );
+    if (!facts.speakersConfirmed)
+      conditions.push(
+        this.condition(
+          "speaker-confirmation",
+          "event",
+          "speakers",
+          "preparation"
+        )
+      );
+    for (const field of facts.requiredDataFields)
+      if (!(field === "date" && eventDay === void 0) && !(field === "host" && !facts.hostConfirmed))
         conditions.push(
-          this.condition("host-confirmation", "event", "host", "preparation")
+          this.condition("required-data", "event", field, "preparation")
         );
-      if (!facts.speakersConfirmed)
-        conditions.push(
-          this.condition(
-            "speaker-confirmation",
-            "event",
-            "speakers",
-            "preparation"
-          )
-        );
-      if (facts.requiredDataMissing)
-        conditions.push(
-          this.condition("required-data", "event", "event", "preparation")
-        );
-      for (const task of facts.publicationPending)
-        conditions.push(
-          this.condition("manual-publication", "event", task, "preparation")
-        );
-    }
+    for (const task of facts.publicationPending)
+      conditions.push(
+        this.condition("manual-publication", "event", task, "preparation")
+      );
   }
   condition(code, owner, resource, policy) {
     return {
@@ -30220,6 +30228,7 @@ var AttentionEpisodes = class {
       observation.conditions.map((condition) => [condition.key, condition])
     );
     for (const episode of state.episodes) {
+      episode.runId ??= state.runId;
       const condition = conditions.get(episode.condition.key);
       if (condition) {
         conditions.delete(condition.key);
@@ -30229,6 +30238,7 @@ var AttentionEpisodes = class {
           episode.lastWindow = void 0;
         }
         episode.condition = condition;
+        episode.runId = observation.runId;
         episode.status = "active";
         if (changedDate && episode.lastWindow && ["preparation", "occurrence", "follow-up"].includes(condition.policy))
           episode.lastWindow = this.collaborators.attentionPolicy.window(
@@ -30242,6 +30252,7 @@ var AttentionEpisodes = class {
     }
     for (const condition of conditions.values())
       state.episodes.push({
+        runId: observation.runId,
         condition,
         episode: 1,
         openedAt: now2.toISOString(),
@@ -30257,6 +30268,8 @@ var AttentionEpisodes = class {
     if (episode.condition.recovery && (episode.status === "active" || episode.status === "unknown") && !observation.verifiedRecovery?.includes(episode.condition.key))
       return "unknown";
     if (observation.stopped && !episode.condition.recovery) return "stopped";
+    if (!observation.scope.includes(episode.condition.owner))
+      return episode.status;
     if (observation.evaluated.includes(episode.condition.owner))
       return "resolved";
     return episode.status === "active" ? "unknown" : episode.status;
@@ -32202,9 +32215,11 @@ var AttentionStageEvaluation = class {
   }
   collaborators;
   evaluate(input) {
-    const eventDiagnostics = input.event.diagnostics;
+    const eventDiagnostics = input.event?.diagnostics ?? [];
     return this.owners(input).map((owner) => {
-      const { outcome, diagnostics } = input[owner];
+      const report = input[owner];
+      const { diagnostics } = report;
+      const outcome = report.outcome === "success" && !report.reported ? "unknown" : report.outcome;
       const blocked = diagnostics.some(
         (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) && !this.eventPrerequisite(item.code, owner, eventDiagnostics)
       );
@@ -32243,12 +32258,13 @@ var AttentionStageEvaluation = class {
     return Boolean(input.social && this.stageComplete(input.social));
   }
   stageComplete(stage) {
-    return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
+    return stage !== void 0 && stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
       (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
     );
   }
   owners(input) {
-    return input.social ? [...ATTENTION_STAGE_OWNERS, "social"] : ATTENTION_STAGE_OWNERS;
+    const owners = input.social ? [...ATTENTION_STAGE_OWNERS, "social"] : ATTENTION_STAGE_OWNERS;
+    return owners.filter((owner) => input[owner] !== void 0);
   }
   organizerPrerequisite(item) {
     if (item.code === "event.concurrently-modified") return true;
@@ -32551,7 +32567,7 @@ var AssetParticipantProjection = class {
 };
 
 // packages/application/journey/src/use-cases/attention-event-facts.ts
-var AttentionEventFacts = class {
+var AttentionEventFacts = class _AttentionEventFacts {
   constructor(collaborators) {
     this.collaborators = collaborators;
   }
@@ -32576,9 +32592,7 @@ var AttentionEventFacts = class {
       eventDate: this.collaborators.attentionPolicy.eventDay(event.date) === void 0 ? "" : event.date,
       closed: event.issueState === "closed",
       occurrence: event.occurrenceStatus ?? "scheduled",
-      requiredDataMissing: diagnostics.some(
-        (item) => item.category === "invalid" || item.category === "incomplete"
-      ),
+      requiredDataFields: this.requiredFields(diagnostics),
       hostConfirmed: Boolean(event.host?.displayName.trim()),
       speakersConfirmed: event.confirmations.speakers,
       publicationPending: [
@@ -32589,6 +32603,38 @@ var AttentionEventFacts = class {
       followUpPending: this.followUp(event)
     };
   }
+  requiredFields(diagnostics) {
+    const fields = diagnostics.filter(
+      (item) => (item.category === "invalid" || item.category === "incomplete") && !/^publication\.(meetup|community|assets)\.(missing|unpublished)$/.test(
+        item.code
+      )
+    ).map((item) => {
+      const field = item.field ?? "";
+      if (/^agenda\.\d+\.speakers/.test(field)) return "agenda-speakers";
+      if (/^agenda\.\d+\.description/.test(field))
+        return "agenda-descriptions";
+      return _AttentionEventFacts.REQUIRED_FIELDS.get(field) ?? _AttentionEventFacts.REQUIRED_FIELDS.get(field.split(".")[0]) ?? "event-form";
+    });
+    return [...new Set(fields)];
+  }
+  static REQUIRED_FIELDS = /* @__PURE__ */ new Map([
+    ["date", "date"],
+    ["eventTitle", "title"],
+    ["title", "title"],
+    ["description", "description"],
+    ["agenda", "agenda"],
+    ["host", "host"],
+    ["hoster", "host"],
+    ["labels", "event-status"],
+    ["event_status", "event-status"],
+    ["occurrenceStatus", "event-status"],
+    ["publicationLinks", "publication-links"],
+    ["confirmations", "confirmations"],
+    ["publicationLinks.meetup", "meetup-link"],
+    ["publicationLinks.community", "community-link"],
+    ["publicationLinks.assets", "assets-link"],
+    ["publicationLinks.feedback", "feedback-link"]
+  ]);
   followUp(event) {
     return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
       if (name === "Share slides to meetup") return [];
@@ -34180,15 +34226,13 @@ var AttentionStageInput = class {
     const input = this.json(value, "stage-results");
     if (!this.isRecord(input))
       throw new RuntimeInputError("stage-results", "must be an object");
-    const reports = ATTENTION_STAGE_OWNERS.map(
+    const reports = ATTENTION_STAGE_OWNERS.filter(
+      (owner) => Object.hasOwn(input, owner)
+    ).map(
       (owner) => [owner, this.group(input[owner], `stage-results.${owner}`)]
     );
     return {
-      event: reports[0][1],
-      assets: reports[1][1],
-      feedback: reports[2][1],
-      communications: reports[3][1],
-      content: reports[4][1],
+      ...Object.fromEntries(reports),
       ...input.social === void 0 ? {} : { social: this.group(input.social, "stage-results.social") }
     };
   }

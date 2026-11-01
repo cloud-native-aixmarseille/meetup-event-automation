@@ -84,7 +84,11 @@ Missing diagnostics, including `null` when GitHub suppresses a job output,
 count as unreported evidence. They do not replace an explicit empty diagnostic
 array and cannot clear checklist tasks.
 Social publication has an optional independent stage in the same canonical
-comment. A complete social evaluation replaces only its marked section; base
+comment. Reports include only the stages attempted by their workflow. An omitted
+stage is outside that run's scope: it creates no alert and leaves existing evidence
+unchanged. An explicitly included stage with missing, skipped, or suppressed
+results remains unverified, even when the job succeeds.
+A complete social evaluation replaces only its marked section; base
 reconciliation preserves that section. Social reconciliation preserves the base
 checklist and trusted attention state. Failed, skipped, technically invalid or
 concurrently changed social evaluation retains its previous unresolved tasks.
@@ -103,11 +107,16 @@ they were minimized for another moderation reason. The visibility adapter
 rechecks the current body before changing visibility; a concurrent edit or
 unconfirmed mutation fails the operation and can be retried.
 
-Workflow stage results carry the consumed diagnostic outputs. Stages that did
-not execute remain unknown, and dependent blockage cannot resolve an earlier
+Workflow stage results carry the consumed diagnostic outputs. Included stages that
+did not execute remain unknown, and dependent blockage cannot resolve an earlier
 unverified technical failure. The reporting job runs after earlier failures when
 its GitHub setup is available. Attention requires a successful checklist step;
 a checklist write failure cannot be followed by a Slack notification.
+
+Each attention episode retains its source run, so an unrelated successful audit
+cannot replace a failure's details link. Missing-data guidance identifies the
+affected public fields. Missing publication links and unpublished Meetup drafts
+remain publication tasks rather than duplicate generic data warnings.
 
 ## Validation
 

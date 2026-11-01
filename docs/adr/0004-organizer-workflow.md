@@ -47,6 +47,13 @@ tasks. Document/PDF and event/shared-link groups require all members. Draft revi
 has explicit content-stage evidence. Persist the checklist before attention can
 send a new notification.
 
+Stage scope is explicit in the reports supplied by each workflow. Omitted stages
+leave prior evidence unchanged and produce no new incomplete-stage alert. A
+reported stage with unavailable diagnostics cannot resolve earlier work. Each
+episode keeps its source run independently of subsequent audits. Missing-data
+conditions identify public fields and exclude publication tasks already tracked
+separately.
+
 ### Durable attention
 
 The communication domain owns conditions, episodes, due windows, and delivery
@@ -114,6 +121,12 @@ The system cannot detect a schedule that never runs; external monitoring remains
 an operational responsibility.
 
 ## Decision history
+
+On 2026-11-01, scoped reporting replaced the assumption that every workflow
+evaluated all preparation stages. Source runs moved into attention episodes;
+the prior global run link could point an old failure at an unrelated successful
+audit. Missing-data reminders now identify fields instead of combining
+publication readiness with generic input completeness.
 
 On 2026-10-27, email scheduling stopped requiring an unchecked form task.
 Previously, removing an email task disabled its scheduling. The form now contains

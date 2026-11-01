@@ -70,6 +70,10 @@ export class AttentionRecord {
 				true,
 			),
 			openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
+			runId:
+				data.runId === undefined
+					? undefined
+					: this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
 			status: this.collaborators.attentionRecordFields.choice(data.status, [
 				"active",
 				"unknown",

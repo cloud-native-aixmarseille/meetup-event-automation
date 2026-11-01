@@ -28,6 +28,7 @@ export class AttentionEpisodes {
 			observation.conditions.map((condition) => [condition.key, condition]),
 		);
 		for (const episode of state.episodes) {
+			episode.runId ??= state.runId;
 			const condition = conditions.get(episode.condition.key);
 			if (condition) {
 				conditions.delete(condition.key);
@@ -37,6 +38,7 @@ export class AttentionEpisodes {
 					episode.lastWindow = undefined;
 				}
 				episode.condition = condition;
+				episode.runId = observation.runId;
 				episode.status = "active";
 				if (
 					changedDate &&
@@ -54,6 +56,7 @@ export class AttentionEpisodes {
 		}
 		for (const condition of conditions.values())
 			state.episodes.push({
+				runId: observation.runId,
 				condition,
 				episode: 1,
 				openedAt: now.toISOString(),
@@ -76,6 +79,8 @@ export class AttentionEpisodes {
 		)
 			return "unknown";
 		if (observation.stopped && !episode.condition.recovery) return "stopped";
+		if (!observation.scope.includes(episode.condition.owner))
+			return episode.status;
 		if (observation.evaluated.includes(episode.condition.owner))
 			return "resolved";
 		return episode.status === "active" ? "unknown" : episode.status;

@@ -16,7 +16,7 @@ export const messages = {
 	"attention.review": "Voir les détails",
 	"attention.unknown": "statut non vérifié",
 	"action.missing-date": "Renseignez la date du meetup.",
-	"action.required-data": "Complétez les informations du meetup.",
+	"action.required-data": "Complétez ou corrigez : {task}.",
 	"action.host-confirmation":
 		"Sélectionnez un hôte dans le formulaire du meetup.",
 	"action.speaker-confirmation":
@@ -30,7 +30,7 @@ export const messages = {
 	"action.occurrence-decision":
 		"Date passée : indiquez tenu, reporté ou annulé.",
 	"action.follow-up": "{task}.",
-	"action.stage-unknown": "Vérifiez l'étape inachevée : {task}.",
+	"action.stage-unknown": "Résultat non vérifié : {task}.",
 
 	"task.approvals": "validation des emails",
 	"task.delivery": "reprise des envois",
@@ -38,7 +38,23 @@ export const messages = {
 	"attention.clear": "Aucune tâche en attente.",
 	"attention.pending":
 		"Vérifiez le message Slack avant de réessayer : envoi non confirmé.",
-	"task.publish-community-event": "Publiez sur la plateforme CNCF",
+	"task.publish-community-event":
+		'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
+	"task.date": "date du meetup",
+	"task.title": "titre du meetup",
+	"task.description": "description du meetup",
+	"task.agenda": "programme des talks",
+	"task.agenda-speakers": "intervenants des talks",
+	"task.agenda-descriptions": "descriptions des talks",
+	"task.host": "hôte du meetup",
+	"task.event-status": "statut du meetup",
+	"task.publication-links": "liens de publication",
+	"task.meetup-link": "Meetup Link",
+	"task.community-link": "CNCF Link",
+	"task.assets-link": "lien du dossier des ressources",
+	"task.feedback-link": "OpenFeedback Link",
+	"task.confirmations": "confirmation des intervenants",
+	"task.event-form": "formulaire du meetup",
 	"task.create-asset-folder": "Préparez le dossier des ressources",
 	"task.thank-host": "Remerciez l'hôte",
 	"task.thank-speakers": "Remerciez les intervenants",

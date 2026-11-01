@@ -99,7 +99,7 @@ describe("workflow attention input decoding", () => {
 			],
 		});
 		expect(JSON.stringify(result)).not.toContain("private@example.test");
-		expect(result.event.outcome).toBe("unknown");
+		expect(result.event).toBeUndefined();
 	});
 	it.each([
 		null,
@@ -157,11 +157,7 @@ describe("workflow attention input decoding", () => {
 				},
 			],
 		});
-		expect(result.assets).toEqual({
-			outcome: "unknown",
-			reported: false,
-			diagnostics: [],
-		});
+		expect(result.assets).toBeUndefined();
 	});
 });
 
@@ -204,8 +200,8 @@ describe("grouped stage evidence", () => {
 			// Act
 			const result = parser.parse(input);
 			// Assert
-			expect(result.assets.reported).toBe(false);
-			expect(result.assets.outcome).toBe(
+			expect(result.assets?.reported).toBe(false);
+			expect(result.assets?.outcome).toBe(
 				outcome === "failure" ? "failure" : "unknown",
 			);
 		},

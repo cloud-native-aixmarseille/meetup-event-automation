@@ -170,6 +170,12 @@ Slack combines the relevant checklist items, approvals and recovery tasks in one
 message per issue and local day. Later changes update that message, so a failure
 may appear as an edit without a fresh notification.
 
+Missing-data reminders name the fields to correct. For manual CNCF publication,
+publish the event and fill in **CNCF Link**. A social audit checks only its own
+stages; it does not mark event preparation unfinished. An unverified result means
+the included stage did not supply usable reporting evidence. Follow the linked
+run; existing failure links remain attached to the run that observed them.
+
 See [organizer attention](../integrations/communications.md#organizer-attention)
 for reminder timing and recovery.
 

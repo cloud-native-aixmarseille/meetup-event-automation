@@ -4,6 +4,7 @@ import {
 } from "@meetup-automation/localization";
 import { CATALOGS, type MessageId } from "./catalog.js";
 export interface MessageParameters {
+	"action.required-data": { task: string };
 	"slack.title": { issue: string };
 	"slack.more": { count: number };
 	"action.manual-publication": { task: string };

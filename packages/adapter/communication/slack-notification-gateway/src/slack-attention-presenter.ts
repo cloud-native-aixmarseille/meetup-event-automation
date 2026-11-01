@@ -145,6 +145,7 @@ export class SlackAttentionPresenter {
 				});
 	}
 	private url(episode: AttentionEpisode, state: AttentionState): string {
+		const runId = episode.runId ?? state.runId;
 		if (
 			Number.isSafeInteger(episode.condition.commentId) &&
 			(episode.condition.commentId ?? 0) > 0
@@ -154,10 +155,10 @@ export class SlackAttentionPresenter {
 			["integration-failure", "stage-unknown"].includes(
 				episode.condition.code,
 			) &&
-			state.runId &&
-			/^\d+$/.test(state.runId)
+			runId &&
+			/^\d+$/.test(runId)
 		)
-			return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
+			return `https://github.com/${this.repository}/actions/runs/${runId}`;
 		return this.overviewUrl(state);
 	}
 	private overviewUrl(state: AttentionState): string {
