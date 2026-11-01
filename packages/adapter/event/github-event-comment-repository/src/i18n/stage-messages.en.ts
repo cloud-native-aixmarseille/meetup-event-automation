@@ -1,6 +1,6 @@
 export const STAGE_MESSAGES_EN = {
 	"comment.guidance.meetup.uncertain":
-		"Meetup did not confirm the event save. Check the existing event before retrying; the save click was not repeated.",
+		'Automation could not confirm the changes on Meetup. Open the event on Meetup and compare its title, description and image with the content approved here. Check that its URL is in "Meetup Link", then rerun the "Event / Reconcile active" workflow from Actions. If you cannot find the event or the warning returns, ask a maintainer to investigate the run; do not recreate the event.',
 	"comment.guidance.meetup.authentication-configuration":
 		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
 	"comment.guidance.meetup.authentication-captcha-required":

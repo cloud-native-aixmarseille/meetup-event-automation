@@ -51003,7 +51003,7 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
-  "comment.guidance.meetup.uncertain": "Meetup did not confirm the event save. Check the existing event before retrying; the save click was not repeated.",
+  "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. Open the event on Meetup and compare its title, description and image with the content approved here. Check that its URL is in "Meetup Link", then rerun the "Event / Reconcile active" workflow from Actions. If you cannot find the event or the warning returns, ask a maintainer to investigate the run; do not recreate the event.',
   "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -51070,7 +51070,7 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
-  "comment.guidance.meetup.uncertain": "Meetup n'a pas confirm\xE9 l'enregistrement. V\xE9rifiez l'\xE9v\xE9nement existant avant de relancer ; le clic d'enregistrement n'a pas \xE9t\xE9 r\xE9p\xE9t\xE9.",
+  "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Ouvrez l'\xE9v\xE9nement sur Meetup et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. V\xE9rifiez que son URL figure dans "Meetup Link", puis relancez le workflow "Event / Reconcile active" depuis Actions. Si l'\xE9v\xE9nement est introuvable ou si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
   "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",

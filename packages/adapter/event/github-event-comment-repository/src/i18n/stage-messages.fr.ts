@@ -1,6 +1,6 @@
 export const STAGE_MESSAGES_FR = {
 	"comment.guidance.meetup.uncertain":
-		"Meetup n'a pas confirmé l'enregistrement. Vérifiez l'événement existant avant de relancer ; le clic d'enregistrement n'a pas été répété.",
+		"La synchronisation n'a pas pu confirmer les changements sur Meetup. Ouvrez l'événement sur Meetup et comparez son titre, sa description et son image aux contenus approuvés ici. Vérifiez que son URL figure dans \"Meetup Link\", puis relancez le workflow \"Event / Reconcile active\" depuis Actions. Si l'événement est introuvable ou si l'alerte revient, demandez à un mainteneur d'examiner le run ; ne recréez pas l'événement.",
 	"comment.guidance.meetup.authentication-configuration":
 		"Les identifiants Meetup manquent dans la configuration de l'automatisation. Vérifiez PUBLICATION_CREDENTIALS.",
 	"comment.guidance.meetup.authentication-captcha-required":
