@@ -4,10 +4,6 @@ import type { MessageId } from "./i18n/catalog.js";
 export const STAGE_GUIDANCE = [
 	...AUTHENTICATION_GUIDANCE,
 	[
-		"publication.meetup.uncertain",
-		["Meetup Link", "comment.guidance.meetup.uncertain"],
-	],
-	[
 		"publication.content.invalid",
 		["Event materials", "comment.guidance.content.invalid"],
 	],

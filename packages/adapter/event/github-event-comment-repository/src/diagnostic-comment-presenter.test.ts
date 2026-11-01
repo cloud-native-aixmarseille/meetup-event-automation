@@ -37,37 +37,34 @@ describe("renderDiagnosticComment", () => {
 		["fr", "authentication-rate-limited", "HTTP 429"],
 		["en", "uncertain", "Check the existing event before retrying"],
 		["fr", "uncertain", "Vérifiez l'événement existant avant de relancer"],
-	])(
-		"names a Meetup block in %s: %s",
-		(locale, code, expected) => {
-			// Arrange
-			const diagnostic: EventDiagnostic = {
-				code: `publication.meetup.${code}`,
-				severity: "warning",
-				category: "incomplete",
-				field: "publicationLinks.meetup",
-				message: "private account detail",
-			};
-			const presenter = new DiagnosticCommentPresenter({
-				organizerDiagnosticPolicy:
-					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
-				diagnosticPresenter:
-					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
-			});
-			const messages =
-				new GithubEventCommentRepositoryComposition().eventCommentMessages(
-					locale,
-				);
+	])("names a Meetup block in %s: %s", (locale, code, expected) => {
+		// Arrange
+		const diagnostic: EventDiagnostic = {
+			code: `publication.meetup.${code}`,
+			severity: "warning",
+			category: "incomplete",
+			field: "publicationLinks.meetup",
+			message: "private account detail",
+		};
+		const presenter = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+		});
+		const messages =
+			new GithubEventCommentRepositoryComposition().eventCommentMessages(
+				locale,
+			);
 
-			// Act
-			const body = presenter.render([diagnostic], messages);
+		// Act
+		const body = presenter.render([diagnostic], messages);
 
-			// Assert
-			expect(body).toContain("**Meetup Link**:");
-			expect(body).toContain(expected);
-			expect(body).not.toContain(diagnostic.message);
-		},
-	);
+		// Assert
+		expect(body).toContain("**Meetup Link**:");
+		expect(body).toContain(expected);
+		expect(body).not.toContain(diagnostic.message);
+	});
 	it.each([
 		[
 			"en",

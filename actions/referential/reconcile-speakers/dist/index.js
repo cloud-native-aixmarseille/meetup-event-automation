@@ -33082,7 +33082,8 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       "publication.community.approval-pending",
       "publication.meetup.approval-pending",
       "publication.community.approval-rejected",
-      "publication.meetup.approval-rejected"
+      "publication.meetup.approval-rejected",
+      "publication.meetup.uncertain"
     ].includes(item.code);
   }
   eventPrerequisite(code, owner, eventDiagnostics) {
