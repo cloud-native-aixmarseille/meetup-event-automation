@@ -4,15 +4,10 @@ import type {
 	SocialJournalCommentClient,
 	SocialJournalCommentEdit,
 } from "../src/social-journal-comment-client.js";
-
 type SocialJournalHistoryEntry = Awaited<
 	ReturnType<SocialJournalCommentClient["history"]>
 >[number];
-
-import {
-	SOCIAL_JOURNAL_MARKER,
-	TrustedSocialJournalComments,
-} from "../src/trusted-social-journal-comments.js";
+import { TrustedSocialJournalComments } from "../src/trusted-social-journal-comments.js";
 
 export function journalClientFixture() {
 	const comments: SocialJournalComment[] = [];
@@ -62,10 +57,6 @@ export function journalClientFixture() {
 		}),
 		history: vi.fn(async (comment) => histories.get(comment.id) ?? []),
 	};
-	const trusted = new TrustedSocialJournalComments(
-		client,
-		"automation[bot]",
-		SOCIAL_JOURNAL_MARKER,
-	);
+	const trusted = new TrustedSocialJournalComments(client, "automation[bot]");
 	return { comments, edits, histories, client, trusted };
 }

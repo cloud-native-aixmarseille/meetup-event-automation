@@ -27,7 +27,6 @@ import {
 	type EventDocumentCompositionInput,
 	SERVICES,
 } from "./composition.js";
-import { LinkedInSharingComposition } from "./linkedin-sharing-composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 import { PublicationPolicyComposition } from "./publication-policy-composition.js";
 
@@ -166,12 +165,6 @@ export class AttentionComposition {
 					repository: context.get<EventRepository>(SERVICES.eventRepository),
 					codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 					clock,
-					sharing: new LinkedInSharingComposition().create(
-						input,
-						context.get<EventRepository>(SERVICES.eventRepository),
-						context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
-						clock,
-					),
 					approvals: context.get<ApprovalCapabilities>(
 						ATTENTION_SERVICES.approvals,
 					).attention,

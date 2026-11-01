@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { LinkedInPostReference } from "./linkedin-post-reference.js";
 import type { SocialDestination } from "./social-destination.js";
 import { SocialRecoveryReference } from "./social-recovery-reference.js";
 
@@ -20,7 +19,7 @@ const linkedin: SocialDestination = {
 describe("social recovery remote references", () => {
 	it("extracts a Slack message timestamp without losing fractional digits", () => {
 		// Arrange
-		const references = new SocialRecoveryReference(new LinkedInPostReference());
+		const references = new SocialRecoveryReference();
 		const url = "https://community.slack.com/archives/C123/p1792497600000123";
 
 		// Act
@@ -58,7 +57,7 @@ describe("social recovery remote references", () => {
 		],
 	])("preserves the LinkedIn remote identity from %s", (url, postUrn) => {
 		// Arrange
-		const references = new SocialRecoveryReference(new LinkedInPostReference());
+		const references = new SocialRecoveryReference();
 
 		// Act
 		const receipt = references.receipt(linkedin, url);
@@ -84,7 +83,7 @@ describe("social recovery remote references", () => {
 		" https://community.slack.com/archives/C123/p1792497600123456",
 	])("rejects an unsafe or mismatched Slack reference %s", (url) => {
 		// Arrange
-		const references = new SocialRecoveryReference(new LinkedInPostReference());
+		const references = new SocialRecoveryReference();
 
 		// Act
 		const parse = () => references.receipt(slack, url);
@@ -102,7 +101,7 @@ describe("social recovery remote references", () => {
 		"https://www.linkedin.com/feed/update/%invalid/",
 	])("rejects an invalid LinkedIn post reference %s", (url) => {
 		// Arrange
-		const references = new SocialRecoveryReference(new LinkedInPostReference());
+		const references = new SocialRecoveryReference();
 
 		// Act
 		const parse = () => references.receipt(linkedin, url);
@@ -112,7 +111,7 @@ describe("social recovery remote references", () => {
 	});
 	it("accepts a GitHub organizer evidence comment for non-publication", () => {
 		// Arrange
-		const references = new SocialRecoveryReference(new LinkedInPostReference());
+		const references = new SocialRecoveryReference();
 
 		// Act
 		const parse = () =>
@@ -134,7 +133,7 @@ describe("social recovery remote references", () => {
 		"https://private@github.com/example/events/issues/42#issuecomment-100",
 	])("requires an explicit usable GitHub evidence comment %s", (url) => {
 		// Arrange
-		const references = new SocialRecoveryReference(new LinkedInPostReference());
+		const references = new SocialRecoveryReference();
 
 		// Act
 		const parse = () => references.evidence(url);

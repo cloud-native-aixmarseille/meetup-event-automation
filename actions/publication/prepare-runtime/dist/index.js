@@ -32260,7 +32260,6 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
-  "event.linkedin-post.invalid",
   "communication.social.pending",
   "communication.social.blocked",
   "communication.social.uncertain",
@@ -33349,11 +33348,10 @@ var ManageMeetupAttention = class {
       ...observation,
       commentId
     });
-    const sharing = await this.dependencies.sharing.execute(source);
     return {
       ...result,
       skipped: false,
-      notificationFailed: sharing.notificationFailed || result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
+      notificationFailed: result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
     };
   }
   async synchronizeEvidence() {

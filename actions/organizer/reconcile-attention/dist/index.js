@@ -31696,117 +31696,6 @@ var CommunicationDomainComposition = class {
   }
 };
 
-// packages/domain/communication/src/social/linkedin-post-reference.ts
-var LinkedInPostReference = class {
-  read(value) {
-    if (value.length > 2e3 || /[\s<>|]/.test(value)) return void 0;
-    try {
-      const url = new URL(value);
-      if (url.protocol !== "https:" || !["www.linkedin.com", "linkedin.com"].includes(url.hostname) || url.username || url.password || url.port)
-        return void 0;
-      const path = decodeURIComponent(url.pathname);
-      const urn = /^\/feed\/update\/(urn:li:(?:ugcPost|share|activity):[1-9]\d{0,29})\/?$/.exec(
-        path
-      )?.[1];
-      const activity = /^\/posts\/[^/]+-activity-([1-9]\d{0,29})-[^/]+\/?$/.exec(path)?.[1];
-      const id = urn ?? (activity ? `urn:li:activity:${activity}` : void 0);
-      return id ? { id, url: `https://www.linkedin.com/feed/update/${id}/` } : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-};
-
-// packages/domain/communication/src/social/linkedin-sharing-state.ts
-var LinkedInSharingState = class {
-  validate(previous, next) {
-    const newReservation = next.status === "pending" && next.attempts === (previous?.attempts ?? 0) + 1;
-    if (!previous) {
-      if (!newReservation)
-        throw new Error("LinkedIn sharing must reserve before sending");
-      return;
-    }
-    if (previous.id !== next.id || previous.url !== next.url || previous.status === "sent")
-      throw new Error("LinkedIn sharing history cannot be replaced");
-    if (previous.status === "retry" && newReservation) return;
-    if (previous.status === "pending" && next.status !== "pending" && next.attempts === previous.attempts && next.reservedAt === previous.reservedAt)
-      return;
-    throw new Error("Invalid LinkedIn sharing transition");
-  }
-};
-
-// packages/domain/communication/src/social/reconcile-linkedin-sharing.ts
-var ReconcileLinkedInSharing = class {
-  constructor(references, journal, notification, clock) {
-    this.references = references;
-    this.journal = journal;
-    this.notification = notification;
-    this.clock = clock;
-  }
-  references;
-  journal;
-  notification;
-  clock;
-  async execute(urls, beforeSend) {
-    const posts = /* @__PURE__ */ new Map();
-    for (const url of urls) {
-      const post = this.references.read(url);
-      if (post) posts.set(post.id, post);
-    }
-    let notificationFailed = false;
-    for (const post of posts.values()) {
-      try {
-        if (!await this.share(post, beforeSend)) notificationFailed = true;
-      } catch {
-        notificationFailed = true;
-      }
-    }
-    return { notificationFailed };
-  }
-  async share(post, beforeSend) {
-    const previous = await this.journal.load(post.id);
-    if (previous?.status === "sent") return true;
-    if (previous?.status === "pending" || (previous?.attempts ?? 0) >= 10)
-      return false;
-    const now2 = this.clock.now();
-    if (previous?.retryAt && Date.parse(previous.retryAt) > now2.getTime())
-      return false;
-    await beforeSend();
-    const reserved = {
-      ...post,
-      status: "pending",
-      attempts: (previous?.attempts ?? 0) + 1,
-      reservedAt: now2.toISOString()
-    };
-    await this.journal.save(previous, reserved);
-    try {
-      await beforeSend();
-    } catch {
-      await this.journal.save(reserved, {
-        ...reserved,
-        status: "retry",
-        retryAt: now2.toISOString()
-      });
-      return false;
-    }
-    const { result, retryAfterSeconds } = await this.notification.send(
-      post.url
-    );
-    if (result.outcome === "uncertain") return false;
-    const accepted = result.outcome === "accepted";
-    await this.journal.save(reserved, {
-      ...reserved,
-      status: accepted ? "sent" : "retry",
-      ...accepted ? {} : {
-        retryAt: new Date(
-          now2.getTime() + Math.max(300, retryAfterSeconds ?? 300) * 1e3
-        ).toISOString()
-      }
-    });
-    return accepted;
-  }
-};
-
 // packages/domain/communication/src/social/social-post-draft.ts
 var SocialPostDraft = class {
   ready(facts) {
@@ -34567,7 +34456,6 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
-  "event.linkedin-post.invalid",
   "communication.social.pending",
   "communication.social.blocked",
   "communication.social.uncertain",
@@ -35656,11 +35544,10 @@ var ManageMeetupAttention = class {
       ...observation,
       commentId
     });
-    const sharing = await this.dependencies.sharing.execute(source);
     return {
       ...result,
       skipped: false,
-      notificationFailed: sharing.notificationFailed || result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
+      notificationFailed: result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
     };
   }
   async synchronizeEvidence() {
@@ -36601,45 +36488,6 @@ var DraftProposalComposition = class {
     return new PromotionalContentFingerprint(
       new ApprovalValueFingerprint(new ContentFingerprint()),
       this.policy()
-    );
-  }
-};
-
-// packages/application/journey/src/use-cases/notify-linkedin-sharing.ts
-var NotifyLinkedInSharing = class {
-  constructor(repository, codec, concurrency, publications, sharing) {
-    this.repository = repository;
-    this.codec = codec;
-    this.concurrency = concurrency;
-    this.publications = publications;
-    this.sharing = sharing;
-  }
-  repository;
-  codec;
-  concurrency;
-  publications;
-  sharing;
-  async execute(source) {
-    const event = this.codec.decode(source).event;
-    const records = await this.publications.list();
-    const urls = records.filter(
-      (record) => record.occurrence === event.date && record.destination.provider === "linkedin"
-    ).flatMap((record) => {
-      if (record.manual) return [record.manual.reference];
-      const receipt = record.attempts.find(
-        (attempt) => attempt.status === "accepted"
-      )?.receipt;
-      return receipt?.provider === "linkedin" ? [
-        receipt.url ?? `https://www.linkedin.com/feed/update/${receipt.postUrn}/`
-      ] : [];
-    });
-    return this.sharing.execute(
-      [...event.linkedInPosts ?? [], ...urls],
-      () => this.concurrency.ensureEventDocumentIsCurrent(
-        this.repository,
-        event.identity,
-        source
-      )
     );
   }
 };
@@ -47886,7 +47734,6 @@ var GithubOrganizerAttentionComposition = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
 var messages3 = {
-  "slack.linkedin-share": "The LinkedIn post is live. Please share it:",
   "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
   "failure.social": "Posting failed.",
@@ -47933,7 +47780,6 @@ var messages3 = {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
 var messages4 = {
-  "slack.linkedin-share": "Le post LinkedIn est en ligne. Merci de le partager :",
   "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "failure.social": "La publication a \xE9chou\xE9.",
@@ -48393,49 +48239,6 @@ var SlackEmailApprovalPresenter = class {
   }
 };
 
-// packages/adapter/communication/slack-notification-gateway/src/slack-linkedin-sharing-notification.ts
-var SlackLinkedInSharingNotification = class {
-  constructor(client, channel, messages5, references, messageReferences) {
-    this.client = client;
-    this.channel = channel;
-    this.messages = messages5;
-    this.references = references;
-    this.messageReferences = messageReferences;
-    if (!/^[CG][A-Z0-9]+$/.test(channel))
-      throw new Error("Invalid organizer channel");
-  }
-  client;
-  channel;
-  messages;
-  references;
-  messageReferences;
-  async send(url) {
-    const post = this.references.read(url);
-    if (!post)
-      return {
-        result: { outcome: "rejected", diagnosticCode: "invalid-request" }
-      };
-    const response = await this.client.post("chat.postMessage", {
-      channel: this.channel,
-      text: `${this.messages.t("slack.linkedin-share")}
-${post.url}`,
-      parse: "none",
-      link_names: false,
-      mrkdwn: true,
-      unfurl_links: false,
-      unfurl_media: false
-    });
-    if (response.result.outcome === "accepted" && !this.messageReferences.read(response.payload, this.channel))
-      return {
-        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
-      };
-    return {
-      result: response.result,
-      retryAfterSeconds: response.retryAfterSeconds
-    };
-  }
-};
-
 // packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
 var SlackMeetupApprovalPresenter = class {
   constructor(messages5) {
@@ -48480,15 +48283,6 @@ var SlackSocialPublicationApprovalPresenter = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
 var SlackNotificationGatewayComposition = class {
-  linkedinSharingNotification(token, channel, locale, fetcher = fetch) {
-    return new SlackLinkedInSharingNotification(
-      this.slackApiClient(token, fetcher),
-      channel,
-      this.slackAttentionMessages(locale),
-      new LinkedInPostReference(),
-      this.slackMessageReference()
-    );
-  }
   slackApiClient(token, fetcher = fetch) {
     return new SlackApiClient(token, fetcher);
   }
@@ -51356,7 +51150,6 @@ var FIELD_ORDER = [
   "OpenFeedback Link",
   "Event materials",
   "Communication",
-  "Posts LinkedIn",
   "Automated introduction emails",
   "Aperitif",
   "Restaurant / Bar",
@@ -51370,10 +51163,6 @@ var FIELD_ORDER = [
 ];
 var GUIDANCE = new Map([
   ...STAGE_GUIDANCE,
-  [
-    "event.linkedin-post.invalid",
-    ["Posts LinkedIn", "comment.guidance.linkedin-post.invalid"]
-  ],
   [
     "event.proposals.invalid-selection",
     ["Agenda", "comment.guidance.proposals.invalid-selection"]
@@ -51958,7 +51747,6 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
-  "comment.guidance.linkedin-post.invalid": "Add one published LinkedIn post URL per line in Posts LinkedIn. Profile and company URLs are not post links.",
   "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
   "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
   "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
@@ -52043,7 +51831,6 @@ var EN_MESSAGES4 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
-  "comment.guidance.linkedin-post.invalid": "Dans Posts LinkedIn, ajoutez un lien de post publi\xE9 par ligne. Un lien de profil ou de page entreprise ne suffit pas.",
   "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
   "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
   "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
@@ -52542,7 +52329,6 @@ var HEADINGS = Object.freeze({
   communityLink: "CNCF Link",
   assetsLink: "Drive Link",
   feedbackLink: "OpenFeedback Link",
-  linkedInPosts: "Posts LinkedIn",
   slidesPdf: "Slides PDF",
   slides: "Event materials",
   communication: "Communication",
@@ -53130,31 +52916,6 @@ var IssueFormFields = class {
   }
 };
 
-// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-linkedin-posts.ts
-var IssueFormLinkedInPosts = class {
-  constructor(references) {
-    this.references = references;
-  }
-  references;
-  read(value, diagnostics) {
-    if (!value) return void 0;
-    const posts = [];
-    for (const line of value.split("\n").filter((line2) => line2.trim())) {
-      const post = this.references.read(line.trim().replace(/^[-*] +/, ""));
-      if (post) posts.push(post.url);
-      else if (!diagnostics.some((item) => item.code === "event.linkedin-post.invalid"))
-        diagnostics.push({
-          code: "event.linkedin-post.invalid",
-          severity: "warning",
-          category: "invalid",
-          field: "linkedInPosts",
-          message: "LinkedIn posts must contain one published post URL per line"
-        });
-    }
-    return [...new Set(posts)];
-  }
-};
-
 // packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-reader.ts
 var IssueFormReader = class {
   constructor(collaborators, options = {}) {
@@ -53192,7 +52953,12 @@ var IssueFormReader = class {
     );
     const event = {
       ...migrated.event,
-      ...this.readPublishedLinks(sections, diagnostics),
+      slidesPdfUrl: this.collaborators.issueFormSections.readSection(
+        sections,
+        HEADINGS.slidesPdf,
+        false,
+        diagnostics
+      ) || void 0,
       ...operations,
       ...this.collaborators.proposalSelectionCodec.read(
         document.body,
@@ -53215,21 +52981,6 @@ var IssueFormReader = class {
         document.identity.repository
       ),
       diagnostics: Object.freeze(diagnostics)
-    };
-  }
-  readPublishedLinks(sections, diagnostics) {
-    const read = (heading) => this.collaborators.issueFormSections.readSection(
-      sections,
-      heading,
-      false,
-      diagnostics
-    );
-    return {
-      linkedInPosts: this.collaborators.linkedInPosts.read(
-        read(HEADINGS.linkedInPosts),
-        diagnostics
-      ),
-      slidesPdfUrl: read(HEADINGS.slidesPdf) || void 0
     };
   }
   readBody(sections, diagnostics) {
@@ -53552,12 +53303,6 @@ var IssueFormWriter = class {
   }
   renderOperations(source, event) {
     let body = source;
-    if (!this.collaborators.issueFormSections.parseSections(body).has(HEADINGS.linkedInPosts))
-      body = this.collaborators.issueFormSections.replaceOrAppendSection(
-        body,
-        HEADINGS.linkedInPosts,
-        "_No response_"
-      );
     for (const [headings, items] of [
       [[HEADINGS.slides], event.operationalChecklists.slidesAndContent],
       [
@@ -54181,7 +53926,6 @@ var GithubIssueFormEventDocumentCodecComposition = class {
   issueFormReader(...args) {
     return new IssueFormReader(
       {
-        linkedInPosts: new IssueFormLinkedInPosts(new LinkedInPostReference()),
         issueFormSections: this.issueFormSections(),
         managedIssueMarkers: this.managedIssueMarkers(),
         issueFormEventMapper: this.issueFormEventMapper(),
@@ -69299,646 +69043,6 @@ var EventComposition = class _EventComposition {
   }
 };
 
-// packages/adapter/communication/github-social-delivery-journal/src/github-linkedin-sharing-journal.ts
-import { isDeepStrictEqual } from "node:util";
-var GithubLinkedInSharingJournal = class {
-  constructor(client, comments, codec, states) {
-    this.client = client;
-    this.comments = comments;
-    this.codec = codec;
-    this.states = states;
-  }
-  client;
-  comments;
-  codec;
-  states;
-  async load(id) {
-    return (await this.records()).find((item) => item.record.id === id)?.record;
-  }
-  async save(previous, next) {
-    const body = this.codec.write(next);
-    const existing = (await this.records()).find(
-      (item) => item.record.id === next.id
-    );
-    if (!isDeepStrictEqual(existing?.record, previous))
-      throw new Error("LinkedIn sharing history changed before persistence");
-    this.states.validate(previous, next);
-    if (existing)
-      await this.client.replace(
-        existing.comment.id,
-        existing.comment.body ?? "",
-        body
-      );
-    else await this.client.create(body);
-    if (!isDeepStrictEqual(await this.load(next.id), next))
-      throw new Error("LinkedIn sharing persistence readback is uncertain");
-  }
-  async records() {
-    const records = (await this.comments.list()).map((comment) => ({
-      comment,
-      record: this.codec.read(comment.body ?? "")
-    }));
-    if (new Set(records.map((item) => item.record.id)).size !== records.length)
-      throw new Error("Duplicate LinkedIn sharing identity");
-    return records;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/github-social-delivery-journal.ts
-import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
-var GithubSocialDeliveryJournal = class {
-  constructor(client, comments, codec, transitions) {
-    this.client = client;
-    this.comments = comments;
-    this.codec = codec;
-    this.transitions = transitions;
-  }
-  client;
-  comments;
-  codec;
-  transitions;
-  async load(intentId) {
-    return (await this.records()).find(
-      (entry) => entry.record.intentId === intentId
-    )?.record;
-  }
-  async list() {
-    return (await this.records()).map((item) => item.record);
-  }
-  async save(previous, next) {
-    const body = this.codec.write(next);
-    const canonical = this.codec.read(body);
-    const prior = previous ? this.codec.read(this.codec.write(previous)) : void 0;
-    const existing = (await this.records()).find(
-      (entry) => entry.record.intentId === next.intentId
-    );
-    if (!isDeepStrictEqual2(existing?.record, prior))
-      throw new Error("Social delivery history changed before persistence");
-    this.transitions.validate(prior, canonical);
-    if (existing) {
-      await this.client.replace(
-        existing.comment.id,
-        existing.comment.body ?? "",
-        body
-      );
-    } else await this.client.create(body);
-    const saved = await this.load(next.intentId);
-    if (!isDeepStrictEqual2(saved, canonical))
-      throw new Error("Social delivery persistence readback is uncertain");
-  }
-  async records() {
-    const records = [];
-    for (const comment of await this.comments.list()) {
-      const record = this.codec.read(comment.body ?? "");
-      if (records.some((entry) => entry.record.intentId === record.intentId))
-        throw new Error("Duplicate social delivery journal identity");
-      records.push({ comment, record });
-    }
-    return records;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/linkedin-sharing-codec.ts
-var LINKEDIN_SHARING_MARKER = "<!-- meetup-linkedin-sharing:v1 ";
-var LinkedInSharingCodec = class {
-  constructor(values, references) {
-    this.values = values;
-    this.references = references;
-  }
-  values;
-  references;
-  read(body) {
-    if (!body.startsWith(LINKEDIN_SHARING_MARKER) || !body.endsWith(" -->"))
-      throw new Error("Invalid LinkedIn sharing marker");
-    const value = JSON.parse(
-      body.slice(LINKEDIN_SHARING_MARKER.length, -4)
-    );
-    const item = this.values.object(value, [
-      "id",
-      "url",
-      "status",
-      "attempts",
-      "reservedAt",
-      "retryAt"
-    ]);
-    const url = this.values.text(item.url, 2e3);
-    const post = this.references.read(url);
-    if (!post || post.id !== item.id || post.url !== url)
-      throw new Error("Invalid LinkedIn sharing identity");
-    if (item.status !== "pending" && item.status !== "sent" && item.status !== "retry")
-      throw new Error("Invalid LinkedIn sharing status");
-    if (typeof item.attempts !== "number" || !Number.isInteger(item.attempts) || item.attempts < 1 || item.attempts > 10)
-      throw new Error("Invalid LinkedIn sharing attempt count");
-    if (item.status === "retry" !== (item.retryAt !== void 0))
-      throw new Error("Invalid LinkedIn sharing retry time");
-    return {
-      ...post,
-      status: item.status,
-      attempts: item.attempts,
-      reservedAt: this.values.instant(item.reservedAt),
-      ...item.retryAt === void 0 ? {} : { retryAt: this.values.instant(item.retryAt) }
-    };
-  }
-  write(record) {
-    const body = `${LINKEDIN_SHARING_MARKER}${JSON.stringify(record)} -->`;
-    this.read(body);
-    return body;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-attempt-codec.ts
-var SocialJournalAttemptCodec = class {
-  constructor(values) {
-    this.values = values;
-  }
-  values;
-  read(value) {
-    const item = this.values.object(value, [
-      "id",
-      "revision",
-      "reservedAt",
-      "status",
-      "media",
-      "receipt",
-      "code",
-      "retryAt",
-      "recovery"
-    ]);
-    const status = item.status;
-    if (status !== "reserved" && status !== "prepared" && status !== "accepted" && status !== "rejected" && status !== "deferred" && status !== "uncertain" && status !== "stale")
-      throw new Error("Invalid social delivery attempt status");
-    const attempt = {
-      id: this.values.text(item.id, 200),
-      revision: this.values.text(item.revision, 200),
-      reservedAt: this.values.instant(item.reservedAt),
-      status,
-      ...item.media === void 0 ? {} : { media: this.media(item.media) },
-      ...item.receipt === void 0 ? {} : { receipt: this.receipt(item.receipt) },
-      ...item.code === void 0 ? {} : { code: this.values.pattern(item.code, 100, /^[a-z][a-z0-9-]*$/) },
-      ...item.retryAt === void 0 ? {} : { retryAt: this.values.instant(item.retryAt) },
-      ...item.recovery === void 0 ? {} : { recovery: this.recovery(item.recovery) }
-    };
-    this.validate(attempt);
-    return attempt;
-  }
-  media(value) {
-    const item = this.values.object(value, [
-      "assetUrn",
-      "fingerprint",
-      "description"
-    ]);
-    return {
-      assetUrn: this.values.pattern(
-        item.assetUrn,
-        200,
-        /^urn:li:image:[A-Za-z0-9_-]+$/
-      ),
-      fingerprint: this.values.pattern(item.fingerprint, 64, /^[a-f0-9]{64}$/),
-      description: this.values.text(item.description, 4086)
-    };
-  }
-  receipt(value) {
-    const item = this.values.object(value, [
-      "provider",
-      "workspaceId",
-      "channelId",
-      "ts",
-      "organizationUrn",
-      "postUrn",
-      "url"
-    ]);
-    if (item.provider === "slack") {
-      this.values.object(value, [
-        "provider",
-        "workspaceId",
-        "channelId",
-        "ts",
-        "url"
-      ]);
-      return {
-        provider: "slack",
-        workspaceId: this.values.pattern(
-          item.workspaceId,
-          100,
-          /^T[A-Z0-9]{2,}$/
-        ),
-        channelId: this.values.pattern(
-          item.channelId,
-          100,
-          /^[CG][A-Z0-9]{2,}$/
-        ),
-        ts: this.values.pattern(item.ts, 40, /^\d+\.\d+$/),
-        ...item.url === void 0 ? {} : { url: this.values.url(item.url, "slack") }
-      };
-    }
-    this.values.object(value, [
-      "provider",
-      "organizationUrn",
-      "postUrn",
-      "url"
-    ]);
-    if (item.provider !== "linkedin")
-      throw new Error("Invalid social receipt provider");
-    return {
-      provider: "linkedin",
-      organizationUrn: this.values.pattern(
-        item.organizationUrn,
-        100,
-        /^urn:li:organization:[1-9]\d*$/
-      ),
-      postUrn: this.values.pattern(
-        item.postUrn,
-        200,
-        /^urn:li:(?:share|ugcPost|activity):[1-9]\d*$/
-      ),
-      ...item.url === void 0 ? {} : { url: this.values.url(item.url, "linkedin") }
-    };
-  }
-  recovery(value) {
-    const item = this.values.object(value, [
-      "actor",
-      "decidedAt",
-      "outcome",
-      "reference"
-    ]);
-    if (item.outcome !== "published" && item.outcome !== "not-published")
-      throw new Error("Invalid social delivery recovery outcome");
-    return {
-      actor: this.values.pattern(
-        item.actor,
-        39,
-        /^[a-z\d](?:[a-z\d-]*[a-z\d])?$/i
-      ),
-      decidedAt: this.values.instant(item.decidedAt),
-      outcome: item.outcome,
-      reference: this.values.text(item.reference, 2e3)
-    };
-  }
-  validate(attempt) {
-    if (attempt.receipt?.provider === "linkedin" && attempt.receipt.postUrn.startsWith("urn:li:activity:") && attempt.recovery?.outcome !== "published")
-      throw new Error("LinkedIn activity identity requires verified recovery");
-    if (attempt.status === "accepted" !== Boolean(attempt.receipt))
-      throw new Error("Social delivery acceptance requires its receipt");
-    if (attempt.status === "prepared" && !attempt.media)
-      throw new Error("Prepared social delivery requires media");
-    if (attempt.retryAt && attempt.status !== "deferred")
-      throw new Error("Only deferred social delivery has a retry time");
-    if (attempt.recovery) {
-      if (attempt.recovery.outcome === "published" !== (attempt.status === "accepted"))
-        throw new Error("Social delivery recovery contradicts its outcome");
-      if (Date.parse(attempt.recovery.decidedAt) < Date.parse(attempt.reservedAt))
-        throw new Error("Social delivery recovery predates its reservation");
-    }
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/trusted-social-journal-comments.ts
-var SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
-var TrustedSocialJournalComments = class {
-  constructor(client, author, marker) {
-    this.client = client;
-    this.author = author;
-    this.marker = marker;
-    if (!/^[a-z\d-]+\[bot\]$/i.test(author))
-      throw new Error("Social delivery requires a trusted GitHub App bot");
-  }
-  client;
-  author;
-  marker;
-  async list() {
-    const records = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-        continue;
-      const current = await this.client.edit(comment);
-      if (current.body !== comment.body || current.id !== comment.node_id)
-        throw new Error("Social delivery history changed during verification");
-      const managed = current.body.startsWith(this.marker);
-      if (current.lastEditedAt !== null || current.editor !== null)
-        await this.verifyHistory(comment, current, managed);
-      if (managed) records.push(comment);
-    }
-    return records;
-  }
-  async verifyHistory(comment, current, managed) {
-    if (!current.editor)
-      throw new Error("Social delivery history editor is unavailable");
-    const history = await this.client.history(comment);
-    if (history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
-      throw new Error("Social delivery history is unavailable");
-    const previouslyManaged = history.some(
-      (edit) => edit.diff?.startsWith(this.marker)
-    );
-    if (!managed && !previouslyManaged) return;
-    if (!managed || !this.trusted(current.editor) || history.some((edit) => !this.trusted(edit.editor)))
-      throw new Error("Social delivery history was edited outside automation");
-  }
-  trusted(editor) {
-    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-codec.ts
-var SocialJournalCodec = class {
-  constructor(values, attempts) {
-    this.values = values;
-    this.attempts = attempts;
-  }
-  values;
-  attempts;
-  read(body) {
-    if (!body.startsWith(SOCIAL_JOURNAL_MARKER) || !body.endsWith(" -->"))
-      throw new Error("Invalid social delivery marker");
-    const value = JSON.parse(
-      body.slice(SOCIAL_JOURNAL_MARKER.length, -4)
-    );
-    return this.parse(value);
-  }
-  write(record) {
-    const value = this.parse(record);
-    const json = JSON.stringify(value).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
-    const body = `${SOCIAL_JOURNAL_MARKER}${json} -->`;
-    if (body.length > 6e4)
-      throw new Error("Social delivery journal comment limit exceeded");
-    return body;
-  }
-  parse(value) {
-    const item = this.values.object(value, [
-      "manual",
-      "intentId",
-      "occurrence",
-      "purpose",
-      "destination",
-      "attempts"
-    ]);
-    if (item.purpose !== "announcement" && item.purpose !== "d7" && item.purpose !== "d0")
-      throw new Error("Invalid social delivery purpose");
-    if (!Array.isArray(item.attempts) || item.attempts.length > 100)
-      throw new Error("Invalid social delivery attempts");
-    const record = {
-      ...item.manual === void 0 ? {} : { manual: this.manual(item.manual) },
-      intentId: this.values.text(item.intentId, 200),
-      occurrence: this.values.text(item.occurrence, 200),
-      purpose: item.purpose,
-      destination: this.destination(item.destination),
-      attempts: item.attempts.map((attempt) => this.attempts.read(attempt))
-    };
-    this.validate(record);
-    return record;
-  }
-  destination(value) {
-    const item = this.values.object(value, [
-      "key",
-      "provider",
-      "label",
-      "workspaceId",
-      "channelId",
-      "organizationUrn"
-    ]);
-    const key = this.values.pattern(item.key, 64, /^[a-z][a-z0-9-]{0,63}$/);
-    const label = this.values.text(item.label, 100);
-    if (item.provider === "slack") {
-      this.values.object(value, [
-        "key",
-        "provider",
-        "label",
-        "workspaceId",
-        "channelId"
-      ]);
-      return {
-        key,
-        label,
-        provider: "slack",
-        workspaceId: this.values.pattern(
-          item.workspaceId,
-          100,
-          /^T[A-Z0-9]{2,}$/
-        ),
-        channelId: this.values.pattern(
-          item.channelId,
-          100,
-          /^[CG][A-Z0-9]{2,}$/
-        )
-      };
-    }
-    this.values.object(value, ["key", "provider", "label", "organizationUrn"]);
-    if (item.provider !== "linkedin")
-      throw new Error("Invalid social destination provider");
-    return {
-      key,
-      label,
-      provider: "linkedin",
-      organizationUrn: this.values.pattern(
-        item.organizationUrn,
-        100,
-        /^urn:li:organization:[1-9]\d*$/
-      )
-    };
-  }
-  validate(record) {
-    if (record.manual && record.attempts.length)
-      throw new Error(
-        "Manual social completion cannot overwrite provider history"
-      );
-    if (new Set(record.attempts.map((attempt) => attempt.id)).size !== record.attempts.length)
-      throw new Error("Duplicate social delivery attempt identity");
-    for (const [index, attempt] of record.attempts.entries()) {
-      const destination = record.destination;
-      if (attempt.media && destination.provider !== "linkedin")
-        throw new Error("Social delivery media belongs to LinkedIn");
-      const receipt = attempt.receipt;
-      if (receipt) this.validateDestination(destination, receipt);
-      if (index < record.attempts.length - 1 && attempt.status !== "rejected" && attempt.status !== "deferred" && attempt.status !== "stale" && attempt.recovery?.outcome !== "not-published")
-        throw new Error("Social delivery attempts contain unsafe replay");
-    }
-  }
-  manual(value) {
-    const item = this.values.object(value, ["recordedAt", "reference"]);
-    return {
-      recordedAt: this.values.instant(item.recordedAt),
-      reference: this.values.text(item.reference, 2e3)
-    };
-  }
-  validateDestination(destination, receipt) {
-    const matches = receipt.provider === "slack" && destination.provider === "slack" ? receipt.workspaceId === destination.workspaceId && receipt.channelId === destination.channelId : receipt.provider === "linkedin" && destination.provider === "linkedin" && receipt.organizationUrn === destination.organizationUrn;
-    if (!matches)
-      throw new Error(
-        "Social receipt destination does not match its reservation"
-      );
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-transition.ts
-import { isDeepStrictEqual as isDeepStrictEqual3 } from "node:util";
-var SocialJournalTransition = class {
-  validate(previous, next) {
-    if (previous?.manual && !isDeepStrictEqual3(previous, next))
-      throw new Error("Manual social completion cannot change");
-    if (!previous) {
-      this.initial(next);
-      return;
-    }
-    if (previous.intentId !== next.intentId || previous.occurrence !== next.occurrence || previous.purpose !== next.purpose || !isDeepStrictEqual3(previous.destination, next.destination))
-      throw new Error("Social delivery identity cannot change");
-    if (next.attempts.length < previous.attempts.length || next.attempts.length > previous.attempts.length + 1)
-      throw new Error("Social delivery history must be preserved");
-    for (const [index, attempt] of previous.attempts.entries()) {
-      const updated = next.attempts[index];
-      if (isDeepStrictEqual3(attempt, updated)) continue;
-      if (!updated || index !== previous.attempts.length - 1)
-        throw new Error("Earlier social delivery attempts cannot change");
-      this.attempt(attempt, updated);
-    }
-    if (next.attempts.length > previous.attempts.length)
-      this.append(previous, next);
-  }
-  initial(next) {
-    if (next.attempts.length > 1 || next.attempts.some(
-      (attempt) => attempt.status !== "reserved" || attempt.media || attempt.recovery
-    ))
-      throw new Error("Social delivery must be reserved before effects");
-  }
-  append(previous, next) {
-    const last = previous.attempts.at(-1);
-    if (last && last.status !== "rejected" && last.status !== "deferred" && last.status !== "stale" && last.recovery?.outcome !== "not-published")
-      throw new Error("Uncertain social delivery cannot be replayed");
-    const added = next.attempts.at(-1);
-    if (added?.status !== "reserved" || added.receipt || added.code || added.retryAt || added.recovery)
-      throw new Error("Social delivery must be reserved before effects");
-    if (added.media && (!isDeepStrictEqual3(last?.media, added.media) || last?.revision !== added.revision))
-      throw new Error("Social delivery cannot reuse unreviewed media");
-    if (last && Date.parse(added.reservedAt) < Date.parse(last.reservedAt))
-      throw new Error("Social delivery attempt predates its history");
-  }
-  attempt(previous, next) {
-    if (previous.status === "accepted" || previous.recovery)
-      throw new Error("Completed social delivery evidence cannot change");
-    if (previous.status === "rejected" || previous.status === "deferred") {
-      this.terminalRecovery(previous, next);
-      return;
-    }
-    if (previous.id !== next.id || previous.revision !== next.revision || previous.reservedAt !== next.reservedAt || previous.media && !isDeepStrictEqual3(previous.media, next.media))
-      throw new Error("Social delivery reservation cannot change");
-    if (previous.status === "uncertain" && !next.recovery)
-      throw new Error("Uncertain social delivery requires explicit recovery");
-    if (next.recovery) {
-      this.recovery(previous, next);
-      return;
-    }
-    if (next.status === "reserved" || previous.status === "prepared" && next.status === "prepared")
-      throw new Error("Social delivery cannot return to an earlier stage");
-  }
-  terminalRecovery(previous, next) {
-    const { recovery, ...evidence } = next;
-    if (recovery?.outcome !== "not-published" || !isDeepStrictEqual3(previous, evidence))
-      throw new Error("Completed social delivery evidence cannot change");
-  }
-  recovery(previous, next) {
-    const {
-      status: previousStatus,
-      receipt: previousReceipt,
-      recovery: previousRecovery,
-      ...previousEvidence
-    } = previous;
-    const { status, receipt, recovery, ...evidence } = next;
-    if (!isDeepStrictEqual3(previousEvidence, evidence))
-      throw new Error("Social recovery cannot change provider evidence");
-    const validOutcome = recovery?.outcome === "published" ? status === "accepted" && Boolean(receipt) : status === previousStatus && isDeepStrictEqual3(receipt, previousReceipt) && !previousRecovery;
-    if (!validOutcome)
-      throw new Error("Invalid social delivery recovery transition");
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-value-schema.ts
-var SocialJournalValueSchema = class {
-  object(value, keys) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
-      throw new Error("Invalid social delivery object");
-    return value;
-  }
-  text(value, max) {
-    if (typeof value !== "string" || !value.trim() || value.length > max || [...value].some(
-      (character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127
-    ))
-      throw new Error("Invalid social delivery value");
-    return value;
-  }
-  pattern(value, max, pattern) {
-    const text = this.text(value, max);
-    if (!pattern.test(text))
-      throw new Error("Invalid social delivery identity");
-    return text;
-  }
-  instant(value) {
-    const text = this.text(value, 40);
-    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(text) || !Number.isFinite(Date.parse(text)))
-      throw new Error("Invalid social delivery timestamp");
-    return text;
-  }
-  url(value, provider) {
-    const text = this.text(value, 2e3);
-    const url = new URL(text);
-    const validHost = provider === "slack" ? /^(?:[a-z0-9-]+\.)?slack\.com$/.test(url.hostname) : /^(?:www\.)?linkedin\.com$/.test(url.hostname);
-    if (!validHost || url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.port)
-      throw new Error("Invalid social delivery post URL");
-    return text;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/dependency-composition.ts
-var GithubSocialDeliveryJournalComposition = class {
-  sharing(client, author) {
-    return new GithubLinkedInSharingJournal(
-      client,
-      new TrustedSocialJournalComments(client, author, LINKEDIN_SHARING_MARKER),
-      new LinkedInSharingCodec(
-        new SocialJournalValueSchema(),
-        new LinkedInPostReference()
-      ),
-      new LinkedInSharingState()
-    );
-  }
-  create(client, author) {
-    const values = new SocialJournalValueSchema();
-    const attempts = new SocialJournalAttemptCodec(values);
-    return new GithubSocialDeliveryJournal(
-      client,
-      new TrustedSocialJournalComments(client, author, SOCIAL_JOURNAL_MARKER),
-      new SocialJournalCodec(values, attempts),
-      new SocialJournalTransition()
-    );
-  }
-};
-
-// packages/runtime/github-actions/src/linkedin-sharing-composition.ts
-var LinkedInSharingComposition = class {
-  create(input, repository, codec, clock) {
-    const client = new GithubOrganizerApprovalComposition().githubApprovalClient(
-      input.client,
-      input.owner,
-      input.repo,
-      input.issueNumber
-    );
-    const journals = new GithubSocialDeliveryJournalComposition();
-    return new NotifyLinkedInSharing(
-      repository,
-      codec,
-      new EventDocumentConcurrency(),
-      journals.create(client, input.commentAuthorLogin),
-      new ReconcileLinkedInSharing(
-        new LinkedInPostReference(),
-        journals.sharing(client, input.commentAuthorLogin),
-        new SlackNotificationGatewayComposition().linkedinSharingNotification(
-          input.slackToken,
-          input.slackOrganizerChannelId,
-          input.locale
-        ),
-        clock
-      )
-    );
-  }
-};
-
 // packages/runtime/github-actions/src/organizer-approval-composition.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
 var OrganizerApprovalComposition = class {
@@ -70091,12 +69195,6 @@ var AttentionComposition = class _AttentionComposition {
           repository: context3.get(SERVICES.eventRepository),
           codec: context3.get(SERVICES.eventDocumentCodec),
           clock,
-          sharing: new LinkedInSharingComposition().create(
-            input,
-            context3.get(SERVICES.eventRepository),
-            context3.get(SERVICES.eventDocumentCodec),
-            clock
-          ),
           approvals: context3.get(
             ATTENTION_SERVICES.approvals
           ).attention,

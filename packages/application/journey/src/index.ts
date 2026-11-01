@@ -10,19 +10,7 @@ export type {
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "./communication/contracts.js";
-export { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
-export {
-	RecoverSocialPublication,
-	type SocialRecoveryInput,
-} from "./communication/recover-social-publication.js";
 export { SocialPostDrafts } from "./communication/social-post-drafts.js";
-export { SocialPublicationApprovalRequest } from "./communication/social-publication-approval-request.js";
-export { SocialPublicationCompletion } from "./communication/social-publication-completion.js";
-export type {
-	SocialPublicationDependencies,
-	SocialPublicationResult,
-	SocialPublicationStatus,
-} from "./communication/social-publication-contracts.js";
 export { JourneyCommunicationComposition } from "./communication-composition.js";
 export type { AutomationConfig } from "./config/automation-config.js";
 export { AutomationConfigFactory } from "./config/automation-config.js";
@@ -52,7 +40,6 @@ export type {
 	OrganizerApprovalKind,
 	OrganizerApprovalRequest,
 	OrganizerApprovalResult,
-	SocialPublicationApprovalDetails,
 } from "./ports/organizer-approval.js";
 export type {
 	ApprovalEmailDetail,
@@ -106,12 +93,10 @@ export {
 } from "./review/content-workspace.js";
 export { ManageContentReview } from "./review/manage-content-review.js";
 export { SubmitPromotionalContent } from "./review/submit-promotional-content.js";
-export { SocialPublicationComposition } from "./social-publication-composition.js";
 export { AssetRenderProjection } from "./use-cases/asset-render-projection.js";
 export { CommunicationJourneyResults } from "./use-cases/communication-journey-results.js";
 export type { CommunityPublicationSettings } from "./use-cases/community-publication-projection.js";
 export type * from "./use-cases/event-publication-contracts.js";
-export { EventPublicationResults } from "./use-cases/event-publication-results.js";
 export { FindNextAssetEvent } from "./use-cases/find-next-asset-event.js";
 export { ManageMeetupAttention } from "./use-cases/manage-meetup-attention.js";
 export { ManageMeetupCommunications } from "./use-cases/manage-meetup-communications.js";
@@ -120,7 +105,6 @@ export type {
 	ManageMeetupEventDependencies,
 	ManageMeetupEventResult,
 } from "./use-cases/manage-meetup-event-contracts.js";
-export { NotifyLinkedInSharing } from "./use-cases/notify-linkedin-sharing.js";
 export { ReconcileEventPublications } from "./use-cases/reconcile-event-publications.js";
 export { ReconcileFeedbackLink } from "./use-cases/reconcile-feedback-link.js";
 export { ReconcileMeetupDocuments } from "./use-cases/reconcile-meetup-documents.js";
@@ -130,7 +114,6 @@ export type {
 	ReconcileMeetupIssueFormResult,
 } from "./use-cases/reconcile-meetup-issue-form.js";
 export { ReconcileMeetupIssueForm } from "./use-cases/reconcile-meetup-issue-form.js";
-export { ReconcileMeetupSlidesDelivery } from "./use-cases/reconcile-meetup-slides-delivery.js";
 export {
 	ReconcileMeetupSlidesPdf,
 	type SlidesPdfSource,
@@ -151,3 +134,22 @@ export type {
 	ValidateMeetupReferentialsResult,
 } from "./use-cases/validate-meetup-referentials.js";
 export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referentials.js";
+export { ReconcileMeetupSlidesDelivery } from "./use-cases/reconcile-meetup-slides-delivery.js";
+
+export { EventPublicationResults } from "./use-cases/event-publication-results.js";
+
+export type { SocialPublicationApprovalDetails } from "./ports/organizer-approval.js";
+export { SocialPublicationComposition } from "./social-publication-composition.js";
+export {
+	RecoverSocialPublication,
+	type SocialRecoveryInput,
+} from "./communication/recover-social-publication.js";
+export { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
+export { SocialPublicationCompletion } from "./communication/social-publication-completion.js";
+export type {
+	SocialPublicationDependencies,
+	SocialPublicationResult,
+	SocialPublicationStatus,
+} from "./communication/social-publication-contracts.js";
+
+export { SocialPublicationApprovalRequest } from "./communication/social-publication-approval-request.js";

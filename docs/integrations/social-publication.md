@@ -185,28 +185,6 @@ applies. Credential or permission rejection requires correction and explicit
 recovery. A timeout, ambiguous response, or interrupted reservation blocks
 automatic retries because the post may already exist.
 
-## Ask organizers to share a LinkedIn post
-
-After publishing manually on LinkedIn, add its post URL under **Posts LinkedIn**
-in the meetup issue, one URL per line. This collection can include the
-announcement, reminders and recap. The event reconciliation adds the field to
-existing issues and leaves supplied links unchanged. Do not use a profile or
-company page URL. Adding a link records the organizer's confirmation that the
-post is published; automation does not fetch the LinkedIn page.
-
-Organizer notification reconciliation sends each new post link to the existing
-`slack-organizer-channel-id`, using `slack-token`, with a request to share it.
-Confirmed API publication receipts for the current event date supply the link
-automatically. Drafts, approval requests and uncertain publication attempts do
-not trigger a sharing request. No LinkedIn API access is needed for manual posts.
-
-Notification history is separate from public publication history. Repeated
-reconciliation, tracking parameters, or removing and adding the same post link
-does not send it again. Definite Slack rejections may retry after the provider's
-delay, with a minimum of five minutes and at most ten attempts. An interrupted or
-uncertain notification stays reserved to prevent duplicates; check Slack before
-sharing the post manually. Do not edit or delete the bot's notification history.
-
 ## Recover a delivery
 
 Inspect the provider before deciding whether a post exists. Call

@@ -270,15 +270,6 @@ reporting for the batch; a failed destination does not cancel the remaining ones
 This keeps orchestration with automation while preserving consumer ownership of
 destinations and credentials.
 
-2026-11-01: published LinkedIn posts trigger a separate organizer Slack sharing
-request. Manual publication uses an explicit post URL collection on the issue;
-API publication uses accepted receipts for the current event date. The existing
-organizer token and channel are reused. Canonical post identity and a separate
-trusted notification journal prevent duplicate requests across reconciliation,
-URL tracking variants, and removal/reinsertion. A reservation precedes sending;
-uncertain delivery does not retry automatically. This extends organizer
-notifications without enabling LinkedIn publishing or engagement tracking.
-
 [pinned-communications]: https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/5a80cd5013781ff071bea0dfda49044bc4071c5f/docs/integrations/communications.md
 [slack-post]: https://docs.slack.dev/reference/methods/chat.postMessage/
 [slack-limits]: https://docs.slack.dev/apis/web-api/rate-limits/

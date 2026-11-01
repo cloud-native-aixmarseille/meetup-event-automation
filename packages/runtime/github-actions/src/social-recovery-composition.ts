@@ -1,6 +1,5 @@
 import type { getOctokit } from "@actions/github";
 import {
-	LinkedInPostReference,
 	SocialPostTiming,
 	SocialRecoveryReference,
 } from "@meetup-automation/communication";
@@ -62,7 +61,7 @@ export class SocialRecoveryComposition {
 				new SocialPostTiming(),
 				fingerprints,
 			),
-			new SocialRecoveryReference(new LinkedInPostReference()),
+			new SocialRecoveryReference(),
 			fingerprints,
 		);
 	}

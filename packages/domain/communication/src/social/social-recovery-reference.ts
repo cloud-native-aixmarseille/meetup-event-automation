@@ -1,11 +1,7 @@
-import type { LinkedInPostReference } from "./linkedin-post-reference.js";
 import type { SocialDestination } from "./social-destination.js";
 import type { SocialPostReceipt } from "./social-publication-ports.js";
 
 export class SocialRecoveryReference {
-	constructor(
-		private readonly references: Pick<LinkedInPostReference, "read">,
-	) {}
 	receipt(
 		destination: SocialDestination,
 		reference: string,
@@ -39,13 +35,20 @@ export class SocialRecoveryReference {
 				url: reference,
 			};
 		}
-		const post = this.references.read(reference);
-		if (url.hostname !== "www.linkedin.com" || !post)
+		const path = decodeURIComponent(url.pathname);
+		const urn =
+			/^\/feed\/update\/(urn:li:(?:ugcPost|share|activity):[1-9]\d{0,29})\/?$/.exec(
+				path,
+			)?.[1];
+		const activity = /^\/posts\/[^/]+-activity-([1-9]\d{0,29})-[^/]+\/?$/.exec(
+			path,
+		)?.[1];
+		if (url.hostname !== "www.linkedin.com" || (!urn && !activity))
 			throw new Error("Invalid LinkedIn recovery reference");
 		return {
 			provider: "linkedin",
 			organizationUrn: destination.organizationUrn,
-			postUrn: post.id,
+			postUrn: urn ?? `urn:li:activity:${activity}`,
 			url: reference,
 		};
 	}

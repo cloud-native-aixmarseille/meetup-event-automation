@@ -121,11 +121,7 @@ describe("trusted social delivery history", () => {
 
 		// Act
 		const construct = () =>
-			new TrustedSocialJournalComments(
-				f.client,
-				"organizer",
-				SOCIAL_JOURNAL_MARKER,
-			);
+			new TrustedSocialJournalComments(f.client, "organizer");
 
 		// Assert
 		expect(construct).toThrow("trusted GitHub App bot");

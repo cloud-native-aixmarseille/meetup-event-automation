@@ -1,4 +1,3 @@
-import { LinkedInPostReference } from "@meetup-automation/communication";
 import { EventDomainComposition } from "@meetup-automation/event";
 import { EventReferenceMetadata } from "./event-reference-metadata.js";
 import {
@@ -8,7 +7,6 @@ import {
 import { IssueFormChecklists } from "./issue-form-checklists.js";
 import { IssueFormEventMapper } from "./issue-form-event-mapper.js";
 import { IssueFormFields } from "./issue-form-fields.js";
-import { IssueFormLinkedInPosts } from "./issue-form-linkedin-posts.js";
 import {
 	IssueFormReader,
 	type IssueFormReaderArguments,
@@ -70,7 +68,6 @@ export class GithubIssueFormEventDocumentCodecComposition {
 	issueFormReader(...args: IssueFormReaderArguments): IssueFormReader {
 		return new IssueFormReader(
 			{
-				linkedInPosts: new IssueFormLinkedInPosts(new LinkedInPostReference()),
 				issueFormSections: this.issueFormSections(),
 				managedIssueMarkers: this.managedIssueMarkers(),
 				issueFormEventMapper: this.issueFormEventMapper(),

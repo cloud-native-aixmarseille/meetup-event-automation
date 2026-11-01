@@ -17,7 +17,6 @@ export const HEADINGS = Object.freeze({
 	communityLink: "CNCF Link",
 	assetsLink: "Drive Link",
 	feedbackLink: "OpenFeedback Link",
-	linkedInPosts: "Posts LinkedIn",
 	slidesPdf: "Slides PDF",
 	slides: "Event materials",
 	communication: "Communication",

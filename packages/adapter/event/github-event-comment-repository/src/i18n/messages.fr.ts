@@ -1,7 +1,5 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
-	"comment.guidance.linkedin-post.invalid":
-		"Dans Posts LinkedIn, ajoutez un lien de post publié par ligne. Un lien de profil ou de page entreprise ne suffit pas.",
 	"comment.guidance.content.description-review":
 		"Modifiez et validez la description dans son commentaire.",
 	"comment.guidance.content.title-review":

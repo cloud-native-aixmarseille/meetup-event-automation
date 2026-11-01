@@ -1,8 +1,6 @@
-import { LinkedInPostReference } from "@meetup-automation/communication";
 import type { EventDocument } from "@meetup-automation/event";
 import { EventDomainComposition } from "@meetup-automation/event";
 import { GithubIssueFormEventDocumentCodecComposition } from "./dependency-composition.js";
-import { IssueFormLinkedInPosts } from "./issue-form-linkedin-posts.js";
 import { IssueFormReader } from "./issue-form-reader.js";
 
 const document: EventDocument = {
@@ -40,7 +38,6 @@ describe("IssueFormReader", () => {
 
 			// Act
 			const result = new IssueFormReader({
-				linkedInPosts: new IssueFormLinkedInPosts(new LinkedInPostReference()),
 				issueFormSections:
 					new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
 				managedIssueMarkers:
@@ -74,7 +71,6 @@ describe("IssueFormReader", () => {
 	it("requires an agenda heading when no proposal section exists", () => {
 		// Arrange
 		const reader = new IssueFormReader({
-			linkedInPosts: new IssueFormLinkedInPosts(new LinkedInPostReference()),
 			issueFormSections:
 				new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
 			managedIssueMarkers:
@@ -118,7 +114,6 @@ describe("IssueFormReader", () => {
 
 			// Act
 			const result = new IssueFormReader({
-				linkedInPosts: new IssueFormLinkedInPosts(new LinkedInPostReference()),
 				issueFormSections:
 					new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
 				managedIssueMarkers:

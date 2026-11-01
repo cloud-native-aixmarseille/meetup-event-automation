@@ -105,8 +105,6 @@ export type MeetupEvent = Readonly<{
 	proposalReferences?: readonly string[];
 	proposalStatus?: "current" | "stale";
 	publicationLinks: EventPublicationLinks;
-	/** Published LinkedIn posts supplied by organizers for the sharing notification. */
-	linkedInPosts?: readonly string[];
 	/** Public PDF prepared by asset automation for attendee delivery. */
 	slidesPdfUrl?: string;
 	occurrenceStatus?: OccurrenceStatus;

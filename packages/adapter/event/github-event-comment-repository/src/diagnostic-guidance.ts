@@ -12,7 +12,6 @@ export const FIELD_ORDER = [
 	"OpenFeedback Link",
 	"Event materials",
 	"Communication",
-	"Posts LinkedIn",
 	"Automated introduction emails",
 	"Aperitif",
 	"Restaurant / Bar",
@@ -34,10 +33,6 @@ export const GUIDANCE = new Map<
 	]
 >([
 	...STAGE_GUIDANCE,
-	[
-		"event.linkedin-post.invalid",
-		["Posts LinkedIn", "comment.guidance.linkedin-post.invalid"],
-	],
 	[
 		"event.proposals.invalid-selection",
 		["Agenda", "comment.guidance.proposals.invalid-selection"],

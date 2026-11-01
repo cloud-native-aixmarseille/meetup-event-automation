@@ -65983,215 +65983,6 @@ var CommunicationDiagnosticProjection = class {
   }
 };
 
-// packages/application/journey/src/communication/reconcile-social-publications.ts
-var ReconcileSocialPublications = class {
-  constructor(dependencies, review, requests, intents, delivery) {
-    this.dependencies = dependencies;
-    this.review = review;
-    this.requests = requests;
-    this.intents = intents;
-    this.delivery = delivery;
-  }
-  dependencies;
-  review;
-  requests;
-  intents;
-  delivery;
-  async execute(identity) {
-    const snapshot = await this.dependencies.store.load();
-    const configured = await this.dependencies.configuration();
-    const latest = /* @__PURE__ */ new Map();
-    for (const proposal of snapshot.proposals)
-      if (configured.some(
-        (item) => proposal.plan.target.startsWith(`${item.key}:`)
-      ))
-        latest.set(proposal.plan.target, proposal);
-    const publications = [];
-    for (const proposal of latest.values()) {
-      try {
-        publications.push(
-          this.result(proposal, await this.reconcile(identity, proposal))
-        );
-      } catch {
-        publications.push({
-          ...this.result(proposal, "uncertain"),
-          diagnostics: [
-            {
-              code: "communication.social.evaluation-failed",
-              severity: "error",
-              category: "incomplete",
-              field: `social.${proposal.plan.target.replace(":", ".")}`,
-              message: "Social publication evaluation failed"
-            }
-          ]
-        });
-      }
-    }
-    await this.dependencies.completion.record(identity, publications);
-    return {
-      publications,
-      diagnostics: publications.flatMap((item) => item.diagnostics)
-    };
-  }
-  async reconcile(identity, proposal) {
-    if (!proposal.plan.destination) return "blocked";
-    const record = await this.intents.anchor(identity, proposal);
-    if (record.manual) return "manual";
-    const attempt = record.attempts.at(-1);
-    if (attempt?.status === "accepted") return "complete";
-    const context3 = await this.review.context(identity, proposal);
-    if (!context3) return "blocked";
-    if (!attempt && record.purpose === "announcement" && context3.event.operationalChecklists.communication.some(
-      (item) => item.name === record.destination.label && item.completed
-    )) {
-      await this.dependencies.journal.save(record, {
-        ...record,
-        manual: {
-          recordedAt: this.dependencies.now(),
-          reference: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`
-        }
-      });
-      return "manual";
-    }
-    const status = this.attemptStatus(record, proposal);
-    if (status) return status;
-    if (this.dependencies.timing.expired(context3.plan, this.dependencies.now()))
-      return "expired";
-    if (attempt?.retryAt && Date.parse(attempt.retryAt) > Date.parse(this.dependencies.now()))
-      return "scheduled";
-    const approval = await this.dependencies.approvals.request(
-      this.requests.request(proposal, record)
-    );
-    if (approval.status !== "approved")
-      return approval.status === "pending" ? "pending" : "blocked";
-    if (!this.dependencies.timing.publicationEligible(
-      context3.plan,
-      this.dependencies.now()
-    ))
-      return "scheduled";
-    return await this.delivery.publish(identity, proposal, record);
-  }
-  attemptStatus(record, proposal) {
-    const attempt = record.attempts.at(-1);
-    if (!attempt || attempt.recovery?.outcome === "not-published")
-      return void 0;
-    if (["reserved", "prepared", "uncertain"].includes(attempt.status))
-      return "uncertain";
-    if (attempt.status === "stale")
-      return attempt.revision === proposal.revision ? "blocked" : void 0;
-    if (attempt.status === "rejected" || record.attempts.filter((item) => item.status !== "stale").length >= 10)
-      return "blocked";
-    return void 0;
-  }
-  result(proposal, status) {
-    return {
-      target: proposal.plan.target,
-      occurrence: proposal.plan.facts.date,
-      status,
-      diagnostics: ["published", "complete", "manual", "scheduled"].includes(
-        status
-      ) ? [] : [
-        {
-          code: `communication.social.${status}`,
-          severity: "warning",
-          category: "incomplete",
-          field: `social.${proposal.plan.target.replace(":", ".")}`,
-          message: `Social publication requires organizer action: ${status}`
-        }
-      ]
-    };
-  }
-};
-
-// packages/application/journey/src/communication/recover-social-publication.ts
-var RecoverSocialPublication = class {
-  constructor(journal, store, approvals, review, references, fingerprints) {
-    this.journal = journal;
-    this.store = store;
-    this.approvals = approvals;
-    this.review = review;
-    this.references = references;
-    this.fingerprints = fingerprints;
-  }
-  journal;
-  store;
-  approvals;
-  review;
-  references;
-  fingerprints;
-  async execute(input) {
-    const record = await this.journal.load(input.intentId);
-    if (record?.manual) return "complete";
-    const attempt = record?.attempts.at(-1);
-    if (!record || !attempt)
-      throw new Error("Social recovery requires a recorded attempt");
-    if (attempt.status === "accepted") return "complete";
-    if (["rejected", "deferred"].includes(attempt.status) && input.outcome === "published")
-      throw new Error(
-        "Definitive non-acceptance requires non-publication recovery"
-      );
-    if (attempt.recovery) {
-      if (attempt.recovery.outcome !== input.outcome || attempt.recovery.reference !== input.reference)
-        throw new Error("Social recovery evidence cannot change");
-      return "recovered";
-    }
-    const receipt = input.outcome === "published" ? this.references.receipt(record.destination, input.reference) : void 0;
-    if (input.outcome === "not-published")
-      this.references.evidence(input.reference);
-    const decision = await this.request(input, record, attempt);
-    if (decision.status !== "approved")
-      return decision.status === "pending" ? "pending" : "rejected";
-    await this.persist(input, record, attempt, decision, receipt);
-    return "recovered";
-  }
-  async request(input, record, attempt) {
-    const proposal = (await this.store.load()).proposals.find(
-      (item) => item.publicationIntent === record.intentId && item.revision === attempt.revision
-    );
-    if (!proposal) throw new Error("Social recovery draft evidence is missing");
-    const original = this.review.request(proposal, record);
-    const social = {
-      ...original.social,
-      recovery: { outcome: input.outcome, reference: input.reference }
-    };
-    const request3 = {
-      ...original,
-      social,
-      revision: this.fingerprints.digest({
-        social,
-        attemptId: attempt.id,
-        revision: attempt.revision
-      })
-    };
-    return this.approvals.request(request3);
-  }
-  async persist(input, record, attempt, decision, receipt) {
-    if (!decision.actor || !/^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(decision.actor) || !decision.decidedAt || !Number.isFinite(Date.parse(decision.decidedAt)) || Date.parse(decision.decidedAt) < Date.parse(attempt.reservedAt))
-      throw new Error("Recovery decision provenance is unavailable");
-    const current = await this.journal.load(record.intentId);
-    if (this.fingerprints.digest(current) !== this.fingerprints.digest(record))
-      throw new Error("Social delivery changed during recovery");
-    const recovery = {
-      actor: decision.actor,
-      decidedAt: decision.decidedAt,
-      outcome: input.outcome,
-      reference: input.reference
-    };
-    await this.journal.save(record, {
-      ...record,
-      attempts: [
-        ...record.attempts.slice(0, -1),
-        {
-          ...attempt,
-          status: receipt ? "accepted" : attempt.status,
-          recovery,
-          ...receipt ? { receipt } : {}
-        }
-      ]
-    });
-  }
-};
-
 // packages/application/journey/src/communication/social-post-drafts.ts
 var SocialPostDrafts = class {
   constructor(posts) {
@@ -66239,89 +66030,6 @@ var SocialPostDrafts = class {
       throw new Error("Unsupported social post destination");
     const channel = plan2.destination?.provider ?? (key === "linkedin" ? "linkedin" : "slack");
     return { channel, milestone };
-  }
-};
-
-// packages/application/journey/src/communication/social-publication-approval-request.ts
-var SocialPublicationApprovalRequest = class {
-  constructor(timing, fingerprints) {
-    this.timing = timing;
-    this.fingerprints = fingerprints;
-  }
-  timing;
-  fingerprints;
-  request(proposal, record) {
-    const destination = proposal.plan.destination;
-    if (!destination || !proposal.draft || !proposal.revision)
-      throw new Error("Social draft is incomplete");
-    const expiresAt = this.timing.expiresAt(proposal.plan);
-    const social = {
-      intentId: record.intentId,
-      target: proposal.plan.target,
-      destinationLabel: destination.label,
-      destinationIdentity: destination.provider === "slack" ? `${destination.workspaceId}/${destination.channelId}` : destination.organizationUrn,
-      text: proposal.draft.text,
-      media: proposal.draft.media,
-      plannedAt: proposal.plan.plannedAt ?? "after-approval",
-      expiresAt
-    };
-    return {
-      kind: "social-publication",
-      revision: this.fingerprints.digest({
-        social,
-        proposalRevision: proposal.revision,
-        source: proposal.plan.sourceFingerprint
-      }),
-      eventDate: proposal.plan.facts.date,
-      requestedAt: proposal.createdAt,
-      social
-    };
-  }
-};
-
-// packages/application/journey/src/communication/social-publication-completion.ts
-var SocialPublicationCompletion = class {
-  constructor(repository, codec, concurrency, configuration) {
-    this.repository = repository;
-    this.codec = codec;
-    this.concurrency = concurrency;
-    this.configuration = configuration;
-  }
-  repository;
-  codec;
-  concurrency;
-  configuration;
-  async record(identity, results) {
-    const document2 = await this.repository.find(identity);
-    if (!document2) throw new Error("Social completion issue is unavailable");
-    const event = this.codec.decode(document2).event;
-    const destinations = await this.configuration();
-    const complete = new Set(
-      destinations.filter(
-        (destination) => destinations.filter((item) => item.label === destination.label).every(
-          (item) => results.some(
-            (result) => result.target === `${item.key}:announcement` && result.occurrence === event.date && ["complete", "published", "manual"].includes(result.status)
-          )
-        )
-      ).map((item) => item.label)
-    );
-    const communication = event.operationalChecklists.communication.map(
-      (item) => complete.has(item.name) ? { ...item, completed: true } : item
-    );
-    if (communication.every(
-      (item, index) => item.completed === event.operationalChecklists.communication[index]?.completed
-    ))
-      return;
-    const patch = this.codec.createPatch(document2, {
-      ...event,
-      operationalChecklists: { ...event.operationalChecklists, communication }
-    });
-    await this.concurrency.ensureEventDocumentIsCurrent(
-      this.repository,
-      identity,
-      document2
-    );
-    await this.repository.applyPatch(identity, patch);
   }
 };
 
@@ -67555,45 +67263,6 @@ var CommunicationDomainComposition = class {
   }
 };
 
-// packages/domain/communication/src/social/linkedin-post-reference.ts
-var LinkedInPostReference = class {
-  read(value) {
-    if (value.length > 2e3 || /[\s<>|]/.test(value)) return void 0;
-    try {
-      const url = new URL(value);
-      if (url.protocol !== "https:" || !["www.linkedin.com", "linkedin.com"].includes(url.hostname) || url.username || url.password || url.port)
-        return void 0;
-      const path = decodeURIComponent(url.pathname);
-      const urn = /^\/feed\/update\/(urn:li:(?:ugcPost|share|activity):[1-9]\d{0,29})\/?$/.exec(
-        path
-      )?.[1];
-      const activity = /^\/posts\/[^/]+-activity-([1-9]\d{0,29})-[^/]+\/?$/.exec(path)?.[1];
-      const id = urn ?? (activity ? `urn:li:activity:${activity}` : void 0);
-      return id ? { id, url: `https://www.linkedin.com/feed/update/${id}/` } : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-};
-
-// packages/domain/communication/src/social/linkedin-sharing-state.ts
-var LinkedInSharingState = class {
-  validate(previous, next) {
-    const newReservation = next.status === "pending" && next.attempts === (previous?.attempts ?? 0) + 1;
-    if (!previous) {
-      if (!newReservation)
-        throw new Error("LinkedIn sharing must reserve before sending");
-      return;
-    }
-    if (previous.id !== next.id || previous.url !== next.url || previous.status === "sent")
-      throw new Error("LinkedIn sharing history cannot be replaced");
-    if (previous.status === "retry" && newReservation) return;
-    if (previous.status === "pending" && next.status !== "pending" && next.attempts === previous.attempts && next.reservedAt === previous.reservedAt)
-      return;
-    throw new Error("Invalid LinkedIn sharing transition");
-  }
-};
-
 // packages/domain/communication/src/social/social-post-draft.ts
 var SocialPostDraft = class {
   ready(facts) {
@@ -67738,10 +67407,6 @@ var SocialPostTiming = class {
 
 // packages/domain/communication/src/social/social-recovery-reference.ts
 var SocialRecoveryReference = class {
-  constructor(references) {
-    this.references = references;
-  }
-  references;
   receipt(destination, reference) {
     const url = this.url(reference);
     if (url.protocol !== "https:" || url.username || url.password || url.port || url.search || url.hash)
@@ -67760,13 +67425,19 @@ var SocialRecoveryReference = class {
         url: reference
       };
     }
-    const post = this.references.read(reference);
-    if (url.hostname !== "www.linkedin.com" || !post)
+    const path = decodeURIComponent(url.pathname);
+    const urn = /^\/feed\/update\/(urn:li:(?:ugcPost|share|activity):[1-9]\d{0,29})\/?$/.exec(
+      path
+    )?.[1];
+    const activity = /^\/posts\/[^/]+-activity-([1-9]\d{0,29})-[^/]+\/?$/.exec(
+      path
+    )?.[1];
+    if (url.hostname !== "www.linkedin.com" || !urn && !activity)
       throw new Error("Invalid LinkedIn recovery reference");
     return {
       provider: "linkedin",
       organizationUrn: destination.organizationUrn,
-      postUrn: post.id,
+      postUrn: urn ?? `urn:li:activity:${activity}`,
       url: reference
     };
   }
@@ -69021,7 +68692,6 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
-  "event.linkedin-post.invalid",
   "communication.social.pending",
   "communication.social.blocked",
   "communication.social.uncertain",
@@ -70110,11 +69780,10 @@ var ManageMeetupAttention = class {
       ...observation,
       commentId
     });
-    const sharing = await this.dependencies.sharing.execute(source);
     return {
       ...result,
       skipped: false,
-      notificationFailed: sharing.notificationFailed || result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
+      notificationFailed: result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
     };
   }
   async synchronizeEvidence() {
@@ -71342,6 +71011,252 @@ var ContentWorkspace = class {
   }
 };
 
+// packages/application/journey/src/communication/reconcile-social-publications.ts
+var ReconcileSocialPublications = class {
+  constructor(dependencies, review, requests, intents, delivery) {
+    this.dependencies = dependencies;
+    this.review = review;
+    this.requests = requests;
+    this.intents = intents;
+    this.delivery = delivery;
+  }
+  dependencies;
+  review;
+  requests;
+  intents;
+  delivery;
+  async execute(identity) {
+    const snapshot = await this.dependencies.store.load();
+    const configured = await this.dependencies.configuration();
+    const latest = /* @__PURE__ */ new Map();
+    for (const proposal of snapshot.proposals)
+      if (configured.some(
+        (item) => proposal.plan.target.startsWith(`${item.key}:`)
+      ))
+        latest.set(proposal.plan.target, proposal);
+    const publications = [];
+    for (const proposal of latest.values()) {
+      try {
+        publications.push(
+          this.result(proposal, await this.reconcile(identity, proposal))
+        );
+      } catch {
+        publications.push({
+          ...this.result(proposal, "uncertain"),
+          diagnostics: [
+            {
+              code: "communication.social.evaluation-failed",
+              severity: "error",
+              category: "incomplete",
+              field: `social.${proposal.plan.target.replace(":", ".")}`,
+              message: "Social publication evaluation failed"
+            }
+          ]
+        });
+      }
+    }
+    await this.dependencies.completion.record(identity, publications);
+    return {
+      publications,
+      diagnostics: publications.flatMap((item) => item.diagnostics)
+    };
+  }
+  async reconcile(identity, proposal) {
+    if (!proposal.plan.destination) return "blocked";
+    const record = await this.intents.anchor(identity, proposal);
+    if (record.manual) return "manual";
+    const attempt = record.attempts.at(-1);
+    if (attempt?.status === "accepted") return "complete";
+    const context3 = await this.review.context(identity, proposal);
+    if (!context3) return "blocked";
+    if (!attempt && record.purpose === "announcement" && context3.event.operationalChecklists.communication.some(
+      (item) => item.name === record.destination.label && item.completed
+    )) {
+      await this.dependencies.journal.save(record, {
+        ...record,
+        manual: {
+          recordedAt: this.dependencies.now(),
+          reference: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`
+        }
+      });
+      return "manual";
+    }
+    const status = this.attemptStatus(record, proposal);
+    if (status) return status;
+    if (this.dependencies.timing.expired(context3.plan, this.dependencies.now()))
+      return "expired";
+    if (attempt?.retryAt && Date.parse(attempt.retryAt) > Date.parse(this.dependencies.now()))
+      return "scheduled";
+    const approval = await this.dependencies.approvals.request(
+      this.requests.request(proposal, record)
+    );
+    if (approval.status !== "approved")
+      return approval.status === "pending" ? "pending" : "blocked";
+    if (!this.dependencies.timing.publicationEligible(
+      context3.plan,
+      this.dependencies.now()
+    ))
+      return "scheduled";
+    return await this.delivery.publish(identity, proposal, record);
+  }
+  attemptStatus(record, proposal) {
+    const attempt = record.attempts.at(-1);
+    if (!attempt || attempt.recovery?.outcome === "not-published")
+      return void 0;
+    if (["reserved", "prepared", "uncertain"].includes(attempt.status))
+      return "uncertain";
+    if (attempt.status === "stale")
+      return attempt.revision === proposal.revision ? "blocked" : void 0;
+    if (attempt.status === "rejected" || record.attempts.filter((item) => item.status !== "stale").length >= 10)
+      return "blocked";
+    return void 0;
+  }
+  result(proposal, status) {
+    return {
+      target: proposal.plan.target,
+      occurrence: proposal.plan.facts.date,
+      status,
+      diagnostics: ["published", "complete", "manual", "scheduled"].includes(
+        status
+      ) ? [] : [
+        {
+          code: `communication.social.${status}`,
+          severity: "warning",
+          category: "incomplete",
+          field: `social.${proposal.plan.target.replace(":", ".")}`,
+          message: `Social publication requires organizer action: ${status}`
+        }
+      ]
+    };
+  }
+};
+
+// packages/application/journey/src/communication/recover-social-publication.ts
+var RecoverSocialPublication = class {
+  constructor(journal, store, approvals, review, references, fingerprints) {
+    this.journal = journal;
+    this.store = store;
+    this.approvals = approvals;
+    this.review = review;
+    this.references = references;
+    this.fingerprints = fingerprints;
+  }
+  journal;
+  store;
+  approvals;
+  review;
+  references;
+  fingerprints;
+  async execute(input) {
+    const record = await this.journal.load(input.intentId);
+    if (record?.manual) return "complete";
+    const attempt = record?.attempts.at(-1);
+    if (!record || !attempt)
+      throw new Error("Social recovery requires a recorded attempt");
+    if (attempt.status === "accepted") return "complete";
+    if (["rejected", "deferred"].includes(attempt.status) && input.outcome === "published")
+      throw new Error(
+        "Definitive non-acceptance requires non-publication recovery"
+      );
+    if (attempt.recovery) {
+      if (attempt.recovery.outcome !== input.outcome || attempt.recovery.reference !== input.reference)
+        throw new Error("Social recovery evidence cannot change");
+      return "recovered";
+    }
+    const receipt = input.outcome === "published" ? this.references.receipt(record.destination, input.reference) : void 0;
+    if (input.outcome === "not-published")
+      this.references.evidence(input.reference);
+    const decision = await this.request(input, record, attempt);
+    if (decision.status !== "approved")
+      return decision.status === "pending" ? "pending" : "rejected";
+    await this.persist(input, record, attempt, decision, receipt);
+    return "recovered";
+  }
+  async request(input, record, attempt) {
+    const proposal = (await this.store.load()).proposals.find(
+      (item) => item.publicationIntent === record.intentId && item.revision === attempt.revision
+    );
+    if (!proposal) throw new Error("Social recovery draft evidence is missing");
+    const original = this.review.request(proposal, record);
+    const social = {
+      ...original.social,
+      recovery: { outcome: input.outcome, reference: input.reference }
+    };
+    const request3 = {
+      ...original,
+      social,
+      revision: this.fingerprints.digest({
+        social,
+        attemptId: attempt.id,
+        revision: attempt.revision
+      })
+    };
+    return this.approvals.request(request3);
+  }
+  async persist(input, record, attempt, decision, receipt) {
+    if (!decision.actor || !/^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(decision.actor) || !decision.decidedAt || !Number.isFinite(Date.parse(decision.decidedAt)) || Date.parse(decision.decidedAt) < Date.parse(attempt.reservedAt))
+      throw new Error("Recovery decision provenance is unavailable");
+    const current = await this.journal.load(record.intentId);
+    if (this.fingerprints.digest(current) !== this.fingerprints.digest(record))
+      throw new Error("Social delivery changed during recovery");
+    const recovery = {
+      actor: decision.actor,
+      decidedAt: decision.decidedAt,
+      outcome: input.outcome,
+      reference: input.reference
+    };
+    await this.journal.save(record, {
+      ...record,
+      attempts: [
+        ...record.attempts.slice(0, -1),
+        {
+          ...attempt,
+          status: receipt ? "accepted" : attempt.status,
+          recovery,
+          ...receipt ? { receipt } : {}
+        }
+      ]
+    });
+  }
+};
+
+// packages/application/journey/src/communication/social-publication-approval-request.ts
+var SocialPublicationApprovalRequest = class {
+  constructor(timing, fingerprints) {
+    this.timing = timing;
+    this.fingerprints = fingerprints;
+  }
+  timing;
+  fingerprints;
+  request(proposal, record) {
+    const destination = proposal.plan.destination;
+    if (!destination || !proposal.draft || !proposal.revision)
+      throw new Error("Social draft is incomplete");
+    const expiresAt = this.timing.expiresAt(proposal.plan);
+    const social = {
+      intentId: record.intentId,
+      target: proposal.plan.target,
+      destinationLabel: destination.label,
+      destinationIdentity: destination.provider === "slack" ? `${destination.workspaceId}/${destination.channelId}` : destination.organizationUrn,
+      text: proposal.draft.text,
+      media: proposal.draft.media,
+      plannedAt: proposal.plan.plannedAt ?? "after-approval",
+      expiresAt
+    };
+    return {
+      kind: "social-publication",
+      revision: this.fingerprints.digest({
+        social,
+        proposalRevision: proposal.revision,
+        source: proposal.plan.sourceFingerprint
+      }),
+      eventDate: proposal.plan.facts.date,
+      requestedAt: proposal.createdAt,
+      social
+    };
+  }
+};
+
 // packages/application/journey/src/communication/social-publication-stale-error.ts
 var SocialPublicationStaleError = class extends Error {
 };
@@ -71564,7 +71479,7 @@ var SocialPublicationComposition = class {
         dependencies.timing,
         dependencies.fingerprints
       ),
-      new SocialRecoveryReference(new LinkedInPostReference()),
+      new SocialRecoveryReference(),
       dependencies.fingerprints
     );
   }
@@ -71586,6 +71501,52 @@ var SocialPublicationComposition = class {
       intents,
       new SocialPublicationDelivery(dependencies, intents, review)
     );
+  }
+};
+
+// packages/application/journey/src/communication/social-publication-completion.ts
+var SocialPublicationCompletion = class {
+  constructor(repository, codec, concurrency, configuration) {
+    this.repository = repository;
+    this.codec = codec;
+    this.concurrency = concurrency;
+    this.configuration = configuration;
+  }
+  repository;
+  codec;
+  concurrency;
+  configuration;
+  async record(identity, results) {
+    const document2 = await this.repository.find(identity);
+    if (!document2) throw new Error("Social completion issue is unavailable");
+    const event = this.codec.decode(document2).event;
+    const destinations = await this.configuration();
+    const complete = new Set(
+      destinations.filter(
+        (destination) => destinations.filter((item) => item.label === destination.label).every(
+          (item) => results.some(
+            (result) => result.target === `${item.key}:announcement` && result.occurrence === event.date && ["complete", "published", "manual"].includes(result.status)
+          )
+        )
+      ).map((item) => item.label)
+    );
+    const communication = event.operationalChecklists.communication.map(
+      (item) => complete.has(item.name) ? { ...item, completed: true } : item
+    );
+    if (communication.every(
+      (item, index) => item.completed === event.operationalChecklists.communication[index]?.completed
+    ))
+      return;
+    const patch = this.codec.createPatch(document2, {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
+    });
+    await this.concurrency.ensureEventDocumentIsCurrent(
+      this.repository,
+      identity,
+      document2
+    );
+    await this.repository.applyPatch(identity, patch);
   }
 };
 
@@ -83300,53 +83261,8 @@ var GithubContentStoreComposition = class {
   }
 };
 
-// packages/adapter/communication/github-social-delivery-journal/src/github-linkedin-sharing-journal.ts
-import { isDeepStrictEqual } from "node:util";
-var GithubLinkedInSharingJournal = class {
-  constructor(client, comments, codec, states) {
-    this.client = client;
-    this.comments = comments;
-    this.codec = codec;
-    this.states = states;
-  }
-  client;
-  comments;
-  codec;
-  states;
-  async load(id) {
-    return (await this.records()).find((item) => item.record.id === id)?.record;
-  }
-  async save(previous, next) {
-    const body = this.codec.write(next);
-    const existing = (await this.records()).find(
-      (item) => item.record.id === next.id
-    );
-    if (!isDeepStrictEqual(existing?.record, previous))
-      throw new Error("LinkedIn sharing history changed before persistence");
-    this.states.validate(previous, next);
-    if (existing)
-      await this.client.replace(
-        existing.comment.id,
-        existing.comment.body ?? "",
-        body
-      );
-    else await this.client.create(body);
-    if (!isDeepStrictEqual(await this.load(next.id), next))
-      throw new Error("LinkedIn sharing persistence readback is uncertain");
-  }
-  async records() {
-    const records = (await this.comments.list()).map((comment) => ({
-      comment,
-      record: this.codec.read(comment.body ?? "")
-    }));
-    if (new Set(records.map((item) => item.record.id)).size !== records.length)
-      throw new Error("Duplicate LinkedIn sharing identity");
-    return records;
-  }
-};
-
 // packages/adapter/communication/github-social-delivery-journal/src/github-social-delivery-journal.ts
-import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
+import { isDeepStrictEqual } from "node:util";
 var GithubSocialDeliveryJournal = class {
   constructor(client, comments, codec, transitions) {
     this.client = client;
@@ -83363,9 +83279,6 @@ var GithubSocialDeliveryJournal = class {
       (entry) => entry.record.intentId === intentId
     )?.record;
   }
-  async list() {
-    return (await this.records()).map((item) => item.record);
-  }
   async save(previous, next) {
     const body = this.codec.write(next);
     const canonical = this.codec.read(body);
@@ -83373,7 +83286,7 @@ var GithubSocialDeliveryJournal = class {
     const existing = (await this.records()).find(
       (entry) => entry.record.intentId === next.intentId
     );
-    if (!isDeepStrictEqual2(existing?.record, prior))
+    if (!isDeepStrictEqual(existing?.record, prior))
       throw new Error("Social delivery history changed before persistence");
     this.transitions.validate(prior, canonical);
     if (existing) {
@@ -83384,7 +83297,7 @@ var GithubSocialDeliveryJournal = class {
       );
     } else await this.client.create(body);
     const saved = await this.load(next.intentId);
-    if (!isDeepStrictEqual2(saved, canonical))
+    if (!isDeepStrictEqual(saved, canonical))
       throw new Error("Social delivery persistence readback is uncertain");
   }
   async records() {
@@ -83396,54 +83309,6 @@ var GithubSocialDeliveryJournal = class {
       records.push({ comment, record });
     }
     return records;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/linkedin-sharing-codec.ts
-var LINKEDIN_SHARING_MARKER = "<!-- meetup-linkedin-sharing:v1 ";
-var LinkedInSharingCodec = class {
-  constructor(values, references) {
-    this.values = values;
-    this.references = references;
-  }
-  values;
-  references;
-  read(body) {
-    if (!body.startsWith(LINKEDIN_SHARING_MARKER) || !body.endsWith(" -->"))
-      throw new Error("Invalid LinkedIn sharing marker");
-    const value = JSON.parse(
-      body.slice(LINKEDIN_SHARING_MARKER.length, -4)
-    );
-    const item = this.values.object(value, [
-      "id",
-      "url",
-      "status",
-      "attempts",
-      "reservedAt",
-      "retryAt"
-    ]);
-    const url = this.values.text(item.url, 2e3);
-    const post = this.references.read(url);
-    if (!post || post.id !== item.id || post.url !== url)
-      throw new Error("Invalid LinkedIn sharing identity");
-    if (item.status !== "pending" && item.status !== "sent" && item.status !== "retry")
-      throw new Error("Invalid LinkedIn sharing status");
-    if (typeof item.attempts !== "number" || !Number.isInteger(item.attempts) || item.attempts < 1 || item.attempts > 10)
-      throw new Error("Invalid LinkedIn sharing attempt count");
-    if (item.status === "retry" !== (item.retryAt !== void 0))
-      throw new Error("Invalid LinkedIn sharing retry time");
-    return {
-      ...post,
-      status: item.status,
-      attempts: item.attempts,
-      reservedAt: this.values.instant(item.reservedAt),
-      ...item.retryAt === void 0 ? {} : { retryAt: this.values.instant(item.retryAt) }
-    };
-  }
-  write(record) {
-    const body = `${LINKEDIN_SHARING_MARKER}${JSON.stringify(record)} -->`;
-    this.read(body);
-    return body;
   }
 };
 
@@ -83596,16 +83461,14 @@ var SocialJournalAttemptCodec = class {
 // packages/adapter/communication/github-social-delivery-journal/src/trusted-social-journal-comments.ts
 var SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
 var TrustedSocialJournalComments = class {
-  constructor(client, author, marker) {
+  constructor(client, author) {
     this.client = client;
     this.author = author;
-    this.marker = marker;
     if (!/^[a-z\d-]+\[bot\]$/i.test(author))
       throw new Error("Social delivery requires a trusted GitHub App bot");
   }
   client;
   author;
-  marker;
   async list() {
     const records = [];
     for (const comment of await this.client.list()) {
@@ -83614,7 +83477,7 @@ var TrustedSocialJournalComments = class {
       const current = await this.client.edit(comment);
       if (current.body !== comment.body || current.id !== comment.node_id)
         throw new Error("Social delivery history changed during verification");
-      const managed = current.body.startsWith(this.marker);
+      const managed = current.body.startsWith(SOCIAL_JOURNAL_MARKER);
       if (current.lastEditedAt !== null || current.editor !== null)
         await this.verifyHistory(comment, current, managed);
       if (managed) records.push(comment);
@@ -83628,7 +83491,7 @@ var TrustedSocialJournalComments = class {
     if (history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
       throw new Error("Social delivery history is unavailable");
     const previouslyManaged = history.some(
-      (edit) => edit.diff?.startsWith(this.marker)
+      (edit) => edit.diff?.startsWith(SOCIAL_JOURNAL_MARKER)
     );
     if (!managed && !previouslyManaged) return;
     if (!managed || !this.trusted(current.editor) || history.some((edit) => !this.trusted(edit.editor)))
@@ -83770,22 +83633,22 @@ var SocialJournalCodec = class {
 };
 
 // packages/adapter/communication/github-social-delivery-journal/src/social-journal-transition.ts
-import { isDeepStrictEqual as isDeepStrictEqual3 } from "node:util";
+import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
 var SocialJournalTransition = class {
   validate(previous, next) {
-    if (previous?.manual && !isDeepStrictEqual3(previous, next))
+    if (previous?.manual && !isDeepStrictEqual2(previous, next))
       throw new Error("Manual social completion cannot change");
     if (!previous) {
       this.initial(next);
       return;
     }
-    if (previous.intentId !== next.intentId || previous.occurrence !== next.occurrence || previous.purpose !== next.purpose || !isDeepStrictEqual3(previous.destination, next.destination))
+    if (previous.intentId !== next.intentId || previous.occurrence !== next.occurrence || previous.purpose !== next.purpose || !isDeepStrictEqual2(previous.destination, next.destination))
       throw new Error("Social delivery identity cannot change");
     if (next.attempts.length < previous.attempts.length || next.attempts.length > previous.attempts.length + 1)
       throw new Error("Social delivery history must be preserved");
     for (const [index, attempt] of previous.attempts.entries()) {
       const updated = next.attempts[index];
-      if (isDeepStrictEqual3(attempt, updated)) continue;
+      if (isDeepStrictEqual2(attempt, updated)) continue;
       if (!updated || index !== previous.attempts.length - 1)
         throw new Error("Earlier social delivery attempts cannot change");
       this.attempt(attempt, updated);
@@ -83806,7 +83669,7 @@ var SocialJournalTransition = class {
     const added = next.attempts.at(-1);
     if (added?.status !== "reserved" || added.receipt || added.code || added.retryAt || added.recovery)
       throw new Error("Social delivery must be reserved before effects");
-    if (added.media && (!isDeepStrictEqual3(last?.media, added.media) || last?.revision !== added.revision))
+    if (added.media && (!isDeepStrictEqual2(last?.media, added.media) || last?.revision !== added.revision))
       throw new Error("Social delivery cannot reuse unreviewed media");
     if (last && Date.parse(added.reservedAt) < Date.parse(last.reservedAt))
       throw new Error("Social delivery attempt predates its history");
@@ -83818,7 +83681,7 @@ var SocialJournalTransition = class {
       this.terminalRecovery(previous, next);
       return;
     }
-    if (previous.id !== next.id || previous.revision !== next.revision || previous.reservedAt !== next.reservedAt || previous.media && !isDeepStrictEqual3(previous.media, next.media))
+    if (previous.id !== next.id || previous.revision !== next.revision || previous.reservedAt !== next.reservedAt || previous.media && !isDeepStrictEqual2(previous.media, next.media))
       throw new Error("Social delivery reservation cannot change");
     if (previous.status === "uncertain" && !next.recovery)
       throw new Error("Uncertain social delivery requires explicit recovery");
@@ -83831,7 +83694,7 @@ var SocialJournalTransition = class {
   }
   terminalRecovery(previous, next) {
     const { recovery, ...evidence } = next;
-    if (recovery?.outcome !== "not-published" || !isDeepStrictEqual3(previous, evidence))
+    if (recovery?.outcome !== "not-published" || !isDeepStrictEqual2(previous, evidence))
       throw new Error("Completed social delivery evidence cannot change");
   }
   recovery(previous, next) {
@@ -83842,9 +83705,9 @@ var SocialJournalTransition = class {
       ...previousEvidence
     } = previous;
     const { status, receipt, recovery, ...evidence } = next;
-    if (!isDeepStrictEqual3(previousEvidence, evidence))
+    if (!isDeepStrictEqual2(previousEvidence, evidence))
       throw new Error("Social recovery cannot change provider evidence");
-    const validOutcome = recovery?.outcome === "published" ? status === "accepted" && Boolean(receipt) : status === previousStatus && isDeepStrictEqual3(receipt, previousReceipt) && !previousRecovery;
+    const validOutcome = recovery?.outcome === "published" ? status === "accepted" && Boolean(receipt) : status === previousStatus && isDeepStrictEqual2(receipt, previousReceipt) && !previousRecovery;
     if (!validOutcome)
       throw new Error("Invalid social delivery recovery transition");
   }
@@ -83888,23 +83751,12 @@ var SocialJournalValueSchema = class {
 
 // packages/adapter/communication/github-social-delivery-journal/src/dependency-composition.ts
 var GithubSocialDeliveryJournalComposition = class {
-  sharing(client, author) {
-    return new GithubLinkedInSharingJournal(
-      client,
-      new TrustedSocialJournalComments(client, author, LINKEDIN_SHARING_MARKER),
-      new LinkedInSharingCodec(
-        new SocialJournalValueSchema(),
-        new LinkedInPostReference()
-      ),
-      new LinkedInSharingState()
-    );
-  }
   create(client, author) {
     const values = new SocialJournalValueSchema();
     const attempts = new SocialJournalAttemptCodec(values);
     return new GithubSocialDeliveryJournal(
       client,
-      new TrustedSocialJournalComments(client, author, SOCIAL_JOURNAL_MARKER),
+      new TrustedSocialJournalComments(client, author),
       new SocialJournalCodec(values, attempts),
       new SocialJournalTransition()
     );
@@ -85524,7 +85376,6 @@ var HttpsAssetImageRepositoryComposition = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
 var messages = {
-  "slack.linkedin-share": "The LinkedIn post is live. Please share it:",
   "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
   "failure.social": "Posting failed.",
@@ -85571,7 +85422,6 @@ var messages = {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
 var messages2 = {
-  "slack.linkedin-share": "Le post LinkedIn est en ligne. Merci de le partager :",
   "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "failure.social": "La publication a \xE9chou\xE9.",
@@ -86031,49 +85881,6 @@ var SlackEmailApprovalPresenter = class {
   }
 };
 
-// packages/adapter/communication/slack-notification-gateway/src/slack-linkedin-sharing-notification.ts
-var SlackLinkedInSharingNotification = class {
-  constructor(client, channel, messages5, references, messageReferences) {
-    this.client = client;
-    this.channel = channel;
-    this.messages = messages5;
-    this.references = references;
-    this.messageReferences = messageReferences;
-    if (!/^[CG][A-Z0-9]+$/.test(channel))
-      throw new Error("Invalid organizer channel");
-  }
-  client;
-  channel;
-  messages;
-  references;
-  messageReferences;
-  async send(url) {
-    const post = this.references.read(url);
-    if (!post)
-      return {
-        result: { outcome: "rejected", diagnosticCode: "invalid-request" }
-      };
-    const response = await this.client.post("chat.postMessage", {
-      channel: this.channel,
-      text: `${this.messages.t("slack.linkedin-share")}
-${post.url}`,
-      parse: "none",
-      link_names: false,
-      mrkdwn: true,
-      unfurl_links: false,
-      unfurl_media: false
-    });
-    if (response.result.outcome === "accepted" && !this.messageReferences.read(response.payload, this.channel))
-      return {
-        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
-      };
-    return {
-      result: response.result,
-      retryAfterSeconds: response.retryAfterSeconds
-    };
-  }
-};
-
 // packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
 var SlackMeetupApprovalPresenter = class {
   constructor(messages5) {
@@ -86118,15 +85925,6 @@ var SlackSocialPublicationApprovalPresenter = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
 var SlackNotificationGatewayComposition = class {
-  linkedinSharingNotification(token, channel, locale, fetcher = fetch) {
-    return new SlackLinkedInSharingNotification(
-      this.slackApiClient(token, fetcher),
-      channel,
-      this.slackAttentionMessages(locale),
-      new LinkedInPostReference(),
-      this.slackMessageReference()
-    );
-  }
   slackApiClient(token, fetcher = fetch) {
     return new SlackApiClient(token, fetcher);
   }
@@ -88974,7 +88772,6 @@ var FIELD_ORDER = [
   "OpenFeedback Link",
   "Event materials",
   "Communication",
-  "Posts LinkedIn",
   "Automated introduction emails",
   "Aperitif",
   "Restaurant / Bar",
@@ -88988,10 +88785,6 @@ var FIELD_ORDER = [
 ];
 var GUIDANCE = new Map([
   ...STAGE_GUIDANCE,
-  [
-    "event.linkedin-post.invalid",
-    ["Posts LinkedIn", "comment.guidance.linkedin-post.invalid"]
-  ],
   [
     "event.proposals.invalid-selection",
     ["Agenda", "comment.guidance.proposals.invalid-selection"]
@@ -89576,7 +89369,6 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES5 = {
-  "comment.guidance.linkedin-post.invalid": "Add one published LinkedIn post URL per line in Posts LinkedIn. Profile and company URLs are not post links.",
   "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
   "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
   "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
@@ -89661,7 +89453,6 @@ var EN_MESSAGES5 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES5 = {
-  "comment.guidance.linkedin-post.invalid": "Dans Posts LinkedIn, ajoutez un lien de post publi\xE9 par ligne. Un lien de profil ou de page entreprise ne suffit pas.",
   "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
   "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
   "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
@@ -90160,7 +89951,6 @@ var HEADINGS = Object.freeze({
   communityLink: "CNCF Link",
   assetsLink: "Drive Link",
   feedbackLink: "OpenFeedback Link",
-  linkedInPosts: "Posts LinkedIn",
   slidesPdf: "Slides PDF",
   slides: "Event materials",
   communication: "Communication",
@@ -90748,31 +90538,6 @@ var IssueFormFields = class {
   }
 };
 
-// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-linkedin-posts.ts
-var IssueFormLinkedInPosts = class {
-  constructor(references) {
-    this.references = references;
-  }
-  references;
-  read(value, diagnostics) {
-    if (!value) return void 0;
-    const posts = [];
-    for (const line of value.split("\n").filter((line2) => line2.trim())) {
-      const post = this.references.read(line.trim().replace(/^[-*] +/, ""));
-      if (post) posts.push(post.url);
-      else if (!diagnostics.some((item) => item.code === "event.linkedin-post.invalid"))
-        diagnostics.push({
-          code: "event.linkedin-post.invalid",
-          severity: "warning",
-          category: "invalid",
-          field: "linkedInPosts",
-          message: "LinkedIn posts must contain one published post URL per line"
-        });
-    }
-    return [...new Set(posts)];
-  }
-};
-
 // packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-reader.ts
 var IssueFormReader = class {
   constructor(collaborators, options = {}) {
@@ -90810,7 +90575,12 @@ var IssueFormReader = class {
     );
     const event = {
       ...migrated.event,
-      ...this.readPublishedLinks(sections, diagnostics),
+      slidesPdfUrl: this.collaborators.issueFormSections.readSection(
+        sections,
+        HEADINGS.slidesPdf,
+        false,
+        diagnostics
+      ) || void 0,
       ...operations,
       ...this.collaborators.proposalSelectionCodec.read(
         document2.body,
@@ -90833,21 +90603,6 @@ var IssueFormReader = class {
         document2.identity.repository
       ),
       diagnostics: Object.freeze(diagnostics)
-    };
-  }
-  readPublishedLinks(sections, diagnostics) {
-    const read = (heading) => this.collaborators.issueFormSections.readSection(
-      sections,
-      heading,
-      false,
-      diagnostics
-    );
-    return {
-      linkedInPosts: this.collaborators.linkedInPosts.read(
-        read(HEADINGS.linkedInPosts),
-        diagnostics
-      ),
-      slidesPdfUrl: read(HEADINGS.slidesPdf) || void 0
     };
   }
   readBody(sections, diagnostics) {
@@ -91170,12 +90925,6 @@ var IssueFormWriter = class {
   }
   renderOperations(source, event) {
     let body = source;
-    if (!this.collaborators.issueFormSections.parseSections(body).has(HEADINGS.linkedInPosts))
-      body = this.collaborators.issueFormSections.replaceOrAppendSection(
-        body,
-        HEADINGS.linkedInPosts,
-        "_No response_"
-      );
     for (const [headings, items] of [
       [[HEADINGS.slides], event.operationalChecklists.slidesAndContent],
       [
@@ -91799,7 +91548,6 @@ var GithubIssueFormEventDocumentCodecComposition = class {
   issueFormReader(...args) {
     return new IssueFormReader(
       {
-        linkedInPosts: new IssueFormLinkedInPosts(new LinkedInPostReference()),
         issueFormSections: this.issueFormSections(),
         managedIssueMarkers: this.managedIssueMarkers(),
         issueFormEventMapper: this.issueFormEventMapper(),

@@ -27,9 +27,6 @@ export class GithubSocialDeliveryJournal implements SocialDeliveryJournal {
 			(entry) => entry.record.intentId === intentId,
 		)?.record;
 	}
-	async list(): Promise<readonly SocialDeliveryRecord[]> {
-		return (await this.records()).map((item) => item.record);
-	}
 
 	async save(
 		previous: SocialDeliveryRecord | undefined,

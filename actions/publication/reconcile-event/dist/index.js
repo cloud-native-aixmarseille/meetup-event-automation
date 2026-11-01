@@ -40362,27 +40362,6 @@ var CommunicationDomainComposition = class {
   }
 };
 
-// packages/domain/communication/src/social/linkedin-post-reference.ts
-var LinkedInPostReference = class {
-  read(value) {
-    if (value.length > 2e3 || /[\s<>|]/.test(value)) return void 0;
-    try {
-      const url = new URL(value);
-      if (url.protocol !== "https:" || !["www.linkedin.com", "linkedin.com"].includes(url.hostname) || url.username || url.password || url.port)
-        return void 0;
-      const path = decodeURIComponent(url.pathname);
-      const urn = /^\/feed\/update\/(urn:li:(?:ugcPost|share|activity):[1-9]\d{0,29})\/?$/.exec(
-        path
-      )?.[1];
-      const activity = /^\/posts\/[^/]+-activity-([1-9]\d{0,29})-[^/]+\/?$/.exec(path)?.[1];
-      const id = urn ?? (activity ? `urn:li:activity:${activity}` : void 0);
-      return id ? { id, url: `https://www.linkedin.com/feed/update/${id}/` } : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-};
-
 // packages/domain/communication/src/social/social-post-draft.ts
 var SocialPostDraft = class {
   ready(facts) {
@@ -41762,7 +41741,6 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
-  "event.linkedin-post.invalid",
   "communication.social.pending",
   "communication.social.blocked",
   "communication.social.uncertain",
@@ -42851,11 +42829,10 @@ var ManageMeetupAttention = class {
       ...observation,
       commentId
     });
-    const sharing = await this.dependencies.sharing.execute(source);
     return {
       ...result,
       skipped: false,
-      notificationFailed: sharing.notificationFailed || result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
+      notificationFailed: result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
     };
   }
   async synchronizeEvidence() {
@@ -44532,6 +44509,27 @@ var ContentFactsProjection = class {
   }
 };
 
+// packages/application/journey/src/use-cases/select-meetup-topics.ts
+var SelectMeetupTopics = class {
+  constructor(generator, policy) {
+    this.generator = generator;
+    this.policy = policy;
+  }
+  generator;
+  policy;
+  async select(event, candidates) {
+    if (!candidates.length || !this.generator.supported())
+      throw new Error("Meetup topic selection is unavailable");
+    const text = await this.generator.generate(
+      this.policy.brief(event, candidates)
+    );
+    const selected = this.policy.selection(text, candidates);
+    if (!selected)
+      throw new Error("Meetup topic selection returned invalid candidates");
+    return selected;
+  }
+};
+
 // packages/application/journey/src/use-cases/reconcile-meetup-slides-delivery.ts
 var ReconcileMeetupSlidesDelivery = class {
   constructor(dependencies, key) {
@@ -44643,27 +44641,6 @@ var ReconcileMeetupSlidesDelivery = class {
   }
   blocked(reason) {
     return this.dependencies.results.result("blocked", `slides-${reason}`);
-  }
-};
-
-// packages/application/journey/src/use-cases/select-meetup-topics.ts
-var SelectMeetupTopics = class {
-  constructor(generator, policy) {
-    this.generator = generator;
-    this.policy = policy;
-  }
-  generator;
-  policy;
-  async select(event, candidates) {
-    if (!candidates.length || !this.generator.supported())
-      throw new Error("Meetup topic selection is unavailable");
-    const text = await this.generator.generate(
-      this.policy.brief(event, candidates)
-    );
-    const selected = this.policy.selection(text, candidates);
-    if (!selected)
-      throw new Error("Meetup topic selection returned invalid candidates");
-    return selected;
   }
 };
 
@@ -56577,7 +56554,6 @@ var FIELD_ORDER = [
   "OpenFeedback Link",
   "Event materials",
   "Communication",
-  "Posts LinkedIn",
   "Automated introduction emails",
   "Aperitif",
   "Restaurant / Bar",
@@ -56591,10 +56567,6 @@ var FIELD_ORDER = [
 ];
 var GUIDANCE = new Map([
   ...STAGE_GUIDANCE,
-  [
-    "event.linkedin-post.invalid",
-    ["Posts LinkedIn", "comment.guidance.linkedin-post.invalid"]
-  ],
   [
     "event.proposals.invalid-selection",
     ["Agenda", "comment.guidance.proposals.invalid-selection"]
@@ -57179,7 +57151,6 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
-  "comment.guidance.linkedin-post.invalid": "Add one published LinkedIn post URL per line in Posts LinkedIn. Profile and company URLs are not post links.",
   "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
   "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
   "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
@@ -57264,7 +57235,6 @@ var EN_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
-  "comment.guidance.linkedin-post.invalid": "Dans Posts LinkedIn, ajoutez un lien de post publi\xE9 par ligne. Un lien de profil ou de page entreprise ne suffit pas.",
   "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
   "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
   "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
@@ -57763,7 +57733,6 @@ var HEADINGS = Object.freeze({
   communityLink: "CNCF Link",
   assetsLink: "Drive Link",
   feedbackLink: "OpenFeedback Link",
-  linkedInPosts: "Posts LinkedIn",
   slidesPdf: "Slides PDF",
   slides: "Event materials",
   communication: "Communication",
@@ -58351,31 +58320,6 @@ var IssueFormFields = class {
   }
 };
 
-// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-linkedin-posts.ts
-var IssueFormLinkedInPosts = class {
-  constructor(references) {
-    this.references = references;
-  }
-  references;
-  read(value, diagnostics) {
-    if (!value) return void 0;
-    const posts = [];
-    for (const line of value.split("\n").filter((line2) => line2.trim())) {
-      const post = this.references.read(line.trim().replace(/^[-*] +/, ""));
-      if (post) posts.push(post.url);
-      else if (!diagnostics.some((item) => item.code === "event.linkedin-post.invalid"))
-        diagnostics.push({
-          code: "event.linkedin-post.invalid",
-          severity: "warning",
-          category: "invalid",
-          field: "linkedInPosts",
-          message: "LinkedIn posts must contain one published post URL per line"
-        });
-    }
-    return [...new Set(posts)];
-  }
-};
-
 // packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-reader.ts
 var IssueFormReader = class {
   constructor(collaborators, options = {}) {
@@ -58413,7 +58357,12 @@ var IssueFormReader = class {
     );
     const event = {
       ...migrated.event,
-      ...this.readPublishedLinks(sections, diagnostics),
+      slidesPdfUrl: this.collaborators.issueFormSections.readSection(
+        sections,
+        HEADINGS.slidesPdf,
+        false,
+        diagnostics
+      ) || void 0,
       ...operations,
       ...this.collaborators.proposalSelectionCodec.read(
         document2.body,
@@ -58436,21 +58385,6 @@ var IssueFormReader = class {
         document2.identity.repository
       ),
       diagnostics: Object.freeze(diagnostics)
-    };
-  }
-  readPublishedLinks(sections, diagnostics) {
-    const read = (heading) => this.collaborators.issueFormSections.readSection(
-      sections,
-      heading,
-      false,
-      diagnostics
-    );
-    return {
-      linkedInPosts: this.collaborators.linkedInPosts.read(
-        read(HEADINGS.linkedInPosts),
-        diagnostics
-      ),
-      slidesPdfUrl: read(HEADINGS.slidesPdf) || void 0
     };
   }
   readBody(sections, diagnostics) {
@@ -58773,12 +58707,6 @@ var IssueFormWriter = class {
   }
   renderOperations(source, event) {
     let body = source;
-    if (!this.collaborators.issueFormSections.parseSections(body).has(HEADINGS.linkedInPosts))
-      body = this.collaborators.issueFormSections.replaceOrAppendSection(
-        body,
-        HEADINGS.linkedInPosts,
-        "_No response_"
-      );
     for (const [headings, items] of [
       [[HEADINGS.slides], event.operationalChecklists.slidesAndContent],
       [
@@ -59402,7 +59330,6 @@ var GithubIssueFormEventDocumentCodecComposition = class {
   issueFormReader(...args) {
     return new IssueFormReader(
       {
-        linkedInPosts: new IssueFormLinkedInPosts(new LinkedInPostReference()),
         issueFormSections: this.issueFormSections(),
         managedIssueMarkers: this.managedIssueMarkers(),
         issueFormEventMapper: this.issueFormEventMapper(),
@@ -70523,7 +70450,6 @@ var ContentGateComposition = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
 var messages3 = {
-  "slack.linkedin-share": "The LinkedIn post is live. Please share it:",
   "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
   "failure.social": "Posting failed.",
@@ -70570,7 +70496,6 @@ var messages3 = {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
 var messages4 = {
-  "slack.linkedin-share": "Le post LinkedIn est en ligne. Merci de le partager :",
   "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "failure.social": "La publication a \xE9chou\xE9.",
@@ -71030,49 +70955,6 @@ var SlackEmailApprovalPresenter = class {
   }
 };
 
-// packages/adapter/communication/slack-notification-gateway/src/slack-linkedin-sharing-notification.ts
-var SlackLinkedInSharingNotification = class {
-  constructor(client, channel, messages5, references, messageReferences) {
-    this.client = client;
-    this.channel = channel;
-    this.messages = messages5;
-    this.references = references;
-    this.messageReferences = messageReferences;
-    if (!/^[CG][A-Z0-9]+$/.test(channel))
-      throw new Error("Invalid organizer channel");
-  }
-  client;
-  channel;
-  messages;
-  references;
-  messageReferences;
-  async send(url) {
-    const post = this.references.read(url);
-    if (!post)
-      return {
-        result: { outcome: "rejected", diagnosticCode: "invalid-request" }
-      };
-    const response = await this.client.post("chat.postMessage", {
-      channel: this.channel,
-      text: `${this.messages.t("slack.linkedin-share")}
-${post.url}`,
-      parse: "none",
-      link_names: false,
-      mrkdwn: true,
-      unfurl_links: false,
-      unfurl_media: false
-    });
-    if (response.result.outcome === "accepted" && !this.messageReferences.read(response.payload, this.channel))
-      return {
-        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
-      };
-    return {
-      result: response.result,
-      retryAfterSeconds: response.retryAfterSeconds
-    };
-  }
-};
-
 // packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
 var SlackMeetupApprovalPresenter = class {
   constructor(messages5) {
@@ -71117,15 +70999,6 @@ var SlackSocialPublicationApprovalPresenter = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
 var SlackNotificationGatewayComposition = class {
-  linkedinSharingNotification(token, channel, locale, fetcher = fetch) {
-    return new SlackLinkedInSharingNotification(
-      this.slackApiClient(token, fetcher),
-      channel,
-      this.slackAttentionMessages(locale),
-      new LinkedInPostReference(),
-      this.slackMessageReference()
-    );
-  }
   slackApiClient(token, fetcher = fetch) {
     return new SlackApiClient(token, fetcher);
   }

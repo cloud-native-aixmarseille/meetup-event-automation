@@ -20,9 +20,7 @@ import {
 	type OrganizerFollowUp,
 } from "../ports/organizer-follow-up.js";
 import type { AttentionEventFacts } from "./attention-event-facts.js";
-import type { NotifyLinkedInSharing } from "./notify-linkedin-sharing.js";
 export interface ManageMeetupAttentionDependencies {
-	readonly sharing: Pick<NotifyLinkedInSharing, "execute">;
 	readonly config: AutomationConfig;
 	readonly repository: EventRepository;
 	readonly codec: EventDocumentCodec;
@@ -97,12 +95,10 @@ export class ManageMeetupAttention {
 			...observation,
 			commentId,
 		});
-		const sharing = await this.dependencies.sharing.execute(source);
 		return {
 			...result,
 			skipped: false,
 			notificationFailed:
-				sharing.notificationFailed ||
 				result.notificationFailed ||
 				evidence.approvals === undefined ||
 				evidence.recovery === undefined,

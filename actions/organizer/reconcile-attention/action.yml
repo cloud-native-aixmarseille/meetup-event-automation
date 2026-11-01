@@ -1,7 +1,7 @@
 name: Update organizer tasks
 description:
   Reconcile organizer attention and bounded Slack reminders from the persisted checklist
-  and stage evidence, and request sharing of published LinkedIn posts in organizer Slack.
+  and stage evidence.
 inputs:
   meetup-event-url-prefix:
     description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
