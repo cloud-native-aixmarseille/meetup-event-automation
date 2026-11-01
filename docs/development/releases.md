@@ -29,6 +29,17 @@ model are explicit in the workflow's `changelog-summary` configuration. Consult
 the [Gemini model catalog](https://ai.google.dev/gemini-api/docs/models) when
 updating the model.
 
+## Merge messages
+
+Main CI validates commit messages with `@commitlint/config-conventional`. Use a
+Conventional Commit title and wrap body lines at 100 characters. A pull request's
+description can contain longer paragraphs; do not copy it unchanged into the
+squash commit body. Keep that body concise and validate the final message before
+merging. Passing pull request CI does not validate a later, edited merge message.
+
+Tag creation has no new commits to check. The shared linter skips commitlint for
+that empty push while keeping it enabled for branch and pull request commits.
+
 ## Run and inspect
 
 After the workflow is merged into the default branch, select **Internal - Release**
