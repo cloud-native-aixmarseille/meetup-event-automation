@@ -226,7 +226,7 @@ describe("renderDiagnosticComment", () => {
 - [ ] **Event Title**: Edit and approve the proposed title.
 - [ ] **Event Description**: Edit and approve the proposed description.
 - [ ] **Meetup Link**: Run event publication synchronization to populate the verified Meetup link.
-- [ ] **CNCF Link**: Sync publications, then approve the OCGroups draft. The public link is added automatically.
+- [ ] **CNCF Link**: Publish the CNCF event and fill in its public link.
 - [ ] **Drive Link**: Sync assets to create the event Drive folder.
 - [ ] **Speaker confirmation**: Confirm the speakers, then add the \`speakers:confirmed\` label.`);
 		expect(actual).toBe(body);
