@@ -263,9 +263,13 @@ synchronization. Link manually published events before the first run; titles are
 not identities. Source rereads reduce races but cannot make GitHub issue updates
 transactional with remote writes.
 
-When an identity is recorded, inspect that event and rerun to verify and update
-it. When only a pending reservation remains, inspect the provider dashboard
-before retrying. Delete a reservation only after confirming no event was created.
+When an identity is recorded, open that event and compare its title, description
+and cover with the approved content in the issue. Check that its URL is in the
+issue's publication link field, then rerun the active-event reconciliation
+workflow to verify and update it. If the warning returns, a maintainer must
+investigate the run and journal. When only a pending reservation remains, inspect
+the provider dashboard before retrying. Delete a reservation only after confirming
+no event was created.
 Never remove uncertain state merely to retry.
 
 For Meetup, enter the verified draft or published URL in **Meetup Link** to
