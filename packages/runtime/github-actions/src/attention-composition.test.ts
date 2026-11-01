@@ -35,7 +35,7 @@ describe("attention runtime composition", () => {
 	afterEach(() => vi.unstubAllGlobals());
 	it.each([false, true])(
 		"persists notifications across locale changes without reposting, with LinkedIn post: %s",
-		async (withLinkedInPost) => {
+		async (hasPost) => {
 			// Arrange
 			const f = fixture();
 			const client = getOctokit("synthetic-token");
@@ -55,7 +55,7 @@ describe("attention runtime composition", () => {
 			vi.stubGlobal("fetch", fetcher);
 			const event = createTestEvent({
 				publicationLinks,
-				linkedInPosts: withLinkedInPost
+				linkedInPosts: hasPost
 					? ["https://www.linkedin.com/feed/update/urn:li:activity:12345/"]
 					: undefined,
 				date: "2099-06-08",
@@ -125,10 +125,10 @@ describe("attention runtime composition", () => {
 			expect(second.notificationFailed).toBe(false);
 			expect(urls).toEqual([
 				"https://slack.com/api/chat.postMessage",
-				...(withLinkedInPost ? ["https://slack.com/api/chat.postMessage"] : []),
+				...(hasPost ? ["https://slack.com/api/chat.postMessage"] : []),
 				"https://slack.com/api/chat.update",
 			]);
-			expect(f.comments).toHaveLength(withLinkedInPost ? 2 : 1);
+			expect(f.comments).toHaveLength(hasPost ? 2 : 1);
 			expect(f.comments[0]?.body).toContain('"status":"accepted"');
 			expect(f.comments[0]?.body).not.toContain("hoster:confirmed");
 			expect(f.comments[0]?.body).not.toContain("Sélectionnez un hôte");
