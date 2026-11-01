@@ -160,6 +160,7 @@ describe("publication readiness evidence", () => {
 		"publication.meetup.approval-pending",
 		"publication.community.approval-rejected",
 		"publication.meetup.approval-rejected",
+		"publication.meetup.uncertain",
 	])("keeps a completed audit verifiable when %s remains", (code) => {
 		// Arrange
 		const composition = new JourneyPolicyComposition();

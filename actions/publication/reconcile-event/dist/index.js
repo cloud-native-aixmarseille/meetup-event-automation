@@ -75023,8 +75023,9 @@ var MeetupLoginPage = class {
       );
       if (response?.status() === 429) return "rate-limited";
       const challenge = await this.challengeStatus();
-      if (challenge) return challenge;
+      if (challenge === "one-time-code") return challenge;
       if (this.isMeetupPath("/login")) return "session-not-reusable";
+      if (challenge) return challenge;
       if (!this.isMeetupPath("/account/management")) return "unexpected-page";
       const accountEmail = this.page.locator('input[name="email"]');
       await accountEmail.waitFor();
