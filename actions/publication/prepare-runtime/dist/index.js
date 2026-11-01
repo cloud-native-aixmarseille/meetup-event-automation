@@ -30042,6 +30042,8 @@ var EvaluateAttention = class {
     );
   }
   stageResource(stage) {
+    if (stage.outcome !== "unknown" && stage.failureResource)
+      return stage.failureResource;
     return stage.owner === "event" && stage.outcome === "success" ? "event-data" : stage.owner;
   }
   tasks(facts, now2, conditions) {
@@ -32212,7 +32214,7 @@ var ATTENTION_STAGE_OWNERS = [
 ];
 
 // packages/application/journey/src/result/attention-stage-evaluation.ts
-var AttentionStageEvaluation = class {
+var AttentionStageEvaluation = class _AttentionStageEvaluation {
   constructor(collaborators) {
     this.collaborators = collaborators;
   }
@@ -32229,14 +32231,36 @@ var AttentionStageEvaluation = class {
       const prerequisiteBlocked = outcome !== "unknown" && !blocked && diagnostics.some(
         (item) => this.organizerPrerequisite(item) || this.eventPrerequisite(item.code, owner, eventDiagnostics)
       );
+      const failureResource = diagnostics.find(
+        (item) => _AttentionStageEvaluation.MEETUP_FAILURES.has(item.code) && this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
+      )?.code;
       return {
         owner,
         outcome,
         blocked,
+        ...failureResource ? { failureResource } : {},
         ...prerequisiteBlocked ? { prerequisiteBlocked: true } : {}
       };
     });
   }
+  static MEETUP_FAILURES = /* @__PURE__ */ new Set([
+    "publication.meetup.authentication-configuration",
+    "publication.meetup.authentication-captcha-required",
+    "publication.meetup.authentication-captcha-rejected",
+    "publication.meetup.authentication-captcha-unavailable",
+    "publication.meetup.authentication-session-not-reusable",
+    "publication.meetup.authentication-login-page-unavailable",
+    "publication.meetup.authentication-login-form-unavailable",
+    "publication.meetup.authentication-submit-unavailable",
+    "publication.meetup.authentication-redirect-timeout",
+    "publication.meetup.authentication-account-unavailable",
+    "publication.meetup.authentication-account-mismatch",
+    "publication.meetup.authentication-unexpected-page",
+    "publication.meetup.authentication-rate-limited",
+    "publication.meetup.authentication-browser",
+    "publication.meetup.editor",
+    "publication.meetup.verification"
+  ]);
   diagnostics(input) {
     const diagnostics = /* @__PURE__ */ new Map();
     for (const owner of this.owners(input))

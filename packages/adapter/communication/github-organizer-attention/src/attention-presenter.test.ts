@@ -8,6 +8,36 @@ import { GithubOrganizerAttentionComposition } from "./dependency-composition.js
 import { AttentionMessages } from "./i18n/attention-messages.js";
 
 describe("GitHub attention presentation", () => {
+	it.each([
+		[
+			"publication.meetup.authentication-account-unavailable",
+			"The logged-in account could not be verified after retries.",
+		],
+		[
+			"publication.meetup.editor",
+			"Meetup event editor loading or preparation failed.",
+		],
+	])("shows the classified failure and its run: %s", (resource, message) => {
+		// Arrange
+		const { presenter } = fixture();
+		const failure = {
+			...episode("integration-failure", resource),
+			runId: "1234",
+		};
+		failure.condition = { ...failure.condition, owner: "event" };
+
+		// Act
+		const body = presenter.details({
+			...state(),
+			post: undefined,
+			episodes: [failure],
+		});
+
+		// Assert
+		expect(body).toContain(message);
+		expect(body).toContain("/actions/runs/1234");
+		expect(body).not.toContain("Issue update failed");
+	});
 	it("links a retained failure to the run that observed it", () => {
 		// Arrange
 		const { presenter } = fixture();

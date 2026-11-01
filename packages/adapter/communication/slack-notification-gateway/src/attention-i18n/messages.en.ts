@@ -1,4 +1,36 @@
 export const messages = {
+	"failure.publication.meetup.authentication-configuration":
+		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+	"failure.publication.meetup.authentication-captcha-required":
+		"Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+	"failure.publication.meetup.authentication-captcha-rejected":
+		"Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+	"failure.publication.meetup.authentication-captcha-unavailable":
+		"The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+	"failure.publication.meetup.authentication-session-not-reusable":
+		"Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+	"failure.publication.meetup.authentication-login-page-unavailable":
+		"The Meetup login page could not load after retries. Retry synchronization later.",
+	"failure.publication.meetup.authentication-login-form-unavailable":
+		"The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+	"failure.publication.meetup.authentication-submit-unavailable":
+		"The Meetup login button could not be activated after retries. Check the login page controls.",
+	"failure.publication.meetup.authentication-redirect-timeout":
+		"Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+	"failure.publication.meetup.authentication-account-unavailable":
+		"The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+	"failure.publication.meetup.authentication-account-mismatch":
+		"The authenticated Meetup account does not match the configured account. The session was discarded.",
+	"failure.publication.meetup.authentication-unexpected-page":
+		"Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+	"failure.publication.meetup.authentication-rate-limited":
+		"Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+	"failure.publication.meetup.authentication-browser":
+		"Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+	"failure.publication.meetup.editor":
+		"Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
+	"failure.publication.meetup.verification":
+		"Meetup event verification failed. Check the saved event before retrying.",
 	"action.content-approval-pending":
 		"Edit the proposed text if needed, then approve or request another proposal.",
 	"action.social-approval-pending":

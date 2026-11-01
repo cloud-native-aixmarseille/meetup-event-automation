@@ -46,14 +46,38 @@ export class AttentionStageEvaluation {
 						this.organizerPrerequisite(item) ||
 						this.eventPrerequisite(item.code, owner, eventDiagnostics),
 				);
+			const failureResource = diagnostics.find(
+				(item) =>
+					AttentionStageEvaluation.MEETUP_FAILURES.has(item.code) &&
+					this.collaborators.diagnosticPolicy.isTechnicalFailure(item),
+			)?.code;
 			return {
 				owner,
 				outcome,
 				blocked,
+				...(failureResource ? { failureResource } : {}),
 				...(prerequisiteBlocked ? { prerequisiteBlocked: true } : {}),
 			};
 		});
 	}
+	private static readonly MEETUP_FAILURES = new Set([
+		"publication.meetup.authentication-configuration",
+		"publication.meetup.authentication-captcha-required",
+		"publication.meetup.authentication-captcha-rejected",
+		"publication.meetup.authentication-captcha-unavailable",
+		"publication.meetup.authentication-session-not-reusable",
+		"publication.meetup.authentication-login-page-unavailable",
+		"publication.meetup.authentication-login-form-unavailable",
+		"publication.meetup.authentication-submit-unavailable",
+		"publication.meetup.authentication-redirect-timeout",
+		"publication.meetup.authentication-account-unavailable",
+		"publication.meetup.authentication-account-mismatch",
+		"publication.meetup.authentication-unexpected-page",
+		"publication.meetup.authentication-rate-limited",
+		"publication.meetup.authentication-browser",
+		"publication.meetup.editor",
+		"publication.meetup.verification",
+	]);
 	diagnostics(input: AttentionStageReports): readonly PublicDiagnostic[] {
 		const diagnostics = new Map<string, PublicDiagnostic>();
 		for (const owner of this.owners(input))

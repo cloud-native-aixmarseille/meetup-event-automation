@@ -79,7 +79,9 @@ Document/PDF operations form the assets stage, and event-feedback/shared-link
 operations form the feedback stage. Every member must report success before its
 group is complete. A missing, failed or concurrently invalidated stage preserves previous tasks;
 new diagnostic tasks wait for a complete run. Technical attention still reports
-the failed stage. This avoids treating an unevaluated task as resolved.
+the failed stage, with the classified Meetup authentication or editor failure when
+available. It uses only allowlisted codes and localized guidance, never raw
+provider messages. This avoids treating an unevaluated task as resolved.
 Missing diagnostics, including `null` when GitHub suppresses a job output,
 count as unreported evidence. They do not replace an explicit empty diagnostic
 array and cannot clear checklist tasks.

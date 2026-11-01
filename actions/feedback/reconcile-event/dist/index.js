@@ -38149,6 +38149,8 @@ var EvaluateAttention = class {
     );
   }
   stageResource(stage) {
+    if (stage.outcome !== "unknown" && stage.failureResource)
+      return stage.failureResource;
     return stage.owner === "event" && stage.outcome === "success" ? "event-data" : stage.owner;
   }
   tasks(facts, now2, conditions) {
@@ -40334,7 +40336,7 @@ var ATTENTION_STAGE_OWNERS = [
 ];
 
 // packages/application/journey/src/result/attention-stage-evaluation.ts
-var AttentionStageEvaluation = class {
+var AttentionStageEvaluation = class _AttentionStageEvaluation {
   constructor(collaborators) {
     this.collaborators = collaborators;
   }
@@ -40351,14 +40353,36 @@ var AttentionStageEvaluation = class {
       const prerequisiteBlocked = outcome !== "unknown" && !blocked && diagnostics.some(
         (item) => this.organizerPrerequisite(item) || this.eventPrerequisite(item.code, owner, eventDiagnostics)
       );
+      const failureResource = diagnostics.find(
+        (item) => _AttentionStageEvaluation.MEETUP_FAILURES.has(item.code) && this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
+      )?.code;
       return {
         owner,
         outcome,
         blocked,
+        ...failureResource ? { failureResource } : {},
         ...prerequisiteBlocked ? { prerequisiteBlocked: true } : {}
       };
     });
   }
+  static MEETUP_FAILURES = /* @__PURE__ */ new Set([
+    "publication.meetup.authentication-configuration",
+    "publication.meetup.authentication-captcha-required",
+    "publication.meetup.authentication-captcha-rejected",
+    "publication.meetup.authentication-captcha-unavailable",
+    "publication.meetup.authentication-session-not-reusable",
+    "publication.meetup.authentication-login-page-unavailable",
+    "publication.meetup.authentication-login-form-unavailable",
+    "publication.meetup.authentication-submit-unavailable",
+    "publication.meetup.authentication-redirect-timeout",
+    "publication.meetup.authentication-account-unavailable",
+    "publication.meetup.authentication-account-mismatch",
+    "publication.meetup.authentication-unexpected-page",
+    "publication.meetup.authentication-rate-limited",
+    "publication.meetup.authentication-browser",
+    "publication.meetup.editor",
+    "publication.meetup.verification"
+  ]);
   diagnostics(input) {
     const diagnostics = /* @__PURE__ */ new Map();
     for (const owner of this.owners(input))
@@ -58512,6 +58536,22 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
+  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
   "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
   "failure.social": "Posting failed.",
@@ -58573,6 +58613,22 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
+  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
   "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "failure.social": "La publication a \xE9chou\xE9.",

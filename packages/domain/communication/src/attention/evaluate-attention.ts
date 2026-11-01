@@ -17,6 +17,8 @@ export interface AttentionStage {
 		| "content";
 	readonly outcome: "success" | "failure" | "unknown";
 	readonly blocked: boolean;
+	/** A classified integration failure, separate from raw provider diagnostics. */
+	readonly failureResource?: string;
 	/** A reported event problem prevented evaluating this integration. */
 	readonly prerequisiteBlocked?: boolean;
 }
@@ -112,6 +114,8 @@ export class EvaluateAttention {
 		);
 	}
 	private stageResource(stage: AttentionStage): string {
+		if (stage.outcome !== "unknown" && stage.failureResource)
+			return stage.failureResource;
 		return stage.owner === "event" && stage.outcome === "success"
 			? "event-data"
 			: stage.owner;

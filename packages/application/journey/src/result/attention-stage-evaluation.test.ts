@@ -5,6 +5,73 @@ import { AttentionStageEvaluation } from "./attention-stage-evaluation.js";
 
 describe("attention stage evidence policy", () => {
 	it.each([
+		"publication.meetup.authentication-redirect-timeout",
+		"publication.meetup.authentication-account-unavailable",
+		"publication.meetup.editor",
+	])(
+		"retains the classified failure during an incomplete audit: %s",
+		(code) => {
+			// Arrange
+			const composition = new JourneyPolicyComposition();
+			const evaluation = new AttentionStageEvaluation({
+				diagnosticPolicy: composition.diagnosticPolicy(),
+				organizerDiagnosticPolicy: composition.organizerDiagnosticPolicy(),
+			});
+			const reports = attentionReports({
+				event: {
+					outcome: "failure",
+					diagnostics: [
+						{ code, severity: "error", message: "private provider response" },
+					],
+				},
+			});
+
+			// Act
+			const stages = evaluation.evaluate(reports);
+			const complete = evaluation.complete(reports);
+
+			// Assert
+			expect(complete).toBe(false);
+			expect(stages.find((stage) => stage.owner === "event")).toEqual({
+				owner: "event",
+				outcome: "failure",
+				blocked: true,
+				failureResource: code,
+			});
+			expect(JSON.stringify(stages)).not.toContain("private provider response");
+		},
+	);
+	it("does not forward unclassified provider codes to attention state", () => {
+		// Arrange
+		const composition = new JourneyPolicyComposition();
+		const evaluation = new AttentionStageEvaluation({
+			diagnosticPolicy: composition.diagnosticPolicy(),
+			organizerDiagnosticPolicy: composition.organizerDiagnosticPolicy(),
+		});
+		const reports = attentionReports({
+			event: {
+				outcome: "failure",
+				diagnostics: [
+					{
+						code: "publication.meetup.private-value",
+						severity: "error",
+						message: "private",
+					},
+				],
+			},
+		});
+
+		// Act
+		const stages = evaluation.evaluate(reports);
+
+		// Assert
+		expect(stages.find((stage) => stage.owner === "event")).toEqual({
+			owner: "event",
+			outcome: "failure",
+			blocked: true,
+		});
+	});
+	it.each([
 		{ outcome: "unknown" as const },
 		{ outcome: "failure" as const },
 		{ reported: false },
