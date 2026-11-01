@@ -764,6 +764,31 @@ finished
 			"### Event materials\n\n- [ ] Review the cover image",
 		);
 	});
+	it("adds the LinkedIn post field without replacing organizer-supplied entries", () => {
+		// Arrange
+		const source = document({ body: LEGACY_BODY });
+		const codec =
+			new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec();
+		const entered =
+			"https://www.linkedin.com/posts/example_topic-activity-12345-community/?utm_source=share\ninvalid entry";
+		const supplied = {
+			...source,
+			body: `${LEGACY_BODY}\n### Posts LinkedIn\n\n${entered}\n`,
+		};
+		// Act
+		const emptyPatch = codec.createPatch(source, codec.decode(source).event);
+		const decoded = codec.decode(supplied);
+		const populatedPatch = codec.createPatch(supplied, decoded.event);
+		// Assert
+		expect(emptyPatch.body).toContain("### Posts LinkedIn\n\n_No response_");
+		expect(decoded.event.linkedInPosts).toEqual([
+			"https://www.linkedin.com/feed/update/urn:li:activity:12345/",
+		]);
+		expect(decoded.diagnostics).toContainEqual(
+			expect.objectContaining({ code: "event.linkedin-post.invalid" }),
+		);
+		expect(populatedPatch.body).toContain(entered);
+	});
 
 	it("reports an invalid logistics intent without discarding other facts", () => {
 		// Arrange

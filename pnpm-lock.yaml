@@ -149,6 +149,9 @@ importers:
 
   packages/adapter/event/github-issue-form-event-document-codec:
     dependencies:
+      '@meetup-automation/communication':
+        specifier: workspace:*
+        version: link:../../../domain/communication
       '@meetup-automation/event':
         specifier: workspace:*
         version: link:../../../domain/event

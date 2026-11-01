@@ -32,6 +32,9 @@ function fixture() {
 		.mockResolvedValue({ active: 1, posted: false, notificationFailed: false });
 	const find = vi.fn().mockResolvedValue(document);
 	const dependencies: ManageMeetupAttentionDependencies = {
+		sharing: {
+			execute: vi.fn().mockResolvedValue({ notificationFailed: false }),
+		},
 		config: new JourneyPolicyComposition()
 			.automationConfigFactory()
 			.createAutomationConfig(),
@@ -131,5 +134,21 @@ describe("meetup attention journey", () => {
 		// Assert
 		expect(result.skipped).toBe(true);
 		expect(f.execute).not.toHaveBeenCalled();
+		expect(f.dependencies.sharing.execute).not.toHaveBeenCalled();
+	});
+	it("reports a sharing notification failure after updating organizer attention", async () => {
+		// Arrange
+		const f = fixture();
+		vi.mocked(f.dependencies.sharing.execute).mockResolvedValue({
+			notificationFailed: true,
+		});
+		// Act
+		const result = await f.useCase.execute(f.document.identity, []);
+		// Assert
+		expect(f.dependencies.sharing.execute).toHaveBeenCalledExactlyOnceWith(
+			f.document,
+		);
+		expect(result.notificationFailed).toBe(true);
+		expect(f.execute).toHaveBeenCalled();
 	});
 });

@@ -14,6 +14,7 @@ export class TrustedSocialJournalComments {
 			"list" | "edit" | "history"
 		>,
 		private readonly author: string,
+		private readonly marker: string,
 	) {
 		if (!/^[a-z\d-]+\[bot\]$/i.test(author))
 			throw new Error("Social delivery requires a trusted GitHub App bot");
@@ -30,7 +31,7 @@ export class TrustedSocialJournalComments {
 			const current = await this.client.edit(comment);
 			if (current.body !== comment.body || current.id !== comment.node_id)
 				throw new Error("Social delivery history changed during verification");
-			const managed = current.body.startsWith(SOCIAL_JOURNAL_MARKER);
+			const managed = current.body.startsWith(this.marker);
 			if (current.lastEditedAt !== null || current.editor !== null)
 				await this.verifyHistory(comment, current, managed);
 			if (managed) records.push(comment);
@@ -52,7 +53,7 @@ export class TrustedSocialJournalComments {
 		)
 			throw new Error("Social delivery history is unavailable");
 		const previouslyManaged = history.some((edit) =>
-			edit.diff?.startsWith(SOCIAL_JOURNAL_MARKER),
+			edit.diff?.startsWith(this.marker),
 		);
 		if (!managed && !previouslyManaged) return;
 		if (

@@ -15,6 +15,7 @@ import {
 import type { IssueFormChecklists } from "./issue-form-checklists.js";
 import type { IssueFormBody } from "./issue-form-event-input.js";
 import type { IssueFormEventMapper } from "./issue-form-event-mapper.js";
+import type { IssueFormLinkedInPosts } from "./issue-form-linkedin-posts.js";
 import type { IssueFormSections } from "./issue-form-sections.js";
 import type { ManagedIssueMarkers } from "./managed-issue-markers.js";
 import type { ParticipantLinks } from "./participant-links.js";
@@ -23,6 +24,7 @@ import type { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 type Sections = ReadonlyMap<string, readonly Section[]>;
 
 export interface IssueFormReaderCollaborators {
+	readonly linkedInPosts: Pick<IssueFormLinkedInPosts, "read">;
 	readonly issueFormSections: Pick<
 		IssueFormSections,
 		"parseSections" | "readSection"
@@ -90,13 +92,7 @@ export class IssueFormReader {
 		);
 		const event: MeetupEvent = {
 			...migrated.event,
-			slidesPdfUrl:
-				this.collaborators.issueFormSections.readSection(
-					sections,
-					HEADINGS.slidesPdf,
-					false,
-					diagnostics,
-				) || undefined,
+			...this.readPublishedLinks(sections, diagnostics),
 			...operations,
 			...this.collaborators.proposalSelectionCodec.read(
 				document.body,
@@ -119,6 +115,25 @@ export class IssueFormReader {
 				document.identity.repository,
 			),
 			diagnostics: Object.freeze(diagnostics),
+		};
+	}
+	private readPublishedLinks(
+		sections: Sections,
+		diagnostics: EventDiagnostic[],
+	) {
+		const read = (heading: string) =>
+			this.collaborators.issueFormSections.readSection(
+				sections,
+				heading,
+				false,
+				diagnostics,
+			);
+		return {
+			linkedInPosts: this.collaborators.linkedInPosts.read(
+				read(HEADINGS.linkedInPosts),
+				diagnostics,
+			),
+			slidesPdfUrl: read(HEADINGS.slidesPdf) || undefined,
 		};
 	}
 	private readBody(

@@ -4,6 +4,7 @@ type Diagnostic = Pick<PublicDiagnostic, "code" | "severity" | "fixApplied">;
 type DiagnosticCategory = "technical" | "organizer" | "informational";
 
 const ORGANIZER_CODES = new Set([
+	"event.linkedin-post.invalid",
 	"communication.social.pending",
 	"communication.social.blocked",
 	"communication.social.uncertain",

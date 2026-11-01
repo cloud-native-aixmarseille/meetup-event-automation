@@ -1,4 +1,5 @@
 export const messages = {
+	"slack.linkedin-share": "The LinkedIn post is live. Please share it:",
 	"action.content-approval-pending":
 		"Edit the proposed text if needed, then approve or request another proposal.",
 	"action.social-approval-pending":

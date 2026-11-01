@@ -1,6 +1,7 @@
 import {
 	type AttentionChecklistSource,
 	CommunicationDomainComposition,
+	LinkedInPostReference,
 } from "@meetup-automation/communication";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import {
@@ -19,12 +20,27 @@ import { SlackAttentionPresenter } from "./slack-attention-presenter.js";
 import { SlackCommunityApprovalPresenter } from "./slack-community-approval-presenter.js";
 import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import { SlackEmailApprovalPresenter } from "./slack-email-approval-presenter.js";
+import { SlackLinkedInSharingNotification } from "./slack-linkedin-sharing-notification.js";
 import { SlackMeetupApprovalPresenter } from "./slack-meetup-approval-presenter.js";
 import { SlackMessageReference } from "./slack-message-reference.js";
-import { SlackSocialPublicationApprovalPresenter } from "./slack-social-publication-approval-presenter.js";
 import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
+import { SlackSocialPublicationApprovalPresenter } from "./slack-social-publication-approval-presenter.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class SlackNotificationGatewayComposition {
+	linkedinSharingNotification(
+		token: string,
+		channel: string,
+		locale: string | undefined,
+		fetcher: SlackFetch = fetch,
+	): SlackLinkedInSharingNotification {
+		return new SlackLinkedInSharingNotification(
+			this.slackApiClient(token, fetcher),
+			channel,
+			this.slackAttentionMessages(locale),
+			new LinkedInPostReference(),
+			this.slackMessageReference(),
+		);
+	}
 	slackApiClient(token: string, fetcher: SlackFetch = fetch): SlackApiClient {
 		return new SlackApiClient(token, fetcher);
 	}

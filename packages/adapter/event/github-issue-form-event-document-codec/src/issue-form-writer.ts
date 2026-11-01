@@ -34,7 +34,7 @@ export interface IssueFormWriterCollaborators {
 	>;
 	readonly issueFormSections: Pick<
 		IssueFormSections,
-		"replaceOrAppendSection" | "removeSection"
+		"replaceOrAppendSection" | "removeSection" | "parseSections"
 	>;
 	readonly issueFormChecklists: Pick<
 		IssueFormChecklists,
@@ -126,6 +126,16 @@ export class IssueFormWriter {
 	}
 	private renderOperations(source: string, event: MeetupEvent): string {
 		let body = source;
+		if (
+			!this.collaborators.issueFormSections
+				.parseSections(body)
+				.has(HEADINGS.linkedInPosts)
+		)
+			body = this.collaborators.issueFormSections.replaceOrAppendSection(
+				body,
+				HEADINGS.linkedInPosts,
+				"_No response_",
+			);
 		for (const [headings, items] of [
 			[[HEADINGS.slides], event.operationalChecklists.slidesAndContent],
 			[

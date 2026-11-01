@@ -79,6 +79,17 @@ export type {
 export { PostEventPolicy } from "./post-event-policy.js";
 export type { ReconcileCommunicationsDependencies } from "./reconcile-communications.js";
 export { ReconcileCommunications } from "./reconcile-communications.js";
+export {
+	LinkedInPostReference,
+	type LinkedInPostReferenceValue,
+} from "./social/linkedin-post-reference.js";
+export type {
+	LinkedInShareRecord,
+	LinkedInSharingJournal,
+	LinkedInSharingNotification,
+} from "./social/linkedin-sharing-ports.js";
+export { LinkedInSharingState } from "./social/linkedin-sharing-state.js";
+export { ReconcileLinkedInSharing } from "./social/reconcile-linkedin-sharing.js";
 export type {
 	LinkedInSocialDestination,
 	SlackSocialDestination,
@@ -90,18 +101,18 @@ export {
 	type SocialPostMilestone,
 } from "./social/social-post-draft.js";
 export { SocialPostTiming } from "./social/social-post-timing.js";
-export { SocialRecoveryReference } from "./social/social-recovery-reference.js";
 export type {
-	SocialPostReceipt,
-	SocialPreparedMedia,
+	SocialDeliveryAttempt,
+	SocialDeliveryJournal,
+	SocialDeliveryRecord,
+	SocialDeliveryRecovery,
 	SocialDispatchResult,
-	SocialPostInput,
-	SocialPublicationGateway,
+	SocialImageGateway,
 	SocialImageInput,
 	SocialMediaResult,
-	SocialImageGateway,
-	SocialDeliveryRecovery,
-	SocialDeliveryAttempt,
-	SocialDeliveryRecord,
-	SocialDeliveryJournal,
+	SocialPostInput,
+	SocialPostReceipt,
+	SocialPreparedMedia,
+	SocialPublicationGateway,
 } from "./social/social-publication-ports.js";
+export { SocialRecoveryReference } from "./social/social-recovery-reference.js";

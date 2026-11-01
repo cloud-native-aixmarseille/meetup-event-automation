@@ -1,7 +1,8 @@
 import {
+	LinkedInPostReference,
+	type SocialDeliveryRecord,
 	SocialPostTiming,
 	SocialRecoveryReference,
-	type SocialDeliveryRecord,
 } from "@meetup-automation/communication";
 import { vi } from "vitest";
 import { RecoverSocialPublication } from "../src/communication/recover-social-publication.js";
@@ -94,7 +95,7 @@ export function socialRecoveryFixture(
 			new SocialPostTiming(),
 			source.fingerprints,
 		),
-		new SocialRecoveryReference(),
+		new SocialRecoveryReference(new LinkedInPostReference()),
 		source.fingerprints,
 	);
 	return {

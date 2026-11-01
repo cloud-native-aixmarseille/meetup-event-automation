@@ -30,6 +30,10 @@ For manually managed issues without proposal selections, maintain **Agenda** wit
 speaker references and descriptions using the
 [referential guide](../reference/referentials.md#use-references-in-issues).
 
+After manually publishing on LinkedIn, add the post URL to **Posts LinkedIn**,
+one per line. Automation asks organizers to share each new post in their Slack
+channel. See [sharing requests](../integrations/social-publication.md#ask-organizers-to-share-a-linkedin-post).
+
 Select the aperitif and restaurant/bar options. The form checklists contain
 organizer tasks. Automation adds email completion to the issue after approval
 and accepted delivery.

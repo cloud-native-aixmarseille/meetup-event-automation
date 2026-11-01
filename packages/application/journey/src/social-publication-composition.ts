@@ -1,4 +1,7 @@
-import { SocialRecoveryReference } from "@meetup-automation/communication";
+import {
+	LinkedInPostReference,
+	SocialRecoveryReference,
+} from "@meetup-automation/communication";
 import { MeetupPublicationChecklist } from "@meetup-automation/event";
 import { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
 import { RecoverSocialPublication } from "./communication/recover-social-publication.js";
@@ -20,7 +23,7 @@ export class SocialPublicationComposition {
 				dependencies.timing,
 				dependencies.fingerprints,
 			),
-			new SocialRecoveryReference(),
+			new SocialRecoveryReference(new LinkedInPostReference()),
 			dependencies.fingerprints,
 		);
 	}

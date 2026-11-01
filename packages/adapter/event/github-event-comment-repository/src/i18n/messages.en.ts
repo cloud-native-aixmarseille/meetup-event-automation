@@ -1,4 +1,6 @@
 export const EN_MESSAGES = {
+	"comment.guidance.linkedin-post.invalid":
+		"Add one published LinkedIn post URL per line in Posts LinkedIn. Profile and company URLs are not post links.",
 	"comment.guidance.content.description-review":
 		"Edit and approve the description in its proposal comment.",
 	"comment.guidance.content.title-review":
