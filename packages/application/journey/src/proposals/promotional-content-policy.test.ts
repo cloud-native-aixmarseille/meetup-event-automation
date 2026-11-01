@@ -44,7 +44,7 @@ describe("promotional content prerequisites", () => {
 		);
 		// Act
 		const valid = f.policy.validDraft(plan, {
-			text: `Register: ${facts.registrationUrl}`,
+			text: `Register: ${facts.registrationUrl}\n@Example Host - @Example Speaker - @Example Organizer`,
 			media: [{ ...media, sourceRevision: "different" }],
 		});
 		// Assert

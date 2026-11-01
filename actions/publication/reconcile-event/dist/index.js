@@ -40374,7 +40374,11 @@ var SocialPostDraft = class {
     );
   }
   valid(facts, text, channel) {
-    return text.length <= 2800 && Boolean(facts.registrationUrl) && text.includes(facts.registrationUrl) && (channel !== "slack" || !text.includes(String.fromCharCode(0)) && !/<[!@#]/.test(text)) && (channel !== "linkedin" || !/@\[[^\]]*\]\(urn:li:/.test(text));
+    return text.length <= 2800 && Boolean(facts.registrationUrl) && [...text.matchAll(/https?:\/\/[^\s<>|]+/g)].some(
+      ([url]) => url.replace(/[)\].,!?;:]+$/, "") === facts.registrationUrl
+    ) && (channel !== "slack" || !text.includes(String.fromCharCode(0)) && !/<[!@#]/.test(text)) && (channel !== "linkedin" || !/@\[[^\]]*\]\(urn:li:/.test(text) && this.requiredMentions(facts).every(
+      (mention) => this.includesMention(text, mention)
+    ));
   }
   source(facts, channel) {
     return {
@@ -40394,7 +40398,7 @@ var SocialPostDraft = class {
       })),
       aperitif: facts.aperitif,
       registrationUrl: facts.registrationUrl,
-      ...channel === "linkedin" ? { mentions: [...facts.mentions] } : {}
+      ...channel === "linkedin" ? { mentions: this.requiredMentions(facts) } : {}
     };
   }
   brief(facts, channel, milestone, language, guidance) {
@@ -40405,12 +40409,31 @@ var SocialPostDraft = class {
       guidance,
       instructions: [
         "Write one concise Cloud Native Aix-Marseille meetup post using only the supplied facts. Sound like an organizer inviting fellow practitioners: warm, conversational, and lively, with short sentences and familiar words. Give a concrete reason to come and discuss the supplied topics. No marketing hype, inflated promises, generic welcome, or filler. Maximum 2800 characters; prefer much shorter when the programme allows it.",
-        channel === "linkedin" ? "Use Unicode emoji. End with one short relevant hashtags paragraph and a final line containing the public host name, public speaker names, and organizer names from mentions, separated by spaced hyphens. Never invent account handles or tags." : "Use Slack emoji aliases such as :rocket:, :date:, :round_pushpin:, :beers:, :alarm_clock:. No hashtags or mention footer.",
+        channel === "linkedin" ? "Use Unicode emoji. End with one short relevant hashtags paragraph and a final line containing every entry from facts.mentions exactly as supplied, separated by spaced hyphens. These @Name entries identify the host, every speaker, and the configured organizers. Keep each distinct entry once. They are names for the organizer to select manually in LinkedIn, not API mentions. Never invent account handles, profile URLs, or URNs." : "Use Slack emoji aliases such as :rocket:, :date:, :round_pushpin:, :beers:, :alarm_clock:. No hashtags or mention footer.",
         `Opening: ${reminder ? opening : "Prochain Meetup"} Cloud Native Aix-Marseille ! (translate for English). Then blank line, date, start/end times, host - city, blank line, ordered talk titles and public speaker names${reminder ? ", without detailed teasers" : ", each followed by one concrete teaser about the problem or takeaway in its abstract"}. A programme heading is optional for a single talk. Preserve playful wording already present in the talk titles.`,
-        "End with a short, friendly invitation to join the discussion or share experience, then Inscrivez-vous : registrationUrl (translate for English). Use the exact registrationUrl; never shorten it or substitute a placeholder. Welcome curious participants without inventing prerequisites or promising every talk suits all skill levels. The date/time must remain explicit, including reminders. No invented countdown, scarcity or urgency. Mention an aperitif only when aperitif=true; do not infer who pays for it. Keep talk order and public speaker names."
+        "End with a short, friendly invitation to join the discussion or share experience, then a separate line: Inscription sur Meetup.com : registrationUrl (translate for English). This registration line is required in every Slack and LinkedIn announcement and reminder. Use the exact registrationUrl supplied in the facts; never shorten it, substitute another platform or a placeholder, or add tracking parameters. Welcome curious participants without inventing prerequisites or promising every talk suits all skill levels. The date/time must remain explicit, including reminders. No invented countdown, scarcity or urgency. Mention an aperitif only when aperitif=true; do not infer who pays for it. Keep talk order and public speaker names."
       ],
       facts: this.source(facts, channel)
     };
+  }
+  requiredMentions(facts) {
+    const names = [
+      facts.host.name,
+      ...facts.talks.flatMap(
+        (talk) => talk.speakers.map((speaker) => speaker.name)
+      ),
+      ...facts.mentions
+    ];
+    return [
+      ...new Set(names.map((name) => `@${name.trim().replace(/^@+/, "")}`))
+    ];
+  }
+  includesMention(text, mention) {
+    const escaped = mention.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(
+      `(?<![\\p{L}\\p{N}@])${escaped}(?![\\p{L}\\p{N}])`,
+      "u"
+    ).test(text);
   }
 };
 

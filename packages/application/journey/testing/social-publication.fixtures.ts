@@ -38,7 +38,7 @@ export async function socialFixture(
 			)
 		: f.plan;
 	const draft = {
-		text: `Meetup ${plan.facts.registrationUrl}`,
+		text: `Meetup ${plan.facts.registrationUrl}${target.startsWith("linkedin:") ? "\n@Example Host - @Example Speaker - @Example Organizer" : ""}`,
 		media: target.startsWith("linkedin:") ? [media] : [],
 	};
 	const proposal: ContentProposal = {

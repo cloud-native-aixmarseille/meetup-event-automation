@@ -183,9 +183,10 @@ by empty lines, with talks in agenda order.
 
 Slack uses colon emoji aliases and the canonical Meetup registration URL. It has
 no required image, hashtags, or mention footer. LinkedIn uses Unicode emoji,
-relevant hashtags, and a footer of verified public names; interactive profile
-mentions remain an organizer task. A shortened registration URL is acceptable
-only when its destination is verified.
+relevant hashtags, and a footer of `@Name` entries for the host, speakers, and
+configured organizers, with duplicate names removed. Interactive profile
+selection remains an organizer task. Both formats require the exact canonical
+Meetup registration URL, with an explicit registration invitation.
 
 LinkedIn attaches the generated announcement image. Its filename follows the
 linked Drive template and publication's shared
@@ -354,3 +355,9 @@ templates were proposed from announcements and the confirmed cadence; no
 historical reminder example was supplied. Those observations are dated evidence,
 not a claim that external sources or provider capabilities were reverified during
 this consolidation.
+
+2026-11-01: social copy requires the exact Meetup registration URL; this
+supersedes the earlier allowance for verified shortened LinkedIn links. LinkedIn
+copy now requires `@Name` entries for the host, speakers, and configured organizers,
+with duplicates removed. These prepare manual profile selection and do not enable
+API mentions or automatic LinkedIn publication.
