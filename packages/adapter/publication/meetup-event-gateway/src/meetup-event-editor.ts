@@ -12,13 +12,18 @@ import type {
 } from "./meetup-calendar.js";
 import type { MeetupCover } from "./meetup-cover.js";
 import type {
+	MeetupEditorSelections,
 	MeetupEventVerification,
 	MeetupEventVerificationArguments,
 } from "./meetup-event-verification.js";
+import type { MeetupHosts } from "./meetup-hosts.js";
+import type { MeetupTopics } from "./meetup-topics.js";
 import type { MeetupVenue, MeetupVenueArguments } from "./meetup-venue.js";
 import type { SavedMeetupEvent } from "./saved-meetup-event.js";
 
 export interface MeetupEventEditorCollaborators {
+	readonly createHosts: (page: Page) => Pick<MeetupHosts, "select">;
+	readonly createTopics: (page: Page) => Pick<MeetupTopics, "select">;
 	readonly createCover: (page: Page) => Pick<MeetupCover, "apply">;
 	readonly meetupBrowserRoutes: Pick<
 		MeetupBrowserRoutes,
@@ -82,7 +87,7 @@ export class MeetupEventEditor {
 			this.page,
 		);
 		const existing = identity
-			? await verification.verify(event, identity).catch(() => {
+			? await verification.verify(event, identity, undefined).catch(() => {
 					throw new ScheduledEventError("editor");
 				})
 			: undefined;
@@ -90,9 +95,11 @@ export class MeetupEventEditor {
 			await onSaved(identity.value);
 			return { url: identity.value, status: existing.status };
 		}
-		const status = await this.prepare(event, identity).catch(() => {
-			throw new ScheduledEventError("editor");
-		});
+		const { status, selections } = await this.prepare(event, identity).catch(
+			() => {
+				throw new ScheduledEventError("editor");
+			},
+		);
 		if (status !== (existing?.status ?? "draft"))
 			throw new ScheduledEventError("editor");
 		// Keep concurrency and durable-reservation failures separate from browser errors.
@@ -102,7 +109,7 @@ export class MeetupEventEditor {
 		const savedUrl = await this.submit(identity, status);
 		await onSaved(savedUrl.value);
 		const saved = await verification
-			.verify(event, savedUrl)
+			.verify(event, savedUrl, selections)
 			.catch(() => undefined);
 		if (!saved?.matches || saved.status !== status)
 			throw new ScheduledEventError("verification");
@@ -147,7 +154,10 @@ export class MeetupEventEditor {
 	private async prepare(
 		event: MeetupPublicationEvent,
 		url: MeetupEventUrl | undefined,
-	): Promise<SavedMeetupEvent["status"]> {
+	): Promise<{
+		status: SavedMeetupEvent["status"];
+		selections: MeetupEditorSelections;
+	}> {
 		const editorUrl = url
 			? this.collaborators.meetupBrowserRoutes.edit(url)
 			: this.collaborators.meetupBrowserRoutes.schedule(this.group);
@@ -176,7 +186,13 @@ export class MeetupEventEditor {
 			.locator('[contenteditable="true"]:visible')
 			.fill(event.description);
 		await this.collaborators.createMeetupVenue(this.page).select(event.venue);
-		return status;
+		const topics = await this.collaborators
+			.createTopics(this.page)
+			.select(event);
+		const hosts = await this.collaborators
+			.createHosts(this.page)
+			.select(this.group);
+		return { status, selections: { topics, hosts } };
 	}
 
 	private async startNewDraft(): Promise<void> {

@@ -3,6 +3,7 @@ import { LocalizationComposition } from "@meetup-automation/localization";
 import type {
 	ContentImageLoader,
 	MeetupCoverJournal,
+	MeetupTopicSelection,
 } from "@meetup-automation/publication";
 import { chromium, type Page } from "playwright-core";
 import { AttendeeMessages } from "./i18n/attendee-messages.js";
@@ -34,10 +35,13 @@ import {
 	MeetupEventVerification,
 	type MeetupEventVerificationArguments,
 } from "./meetup-event-verification.js";
+import { MeetupHosts } from "./meetup-hosts.js";
+import { MeetupLeadership } from "./meetup-leadership.js";
 import {
 	MeetupLoginPage,
 	type MeetupLoginPageArguments,
 } from "./meetup-login-page.js";
+import { MeetupTopics } from "./meetup-topics.js";
 import { MeetupVenue, type MeetupVenueArguments } from "./meetup-venue.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class MeetupEventGatewayComposition {
@@ -45,6 +49,7 @@ export class MeetupEventGatewayComposition {
 		private readonly locale: string,
 		private readonly images: ContentImageLoader,
 		private readonly covers: MeetupCoverJournal,
+		private readonly topics: MeetupTopicSelection,
 	) {}
 	meetupBrowserSession(): MeetupBrowserSession {
 		return new MeetupBrowserSession(
@@ -75,6 +80,8 @@ export class MeetupEventGatewayComposition {
 					this.meetupEventVerification(...args),
 				createMeetupCalendar: (...args) => this.meetupCalendar(...args),
 				createMeetupVenue: (...args) => this.meetupVenue(...args),
+				createHosts: (page) => this.meetupHosts(page),
+				createTopics: (page) => this.meetupTopics(page),
 			},
 			...args,
 		);
@@ -128,6 +135,8 @@ export class MeetupEventGatewayComposition {
 				meetupBrowserRoutes: this.meetupBrowserRoutes(),
 				createMeetupVenue: (...args) => this.meetupVenue(...args),
 				createMeetupCalendar: (...args) => this.meetupCalendar(...args),
+				createHosts: (page) => this.meetupHosts(page),
+				createTopics: (page) => this.meetupTopics(page),
 			},
 			...args,
 		);
@@ -140,5 +149,11 @@ export class MeetupEventGatewayComposition {
 	}
 	meetupVenue(...args: MeetupVenueArguments): MeetupVenue {
 		return new MeetupVenue(...args);
+	}
+	meetupHosts(page: Page): MeetupHosts {
+		return new MeetupHosts(page, new MeetupLeadership(page));
+	}
+	meetupTopics(page: Page): MeetupTopics {
+		return new MeetupTopics(page, this.topics);
 	}
 }

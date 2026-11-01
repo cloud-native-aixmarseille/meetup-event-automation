@@ -218,9 +218,7 @@ describe("Meetup event publication", () => {
 				startTime: "18:45",
 				endTime: "20:45",
 				timeZone: "Europe/Paris",
-				description: expect.stringContaining(
-					"Reliable platforms\nExample Speaker",
-				),
+				description: "An evening about cloud-native technology",
 			}),
 			undefined,
 			expect.any(Function),

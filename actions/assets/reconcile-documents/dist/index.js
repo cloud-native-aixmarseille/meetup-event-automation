@@ -63679,18 +63679,8 @@ var EventCopyDescriptionDraft = class {
       facts.date && facts.startTime && facts.host.name && facts.host.city
     );
   }
-  valid(facts, text) {
-    const projected = [
-      text,
-      ...facts.talks.map(
-        (talk) => [
-          talk.title,
-          talk.speakers.map((speaker) => speaker.name).join(", "),
-          talk.abstract
-        ].filter(Boolean).join("\n")
-      )
-    ].join("\n\n");
-    return text.length <= 12e3 && projected.length <= 49e3;
+  valid(text) {
+    return text.length <= 12e3;
   }
   source(facts) {
     return {
@@ -63712,7 +63702,7 @@ var EventCopyDescriptionDraft = class {
         "Open directly with the confirmed date, start/end times, host and city in a compact line. Skip the generic community introduction and impersonal announcements such as 'The event will take place'. Mention an aperitif only when aperitif=true; that fact does not establish who pays for it.",
         "For each talk, keep its original title on one line, then its public speaker(s) and one concrete teaser on the next line. Turn the abstract's actual problem or takeaway into a reason to attend, not a catalogue summary. You may echo a playful metaphor already present in the talk. Keep talk order and public speaker names. A programme heading is optional; avoid it when a single talk needs no introduction.",
         "Finish with one short, friendly invitation to join the discussion or share experience around the supplied topics. Welcome curious participants without claiming that every talk suits all skill levels; only mention a required level or specific learning outcome when the abstracts support it. Avoid stock closings such as 'Venez nombreux !' or 'Rejoignez-nous !' on their own.",
-        "Return readable multiline text with actual line breaks. Separate practical details, each talk, and the invitation with a blank line. Preserve emoji in talk titles and use any additional emoji sparingly. No HTML or code blocks. Maximum 12000 characters. Do not repeat full abstracts; publication appends them.",
+        "Return readable multiline text with actual line breaks. Separate practical details, each talk, and the invitation with a blank line. Preserve emoji in talk titles and use any additional emoji sparingly. No HTML or code blocks. Maximum 12000 characters. This is the complete event description: publication uses the approved text unchanged. Summarize talks without repeating full abstracts.",
         "This description is used on the event's registration page. Do not add a registration URL or a link placeholder. Never invent logistics, sponsors, people, or promises."
       ],
       facts: this.source(facts)
@@ -69770,16 +69760,9 @@ var ScheduledEventProjection = class {
       (talk) => !talk.description.trim() || !talk.speakers.length || talk.speakers.some((speaker) => !speaker.id)
     ))
       return void 0;
-    const talks = event.agenda.map(
-      (talk) => [
-        talk.description,
-        talk.speakers.map((speaker) => speaker.displayName).join(", "),
-        talk.proposal?.abstract
-      ].filter(Boolean).join("\n")
-    );
     return {
       title: event.eventTitle.trim(),
-      description: [event.description.trim(), ...talks].join("\n\n"),
+      description: event.description,
       date: event.date,
       startTime: settings.startTime,
       endTime: settings.endTime,
@@ -70930,7 +70913,7 @@ var EventCopyDrafts = class {
     return plan2.target === "title" ? this.title.ready(plan2.facts.talks) : this.description.ready(plan2.facts);
   }
   valid(plan2, draft) {
-    return draft.media.length === 0 && (plan2.target === "title" ? this.title.valid(draft.text) : this.description.valid(plan2.facts, draft.text));
+    return draft.media.length === 0 && (plan2.target === "title" ? this.title.valid(draft.text) : this.description.valid(draft.text));
   }
   brief(plan2, guidance) {
     if (!this.supports(plan2.target))

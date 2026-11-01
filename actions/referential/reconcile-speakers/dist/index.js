@@ -33798,16 +33798,9 @@ var ScheduledEventProjection = class {
       (talk) => !talk.description.trim() || !talk.speakers.length || talk.speakers.some((speaker) => !speaker.id)
     ))
       return void 0;
-    const talks = event.agenda.map(
-      (talk) => [
-        talk.description,
-        talk.speakers.map((speaker) => speaker.displayName).join(", "),
-        talk.proposal?.abstract
-      ].filter(Boolean).join("\n")
-    );
     return {
       title: event.eventTitle.trim(),
-      description: [event.description.trim(), ...talks].join("\n\n"),
+      description: event.description,
       date: event.date,
       startTime: settings.startTime,
       endTime: settings.endTime,
