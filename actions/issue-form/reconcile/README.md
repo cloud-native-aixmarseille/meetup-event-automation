@@ -30,7 +30,7 @@ Validate referentials and synchronize the public meetup issue form. Invalid reco
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/issue-form/reconcile@c2ad036fdecace0ce967f6c2d3ba9a3e678ac1b6 # 8.0.6
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/issue-form/reconcile@8a789a3fee0b2a06a572aca689b047ea61a441d9 # 8.0.7
   with:
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # This input is required.
