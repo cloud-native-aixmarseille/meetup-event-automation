@@ -347,32 +347,49 @@ confirmation using synthetic controls matching the Meetup form.
 
 ## Browser runtime and validation
 
-Browser operations use fresh sessions and close them after use. Meetup starts
-Google Chrome in an isolated Xvfb display and connects through a loopback-only
-debugging endpoint. Its private profile and display files are removed after each
-operation. All tabs share authentication within that disposable profile. The
-browser process uses the event timezone across navigation and
-challenge solving. OCGroups uses headless Chromium. The workflow installs the
-required browsers and display dependencies; direct action callers must provide
-Google Chrome and `xvfb-run` for Meetup. The 15-minute job uploads no artifacts and persists no browser sessions, page dumps,
-cookies, traces, or video. Changed pages or unverified authentication stop the
-operation. Expected organizer corrections and pending/rejected approvals do not
-fail CI; source, startup, editor, and verification failures do. Diagnostics retain
-`publication.meetup.` and `publication.community.` provider scopes.
+Meetup starts stock Google Chrome in an isolated Xvfb display and connects
+through a loopback-only debugging endpoint. The profile and display files are
+removed after each operation. OCGroups uses headless Chromium. Direct action
+callers must provide the required browsers and `xvfb-run`.
 
-Meetup can attempt one pre-credential hCaptcha challenge using
-[hcaptcha-challenger](https://github.com/QIN2DIM/hcaptcha-challenger), installed
-under its GPL-3.0-or-later license with [locked Python dependencies](../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/requirements.txt).
+Before signing in, Meetup restores any saved session and checks the account email
+on the account management page. An expired session falls back to password login.
+A different account, unexpected origin, one-time-code request, explicit credential
+rejection, or HTTP 429 stops authentication without further submissions.
+Transient browser, navigation, form, redirect, account-page and CAPTCHA failures
+allow at most three authentication attempts, with waits of two and five seconds.
+Retries happen before event operations; they never replay event writes or sends.
+
+The workflow caches only an AES-256-GCM encrypted cookie/localStorage snapshot,
+not the Chrome profile. The key is derived with HKDF from the existing Meetup AI
+API secret and bound to the repository, group, account and password. Rotating
+these credentials invalidates the cache. No extra consumer setting is needed.
+Only the default branch restores or saves the cache. Snapshots older than seven
+days, corrupt ciphertext and state for unrelated sites are discarded. A restored
+snapshot is consumed until account verification succeeds, then saved again.
+Cache availability is not required for fresh login. Session values, page dumps,
+traces and video are never uploaded as artifacts or printed in logs.
+
+[Playwright storage state](https://playwright.dev/docs/auth) carries authentication
+secrets. [GitHub caches can be read by pull requests](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching),
+which is why only authenticated ciphertext is cached. The workflow never stores
+the encryption key alongside it.
+
+Meetup can attempt at most two pre-credential hCaptcha resolutions across the
+login attempts, using [hcaptcha-challenger](https://github.com/QIN2DIM/hcaptcha-challenger)
+and the [locked Python dependencies](../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/requirements.txt).
 The solver receives challenge images and instructions, never account credentials
-or event content. It checks the HTTPS page, refuses pages containing credentials,
-and requires a CAPTCHA response after solving. The Gemini key travels through
-stdin; logs are discarded and private temporary files removed. The deadline is
-two minutes. Unsupported challenges, including reCAPTCHA, one-time codes, and
-post-credential challenges, stop login. There are no automatic login retries.
-Every rerun starts a fresh session. Verification completed in a separate browser
-does not authenticate the workflow. A completed CAPTCHA must still be accepted
-by Meetup; rejected tokens leave login blocked. Gemini quota, billing, and
-data-use terms apply separately from a Workspace subscription.
+or event content. Each call has a two-minute deadline. Its API key travels through
+stdin; logs and temporary files are discarded. Unsupported challenges and
+post-credential challenges are not sent to the solver. A fresh authentication
+attempt can request a new pre-credential challenge. Meetup must still accept the
+solver's response. Gemini quota, billing and data-use terms apply separately.
+
+Diagnostics distinguish browser startup, login-page loading, form filling,
+submission, redirect timeout, account verification, CAPTCHA failure, rejected
+credentials and one-time codes. Technical automation failures fail CI after
+retries; explicit credential rejection and one-time codes remain organizer
+blocks. Neither a timeout nor a CAPTCHA failure claims that the account is invalid.
 
 Synthetic journey and Chromium tests cover lifecycle, provider isolation,
 approval/source guards, recovery, no-op reruns, and saved-field verification.

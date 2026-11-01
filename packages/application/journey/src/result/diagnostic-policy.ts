@@ -43,6 +43,8 @@ const ORGANIZER_CODES = new Set([
 	"publication.assets.pdf.limit",
 	"publication.assets.pdf.sharing",
 	"publication.meetup.authentication",
+	"publication.meetup.authentication-one-time-code",
+	"publication.meetup.authentication-credentials-rejected",
 	"publication.meetup.prerequisites",
 	"publication.meetup.link",
 	"publication.meetup.conflict",

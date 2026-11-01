@@ -1,3 +1,5 @@
+import { MeetupAuthentication } from "./meetup-authentication.js";
+import { sessionStore } from "../testing/session-fixture.js";
 import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import type { Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -20,8 +22,13 @@ function fixture(configuredGroup = groupUrl) {
 		{ load: async () => coverImage },
 		coverJournal(),
 		{ select: vi.fn() },
+		sessionStore(),
 	);
 	const page = {
+		context: () => ({
+			storageState: async () => ({ cookies: [], origins: [] }),
+			setStorageState: vi.fn(),
+		}),
 		setDefaultTimeout: vi.fn(),
 		setDefaultNavigationTimeout: vi.fn(),
 	} as unknown as Page;
@@ -47,16 +54,26 @@ function fixture(configuredGroup = groupUrl) {
 	const send = vi.fn().mockResolvedValue(undefined);
 	const gateway = new MeetupEventGateway(
 		{
-			createBrowserSession: () => browser,
+			authentication: new MeetupAuthentication(
+				{
+					createSession: () => browser,
+					createLogin: (page, endpoint) =>
+						createLogin(
+							page,
+							createCaptchaResolver(page, endpoint),
+							new URL(configuredGroup).origin,
+						),
+					store: sessionStore(),
+					delay: async () => undefined,
+				},
+				{ email: "organizer@example.test", password: " synthetic-password " },
+			),
 			createMeetupEventEditor: (...args) =>
 				composition.meetupEventEditor(...args),
 			createMeetupEventPublisher: (...args) =>
 				composition.meetupEventPublisher(...args),
-			createMeetupLoginPage: createLogin,
 			createAttendeeMessage: () => ({ send }),
 		},
-		{ email: "organizer@example.test", password: " synthetic-password " },
-		createCaptchaResolver,
 		configuredGroup,
 	);
 	return {
@@ -83,11 +100,11 @@ describe("Meetup event browser session", () => {
 
 		// Assert
 		await expect(result).rejects.toThrow(
-			"Event publication failed: unavailable",
+			"Event publication failed: authentication-browser",
 		);
 		expect(login).not.toHaveBeenCalled();
 		expect(save).not.toHaveBeenCalled();
-		expect(browser.close).toHaveBeenCalledOnce();
+		expect(browser.close).toHaveBeenCalledTimes(3);
 	});
 
 	it("sends attendee slides through an authenticated session and closes it", async () => {
@@ -167,7 +184,7 @@ describe("Meetup event browser session", () => {
 	);
 
 	it.each([
-		"challenge-required",
+		"captcha-required",
 		"credentials-rejected",
 		"session-not-reusable",
 	] as const)("does not save when login returns %s", async (status) => {
@@ -179,9 +196,13 @@ describe("Meetup event browser session", () => {
 		const result = gateway.save(desiredEvent, undefined, vi.fn(), vi.fn());
 
 		// Assert
-		await expect(result).rejects.toMatchObject({ kind: "authentication" });
+		await expect(result).rejects.toMatchObject({
+			kind: `authentication-${status}`,
+		});
 		expect(save).not.toHaveBeenCalled();
-		expect(browser.close).toHaveBeenCalledOnce();
+		expect(browser.close).toHaveBeenCalledTimes(
+			status === "credentials-rejected" ? 1 : 3,
+		);
 	});
 
 	it("does not expose a provider exception or override the result on cleanup failure", async () => {
@@ -195,9 +216,9 @@ describe("Meetup event browser session", () => {
 
 		// Assert
 		await expect(result).rejects.toThrow(
-			"Event publication failed: unavailable",
+			"Event publication failed: authentication-browser",
 		);
-		expect(browser.close).toHaveBeenCalledOnce();
+		expect(browser.close).toHaveBeenCalledTimes(3);
 	});
 	it("publishes through an authenticated ephemeral session with the approval guard", async () => {
 		// Arrange
@@ -224,4 +245,19 @@ describe("Meetup event browser session", () => {
 		expect(publish).toHaveBeenCalledWith(desiredEvent, eventUrl, guard);
 		expect(browser.close).toHaveBeenCalledOnce();
 	});
+});
+
+it("does not retry an event write when the provider response is uncertain", async () => {
+	// Arrange
+	const { gateway, login, save, browser } = fixture();
+	save.mockRejectedValue(new Error("uncertain event write"));
+
+	// Act
+	const result = gateway.save(desiredEvent, undefined, vi.fn(), vi.fn());
+
+	// Assert
+	await expect(result).rejects.toThrow("uncertain event write");
+	expect(login).toHaveBeenCalledOnce();
+	expect(save).toHaveBeenCalledOnce();
+	expect(browser.close).toHaveBeenCalledOnce();
 });

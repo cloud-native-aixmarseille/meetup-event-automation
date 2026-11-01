@@ -40460,6 +40460,8 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.assets.pdf.limit",
   "publication.assets.pdf.sharing",
   "publication.meetup.authentication",
+  "publication.meetup.authentication-one-time-code",
+  "publication.meetup.authentication-credentials-rejected",
   "publication.meetup.prerequisites",
   "publication.meetup.link",
   "publication.meetup.conflict",
@@ -46673,6 +46675,22 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "diagnostic.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "diagnostic.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "diagnostic.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "diagnostic.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "diagnostic.publication.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
+  "diagnostic.publication.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+  "diagnostic.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "diagnostic.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "diagnostic.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "diagnostic.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "diagnostic.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "diagnostic.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "diagnostic.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "diagnostic.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "diagnostic.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "diagnostic.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
   "diagnostic.publication.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
   "action.communication.recover-social": "Recover a social post",
   "report.social.recovery": "social_recovery={status}",
@@ -46742,7 +46760,7 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
   "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
   "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check the event and cover photo library before retrying. Restore the verified event URL in Meetup Link and recover any pending or detached cover photo in the trusted journal. Leave Meetup event published unchecked until publication is confirmed. Preserve event and photo identities; clear uncertain state only after checking what Meetup accepted.",
-  "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and AI configuration; complete any unsupported challenge interactively.",
+  "diagnostic.publication.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
   "diagnostic.publication.meetup.editor": "The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
   "diagnostic.publication.meetup.verification": "Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
@@ -46831,6 +46849,22 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "diagnostic.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "diagnostic.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "diagnostic.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "diagnostic.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "diagnostic.publication.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
+  "diagnostic.publication.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
+  "diagnostic.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "diagnostic.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "diagnostic.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "diagnostic.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "diagnostic.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "diagnostic.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "diagnostic.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "diagnostic.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "diagnostic.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "diagnostic.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
   "diagnostic.publication.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
   "action.communication.recover-social": "Reprendre une publication",
   "report.social.recovery": "reprise_sociale={status}",
@@ -46900,7 +46934,7 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
   "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
   "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez l'\xE9v\xE9nement et la phototh\xE8que avant de relancer. R\xE9tablissez l'URL v\xE9rifi\xE9e dans Meetup Link et r\xE9cup\xE9rez toute photo de couverture en attente ou d\xE9tach\xE9e dans le journal de confiance. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Pr\xE9servez les identifiants de l'\xE9v\xE9nement et de la photo ; ne supprimez un \xE9tat incertain qu'apr\xE8s avoir v\xE9rifi\xE9 ce que Meetup a accept\xE9.",
-  "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et la configuration IA ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez pour obtenir le diagnostic d\xE9taill\xE9.",
   "diagnostic.publication.meetup.editor": "Impossible de pr\xE9parer l'\xE9diteur Meetup. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
   "diagnostic.publication.meetup.verification": "Les champs enregistr\xE9s sur Meetup ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
@@ -54457,12 +54491,102 @@ var DiagnosticCommentSections = class {
   }
 };
 
-// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
-var STAGE_GUIDANCE = [
+// packages/adapter/event/github-event-comment-repository/src/authentication-diagnostic-guidance.ts
+var AUTHENTICATION_GUIDANCE = [
   [
     "publication.meetup.authentication",
     ["Meetup Link", "comment.guidance.meetup.authentication"]
   ],
+  [
+    "publication.meetup.authentication-configuration",
+    ["Meetup Link", "comment.guidance.meetup.authentication-configuration"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-required",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-required"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-rejected",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-rejected"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-captcha-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-one-time-code",
+    ["Meetup Link", "comment.guidance.meetup.authentication-one-time-code"]
+  ],
+  [
+    "publication.meetup.authentication-credentials-rejected",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-credentials-rejected"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-session-not-reusable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-session-not-reusable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-page-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-page-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-form-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-submit-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-submit-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-redirect-timeout",
+    ["Meetup Link", "comment.guidance.meetup.authentication-redirect-timeout"]
+  ],
+  [
+    "publication.meetup.authentication-account-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-account-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-account-mismatch",
+    ["Meetup Link", "comment.guidance.meetup.authentication-account-mismatch"]
+  ],
+  [
+    "publication.meetup.authentication-unexpected-page",
+    ["Meetup Link", "comment.guidance.meetup.authentication-unexpected-page"]
+  ],
+  [
+    "publication.meetup.authentication-rate-limited",
+    ["Meetup Link", "comment.guidance.meetup.authentication-rate-limited"]
+  ],
+  [
+    "publication.meetup.authentication-browser",
+    ["Meetup Link", "comment.guidance.meetup.authentication-browser"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
+var STAGE_GUIDANCE = [
+  ...AUTHENTICATION_GUIDANCE,
   [
     "publication.content.invalid",
     ["Event materials", "comment.guidance.content.invalid"]
@@ -55586,7 +55710,23 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
-  "comment.guidance.meetup.authentication": "Meetup sign-in could not be verified. Check the organizer account's access, then retry synchronization.",
+  "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "comment.guidance.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "comment.guidance.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "comment.guidance.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
   "comment.social.target": "Post ({destination}, {purpose})",
   "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
   "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
@@ -55636,7 +55776,23 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
-  "comment.guidance.meetup.authentication": "Connexion \xE0 Meetup non v\xE9rifi\xE9e. V\xE9rifiez l'acc\xE8s du compte organisateur, puis relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "comment.guidance.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "comment.guidance.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "comment.guidance.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
   "comment.social.target": "Publication ({destination}, {purpose})",
   "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",

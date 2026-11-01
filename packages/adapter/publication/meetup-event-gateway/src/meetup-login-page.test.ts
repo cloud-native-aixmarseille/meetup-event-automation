@@ -48,7 +48,12 @@ function fixture() {
 			.mockImplementation((_, { name }) =>
 				name === "Log in" ? submit : cookieNotice,
 			),
-		getByText: vi.fn().mockReturnValue({ first: () => rejected }),
+		getByText: vi.fn().mockImplementation((pattern) => ({
+			first: () =>
+				String(pattern).includes("incorrect")
+					? rejected
+					: { isVisible: async () => false },
+		})),
 	} as unknown as Page;
 	return {
 		login: new MeetupLoginPage(
@@ -141,7 +146,7 @@ describe("Meetup login page", () => {
 		const result = await login.login("organizer@example.test", "secret");
 
 		// Assert
-		expect(result).toBe("challenge-required");
+		expect(result).toBe("captcha-required");
 		expect(email.fill).not.toHaveBeenCalled();
 		expect(submit.click).not.toHaveBeenCalled();
 	});
@@ -156,7 +161,7 @@ describe("Meetup login page", () => {
 		const result = await login.login("organizer@example.test", "secret");
 
 		// Assert
-		expect(result).toBe("challenge-required");
+		expect(result).toBe("one-time-code");
 		expect(solver.resolve).not.toHaveBeenCalled();
 		expect(email.fill).not.toHaveBeenCalled();
 	});
@@ -170,7 +175,7 @@ describe("Meetup login page", () => {
 		const result = await login.login("organizer@example.test", "secret");
 
 		// Assert
-		expect(result).toBe("challenge-required");
+		expect(result).toBe("captcha-required");
 		expect(email.fill).not.toHaveBeenCalled();
 		expect(password.fill).not.toHaveBeenCalled();
 		expect(submit.click).not.toHaveBeenCalled();
@@ -189,7 +194,7 @@ describe("Meetup login page", () => {
 		const result = await login.login("organizer@example.test", "secret");
 
 		// Assert
-		expect(result).toBe("challenge-required");
+		expect(result).toBe("one-time-code");
 		expect(email.fill).not.toHaveBeenCalled();
 	});
 
@@ -240,7 +245,7 @@ describe("Meetup login page", () => {
 		const result = await login.verifyAccount("organizer@example.test");
 
 		// Assert
-		expect(result).toBe("unexpected-page");
+		expect(result).toBe("account-mismatch");
 	});
 
 	it("reports a login redirect as an unusable session", async () => {
@@ -271,7 +276,7 @@ describe("Meetup login page", () => {
 		const result = await login.login("organizer@example.test", "secret");
 
 		// Assert
-		expect(result).toBe("challenge-required");
+		expect(result).toBe("captcha-required");
 		expect(submit.click).toHaveBeenCalledOnce();
 		expect(solver.resolve).not.toHaveBeenCalled();
 	});
@@ -293,14 +298,14 @@ describe("Meetup login page", () => {
 	it("does not force a disabled login button", async () => {
 		// Arrange
 		const { login, submit } = fixture();
-		submit.isEnabled.mockResolvedValue(false);
+		submit.click.mockRejectedValue(new Error("Button disabled timeout"));
 
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
 
 		// Assert
-		expect(result).toBe("unexpected-page");
-		expect(submit.click).not.toHaveBeenCalled();
+		expect(result).toBe("submit-unavailable");
+		expect(submit.click).toHaveBeenCalledOnce();
 	});
 
 	it("dismisses the cookie notice without accepting optional tracking", async () => {
@@ -314,4 +319,45 @@ describe("Meetup login page", () => {
 		// Assert
 		expect(cookieNotice.click).toHaveBeenCalledOnce();
 	});
+});
+
+it("distinguishes a navigation timeout from invalid credentials", async () => {
+	// Arrange
+	const { login, page, email, submit } = fixture();
+	vi.mocked(page.goto).mockRejectedValue(
+		new Error("private connection details"),
+	);
+
+	// Act
+	const result = await login.login("organizer@example.test", "secret");
+
+	// Assert
+	expect(result).toBe("login-page-unavailable");
+	expect(email.fill).not.toHaveBeenCalled();
+	expect(submit.click).not.toHaveBeenCalled();
+});
+
+it("distinguishes missing account controls from a different account", async () => {
+	// Arrange
+	const { login, email } = fixture();
+	email.waitFor.mockRejectedValue(new Error("Account input timeout"));
+
+	// Act
+	const result = await login.verifyAccount("organizer@example.test");
+
+	// Assert
+	expect(result).toBe("account-unavailable");
+});
+
+it("stops immediately when Meetup rate-limits login", async () => {
+	// Arrange
+	const { login, page, email } = fixture();
+	vi.mocked(page.goto).mockResolvedValue({ status: () => 429 } as never);
+
+	// Act
+	const result = await login.login("organizer@example.test", "secret");
+
+	// Assert
+	expect(result).toBe("rate-limited");
+	expect(email.fill).not.toHaveBeenCalled();
 });

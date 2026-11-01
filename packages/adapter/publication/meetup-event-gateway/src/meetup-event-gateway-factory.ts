@@ -5,14 +5,13 @@ import type {
 	MeetupPublicationEvent,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
-import type {
-	MeetupEventGateway,
-	MeetupEventGatewayArguments,
-} from "./meetup-event-gateway.js";
+import type { MeetupEventGateway } from "./meetup-event-gateway.js";
 
 export interface MeetupEventGatewayFactoryCollaborators {
 	readonly createMeetupEventGateway: (
-		...args: MeetupEventGatewayArguments
+		credentials: { email: string; password: string },
+		createCaptchaResolver: (page: Page, endpoint: string) => CaptchaResolver,
+		groupUrl: string,
 	) => MeetupEventGateway;
 }
 

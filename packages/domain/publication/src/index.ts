@@ -91,6 +91,9 @@ export {
 	PublicationUrlPolicyEngine,
 	type PublicationUrlPolicyEngineArguments,
 } from "./domain/publication-url-policy-engine.js";
-export { ScheduledEventError } from "./domain/scheduled-event-error.js";
+export {
+	ScheduledEventError,
+	type ScheduledEventFailure,
+} from "./domain/scheduled-event-error.js";
 export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 export type { PublicationUrlPolicy } from "./domain/url-policy-contracts.js";

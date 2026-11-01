@@ -10,18 +10,24 @@ export class EventPublicationResults {
 			diagnostics: [
 				{
 					code: `publication.${this.field}.${code}`,
-					severity: [
-						"editor",
-						"verification",
-						"source",
-						"unavailable",
-						"approval-unavailable",
-						"approval-notification-failed",
-					].includes(code)
-						? "error"
-						: status === "blocked"
-							? "warning"
-							: "info",
+					severity:
+						(code.startsWith("authentication-") &&
+							![
+								"authentication-one-time-code",
+								"authentication-credentials-rejected",
+							].includes(code)) ||
+						[
+							"editor",
+							"verification",
+							"source",
+							"unavailable",
+							"approval-unavailable",
+							"approval-notification-failed",
+						].includes(code)
+							? "error"
+							: status === "blocked"
+								? "warning"
+								: "info",
 					field: `publicationLinks.${this.field}`,
 					message: `${this.label} publication: ${code}`,
 				},

@@ -1,3 +1,4 @@
+import { sessionStore } from "./session-fixture.js";
 import type { MeetupPublicationEvent } from "@meetup-automation/publication";
 import type { BrowserContext } from "playwright-core";
 import { vi } from "vitest";
@@ -216,6 +217,7 @@ export async function editorFixture(
 		{ load: async () => coverImage },
 		journal,
 		topicSelection,
+		sessionStore(),
 	);
 	return Object.assign(state, { composition, journal, topicSelection });
 }
