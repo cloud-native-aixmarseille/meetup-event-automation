@@ -74,6 +74,10 @@ export class AttentionDiagnosticChecklist implements AttentionChecklistSource {
 		return undefined;
 	}
 	private static readonly FIELDS = new Map<string, AttentionChecklistField>([
+		["Event Title", "title"],
+		["Event Description", "description"],
+		["Drive Link", "assets"],
+		["OpenFeedback Link", "feedback"],
 		["Event Date", "date"],
 		["Hoster", "host"],
 		["Host confirmation", "host-confirmation"],

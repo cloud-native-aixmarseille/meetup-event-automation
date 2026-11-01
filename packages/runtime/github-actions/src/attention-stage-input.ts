@@ -11,16 +11,14 @@ export class AttentionStageInput {
 		const input = this.json(value, "stage-results");
 		if (!this.isRecord(input))
 			throw new RuntimeInputError("stage-results", "must be an object");
-		const reports = ATTENTION_STAGE_OWNERS.map(
+		const reports = ATTENTION_STAGE_OWNERS.filter((owner) =>
+			Object.hasOwn(input, owner),
+		).map(
 			(owner) =>
 				[owner, this.group(input[owner], `stage-results.${owner}`)] as const,
 		);
 		return {
-			event: reports[0][1],
-			assets: reports[1][1],
-			feedback: reports[2][1],
-			communications: reports[3][1],
-			content: reports[4][1],
+			...Object.fromEntries(reports),
 			...(input.social === undefined
 				? {}
 				: { social: this.group(input.social, "stage-results.social") }),

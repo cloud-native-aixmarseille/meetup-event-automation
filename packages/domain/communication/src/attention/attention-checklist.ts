@@ -1,4 +1,8 @@
 export type AttentionChecklistField =
+	| "title"
+	| "description"
+	| "assets"
+	| "feedback"
 	| "date"
 	| "host"
 	| "host-confirmation"

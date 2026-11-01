@@ -4,6 +4,55 @@ import { CommunicationDomainComposition } from "../dependency-composition.js";
 import { AttentionEpisodes } from "./attention-episodes.js";
 
 describe("attention episodes", () => {
+	it("keeps an unrelated failure and its original run during a social audit", () => {
+		// Arrange
+		const policy = new CommunicationDomainComposition().attentionEpisodes();
+		const now = new Date("2099-06-01T10:00:00Z");
+		const first = policy.reconcile(
+			undefined,
+			observation({
+				runId: "100",
+				conditions: [
+					condition({
+						key: "integration-failure:assets",
+						code: "integration-failure",
+						owner: "assets",
+						resource: "assets",
+					}),
+				],
+			}),
+			now,
+		);
+
+		// Act
+		const social = policy.reconcile(
+			first,
+			observation({
+				runId: "200",
+				scope: ["social"],
+				evaluated: ["social"],
+				conditions: [],
+			}),
+			now,
+		);
+		const complete = policy.reconcile(
+			social,
+			observation({ runId: "300", conditions: [] }),
+			now,
+		);
+
+		// Assert
+		expect(social.episodes[0]).toMatchObject({
+			status: "active",
+			runId: "100",
+			episode: 1,
+		});
+		expect(social.runId).toBe("200");
+		expect(complete.episodes[0]).toMatchObject({
+			status: "resolved",
+			runId: "100",
+		});
+	});
 	it("retains unknown conditions and resolves only successfully evaluated owners", () => {
 		// Arrange
 		const now = new Date("2099-06-01T10:00:00Z");

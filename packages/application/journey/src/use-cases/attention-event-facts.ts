@@ -3,6 +3,7 @@ import type {
 	AttentionPolicy,
 } from "@meetup-automation/communication";
 import {
+	type EventDiagnostic,
 	type EventDocumentDecodeResult,
 	type EventRuleEngine,
 	type EventRuleEngineArguments,
@@ -60,9 +61,7 @@ export class AttentionEventFacts {
 					: event.date,
 			closed: event.issueState === "closed",
 			occurrence: event.occurrenceStatus ?? "scheduled",
-			requiredDataMissing: diagnostics.some(
-				(item) => item.category === "invalid" || item.category === "incomplete",
-			),
+			requiredDataFields: this.requiredFields(diagnostics),
 			hostConfirmed: Boolean(event.host?.displayName.trim()),
 			speakersConfirmed: event.confirmations.speakers,
 			publicationPending: [
@@ -76,6 +75,46 @@ export class AttentionEventFacts {
 			followUpPending: this.followUp(event),
 		};
 	}
+	private requiredFields(diagnostics: readonly EventDiagnostic[]): string[] {
+		const fields = diagnostics
+			.filter(
+				(item) =>
+					(item.category === "invalid" || item.category === "incomplete") &&
+					!/^publication\.(meetup|community|assets)\.(missing|unpublished)$/.test(
+						item.code,
+					),
+			)
+			.map((item) => {
+				const field = item.field ?? "";
+				if (/^agenda\.\d+\.speakers/.test(field)) return "agenda-speakers";
+				if (/^agenda\.\d+\.description/.test(field))
+					return "agenda-descriptions";
+				return (
+					AttentionEventFacts.REQUIRED_FIELDS.get(field) ??
+					AttentionEventFacts.REQUIRED_FIELDS.get(field.split(".")[0]) ??
+					"event-form"
+				);
+			});
+		return [...new Set(fields)];
+	}
+	private static readonly REQUIRED_FIELDS = new Map([
+		["date", "date"],
+		["eventTitle", "title"],
+		["title", "title"],
+		["description", "description"],
+		["agenda", "agenda"],
+		["host", "host"],
+		["hoster", "host"],
+		["labels", "event-status"],
+		["event_status", "event-status"],
+		["occurrenceStatus", "event-status"],
+		["publicationLinks", "publication-links"],
+		["confirmations", "confirmations"],
+		["publicationLinks.meetup", "meetup-link"],
+		["publicationLinks.community", "community-link"],
+		["publicationLinks.assets", "assets-link"],
+		["publicationLinks.feedback", "feedback-link"],
+	]);
 	private followUp(event: MeetupEvent): string[] {
 		return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
 			if (name === "Share slides to meetup") return [];

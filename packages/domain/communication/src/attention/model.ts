@@ -42,6 +42,8 @@ export interface AttentionCondition {
 	readonly recovery?: boolean;
 }
 export interface AttentionObservation {
+	/** Owners included in this evaluation; omitted owners keep their prior evidence. */
+	readonly scope: readonly AttentionOwner[];
 	readonly commentId?: number;
 	readonly conditions: readonly AttentionCondition[];
 	readonly evaluated: readonly AttentionOwner[];
@@ -52,6 +54,7 @@ export interface AttentionObservation {
 	readonly runId?: string;
 }
 export interface AttentionEpisode {
+	runId?: string;
 	condition: AttentionCondition;
 	episode: number;
 	openedAt: string;

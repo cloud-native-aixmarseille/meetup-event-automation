@@ -36,6 +36,24 @@ function entry(
 	return { field, action, label: "Public field", description: "Public task" };
 }
 describe("organizer attention task selection", () => {
+	it.each(["agenda", "community"] as const)(
+		"deduplicates missing talk details only against a matching %s checklist task",
+		(field) => {
+			// Arrange
+			const condition = episode("required-data", "agenda-descriptions");
+			const concrete = entry(field);
+
+			// Act
+			const result = new AttentionTaskSelection().select(
+				{ state, conditions: [condition] },
+				{ entries: [concrete] },
+			);
+
+			// Assert
+			expect(result.details).toEqual(field === "agenda" ? [] : [condition]);
+			expect(result.checklist).toEqual([concrete]);
+		},
+	);
 	it.each([
 		["missing-date", "date"],
 		["host-confirmation", "host"],

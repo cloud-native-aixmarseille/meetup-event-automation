@@ -27,6 +27,21 @@ function attentionFixture(
 	);
 }
 describe("Slack attention presentation", () => {
+	it("keeps the original failure link when another workflow reports", () => {
+		// Arrange
+		const presenter = attentionFixture();
+		const failure = { ...episode(), runId: "100" };
+
+		// Act
+		const body = presenter.render({
+			state: { ...state(), runId: "200" },
+			conditions: [failure],
+		});
+
+		// Assert
+		expect(body).toContain("/actions/runs/100");
+		expect(body).not.toContain("/actions/runs/200");
+	});
 	it.each([
 		["en", "Jun 8, 2099", "Email preparation or sending failed.", "Review run"],
 		[

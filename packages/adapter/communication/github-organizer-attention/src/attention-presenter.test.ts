@@ -8,6 +8,40 @@ import { GithubOrganizerAttentionComposition } from "./dependency-composition.js
 import { AttentionMessages } from "./i18n/attention-messages.js";
 
 describe("GitHub attention presentation", () => {
+	it("links a retained failure to the run that observed it", () => {
+		// Arrange
+		const { presenter } = fixture();
+		const failure = {
+			...episode("integration-failure", "assets"),
+			runId: "100",
+		};
+
+		// Act
+		const body = presenter.details({
+			...state(),
+			post: undefined,
+			runId: "200",
+			episodes: [failure],
+		});
+
+		// Assert
+		expect(body).toContain("/actions/runs/100");
+		expect(body).not.toContain("/actions/runs/200");
+	});
+	it("identifies the field that needs correction", () => {
+		// Arrange
+		const { presenter } = fixture();
+
+		// Act
+		const body = presenter.details({
+			...state(),
+			post: undefined,
+			episodes: [episode("required-data", "agenda-descriptions")],
+		});
+
+		// Assert
+		expect(body).toContain("Complete or correct: talk descriptions.");
+	});
 	it("links content review with content-specific guidance", () => {
 		// Arrange
 		const { presenter } = fixture();
@@ -129,7 +163,9 @@ describe("GitHub attention presentation", () => {
 		// Assert
 		expect(body.startsWith(prefix)).toBe(true);
 		expect(body.match(/Confirmez/g)).toHaveLength(1);
-		expect(body).toContain("Publiez sur la plateforme CNCF.");
+		expect(body).toContain(
+			'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link".',
+		);
 	});
 	it("shows pending notification recovery without claiming the event is clear", () => {
 		// Arrange

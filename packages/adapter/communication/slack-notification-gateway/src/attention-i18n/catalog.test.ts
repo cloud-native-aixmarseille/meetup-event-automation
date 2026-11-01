@@ -4,6 +4,7 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./slack-attention-messages.js";
 
 const parameters = {
+	"action.required-data": { task: "agenda" },
 	"slack.title": { issue: "42" },
 	"slack.more": { count: 2 },
 	"action.manual-publication": { task: "publication" },

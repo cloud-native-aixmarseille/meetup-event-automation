@@ -24,7 +24,7 @@ export interface AttentionFacts {
 	readonly eventDate: string;
 	readonly closed: boolean;
 	readonly occurrence: "scheduled" | "held" | "cancelled" | "postponed";
-	readonly requiredDataMissing: boolean;
+	readonly requiredDataFields: readonly string[];
 	readonly hostConfirmed: boolean;
 	readonly speakersConfirmed: boolean;
 	readonly publicationPending: readonly string[];
@@ -62,6 +62,11 @@ export class EvaluateAttention {
 				commentId: item.commentId,
 			});
 		return {
+			scope: [
+				...facts.stages.map((stage) => stage.owner),
+				"approvals",
+				"delivery",
+			],
 			conditions,
 			evaluated,
 			verifiedRecovery: (facts.recovery ?? [])
@@ -177,32 +182,37 @@ export class EvaluateAttention {
 		conditions: AttentionCondition[],
 	): void {
 		if (
-			facts.occurrence === "scheduled" &&
-			(eventDay === undefined || day <= eventDay)
-		) {
-			if (!facts.hostConfirmed)
+			facts.occurrence !== "scheduled" ||
+			(eventDay !== undefined && day > eventDay)
+		)
+			return;
+		if (!facts.hostConfirmed)
+			conditions.push(
+				this.condition("host-confirmation", "event", "host", "preparation"),
+			);
+		if (!facts.speakersConfirmed)
+			conditions.push(
+				this.condition(
+					"speaker-confirmation",
+					"event",
+					"speakers",
+					"preparation",
+				),
+			);
+		for (const field of facts.requiredDataFields)
+			if (
+				!(field === "date" && eventDay === undefined) &&
+				!(field === "host" && !facts.hostConfirmed)
+			)
 				conditions.push(
-					this.condition("host-confirmation", "event", "host", "preparation"),
+					this.condition("required-data", "event", field, "preparation"),
 				);
-			if (!facts.speakersConfirmed)
-				conditions.push(
-					this.condition(
-						"speaker-confirmation",
-						"event",
-						"speakers",
-						"preparation",
-					),
-				);
-			if (facts.requiredDataMissing)
-				conditions.push(
-					this.condition("required-data", "event", "event", "preparation"),
-				);
-			for (const task of facts.publicationPending)
-				conditions.push(
-					this.condition("manual-publication", "event", task, "preparation"),
-				);
-		}
+		for (const task of facts.publicationPending)
+			conditions.push(
+				this.condition("manual-publication", "event", task, "preparation"),
+			);
 	}
+
 	private condition(
 		code: AttentionCondition["code"],
 		owner: AttentionOwner,

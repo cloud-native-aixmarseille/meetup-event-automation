@@ -37300,6 +37300,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
   covered(episode, entries) {
     if (!entries.length) return false;
     const { code, resource } = episode.condition;
+    if (code === "required-data" && resource !== "event")
+      return entries.some((entry) => entry.field === resource.split("-")[0]);
     if (code === "required-data" || code === "integration-failure" && resource === "event-data")
       return true;
     const fields = code === "manual-publication" ? _AttentionTaskSelection.RESOURCE_FIELDS.get(resource) : _AttentionTaskSelection.CONDITION_FIELDS.get(code);
@@ -37338,6 +37340,11 @@ var EvaluateAttention = class {
         commentId: item.commentId
       });
     return {
+      scope: [
+        ...facts.stages.map((stage) => stage.owner),
+        "approvals",
+        "delivery"
+      ],
       conditions,
       evaluated,
       verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
@@ -37411,29 +37418,30 @@ var EvaluateAttention = class {
     }
   }
   preparation(facts, eventDay, day, conditions) {
-    if (facts.occurrence === "scheduled" && (eventDay === void 0 || day <= eventDay)) {
-      if (!facts.hostConfirmed)
+    if (facts.occurrence !== "scheduled" || eventDay !== void 0 && day > eventDay)
+      return;
+    if (!facts.hostConfirmed)
+      conditions.push(
+        this.condition("host-confirmation", "event", "host", "preparation")
+      );
+    if (!facts.speakersConfirmed)
+      conditions.push(
+        this.condition(
+          "speaker-confirmation",
+          "event",
+          "speakers",
+          "preparation"
+        )
+      );
+    for (const field of facts.requiredDataFields)
+      if (!(field === "date" && eventDay === void 0) && !(field === "host" && !facts.hostConfirmed))
         conditions.push(
-          this.condition("host-confirmation", "event", "host", "preparation")
+          this.condition("required-data", "event", field, "preparation")
         );
-      if (!facts.speakersConfirmed)
-        conditions.push(
-          this.condition(
-            "speaker-confirmation",
-            "event",
-            "speakers",
-            "preparation"
-          )
-        );
-      if (facts.requiredDataMissing)
-        conditions.push(
-          this.condition("required-data", "event", "event", "preparation")
-        );
-      for (const task of facts.publicationPending)
-        conditions.push(
-          this.condition("manual-publication", "event", task, "preparation")
-        );
-    }
+    for (const task of facts.publicationPending)
+      conditions.push(
+        this.condition("manual-publication", "event", task, "preparation")
+      );
   }
   condition(code, owner, resource, policy) {
     return {
@@ -37570,6 +37578,7 @@ var AttentionEpisodes = class {
       observation.conditions.map((condition) => [condition.key, condition])
     );
     for (const episode of state.episodes) {
+      episode.runId ??= state.runId;
       const condition = conditions.get(episode.condition.key);
       if (condition) {
         conditions.delete(condition.key);
@@ -37579,6 +37588,7 @@ var AttentionEpisodes = class {
           episode.lastWindow = void 0;
         }
         episode.condition = condition;
+        episode.runId = observation.runId;
         episode.status = "active";
         if (changedDate && episode.lastWindow && ["preparation", "occurrence", "follow-up"].includes(condition.policy))
           episode.lastWindow = this.collaborators.attentionPolicy.window(
@@ -37592,6 +37602,7 @@ var AttentionEpisodes = class {
     }
     for (const condition of conditions.values())
       state.episodes.push({
+        runId: observation.runId,
         condition,
         episode: 1,
         openedAt: now2.toISOString(),
@@ -37607,6 +37618,8 @@ var AttentionEpisodes = class {
     if (episode.condition.recovery && (episode.status === "active" || episode.status === "unknown") && !observation.verifiedRecovery?.includes(episode.condition.key))
       return "unknown";
     if (observation.stopped && !episode.condition.recovery) return "stopped";
+    if (!observation.scope.includes(episode.condition.owner))
+      return episode.status;
     if (observation.evaluated.includes(episode.condition.owner))
       return "resolved";
     return episode.status === "active" ? "unknown" : episode.status;
@@ -39552,9 +39565,11 @@ var AttentionStageEvaluation = class {
   }
   collaborators;
   evaluate(input) {
-    const eventDiagnostics = input.event.diagnostics;
+    const eventDiagnostics = input.event?.diagnostics ?? [];
     return this.owners(input).map((owner) => {
-      const { outcome, diagnostics } = input[owner];
+      const report = input[owner];
+      const { diagnostics } = report;
+      const outcome = report.outcome === "success" && !report.reported ? "unknown" : report.outcome;
       const blocked = diagnostics.some(
         (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) && !this.eventPrerequisite(item.code, owner, eventDiagnostics)
       );
@@ -39593,12 +39608,13 @@ var AttentionStageEvaluation = class {
     return Boolean(input.social && this.stageComplete(input.social));
   }
   stageComplete(stage) {
-    return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
+    return stage !== void 0 && stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
       (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
     );
   }
   owners(input) {
-    return input.social ? [...ATTENTION_STAGE_OWNERS, "social"] : ATTENTION_STAGE_OWNERS;
+    const owners = input.social ? [...ATTENTION_STAGE_OWNERS, "social"] : ATTENTION_STAGE_OWNERS;
+    return owners.filter((owner) => input[owner] !== void 0);
   }
   organizerPrerequisite(item) {
     if (item.code === "event.concurrently-modified") return true;
@@ -39901,7 +39917,7 @@ var AssetParticipantProjection = class {
 };
 
 // packages/application/journey/src/use-cases/attention-event-facts.ts
-var AttentionEventFacts = class {
+var AttentionEventFacts = class _AttentionEventFacts {
   constructor(collaborators) {
     this.collaborators = collaborators;
   }
@@ -39926,9 +39942,7 @@ var AttentionEventFacts = class {
       eventDate: this.collaborators.attentionPolicy.eventDay(event.date) === void 0 ? "" : event.date,
       closed: event.issueState === "closed",
       occurrence: event.occurrenceStatus ?? "scheduled",
-      requiredDataMissing: diagnostics.some(
-        (item) => item.category === "invalid" || item.category === "incomplete"
-      ),
+      requiredDataFields: this.requiredFields(diagnostics),
       hostConfirmed: Boolean(event.host?.displayName.trim()),
       speakersConfirmed: event.confirmations.speakers,
       publicationPending: [
@@ -39939,6 +39953,38 @@ var AttentionEventFacts = class {
       followUpPending: this.followUp(event)
     };
   }
+  requiredFields(diagnostics) {
+    const fields = diagnostics.filter(
+      (item) => (item.category === "invalid" || item.category === "incomplete") && !/^publication\.(meetup|community|assets)\.(missing|unpublished)$/.test(
+        item.code
+      )
+    ).map((item) => {
+      const field = item.field ?? "";
+      if (/^agenda\.\d+\.speakers/.test(field)) return "agenda-speakers";
+      if (/^agenda\.\d+\.description/.test(field))
+        return "agenda-descriptions";
+      return _AttentionEventFacts.REQUIRED_FIELDS.get(field) ?? _AttentionEventFacts.REQUIRED_FIELDS.get(field.split(".")[0]) ?? "event-form";
+    });
+    return [...new Set(fields)];
+  }
+  static REQUIRED_FIELDS = /* @__PURE__ */ new Map([
+    ["date", "date"],
+    ["eventTitle", "title"],
+    ["title", "title"],
+    ["description", "description"],
+    ["agenda", "agenda"],
+    ["host", "host"],
+    ["hoster", "host"],
+    ["labels", "event-status"],
+    ["event_status", "event-status"],
+    ["occurrenceStatus", "event-status"],
+    ["publicationLinks", "publication-links"],
+    ["confirmations", "confirmations"],
+    ["publicationLinks.meetup", "meetup-link"],
+    ["publicationLinks.community", "community-link"],
+    ["publicationLinks.assets", "assets-link"],
+    ["publicationLinks.feedback", "feedback-link"]
+  ]);
   followUp(event) {
     return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
       if (name === "Share slides to meetup") return [];
@@ -41530,15 +41576,13 @@ var AttentionStageInput = class {
     const input = this.json(value, "stage-results");
     if (!this.isRecord(input))
       throw new RuntimeInputError("stage-results", "must be an object");
-    const reports = ATTENTION_STAGE_OWNERS.map(
+    const reports = ATTENTION_STAGE_OWNERS.filter(
+      (owner) => Object.hasOwn(input, owner)
+    ).map(
       (owner) => [owner, this.group(input[owner], `stage-results.${owner}`)]
     );
     return {
-      event: reports[0][1],
-      assets: reports[1][1],
-      feedback: reports[2][1],
-      communications: reports[3][1],
-      content: reports[4][1],
+      ...Object.fromEntries(reports),
       ...input.social === void 0 ? {} : { social: this.group(input.social, "stage-results.social") }
     };
   }
@@ -52151,6 +52195,7 @@ var AttentionRecord = class {
         true
       ),
       openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
+      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
       status: this.collaborators.attentionRecordFields.choice(data.status, [
         "active",
         "unknown",
@@ -52338,6 +52383,10 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
     return void 0;
   }
   static FIELDS = /* @__PURE__ */ new Map([
+    ["Event Title", "title"],
+    ["Event Description", "description"],
+    ["Drive Link", "assets"],
+    ["OpenFeedback Link", "feedback"],
     ["Event Date", "date"],
     ["Hoster", "host"],
     ["Host confirmation", "host-confirmation"],
@@ -52414,12 +52463,13 @@ var AttentionPresenter = class {
     });
   }
   url(episode, state) {
+    const runId = episode.runId ?? state.runId;
     if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
       return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
     if (["integration-failure", "stage-unknown"].includes(
       episode.condition.code
-    ) && state.runId && /^\d+$/.test(state.runId))
-      return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
+    ) && runId && /^\d+$/.test(runId))
+      return `https://github.com/${this.repository}/actions/runs/${runId}`;
     return this.overviewUrl(state);
   }
   overviewUrl(state) {
@@ -52794,7 +52844,7 @@ var messages = {
   "attention.review": "Review details",
   "attention.unknown": "status unverified",
   "action.missing-date": "Set the event date.",
-  "action.required-data": "Complete the event details.",
+  "action.required-data": "Complete or correct: {task}.",
   "action.host-confirmation": "Select a host in the meetup form.",
   "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
@@ -52804,12 +52854,27 @@ var messages = {
   "action.delivery-recovery": "Verify delivery before retrying.",
   "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
   "action.follow-up": "{task}.",
-  "action.stage-unknown": "Check the incomplete stage: {task}.",
+  "action.stage-unknown": "Unverified stage result: {task}.",
   "task.approvals": "email approval",
   "task.delivery": "delivery recovery",
   "attention.clear": "No pending tasks.",
   "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
-  "task.publish-community-event": "Publish on the CNCF platform",
+  "task.publish-community-event": 'Publish on the CNCF platform and fill in "CNCF Link"',
+  "task.date": "event date",
+  "task.title": "event title",
+  "task.description": "event description",
+  "task.agenda": "talk agenda",
+  "task.agenda-speakers": "talk speakers",
+  "task.agenda-descriptions": "talk descriptions",
+  "task.host": "event host",
+  "task.event-status": "event status",
+  "task.publication-links": "publication links",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "resources folder link",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "speaker confirmation",
+  "task.event-form": "event form",
   "task.create-asset-folder": "Prepare the asset folder",
   "task.thank-host": "Thank the host",
   "task.thank-speakers": "Thank the speakers",
@@ -52840,7 +52905,7 @@ var messages2 = {
   "attention.review": "Voir les d\xE9tails",
   "attention.unknown": "statut non v\xE9rifi\xE9",
   "action.missing-date": "Renseignez la date du meetup.",
-  "action.required-data": "Compl\xE9tez les informations du meetup.",
+  "action.required-data": "Compl\xE9tez ou corrigez : {task}.",
   "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
   "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
@@ -52850,12 +52915,27 @@ var messages2 = {
   "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
   "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
   "action.follow-up": "{task}.",
-  "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
+  "action.stage-unknown": "R\xE9sultat non v\xE9rifi\xE9 : {task}.",
   "task.approvals": "validation des emails",
   "task.delivery": "reprise des envois",
   "attention.clear": "Aucune t\xE2che en attente.",
   "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
-  "task.publish-community-event": "Publiez sur la plateforme CNCF",
+  "task.publish-community-event": 'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
+  "task.date": "date du meetup",
+  "task.title": "titre du meetup",
+  "task.description": "description du meetup",
+  "task.agenda": "programme des talks",
+  "task.agenda-speakers": "intervenants des talks",
+  "task.agenda-descriptions": "descriptions des talks",
+  "task.host": "h\xF4te du meetup",
+  "task.event-status": "statut du meetup",
+  "task.publication-links": "liens de publication",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "lien du dossier des ressources",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "confirmation des intervenants",
+  "task.event-form": "formulaire du meetup",
   "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
   "task.thank-host": "Remerciez l'h\xF4te",
   "task.thank-speakers": "Remerciez les intervenants",

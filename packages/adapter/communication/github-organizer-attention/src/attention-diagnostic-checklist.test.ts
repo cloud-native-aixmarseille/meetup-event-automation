@@ -6,6 +6,29 @@ import {
 import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 
 describe("diagnostic checklist decoding", () => {
+	it.each([
+		["Event Title", "title"],
+		["Event Description", "description"],
+		["Drive Link", "assets"],
+		["OpenFeedback Link", "feedback"],
+	])(
+		"identifies the public %s field for task deduplication",
+		(label, field) => {
+			// Arrange
+			const checklist =
+				new GithubOrganizerAttentionComposition().attentionDiagnosticChecklist();
+
+			// Act
+			checklist.set(
+				100,
+				`${DIAGNOSTIC_MARKER}\n\n- [ ] **${label}**: Correct this field.`,
+			);
+			const decoded = checklist.read();
+
+			// Assert
+			expect(decoded.entries).toMatchObject([{ field }]);
+		},
+	);
 	it("reads base and scoped social tasks from the same checklist without exposing markers", () => {
 		// Arrange
 		const checklist = new AttentionDiagnosticChecklist({

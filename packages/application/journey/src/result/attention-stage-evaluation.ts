@@ -25,9 +25,14 @@ export class AttentionStageEvaluation {
 	) {}
 
 	evaluate(input: AttentionStageReports): readonly AttentionStage[] {
-		const eventDiagnostics = input.event.diagnostics;
+		const eventDiagnostics = input.event?.diagnostics ?? [];
 		return this.owners(input).map((owner) => {
-			const { outcome, diagnostics } = input[owner] as AttentionStageReport;
+			const report = input[owner] as AttentionStageReport;
+			const { diagnostics } = report;
+			const outcome =
+				report.outcome === "success" && !report.reported
+					? "unknown"
+					: report.outcome;
 			const blocked = diagnostics.some(
 				(item) =>
 					this.collaborators.diagnosticPolicy.isTechnicalFailure(item) &&
@@ -74,8 +79,9 @@ export class AttentionStageEvaluation {
 	socialComplete(input: AttentionStageReports): boolean {
 		return Boolean(input.social && this.stageComplete(input.social));
 	}
-	private stageComplete(stage: AttentionStageReport): boolean {
+	private stageComplete(stage: AttentionStageReport | undefined): boolean {
 		return (
+			stage !== undefined &&
 			stage.outcome === "success" &&
 			stage.reported &&
 			!stage.diagnostics.some(
@@ -88,9 +94,10 @@ export class AttentionStageEvaluation {
 	private owners(
 		input: AttentionStageReports,
 	): readonly AttentionStage["owner"][] {
-		return input.social
+		const owners: readonly AttentionStage["owner"][] = input.social
 			? [...ATTENTION_STAGE_OWNERS, "social"]
 			: ATTENTION_STAGE_OWNERS;
+		return owners.filter((owner) => input[owner] !== undefined);
 	}
 	private organizerPrerequisite(item: PublicDiagnostic): boolean {
 		if (item.code === "event.concurrently-modified") return true;

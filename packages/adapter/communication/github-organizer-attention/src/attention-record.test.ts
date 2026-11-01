@@ -1,13 +1,35 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { describe, expect, it } from "vitest";
-import { state } from "../testing/attention.fixtures.js";
+import { episode, state } from "../testing/attention.fixtures.js";
 import { ATTENTION_MARKER, AttentionRecord } from "./attention-record.js";
 import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 
 describe("attention record validation", () => {
+	it("retains the source run when serializing an episode", () => {
+		// Arrange
+		const record = new GithubOrganizerAttentionComposition().attentionRecord();
+		const original = {
+			...state(),
+			episodes: [{ ...episode("integration-failure", "assets"), runId: "100" }],
+		};
+
+		// Act
+		const restored = record.read(record.marker(original));
+
+		// Assert
+		expect(restored.episodes[0]?.runId).toBe("100");
+	});
 	it.each([
 		{ version: 2 },
 		{ runId: "private@example.test" },
+		{
+			episodes: [
+				{
+					...episode("integration-failure", "assets"),
+					runId: "private@example.test",
+				},
+			],
+		},
 		{ eventDate: "<script>" },
 		{ post: { ...state().post, status: "accepted" } },
 		{ post: { ...state().post, fingerprint: "raw provider payload" } },
