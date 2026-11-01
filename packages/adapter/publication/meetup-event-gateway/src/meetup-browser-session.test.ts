@@ -16,19 +16,23 @@ describe("Meetup browser session", () => {
 		// Act
 		try {
 			const { page } = await session.open("UTC");
-			await page.context().route("https://example.test/**", (route) =>
-				route.fulfill({
+			await page.context().route("https://example.test/**", async (route) => {
+				const account = new URL(route.request().url()).pathname === "/account";
+				if (!account) sharedCookie = route.request().headers().cookie ?? "";
+				await route.fulfill({
 					contentType: "text/html",
+					headers: account
+						? {
+								"set-cookie":
+									"synthetic-session=private; Path=/; Secure; HttpOnly",
+							}
+						: {},
 					body: "<html><body>synthetic page</body></html>",
-				}),
-			);
-			await page.goto("https://example.test/account");
-			await page.evaluate(() => {
-				document.cookie = "synthetic-session=private; path=/; secure";
+				});
 			});
+			await page.goto("https://example.test/account");
 			const roster = await page.context().newPage();
 			await roster.goto("https://example.test/members");
-			sharedCookie = await roster.evaluate(() => document.cookie);
 		} finally {
 			await session.close();
 		}
