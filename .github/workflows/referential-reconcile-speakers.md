@@ -43,7 +43,7 @@ on:
 permissions: {}
 jobs:
   referential-reconcile-speakers:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/referential-reconcile-speakers.yml@f67f05dc2288071f070e23bfe9be50714a26c3a6 # 8.0.11
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/referential-reconcile-speakers.yml@d95fba47354bad9ac982e7d7b35d46410b693039 # 8.0.12
     permissions:
       contents: read
     secrets:
