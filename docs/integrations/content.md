@@ -59,10 +59,12 @@ permission, inherited or granted on each file before verification. The content
 media adapter verifies this access before review. After approval, document
 reconciliation moves the selected file into the managed event folder and names it
 `YYYY-MM-DD - Cover.png` or `YYYY-MM-DD - Cover.jpg`, matching its original format.
-It grants unlisted reader access to that image before moving it; the event folder
+It verifies the move, then grants unlisted reader access to that image; the event folder
 and its other files keep their existing permissions. The file ID, URL, bytes and
 approval remain unchanged. Reruns reuse the file, including after an uncertain
-move; a changed event date updates its name. Other candidates remain in staging.
+move; a changed event date updates its name. A pending placement record allows
+a retry to restore access lost during the move after rechecking the approved bytes.
+Access revoked after completed placement still blocks use. Other candidates remain in staging.
 Content media use separate immutable files, with reserved Drive IDs and SHA-256
 fingerprints. Existing documents, asset manifests, PDF files, and delivery
 ledgers retain their identities. The media verifier reads file permissions

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { drive_v3 } from "@googleapis/drive";
 import { vi } from "vitest";
 import { DriveContentImage } from "../src/drive-content-image.js";
+import { DriveContentSharing } from "../src/drive-content-sharing.js";
 import { DriveContentLocation } from "../src/drive-content-location.js";
 import { GoogleDriveContentMediaStore } from "../src/google-drive-content-media-store.js";
 
@@ -44,8 +45,16 @@ export function contentPlacementFixture() {
 			: structuredClone(input.fileId === folder.id ? folder : file),
 	}));
 	const update = vi.fn(async (input: drive_v3.Params$Resource$Files$Update) => {
+		const properties = {
+			...file.appProperties,
+			...input.requestBody?.appProperties,
+		};
 		Object.assign(file, input.requestBody);
-		if (input.addParents) file.parents = [input.addParents];
+		file.appProperties = properties;
+		if (input.addParents) {
+			file.parents = [input.addParents];
+			directReader = false;
+		}
 		file.version = String(Number(file.version) + 1);
 		return { data: structuredClone(file) };
 	});
@@ -66,7 +75,8 @@ export function contentPlacementFixture() {
 		permissions: { create: share, list },
 	} as unknown as drive_v3.Drive;
 	const folders = { resolve: async () => "tmp-covers" };
-	const location = new DriveContentLocation(client, folders);
+	const sharing = new DriveContentSharing(client);
+	const location = new DriveContentLocation(client, folders, sharing);
 	const store = new GoogleDriveContentMediaStore(
 		client,
 		folders,
@@ -74,6 +84,7 @@ export function contentPlacementFixture() {
 		{ read: async () => bytes },
 		{ verify: vi.fn() },
 		location,
+		sharing,
 	);
 	const input = {
 		media,
@@ -98,5 +109,6 @@ export function contentPlacementFixture() {
 		list,
 		location,
 		store,
+		sharing,
 	};
 }

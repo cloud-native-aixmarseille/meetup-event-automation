@@ -10,6 +10,7 @@ import {
 import type { DriveAnnouncementImage } from "./drive-announcement-image.js";
 import type { DriveBoundedStream } from "./drive-bounded-stream.js";
 import type { DriveContentImage } from "./drive-content-image.js";
+import type { DriveContentSharing } from "./drive-content-sharing.js";
 import type { DriveContentLocation } from "./drive-content-location.js";
 import { requestOptions } from "./google-drive-asset-repository-contracts.js";
 import type { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
@@ -25,11 +26,17 @@ export class GoogleDriveContentMediaStore
 		private readonly stream: Pick<DriveBoundedStream, "read">,
 		private readonly announcement: Pick<DriveAnnouncementImage, "verify">,
 		private readonly location: Pick<DriveContentLocation, "valid" | "place">,
+		private readonly sharing: Pick<DriveContentSharing, "readable">,
 	) {}
 	async place(
 		input: Parameters<EventCoverRepository["place"]>[0],
 	): Promise<void> {
-		if (input.media.source || !(await this.verify(input.media)))
+		if (input.media.source)
+			throw new ContentMediaChangedError(
+				"Only generated cover artwork can be placed",
+			);
+		const current = await this.readMedia(input.media.id, false);
+		if (!this.matches(input.media, current))
 			throw new ContentMediaChangedError(
 				"Selected cover is no longer the approved artwork",
 			);
@@ -90,6 +97,12 @@ export class GoogleDriveContentMediaStore
 		return result;
 	}
 	async read(id: string): Promise<ContentMedia | undefined> {
+		return this.readMedia(id, true);
+	}
+	private async readMedia(
+		id: string,
+		requirePublicAccess: boolean,
+	): Promise<ContentMedia | undefined> {
 		if (!/^[\w-]+$/.test(id)) throw new Error("Invalid content media identity");
 		const metadata = await this.client.files.get(
 			{
@@ -110,7 +123,10 @@ export class GoogleDriveContentMediaStore
 			file.appProperties?.contentSchema !== "1" ||
 			!file.version ||
 			!file.description ||
-			!(await this.readable(id))
+			(!(await this.sharing.readable(id)) &&
+				(requirePublicAccess ||
+					!file.appProperties.contentEventKey ||
+					file.appProperties.contentPlacementPending !== "1"))
 		)
 			throw new ContentMediaChangedError(
 				"Content media is not a verified public artifact",
@@ -142,47 +158,22 @@ export class GoogleDriveContentMediaStore
 		if (media.source) return this.announcement.verify(media);
 		try {
 			const actual = await this.read(media.id);
-			return (
-				actual !== undefined &&
-				actual.fingerprint === media.fingerprint &&
-				actual.url === media.url &&
-				actual.description === media.description
-			);
+			return this.matches(media, actual);
 		} catch (error) {
 			if (error instanceof ContentMediaChangedError) return false;
 			throw error;
 		}
 	}
-	private async readable(fileId: string): Promise<boolean> {
-		let pageToken: string | undefined;
-		let readable = false;
-		const seen = new Set<string>();
-		for (let page = 0; page < 10; page++) {
-			const { data } = await this.client.permissions.list(
-				{
-					fileId,
-					supportsAllDrives: true,
-					pageSize: 100,
-					pageToken,
-					fields: "nextPageToken,permissions(type,role)",
-				},
-				requestOptions,
-			);
-			if (!Array.isArray(data.permissions))
-				throw new ContentMediaChangedError(
-					"Content permissions are unavailable",
-				);
-			readable ||= data.permissions.some(
-				(permission) =>
-					permission.type === "anyone" && permission.role === "reader",
-			);
-			pageToken = data.nextPageToken ?? undefined;
-			if (!pageToken) return readable;
-			if (seen.has(pageToken)) break;
-			seen.add(pageToken);
-		}
-		throw new ContentMediaChangedError(
-			"Content permission listing is incomplete",
+
+	private matches(
+		media: ContentMedia,
+		actual: ContentMedia | undefined,
+	): boolean {
+		return (
+			actual !== undefined &&
+			actual.fingerprint === media.fingerprint &&
+			actual.url === media.url &&
+			actual.description === media.description
 		);
 	}
 }
