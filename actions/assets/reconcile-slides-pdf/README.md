@@ -30,7 +30,7 @@ Reconcile the post-event presentation PDF while preserving its identity, source 
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-slides-pdf@ff0e07df70e80f3377030d5cacef089431e614ab # 8.0.13
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-slides-pdf@ef7bf4c8a13928a245b833b6291937f78a761db2 # 9.0.0
   with:
     # Language for generated reports (en or fr).
     # This input is required.
