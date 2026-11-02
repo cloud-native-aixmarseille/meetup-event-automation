@@ -92,6 +92,9 @@
 			"@meetup-automation/https-asset-image-repository": [
 				"./packages/adapter/publication/https-asset-image-repository/src/index.ts"
 			],
+			"@meetup-automation/github-event-website": [
+				"./packages/adapter/publication/github-event-website/src/index.ts"
+			],
 			"@meetup-automation/github-publication-journal": [
 				"./packages/adapter/publication/github-publication-journal/src/index.ts"
 			],

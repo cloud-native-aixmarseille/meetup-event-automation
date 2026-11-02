@@ -74,6 +74,30 @@ beforeEach(() => {
 });
 
 describe("event publication action", () => {
+	it("reads and masks the website token only when the published event needs synchronization", async () => {
+		// Arrange
+		const configuration = new GithubActionsComposition()
+			.eventPublicationConfiguration()
+			.parse(eventPublicationConfigurationFixture());
+		const settings = { repository: "site", path: "events.md" };
+		mocks.load.mockResolvedValue({ ...configuration, website: settings });
+		mocks.inputs["website-token"] = "synthetic-website-token";
+		const messages = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"en",
+		);
+		// Act
+		await subject().run(messages);
+		const before = vi
+			.mocked(core.getInput)
+			.mock.calls.some(([name]) => name === "website-token");
+		const website = mocks.create.mock.calls[0][0].website;
+		website.createClient();
+		// Assert
+		expect(before).toBe(false);
+		expect(website.settings).toEqual(settings);
+		expect(mocks.setSecret).toHaveBeenCalledWith("synthetic-website-token");
+	});
 	it("prepares the selected issue and masks all account credentials", async () => {
 		// Arrange
 		const messages = new ActionMessages(

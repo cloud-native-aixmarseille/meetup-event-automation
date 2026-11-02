@@ -53,7 +53,8 @@ secret, without changing its parsed values. Never print credentials to logs.
 
 The [publication workflow](../../.github/workflows/event-reconcile.yml)
 uses `.github/event-publication.json` for the common schedule, public venues,
-and configured destination collection. The required `publication-credentials`
+and configured destination collection, plus the optional `website` repository and
+Markdown path for the public calendar. The required `publication-credentials`
 secret contains credentials keyed by enabled provider. Meetup requires email,
 password, and AI settings; OCGroups requires username and password. The workflow
 also uses the shared GitHub App, Conference Hall, and Slack settings.

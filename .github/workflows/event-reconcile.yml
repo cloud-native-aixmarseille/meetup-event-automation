@@ -304,10 +304,23 @@ jobs:
           key: meetup-session-v1-${{ github.repository_id }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.issue-number }}
           restore-keys: meetup-session-v1-${{ github.repository_id }}-
 
+      - name: Create website repository token
+        id: website-token
+        if: ${{ steps.publication-runtime.outputs.website-repository != '' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.publication-runtime.outputs.website-repository }}
+          permission-contents: write
+
       - name: Reconcile event publication
         id: publication
         uses: $/actions/publication/reconcile-event
         with:
+          website-token: ${{ steps.website-token.outputs.token }}
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
           community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
           asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}

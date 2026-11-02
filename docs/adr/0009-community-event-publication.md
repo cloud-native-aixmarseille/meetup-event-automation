@@ -34,6 +34,13 @@ their adapters. A supported write API can replace either browser implementation
 without changing the lifecycle. Verify the deployed login method and permissions
 before enabling a caller; do not treat internal dashboard routes as a stable API.
 
+The optional site target synchronizes the public calendar after verified
+Meetup publication. Journey owns this ordering and the source guard; the site
+port accepts only public calendar fields. Its GitHub adapter owns Markdown and
+compare-and-swap writes, using a separately scoped App token. Site failures
+retain verified publication and can be retried without republishing the event.
+See the dated site decision below for alternatives and deployment constraints.
+
 ### Ownership and reusable contracts
 
 - Publication owns managed event values, identity validation, and
@@ -492,3 +499,26 @@ bounded solver calls. Explicit credential rejection, one-time codes, unexpected
 pages/accounts and HTTP 429 stop immediately. No publication or email operation
 is included in the retry loop. Synthetic validation and live results belong in
 the change review; this decision does not assert unattended provider availability.
+
+### 2026-11-02: Synchronize the public calendar after verified Meetup publication
+
+Accepted. The shared publication journey invokes a narrow site repository port
+only after Meetup publication is verified and recorded in the issue. The GitHub
+adapter edits the existing calendar table with compare-and-swap file updates.
+Public date, registration URL, venue name, and city are its entire event input.
+Calendar representation and GitHub effects remain adapter responsibilities;
+publication ordering and source/content revalidation remain journey policies.
+
+The optional target lives in the existing publication configuration, within the
+consumer organization. A separate GitHub App installation token grants Contents
+write only on that repository. The existing site push workflow owns deployment.
+Missing credentials or site errors report a separate diagnostic without
+reversing verified publication. Reruns retry idempotently; they never publish a
+second Meetup event to recover a site failure.
+
+A separate consumer script was rejected because it would duplicate publication
+state and configuration parsing. Rebuilding the site to query Meetup at page
+load was unnecessary for an existing Markdown calendar and would add a runtime
+provider dependency. Default-branch updates require the installed App's write
+access and a deployment workflow triggered by its commits. This decision does not
+assert deployment completion from a successful Contents API write.

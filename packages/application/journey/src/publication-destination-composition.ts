@@ -41,6 +41,7 @@ export class PublicationDestinationComposition {
 	meetup(
 		input: DestinationInput<MeetupPublicationEvent, ScheduledEventSettings> & {
 			artwork: Pick<CoverArtworkApprovalGate, "cover">;
+			website?: import("@meetup-automation/publication").EventWebsiteRepository;
 		},
 		group: MeetupGroupUrl,
 	) {

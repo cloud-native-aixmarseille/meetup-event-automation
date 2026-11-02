@@ -1,4 +1,13 @@
 export const EN_MESSAGES = {
+	"comment.guidance.website.access":
+		"Meetup is published, but the website update was denied. Ask a maintainer to check the configured repository and file, the GitHub App installation, and its Contents write permission.",
+	"comment.guidance.website.conflict":
+		"Meetup is published, but the calendar contains conflicting rows or concurrent edits. Ask a maintainer to check the calendar, then rerun synchronization.",
+	"comment.guidance.website.format":
+		"Meetup is published, but the calendar format is unsupported. Ask a maintainer to check the year headings and three-column month, date, and venue table.",
+	"comment.guidance.website.unavailable":
+		"Meetup is published, but GitHub could not confirm the website update. Rerun synchronization; it will reuse the same calendar entry.",
+
 	"comment.guidance.content.description-review":
 		"Edit and approve the description in its proposal comment.",
 	"comment.guidance.content.title-review":

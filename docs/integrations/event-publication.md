@@ -150,6 +150,51 @@ the whole collection. The App token grants consumer contents read and issues
 write. Provider credentials reach only the reconciliation step. Direct action
 callers must supply the same runtimes, permissions, and lock.
 
+## Update the site calendar
+
+To update a GitHub-hosted Markdown calendar after verified Meetup publication,
+add a `website` entry to `.github/event-publication.json`:
+
+```json
+{
+  "website": {
+    "repository": ".github",
+    "path": "website/events.md"
+  }
+}
+```
+
+This entry belongs beside `destinations` and requires the Meetup destination.
+The site repository must belong to the consumer repository's owner. Install
+its existing GitHub App on that repository with **Contents: write**. No new secret
+or consumer workflow input is required. The reusable workflow creates a separate
+token scoped to that repository; the consumer token keeps its existing permissions.
+The target repository must deploy the site on pushes to its default branch.
+
+The calendar uses `## YYYY` sections and a three-column Markdown table for month,
+date, and venue. Synchronization replaces the matching planned row with the
+confirmed date linked to the Meetup registration page and `Venue (City)`.
+It identifies published rows by Meetup URL, retains unrelated rows and historical
+sections, and creates a year section when needed. The public date, URL, venue name,
+and city are the only event fields written. Private contacts and agenda data never
+enter the site adapter.
+
+Drafts and unverified publication attempts do not change the calendar. A verified
+published event also synchronizes on subsequent active-event audits. Unchanged
+rows produce no commit. The write uses the current file SHA; conflicts trigger
+at most three attempts, each rereading and merging the file and rechecking the
+source issue before writing. Duplicate candidate rows or an unsupported table
+stop the update instead of choosing or replacing content blindly.
+
+A site failure leaves the verified Meetup publication and its issue checkbox
+intact. The report distinguishes repository access, calendar format, conflicting
+edits, and unavailable GitHub requests. After correcting the reported problem,
+rerun event synchronization. A lost commit response is safe to retry because the
+next run rereads the calendar before writing. Site deployment failures belong
+to the site repository's deployment workflow; a committed row alone does not
+confirm that the public page has deployed. Cancellation, unpublishing, and removal
+of calendar entries remain manual.
+
 ## Review and reconcile
 
 The issue must be open, scheduled in the future, have confirmed host and

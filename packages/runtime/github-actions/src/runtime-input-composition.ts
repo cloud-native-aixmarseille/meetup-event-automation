@@ -17,6 +17,7 @@ import { CommunicationInput } from "./communication-input.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
 import { EventPublicationConfiguration } from "./event-publication-configuration.js";
 import { EventScheduleConfiguration } from "./event-schedule-configuration.js";
+import { EventWebsiteConfiguration } from "./event-website-configuration.js";
 import { OcgroupsPublicationSettings } from "./ocgroups-publication-settings.js";
 import { PublicationUrlInput } from "./publication-url-input.js";
 import { RuntimeInput } from "./runtime-input.js";
@@ -129,7 +130,13 @@ export class RuntimeInputComposition {
 					runtime: RuntimeInput,
 					schedule: EventScheduleConfiguration,
 					ocgroups: OcgroupsPublicationSettings,
-				) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+				) =>
+					new EventPublicationConfiguration(
+						runtime,
+						schedule,
+						ocgroups,
+						new EventWebsiteConfiguration(),
+					),
 				[RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings],
 			);
 	}

@@ -53,6 +53,10 @@ Install the same App on `mailings` under the consumer repository's owner with
 **Contents: write** permission for email dispatch. Each workflow creates the
 repository-scoped tokens it needs and revokes them when the job ends.
 
+For an automatic site calendar, install this App on the configured site
+repository with **Contents: write** and follow
+[site calendar setup](../integrations/event-publication.md#update-the-site-calendar).
+
 Add the following repository settings:
 
 | Type     | Name                           | Value                                                                                                                       |

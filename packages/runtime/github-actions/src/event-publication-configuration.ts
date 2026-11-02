@@ -3,6 +3,10 @@ import { join } from "node:path";
 import type { ScheduledEventSettings } from "@meetup-automation/journey";
 import type { EventScheduleConfiguration } from "./event-schedule-configuration.js";
 import type {
+	EventWebsiteConfiguration,
+	EventWebsiteSettings,
+} from "./event-website-configuration.js";
+import type {
 	OcgroupsPublicationSettings,
 	OcgroupsPublicationSettingsValue,
 } from "./ocgroups-publication-settings.js";
@@ -17,6 +21,7 @@ export type PublicationDestinationConfiguration =
 export type EventPublicationConfigurationValue = Readonly<{
 	schedule: ScheduledEventSettings;
 	destinations: readonly PublicationDestinationConfiguration[];
+	website?: EventWebsiteSettings;
 }>;
 
 export class EventPublicationConfiguration {
@@ -24,6 +29,7 @@ export class EventPublicationConfiguration {
 		private readonly input: Pick<RuntimeInput, "isObject">,
 		private readonly schedule: Pick<EventScheduleConfiguration, "parse">,
 		private readonly ocgroups: Pick<OcgroupsPublicationSettings, "parse">,
+		private readonly website: Pick<EventWebsiteConfiguration, "parse">,
 	) {}
 	async load(root: string): Promise<EventPublicationConfigurationValue> {
 		const text = await readFile(
@@ -50,7 +56,18 @@ export class EventPublicationConfiguration {
 			destinations.length
 		)
 			throw new Error("Duplicate publication provider");
-		return { schedule, destinations };
+		if (
+			value.website !== undefined &&
+			!destinations.some((destination) => destination.provider === "meetup")
+		)
+			throw new Error("Website synchronization requires a Meetup destination");
+		return {
+			schedule,
+			destinations,
+			...(value.website === undefined
+				? {}
+				: { website: this.website.parse(value.website) }),
+		};
 	}
 	private destination(
 		value: unknown,

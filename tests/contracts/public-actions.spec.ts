@@ -38,11 +38,16 @@ const actionContracts = [
 	{
 		directory: "actions/publication/prepare-runtime",
 		inputs: [],
-		outputs: ["requires-challenge-solver", "runtime-directory"],
+		outputs: [
+			"requires-challenge-solver",
+			"runtime-directory",
+			"website-repository",
+		],
 	},
 	{
 		directory: "actions/publication/reconcile-event",
 		inputs: [
+			"website-token",
 			"asset-folder-url-prefix",
 			"community-event-url-prefixes",
 			"meetup-event-url-prefix",

@@ -7,6 +7,33 @@ import { GithubActionsComposition } from "./dependency-composition.js";
 import type { EventPublicationConfiguration } from "./event-publication-configuration.js";
 
 describe("shared publication configuration", () => {
+	it("uses the single website target with a Meetup destination", () => {
+		// Arrange
+		const website = { repository: "site", path: "website/events.md" };
+		const subject =
+			new GithubActionsComposition().eventPublicationConfiguration();
+		// Act
+		const result = subject.parse({
+			...eventPublicationConfigurationFixture(),
+			website,
+		});
+		// Assert
+		expect(result.website).toEqual(website);
+	});
+	it("rejects website synchronization without Meetup", () => {
+		// Arrange
+		const subject =
+			new GithubActionsComposition().eventPublicationConfiguration();
+		// Act
+		const parse = () =>
+			subject.parse({
+				...eventPublicationConfigurationFixture(),
+				destinations: [],
+				website: { repository: "site", path: "events.md" },
+			});
+		// Assert
+		expect(parse).toThrow("requires a Meetup destination");
+	});
 	it("shares the schedule across typed destinations and retains OCGroups public venue data", () => {
 		// Arrange
 		const input = eventPublicationConfigurationFixture();

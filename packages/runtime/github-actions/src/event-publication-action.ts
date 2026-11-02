@@ -62,6 +62,12 @@ export class EventPublicationAction {
 			locale: messages.locale,
 			client: getOctokit(githubToken),
 			adapters,
+			website: configuration.website
+				? {
+						settings: configuration.website,
+						createClient: () => getOctokit(this.secret("website-token")),
+					}
+				: undefined,
 			slackToken: this.secret("slack-token"),
 			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
 				required: true,

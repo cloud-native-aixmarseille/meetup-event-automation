@@ -1,4 +1,5 @@
 type Step = {
+	id?: string;
 	"working-directory"?: string;
 	uses?: string;
 	if?: string;
@@ -84,6 +85,11 @@ export function operationalValues(
 	for (const step of job.steps ?? []) {
 		const ownedAction = /^[.$]\/actions\//.test(step.uses ?? "");
 		if (ownedAction) values.push(...strings(step.with));
+		// Repository scoping changes authorization only when an owned action uses the token.
+		if (tokenScopeUsed(step, job.steps ?? []))
+			values.push(
+				...strings([step.with?.repositories, step.with?.owner, step.if]),
+			);
 		if (operationalCommand(step.run ?? ""))
 			values.push(...strings(step["working-directory"]));
 		// Unknown third-party actions and arbitrary scripts need a reviewed rule here.
@@ -93,6 +99,18 @@ export function operationalValues(
 			if (shellConsumes(step.run ?? "", name)) values.push(...strings(value));
 	}
 	return values;
+}
+
+function tokenScopeUsed(step: Step, steps: readonly Step[]): boolean {
+	if (!step.id || !step.uses?.startsWith("actions/create-github-app-token@"))
+		return false;
+	return steps.some(
+		(consumer) =>
+			/^[.$]\/actions\//.test(consumer.uses ?? "") &&
+			strings(consumer.with).some((value) =>
+				value.includes(`steps.${step.id}.outputs.token`),
+			),
+	);
 }
 
 export function workflowOutputConsumed(
