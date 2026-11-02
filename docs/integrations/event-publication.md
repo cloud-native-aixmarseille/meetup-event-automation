@@ -160,7 +160,8 @@ source data blocks synchronization before browser access.
 
 The event description is exactly the approved **Event Description** copy, with
 its line breaks. Publication does not append talk abstracts, speaker names, or
-the issue's agenda to that text.
+the issue's agenda to that text. Meetup input is checked before saving; an editor
+that discards the approved text stops synchronization before an event write.
 
 The workflow processes destinations in configuration order. Pending approval or
 a provider failure does not prevent a ready destination from proceeding. OCGroups

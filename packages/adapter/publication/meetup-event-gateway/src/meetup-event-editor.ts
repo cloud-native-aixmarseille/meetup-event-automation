@@ -181,10 +181,7 @@ export class MeetupEventEditor {
 		await this.collaborators
 			.createMeetupCalendar(this.page)
 			.fill(event.date, event.startTime, event.endTime);
-		await this.page
-			.getByTestId("event-description-editor")
-			.locator('[contenteditable="true"]:visible')
-			.fill(event.description);
+		await this.fillDescription(event.description);
 		await this.collaborators.createMeetupVenue(this.page).select(event.venue);
 		const topics = await this.collaborators
 			.createTopics(this.page)
@@ -193,6 +190,27 @@ export class MeetupEventEditor {
 			.createHosts(this.page)
 			.select(this.group);
 		return { status, selections: { topics, hosts } };
+	}
+
+	private async fillDescription(value: string): Promise<void> {
+		const editor = this.page
+			.getByTestId("event-description-editor")
+			.locator('[contenteditable="true"]:visible');
+		await editor.focus();
+		await editor.press("ControlOrMeta+A");
+		await editor.press("Backspace");
+		const lines = value.split(/\r?\n/);
+		for (const [index, line] of lines.entries()) {
+			// The rich editor rejects a single multiline insertText operation.
+			if (index > 0) await editor.press("Enter");
+			if (line) await this.page.keyboard.insertText(line);
+		}
+		await editor.press("Tab");
+		const actual = (await editor.innerText()).replace(/\s+/g, " ").trim();
+		if (actual !== value.replace(/\s+/g, " ").trim())
+			throw new Error(
+				"The description editor did not retain the approved text",
+			);
 	}
 
 	private async startNewDraft(): Promise<void> {
