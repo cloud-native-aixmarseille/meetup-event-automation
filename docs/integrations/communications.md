@@ -175,8 +175,8 @@ For introductions, the automation adds a reaction to the original Slack request:
 delivery. Failed reactions are retried on later reconciliations, including
 after email tasks are complete. They do not reopen the decision or resend mail.
 
-Introductions and thank-you emails require separate approvals. Approval covers
-the host and speaker batch for the current email inputs, including recipient
+Each preparation type and the thank-you batch require separate approvals.
+Approval covers that group's current email inputs, including recipient
 addresses, templates, placeholders, date and policy. Only a fingerprint and
 public facts are persisted; contact details never appear in the request.
 Changes to those inputs create a new request in the same GitHub comment, with
