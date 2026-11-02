@@ -8,13 +8,15 @@ import {
 	folderMimeType,
 	requestOptions,
 } from "./google-drive-asset-repository-contracts.js";
+import type { DriveContentSharing } from "./drive-content-sharing.js";
 import type { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
 
 /** Keeps media in staging or in the event folder recorded by its managed move. */
 export class DriveContentLocation {
 	constructor(
-		private readonly client: Pick<drive_v3.Drive, "files" | "permissions">,
+		private readonly client: Pick<drive_v3.Drive, "files">,
 		private readonly folders: Pick<GoogleDrivePublicAssetFolder, "resolve">,
+		private readonly sharing: Pick<DriveContentSharing, "ensure">,
 	) {}
 
 	async valid(file: drive_v3.Schema$File): Promise<boolean> {
@@ -58,6 +60,17 @@ export class DriveContentLocation {
 			throw new ContentMediaChangedError(
 				"Cover placement could not be verified",
 			);
+		// Drive re-evaluates inherited access on a move. Grant on the final file.
+		await this.sharing.ensure(media.id);
+		if (actual.appProperties.contentPlacementPending === "1")
+			await this.client.files.update(
+				{
+					fileId: media.id,
+					supportsAllDrives: true,
+					requestBody: { appProperties: { contentPlacementPending: "0" } },
+				},
+				requestOptions,
+			);
 	}
 
 	private async move(
@@ -67,23 +80,6 @@ export class DriveContentLocation {
 	): Promise<void> {
 		const { media, container, name } = input;
 		const moved = file.parents?.[0] !== container.id;
-		if (moved) {
-			// Preserve the already-public image's access when leaving its public parent.
-			// Never share the event folder or its other files.
-			await this.client.permissions.create(
-				{
-					fileId: media.id,
-					supportsAllDrives: true,
-					requestBody: {
-						type: "anyone",
-						role: "reader",
-						allowFileDiscovery: false,
-					},
-					fields: "id",
-				},
-				requestOptions,
-			);
-		}
 		if (moved || file.name !== name) {
 			await this.client.files.update(
 				{
@@ -94,7 +90,11 @@ export class DriveContentLocation {
 						: {}),
 					requestBody: {
 						name,
-						appProperties: { ...file.appProperties, contentEventKey: key },
+						appProperties: {
+							...file.appProperties,
+							contentEventKey: key,
+							...(moved ? { contentPlacementPending: "1" } : {}),
+						},
 					},
 				},
 				requestOptions,

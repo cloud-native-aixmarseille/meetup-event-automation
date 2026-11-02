@@ -1,12 +1,51 @@
 import type { drive_v3 } from "@googleapis/drive";
 import { describe, expect, it, vi } from "vitest";
 import { contentPlacementFixture } from "../testing/content-placement-fixture.js";
+import { DriveContentSharing } from "./drive-content-sharing.js";
 import { DriveContentLocation } from "./drive-content-location.js";
 import { DriveContentImage } from "./drive-content-image.js";
 import { DrivePublicFolderError } from "./drive-public-folder-error.js";
 import { GoogleDriveContentMediaStore } from "./google-drive-content-media-store.js";
 
 describe("immutable content media", () => {
+	it("recovers the approved bytes after a move response is lost and inherited access disappears", async () => {
+		// Arrange
+		const f = contentPlacementFixture();
+		const update = f.update.getMockImplementation();
+		if (!update) throw new Error("Missing update fixture");
+		f.update.mockImplementationOnce(async (input) => {
+			await update(input);
+			throw new Error("Response lost");
+		});
+		// Act
+		const first = await f.store
+			.place(f.input)
+			.catch((error: Error) => error.message);
+		const readableBeforeRecovery = await f.store.verify(f.media);
+		await f.store.place(f.input);
+		const verified = await f.store.verify(f.media);
+		await f.store.place(f.input);
+		// Assert
+		expect(first).toBe("Response lost");
+		expect(readableBeforeRecovery).toBe(false);
+		expect(verified).toBe(true);
+		expect(f.file.appProperties?.contentPlacementPending).toBe("0");
+		expect(f.share).toHaveBeenCalledTimes(1);
+		expect(
+			f.update.mock.calls.filter(([input]) => input.addParents),
+		).toHaveLength(1);
+	});
+	it("does not restore access revoked after a completed placement", async () => {
+		// Arrange
+		const f = contentPlacementFixture();
+		// Act
+		await f.store.place(f.input);
+		f.list.mockResolvedValue({ data: { permissions: [] } });
+		const result = f.store.place(f.input);
+		// Assert
+		await expect(result).rejects.toThrow("verified public artifact");
+		expect(f.share).toHaveBeenCalledTimes(1);
+	});
 	it("preserves the approved media identity, bytes and URL after placement", async () => {
 		// Arrange
 		const f = contentPlacementFixture();
@@ -17,8 +56,8 @@ describe("immutable content media", () => {
 		await f.store.place(f.input);
 		// Assert
 		expect(verified).toBe(true);
-		expect(current).toMatchObject({ ...f.media, sourceRevision: "2" });
-		expect(f.update).toHaveBeenCalledTimes(1);
+		expect(current).toMatchObject({ ...f.media, sourceRevision: "3" });
+		expect(f.update).toHaveBeenCalledTimes(2);
 	});
 	it("does not move modified artwork", async () => {
 		// Arrange
@@ -30,7 +69,7 @@ describe("immutable content media", () => {
 		// Act
 		const result = f.store.place(f.input);
 		// Assert
-		await expect(result).rejects.toThrow("no longer the approved artwork");
+		await expect(result).rejects.toThrow("Stored content image changed");
 		expect(f.update).not.toHaveBeenCalled();
 		expect(f.share).not.toHaveBeenCalled();
 	});
@@ -102,7 +141,11 @@ describe("immutable content media", () => {
 				new DriveContentLocation(
 					{ files: { get } } as unknown as drive_v3.Drive,
 					{ resolve: async () => "covers-folder" },
+					{ ensure: vi.fn() },
 				),
+				new DriveContentSharing({
+					permissions: { list },
+				} as unknown as drive_v3.Drive),
 			);
 			// Act
 			const verified = await store.verify(media);
@@ -112,6 +155,7 @@ describe("immutable content media", () => {
 	);
 	it("rejects invalid destination layout before reserving an image identity", async () => {
 		// Arrange
+		const list = vi.fn();
 		const generateIds = vi.fn();
 		const get = vi.fn();
 		const store = new GoogleDriveContentMediaStore(
@@ -127,7 +171,11 @@ describe("immutable content media", () => {
 			new DriveContentLocation(
 				{ files: { get } } as unknown as drive_v3.Drive,
 				{ resolve: async () => "covers-folder" },
+				{ ensure: vi.fn() },
 			),
+			new DriveContentSharing({
+				permissions: { list },
+			} as unknown as drive_v3.Drive),
 		);
 		// Act
 		const result = store.reserve();
@@ -139,6 +187,7 @@ describe("immutable content media", () => {
 		"rejects a cover in %s before downloading it",
 		async (parent) => {
 			// Arrange
+			const list = vi.fn();
 			const get = vi.fn(async () => ({ data: { parents: [parent] } }));
 			const read = vi.fn();
 			const store = new GoogleDriveContentMediaStore(
@@ -150,7 +199,11 @@ describe("immutable content media", () => {
 				new DriveContentLocation(
 					{ files: { get } } as unknown as drive_v3.Drive,
 					{ resolve: async () => "covers-folder" },
+					{ ensure: vi.fn() },
 				),
+				new DriveContentSharing({
+					permissions: { list },
+				} as unknown as drive_v3.Drive),
 			);
 			// Act
 			const result = store.read("reserved");
@@ -230,7 +283,11 @@ describe("immutable content media", () => {
 				new DriveContentLocation(
 					{ files: { get } } as unknown as drive_v3.Drive,
 					{ resolve: async () => "covers-folder" },
+					{ ensure: vi.fn() },
 				),
+				new DriveContentSharing({
+					permissions: { list },
+				} as unknown as drive_v3.Drive),
 			);
 
 			// Act
@@ -315,7 +372,11 @@ describe("immutable content media", () => {
 				new DriveContentLocation(
 					{ files: { get } } as unknown as drive_v3.Drive,
 					{ resolve: async () => "covers-folder" },
+					{ ensure: vi.fn() },
 				),
+				new DriveContentSharing({
+					permissions: { list },
+				} as unknown as drive_v3.Drive),
 			);
 			// Act
 			const result = store.persist("reserved", image, "Public cover");
@@ -351,6 +412,7 @@ describe("immutable content media", () => {
 	);
 	it("treats a changed artifact as stale while retaining transport failures", async () => {
 		// Arrange
+		const list = vi.fn();
 		const get = vi
 			.fn()
 			.mockResolvedValueOnce({ data: { trashed: true } })
@@ -364,7 +426,11 @@ describe("immutable content media", () => {
 			new DriveContentLocation(
 				{ files: { get } } as unknown as drive_v3.Drive,
 				{ resolve: async () => "covers-folder" },
+				{ ensure: vi.fn() },
 			),
+			new DriveContentSharing({
+				permissions: { list },
+			} as unknown as drive_v3.Drive),
 		);
 		const media = {
 			id: "reserved",

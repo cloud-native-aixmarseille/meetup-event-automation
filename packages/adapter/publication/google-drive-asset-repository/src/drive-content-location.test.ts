@@ -17,7 +17,8 @@ describe("Drive content placement", () => {
 				contentHash: f.media.fingerprint,
 			},
 		});
-		expect(f.update).toHaveBeenCalledExactlyOnceWith(
+		expect(f.update).toHaveBeenNthCalledWith(
+			1,
 			expect.objectContaining({
 				fileId: f.media.id,
 				addParents: f.folder.id,
@@ -36,7 +37,7 @@ describe("Drive content placement", () => {
 			}),
 			expect.anything(),
 		);
-		expect(f.share.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(f.share.mock.invocationCallOrder[0]).toBeGreaterThan(
 			Number(f.update.mock.invocationCallOrder[0]),
 		);
 	});
@@ -49,7 +50,7 @@ describe("Drive content placement", () => {
 		// Assert
 		expect(f.file.name).toBe("2099-12-06 - Cover.png");
 		expect(f.share).toHaveBeenCalledTimes(1);
-		expect(f.update.mock.calls[1]?.[0]).not.toHaveProperty("addParents");
+		expect(f.update.mock.calls[2]?.[0]).not.toHaveProperty("addParents");
 	});
 	it.each(["wrong-event", "trashed", "not-folder"])(
 		"rejects a %s destination before changing the selected file",
@@ -68,7 +69,7 @@ describe("Drive content placement", () => {
 			expect(f.share).not.toHaveBeenCalled();
 		},
 	);
-	it("leaves the cover in staging when its public access cannot be preserved", async () => {
+	it("retains a pending move when public access cannot be granted", async () => {
 		// Arrange
 		const f = contentPlacementFixture();
 		f.share.mockRejectedValue(new Error("Permission denied"));
@@ -76,8 +77,8 @@ describe("Drive content placement", () => {
 		const result = f.location.place(f.input);
 		// Assert
 		await expect(result).rejects.toThrow("Permission denied");
-		expect(f.update).not.toHaveBeenCalled();
-		expect(f.file.parents).toEqual(["tmp-covers"]);
+		expect(f.file.parents).toEqual([f.folder.id]);
+		expect(f.file.appProperties?.contentPlacementPending).toBe("1");
 	});
 	it("rejects an unconfirmed move instead of reporting success", async () => {
 		// Arrange
@@ -105,7 +106,7 @@ describe("Drive content placement", () => {
 		// Assert
 		expect(first).toBe("Response lost");
 		expect(f.file.name).toBe(f.input.name);
-		expect(f.update).toHaveBeenCalledTimes(1);
+		expect(f.update).toHaveBeenCalledTimes(2);
 		expect(f.share).toHaveBeenCalledTimes(1);
 	});
 });

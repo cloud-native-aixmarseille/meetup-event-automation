@@ -94,8 +94,8 @@ child. Resolve one existing direct child by its fixed name; do not create folder
 or fall back to storing assets in the root.
 After approval, move the selected cover into its managed event folder using the
 event date and `Cover` filename, with the original PNG or JPEG extension. Preserve
-its bytes and identity, and grant unlisted reader access to that image before
-moving it. Other event files and unselected candidates remain unchanged.
+its bytes and identity, and grant unlisted reader access to that image after
+verifying its placement. Other event files and unselected candidates remain unchanged.
 It is a distinct artifact with its own stable file ID and provenance metadata,
 not another template copy or a document binding. Refresh that same managed file
 when the editable source changes; this does not create an immutable revision
@@ -250,3 +250,13 @@ preserve the approved bytes, ID and URL; explicit image reader access preserves
 its public use when parent permissions change. Verification accepts the recorded
 managed event folder and rejects unrelated moves. Retries inspect the existing
 placement, without copying artwork or altering approval records.
+
+### 2026-11-02: verify reader access after the move
+
+A live move showed that granting reader access in the public staging folder
+did not retain that access in the private event folder. This supersedes the
+pre-move grant described above: verify the destination first, then ensure reader
+access on the selected image. Record pending placement with the move so retries
+can verify the approved bytes and restore access after an interrupted operation.
+Clear that intent only after sharing is verified. Completed placements do not
+authorize restoring access that an organizer later revokes.

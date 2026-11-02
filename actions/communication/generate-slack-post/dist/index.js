@@ -77935,12 +77935,14 @@ var DriveContentImage = class {
 // packages/adapter/publication/google-drive-asset-repository/src/drive-content-location.ts
 import { createHash as createHash4 } from "node:crypto";
 var DriveContentLocation = class {
-  constructor(client, folders) {
+  constructor(client, folders, sharing) {
     this.client = client;
     this.folders = folders;
+    this.sharing = sharing;
   }
   client;
   folders;
+  sharing;
   async valid(file) {
     const parent = file.parents?.[0];
     if (!parent || file.parents?.length !== 1) return false;
@@ -77966,25 +77968,20 @@ var DriveContentLocation = class {
       throw new ContentMediaChangedError(
         "Cover placement could not be verified"
       );
+    await this.sharing.ensure(media.id);
+    if (actual.appProperties.contentPlacementPending === "1")
+      await this.client.files.update(
+        {
+          fileId: media.id,
+          supportsAllDrives: true,
+          requestBody: { appProperties: { contentPlacementPending: "0" } }
+        },
+        requestOptions
+      );
   }
   async move(file, input, key) {
     const { media, container, name } = input;
     const moved = file.parents?.[0] !== container.id;
-    if (moved) {
-      await this.client.permissions.create(
-        {
-          fileId: media.id,
-          supportsAllDrives: true,
-          requestBody: {
-            type: "anyone",
-            role: "reader",
-            allowFileDiscovery: false
-          },
-          fields: "id"
-        },
-        requestOptions
-      );
-    }
     if (moved || file.name !== name) {
       await this.client.files.update(
         {
@@ -77993,7 +77990,11 @@ var DriveContentLocation = class {
           ...moved ? { addParents: container.id, removeParents: file.parents?.[0] } : {},
           requestBody: {
             name,
-            appProperties: { ...file.appProperties, contentEventKey: key }
+            appProperties: {
+              ...file.appProperties,
+              contentEventKey: key,
+              ...moved ? { contentPlacementPending: "1" } : {}
+            }
           }
         },
         requestOptions
@@ -78015,6 +78016,65 @@ var DriveContentLocation = class {
       requestOptions
     );
     return data;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-content-sharing.ts
+var DriveContentSharing = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async ensure(fileId) {
+    if (await this.readable(fileId)) return;
+    await this.client.permissions.create(
+      {
+        fileId,
+        supportsAllDrives: true,
+        requestBody: {
+          type: "anyone",
+          role: "reader",
+          allowFileDiscovery: false
+        },
+        fields: "id"
+      },
+      requestOptions
+    );
+    if (!await this.readable(fileId))
+      throw new ContentMediaChangedError(
+        "Public cover reader access could not be verified"
+      );
+  }
+  async readable(fileId) {
+    let pageToken;
+    let readable = false;
+    const seen = /* @__PURE__ */ new Set();
+    for (let page = 0; page < 10; page++) {
+      const { data } = await this.client.permissions.list(
+        {
+          fileId,
+          supportsAllDrives: true,
+          pageSize: 100,
+          pageToken,
+          fields: "nextPageToken,permissions(type,role)"
+        },
+        requestOptions
+      );
+      if (!Array.isArray(data.permissions))
+        throw new ContentMediaChangedError(
+          "Content permissions are unavailable"
+        );
+      readable ||= data.permissions.some(
+        (permission) => permission.type === "anyone" && permission.role === "reader"
+      );
+      pageToken = data.nextPageToken ?? void 0;
+      if (!pageToken) return readable;
+      if (seen.has(pageToken)) break;
+      seen.add(pageToken);
+    }
+    throw new ContentMediaChangedError(
+      "Content permission listing is incomplete"
+    );
   }
 };
 
@@ -78056,13 +78116,14 @@ var GoogleDriveAuthentication = class {
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-content-media-store.ts
 import { Readable } from "node:stream";
 var GoogleDriveContentMediaStore = class {
-  constructor(client, folders, image, stream, announcement, location) {
+  constructor(client, folders, image, stream, announcement, location, sharing) {
     this.client = client;
     this.folders = folders;
     this.image = image;
     this.stream = stream;
     this.announcement = announcement;
     this.location = location;
+    this.sharing = sharing;
   }
   client;
   folders;
@@ -78070,8 +78131,14 @@ var GoogleDriveContentMediaStore = class {
   stream;
   announcement;
   location;
+  sharing;
   async place(input) {
-    if (input.media.source || !await this.verify(input.media))
+    if (input.media.source)
+      throw new ContentMediaChangedError(
+        "Only generated cover artwork can be placed"
+      );
+    const current = await this.readMedia(input.media.id, false);
+    if (!this.matches(input.media, current))
       throw new ContentMediaChangedError(
         "Selected cover is no longer the approved artwork"
       );
@@ -78128,6 +78195,9 @@ var GoogleDriveContentMediaStore = class {
     return result;
   }
   async read(id) {
+    return this.readMedia(id, true);
+  }
+  async readMedia(id, requirePublicAccess) {
     if (!/^[\w-]+$/.test(id)) throw new Error("Invalid content media identity");
     const metadata = await this.client.files.get(
       {
@@ -78142,7 +78212,7 @@ var GoogleDriveContentMediaStore = class {
     );
     if (metadata.status === 404) return void 0;
     const file = metadata.data;
-    if (file.trashed || !await this.location.valid(file) || file.appProperties?.contentSchema !== "1" || !file.version || !file.description || !await this.readable(id))
+    if (file.trashed || !await this.location.valid(file) || file.appProperties?.contentSchema !== "1" || !file.version || !file.description || !await this.sharing.readable(id) && (requirePublicAccess || !file.appProperties.contentEventKey || file.appProperties.contentPlacementPending !== "1"))
       throw new ContentMediaChangedError(
         "Content media is not a verified public artifact"
       );
@@ -78173,42 +78243,14 @@ var GoogleDriveContentMediaStore = class {
     if (media.source) return this.announcement.verify(media);
     try {
       const actual = await this.read(media.id);
-      return actual !== void 0 && actual.fingerprint === media.fingerprint && actual.url === media.url && actual.description === media.description;
+      return this.matches(media, actual);
     } catch (error2) {
       if (error2 instanceof ContentMediaChangedError) return false;
       throw error2;
     }
   }
-  async readable(fileId) {
-    let pageToken;
-    let readable = false;
-    const seen = /* @__PURE__ */ new Set();
-    for (let page = 0; page < 10; page++) {
-      const { data } = await this.client.permissions.list(
-        {
-          fileId,
-          supportsAllDrives: true,
-          pageSize: 100,
-          pageToken,
-          fields: "nextPageToken,permissions(type,role)"
-        },
-        requestOptions
-      );
-      if (!Array.isArray(data.permissions))
-        throw new ContentMediaChangedError(
-          "Content permissions are unavailable"
-        );
-      readable ||= data.permissions.some(
-        (permission) => permission.type === "anyone" && permission.role === "reader"
-      );
-      pageToken = data.nextPageToken ?? void 0;
-      if (!pageToken) return readable;
-      if (seen.has(pageToken)) break;
-      seen.add(pageToken);
-    }
-    throw new ContentMediaChangedError(
-      "Content permission listing is incomplete"
-    );
+  matches(media, actual) {
+    return actual !== void 0 && actual.fingerprint === media.fingerprint && actual.url === media.url && actual.description === media.description;
   }
 };
 
@@ -78269,6 +78311,7 @@ var GoogleDriveContentMediaComposition = class {
       version: "v3",
       auth: new GoogleDriveAuthentication().create(credentials)
     });
+    const sharing = new DriveContentSharing(client);
     return new GoogleDriveContentMediaStore(
       client,
       new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers"),
@@ -78277,8 +78320,10 @@ var GoogleDriveContentMediaComposition = class {
       this.announcement(credentials, loader, names),
       new DriveContentLocation(
         client,
-        new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers")
-      )
+        new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers"),
+        sharing
+      ),
+      sharing
     );
   }
   announcement(credentials, loader, names) {
