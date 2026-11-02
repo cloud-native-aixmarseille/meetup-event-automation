@@ -22,7 +22,7 @@
 
 ## Overview
 
-Reconcile managed Drive folders, template copies, document content and the issue asset link.
+Reconcile managed Drive folders, template copies, approved cover placement, document content and the issue asset link.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -72,6 +72,10 @@ Reconcile managed Drive folders, template copies, document content and the issue
     # This input is required.
     google-drive-template-folder-id: ""
 
+    # Public Drive root ID containing the tmp-covers staging folder.
+    # This input is required.
+    google-drive-public-folder-id: ""
+
     # Conference Hall CFP slug for live linked profiles and selected proposals.
     # This input is required.
     conference-hall-event: ""
@@ -98,6 +102,7 @@ Reconcile managed Drive folders, template copies, document content and the issue
 | **`google-credentials`**              | Service-account JSON with access to the configured Drive parent, template and public folders.                                      | **true**     | -           |
 | **`google-drive-folder-id`**          | Google Drive folder ID of the parent asset folder.                                                                                 | **true**     | -           |
 | **`google-drive-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |
+| **`google-drive-public-folder-id`**   | Public Drive root ID containing the tmp-covers staging folder.                                                                     | **true**     | -           |
 | **`conference-hall-event`**           | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`**         | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 
