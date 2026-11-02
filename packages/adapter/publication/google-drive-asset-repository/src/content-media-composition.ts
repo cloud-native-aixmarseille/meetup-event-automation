@@ -6,6 +6,7 @@ import type {
 import { DriveAnnouncementImage } from "./drive-announcement-image.js";
 import { DriveBoundedStream } from "./drive-bounded-stream.js";
 import { DriveContentImage } from "./drive-content-image.js";
+import { DriveContentLocation } from "./drive-content-location.js";
 import { GoogleDriveAuthentication } from "./google-drive-authentication.js";
 import { GoogleDriveContentMediaStore } from "./google-drive-content-media-store.js";
 import { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
@@ -27,6 +28,10 @@ export class GoogleDriveContentMediaComposition {
 			new DriveContentImage(),
 			new DriveBoundedStream(),
 			this.announcement(credentials, loader, names),
+			new DriveContentLocation(
+				client,
+				new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers"),
+			),
 		);
 	}
 	announcement(

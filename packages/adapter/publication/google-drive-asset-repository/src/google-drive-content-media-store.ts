@@ -5,22 +5,40 @@ import {
 	type ContentMedia,
 	ContentMediaChangedError,
 	type ContentMediaStore,
+	type EventCoverRepository,
 } from "@meetup-automation/publication";
 import type { DriveAnnouncementImage } from "./drive-announcement-image.js";
 import type { DriveBoundedStream } from "./drive-bounded-stream.js";
 import type { DriveContentImage } from "./drive-content-image.js";
+import type { DriveContentLocation } from "./drive-content-location.js";
 import { requestOptions } from "./google-drive-asset-repository-contracts.js";
 import type { GoogleDrivePublicAssetFolder } from "./google-drive-public-asset-folder.js";
 
-/** Immutable public media in a dedicated folder; never writes existing asset sidecars. */
-export class GoogleDriveContentMediaStore implements ContentMediaStore {
+/** Immutable public artwork, staged for review then placed in its event folder. */
+export class GoogleDriveContentMediaStore
+	implements ContentMediaStore, EventCoverRepository
+{
 	constructor(
 		private readonly client: Pick<drive_v3.Drive, "files" | "permissions">,
 		private readonly folders: Pick<GoogleDrivePublicAssetFolder, "resolve">,
 		private readonly image: Pick<DriveContentImage, "inspect">,
 		private readonly stream: Pick<DriveBoundedStream, "read">,
 		private readonly announcement: Pick<DriveAnnouncementImage, "verify">,
+		private readonly location: Pick<DriveContentLocation, "valid" | "place">,
 	) {}
+	async place(
+		input: Parameters<EventCoverRepository["place"]>[0],
+	): Promise<void> {
+		if (input.media.source || !(await this.verify(input.media)))
+			throw new ContentMediaChangedError(
+				"Selected cover is no longer the approved artwork",
+			);
+		await this.location.place(input);
+		if (!(await this.verify(input.media)))
+			throw new ContentMediaChangedError(
+				"Approved cover could not be verified after placement",
+			);
+	}
 	async reserve(): Promise<string> {
 		await this.folders.resolve();
 		const { data } = await this.client.files.generateIds(
@@ -88,8 +106,7 @@ export class GoogleDriveContentMediaStore implements ContentMediaStore {
 		const file = metadata.data;
 		if (
 			file.trashed ||
-			file.parents?.length !== 1 ||
-			file.parents[0] !== (await this.folders.resolve()) ||
+			!(await this.location.valid(file)) ||
 			file.appProperties?.contentSchema !== "1" ||
 			!file.version ||
 			!file.description ||

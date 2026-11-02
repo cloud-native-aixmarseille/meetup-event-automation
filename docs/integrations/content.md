@@ -56,14 +56,22 @@ Use the service account already configured for Drive assets and the
 in the existing `tmp-covers` child of `GOOGLE_DRIVE_PUBLIC_FOLDER_ID`. The service
 account needs write access there. Generated files must have an `anyone` reader
 permission, inherited or granted on each file before verification. The content
-media adapter verifies this access but does not grant it or change folder access.
+media adapter verifies this access before review. After approval, document
+reconciliation moves the selected file into the managed event folder and names it
+`YYYY-MM-DD - Cover.png` or `YYYY-MM-DD - Cover.jpg`, matching its original format.
+It grants unlisted reader access to that image before moving it; the event folder
+and its other files keep their existing permissions. The file ID, URL, bytes and
+approval remain unchanged. Reruns reuse the file, including after an uncertain
+move; a changed event date updates its name. Other candidates remain in staging.
 Content media use separate immutable files, with reserved Drive IDs and SHA-256
 fingerprints. Existing documents, asset manifests, PDF files, and delivery
 ledgers retain their identities. The media verifier reads file permissions
 through the paginated Drive permissions API, including for shared-drive files
 whose metadata omits permissions. Keep candidates referenced by reviews; the
 folder name does not imply automatic deletion. Cover verification compares the
-downloaded bytes, file URL, description, managed folder and public reader access.
+downloaded bytes, file URL, description, managed location and public reader access.
+The managed location is staging or the event folder recorded by the approved move;
+a move into an unrelated folder fails verification.
 Drive's file version is recorded for traceability; a metadata-only version change
 does not invalidate identical artwork. Changed bytes or access still block review
 and use. Missing or ambiguous destination

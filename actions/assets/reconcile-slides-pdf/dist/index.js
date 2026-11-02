@@ -68820,6 +68820,7 @@ var ReconcileMeetupDocuments = class {
       source
     );
     const slidesReady = Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
+    await this.placeCover(cover, assets.container, evaluation.event.date);
     const { persisted, current } = await this.persistAsset(
       source,
       assets.container?.url
@@ -68844,6 +68845,14 @@ var ReconcileMeetupDocuments = class {
         }))
       ]
     };
+  }
+  async placeCover(media, container, date) {
+    if (!media || !container) return;
+    await this.dependencies.covers.place({
+      media,
+      container,
+      name: `${date} - Cover.${media.mimeType === "image/png" ? "png" : "jpg"}`
+    });
   }
   skipped(diagnostics) {
     return {

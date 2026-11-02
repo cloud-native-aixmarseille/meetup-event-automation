@@ -1,5 +1,5 @@
 name: Update meetup files
-description: Reconcile managed Drive folders, template copies, document content and the issue asset link.
+description: Reconcile managed Drive folders, template copies, approved cover placement, document content and the issue asset link.
 author: Cloud Native Aix-Marseille
 inputs:
   managed-comment-author:
@@ -33,6 +33,9 @@ inputs:
     required: true
   google-drive-template-folder-id:
     description: Google Drive folder ID of the template folder.
+    required: true
+  google-drive-public-folder-id:
+    description: Public Drive root ID containing the tmp-covers staging folder.
     required: true
   conference-hall-event:
     description: Conference Hall CFP slug for live linked profiles and selected proposals.

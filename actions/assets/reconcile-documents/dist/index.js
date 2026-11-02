@@ -10185,7 +10185,7 @@ var require_readable = __commonJS({
   "node_modules/.pnpm/undici@6.29.1/node_modules/undici/lib/api/readable.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable: Readable5 } = __require("node:stream");
+    var { Readable: Readable6 } = __require("node:stream");
     var { RequestAbortedError, NotSupportedError, InvalidArgumentError, AbortError: AbortError2 } = require_errors();
     var util = require_util();
     var { ReadableStreamFrom } = require_util();
@@ -10197,7 +10197,7 @@ var require_readable = __commonJS({
     var kContentLength = /* @__PURE__ */ Symbol("kContentLength");
     var noop4 = () => {
     };
-    var BodyReadable = class extends Readable5 {
+    var BodyReadable = class extends Readable6 {
       constructor({
         resume,
         abort,
@@ -10539,7 +10539,7 @@ var require_api_request = __commonJS({
   "node_modules/.pnpm/undici@6.29.1/node_modules/undici/lib/api/api-request.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable: Readable5 } = require_readable();
+    var { Readable: Readable6 } = require_readable();
     var { InvalidArgumentError, RequestAbortedError } = require_errors();
     var util = require_util();
     var { getResolveErrorBodyCallback } = require_util3();
@@ -10634,7 +10634,7 @@ var require_api_request = __commonJS({
         const parsedHeaders = responseHeaders === "raw" ? util.parseHeaders(rawHeaders) : headers;
         const contentType = parsedHeaders["content-type"];
         const contentLength = parsedHeaders["content-length"];
-        const res = new Readable5({
+        const res = new Readable6({
           resume,
           abort,
           contentType,
@@ -10949,7 +10949,7 @@ var require_api_pipeline = __commonJS({
   "node_modules/.pnpm/undici@6.29.1/node_modules/undici/lib/api/api-pipeline.js"(exports, module) {
     "use strict";
     var {
-      Readable: Readable5,
+      Readable: Readable6,
       Duplex,
       PassThrough: PassThrough3
     } = __require("node:stream");
@@ -10963,7 +10963,7 @@ var require_api_pipeline = __commonJS({
     var { addSignal, removeSignal } = require_abort_signal();
     var assert = __require("node:assert");
     var kResume = /* @__PURE__ */ Symbol("resume");
-    var PipelineRequest = class extends Readable5 {
+    var PipelineRequest = class extends Readable6 {
       constructor() {
         super({ autoDestroy: true });
         this[kResume] = null;
@@ -10980,7 +10980,7 @@ var require_api_pipeline = __commonJS({
         callback(err);
       }
     };
-    var PipelineResponse = class extends Readable5 {
+    var PipelineResponse = class extends Readable6 {
       constructor(resume) {
         super({ autoDestroy: true });
         this[kResume] = resume;
@@ -14305,7 +14305,7 @@ var require_fetch = __commonJS({
       subresourceSet
     } = require_constants3();
     var EE = __require("node:events");
-    var { Readable: Readable5, pipeline: pipeline2, finished } = __require("node:stream");
+    var { Readable: Readable6, pipeline: pipeline2, finished } = __require("node:stream");
     var { addAbortListener, isErrored, isReadable, bufferToLowerCasedHeaderName } = require_util();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
     var { getGlobalDispatcher } = require_global2();
@@ -15244,7 +15244,7 @@ var require_fetch = __commonJS({
                   }
                 }
               }
-              this.body = new Readable5({ read: resume });
+              this.body = new Readable6({ read: resume });
               const onError = this.onError.bind(this);
               resolve4({
                 status,
@@ -70436,6 +70436,7 @@ var ReconcileMeetupDocuments = class {
       source
     );
     const slidesReady = Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
+    await this.placeCover(cover, assets.container, evaluation.event.date);
     const { persisted, current } = await this.persistAsset(
       source,
       assets.container?.url
@@ -70460,6 +70461,14 @@ var ReconcileMeetupDocuments = class {
         }))
       ]
     };
+  }
+  async placeCover(media, container, date) {
+    if (!media || !container) return;
+    await this.dependencies.covers.place({
+      media,
+      container,
+      name: `${date} - Cover.${media.mimeType === "image/png" ? "png" : "jpg"}`
+    });
   }
   skipped(diagnostics) {
     return {
@@ -80459,6 +80468,9 @@ var DocumentAction = class {
       }),
       templateFolderId: getInput("google-drive-template-folder-id", {
         required: true
+      }),
+      publicFolderId: getInput("google-drive-public-folder-id", {
+        required: true
       })
     });
     const outcome = await journey.execute({
@@ -80994,6 +81006,87 @@ var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
 
+// packages/adapter/publication/google-drive-asset-repository/src/drive-announcement-image.ts
+var DriveAnnouncementImage = class {
+  constructor(client, loader, images, names) {
+    this.client = client;
+    this.loader = loader;
+    this.images = images;
+    this.names = names;
+  }
+  client;
+  loader;
+  images;
+  names;
+  async read(date, exported) {
+    const file = await this.source(exported.sourceId, exported.sourceRevision);
+    if (file.name !== await this.expectedName(file, date))
+      throw new ContentMediaChangedError(
+        "Announcement export belongs to another event"
+      );
+    const image = await this.loader.load(exported.url);
+    const inspected = this.images.inspect(image);
+    return {
+      id: `announcement-${exported.sourceId}`,
+      url: exported.url,
+      description: exported.description,
+      ...inspected,
+      mimeType: image.mimeType,
+      sourceRevision: exported.sourceRevision,
+      source: { id: exported.sourceId, revision: exported.sourceRevision }
+    };
+  }
+  async verify(media) {
+    if (!media.source || media.id !== `announcement-${media.source.id}`)
+      return false;
+    try {
+      await this.source(media.source.id, media.source.revision);
+    } catch (error2) {
+      if (error2 instanceof ContentMediaChangedError) return false;
+      throw error2;
+    }
+    const actual = this.images.inspect(await this.loader.load(media.url));
+    return actual.fingerprint === media.fingerprint && actual.width === media.width && actual.height === media.height && actual.mimeType === media.mimeType;
+  }
+  async expectedName(file, date) {
+    const templateId = file.appProperties?.template_file_id;
+    if (!templateId || !/^[\w-]+$/.test(templateId))
+      throw new ContentMediaChangedError(
+        "Announcement template identity is missing"
+      );
+    const { data } = await this.client.files.get(
+      {
+        fileId: templateId,
+        supportsAllDrives: true,
+        fields: "id,name,mimeType,trashed,appProperties"
+      },
+      requestOptions
+    );
+    if (data.id !== templateId || data.trashed || typeof data.name !== "string" || !data.name.trim() || data.mimeType !== "application/vnd.google-apps.presentation" || data.appProperties?.template_kind !== "announcement")
+      throw new ContentMediaChangedError(
+        "Announcement template changed or is invalid"
+      );
+    return this.names.render(data.name, date);
+  }
+  async source(id, revision) {
+    if (!/^[\w-]+$/.test(id) || !/^\d+$/.test(revision))
+      throw new Error("Invalid announcement source identity");
+    const { data } = await this.client.files.get(
+      {
+        fileId: id,
+        supportsAllDrives: true,
+        fields: "id,name,mimeType,trashed,version,appProperties"
+      },
+      requestOptions
+    );
+    if (data.trashed || data.mimeType !== "application/vnd.google-apps.presentation" || data.version !== revision || data.appProperties?.template_kind !== "announcement" || data.appProperties?.meetup_content !== "v1")
+      throw new ContentMediaChangedError(
+        "Announcement source changed or is not managed"
+      );
+    return data;
+  }
+};
+
 // packages/adapter/publication/google-drive-asset-repository/src/drive-bounded-stream.ts
 var DriveBoundedStream = class {
   async read(stream, limit) {
@@ -81012,6 +81105,9 @@ var DriveBoundedStream = class {
     }
   }
 };
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-content-image.ts
+import { createHash as createHash3 } from "node:crypto";
 
 // node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
 var decoder = new TextDecoder();
@@ -82018,6 +82114,110 @@ function imageSize(input) {
   throw new TypeError(`unsupported file type: ${type}`);
 }
 
+// packages/adapter/publication/google-drive-asset-repository/src/drive-content-image.ts
+var DriveContentImage = class {
+  inspect(image) {
+    if (!image.bytes.byteLength || image.bytes.byteLength > 2e7)
+      throw new Error("Invalid content image size");
+    const size = imageSize(image.bytes);
+    const mimeType = size.type === "png" ? "image/png" : size.type === "jpg" ? "image/jpeg" : void 0;
+    if (!mimeType || mimeType !== image.mimeType || !size.width || !size.height || size.width * size.height > 25e6)
+      throw new Error("Invalid content image dimensions or encoding");
+    return {
+      mimeType,
+      width: size.width,
+      height: size.height,
+      fingerprint: createHash3("sha256").update(image.bytes).digest("hex")
+    };
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/drive-content-location.ts
+import { createHash as createHash4 } from "node:crypto";
+var DriveContentLocation = class {
+  constructor(client, folders) {
+    this.client = client;
+    this.folders = folders;
+  }
+  client;
+  folders;
+  async valid(file) {
+    const parent = file.parents?.[0];
+    if (!parent || file.parents?.length !== 1) return false;
+    const key = file.appProperties?.contentEventKey;
+    if (!key) return parent === await this.folders.resolve();
+    return this.eventFolder(parent, key);
+  }
+  async place(input) {
+    const { media, container, name } = input;
+    const key = createHash4("sha256").update(`${container.eventId}:assets:v1`).digest("hex");
+    if (!await this.eventFolder(container.id, key))
+      throw new ContentMediaChangedError(
+        "Cover destination is not this event's managed folder"
+      );
+    const file = await this.file(media.id);
+    if (!await this.valid(file) || file.trashed || file.appProperties?.contentEventKey && file.appProperties.contentEventKey !== key)
+      throw new ContentMediaChangedError(
+        "Cover location changed before placement"
+      );
+    await this.move(file, input, key);
+    const actual = await this.file(media.id);
+    if (actual.name !== name || actual.parents?.[0] !== container.id || actual.appProperties?.contentEventKey !== key || actual.trashed || !await this.valid(actual))
+      throw new ContentMediaChangedError(
+        "Cover placement could not be verified"
+      );
+  }
+  async move(file, input, key) {
+    const { media, container, name } = input;
+    const moved = file.parents?.[0] !== container.id;
+    if (moved) {
+      await this.client.permissions.create(
+        {
+          fileId: media.id,
+          supportsAllDrives: true,
+          requestBody: {
+            type: "anyone",
+            role: "reader",
+            allowFileDiscovery: false
+          },
+          fields: "id"
+        },
+        requestOptions
+      );
+    }
+    if (moved || file.name !== name) {
+      await this.client.files.update(
+        {
+          fileId: media.id,
+          supportsAllDrives: true,
+          ...moved ? { addParents: container.id, removeParents: file.parents?.[0] } : {},
+          requestBody: {
+            name,
+            appProperties: { ...file.appProperties, contentEventKey: key }
+          }
+        },
+        requestOptions
+      );
+    }
+  }
+  async eventFolder(id, key) {
+    if (!/^[\w-]+$/.test(id) || !/^[a-f0-9]{64}$/.test(key)) return false;
+    const folder = await this.file(id);
+    return !folder.trashed && folder.mimeType === folderMimeType && folder.appProperties?.meetup_event_key === key;
+  }
+  async file(id) {
+    const { data } = await this.client.files.get(
+      {
+        fileId: id,
+        supportsAllDrives: true,
+        fields: "id,name,mimeType,parents,trashed,appProperties"
+      },
+      requestOptions
+    );
+    return data;
+  }
+};
+
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
 var import_drive = __toESM(require_build2(), 1);
 
@@ -82050,6 +82250,165 @@ var GoogleDriveAuthentication = class {
       key: credentials.private_key,
       scopes: ["https://www.googleapis.com/auth/drive"]
     });
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/google-drive-content-media-store.ts
+import { Readable } from "node:stream";
+var GoogleDriveContentMediaStore = class {
+  constructor(client, folders, image, stream, announcement, location) {
+    this.client = client;
+    this.folders = folders;
+    this.image = image;
+    this.stream = stream;
+    this.announcement = announcement;
+    this.location = location;
+  }
+  client;
+  folders;
+  image;
+  stream;
+  announcement;
+  location;
+  async place(input) {
+    if (input.media.source || !await this.verify(input.media))
+      throw new ContentMediaChangedError(
+        "Selected cover is no longer the approved artwork"
+      );
+    await this.location.place(input);
+    if (!await this.verify(input.media))
+      throw new ContentMediaChangedError(
+        "Approved cover could not be verified after placement"
+      );
+  }
+  async reserve() {
+    await this.folders.resolve();
+    const { data } = await this.client.files.generateIds(
+      { count: 1, space: "drive", type: "files" },
+      requestOptions
+    );
+    const id = data.ids?.[0];
+    if (!id || !/^[\w-]+$/.test(id))
+      throw new Error("Content media identity was not reserved");
+    return id;
+  }
+  async persist(id, image, description) {
+    const expected = this.image.inspect(image);
+    const folderId = await this.folders.resolve();
+    const existing = await this.read(id);
+    if (existing) {
+      if (existing.fingerprint !== expected.fingerprint)
+        throw new Error(
+          "Content media identity already contains different bytes"
+        );
+      return existing;
+    }
+    await this.client.files.create(
+      {
+        supportsAllDrives: true,
+        requestBody: {
+          id,
+          name: `${id}.${image.mimeType === "image/png" ? "png" : "jpg"}`,
+          description,
+          mimeType: image.mimeType,
+          parents: [folderId],
+          appProperties: {
+            contentSchema: "1",
+            contentHash: expected.fingerprint
+          }
+        },
+        media: { mimeType: image.mimeType, body: Readable.from([image.bytes]) },
+        fields: "id"
+      },
+      requestOptions
+    );
+    const result = await this.read(id);
+    if (!result || result.fingerprint !== expected.fingerprint)
+      throw new Error("Content media write could not be verified");
+    return result;
+  }
+  async read(id) {
+    if (!/^[\w-]+$/.test(id)) throw new Error("Invalid content media identity");
+    const metadata = await this.client.files.get(
+      {
+        fileId: id,
+        supportsAllDrives: true,
+        fields: "id,mimeType,description,parents,trashed,version,appProperties"
+      },
+      {
+        ...requestOptions,
+        validateStatus: (status) => status === 200 || status === 404
+      }
+    );
+    if (metadata.status === 404) return void 0;
+    const file = metadata.data;
+    if (file.trashed || !await this.location.valid(file) || file.appProperties?.contentSchema !== "1" || !file.version || !file.description || !await this.readable(id))
+      throw new ContentMediaChangedError(
+        "Content media is not a verified public artifact"
+      );
+    if (file.mimeType !== "image/png" && file.mimeType !== "image/jpeg")
+      throw new ContentMediaChangedError("Invalid content media type");
+    const response = await this.client.files.get(
+      { fileId: id, alt: "media", supportsAllDrives: true },
+      {
+        ...requestOptions,
+        responseType: "stream",
+        signal: AbortSignal.timeout(3e4)
+      }
+    );
+    const bytes = await this.stream.read(response.data, 2e7);
+    const inspected = this.image.inspect({ bytes, mimeType: file.mimeType });
+    if (inspected.fingerprint !== file.appProperties.contentHash)
+      throw new ContentMediaChangedError("Stored content image changed");
+    return {
+      id,
+      url: `https://drive.google.com/uc?export=download&id=${id}`,
+      ...inspected,
+      mimeType: file.mimeType,
+      description: file.description,
+      sourceRevision: file.version
+    };
+  }
+  async verify(media) {
+    if (media.source) return this.announcement.verify(media);
+    try {
+      const actual = await this.read(media.id);
+      return actual !== void 0 && actual.fingerprint === media.fingerprint && actual.url === media.url && actual.description === media.description;
+    } catch (error2) {
+      if (error2 instanceof ContentMediaChangedError) return false;
+      throw error2;
+    }
+  }
+  async readable(fileId) {
+    let pageToken;
+    let readable = false;
+    const seen = /* @__PURE__ */ new Set();
+    for (let page = 0; page < 10; page++) {
+      const { data } = await this.client.permissions.list(
+        {
+          fileId,
+          supportsAllDrives: true,
+          pageSize: 100,
+          pageToken,
+          fields: "nextPageToken,permissions(type,role)"
+        },
+        requestOptions
+      );
+      if (!Array.isArray(data.permissions))
+        throw new ContentMediaChangedError(
+          "Content permissions are unavailable"
+        );
+      readable ||= data.permissions.some(
+        (permission) => permission.type === "anyone" && permission.role === "reader"
+      );
+      pageToken = data.nextPageToken ?? void 0;
+      if (!pageToken) return readable;
+      if (seen.has(pageToken)) break;
+      seen.add(pageToken);
+    }
+    throw new ContentMediaChangedError(
+      "Content permission listing is incomplete"
+    );
   }
 };
 
@@ -82100,6 +82459,38 @@ var GoogleDrivePublicAssetFolder = class {
     if (!folder?.id || !/^[\w-]{1,120}$/.test(folder.id) || folder.id === this.rootId || folder.name !== this.name || folder.mimeType !== folderMimeType || folder.trashed || folder.parents?.length !== 1 || folder.parents[0] !== this.rootId)
       throw new DrivePublicFolderError("Invalid public asset folder");
     return folder.id;
+  }
+};
+
+// packages/adapter/publication/google-drive-asset-repository/src/content-media-composition.ts
+var GoogleDriveContentMediaComposition = class {
+  create(credentials, folderId, loader, names) {
+    const client = (0, import_drive2.drive)({
+      version: "v3",
+      auth: new GoogleDriveAuthentication().create(credentials)
+    });
+    return new GoogleDriveContentMediaStore(
+      client,
+      new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers"),
+      new DriveContentImage(),
+      new DriveBoundedStream(),
+      this.announcement(credentials, loader, names),
+      new DriveContentLocation(
+        client,
+        new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers")
+      )
+    );
+  }
+  announcement(credentials, loader, names) {
+    return new DriveAnnouncementImage(
+      (0, import_drive2.drive)({
+        version: "v3",
+        auth: new GoogleDriveAuthentication().create(credentials)
+      }),
+      loader,
+      new DriveContentImage(),
+      names
+    );
   }
 };
 
@@ -82163,7 +82554,7 @@ var DrivePdfBinary = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-asset-repository.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 var GoogleDriveAssetRepository = class {
   constructor(collaborators, client, options) {
     this.collaborators = collaborators;
@@ -82338,7 +82729,7 @@ var GoogleDriveAssetRepository = class {
     return files;
   }
   key(request3) {
-    return createHash3("sha256").update(request3.idempotencyKey).digest("hex");
+    return createHash5("sha256").update(request3.idempotencyKey).digest("hex");
   }
   escapeQuery(value) {
     return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
@@ -82391,7 +82782,7 @@ var GoogleDriveAssetRepositoryFactory = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-manifest-repository.ts
-import { Readable } from "node:stream";
+import { Readable as Readable2 } from "node:stream";
 var GoogleDriveManifestRepository = class {
   constructor(client) {
     this.client = client;
@@ -82424,7 +82815,7 @@ var GoogleDriveManifestRepository = class {
     const id = await this.find(folderId, manifest.fileId);
     const json = JSON.stringify(manifest);
     if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
-    const media = { mimeType: "application/json", body: Readable.from([json]) };
+    const media = { mimeType: "application/json", body: Readable2.from([json]) };
     if (id) {
       await this.client.files.update(
         { fileId: id, media, supportsAllDrives: true },
@@ -82469,7 +82860,7 @@ var GoogleDriveManifestRepository = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-download.ts
-import { Readable as Readable2 } from "node:stream";
+import { Readable as Readable3 } from "node:stream";
 var GoogleDrivePdfDownload = class {
   constructor(client, accessToken, request3, wait, now2, binary) {
     this.client = client;
@@ -82505,7 +82896,7 @@ var GoogleDrivePdfDownload = class {
       throw new Error("Google Drive PDF download failed");
     }
     return this.binary.read(
-      Readable2.fromWeb(response.body),
+      Readable3.fromWeb(response.body),
       response.headers.get("content-type")
     );
   }
@@ -82720,7 +83111,7 @@ var DrivePdfStateCodec = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-repository.ts
-import { Readable as Readable3 } from "node:stream";
+import { Readable as Readable4 } from "node:stream";
 var GoogleDrivePdfRepository = class {
   constructor(client, lookup2, metadata, binary, folders, sharing) {
     this.client = client;
@@ -82812,7 +83203,7 @@ var GoogleDrivePdfRepository = class {
     };
     const media = {
       mimeType: "application/pdf",
-      body: Readable3.from([input.binary.bytes])
+      body: Readable4.from([input.binary.bytes])
     };
     if (current) {
       await this.client.files.update(
@@ -82928,7 +83319,7 @@ var GoogleDrivePdfSource = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-pdf-state-repository.ts
-import { Readable as Readable4 } from "node:stream";
+import { Readable as Readable5 } from "node:stream";
 var GoogleDrivePdfStateRepository = class {
   constructor(client, lookup2, metadata, stream, codec) {
     this.client = client;
@@ -82977,7 +83368,7 @@ var GoogleDrivePdfStateRepository = class {
     const current = await this.lookup.find(state.identity, "state", prior?.id);
     if (current?.id !== prior?.id || current?.version !== prior?.version)
       throw new PdfExportError("recovery");
-    const media = { mimeType: "application/json", body: Readable4.from([json]) };
+    const media = { mimeType: "application/json", body: Readable5.from([json]) };
     const options = {
       supportsAllDrives: true,
       fields: "id,name,description,parents,mimeType,trashed,version,appProperties",
@@ -84640,7 +85031,7 @@ var CsvReferentialRepository = class {
 };
 
 // packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash6 } from "node:crypto";
 import { readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join3 } from "node:path";
 var CsvSpeakerCatalogStore = class {
@@ -84724,7 +85115,7 @@ var CsvSpeakerCatalogStore = class {
     return { csv, state, historicalIds };
   }
   revision(csv, state, historicalIds) {
-    return createHash4("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+    return createHash6("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
 
@@ -101331,10 +101722,10 @@ var ContentGateComposition = class {
 };
 
 // packages/runtime/github-actions/src/event-snapshot-hash.ts
-import { createHash as createHash5 } from "node:crypto";
+import { createHash as createHash7 } from "node:crypto";
 var EventSnapshotHash = class {
   of(document2) {
-    return createHash5("sha256").update(
+    return createHash7("sha256").update(
       JSON.stringify([
         document2.identity.repository,
         document2.identity.issueNumber,
@@ -101349,9 +101740,18 @@ var EventSnapshotHash = class {
 
 // packages/runtime/github-actions/src/document-composition.ts
 var ASSET_REPOSITORY = /* @__PURE__ */ Symbol("AssetRepository");
+var EVENT_COVER_REPOSITORY = /* @__PURE__ */ Symbol("EventCoverRepository");
 var DocumentComposition = class _DocumentComposition {
   static createDocumentContainer(input) {
     const container = EventComposition.createEventContainer(input);
+    container.bind(EVENT_COVER_REPOSITORY).toDynamicValue(
+      () => new GoogleDriveContentMediaComposition().create(
+        input.credentials,
+        input.publicFolderId,
+        new HttpsAssetImageRepositoryComposition().contentImageLoader(),
+        new AssetFileNameComposition().create(input.locale)
+      )
+    );
     container.bind(ASSET_REPOSITORY).toDynamicValue(
       () => new GoogleDriveAssetRepositoryComposition().googleDriveAssetRepositoryFactory().createGoogleDriveAssetRepository(input.credentials, {
         parentFolderId: input.parentFolderId,
@@ -101378,6 +101778,7 @@ var DocumentComposition = class _DocumentComposition {
           input.commentAuthorLogin
         ),
         revision: new EventSnapshotHash(),
+        covers: context3.get(EVENT_COVER_REPOSITORY),
         renderProjection: new JourneyComposition().assetRenderProjection(
           new GithubActionsComposition().assetRenderPresenterImpl(
             new GithubActionsComposition().assetMessages(input.locale)

@@ -247,6 +247,7 @@ jobs:
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
           google-drive-folder-id: ${{ inputs.google-drive-folder-id }}
           google-drive-template-folder-id: ${{ inputs.google-drive-template-folder-id }}
+          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
       - name: Reconcile presentation PDF
         id: pdf
         if: ${{ !cancelled() && steps.assets.outputs.pdf-source != '' && steps.assets.outputs.slides-ready != '' }}

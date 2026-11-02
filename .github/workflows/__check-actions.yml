@@ -423,6 +423,7 @@ jobs:
           google-credentials: ""
           google-drive-folder-id: synthetic-parent-folder
           google-drive-template-folder-id: synthetic-template-folder
+          google-drive-public-folder-id: synthetic-public-folder
 
       - name: Assert asset action rejects missing credentials
         shell: bash

@@ -1,10 +1,49 @@
 import type { drive_v3 } from "@googleapis/drive";
 import { describe, expect, it, vi } from "vitest";
+import { contentPlacementFixture } from "../testing/content-placement-fixture.js";
+import { DriveContentLocation } from "./drive-content-location.js";
 import { DriveContentImage } from "./drive-content-image.js";
 import { DrivePublicFolderError } from "./drive-public-folder-error.js";
 import { GoogleDriveContentMediaStore } from "./google-drive-content-media-store.js";
 
 describe("immutable content media", () => {
+	it("preserves the approved media identity, bytes and URL after placement", async () => {
+		// Arrange
+		const f = contentPlacementFixture();
+		// Act
+		await f.store.place(f.input);
+		const current = await f.store.read(f.media.id);
+		const verified = await f.store.verify(f.media);
+		await f.store.place(f.input);
+		// Assert
+		expect(verified).toBe(true);
+		expect(current).toMatchObject({ ...f.media, sourceRevision: "2" });
+		expect(f.update).toHaveBeenCalledTimes(1);
+	});
+	it("does not move modified artwork", async () => {
+		// Arrange
+		const f = contentPlacementFixture();
+		f.file.appProperties = {
+			...f.file.appProperties,
+			contentHash: "b".repeat(64),
+		};
+		// Act
+		const result = f.store.place(f.input);
+		// Assert
+		await expect(result).rejects.toThrow("no longer the approved artwork");
+		expect(f.update).not.toHaveBeenCalled();
+		expect(f.share).not.toHaveBeenCalled();
+	});
+	it("rejects a managed cover moved outside its recorded event", async () => {
+		// Arrange
+		const f = contentPlacementFixture();
+		// Act
+		await f.store.place(f.input);
+		f.file.parents = ["unrelated-folder"];
+		const verified = await f.store.verify(f.media);
+		// Assert
+		expect(verified).toBe(false);
+	});
 	it.each(["metadata-version", "bytes", "description", "private", "moved"])(
 		"verifies a saved cover after a change to %s",
 		async (change) => {
@@ -60,6 +99,10 @@ describe("immutable content media", () => {
 				inspector,
 				{ read: async () => currentBytes },
 				{ verify: vi.fn() },
+				new DriveContentLocation(
+					{ files: { get } } as unknown as drive_v3.Drive,
+					{ resolve: async () => "covers-folder" },
+				),
 			);
 			// Act
 			const verified = await store.verify(media);
@@ -70,6 +113,7 @@ describe("immutable content media", () => {
 	it("rejects invalid destination layout before reserving an image identity", async () => {
 		// Arrange
 		const generateIds = vi.fn();
+		const get = vi.fn();
 		const store = new GoogleDriveContentMediaStore(
 			{ files: { generateIds } } as unknown as drive_v3.Drive,
 			{
@@ -80,6 +124,10 @@ describe("immutable content media", () => {
 			new DriveContentImage(),
 			{ read: vi.fn() },
 			{ verify: vi.fn() },
+			new DriveContentLocation(
+				{ files: { get } } as unknown as drive_v3.Drive,
+				{ resolve: async () => "covers-folder" },
+			),
 		);
 		// Act
 		const result = store.reserve();
@@ -99,6 +147,10 @@ describe("immutable content media", () => {
 				new DriveContentImage(),
 				{ read },
 				{ verify: vi.fn() },
+				new DriveContentLocation(
+					{ files: { get } } as unknown as drive_v3.Drive,
+					{ resolve: async () => "covers-folder" },
+				),
 			);
 			// Act
 			const result = store.read("reserved");
@@ -175,6 +227,10 @@ describe("immutable content media", () => {
 				inspector,
 				{ read },
 				{ verify: vi.fn() },
+				new DriveContentLocation(
+					{ files: { get } } as unknown as drive_v3.Drive,
+					{ resolve: async () => "covers-folder" },
+				),
 			);
 
 			// Act
@@ -256,6 +312,10 @@ describe("immutable content media", () => {
 				inspector,
 				{ read: vi.fn(async () => image.bytes) },
 				{ verify: vi.fn() },
+				new DriveContentLocation(
+					{ files: { get } } as unknown as drive_v3.Drive,
+					{ resolve: async () => "covers-folder" },
+				),
 			);
 			// Act
 			const result = store.persist("reserved", image, "Public cover");
@@ -301,6 +361,10 @@ describe("immutable content media", () => {
 			new DriveContentImage(),
 			{ read: vi.fn() },
 			{ verify: vi.fn() },
+			new DriveContentLocation(
+				{ files: { get } } as unknown as drive_v3.Drive,
+				{ resolve: async () => "covers-folder" },
+			),
 		);
 		const media = {
 			id: "reserved",

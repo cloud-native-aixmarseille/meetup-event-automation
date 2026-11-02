@@ -13,6 +13,7 @@ import { GithubActionsComposition } from "./dependency-composition.js";
 import { SERVICES } from "./composition.js";
 import {
 	ASSET_REPOSITORY,
+	EVENT_COVER_REPOSITORY,
 	DocumentComposition,
 } from "./document-composition.js";
 
@@ -55,7 +56,11 @@ describe("document-composition", () => {
 			credentials: "not-json",
 			parentFolderId: "parent",
 			templateFolderId: "templates",
+			publicFolderId: "public",
 		});
+		container
+			.rebind(EVENT_COVER_REPOSITORY)
+			.toConstantValue({ place: vi.fn() });
 		container.rebind(ReconcileAssetContent).toConstantValue(
 			new ReconcileAssetContent(
 				{

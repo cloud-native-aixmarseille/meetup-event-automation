@@ -75,6 +75,9 @@ export class DocumentAction {
 			templateFolderId: core.getInput("google-drive-template-folder-id", {
 				required: true,
 			}),
+			publicFolderId: core.getInput("google-drive-public-folder-id", {
+				required: true,
+			}),
 		});
 		const outcome = await journey.execute({
 			identity: { repository: `${owner}/${repo}`, issueNumber },

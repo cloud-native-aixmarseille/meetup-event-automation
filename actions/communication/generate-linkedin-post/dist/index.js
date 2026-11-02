@@ -70174,6 +70174,7 @@ var ReconcileMeetupDocuments = class {
       source
     );
     const slidesReady = Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only");
+    await this.placeCover(cover, assets.container, evaluation.event.date);
     const { persisted, current } = await this.persistAsset(
       source,
       assets.container?.url
@@ -70198,6 +70199,14 @@ var ReconcileMeetupDocuments = class {
         }))
       ]
     };
+  }
+  async placeCover(media, container, date) {
+    if (!media || !container) return;
+    await this.dependencies.covers.place({
+      media,
+      container,
+      name: `${date} - Cover.${media.mimeType === "image/png" ? "png" : "jpg"}`
+    });
   }
   skipped(diagnostics) {
     return {
@@ -77923,6 +77932,92 @@ var DriveContentImage = class {
   }
 };
 
+// packages/adapter/publication/google-drive-asset-repository/src/drive-content-location.ts
+import { createHash as createHash4 } from "node:crypto";
+var DriveContentLocation = class {
+  constructor(client, folders) {
+    this.client = client;
+    this.folders = folders;
+  }
+  client;
+  folders;
+  async valid(file) {
+    const parent = file.parents?.[0];
+    if (!parent || file.parents?.length !== 1) return false;
+    const key = file.appProperties?.contentEventKey;
+    if (!key) return parent === await this.folders.resolve();
+    return this.eventFolder(parent, key);
+  }
+  async place(input) {
+    const { media, container, name } = input;
+    const key = createHash4("sha256").update(`${container.eventId}:assets:v1`).digest("hex");
+    if (!await this.eventFolder(container.id, key))
+      throw new ContentMediaChangedError(
+        "Cover destination is not this event's managed folder"
+      );
+    const file = await this.file(media.id);
+    if (!await this.valid(file) || file.trashed || file.appProperties?.contentEventKey && file.appProperties.contentEventKey !== key)
+      throw new ContentMediaChangedError(
+        "Cover location changed before placement"
+      );
+    await this.move(file, input, key);
+    const actual = await this.file(media.id);
+    if (actual.name !== name || actual.parents?.[0] !== container.id || actual.appProperties?.contentEventKey !== key || actual.trashed || !await this.valid(actual))
+      throw new ContentMediaChangedError(
+        "Cover placement could not be verified"
+      );
+  }
+  async move(file, input, key) {
+    const { media, container, name } = input;
+    const moved = file.parents?.[0] !== container.id;
+    if (moved) {
+      await this.client.permissions.create(
+        {
+          fileId: media.id,
+          supportsAllDrives: true,
+          requestBody: {
+            type: "anyone",
+            role: "reader",
+            allowFileDiscovery: false
+          },
+          fields: "id"
+        },
+        requestOptions
+      );
+    }
+    if (moved || file.name !== name) {
+      await this.client.files.update(
+        {
+          fileId: media.id,
+          supportsAllDrives: true,
+          ...moved ? { addParents: container.id, removeParents: file.parents?.[0] } : {},
+          requestBody: {
+            name,
+            appProperties: { ...file.appProperties, contentEventKey: key }
+          }
+        },
+        requestOptions
+      );
+    }
+  }
+  async eventFolder(id, key) {
+    if (!/^[\w-]+$/.test(id) || !/^[a-f0-9]{64}$/.test(key)) return false;
+    const folder = await this.file(id);
+    return !folder.trashed && folder.mimeType === folderMimeType && folder.appProperties?.meetup_event_key === key;
+  }
+  async file(id) {
+    const { data } = await this.client.files.get(
+      {
+        fileId: id,
+        supportsAllDrives: true,
+        fields: "id,name,mimeType,parents,trashed,appProperties"
+      },
+      requestOptions
+    );
+    return data;
+  }
+};
+
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-authentication.ts
 var import_drive = __toESM(require_build(), 1);
 
@@ -77961,18 +78056,31 @@ var GoogleDriveAuthentication = class {
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-content-media-store.ts
 import { Readable } from "node:stream";
 var GoogleDriveContentMediaStore = class {
-  constructor(client, folders, image, stream, announcement) {
+  constructor(client, folders, image, stream, announcement, location) {
     this.client = client;
     this.folders = folders;
     this.image = image;
     this.stream = stream;
     this.announcement = announcement;
+    this.location = location;
   }
   client;
   folders;
   image;
   stream;
   announcement;
+  location;
+  async place(input) {
+    if (input.media.source || !await this.verify(input.media))
+      throw new ContentMediaChangedError(
+        "Selected cover is no longer the approved artwork"
+      );
+    await this.location.place(input);
+    if (!await this.verify(input.media))
+      throw new ContentMediaChangedError(
+        "Approved cover could not be verified after placement"
+      );
+  }
   async reserve() {
     await this.folders.resolve();
     const { data } = await this.client.files.generateIds(
@@ -78034,7 +78142,7 @@ var GoogleDriveContentMediaStore = class {
     );
     if (metadata.status === 404) return void 0;
     const file = metadata.data;
-    if (file.trashed || file.parents?.length !== 1 || file.parents[0] !== await this.folders.resolve() || file.appProperties?.contentSchema !== "1" || !file.version || !file.description || !await this.readable(id))
+    if (file.trashed || !await this.location.valid(file) || file.appProperties?.contentSchema !== "1" || !file.version || !file.description || !await this.readable(id))
       throw new ContentMediaChangedError(
         "Content media is not a verified public artifact"
       );
@@ -78166,7 +78274,11 @@ var GoogleDriveContentMediaComposition = class {
       new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers"),
       new DriveContentImage(),
       new DriveBoundedStream(),
-      this.announcement(credentials, loader, names)
+      this.announcement(credentials, loader, names),
+      new DriveContentLocation(
+        client,
+        new GoogleDrivePublicAssetFolder(client, folderId, "tmp-covers")
+      )
     );
   }
   announcement(credentials, loader, names) {
@@ -81037,7 +81149,7 @@ var CsvReferentialRepository = class {
 };
 
 // packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 import { readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join3 } from "node:path";
 var CsvSpeakerCatalogStore = class {
@@ -81121,7 +81233,7 @@ var CsvSpeakerCatalogStore = class {
     return { csv, state, historicalIds };
   }
   revision(csv, state, historicalIds) {
-    return createHash4("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+    return createHash5("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
 
@@ -95747,7 +95859,7 @@ var SlackApprovalPresenter = class {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
-import { createHash as createHash5 } from "node:crypto";
+import { createHash as createHash6 } from "node:crypto";
 var SlackAttentionNotification = class {
   constructor(collaborators, client, channel, presenter) {
     this.collaborators = collaborators;
@@ -95762,7 +95874,7 @@ var SlackAttentionNotification = class {
   channel;
   presenter;
   fingerprint(view) {
-    return createHash5("sha256").update(this.presenter.render(view)).digest("hex");
+    return createHash6("sha256").update(this.presenter.render(view)).digest("hex");
   }
   async post(view) {
     const response = await this.client.post(
