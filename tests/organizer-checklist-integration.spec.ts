@@ -15,6 +15,7 @@ import {
 import { JourneyComposition } from "../packages/application/journey/src/index.js";
 import { CommunicationDomainComposition } from "../packages/domain/communication/src/index.js";
 import type { EventDiagnostic } from "../packages/domain/event/src/index.js";
+import { createTestEvent } from "../packages/domain/event/testing/event.fixtures.js";
 import { GithubActionsComposition } from "../packages/runtime/github-actions/src/index.js";
 
 import { OrganizerFeedback } from "../packages/runtime/github-actions/src/organizer-feedback.js";
@@ -71,7 +72,7 @@ describe("single organizer checklist across event and attention runs", () => {
 		const attention = state();
 
 		// Act
-		await comments.reconcileDiagnostics(identity, [diagnostic]);
+		await comments.reconcileDiagnostics(identity, [diagnostic], {});
 		await f.repository.load();
 		await f.repository.save(attention);
 		await new OrganizerFeedback(
@@ -88,6 +89,11 @@ describe("single organizer checklist across event and attention runs", () => {
 			},
 			comments,
 			"meetup",
+			{
+				decode: vi
+					.fn()
+					.mockReturnValue({ event: createTestEvent(), diagnostics: [] }),
+			},
 		).execute(
 			identity,
 			JSON.stringify({
@@ -155,7 +161,7 @@ describe("single organizer checklist across event and attention runs", () => {
 				authorLogin: "automation[bot]",
 			},
 		);
-		await comments.reconcileDiagnostics(identity, [diagnostic]);
+		await comments.reconcileDiagnostics(identity, [diagnostic], {});
 		await f.client.create(
 			f.presenter.issue(
 				state(),

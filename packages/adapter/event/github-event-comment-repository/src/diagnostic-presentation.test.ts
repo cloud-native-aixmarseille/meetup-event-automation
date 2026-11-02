@@ -12,6 +12,84 @@ const diagnostic: EventDiagnostic = {
 };
 
 describe("organizer diagnostic presentation", () => {
+	it.each(["fr", "en"])(
+		"links the event and the consumer workflow in %s",
+		(locale) => {
+			// Arrange
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
+			const item = { ...diagnostic, code: "publication.meetup.uncertain" };
+			const links = {
+				repository: "organizers/event-issues",
+				meetup: "https://www.meetup.com/example/events/42/",
+			};
+
+			// Act
+			const result = new DiagnosticPresenter().presentDiagnostic(
+				item,
+				messages,
+				links,
+			);
+
+			// Assert
+			expect(result.message).toContain(`](${links.meetup})`);
+			expect(result.message).toContain(
+				"](https://github.com/organizers/event-issues/actions/workflows/event-reconcile-active.yml)",
+			);
+			expect(result.message).toContain('"Run workflow"');
+			expect(result.message).not.toContain('"Meetup Link"');
+			expect(result.message).not.toContain(item.message);
+		},
+	);
+	it.each(["fr", "en"])(
+		"reports an unavailable event link while keeping the workflow link in %s",
+		(locale) => {
+			// Arrange
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
+			const item = { ...diagnostic, code: "publication.meetup.uncertain" };
+
+			// Act
+			const result = new DiagnosticPresenter().presentDiagnostic(
+				item,
+				messages,
+				{ repository: "organizers/event-issues" },
+			);
+
+			// Assert
+			expect(result.message).toContain(
+				locale === "fr" ? "Aucun lien" : "No valid Meetup event link",
+			);
+			expect(result.message).toContain(
+				"](https://github.com/organizers/event-issues/actions/workflows/event-reconcile-active.yml)",
+			);
+			expect(result.message).not.toContain("www.meetup.com");
+			expect(result.message).not.toContain("undefined");
+		},
+	);
+	it("escapes Markdown delimiters in link destinations", () => {
+		// Arrange
+		const messages = new EventCommentMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"en",
+		);
+		const item = { ...diagnostic, code: "publication.meetup.uncertain" };
+
+		// Act
+		const result = new DiagnosticPresenter().presentDiagnostic(item, messages, {
+			repository: "example/meetups",
+			meetup: "https://events(example).test/group/events/42/",
+		});
+
+		// Assert
+		expect(result.message).toContain(
+			"](https://events%28example%29.test/group/events/42/)",
+		);
+	});
 	it.each([
 		[
 			"en",
@@ -86,6 +164,7 @@ describe("organizer diagnostic presentation", () => {
 					{ localeResolver: new LocalizationComposition().localeResolver() },
 					locale,
 				),
+				{ repository: "example/meetups" },
 			);
 
 			// Assert

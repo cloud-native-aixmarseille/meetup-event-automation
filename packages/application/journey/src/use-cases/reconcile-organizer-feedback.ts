@@ -1,8 +1,10 @@
 import type {
 	EventCommentRepository,
+	EventDocumentCodec,
 	EventIdentity,
 	EventRepository,
 } from "@meetup-automation/event";
+import { MeetupEventUrl } from "@meetup-automation/publication";
 import type { AttentionStageEvaluation } from "../result/attention-stage-evaluation.js";
 import type { AttentionStageReports } from "../result/attention-stage-reports.js";
 
@@ -20,6 +22,7 @@ export class ReconcileOrganizerFeedback {
 		private readonly events: EventRepository,
 		private readonly comments: EventCommentRepository,
 		private readonly meetupLabel: string,
+		private readonly codec: Pick<EventDocumentCodec, "decode">,
 	) {}
 
 	async execute(identity: EventIdentity, stageResults: AttentionStageReports) {
@@ -31,14 +34,23 @@ export class ReconcileOrganizerFeedback {
 		const source = await this.events.find(identity);
 		if (!source) throw new Error("Organizer feedback issue is unavailable");
 		if (!source.labels.includes(this.meetupLabel)) return { updated: false };
+		const meetup = MeetupEventUrl.parse(
+			this.codec.decode(source).event.publicationLinks.meetup,
+		)?.value;
 		if (baseComplete)
-			await this.reconcile(identity, { ...stageResults, social: undefined });
-		if (socialComplete) await this.reconcile(identity, stageResults, "social");
+			await this.reconcile(
+				identity,
+				{ ...stageResults, social: undefined },
+				{ meetup },
+			);
+		if (socialComplete)
+			await this.reconcile(identity, stageResults, { meetup }, "social");
 		return { updated: true };
 	}
 	private async reconcile(
 		identity: EventIdentity,
 		stageResults: AttentionStageReports,
+		links: Readonly<{ meetup?: string }>,
 		scope?: "social",
 	) {
 		const diagnostics =
@@ -54,9 +66,12 @@ export class ReconcileOrganizerFeedback {
 						? ("invalid" as const)
 						: ("incomplete" as const),
 			}));
-		if (scope)
-			await this.comments.reconcileDiagnostics(identity, actionable, scope);
-		else await this.comments.reconcileDiagnostics(identity, actionable);
+		await this.comments.reconcileDiagnostics(
+			identity,
+			actionable,
+			links,
+			scope,
+		);
 	}
 }
 export type ReconcileOrganizerFeedbackArguments =

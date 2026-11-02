@@ -64,6 +64,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 	async reconcileDiagnostics(
 		identity: EventIdentity,
 		diagnostics: readonly EventDiagnostic[],
+		links: Readonly<{ meetup?: string }>,
 		scope?: "social",
 	): Promise<EventCommentReconciliation> {
 		this.assertScope(identity.repository);
@@ -81,6 +82,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			identity.issueNumber,
 			canonical,
 			diagnostics,
+			links,
 			scope,
 		);
 
@@ -119,6 +121,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		issueNumber: number,
 		canonical: ManagedComment | undefined,
 		diagnostics: readonly EventDiagnostic[],
+		links: Readonly<{ meetup?: string }>,
 		scope?: "social",
 	): Promise<string> {
 		const previous =
@@ -132,6 +135,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		const rendered = this.collaborators.diagnosticCommentPresenter.render(
 			diagnostics,
 			this.messages,
+			{ repository: this.repositoryName, meetup: links.meetup },
 		);
 		const body = this.collaborators.diagnosticCommentSections.merge(
 			previous.body,

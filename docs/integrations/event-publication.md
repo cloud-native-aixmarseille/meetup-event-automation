@@ -264,10 +264,12 @@ not identities. Source rereads reduce races but cannot make GitHub issue updates
 transactional with remote writes.
 
 When an identity is recorded, open that event and compare its title, description
-and cover with the approved content in the issue. Check that its URL is in the
-issue's publication link field, then rerun the active-event reconciliation
-workflow to verify and update it. If the warning returns, a maintainer must
-investigate the run and journal. When only a pending reservation remains, inspect
+and cover with the approved content in the issue. The checklist reads the Meetup
+link automatically and links to both the event and the active-event reconciliation
+workflow. Open that workflow and choose **Run workflow** to verify and update the
+event. Missing or malformed links are reported without an event link. If the
+warning returns, a maintainer must investigate the run and journal. When only a
+pending reservation remains, inspect
 the provider dashboard before retrying. Delete a reservation only after confirming
 no event was created.
 Never remove uncertain state merely to retry.

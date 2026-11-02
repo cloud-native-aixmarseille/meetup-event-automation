@@ -4,6 +4,15 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"comment.guidance.meetup.uncertain": {
+		eventUrl: "https://www.meetup.com/example/events/42/",
+		workflowUrl:
+			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+	},
+	"comment.guidance.meetup.uncertain-missing-link": {
+		workflowUrl:
+			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+	},
 	"comment.social.target": {
 		destination: "community",
 		purpose: "announcement",

@@ -1,6 +1,7 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
 import type { OrganizerDiagnosticPolicy } from "@meetup-automation/journey";
 import type {
+	DiagnosticLinks,
 	DiagnosticPresentation,
 	DiagnosticPresenter,
 } from "./diagnostic-presentation.js";
@@ -22,6 +23,7 @@ export class DiagnosticCommentPresenter {
 	render(
 		diagnostics: readonly EventDiagnostic[],
 		messages: EventCommentMessages,
+		links: DiagnosticLinks,
 	): string {
 		const actionable = new Map<string, DiagnosticPresentation>();
 		for (const item of diagnostics) {
@@ -37,6 +39,7 @@ export class DiagnosticCommentPresenter {
 				this.collaborators.diagnosticPresenter.presentDiagnostic(
 					item,
 					messages,
+					links,
 				);
 			actionable.set(
 				`${presentation.field}:${presentation.message}`,

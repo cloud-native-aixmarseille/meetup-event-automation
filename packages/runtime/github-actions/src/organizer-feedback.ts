@@ -1,5 +1,6 @@
 import type {
 	EventCommentRepository,
+	EventDocumentCodec,
 	EventIdentity,
 	EventRepository,
 } from "@meetup-automation/event";
@@ -23,11 +24,13 @@ export class OrganizerFeedback {
 		events: EventRepository,
 		comments: EventCommentRepository,
 		meetupLabel: string,
+		codec: Pick<EventDocumentCodec, "decode">,
 	) {
 		this.reconciliation = this.collaborators.createReconcileOrganizerFeedback(
 			events,
 			comments,
 			meetupLabel,
+			codec,
 		);
 	}
 	async execute(identity: EventIdentity, stageResults: string) {

@@ -43416,16 +43416,18 @@ var ReconcileMeetupIssueForm = class {
 
 // packages/application/journey/src/use-cases/reconcile-organizer-feedback.ts
 var ReconcileOrganizerFeedback = class {
-  constructor(collaborators, events, comments, meetupLabel) {
+  constructor(collaborators, events, comments, meetupLabel, codec) {
     this.collaborators = collaborators;
     this.events = events;
     this.comments = comments;
     this.meetupLabel = meetupLabel;
+    this.codec = codec;
   }
   collaborators;
   events;
   comments;
   meetupLabel;
+  codec;
   async execute(identity, stageResults) {
     const baseComplete = this.collaborators.attentionStageEvaluation.complete(stageResults);
     const socialComplete = this.collaborators.attentionStageEvaluation.socialComplete(stageResults);
@@ -43433,20 +43435,31 @@ var ReconcileOrganizerFeedback = class {
     const source = await this.events.find(identity);
     if (!source) throw new Error("Organizer feedback issue is unavailable");
     if (!source.labels.includes(this.meetupLabel)) return { updated: false };
+    const meetup = MeetupEventUrl.parse(
+      this.codec.decode(source).event.publicationLinks.meetup
+    )?.value;
     if (baseComplete)
-      await this.reconcile(identity, { ...stageResults, social: void 0 });
-    if (socialComplete) await this.reconcile(identity, stageResults, "social");
+      await this.reconcile(
+        identity,
+        { ...stageResults, social: void 0 },
+        { meetup }
+      );
+    if (socialComplete)
+      await this.reconcile(identity, stageResults, { meetup }, "social");
     return { updated: true };
   }
-  async reconcile(identity, stageResults, scope) {
+  async reconcile(identity, stageResults, links, scope) {
     const diagnostics = scope === "social" ? stageResults.social?.diagnostics ?? [] : this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
     const actionable = diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
       ...item,
       category: item.severity === "error" ? "invalid" : "incomplete"
     }));
-    if (scope)
-      await this.comments.reconcileDiagnostics(identity, actionable, scope);
-    else await this.comments.reconcileDiagnostics(identity, actionable);
+    await this.comments.reconcileDiagnostics(
+      identity,
+      actionable,
+      links,
+      scope
+    );
   }
 };
 
@@ -49445,12 +49458,13 @@ var ActionMessages = class extends MessageLocalizer {
 
 // packages/runtime/github-actions/src/organizer-feedback.ts
 var OrganizerFeedback = class {
-  constructor(collaborators, events, comments, meetupLabel) {
+  constructor(collaborators, events, comments, meetupLabel, codec) {
     this.collaborators = collaborators;
     this.reconciliation = this.collaborators.createReconcileOrganizerFeedback(
       events,
       comments,
-      meetupLabel
+      meetupLabel,
+      codec
     );
   }
   collaborators;
@@ -56304,7 +56318,7 @@ var DiagnosticCommentPresenter = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  render(diagnostics, messages5) {
+  render(diagnostics, messages5, links) {
     const actionable = /* @__PURE__ */ new Map();
     for (const item of diagnostics) {
       if (this.collaborators.organizerDiagnosticPolicy.suppressed(
@@ -56315,7 +56329,8 @@ var DiagnosticCommentPresenter = class {
       }
       const presentation = this.collaborators.diagnosticPresenter.presentDiagnostic(
         item,
-        messages5
+        messages5,
+        links
       );
       actionable.set(
         `${presentation.field}:${presentation.message}`,
@@ -56793,10 +56808,6 @@ var FIELD_ORDER = [
 var GUIDANCE = new Map([
   ...STAGE_GUIDANCE,
   [
-    "publication.meetup.uncertain",
-    ["Meetup Link", "comment.guidance.meetup.uncertain"]
-  ],
-  [
     "event.proposals.invalid-selection",
     ["Agenda", "comment.guidance.proposals.invalid-selection"]
   ],
@@ -57082,7 +57093,13 @@ var DiagnosticPresenter = class {
     ["occurrenceStatus", "Event Status"],
     ["event_status", "Event Status"]
   ]);
-  presentDiagnostic(item, messages5) {
+  presentDiagnostic(item, messages5, links) {
+    if (item.code === "publication.meetup.uncertain")
+      return {
+        field: "Meetup Link",
+        message: this.meetupRecovery(messages5, links),
+        order: FIELD_ORDER.indexOf("Meetup Link")
+      };
     const guidance = GUIDANCE.get(item.code);
     const referential = /^referential\.(host|contact|speaker)\./.test(
       item.code
@@ -57092,6 +57109,18 @@ var DiagnosticPresenter = class {
     const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
     const order = FIELD_ORDER.indexOf(section);
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  meetupRecovery(messages5, links) {
+    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+    return links.meetup ? messages5.t("comment.guidance.meetup.uncertain", {
+      eventUrl: links.meetup.replace(
+        /[()<>\s]/g,
+        (character) => character === "(" ? "%28" : character === ")" ? "%29" : encodeURIComponent(character)
+      ),
+      workflowUrl
+    }) : messages5.t("comment.guidance.meetup.uncertain-missing-link", {
+      workflowUrl
+    });
   }
   /** Only known issue headings and numeric agenda positions can reach Markdown. */
   publicField(field, fallback, messages5) {
@@ -57239,7 +57268,7 @@ var GitHubEventCommentRepository = class {
   repo;
   repositoryName;
   authorLogin;
-  async reconcileDiagnostics(identity, diagnostics, scope) {
+  async reconcileDiagnostics(identity, diagnostics, links, scope) {
     this.assertScope(identity.repository);
     const managedComments = await this.listManagedComments(
       identity.issueNumber
@@ -57255,6 +57284,7 @@ var GitHubEventCommentRepository = class {
       identity.issueNumber,
       canonical,
       diagnostics,
+      links,
       scope
     );
     if (!canonical) {
@@ -57283,7 +57313,7 @@ var GitHubEventCommentRepository = class {
     );
     return { changed: changed || retiredChanged };
   }
-  async body(issueNumber, canonical, diagnostics, scope) {
+  async body(issueNumber, canonical, diagnostics, links, scope) {
     const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
       issueNumber,
       canonical.id,
@@ -57291,7 +57321,8 @@ var GitHubEventCommentRepository = class {
     ) : { body: canonical?.body ?? "", retained: "" };
     const rendered = this.collaborators.diagnosticCommentPresenter.render(
       diagnostics,
-      this.messages
+      this.messages,
+      { repository: this.repositoryName, meetup: links.meetup }
     );
     const body = this.collaborators.diagnosticCommentSections.merge(
       previous.body,
@@ -57602,7 +57633,8 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
-  "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. Open the event on Meetup and compare its title, description and image with the content approved here. Check that its URL is in "Meetup Link", then rerun the "Event / Reconcile active" workflow from Actions. If you cannot find the event or the warning returns, ask a maintainer to investigate the run; do not recreate the event.',
+  "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
+  "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
   "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -57669,7 +57701,8 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
-  "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Ouvrez l'\xE9v\xE9nement sur Meetup et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. V\xE9rifiez que son URL figure dans "Meetup Link", puis relancez le workflow "Event / Reconcile active" depuis Actions. Si l'\xE9v\xE9nement est introuvable ou si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
+  "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
+  "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
   "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",

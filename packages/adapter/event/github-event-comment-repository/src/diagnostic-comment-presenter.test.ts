@@ -58,7 +58,10 @@ describe("renderDiagnosticComment", () => {
 			);
 
 		// Act
-		const body = presenter.render([diagnostic], messages);
+		const body = presenter.render([diagnostic], messages, {
+			repository: "example/meetups",
+			meetup: "https://www.meetup.com/example/events/42/",
+		});
 
 		// Assert
 		expect(body).toContain("**Meetup Link**:");
@@ -108,7 +111,10 @@ describe("renderDiagnosticComment", () => {
 					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
 				diagnosticPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
-			}).render(diagnostics, messages);
+			}).render(diagnostics, messages, {
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			});
 
 			// Assert
 			expect(body).toContain(guidance);
@@ -144,7 +150,10 @@ describe("renderDiagnosticComment", () => {
 					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
 				diagnosticPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
-			}).render(diagnostics, messages);
+			}).render(diagnostics, messages, {
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			});
 
 			// Assert
 			expect(body).toContain(`**OpenFeedback Link**: ${guidance}`);
@@ -178,13 +187,19 @@ describe("renderDiagnosticComment", () => {
 				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
 			diagnosticPresenter:
 				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
-		}).render(diagnostics, messages);
+		}).render(diagnostics, messages, {
+			repository: "example/meetups",
+			meetup: "https://www.meetup.com/example/events/42/",
+		});
 		const resolved = new DiagnosticCommentPresenter({
 			organizerDiagnosticPolicy:
 				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
 			diagnosticPresenter:
 				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
-		}).render([], messages);
+		}).render([], messages, {
+			repository: "example/meetups",
+			meetup: "https://www.meetup.com/example/events/42/",
+		});
 
 		// Assert
 		expect(body).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
@@ -219,7 +234,10 @@ describe("renderDiagnosticComment", () => {
 					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
 				diagnosticPresenter:
 					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
-			}).render([diagnostic, diagnostic], messages);
+			}).render([diagnostic, diagnostic], messages, {
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			});
 
 			// Assert
 			expect(body).toContain("Meetup");
@@ -258,6 +276,10 @@ describe("renderDiagnosticComment", () => {
 		}).render(
 			diagnostics,
 			new GithubEventCommentRepositoryComposition().eventCommentMessages("en"),
+			{
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			},
 		);
 		const actual = new DiagnosticCommentPresenter({
 			organizerDiagnosticPolicy:
@@ -267,6 +289,10 @@ describe("renderDiagnosticComment", () => {
 		}).render(
 			[...diagnostics].reverse(),
 			new GithubEventCommentRepositoryComposition().eventCommentMessages("en"),
+			{
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			},
 		);
 
 		// Assert
@@ -308,6 +334,10 @@ describe("renderDiagnosticComment", () => {
 		}).render(
 			diagnostics,
 			new GithubEventCommentRepositoryComposition().eventCommentMessages("en"),
+			{
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			},
 		);
 
 		// Assert
@@ -359,6 +389,10 @@ describe("renderDiagnosticComment", () => {
 		}).render(
 			diagnostics,
 			new GithubEventCommentRepositoryComposition().eventCommentMessages("en"),
+			{
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			},
 		);
 
 		// Assert
@@ -403,6 +437,10 @@ describe("renderDiagnosticComment", () => {
 		}).render(
 			diagnostics,
 			new GithubEventCommentRepositoryComposition().eventCommentMessages("en"),
+			{
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			},
 		);
 
 		// Assert
@@ -438,6 +476,10 @@ describe("renderDiagnosticComment", () => {
 		}).render(
 			diagnostics,
 			new GithubEventCommentRepositoryComposition().eventCommentMessages("en"),
+			{
+				repository: "example/meetups",
+				meetup: "https://www.meetup.com/example/events/42/",
+			},
 		);
 
 		// Assert

@@ -1,9 +1,63 @@
 import { describe, expect, it, vi } from "vitest";
+import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
 import { attentionReports } from "../../testing/attention-reports.fixtures.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ReconcileOrganizerFeedback } from "./reconcile-organizer-feedback.js";
 
 describe("merged organizer feedback reconciliation", () => {
+	it.each([
+		[
+			"https://www.meetup.com/example/events/42",
+			"https://www.meetup.com/example/events/42/",
+		],
+		[undefined, undefined],
+		["javascript:alert(1)", undefined],
+		["https://private:secret@www.meetup.com/example/events/42", undefined],
+		["https://www.meetup.com/example/events/42?token=secret", undefined],
+		["https://www.meetup.com/example/events/invalid", undefined],
+	])(
+		"projects only an event identity URL into checklist links: %s",
+		async (meetup, expected) => {
+			// Arrange
+			const identity = { repository: "example/meetups", issueNumber: 42 };
+			const source = { identity, labels: ["meetup"], body: "source issue" };
+			const events = {
+				find: vi.fn().mockResolvedValue(source),
+				applyPatch: vi.fn(),
+				listPage: vi.fn(),
+			};
+			const comments = { reconcileDiagnostics: vi.fn() };
+			const codec = {
+				decode: vi.fn().mockReturnValue({
+					event: createTestEvent({ publicationLinks: { meetup } }),
+					diagnostics: [],
+				}),
+			};
+			const useCase = new ReconcileOrganizerFeedback(
+				{
+					attentionStageEvaluation:
+						new JourneyPolicyComposition().attentionStageEvaluation(),
+				},
+				events,
+				comments,
+				"meetup",
+				codec,
+			);
+
+			// Act
+			await useCase.execute(identity, attentionReports());
+
+			// Assert
+			expect(codec.decode).toHaveBeenCalledExactlyOnceWith(source);
+			expect(comments.reconcileDiagnostics).toHaveBeenCalledExactlyOnceWith(
+				identity,
+				[],
+				{ meetup: expected },
+				undefined,
+			);
+			expect(events.applyPatch).not.toHaveBeenCalled();
+		},
+	);
 	it("refreshes social tasks independently when other stages were not evaluated", async () => {
 		// Arrange
 		const events = {
@@ -20,6 +74,12 @@ describe("merged organizer feedback reconciliation", () => {
 			events,
 			comments,
 			"meetup",
+			{
+				decode: vi.fn().mockReturnValue({
+					event: createTestEvent({ publicationLinks: {} }),
+					diagnostics: [],
+				}),
+			},
 		);
 		const identity = { repository: "example/meetups", issueNumber: 42 };
 		const diagnostic = {
@@ -43,6 +103,7 @@ describe("merged organizer feedback reconciliation", () => {
 		expect(comments.reconcileDiagnostics).toHaveBeenCalledExactlyOnceWith(
 			identity,
 			[{ ...diagnostic, category: "incomplete" }],
+			{ meetup: undefined },
 			"social",
 		);
 	});
@@ -91,6 +152,12 @@ describe("merged organizer feedback reconciliation", () => {
 				events,
 				comments,
 				"meetup",
+				{
+					decode: vi.fn().mockReturnValue({
+						event: createTestEvent({ publicationLinks: {} }),
+						diagnostics: [],
+					}),
+				},
 			);
 
 			// Act
@@ -130,6 +197,12 @@ describe("merged organizer feedback reconciliation", () => {
 				events,
 				comments,
 				"meetup",
+				{
+					decode: vi.fn().mockReturnValue({
+						event: createTestEvent({ publicationLinks: {} }),
+						diagnostics: [],
+					}),
+				},
 			);
 
 			// Act

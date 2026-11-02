@@ -1,5 +1,6 @@
 import { JourneyComposition } from "@meetup-automation/journey";
 import { describe, expect, it, vi } from "vitest";
+import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { OrganizerFeedback } from "./organizer-feedback.js";
 
@@ -26,6 +27,12 @@ function fixture(labels = ["meetup"]) {
 			events,
 			comments,
 			"meetup",
+			{
+				decode: vi.fn().mockReturnValue({
+					event: createTestEvent({ publicationLinks: {} }),
+					diagnostics: [],
+				}),
+			},
 		),
 	};
 }
@@ -143,7 +150,12 @@ describe("OrganizerFeedback", () => {
 		await feedback.execute(identity, reports());
 
 		// Assert
-		expect(comments.reconcileDiagnostics).toHaveBeenCalledWith(identity, []);
+		expect(comments.reconcileDiagnostics).toHaveBeenCalledWith(
+			identity,
+			[],
+			{ meetup: undefined },
+			undefined,
+		);
 	});
 	it("does not write a checklist on an unrelated issue", async () => {
 		// Arrange
