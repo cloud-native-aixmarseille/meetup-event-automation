@@ -30,7 +30,7 @@ Review content, import organizer submissions, and apply approved current values.
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/organizer/review-drafts@d95fba47354bad9ac982e7d7b35d46410b693039 # 8.0.12
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/organizer/review-drafts@ff0e07df70e80f3377030d5cacef089431e614ab # 8.0.13
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
