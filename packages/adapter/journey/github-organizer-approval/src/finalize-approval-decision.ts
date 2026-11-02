@@ -39,6 +39,8 @@ export class FinalizeApprovalDecision {
 	): Promise<OrganizerApprovalResult> {
 		const { record, comment } = state;
 		const decision = await this.decisions.execute(record, comment);
+		if (this.pendingEmailEdit(record, decision))
+			return { ...decision, notificationFailed: false };
 		const textValid =
 			decision.editedText === undefined || validateText?.(decision.editedText);
 		if (
@@ -52,6 +54,21 @@ export class FinalizeApprovalDecision {
 				editedText: decision.editedText,
 				invalidText: textValid === false,
 			};
+		this.recordDecision(record, decision);
+		const persisted = await this.repository.save(record, state);
+		await this.refreshVisibility(persisted);
+		return {
+			status: decision.status,
+			...(record.kind === "content-review" || record.details?.parameters
+				? decision
+				: {}),
+			notificationFailed: await this.notifications.react(record, comment.id),
+		};
+	}
+	private recordDecision(
+		record: import("./approval-state.js").StoredApproval,
+		decision: import("./approval-state.js").ApprovalDecision,
+	): void {
 		if (decision.status !== "pending" && !record.decision) {
 			if (!decision.actor || !decision.decidedAt)
 				throw new Error("Missing verified approval identity");
@@ -59,6 +76,9 @@ export class FinalizeApprovalDecision {
 				status: decision.status,
 				actor: decision.actor,
 				decidedAt: decision.decidedAt,
+				...(decision.emailParameters
+					? { emailParameters: decision.emailParameters }
+					: {}),
 				...(decision.editedText === undefined
 					? {}
 					: { editedText: decision.editedText }),
@@ -67,19 +87,27 @@ export class FinalizeApprovalDecision {
 					: {}),
 			};
 		}
-		const persisted = await this.repository.save(record, state);
-		await this.refreshVisibility(persisted);
-		return {
-			status: decision.status,
-			...(record.kind === "content-review" ? decision : {}),
-			notificationFailed: await this.notifications.react(record, comment.id),
-		};
+	}
+
+	private pendingEmailEdit(
+		record: import("./approval-state.js").StoredApproval,
+		decision: import("./approval-state.js").ApprovalDecision,
+	): boolean {
+		return (
+			!record.decision &&
+			decision.status === "pending" &&
+			Boolean(decision.emailParameters || decision.invalidEmailParameters)
+		);
 	}
 	async refreshVisibility(state: ApprovalState): Promise<void> {
 		const { record, comment } = state;
 		const attention = record.followUp?.attention;
 		const resolved = this.collaborators.approvalRequestPolicy.resolved({
 			decided: record.decision !== undefined,
+			deliveryRequired:
+				record.decision?.status === "approved" &&
+				Boolean(record.details?.parameters || record.delivery),
+			delivery: record.delivery,
 			recipientCount: record.recipientCount,
 			followUp: record.followUp,
 			attentionPending:

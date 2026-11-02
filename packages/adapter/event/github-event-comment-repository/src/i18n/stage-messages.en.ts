@@ -1,4 +1,6 @@
 export const STAGE_MESSAGES_EN = {
+	"comment.guidance.communication.email-parameters-invalid":
+		"Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
 	"comment.guidance.meetup.uncertain":
 		'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
 	"comment.guidance.meetup.uncertain-missing-link":

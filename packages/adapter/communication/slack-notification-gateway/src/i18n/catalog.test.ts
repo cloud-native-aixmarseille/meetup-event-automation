@@ -20,6 +20,7 @@ const parameters = {
 		url: "https://github.com/example/events/issues/1",
 	},
 	"request.introduction": {
+		kind: "host_introduction",
 		date: "2099-06-08",
 		count: 2,
 		url: "https://github.com/example/meetups/issues/42#issuecomment-100",

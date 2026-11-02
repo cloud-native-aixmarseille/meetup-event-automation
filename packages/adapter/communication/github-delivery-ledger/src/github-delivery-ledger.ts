@@ -42,6 +42,23 @@ export class GithubDeliveryLedger
 		}
 	}
 
+	async readEmailReport() {
+		const state = await this.#load();
+		return {
+			commentId: state.commentId,
+			hasOtherDeliveries: state.ledger.entries.some(
+				(entry) =>
+					entry.kind === "readiness-reminder" ||
+					entry.kind === "attendee-slides",
+			),
+			body: state.body,
+			entries: state.ledger.entries.flatMap((entry) =>
+				entry.kind === "readiness-reminder" || entry.kind === "attendee-slides"
+					? []
+					: [{ kind: entry.kind, status: entry.status }],
+			),
+		};
+	}
 	async readAttention(): Promise<readonly AttentionRecoveryItem[]> {
 		const { ledger, commentId } = await this.#load();
 		return ledger.entries.map((entry) => ({
@@ -194,7 +211,11 @@ export class GithubDeliveryLedger
 		await this.#save(state.commentId, state.ledger);
 	}
 
-	async #load(): Promise<{ commentId?: number; ledger: StoredLedger }> {
+	async #load(): Promise<{
+		commentId?: number;
+		body?: string;
+		ledger: StoredLedger;
+	}> {
 		const matching = (await this.comments.listComments()).filter(
 			(comment) =>
 				comment.body.startsWith(DELIVERY_LEDGER_MARKER) &&
@@ -209,6 +230,7 @@ export class GithubDeliveryLedger
 		}
 		return {
 			commentId: comment.id,
+			body: comment.body,
 			ledger: this.collaborators.ledgerCommentCodec.decode(comment.body),
 		};
 	}

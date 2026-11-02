@@ -12,10 +12,28 @@ export class ApprovalRequestPolicy {
 			return `content:${request.content.key}`;
 		if (request.kind === "social-publication")
 			return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
+		if (request.kind === "email-introduction" && request.details?.mailKind)
+			return `email:${request.details.mailKind}`;
 		return request.kind;
 	}
+	canReplaceCombinedEmail(
+		previous: OrganizerApprovalRequest,
+		input: OrganizerApprovalRequest,
+		decided: boolean,
+	): boolean {
+		return (
+			!decided &&
+			input.kind === "email-introduction" &&
+			Boolean(input.details?.mailKind) &&
+			previous.kind === "email-introduction" &&
+			!previous.details?.mailKind
+		);
+	}
+
 	resolved(facts: {
 		readonly decided: boolean;
+		readonly deliveryRequired?: boolean;
+		readonly delivery?: readonly import("../ports/email-delivery-report.js").EmailDeliverySummary[];
 		readonly recipientCount?: number;
 		readonly followUp?: {
 			readonly active: boolean;
@@ -24,6 +42,14 @@ export class ApprovalRequestPolicy {
 		readonly attentionPending: boolean;
 	}): boolean {
 		if (facts.attentionPending) return false;
+		if (
+			facts.deliveryRequired &&
+			(!facts.delivery ||
+				facts.delivery.some((item) => item.status !== "accepted") ||
+				facts.delivery.reduce((count, item) => count + item.count, 0) <
+					(facts.recipientCount ?? 0))
+		)
+			return false;
 		if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
 			return false;
 		return (
@@ -99,6 +125,8 @@ export class ApprovalRequestPolicy {
 			{ kind: "email-introduction" | "email-thanks" }
 		>,
 	): void {
+		if (request.details?.mailKind && request.kind !== "email-introduction")
+			throw new Error("Invalid preparation email scope");
 		if (
 			request.details &&
 			request.details.emails.length + request.details.omittedEmails !==
@@ -159,6 +187,9 @@ export class ApprovalRequestPolicy {
 	): boolean {
 		if (!left || !right) return left === right;
 		return (
+			left.mailKind === right.mailKind &&
+			this.fingerprints.digest(left.parameters ?? {}) ===
+				this.fingerprints.digest(right.parameters ?? {}) &&
 			left.omittedEmails === right.omittedEmails &&
 			left.emails.length === right.emails.length &&
 			left.emails.every((email, index) => {

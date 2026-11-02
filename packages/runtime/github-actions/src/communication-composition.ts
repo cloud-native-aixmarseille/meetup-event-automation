@@ -1,7 +1,6 @@
 import { getOctokit } from "@actions/github";
 import {
 	CommunicationDomainComposition,
-	type DeliveryLedger,
 	type MailGateway,
 	PlanCommunications,
 } from "@meetup-automation/communication";
@@ -9,7 +8,10 @@ import type {
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
-import { GithubDeliveryLedgerComposition } from "@meetup-automation/github-delivery-ledger";
+import {
+	type GithubDeliveryLedger,
+	GithubDeliveryLedgerComposition,
+} from "@meetup-automation/github-delivery-ledger";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import { GithubRepositoryDispatchMailGatewayComposition } from "@meetup-automation/github-repository-dispatch-mail-gateway";
 import {
@@ -48,7 +50,9 @@ type CommunicationCompositionInput = EventCompositionInput & {
 	readonly slackOrganizerChannelId: string;
 };
 
-type DeliveryLedgerFactory = (dispatchAuthorized: boolean) => DeliveryLedger;
+type DeliveryLedgerFactory = (
+	dispatchAuthorized: boolean,
+) => GithubDeliveryLedger;
 
 export class CommunicationComposition {
 	static createCommunicationContainer(input: CommunicationCompositionInput) {
@@ -137,6 +141,28 @@ export class CommunicationComposition {
 			const mailGateway = context.get<MailGateway>(
 				COMMUNICATION_SERVICES.mailGateway,
 			);
+			const approvals = OrganizerApprovalComposition.create(
+				new GithubOrganizerApprovalComposition().githubApprovalClient(
+					input.client,
+					input.owner,
+					input.repo,
+					input.issueNumber,
+				),
+				input.commentAuthorLogin,
+				new GithubOrganizerApprovalComposition().approvalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages(
+						input.locale,
+					),
+				),
+				new SlackNotificationGatewayComposition().slackApprovalNotification(
+					input.slackToken,
+					new SlackNotificationGatewayComposition().slackApprovalPresenter(
+						input.locale,
+					),
+				),
+				input.slackOrganizerChannelId,
+				OrganizerApprovalComposition.visibility(input),
+			);
 			return new JourneyCommunicationComposition().manageMeetupCommunications({
 				contentGate: new ContentGateComposition().create(
 					input,
@@ -148,28 +174,8 @@ export class CommunicationComposition {
 						input.openFeedbackApiKey ?? "",
 					),
 				clock,
-				organizerApproval: OrganizerApprovalComposition.create(
-					new GithubOrganizerApprovalComposition().githubApprovalClient(
-						input.client,
-						input.owner,
-						input.repo,
-						input.issueNumber,
-					),
-					input.commentAuthorLogin,
-					new GithubOrganizerApprovalComposition().approvalPresenter(
-						new GithubOrganizerApprovalComposition().approvalMessages(
-							input.locale,
-						),
-					),
-					new SlackNotificationGatewayComposition().slackApprovalNotification(
-						input.slackToken,
-						new SlackNotificationGatewayComposition().slackApprovalPresenter(
-							input.locale,
-						),
-					),
-					input.slackOrganizerChannelId,
-					OrganizerApprovalComposition.visibility(input),
-				).approval,
+				organizerApproval: approvals.approval,
+				emailDeliveryReport: approvals.emailDeliveryReport(ledger(false)),
 				config: context.get<AutomationConfig>(SERVICES.config),
 				eventRepository: context.get<EventRepository>(SERVICES.eventRepository),
 				referentialRepository: context.get<ReferentialRepository>(

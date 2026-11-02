@@ -1,4 +1,7 @@
 export interface MessageParameters {
+	"approval.delivery.status": { kind: string; status: string; count: number };
+	"approval.delivery.notice": Record<string, never>;
+	"approval.parameters.instructions": Record<string, never>;
 	"approval.content.image-label": { index: number };
 	"approval.social.after-approval": Record<string, never>;
 	"approval.social.details": {

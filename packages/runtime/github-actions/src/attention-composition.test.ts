@@ -193,7 +193,7 @@ describe("post-event attention composition", () => {
 		expect(second.posted).toBe(false);
 		expect(second.notificationFailed).toBe(false);
 		expect(f.comments).toHaveLength(1);
-		expect(body).toContain("- [ ] Approve sending");
+		expect(body).toContain("- [ ] ✅ Approve sending");
 		expect(
 			state.episodes.filter(
 				(episode) => episode.condition.code === "follow-up",

@@ -16,7 +16,7 @@ const { getOctokitMock } = vi.hoisted(() => ({ getOctokitMock: vi.fn() }));
 vi.mock("@actions/github", () => ({ getOctokit: getOctokitMock }));
 
 import {
-	approveBatch,
+	approveEmailRequests,
 	cleanupCommunicationFixtures,
 	createWorkspace,
 	eventBody,
@@ -931,7 +931,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		vi.mocked(fetch).mockResolvedValue({
 			ok: true,
 			json: async () => ({ ok: false, error: "missing_scope" }),
@@ -987,7 +987,7 @@ describe("organizer approval for email batches", () => {
 			code: "communication.approval-notification-failed",
 			severity: "warning",
 		});
-		expect(fetch).toHaveBeenCalledTimes(callsBeforeRetry + 1);
+		expect(fetch).toHaveBeenCalledTimes(callsBeforeRetry + 2);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
 		expect(f.comments[0]?.body).toContain("✅ Approved");
 	});
@@ -1004,7 +1004,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f, "Reject");
+		approveEmailRequests(f, "Reject");
 
 		// Act
 		const result = await new CommunicationRuntime({
@@ -1036,7 +1036,7 @@ describe("organizer approval for email batches", () => {
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
 		expect(f.comments[0]?.body).toContain("❌ Rejected by @organizer");
 		expect(f.comments[0]?.body).not.toContain("- [");
-		expect(fetch).toHaveBeenCalledTimes(2);
+		expect(fetch).toHaveBeenCalledTimes(4);
 		expect(fetch).toHaveBeenLastCalledWith(
 			"https://slack.com/api/reactions.add",
 			expect.objectContaining({
@@ -1070,7 +1070,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		const originalRequest = f.comments[0]?.body;
 
 		// Act
@@ -1096,7 +1096,7 @@ describe("organizer approval for email batches", () => {
 		});
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
 		expect(f.comments[0]?.body).not.toBe(originalRequest);
-		expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
 	});
 	it.each(["scheduled", "held"])(
 		"shows human-readable collapsed details before approving %s emails",
@@ -1122,7 +1122,7 @@ describe("organizer approval for email batches", () => {
 					new JourneyPolicyComposition().automationConfigFactory(),
 				localeResolver: new LocalizationComposition().localeResolver(),
 			}).runCommunicationReconcile(f.input);
-			const body = f.comments[0]?.body ?? "";
+			const body = f.comments.map((comment) => comment.body).join("\n\n");
 
 			// Assert
 			expect(result.counts.dispatched).toBe(0);
@@ -1132,7 +1132,7 @@ describe("organizer approval for email batches", () => {
 			expect(body).toContain(
 				status === "held"
 					? "Feedback results: A public talk"
-					: "Meetup presentation",
+					: "eventSlidesUrl",
 			);
 			expect(body).not.toContain("Private Host Contact");
 			expect(body).not.toContain("1 Private Street");
@@ -1160,7 +1160,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		vi.mocked(
 			OpenFeedbackTalkResultsGateway.prototype.resolve,
 		).mockResolvedValue([
@@ -1189,7 +1189,7 @@ describe("organizer approval for email batches", () => {
 			severity: "warning",
 		});
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
-		expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
 	});
 
 	it("keeps the thank-you approval after the speaker email succeeds and the host email is deferred", async () => {
@@ -1212,7 +1212,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		f.createDispatchEvent.mockRejectedValueOnce({ status: 429 });
 
 		// Act
@@ -1292,7 +1292,7 @@ describe("organizer approval for email batches", () => {
 					new JourneyPolicyComposition().automationConfigFactory(),
 				localeResolver: new LocalizationComposition().localeResolver(),
 			}).runCommunicationReconcile(f.input);
-			approveBatch(f);
+			approveEmailRequests(f);
 			const approved = await new CommunicationRuntime({
 				createJourney: (input) =>
 					CommunicationComposition.createCommunicationContainer(input).get(
@@ -1329,7 +1329,7 @@ describe("organizer approval for email batches", () => {
 					? "- [x] Mail introduction"
 					: "- [x] Send host introduction email",
 			);
-			expect(fetch).toHaveBeenCalledTimes(2);
+			expect(fetch).toHaveBeenCalledTimes(4);
 			const notification = JSON.parse(
 				vi.mocked(fetch).mock.calls[0]?.[1]?.body as string,
 			);
@@ -1359,6 +1359,66 @@ describe("organizer approval for email batches", () => {
 			expect(JSON.stringify(f.comments)).not.toContain("@example.invalid");
 		},
 	);
+	it("sends each preparation type with its approved values and reports delivery in its review", async () => {
+		// Arrange
+		const f = await setup();
+		const runtime = new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		});
+		await runtime.runCommunicationReconcile(f.input);
+		const hostReview = f.comments[0];
+		if (!hostReview) throw new Error("Missing host review");
+		hostReview.body = hostReview.body.replace(
+			"- `eventDate` : `2099-06-08`",
+			"- `eventDate` : `2099-06-09`",
+		);
+		approveEmailRequests(f, "Approve", "host-introduction");
+
+		// Act
+		const hostResult = await runtime.runCommunicationReconcile(f.input);
+		const dispatchesAfterHost = f.createDispatchEvent.mock.calls.length;
+		const speakerBodyBeforeApproval = f.comments[1]?.body;
+		approveEmailRequests(f, "Approve", "speaker-introduction");
+		const speakerResult = await runtime.runCommunicationReconcile(f.input);
+		await runtime.runCommunicationReconcile(f.input);
+		const ledger = f.comments.find(({ body }) =>
+			body.startsWith("<!-- meetup-automation-delivery-ledger:v1 -->"),
+		);
+
+		// Assert
+		expect(hostResult.counts.accepted).toBe(1);
+		expect(dispatchesAfterHost).toBe(1);
+		expect(speakerBodyBeforeApproval).toContain("- [ ] ✅ Approve sending");
+		expect(speakerResult.counts.accepted).toBe(1);
+		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
+		expect(
+			f.createDispatchEvent.mock.calls.map(([request]) => ({
+				template: request.client_payload["template-name"],
+				date: request.client_payload.placeholders.eventDate,
+			})),
+		).toEqual([
+			{ template: "meetup-intro-hosting", date: "2099-06-09" },
+			{ template: "meetup-intro-speakers", date: "2099-06-08" },
+		]);
+		expect(hostReview.body).toContain(
+			'"delivery":[{"kind":"host-introduction","status":"accepted","count":1}]',
+		);
+		expect(f.comments[1]?.body).toContain(
+			'"delivery":[{"kind":"speaker-introduction","status":"accepted","count":1}]',
+		);
+		expect(f.comments).toHaveLength(3);
+		expect(ledger).toBeDefined();
+		expect(f.minimized.has(ledger?.node_id ?? "")).toBe(true);
+		expect(f.minimized.has(hostReview.node_id ?? "")).toBe(true);
+		expect(JSON.stringify(f.comments)).not.toContain("@example.invalid");
+	});
 	it("requires a new confirmation after a private recipient address changes", async () => {
 		// Arrange
 		const f = await setup();
@@ -1372,8 +1432,8 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
-		const before = f.comments[0]?.body;
+		approveEmailRequests(f);
+		const before = f.comments[1]?.body;
 		await writeFile(
 			join(f.workspaceRoot, "referentials/speakers.csv"),
 			"speaker_id,firstname,lastname,company,mail,phone\nspeaker-0001,Ada,Speaker,Public Company,changed@example.invalid,\n",
@@ -1392,12 +1452,19 @@ describe("organizer approval for email batches", () => {
 		}).runCommunicationReconcile(f.input);
 
 		// Assert
-		expect(result.counts.dispatched).toBe(0);
+		expect(result.counts.dispatched).toBe(1);
 		expect(result.runtimeDiagnostics).toContainEqual({
 			code: "communication.approval-pending",
 			severity: "warning",
 		});
-		expect(f.comments[0]?.body).not.toBe(before);
+		expect(f.comments[1]?.body).not.toBe(before);
+		expect(f.createDispatchEvent).toHaveBeenCalledWith(
+			expect.objectContaining({
+				client_payload: expect.objectContaining({
+					"template-name": "meetup-intro-hosting",
+				}),
+			}),
+		);
 		expect(JSON.stringify(f.comments)).not.toContain("changed@example.invalid");
 	});
 	it("retains approval across partial completion and a safe retry", async () => {
@@ -1418,7 +1485,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		f.createDispatchEvent
 			.mockResolvedValueOnce({ status: 204 })
 			.mockRejectedValueOnce({ status: 429 });
@@ -1452,7 +1519,7 @@ describe("organizer approval for email batches", () => {
 		expect(partial).toContain("- [ ] Mail introduction speakers");
 		expect(second.counts.accepted).toBe(1);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(3);
-		expect(fetch).toHaveBeenCalledTimes(2);
+		expect(fetch).toHaveBeenCalledTimes(4);
 		expect(f.issue.body).toContain("- [x] Mail introduction speakers");
 	});
 	it("requires a separate approval for thank-you emails", async () => {
@@ -1468,7 +1535,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		await new CommunicationRuntime({
 			createJourney: (input) =>
 				CommunicationComposition.createCommunicationContainer(input).get(
@@ -1541,7 +1608,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		f.permission.mockRejectedValue(new Error("private provider error"));
 
 		// Act
@@ -1577,7 +1644,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
-		approveBatch(f);
+		approveEmailRequests(f);
 		f.graphql.mockRejectedValue(new Error("private GraphQL error"));
 
 		// Act
@@ -1686,7 +1753,7 @@ describe("scheduled post-event thanks", () => {
 			),
 		).toHaveLength(1);
 		// Arrange: approve the prepared batch.
-		approveBatch(f);
+		approveEmailRequests(f);
 
 		// Act
 		const approved = await new CommunicationRuntime({

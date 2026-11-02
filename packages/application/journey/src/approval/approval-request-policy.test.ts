@@ -24,6 +24,39 @@ const request = {
 
 describe("approval review eligibility", () => {
 	it.each([
+		"accepted",
+		"pending",
+		"uncertain",
+		"not-sent",
+		"rejected",
+	] as const)(
+		"resolves email approvals only after complete accepted delivery (%s)",
+		(status) => {
+			// Arrange
+			const policy = new ApprovalRequestPolicy(
+				new DraftProposalComposition().fingerprints(),
+			);
+			// Act
+			const resolved = policy.resolved({
+				decided: true,
+				recipientCount: 2,
+				attentionPending: false,
+				deliveryRequired: true,
+				delivery: [{ kind: "speaker-introduction", status, count: 2 }],
+			});
+			const partial = policy.resolved({
+				decided: true,
+				recipientCount: 3,
+				attentionPending: false,
+				deliveryRequired: true,
+				delivery: [{ kind: "speaker-introduction", status, count: 2 }],
+			});
+			// Assert
+			expect(resolved).toBe(status === "accepted");
+			expect(partial).toBe(false);
+		},
+	);
+	it.each([
 		[{ recipientCount: 0, decided: false }, "inactive"],
 		[{ recipientCount: 1, followUpActive: false, decided: false }, "inactive"],
 		[{ recipientCount: 1, decided: true }, "final"],

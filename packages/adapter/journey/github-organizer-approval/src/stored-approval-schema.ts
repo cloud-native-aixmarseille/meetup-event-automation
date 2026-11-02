@@ -7,6 +7,7 @@ import type { FollowUpSchema } from "./follow-up-schema.js";
 /** Validate versioned persistence fields and their contradictory combinations. */
 export interface StoredApprovalSchemaCollaborators {
 	readonly approvalSchema: Pick<ApprovalSchema, "object">;
+	readonly parameterPolicy: import("@meetup-automation/journey").EmailReviewParameterPolicy;
 	readonly approvalRequestSchema: Pick<ApprovalRequestSchema, "validate">;
 	readonly followUpSchema: Pick<FollowUpSchema, "validate">;
 	readonly approvalRequestPolicy: Pick<
@@ -49,9 +50,12 @@ export class StoredApprovalSchema {
 					decision.editedText !== undefined)
 			)
 				throw new Error("Invalid content decision kind");
+			this.emailDecision(value, decision);
 			if (value.kind === "content-review")
 				this.contentDecision(value, decision);
 		}
+		if (state.delivery !== undefined)
+			this.delivery(state.delivery, value.details, state.decision);
 		if (state.notificationMessage !== undefined)
 			this.notificationMessage(state.notificationMessage);
 		if (
@@ -63,6 +67,48 @@ export class StoredApprovalSchema {
 			throw new Error("Invalid approval reaction state");
 	}
 
+	private emailDecision(
+		value: import("@meetup-automation/journey").OrganizerApprovalRequest,
+		decision: Record<string, unknown>,
+	): void {
+		if (decision.emailParameters !== undefined) {
+			if (decision.status !== "approved" || !value.details?.parameters)
+				throw new Error("Invalid email parameter decision");
+			this.collaborators.parameterPolicy.validateEdit(
+				value.details.parameters,
+				decision.emailParameters,
+			);
+		}
+	}
+
+	private delivery(
+		value: unknown,
+		details:
+			| import("@meetup-automation/journey").OrganizerApprovalDetails
+			| undefined,
+		decision: unknown,
+	): void {
+		if (
+			!details ||
+			!this.collaborators.approvalSchema.object(decision) ||
+			decision.status !== "approved" ||
+			!Array.isArray(value) ||
+			value.length > 20
+		)
+			throw new Error("Invalid email delivery report");
+		for (const item of value)
+			if (
+				!this.collaborators.approvalSchema.object(item) ||
+				!details.emails.some((email) => email.kind === item.kind) ||
+				!["not-sent", "accepted", "pending", "uncertain", "rejected"].includes(
+					String(item.status),
+				) ||
+				typeof item.count !== "number" ||
+				!Number.isSafeInteger(item.count) ||
+				item.count < 0
+			)
+				throw new Error("Invalid email delivery status");
+	}
 	private decision(value: unknown): void {
 		if (
 			!this.collaborators.approvalSchema.object(value) ||

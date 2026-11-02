@@ -9,6 +9,7 @@ export { FinalizeApprovalDecision } from "./finalize-approval-decision.js";
 export { GithubApprovalAttentionSource } from "./github-approval-attention-source.js";
 export { GithubApprovalClient } from "./github-approval-client.js";
 export { GithubApprovalRepository } from "./github-approval-repository.js";
+export { GithubEmailDeliveryReport } from "./github-email-delivery-report.js";
 export { GithubFollowUpAttentionRepository } from "./github-follow-up-attention-repository.js";
 export { GithubOrganizerApproval } from "./github-organizer-approval.js";
 export { GithubOrganizerFollowUp } from "./github-organizer-follow-up.js";

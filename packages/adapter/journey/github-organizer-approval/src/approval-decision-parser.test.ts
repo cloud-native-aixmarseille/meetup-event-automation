@@ -1,6 +1,7 @@
 import {
 	ApprovalRequestPolicy,
 	DraftProposalComposition,
+	EmailReviewParameterPolicy,
 } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
@@ -18,6 +19,8 @@ import { ApprovalPresenter } from "./approval-presenter.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { ContentTextPreview } from "./content-text-preview.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
+import { EmailApprovalDecisionParser } from "./email-approval-decision-parser.js";
+import { EmailParametersPreview } from "./email-parameters-preview.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 
@@ -33,6 +36,9 @@ describe("approval decision parsing", () => {
 			);
 			const parser = new ApprovalDecisionParser(
 				new ContentTextPreview(),
+				new EmailApprovalDecisionParser(
+					new EmailParametersPreview(new EmailReviewParameterPolicy()),
+				),
 				new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),
@@ -113,6 +119,9 @@ describe("approval decision parsing", () => {
 			.replace(/\n/g, "\r\n");
 		const parser = new ApprovalDecisionParser(
 			new ContentTextPreview(),
+			new EmailApprovalDecisionParser(
+				new EmailParametersPreview(new EmailReviewParameterPolicy()),
+			),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			new GithubOrganizerApprovalComposition()
 				.approvalPresenterFactory()
@@ -179,6 +188,9 @@ describe("approval decision parsing", () => {
 			);
 		const parser = new ApprovalDecisionParser(
 			new ContentTextPreview(),
+			new EmailApprovalDecisionParser(
+				new EmailParametersPreview(new EmailReviewParameterPolicy()),
+			),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			new GithubOrganizerApprovalComposition()
 				.approvalPresenterFactory()
@@ -244,12 +256,15 @@ describe("approval decision parsing", () => {
 			);
 			const approved = presenter.issue(record, { status: "approved" });
 			const bodies = {
-				both: approved.replace("- [ ] Reject", "- [x] Reject"),
+				both: approved.replace("- [ ] ❌ Reject", "- [x] ❌ Reject"),
 				neither: presenter.issue(record, { status: "pending" }),
 				"changed metadata": approved.replace(record.revision, "b".repeat(64)),
 			};
 			const parser = new ApprovalDecisionParser(
 				new ContentTextPreview(),
+				new EmailApprovalDecisionParser(
+					new EmailParametersPreview(new EmailReviewParameterPolicy()),
+				),
 				new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),
@@ -277,6 +292,9 @@ describe("content decision parsing", () => {
 		);
 		const parser = new ApprovalDecisionParser(
 			new ContentTextPreview(),
+			new EmailApprovalDecisionParser(
+				new EmailParametersPreview(new EmailReviewParameterPolicy()),
+			),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			composition.approvalPresenterFactory().supportedLocales(),
 		);
@@ -297,6 +315,9 @@ describe("content decision parsing", () => {
 			);
 			const parser = new ApprovalDecisionParser(
 				new ContentTextPreview(),
+				new EmailApprovalDecisionParser(
+					new EmailParametersPreview(new EmailReviewParameterPolicy()),
+				),
 				new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),
@@ -327,6 +348,9 @@ describe("content decision parsing", () => {
 		);
 		const parser = new ApprovalDecisionParser(
 			new ContentTextPreview(),
+			new EmailApprovalDecisionParser(
+				new EmailParametersPreview(new EmailReviewParameterPolicy()),
+			),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			[presenter],
 		);
@@ -356,6 +380,9 @@ describe("edited proposal integrity", () => {
 		const preview = new ContentTextPreview();
 		const parser = new ApprovalDecisionParser(
 			preview,
+			new EmailApprovalDecisionParser(
+				new EmailParametersPreview(new EmailReviewParameterPolicy()),
+			),
 			new ApprovalRequestPolicy(new DraftProposalComposition().fingerprints()),
 			[presenter],
 		);

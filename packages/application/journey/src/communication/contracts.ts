@@ -14,6 +14,7 @@ type CommunicationJourneyDiagnosticCode =
 	| "communication.content-review"
 	| "communication.dispatch-disabled-by-config"
 	| "communication.approval-pending"
+	| "communication.email-parameters-invalid"
 	| "communication.approval-rejected"
 	| "communication.approval-unavailable"
 	| "communication.approval-notification-failed"

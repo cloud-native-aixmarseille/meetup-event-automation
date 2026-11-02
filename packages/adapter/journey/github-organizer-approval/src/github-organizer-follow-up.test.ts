@@ -61,7 +61,7 @@ describe("shared post-event follow-up", () => {
 		expect(waiting).not.toContain("- [ ]");
 		expect(result.status).toBe("pending");
 		expect(f.comments).toHaveLength(1);
-		expect(f.comments[0]?.body).toContain("- [ ] Approve");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve");
 		expect(f.comments[0]?.body).toContain("Import attendance into CNCF");
 		expect(f.dispatch).not.toHaveBeenCalled();
 	});
@@ -162,7 +162,7 @@ describe("shared post-event follow-up", () => {
 			body: "serialized-reservation",
 		});
 		expect(f.comments).toHaveLength(1);
-		expect(f.comments[0]?.body).toContain("- [ ] Approve");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve");
 	});
 	it("removes approval controls when follow-up is no longer eligible", async () => {
 		// Arrange

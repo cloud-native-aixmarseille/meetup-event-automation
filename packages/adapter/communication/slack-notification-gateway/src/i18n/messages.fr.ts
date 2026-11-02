@@ -6,7 +6,7 @@ export const FR_MESSAGES = {
 	"request.content":
 		"Contenu du {date} · {target}\nModifiez si besoin, puis validez : {url}",
 	"request.introduction":
-		"Emails de préparation · {date} · {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
+		"{kind, select, host_introduction {Email de préparation — hôte} speaker_introduction {Emails de préparation — intervenants} other {Emails de préparation}} · {date} · {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
 	"request.publication":
 		"Meetup · {date}\nVérifiez et validez la publication : {url}",
 } as const;

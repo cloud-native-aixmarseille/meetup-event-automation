@@ -27,6 +27,9 @@ describe("communication source consistency", () => {
 						: { ...sourceDocument, body: "Changed organizer content" },
 				);
 			const dependencies: ManageMeetupCommunicationsDependencies = {
+				emailDeliveryReport: {
+					synchronize: vi.fn().mockResolvedValue(undefined),
+				},
 				contentGate: { blocked: vi.fn().mockResolvedValue([]) },
 				config: {
 					...config,

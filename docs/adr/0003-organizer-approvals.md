@@ -23,7 +23,8 @@ announcement destinations have separate [draft and review rules](0008-draft-gene
 Journey owns approval capabilities and policies. GitHub adapters verify comment
 identity, current body, last editor, edit time, current repository permission,
 and trusted bot revision history. A pending request accepts exactly one choice
-on its unchanged localized rendering. Missing identity, altered facts, bots,
+on its localized rendering, allowing only validated edits in designated public
+parameter regions. Missing identity, altered facts, bots,
 ambiguous choices, or unavailable verification cannot authorize an effect.
 
 Persist a verified decision, actor, and time in the original bot request before
@@ -33,13 +34,15 @@ from bot-authored history and fail closed when it is unavailable. Recheck the
 recorded organizer's permission before using an approval.
 
 Collapse completed review comments as resolved after persisting the verified
-decision. Retain their content and history. Keep shared follow-up comments visible
+decision. Email approvals stay visible until their delivery report confirms all
+requests accepted; pending, rejected or uncertain delivery remains actionable. Retain their content and history. Keep shared follow-up comments visible
 until their tasks and uncertain notifications are resolved. Reopen reused
 comments when new work appears, preserving unrelated moderation decisions.
 
 ### Email batches and completion
 
-Introduction and thank-you batches require independent decisions. Fingerprints
+Host and speaker preparation emails require independent decisions. Thank-you
+emails retain one batch approval in the follow-up comment. Fingerprints
 cover outgoing inputs, including recipient addresses, templates, placeholders,
 event facts, and policy. Only fingerprints and public review details cross into
 comments and Slack. Partial completion and locale changes do not invalidate an
@@ -88,6 +91,13 @@ compare-and-set writes; source rereads and workflow locks reduce, but cannot
 eliminate, a final concurrent human edit.
 
 ## Decision history
+
+- 2026-11-02: Preparation approval is split into host and speaker types,
+  superseding the single combined introduction batch. Public date/link parameters
+  may be edited before approval; metadata and private recipients remain protected.
+  Delivery results are projected into the original approvals and the separate
+  ledger view is collapsed after successful projection. The ledger and delivery
+  identities remain authoritative, including previously accepted messages.
 
 - 2026-11-01: Final decisions remain in their original comments, now collapsed
   as resolved instead of left expanded. This refines presentation only; persisted

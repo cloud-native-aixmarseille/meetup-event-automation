@@ -13,6 +13,7 @@ import {
 	request,
 } from "../testing/approval.fixtures.js";
 import { contentRequest } from "../testing/content.fixtures.js";
+import { emailReviewRequest } from "../testing/email-review.fixtures.js";
 import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
@@ -21,6 +22,87 @@ import { GithubOrganizerApprovalComposition } from "./dependency-composition.js"
 import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
+
+describe("email parameter approval integrity", () => {
+	it.each(["write", "read"])(
+		"checks %s access before authorizing edited parameters",
+		async (permission) => {
+			// Arrange
+			const f = fixture();
+			const approvals =
+				new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+					f.repository,
+					f.records,
+					f.finalizer,
+					f.notifications,
+					f.client,
+				);
+			await approvals.request(emailReviewRequest);
+			const record = new GithubOrganizerApprovalComposition()
+				.approvalCommentCodec()
+				.read(f.comments[0]?.body ?? "");
+			const edited = f.presenter
+				.issue(record, { status: "approved" })
+				.replace("`2099-06-08`", "`2099-06-09`");
+			decision(f, { body: edited });
+			f.permission.mockResolvedValue({ data: { permission } });
+			// Act
+			const result = await approvals.request(emailReviewRequest);
+			const again = await approvals.request(emailReviewRequest);
+			// Assert
+			expect(result.status).toBe(
+				permission === "write" ? "approved" : "pending",
+			);
+			expect(again.status).toBe(result.status);
+			if (permission === "write")
+				expect(again.emailParameters?.eventDate).toBe("2099-06-09");
+			else expect(result.emailParameters).toBeUndefined();
+		},
+	);
+	it("preserves an edited parameter list while its author is still preparing approval", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+		await approvals.request(emailReviewRequest);
+		const edited = (f.comments[0]?.body ?? "").replace(
+			"`2099-06-08`",
+			"`2099-06-09`",
+		);
+		decision(f, { body: edited }, "pending");
+		// Act
+		await approvals.synchronize();
+		const result = await approvals.request(emailReviewRequest);
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(f.comments[0]?.body).toBe(edited);
+		expect(f.react).not.toHaveBeenCalled();
+	});
+	it("replaces a pending combined request without duplicating its organizer task", async () => {
+		// Arrange
+		const f = fixture();
+		const approvals =
+			new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+		await approvals.request(request);
+		// Act
+		await approvals.request(emailReviewRequest);
+		// Assert
+		expect(f.comments).toHaveLength(1);
+		expect(f.comments[0]?.body).toContain("Preparation email — host");
+	});
+});
 
 describe("organizer approval requests", () => {
 	it("keeps destination publication and recovery approvals independent", async () => {
@@ -185,7 +267,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		expect(result.status).toBe("pending");
-		expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
 		expect(f.react).not.toHaveBeenCalled();
 		expect(f.permission).not.toHaveBeenCalled();
 	});
@@ -353,7 +435,7 @@ describe("organizer approval requests", () => {
 		const original = f.comments[0]?.body;
 
 		// Act
-		decision(f, { body: "- [x] Approve sending" });
+		decision(f, { body: "- [x] ✅ Approve sending" });
 		const result = await approvals.request(request);
 
 		// Assert
@@ -533,7 +615,7 @@ describe("organizer approval requests", () => {
 
 			// Assert
 			expect(result.status).toBe("pending");
-			expect(f.comments[0]?.body).toContain("- [ ] Approve sending");
+			expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
 			expect(f.permission).not.toHaveBeenCalled();
 		},
 	);
@@ -666,7 +748,7 @@ describe("organizer approval requests", () => {
 			const body = f.comments[0]?.body ?? "";
 			const altered =
 				variant === "both"
-					? body.replace("- [ ] Reject", "- [x] Reject")
+					? body.replace("- [ ] ❌ Reject", "- [x] ❌ Reject")
 					: variant === "command"
 						? `${body}\n/approve approval-synthetic`
 						: body.replace("Up to 2", "Up to 1");
@@ -782,7 +864,7 @@ describe("organizer approval requests", () => {
 		await expect(result).rejects.toThrow(
 			"Approval comment changed before persistence",
 		);
-		expect(f.comments[0]?.body).toContain("- [x] Approve sending");
+		expect(f.comments[0]?.body).toContain("- [x] ✅ Approve sending");
 	});
 	it.each(["en", "fr"])(
 		"creates one issue request and one Slack alert in %s",
@@ -819,7 +901,7 @@ describe("organizer approval requests", () => {
 				"https://github.com/example/meetups/issues/42#issuecomment-100",
 			);
 			expect(f.comments[0]?.body).toContain(
-				locale === "fr" ? "- [ ] Approuver" : "- [ ] Approve",
+				locale === "fr" ? "- [ ] ✅ Approuver" : "- [ ] ✅ Approve",
 			);
 		},
 	);

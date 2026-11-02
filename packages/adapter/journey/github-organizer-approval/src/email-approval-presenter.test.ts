@@ -11,6 +11,7 @@ import {
 } from "../testing/approval.fixtures.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { EmailApprovalPresenter } from "./email-approval-presenter.js";
+import { EmailDeliveryPresenter } from "./email-delivery-presenter.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 
 describe("approval request details", () => {
@@ -20,6 +21,9 @@ describe("approval request details", () => {
 			// Arrange
 			const presenter = new EmailApprovalPresenter(
 				{
+					deliveryPresenter: new EmailDeliveryPresenter(
+						new GithubOrganizerApprovalComposition().approvalMessages("en"),
+					),
 					approvalRequestPolicy: new ApprovalRequestPolicy(
 						new DraftProposalComposition().fingerprints(),
 					),
@@ -101,6 +105,9 @@ describe("approval request details", () => {
 				throw new Error("Expected email request");
 			const presenter = new EmailApprovalPresenter(
 				{
+					deliveryPresenter: new EmailDeliveryPresenter(
+						new GithubOrganizerApprovalComposition().approvalMessages("en"),
+					),
 					approvalRequestPolicy: new ApprovalRequestPolicy(
 						new DraftProposalComposition().fingerprints(),
 					),
@@ -146,6 +153,9 @@ describe("approval request details", () => {
 			throw new Error("Expected email request");
 		const presenter = new EmailApprovalPresenter(
 			{
+				deliveryPresenter: new EmailDeliveryPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
+				),
 				approvalRequestPolicy: new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),

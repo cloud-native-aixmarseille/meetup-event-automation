@@ -1,4 +1,8 @@
 export const EN_MESSAGES = {
+	"approval.delivery.status":
+		"- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {✅ Send accepted ({count})} pending {⏳ Sending ({count})} uncertain {⚠️ Uncertain result ({count}) — check the mail service before recovery} rejected {❌ Send rejected ({count})} other {Awaiting dispatch}}.",
+	"approval.delivery.notice":
+		"Accepted means the mail service accepted the request, not that the email reached the inbox.",
 	"approval.content.image-label": "#### Image {index, number}",
 	"approval.social.after-approval": "after approval",
 	"approval.social.details":
@@ -44,6 +48,8 @@ export const EN_MESSAGES = {
 	"follow-up.stopped": "Follow-up paused.",
 	"follow-up.waiting": "Thank-you emails are not ready yet.",
 	"follow-up.emails-complete": "No thank-you emails pending.",
+	"approval.parameters.instructions":
+		"Edit the values between backticks, then approve sending. Private contact details stay in the catalog.",
 	"approval.details.summary": "Email details",
 	"approval.details.email":
 		"{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thank-you} speaker_thanks {Speaker thank-you} other {Email}}",
@@ -57,7 +63,7 @@ export const EN_MESSAGES = {
 	"approval.details.omitted-links":
 		"{count, plural, one {# more link.} other {# more links.}}",
 	"approval.final":
-		"### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} · Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {✅ Approved} rejected {❌ Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
+		"### {kind, select, introduction {Introduction emails} host_introduction {Preparation email — host} speaker_introduction {Preparation emails — speakers} thanks {Thank-you emails} other {Action}}\n\n{date} · Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {✅ Approved} rejected {❌ Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
 	"approval.request":
-		"### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} · Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] Approve sending\n- [{rejectMark}] Reject sending",
+		"### {kind, select, introduction {Introduction emails} host_introduction {Preparation email — host} speaker_introduction {Preparation emails — speakers} thanks {Thank-you emails} other {Action}}\n\n{date} · Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] ✅ Approve sending\n- [{rejectMark}] ❌ Reject sending",
 } as const;

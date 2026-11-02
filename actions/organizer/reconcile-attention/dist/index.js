@@ -27993,7 +27993,8 @@ var ApprovalNotificationPolicy = class {
         return {
           kind: request2.kind,
           eventDate: request2.eventDate,
-          recipientCount: request2.recipientCount
+          recipientCount: request2.recipientCount,
+          ...request2.details?.mailKind ? { mailKind: request2.details.mailKind } : {}
         };
       case "meetup-publication":
       case "community-publication":
@@ -28025,10 +28026,17 @@ var ApprovalRequestPolicy = class {
       return `content:${request2.content.key}`;
     if (request2.kind === "social-publication")
       return `social:${request2.social.intentId}:${request2.social.recovery ? "recovery" : "publication"}`;
+    if (request2.kind === "email-introduction" && request2.details?.mailKind)
+      return `email:${request2.details.mailKind}`;
     return request2.kind;
+  }
+  canReplaceCombinedEmail(previous, input, decided) {
+    return !decided && input.kind === "email-introduction" && Boolean(input.details?.mailKind) && previous.kind === "email-introduction" && !previous.details?.mailKind;
   }
   resolved(facts) {
     if (facts.attentionPending) return false;
+    if (facts.deliveryRequired && (!facts.delivery || facts.delivery.some((item) => item.status !== "accepted") || facts.delivery.reduce((count, item) => count + item.count, 0) < (facts.recipientCount ?? 0)))
+      return false;
     if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
       return false;
     return this.reviewPhase({
@@ -28066,6 +28074,8 @@ var ApprovalRequestPolicy = class {
       throw new Error("Invalid approval request");
   }
   validateEmailCount(request2) {
+    if (request2.details?.mailKind && request2.kind !== "email-introduction")
+      throw new Error("Invalid preparation email scope");
     if (request2.details && request2.details.emails.length + request2.details.omittedEmails !== request2.recipientCount)
       throw new Error("Invalid approval details");
   }
@@ -28082,13 +28092,59 @@ var ApprovalRequestPolicy = class {
   }
   sameDetails(left, right) {
     if (!left || !right) return left === right;
-    return left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
+    return left.mailKind === right.mailKind && this.fingerprints.digest(left.parameters ?? {}) === this.fingerprints.digest(right.parameters ?? {}) && left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
       const other = right.emails[index];
       return other !== void 0 && email.kind === other.kind && email.recipientName === other.recipientName && email.omittedLinks === other.omittedLinks && email.links.length === other.links.length && email.links.every((link, linkIndex) => {
         const otherLink = other.links[linkIndex];
         return otherLink !== void 0 && link.kind === otherLink.kind && link.url === otherLink.url && link.title === otherLink.title;
       });
     });
+  }
+};
+
+// packages/application/journey/src/approval/email-review-parameters.ts
+var EmailReviewParameterPolicy = class {
+  project(values) {
+    return Object.fromEntries(
+      Object.entries(values).filter(
+        ([key, value]) => this.allowed(key) && typeof value === "string"
+      )
+    );
+  }
+  validate(values) {
+    if (!values || typeof values !== "object" || Array.isArray(values))
+      throw new Error("Invalid email review parameters");
+    for (const [key, value] of Object.entries(values)) {
+      if (!this.allowed(key) || typeof value !== "string" || !this.valid(key, value))
+        throw new Error("Invalid email review parameter");
+    }
+  }
+  validateEdit(original, edited) {
+    this.validate(edited);
+    const keys = Object.keys(original);
+    if (keys.length !== Object.keys(edited).length || keys.some((key) => !(key in edited)))
+      throw new Error("Email review parameter keys cannot change");
+  }
+  allowed(key) {
+    return [
+      "eventDate",
+      "eventMeetupUrl",
+      "eventCncfUrl",
+      "eventSlidesUrl"
+    ].includes(key);
+  }
+  valid(key, value) {
+    if (!value || value.length > 2048 || /[\s`<>]/.test(value)) return false;
+    if (key === "eventDate") {
+      const date = /* @__PURE__ */ new Date(`${value}T12:00:00Z`);
+      return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    }
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
   }
 };
 
@@ -30393,6 +30449,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.email-parameters-invalid": "Reviewed email parameters require valid public dates and HTTPS URLs.",
   "communication.content-review": "Event content needs current organizer approval.",
   "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
   "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
@@ -34639,6 +34696,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "referential.speaker.last-name.invalid",
   "referential.speaker.mapping.invalid",
   "referential.speaker.phone.invalid",
+  "communication.email-parameters-invalid",
   "communication.approval-pending",
   "communication.approval-rejected",
   "communication.event-concurrently-modified",
@@ -35015,6 +35073,22 @@ var CommunicationDispatchPolicy = class {
 
 // packages/application/journey/src/use-cases/communication-journey-results.ts
 var CommunicationJourneyResults = class {
+  combine(mode, results) {
+    const combined = this.emptyCommunicationResult(mode, []);
+    const counts = { ...combined.counts };
+    for (const result of results)
+      for (const key of Object.keys(counts))
+        counts[key] += result.counts[key];
+    return {
+      mode,
+      counts,
+      intentIds: results.flatMap((result) => result.intentIds),
+      completedMailKinds: [
+        ...new Set(results.flatMap((result) => result.completedMailKinds))
+      ],
+      diagnostics: results.flatMap((result) => result.diagnostics)
+    };
+  }
   withRuntimeDiagnostics(result, runtimeDiagnostics) {
     return {
       ...result,
@@ -44718,6 +44792,19 @@ var GithubDeliveryLedger = class {
   options;
   presenter;
   #authorLogin;
+  async readEmailReport() {
+    const state = await this.#load();
+    return {
+      commentId: state.commentId,
+      hasOtherDeliveries: state.ledger.entries.some(
+        (entry) => entry.kind === "readiness-reminder" || entry.kind === "attendee-slides"
+      ),
+      body: state.body,
+      entries: state.ledger.entries.flatMap(
+        (entry) => entry.kind === "readiness-reminder" || entry.kind === "attendee-slides" ? [] : [{ kind: entry.kind, status: entry.status }]
+      )
+    };
+  }
   async readAttention() {
     const { ledger, commentId } = await this.#load();
     return ledger.entries.map((entry) => ({
@@ -44848,6 +44935,7 @@ var GithubDeliveryLedger = class {
     }
     return {
       commentId: comment.id,
+      body: comment.body,
       ledger: this.collaborators.ledgerCommentCodec.decode(comment.body)
     };
   }
@@ -45137,12 +45225,14 @@ var GithubDeliveryLedgerComposition = class {
 
 // packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
 var ApprovalDecisionParser = class {
-  constructor(textPreview, policy, comments) {
+  constructor(textPreview, emailDecisions, policy, comments) {
     this.textPreview = textPreview;
+    this.emailDecisions = emailDecisions;
     this.policy = policy;
     this.comments = comments;
   }
   textPreview;
+  emailDecisions;
   policy;
   comments;
   parse(record, body) {
@@ -45155,6 +45245,8 @@ var ApprovalDecisionParser = class {
     const normalized = body.replace(/\r\n/g, "\n");
     if (record.kind === "content-review")
       return this.content(record, normalized);
+    if (record.details?.parameters)
+      return this.emailDecisions.parse(record, normalized, this.comments);
     for (const comment of this.comments) {
       for (const status of ["approved", "rejected"]) {
         if (normalized.replace(/- \[X\]/g, "- [x]") === comment.issue(record, { status }))
@@ -45290,6 +45382,8 @@ var ApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "approval.delivery.status": "- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {\u2705 Send accepted ({count})} pending {\u23F3 Sending ({count})} uncertain {\u26A0\uFE0F Uncertain result ({count}) \u2014 check the mail service before recovery} rejected {\u274C Send rejected ({count})} other {Awaiting dispatch}}.",
+  "approval.delivery.notice": "Accepted means the mail service accepted the request, not that the email reached the inbox.",
   "approval.content.image-label": "#### Image {index, number}",
   "approval.social.after-approval": "after approval",
   "approval.social.details": "### Publish on {target}\n\n{destination} \xB7 {identity}\n\nScheduled for: {plannedAt}; expires: {expiresAt}.\n\nReview the post below.",
@@ -45316,6 +45410,7 @@ var EN_MESSAGES2 = {
   "follow-up.stopped": "Follow-up paused.",
   "follow-up.waiting": "Thank-you emails are not ready yet.",
   "follow-up.emails-complete": "No thank-you emails pending.",
+  "approval.parameters.instructions": "Edit the values between backticks, then approve sending. Private contact details stay in the catalog.",
   "approval.details.summary": "Email details",
   "approval.details.email": "{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thank-you} speaker_thanks {Speaker thank-you} other {Email}}",
   "approval.details.purpose": "{kind, select, host_introduction {Event links, slides, and logistics.} speaker_introduction {Event links, arrival details, and talk instructions.} host_thanks {Thanks and an invitation to host again.} speaker_thanks {Thanks, talk feedback, and a request for suggestions.} other {Planned email.}}",
@@ -45323,12 +45418,14 @@ var EN_MESSAGES2 = {
   "approval.details.feedback": "Feedback results: {title}",
   "approval.details.omitted-emails": "{count, plural, one {# more email.} other {# more emails.}}",
   "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
-  "approval.final": "### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
-  "approval.request": "### {kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] Approve sending\n- [{rejectMark}] Reject sending"
+  "approval.final": "### {kind, select, introduction {Introduction emails} host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
+  "approval.request": "### {kind, select, introduction {Introduction emails} host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] \u2705 Approve sending\n- [{rejectMark}] \u274C Reject sending"
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "approval.delivery.status": "- {kind, select, host_introduction {H\xF4te} speaker_introduction {Intervenants} host_thanks {Remerciements h\xF4te} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {\u2705 Envoi accept\xE9 ({count})} pending {\u23F3 Envoi en cours ({count})} uncertain {\u26A0\uFE0F R\xE9sultat incertain ({count}) \u2014 v\xE9rifier le service d'envoi avant toute reprise} rejected {\u274C Envoi refus\xE9 ({count})} other {En attente d'envoi}}.",
+  "approval.delivery.notice": "Accept\xE9 signifie que le service d'envoi a pris la demande en charge, pas que l'email a \xE9t\xE9 re\xE7u.",
   "approval.content.image-label": "#### Visuel {index, number}",
   "approval.social.after-approval": "apr\xE8s approbation",
   "approval.social.details": "### Publier sur {target}\n\n{destination} \xB7 {identity}\n\nPublication : {plannedAt} ; expiration : {expiresAt}.\n\nV\xE9rifiez le message ci-dessous.",
@@ -45355,6 +45452,7 @@ var FR_MESSAGES2 = {
   "follow-up.stopped": "Suivi suspendu.",
   "follow-up.waiting": "Les emails de remerciement ne sont pas encore pr\xEAts.",
   "follow-up.emails-complete": "Aucun email de remerciement en attente.",
+  "approval.parameters.instructions": "Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonn\xE9es priv\xE9es restent dans le r\xE9f\xE9rentiel.",
   "approval.details.summary": "D\xE9tail des emails",
   "approval.details.email": "{kind, select, host_introduction {Informations pour l'h\xF4te} speaker_introduction {Informations pour l'intervenant} host_thanks {Remerciement \xE0 l'h\xF4te} speaker_thanks {Remerciement \xE0 l'intervenant} other {Email}}",
   "approval.details.purpose": "{kind, select, host_introduction {Liens du meetup, slides et logistique.} speaker_introduction {Liens du meetup, acc\xE8s au lieu et consignes pour le talk.} host_thanks {Remerciements et proposition d'accueillir un prochain meetup.} speaker_thanks {Remerciements, retours sur le talk et demande de suggestions.} other {Email pr\xE9vu.}}",
@@ -45362,8 +45460,8 @@ var FR_MESSAGES2 = {
   "approval.details.feedback": "R\xE9sultats des retours : {title}",
   "approval.details.omitted-emails": "{count, plural, one {# autre email.} other {# autres emails.}}",
   "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
-  "approval.final": "### {kind, select, introduction {Emails de pr\xE9paration} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\n{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Les emails d\xE9j\xE0 envoy\xE9s ne seront pas renvoy\xE9s.} rejected {Ces emails ne seront pas envoy\xE9s.} other {}}",
-  "approval.request": "### {kind, select, introduction {Emails de pr\xE9paration} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\nCochez un choix. Les emails d\xE9j\xE0 envoy\xE9s sont ignor\xE9s. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] Approuver l'envoi\n- [{rejectMark}] Refuser l'envoi"
+  "approval.final": "### {kind, select, introduction {Emails de pr\xE9paration} host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\n{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Les emails d\xE9j\xE0 envoy\xE9s ne seront pas renvoy\xE9s.} rejected {Ces emails ne seront pas envoy\xE9s.} other {}}",
+  "approval.request": "### {kind, select, introduction {Emails de pr\xE9paration} host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\nCochez un choix. Les emails d\xE9j\xE0 envoy\xE9s sont ignor\xE9s. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] \u2705 Approuver l'envoi\n- [{rejectMark}] \u274C Refuser l'envoi"
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
@@ -45598,16 +45696,26 @@ var ApprovalCommentCodec = class {
 
 // packages/adapter/journey/github-organizer-approval/src/approval-details-presenter.ts
 var ApprovalDetailsPresenter = class {
-  constructor(messages5) {
+  constructor(parameters, messages5) {
+    this.parameters = parameters;
     this.messages = messages5;
   }
+  parameters;
   messages;
   render(details) {
     const lines = [
       "<details>",
       `<summary>${this.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
       "",
-      ...details.emails.map((email) => this.email(email))
+      ...details.parameters ? [
+        this.messages.t("approval.parameters.instructions", {}),
+        "",
+        this.parameters.render(details.parameters),
+        ""
+      ] : [],
+      ...details.emails.map(
+        (email) => this.email(details.parameters ? { ...email, links: [] } : email)
+      )
     ];
     if (details.omittedEmails > 0)
       lines.push(
@@ -45671,6 +45779,8 @@ var ApprovalDetailsPreview = class {
       }
     }
     return {
+      ...details.mailKind ? { mailKind: details.mailKind } : {},
+      ...details.parameters ? { parameters: details.parameters } : {},
       emails,
       omittedEmails: details.omittedEmails + details.emails.length - emails.length
     };
@@ -45728,6 +45838,19 @@ var ApprovalRequestSchema = class {
       this.collaborators.meetupApprovalDetailsSchema.validate(
         value.publication
       );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
+var ApprovalSchema = class {
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  count(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  }
+  text(value, maximum) {
+    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
   }
 };
 
@@ -45795,6 +45918,46 @@ var ContentApprovalSchema = class {
   }
 };
 
+// packages/adapter/journey/github-organizer-approval/src/email-approval-details-schema.ts
+var EmailApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(details) {
+    if (details === void 0) return;
+    if (!this.collaborators.approvalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !this.collaborators.approvalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(this.email.bind(this)))
+      throw new Error("Invalid approval details");
+    if (details.mailKind !== void 0 && (!["host-introduction", "speaker-introduction"].includes(
+      String(details.mailKind)
+    ) || !details.emails.every((email) => email.kind === details.mailKind)))
+      throw new Error("Invalid email approval scope");
+    if (details.parameters !== void 0)
+      this.collaborators.parameterPolicy.validate(details.parameters);
+  }
+  email(email) {
+    return this.collaborators.approvalSchema.object(email) && typeof email.kind === "string" && [
+      "host-introduction",
+      "speaker-introduction",
+      "host-thanks",
+      "speaker-thanks"
+    ].includes(email.kind) && this.collaborators.approvalSchema.text(email.recipientName, 200) && this.collaborators.approvalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(this.link.bind(this));
+  }
+  link(link) {
+    return this.collaborators.approvalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || this.collaborators.approvalSchema.text(link.title, 200)) && this.url(link.url);
+  }
+  url(value) {
+    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
+      return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
+};
+
 // packages/adapter/journey/github-organizer-approval/src/social-publication-approval-schema.ts
 var SocialPublicationApprovalSchema = class {
   constructor(values) {
@@ -45840,8 +46003,100 @@ var SocialPublicationApprovalSchema = class {
   }
 };
 
+// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
+var StoredApprovalSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value))
+      throw new Error("Invalid approval state");
+    const state = value;
+    this.collaborators.approvalRequestSchema.validate(value);
+    this.collaborators.followUpSchema.validate(state.followUp);
+    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
+      hasFollowUp: state.followUp !== void 0,
+      decided: state.decision !== void 0
+    });
+    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
+      (status) => status === state.notification
+    ))
+      throw new Error("Invalid approval state");
+    if (state.decision !== void 0) {
+      this.decision(state.decision);
+      const decision = state.decision;
+      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0 || decision.editedText !== void 0))
+        throw new Error("Invalid content decision kind");
+      this.emailDecision(value, decision);
+      if (value.kind === "content-review")
+        this.contentDecision(value, decision);
+    }
+    if (state.delivery !== void 0)
+      this.delivery(state.delivery, value.details, state.decision);
+    if (state.notificationMessage !== void 0)
+      this.notificationMessage(state.notificationMessage);
+    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
+      throw new Error("Invalid approval reaction state");
+  }
+  emailDecision(value, decision) {
+    if (decision.emailParameters !== void 0) {
+      if (decision.status !== "approved" || !value.details?.parameters)
+        throw new Error("Invalid email parameter decision");
+      this.collaborators.parameterPolicy.validateEdit(
+        value.details.parameters,
+        decision.emailParameters
+      );
+    }
+  }
+  delivery(value, details, decision) {
+    if (!details || !this.collaborators.approvalSchema.object(decision) || decision.status !== "approved" || !Array.isArray(value) || value.length > 20)
+      throw new Error("Invalid email delivery report");
+    for (const item of value)
+      if (!this.collaborators.approvalSchema.object(item) || !details.emails.some((email) => email.kind === item.kind) || !["not-sent", "accepted", "pending", "uncertain", "rejected"].includes(
+        String(item.status)
+      ) || typeof item.count !== "number" || !Number.isSafeInteger(item.count) || item.count < 0)
+        throw new Error("Invalid email delivery status");
+  }
+  decision(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
+      String(value.status)
+    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
+      throw new Error("Invalid final approval decision");
+  }
+  contentDecision(value, decision) {
+    const selected = decision.selectedImage;
+    if (decision.editedText !== void 0 && (decision.status !== "approved" || value.content.target === "cover" || typeof decision.editedText !== "string" || !decision.editedText.trim() || decision.editedText.length > 12e3))
+      throw new Error("Invalid approved text edit");
+    if (value.content.target === "cover" && decision.status === "approved") {
+      if (!value.content.draft.media.some((media) => media.id === selected))
+        throw new Error("Missing approved cover identity");
+    } else if (selected !== void 0)
+      throw new Error("Unexpected cover identity");
+  }
+  notificationMessage(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
+      throw new Error("Invalid approval notification reference");
+  }
+};
+
 // packages/adapter/journey/github-organizer-approval/src/approval-request-schema-composition.ts
 var ApprovalRequestSchemaComposition = class {
+  email(approvalSchema) {
+    return new EmailApprovalDetailsSchema({
+      approvalSchema,
+      parameterPolicy: new EmailReviewParameterPolicy()
+    });
+  }
+  stored(approvalRequestSchema, followUpSchema) {
+    return new StoredApprovalSchema({
+      approvalRequestSchema,
+      followUpSchema,
+      approvalSchema: new ApprovalSchema(),
+      parameterPolicy: new EmailReviewParameterPolicy(),
+      approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+    });
+  }
   create(approvalSchema, meetupApprovalDetailsSchema, emailApprovalDetailsSchema) {
     const values = new ContentValueSchema(new PublicAssetUrl());
     return new ApprovalRequestSchema({
@@ -45861,19 +46116,6 @@ var ApprovalRequestSchemaComposition = class {
         scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
       })
     });
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
-var ApprovalSchema = class {
-  object(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  count(value) {
-    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
-  }
-  text(value, maximum) {
-    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
   }
 };
 
@@ -46007,37 +46249,36 @@ ${this.end}`;
   }
 };
 
-// packages/adapter/journey/github-organizer-approval/src/email-approval-details-schema.ts
-var EmailApprovalDetailsSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
+// packages/adapter/journey/github-organizer-approval/src/email-approval-decision-parser.ts
+var EmailApprovalDecisionParser = class {
+  constructor(parameters) {
+    this.parameters = parameters;
   }
-  collaborators;
-  validate(details) {
-    if (details === void 0) return;
-    if (!this.collaborators.approvalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !this.collaborators.approvalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(this.email.bind(this)))
-      throw new Error("Invalid approval details");
-  }
-  email(email) {
-    return this.collaborators.approvalSchema.object(email) && typeof email.kind === "string" && [
-      "host-introduction",
-      "speaker-introduction",
-      "host-thanks",
-      "speaker-thanks"
-    ].includes(email.kind) && this.collaborators.approvalSchema.text(email.recipientName, 200) && this.collaborators.approvalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(this.link.bind(this));
-  }
-  link(link) {
-    return this.collaborators.approvalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || this.collaborators.approvalSchema.text(link.title, 200)) && this.url(link.url);
-  }
-  url(value) {
-    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
-      return false;
+  parameters;
+  parse(record, body, presenters) {
+    const original = record.details?.parameters;
+    if (!original) return { status: "pending" };
     try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password;
+      const edited = this.parameters.read(body, original);
+      const restored = this.parameters.restore(
+        body.replace(/- \[X\]/g, "- [x]"),
+        original
+      );
+      for (const status of ["pending", "approved", "rejected"]) {
+        if (presenters.some(
+          (presenter) => presenter.issue(record, { status }) === restored
+        ))
+          return {
+            status,
+            ...status === "approved" || status === "pending" && Object.entries(original).some(
+              ([key, value]) => edited[key] !== value
+            ) ? { emailParameters: edited } : {}
+          };
+      }
     } catch {
-      return false;
+      return { status: "pending", invalidEmailParameters: true };
     }
+    return { status: "pending", invalidEmailParameters: true };
   }
 };
 
@@ -46058,14 +46299,23 @@ var EmailApprovalPresenter = class {
     });
     if (phase === "inactive")
       return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
-    const details = record.details ? [this.collaborators.approvalDetailsPresenter.render(record.details)] : [];
+    const details = record.details ? [
+      this.collaborators.approvalDetailsPresenter.render({
+        ...record.details,
+        ...record.decision?.emailParameters ? { parameters: record.decision.emailParameters } : {}
+      })
+    ] : [];
+    if (record.delivery)
+      details.unshift(
+        this.collaborators.deliveryPresenter.render(record.delivery)
+      );
     if (record.followUp?.attentionDetails)
       details.push(record.followUp.attentionDetails);
     if (record.decision)
       return [
         ...heading,
         this.messages.t("approval.final", {
-          kind: record.kind.replace("email-", ""),
+          kind: record.details?.mailKind?.replaceAll("-", "_") ?? record.kind.replace("email-", ""),
           date: record.eventDate,
           count: record.recipientCount,
           status: record.decision.status,
@@ -46077,7 +46327,7 @@ var EmailApprovalPresenter = class {
     return [
       ...heading,
       this.messages.t("approval.request", {
-        kind: record.kind.replace("email-", ""),
+        kind: record.details?.mailKind?.replaceAll("-", "_") ?? record.kind.replace("email-", ""),
         date: record.eventDate,
         count: record.recipientCount,
         approveMark: decision.status === "approved" ? "x" : " ",
@@ -46085,6 +46335,68 @@ var EmailApprovalPresenter = class {
       }),
       ...details
     ].join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-delivery-presenter.ts
+var EmailDeliveryPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(delivery) {
+    return [
+      ...delivery.map(
+        (item) => this.messages.t("approval.delivery.status", {
+          kind: item.kind.replaceAll("-", "_"),
+          status: item.status.replaceAll("-", "_"),
+          count: item.count
+        })
+      ),
+      this.messages.t("approval.delivery.notice", {})
+    ].join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-parameters-preview.ts
+var START = "<!-- meetup-email:parameters -->";
+var END = "<!-- /meetup-email:parameters -->";
+var EmailParametersPreview = class {
+  constructor(policy) {
+    this.policy = policy;
+  }
+  policy;
+  render(parameters) {
+    return [
+      START,
+      ...Object.entries(parameters).map(
+        ([key, value]) => `- \`${key}\` : \`${value}\``
+      ),
+      END
+    ].join("\n");
+  }
+  read(body, original) {
+    const section = this.section(body);
+    const values = {};
+    for (const line of section.split("\n").slice(1, -1)) {
+      const match = /^- `([A-Za-z]+)` : `([^`\r\n]*)`$/.exec(line);
+      if (!match?.[1] || match[2] === void 0 || Object.hasOwn(values, match[1]))
+        throw new Error("Invalid email parameter list");
+      values[match[1]] = match[2];
+    }
+    this.policy.validateEdit(original, values);
+    return values;
+  }
+  restore(body, parameters) {
+    return body.replace(this.section(body), this.render(parameters));
+  }
+  section(body) {
+    if (body.split(START).length !== 2 || body.split(END).length !== 2)
+      throw new Error("Missing or duplicate email parameter list");
+    const start = body.indexOf(START);
+    const end = body.indexOf(END);
+    if (end < start) throw new Error("Invalid email parameter list");
+    return body.slice(start, end + END.length);
   }
 };
 
@@ -46107,6 +46419,8 @@ var FinalizeApprovalDecision = class {
   async execute(state, validateText) {
     const { record, comment } = state;
     const decision = await this.decisions.execute(record, comment);
+    if (this.pendingEmailEdit(record, decision))
+      return { ...decision, notificationFailed: false };
     const textValid = decision.editedText === void 0 || validateText?.(decision.editedText);
     if (!record.decision && decision.editedText !== void 0 && (decision.status === "pending" || !textValid))
       return {
@@ -46115,6 +46429,16 @@ var FinalizeApprovalDecision = class {
         editedText: decision.editedText,
         invalidText: textValid === false
       };
+    this.recordDecision(record, decision);
+    const persisted = await this.repository.save(record, state);
+    await this.refreshVisibility(persisted);
+    return {
+      status: decision.status,
+      ...record.kind === "content-review" || record.details?.parameters ? decision : {},
+      notificationFailed: await this.notifications.react(record, comment.id)
+    };
+  }
+  recordDecision(record, decision) {
     if (decision.status !== "pending" && !record.decision) {
       if (!decision.actor || !decision.decidedAt)
         throw new Error("Missing verified approval identity");
@@ -46122,23 +46446,22 @@ var FinalizeApprovalDecision = class {
         status: decision.status,
         actor: decision.actor,
         decidedAt: decision.decidedAt,
+        ...decision.emailParameters ? { emailParameters: decision.emailParameters } : {},
         ...decision.editedText === void 0 ? {} : { editedText: decision.editedText },
         ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
       };
     }
-    const persisted = await this.repository.save(record, state);
-    await this.refreshVisibility(persisted);
-    return {
-      status: decision.status,
-      ...record.kind === "content-review" ? decision : {},
-      notificationFailed: await this.notifications.react(record, comment.id)
-    };
+  }
+  pendingEmailEdit(record, decision) {
+    return !record.decision && decision.status === "pending" && Boolean(decision.emailParameters || decision.invalidEmailParameters);
   }
   async refreshVisibility(state) {
     const { record, comment } = state;
     const attention = record.followUp?.attention;
     const resolved = this.collaborators.approvalRequestPolicy.resolved({
       decided: record.decision !== void 0,
+      deliveryRequired: record.decision?.status === "approved" && Boolean(record.details?.parameters || record.delivery),
+      delivery: record.delivery,
       recipientCount: record.recipientCount,
       followUp: record.followUp,
       attentionPending: attention !== void 0 && !this.collaborators.attentionPolicy.resolved(
@@ -46513,9 +46836,7 @@ var GithubOrganizerApproval = class {
     input = this.reviewedRequest(input);
     this.collaborators.approvalRequestSchema.validate(input);
     this.collaborators.approvalRequestPolicy.validate(input);
-    const existing = (await this.repository.states()).find(
-      ({ record: record2 }) => this.collaborators.approvalRequestPolicy.scope(record2) === this.collaborators.approvalRequestPolicy.scope(input)
-    );
+    const existing = await this.existingRequest(input);
     if (existing && this.collaborators.approvalRequestPolicy.matches(
       existing.record,
       input,
@@ -46528,7 +46849,7 @@ var GithubOrganizerApproval = class {
         throw new Error(
           "The recorded organizer no longer has approval permission"
         );
-      if (result.status !== "pending" || result.editedText !== void 0)
+      if (result.status !== "pending" || result.editedText !== void 0 || result.emailParameters || result.invalidEmailParameters)
         return result;
       return {
         status: "pending",
@@ -46554,6 +46875,18 @@ var GithubOrganizerApproval = class {
         state.comment.id
       )
     };
+  }
+  async existingRequest(input) {
+    const states = await this.repository.states();
+    return states.find(
+      ({ record }) => this.collaborators.approvalRequestPolicy.scope(record) === this.collaborators.approvalRequestPolicy.scope(input)
+    ) ?? states.find(
+      ({ record }) => this.collaborators.approvalRequestPolicy.canReplaceCombinedEmail(
+        record,
+        input,
+        record.decision !== void 0
+      )
+    );
   }
   async synchronize() {
     let notificationFailed = false;
@@ -46756,61 +47089,6 @@ var SocialPublicationApprovalPresenter = class {
   }
 };
 
-// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
-var StoredApprovalSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value))
-      throw new Error("Invalid approval state");
-    const state = value;
-    this.collaborators.approvalRequestSchema.validate(value);
-    this.collaborators.followUpSchema.validate(state.followUp);
-    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
-      hasFollowUp: state.followUp !== void 0,
-      decided: state.decision !== void 0
-    });
-    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
-      (status) => status === state.notification
-    ))
-      throw new Error("Invalid approval state");
-    if (state.decision !== void 0) {
-      this.decision(state.decision);
-      const decision = state.decision;
-      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0 || decision.editedText !== void 0))
-        throw new Error("Invalid content decision kind");
-      if (value.kind === "content-review")
-        this.contentDecision(value, decision);
-    }
-    if (state.notificationMessage !== void 0)
-      this.notificationMessage(state.notificationMessage);
-    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
-      throw new Error("Invalid approval reaction state");
-  }
-  decision(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
-      String(value.status)
-    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
-      throw new Error("Invalid final approval decision");
-  }
-  contentDecision(value, decision) {
-    const selected = decision.selectedImage;
-    if (decision.editedText !== void 0 && (decision.status !== "approved" || value.content.target === "cover" || typeof decision.editedText !== "string" || !decision.editedText.trim() || decision.editedText.length > 12e3))
-      throw new Error("Invalid approved text edit");
-    if (value.content.target === "cover" && decision.status === "approved") {
-      if (!value.content.draft.media.some((media) => media.id === selected))
-        throw new Error("Missing approved cover identity");
-    } else if (selected !== void 0)
-      throw new Error("Unexpected cover identity");
-  }
-  notificationMessage(value) {
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
-      throw new Error("Invalid approval notification reference");
-  }
-};
-
 // packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
 var TrustedApprovalState = class {
   constructor(collaborators, client, authorLogin) {
@@ -46854,12 +47132,18 @@ var GithubOrganizerApprovalComposition = class {
   approvalDecisionParser(...args) {
     return new ApprovalDecisionParser(
       new ContentTextPreview(),
+      new EmailApprovalDecisionParser(
+        new EmailParametersPreview(new EmailReviewParameterPolicy())
+      ),
       new JourneyPolicyComposition().approvalRequestPolicy(),
       ...args
     );
   }
   approvalDetailsPresenter(...args) {
-    return new ApprovalDetailsPresenter(...args);
+    return new ApprovalDetailsPresenter(
+      new EmailParametersPreview(new EmailReviewParameterPolicy()),
+      ...args
+    );
   }
   approvalDetailsPreview() {
     return new ApprovalDetailsPreview();
@@ -46908,20 +47192,16 @@ var GithubOrganizerApprovalComposition = class {
     return new ApprovalRequestSchemaComposition().create(
       this.approvalSchema(),
       this.meetupApprovalDetailsSchema(),
-      this.emailApprovalDetailsSchema()
+      new ApprovalRequestSchemaComposition().email(this.approvalSchema())
     );
   }
   approvalSchema() {
     return new ApprovalSchema();
   }
-  emailApprovalDetailsSchema() {
-    return new EmailApprovalDetailsSchema({
-      approvalSchema: this.approvalSchema()
-    });
-  }
   emailApprovalPresenter(...args) {
     return new EmailApprovalPresenter(
       {
+        deliveryPresenter: new EmailDeliveryPresenter(args[0]),
         followUpPresenter: this.followUpPresenter(args[0]),
         approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
         approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
@@ -46997,18 +47277,76 @@ var GithubOrganizerApprovalComposition = class {
     return new ResolveApprovalDecision(...args);
   }
   storedApprovalSchema() {
-    return new StoredApprovalSchema({
-      approvalSchema: this.approvalSchema(),
-      approvalRequestSchema: this.approvalRequestSchema(),
-      followUpSchema: this.followUpSchema(),
-      approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
-    });
+    return new ApprovalRequestSchemaComposition().stored(
+      this.approvalRequestSchema(),
+      this.followUpSchema()
+    );
   }
   trustedApprovalState(...args) {
     return new TrustedApprovalState(
       { approvalCommentCodec: this.approvalCommentCodec() },
       ...args
     );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-email-delivery-report.ts
+var GithubEmailDeliveryReport = class {
+  constructor(approvals, source, finalizer, visibility) {
+    this.approvals = approvals;
+    this.source = source;
+    this.finalizer = finalizer;
+    this.visibility = visibility;
+  }
+  approvals;
+  source;
+  finalizer;
+  visibility;
+  async synchronize() {
+    const snapshot = await this.source.readEmailReport();
+    const covered = /* @__PURE__ */ new Set();
+    for (const state of await this.approvals.states()) {
+      const record = state.record;
+      if (!record.details || record.decision?.status !== "approved") continue;
+      const kinds = new Set(record.details.emails.map((email) => email.kind));
+      const delivery = [...kinds].flatMap(
+        (kind) => this.summary(
+          kind,
+          snapshot.entries,
+          record.details?.mailKind ? record.recipientCount : record.details?.emails.filter((email) => email.kind === kind).length ?? 0
+        )
+      );
+      for (const kind of kinds) covered.add(kind);
+      const persisted = await this.approvals.save(
+        { ...record, delivery },
+        state
+      );
+      await this.finalizer.refreshVisibility(persisted);
+    }
+    if (snapshot.commentId && snapshot.body)
+      await this.visibility.synchronize(
+        snapshot.commentId,
+        snapshot.body,
+        snapshot.entries.length > 0 && !snapshot.hasOtherDeliveries && snapshot.entries.every(({ kind }) => covered.has(kind))
+      );
+  }
+  summary(kind, entries, expected) {
+    const matching = entries.filter((entry) => entry.kind === kind);
+    if (!matching.length)
+      return [{ kind, status: "not-sent", count: expected }];
+    const counts = /* @__PURE__ */ new Map();
+    for (const entry of matching)
+      counts.set(entry.status, (counts.get(entry.status) ?? 0) + 1);
+    const summary2 = [...counts].map(
+      ([status, count]) => ({ kind, status, count })
+    );
+    if (matching.length < expected)
+      summary2.push({
+        kind,
+        status: "not-sent",
+        count: expected - matching.length
+      });
+    return summary2;
   }
 };
 
@@ -48141,7 +48479,7 @@ var EN_MESSAGES3 = {
   "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
   "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
   "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
-  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\nApprove or reject: {url}",
+  "request.introduction": "{kind, select, host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} other {Introduction emails}} \xB7 {date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\nApprove or reject: {url}",
   "request.publication": "Meetup \xB7 {date}\nReview and approve publication: {url}"
 };
 
@@ -48150,7 +48488,7 @@ var FR_MESSAGES3 = {
   "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
   "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
   "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
-  "request.introduction": "Emails de pr\xE9paration \xB7 {date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
+  "request.introduction": "{kind, select, host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} other {Emails de pr\xE9paration}} \xB7 {date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
   "request.publication": "Meetup \xB7 {date}\nV\xE9rifiez et validez la publication : {url}"
 };
 
@@ -48528,6 +48866,7 @@ var SlackEmailApprovalPresenter = class {
   render(request2) {
     return this.messages.t("request.introduction", {
       date: request2.eventDate,
+      kind: request2.mailKind?.replaceAll("-", "_") ?? "introduction",
       url: request2.approvalUrl,
       count: request2.recipientCount
     });
@@ -51233,6 +51572,93 @@ var AUTHENTICATION_GUIDANCE = [
   ]
 ];
 
+// packages/adapter/event/github-event-comment-repository/src/email-diagnostic-guidance.ts
+var EMAIL_GUIDANCE = [
+  [
+    "communication.email-parameters-invalid",
+    [
+      "Communication",
+      "comment.guidance.communication.email-parameters-invalid"
+    ]
+  ],
+  [
+    "communication.approval-pending",
+    ["Communication", "comment.guidance.communication.approval"]
+  ],
+  [
+    "communication.approval-rejected",
+    ["Communication", "comment.guidance.communication.rejected"]
+  ],
+  [
+    "communication.approval-unavailable",
+    ["Communication", "comment.guidance.communication.approval-unavailable"]
+  ],
+  [
+    "communication.approval-notification-failed",
+    ["Communication", "comment.guidance.communication.approval-notification"]
+  ],
+  [
+    "communication.gateway-delivery-uncertain",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-threw-ambiguous-error",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.ledger-status-write-failed",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-delivery-rejected",
+    ["Communication", "comment.guidance.communication.delivery-rejected"]
+  ],
+  [
+    "communication.gateway-delivery-deferred",
+    ["Communication", "comment.guidance.communication.delivery-deferred"]
+  ],
+  [
+    "communication.invalid-clock",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-identifier",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-time-zone",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.ledger-read-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.ledger-reservation-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.missing-mail-destination",
+    ["Communication", "comment.guidance.communication.destination"]
+  ],
+  [
+    "communication.checklist-update-failed",
+    ["Communication", "comment.guidance.communication.checklist"]
+  ],
+  [
+    "communication.event-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent"]
+  ],
+  [
+    "communication.event-references-unresolved",
+    ["Agenda", "comment.guidance.communication.references"]
+  ],
+  [
+    "communication.referential-catalog-invalid",
+    ["Referentials", "comment.guidance.communication.catalog"]
+  ]
+];
+
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   ...AUTHENTICATION_GUIDANCE,
@@ -51385,82 +51811,7 @@ var STAGE_GUIDANCE = [
     "communication.slides-unavailable",
     ["Event materials", "comment.guidance.assets.slides"]
   ],
-  [
-    "communication.approval-pending",
-    ["Communication", "comment.guidance.communication.approval"]
-  ],
-  [
-    "communication.approval-rejected",
-    ["Communication", "comment.guidance.communication.rejected"]
-  ],
-  [
-    "communication.approval-unavailable",
-    ["Communication", "comment.guidance.communication.approval-unavailable"]
-  ],
-  [
-    "communication.approval-notification-failed",
-    ["Communication", "comment.guidance.communication.approval-notification"]
-  ],
-  [
-    "communication.gateway-delivery-uncertain",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-threw-ambiguous-error",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.ledger-status-write-failed",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-delivery-rejected",
-    ["Communication", "comment.guidance.communication.delivery-rejected"]
-  ],
-  [
-    "communication.gateway-delivery-deferred",
-    ["Communication", "comment.guidance.communication.delivery-deferred"]
-  ],
-  [
-    "communication.invalid-clock",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-identifier",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-time-zone",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.ledger-read-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.ledger-reservation-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.missing-mail-destination",
-    ["Communication", "comment.guidance.communication.destination"]
-  ],
-  [
-    "communication.checklist-update-failed",
-    ["Communication", "comment.guidance.communication.checklist"]
-  ],
-  [
-    "communication.event-concurrently-modified",
-    ["Communication", "comment.guidance.communication.concurrent"]
-  ],
-  [
-    "communication.event-references-unresolved",
-    ["Agenda", "comment.guidance.communication.references"]
-  ],
-  [
-    "communication.referential-catalog-invalid",
-    ["Referentials", "comment.guidance.communication.catalog"]
-  ],
+  ...EMAIL_GUIDANCE,
   [
     "publication.feedback.agenda",
     ["Agenda", "comment.guidance.feedback.agenda"]
@@ -52379,6 +52730,7 @@ var FR_MESSAGES4 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
   "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
   "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
   "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
@@ -52447,6 +52799,7 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
   "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
   "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
   "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
@@ -69581,7 +69934,7 @@ var EventComposition = class _EventComposition {
 
 // packages/runtime/github-actions/src/organizer-approval-composition.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
-var OrganizerApprovalComposition = class {
+var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
   static visibility(input) {
     return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
       input.client,
@@ -69593,8 +69946,7 @@ var OrganizerApprovalComposition = class {
     const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
       randomUUID2
     );
-    const notifications = new GithubOrganizerApprovalComposition().approvalNotifications(
-      new ApprovalNotificationPolicy(),
+    const notifications = _OrganizerApprovalComposition.notifications(
       client,
       presenter,
       notificationPort,
@@ -69622,6 +69974,11 @@ var OrganizerApprovalComposition = class {
       new GithubOrganizerAttentionComposition().attentionRecord()
     );
     return {
+      emailDeliveryReport: _OrganizerApprovalComposition.deliveryReport(
+        repository,
+        finalizer,
+        visibility
+      ),
       approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
         repository,
         records,
@@ -69639,6 +69996,18 @@ var OrganizerApprovalComposition = class {
         finalizer
       )
     };
+  }
+  static notifications(client, presenter, port, channel) {
+    return new GithubOrganizerApprovalComposition().approvalNotifications(
+      new ApprovalNotificationPolicy(),
+      client,
+      presenter,
+      port,
+      channel
+    );
+  }
+  static deliveryReport(repository, finalizer, visibility) {
+    return (source) => new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
   }
 };
 

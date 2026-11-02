@@ -13,7 +13,11 @@ export type ApprovalNotificationResult = GatewayDispatchResult & {
 export type ApprovalNotificationFacts = {
 	readonly eventDate: string;
 } & (
-	| { readonly kind: "email-introduction"; readonly recipientCount: number }
+	| {
+			readonly kind: "email-introduction";
+			readonly recipientCount: number;
+			readonly mailKind?: "host-introduction" | "speaker-introduction";
+	  }
 	| { readonly kind: "meetup-publication" }
 	| { readonly kind: "community-publication" }
 	| { readonly kind: "content-review"; readonly target: string }

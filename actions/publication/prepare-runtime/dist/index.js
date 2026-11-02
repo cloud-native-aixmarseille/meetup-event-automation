@@ -27523,10 +27523,17 @@ var ApprovalRequestPolicy = class {
       return `content:${request.content.key}`;
     if (request.kind === "social-publication")
       return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
+    if (request.kind === "email-introduction" && request.details?.mailKind)
+      return `email:${request.details.mailKind}`;
     return request.kind;
+  }
+  canReplaceCombinedEmail(previous, input, decided) {
+    return !decided && input.kind === "email-introduction" && Boolean(input.details?.mailKind) && previous.kind === "email-introduction" && !previous.details?.mailKind;
   }
   resolved(facts) {
     if (facts.attentionPending) return false;
+    if (facts.deliveryRequired && (!facts.delivery || facts.delivery.some((item) => item.status !== "accepted") || facts.delivery.reduce((count, item) => count + item.count, 0) < (facts.recipientCount ?? 0)))
+      return false;
     if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
       return false;
     return this.reviewPhase({
@@ -27564,6 +27571,8 @@ var ApprovalRequestPolicy = class {
       throw new Error("Invalid approval request");
   }
   validateEmailCount(request) {
+    if (request.details?.mailKind && request.kind !== "email-introduction")
+      throw new Error("Invalid preparation email scope");
     if (request.details && request.details.emails.length + request.details.omittedEmails !== request.recipientCount)
       throw new Error("Invalid approval details");
   }
@@ -27580,7 +27589,7 @@ var ApprovalRequestPolicy = class {
   }
   sameDetails(left, right) {
     if (!left || !right) return left === right;
-    return left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
+    return left.mailKind === right.mailKind && this.fingerprints.digest(left.parameters ?? {}) === this.fingerprints.digest(right.parameters ?? {}) && left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
       const other = right.emails[index];
       return other !== void 0 && email.kind === other.kind && email.recipientName === other.recipientName && email.omittedLinks === other.omittedLinks && email.links.length === other.links.length && email.links.every((link, linkIndex) => {
         const otherLink = other.links[linkIndex];
@@ -29785,6 +29794,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.email-parameters-invalid": "Reviewed email parameters require valid public dates and HTTPS URLs.",
   "communication.content-review": "Event content needs current organizer approval.",
   "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
   "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
@@ -32443,6 +32453,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "referential.speaker.last-name.invalid",
   "referential.speaker.mapping.invalid",
   "referential.speaker.phone.invalid",
+  "communication.email-parameters-invalid",
   "communication.approval-pending",
   "communication.approval-rejected",
   "communication.event-concurrently-modified",
@@ -32819,6 +32830,22 @@ var CommunicationDispatchPolicy = class {
 
 // packages/application/journey/src/use-cases/communication-journey-results.ts
 var CommunicationJourneyResults = class {
+  combine(mode, results) {
+    const combined = this.emptyCommunicationResult(mode, []);
+    const counts = { ...combined.counts };
+    for (const result of results)
+      for (const key of Object.keys(counts))
+        counts[key] += result.counts[key];
+    return {
+      mode,
+      counts,
+      intentIds: results.flatMap((result) => result.intentIds),
+      completedMailKinds: [
+        ...new Set(results.flatMap((result) => result.completedMailKinds))
+      ],
+      diagnostics: results.flatMap((result) => result.diagnostics)
+    };
+  }
   withRuntimeDiagnostics(result, runtimeDiagnostics) {
     return {
       ...result,

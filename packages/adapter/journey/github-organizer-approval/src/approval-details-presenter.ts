@@ -6,14 +6,27 @@ import type {
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
 export class ApprovalDetailsPresenter {
-	constructor(private readonly messages: ApprovalMessages) {}
+	constructor(
+		private readonly parameters: import("./email-parameters-preview.js").EmailParametersPreview,
+		private readonly messages: ApprovalMessages,
+	) {}
 
 	render(details: OrganizerApprovalDetails): string {
 		const lines = [
 			"<details>",
 			`<summary>${this.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
 			"",
-			...details.emails.map((email) => this.email(email)),
+			...(details.parameters
+				? [
+						this.messages.t("approval.parameters.instructions", {}),
+						"",
+						this.parameters.render(details.parameters),
+						"",
+					]
+				: []),
+			...details.emails.map((email) =>
+				this.email(details.parameters ? { ...email, links: [] } : email),
+			),
 		];
 		if (details.omittedEmails > 0)
 			lines.push(
@@ -66,6 +79,4 @@ export class ApprovalDetailsPresenter {
 			.replaceAll("@", "&#64;");
 	}
 }
-export type ApprovalDetailsPresenterArguments = ConstructorParameters<
-	typeof ApprovalDetailsPresenter
->;
+export type ApprovalDetailsPresenterArguments = [messages: ApprovalMessages];
