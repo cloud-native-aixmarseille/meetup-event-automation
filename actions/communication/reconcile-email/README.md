@@ -30,7 +30,7 @@ Reconcile due email batches, verified organizer approval, delivery records and c
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile-email@ef7bf4c8a13928a245b833b6291937f78a761db2 # 9.0.0
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile-email@9f7e98adced79b363adcf16beb4778f23e80f0bd # 9.0.1
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.

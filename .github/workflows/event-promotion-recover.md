@@ -43,7 +43,7 @@ on:
 permissions: {}
 jobs:
   event-promotion-recover:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-recover.yml@ef7bf4c8a13928a245b833b6291937f78a761db2 # 9.0.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-recover.yml@9f7e98adced79b363adcf16beb4778f23e80f0bd # 9.0.1
     permissions:
       contents: read
     secrets:
