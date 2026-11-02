@@ -23,6 +23,62 @@ afterEach(async () => {
 });
 
 describe("Meetup browser event editor", () => {
+	it.each(["draft", "published"] as const)(
+		"preserves approved multiline text in a %s rich editor",
+		async (status) => {
+			// Arrange
+			const state = await editorFixture(context, desiredEvent, status);
+			const event = {
+				...desiredEvent,
+				description:
+					"Cloud evening.\nRefreshments provided.\n\n🧙 Infrastructure step by step\nby Example Speaker.\n\nJoin us!",
+			};
+			const editor = state.composition.meetupEventEditor(
+				await context.newPage(),
+				groupUrl,
+			);
+			// Act
+			const saved = await editor.save(event, eventUrl, vi.fn(), vi.fn());
+			const repeated = await editor.save(event, eventUrl, vi.fn(), vi.fn());
+			// Assert
+			expect(saved).toEqual({ url: eventUrl, status });
+			expect(repeated).toEqual(saved);
+			expect(state.event?.description.trim().split(/\n+/)).toEqual(
+				event.description.split(/\n+/),
+			);
+			expect(state.writes).toBe(1);
+			expect(state.publishClicks).toBe(0);
+		},
+	);
+
+	it("rejects discarded description input before any event write", async () => {
+		// Arrange
+		const state = await editorFixture(context, desiredEvent);
+		await context.addInitScript(() => {
+			document.addEventListener("input", (event) => {
+				const element = event.target;
+				if (element instanceof HTMLElement && element.isContentEditable)
+					element.textContent = "";
+			});
+		});
+		const editor = state.composition.meetupEventEditor(
+			await context.newPage(),
+			groupUrl,
+		);
+		const before = vi.fn();
+		// Act
+		const result = editor.save(
+			{ ...desiredEvent, description: "Updated text" },
+			eventUrl,
+			before,
+			vi.fn(),
+		);
+		// Assert
+		await expect(result).rejects.toMatchObject({ kind: "editor" });
+		expect(before).not.toHaveBeenCalled();
+		expect(state.writes).toBe(0);
+	});
+
 	it("adds every leader and relevant topics to an otherwise synchronized draft", async () => {
 		// Arrange
 		const state = await editorFixture(context, desiredEvent);
