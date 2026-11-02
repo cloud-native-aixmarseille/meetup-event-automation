@@ -1,5 +1,14 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"comment.guidance.website.access":
+		"Le meetup est publié, mais la mise à jour du site a été refusée. Demandez à un mainteneur de vérifier le dépôt et le fichier configurés, l'installation de la GitHub App et son droit Contents en écriture.",
+	"comment.guidance.website.conflict":
+		"Le meetup est publié, mais plusieurs lignes ou des modifications simultanées empêchent la mise à jour du calendrier. Demandez à un mainteneur de vérifier le calendrier, puis relancez la synchronisation.",
+	"comment.guidance.website.format":
+		"Le meetup est publié, mais le format du calendrier n'est pas reconnu. Demandez à un mainteneur de vérifier les titres des années et le tableau à trois colonnes : mois, date et lieu.",
+	"comment.guidance.website.unavailable":
+		"Le meetup est publié, mais GitHub n'a pas confirmé la mise à jour du site. Relancez la synchronisation ; elle réutilisera la même ligne du calendrier.",
+
 	"comment.guidance.content.description-review":
 		"Modifiez et validez la description dans son commentaire.",
 	"comment.guidance.content.title-review":

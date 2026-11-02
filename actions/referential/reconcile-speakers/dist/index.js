@@ -35288,14 +35288,16 @@ var ConferenceHallInput = class {
 import { readFile as readFile2 } from "node:fs/promises";
 import { join as join2 } from "node:path";
 var EventPublicationConfiguration = class {
-  constructor(input, schedule, ocgroups) {
+  constructor(input, schedule, ocgroups, website) {
     this.input = input;
     this.schedule = schedule;
     this.ocgroups = ocgroups;
+    this.website = website;
   }
   input;
   schedule;
   ocgroups;
+  website;
   async load(root) {
     const text = await readFile2(
       join2(root, ".github/event-publication.json"),
@@ -35314,7 +35316,13 @@ var EventPublicationConfiguration = class {
     );
     if (new Set(destinations.map((destination) => destination.provider)).size !== destinations.length)
       throw new Error("Duplicate publication provider");
-    return { schedule, destinations };
+    if (value.website !== void 0 && !destinations.some((destination) => destination.provider === "meetup"))
+      throw new Error("Website synchronization requires a Meetup destination");
+    return {
+      schedule,
+      destinations,
+      ...value.website === void 0 ? {} : { website: this.website.parse(value.website) }
+    };
   }
   destination(value, schedule, venues) {
     if (!this.input.isObject(value))
@@ -35498,6 +35506,17 @@ var EventScheduleConfiguration = class {
   }
 };
 
+// packages/runtime/github-actions/src/event-website-configuration.ts
+var EventWebsiteConfiguration = class {
+  parse(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !["repository", "path"].includes(key)) || !("repository" in value) || typeof value.repository !== "string" || !/^[a-zA-Z0-9_.-]+$/.test(value.repository) || [".", ".."].includes(value.repository) || !("path" in value) || typeof value.path !== "string" || !value.path.endsWith(".md") || value.path.split("/").some(
+      (part) => !/^[a-zA-Z0-9_.-]+$/.test(part) || [".", ".."].includes(part)
+    ))
+      throw new Error("Invalid website repository or Markdown path");
+    return { repository: value.repository, path: value.path };
+  }
+};
+
 // packages/runtime/github-actions/src/ocgroups-publication-settings.ts
 var OcgroupsPublicationSettings = class {
   constructor(input, schedule, policy) {
@@ -35649,7 +35668,12 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
       [RuntimeInput, EventScheduleConfiguration, ScheduledEventPolicy]
     );
     container.bind(EventPublicationConfiguration).toResolvedValue(
-      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(
+        runtime,
+        schedule,
+        ocgroups,
+        new EventWebsiteConfiguration()
+      ),
       [RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings]
     );
   }

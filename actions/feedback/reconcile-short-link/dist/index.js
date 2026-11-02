@@ -42728,14 +42728,16 @@ var ConferenceHallInput = class {
 import { readFile as readFile2 } from "node:fs/promises";
 import { join as join2 } from "node:path";
 var EventPublicationConfiguration = class {
-  constructor(input, schedule, ocgroups) {
+  constructor(input, schedule, ocgroups, website) {
     this.input = input;
     this.schedule = schedule;
     this.ocgroups = ocgroups;
+    this.website = website;
   }
   input;
   schedule;
   ocgroups;
+  website;
   async load(root) {
     const text = await readFile2(
       join2(root, ".github/event-publication.json"),
@@ -42754,7 +42756,13 @@ var EventPublicationConfiguration = class {
     );
     if (new Set(destinations.map((destination) => destination.provider)).size !== destinations.length)
       throw new Error("Duplicate publication provider");
-    return { schedule, destinations };
+    if (value.website !== void 0 && !destinations.some((destination) => destination.provider === "meetup"))
+      throw new Error("Website synchronization requires a Meetup destination");
+    return {
+      schedule,
+      destinations,
+      ...value.website === void 0 ? {} : { website: this.website.parse(value.website) }
+    };
   }
   destination(value, schedule, venues) {
     if (!this.input.isObject(value))
@@ -42938,6 +42946,17 @@ var EventScheduleConfiguration = class {
   }
 };
 
+// packages/runtime/github-actions/src/event-website-configuration.ts
+var EventWebsiteConfiguration = class {
+  parse(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !["repository", "path"].includes(key)) || !("repository" in value) || typeof value.repository !== "string" || !/^[a-zA-Z0-9_.-]+$/.test(value.repository) || [".", ".."].includes(value.repository) || !("path" in value) || typeof value.path !== "string" || !value.path.endsWith(".md") || value.path.split("/").some(
+      (part) => !/^[a-zA-Z0-9_.-]+$/.test(part) || [".", ".."].includes(part)
+    ))
+      throw new Error("Invalid website repository or Markdown path");
+    return { repository: value.repository, path: value.path };
+  }
+};
+
 // packages/runtime/github-actions/src/ocgroups-publication-settings.ts
 var OcgroupsPublicationSettings = class {
   constructor(input, schedule, policy) {
@@ -43089,7 +43108,12 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
       [RuntimeInput, EventScheduleConfiguration, ScheduledEventPolicy]
     );
     container.bind(EventPublicationConfiguration).toResolvedValue(
-      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(runtime, schedule, ocgroups),
+      (runtime, schedule, ocgroups) => new EventPublicationConfiguration(
+        runtime,
+        schedule,
+        ocgroups,
+        new EventWebsiteConfiguration()
+      ),
       [RuntimeInput, EventScheduleConfiguration, OcgroupsPublicationSettings]
     );
   }
@@ -50226,6 +50250,22 @@ var EMAIL_GUIDANCE = [
 var STAGE_GUIDANCE = [
   ...AUTHENTICATION_GUIDANCE,
   [
+    "publication.website.access",
+    ["Website", "comment.guidance.website.access"]
+  ],
+  [
+    "publication.website.conflict",
+    ["Website", "comment.guidance.website.conflict"]
+  ],
+  [
+    "publication.website.format",
+    ["Website", "comment.guidance.website.format"]
+  ],
+  [
+    "publication.website.unavailable",
+    ["Website", "comment.guidance.website.unavailable"]
+  ],
+  [
     "publication.content.invalid",
     ["Event materials", "comment.guidance.content.invalid"]
   ],
@@ -51125,6 +51165,10 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
+  "comment.guidance.website.access": "Meetup is published, but the website update was denied. Ask a maintainer to check the configured repository and file, the GitHub App installation, and its Contents write permission.",
+  "comment.guidance.website.conflict": "Meetup is published, but the calendar contains conflicting rows or concurrent edits. Ask a maintainer to check the calendar, then rerun synchronization.",
+  "comment.guidance.website.format": "Meetup is published, but the calendar format is unsupported. Ask a maintainer to check the year headings and three-column month, date, and venue table.",
+  "comment.guidance.website.unavailable": "Meetup is published, but GitHub could not confirm the website update. Rerun synchronization; it will reuse the same calendar entry.",
   "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
   "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
   "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
@@ -51209,6 +51253,10 @@ var EN_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
+  "comment.guidance.website.access": "Le meetup est publi\xE9, mais la mise \xE0 jour du site a \xE9t\xE9 refus\xE9e. Demandez \xE0 un mainteneur de v\xE9rifier le d\xE9p\xF4t et le fichier configur\xE9s, l'installation de la GitHub App et son droit Contents en \xE9criture.",
+  "comment.guidance.website.conflict": "Le meetup est publi\xE9, mais plusieurs lignes ou des modifications simultan\xE9es emp\xEAchent la mise \xE0 jour du calendrier. Demandez \xE0 un mainteneur de v\xE9rifier le calendrier, puis relancez la synchronisation.",
+  "comment.guidance.website.format": "Le meetup est publi\xE9, mais le format du calendrier n'est pas reconnu. Demandez \xE0 un mainteneur de v\xE9rifier les titres des ann\xE9es et le tableau \xE0 trois colonnes : mois, date et lieu.",
+  "comment.guidance.website.unavailable": "Le meetup est publi\xE9, mais GitHub n'a pas confirm\xE9 la mise \xE0 jour du site. Relancez la synchronisation ; elle r\xE9utilisera la m\xEAme ligne du calendrier.",
   "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
   "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
   "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",

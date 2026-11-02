@@ -1,0 +1,25 @@
+{
+	"name": "github-event-website",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/publication/github-event-website/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/publication/github-event-website/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/publication/github-event-website"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:publication",
+		"technology:github",
+		"responsibility:event-website"
+	]
+}

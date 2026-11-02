@@ -40,6 +40,7 @@
 		"@meetup-automation/ocgroups-event-gateway": "workspace:*",
 		"@meetup-automation/slack-social-gateway": "workspace:*",
 		"@meetup-automation/linkedin-social-gateway": "workspace:*",
-		"@meetup-automation/github-social-delivery-journal": "workspace:*"
+		"@meetup-automation/github-social-delivery-journal": "workspace:*",
+		"@meetup-automation/github-event-website": "workspace:*"
 	}
 }

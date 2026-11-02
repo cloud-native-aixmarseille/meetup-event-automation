@@ -5,6 +5,7 @@ import {
 } from "@meetup-automation/event";
 import {
 	type EventPublicationIdentity,
+	EventWebsiteError,
 	type PublicationRecord,
 	type SavedEventPublication,
 	type ScheduledEvent,
@@ -183,7 +184,7 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 	): Promise<EventPublicationResult> {
 		await this.persist(source, saved);
 		if (saved.status === "published")
-			return { status: "updated", diagnostics: [] };
+			return this.completePublished(source, event, saved, []);
 		await this.ensureCurrent(source, event);
 		const decision = await this.approval.request(event, saved.identity);
 		const diagnostics = decision.notificationFailed
@@ -214,6 +215,45 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 			throw new ScheduledEventError("verification");
 		await this.configuration.journal.record(published.identity);
 		await this.persist(source, published);
-		return { status: "updated", diagnostics };
+		return this.completePublished(source, event, published, diagnostics);
+	}
+
+	private async completePublished(
+		source: EventPublicationSource,
+		event: Event,
+		saved: SavedEventPublication,
+		diagnostics: EventPublicationResult["diagnostics"],
+	): Promise<EventPublicationResult> {
+		if (!this.configuration.website) return { status: "updated", diagnostics };
+		try {
+			if (!saved.identity.publicUrl)
+				throw new ScheduledEventError("verification");
+			await this.configuration.website.upsert(
+				{ date: event.date, venue: event.venue, url: saved.identity.publicUrl },
+				() => this.ensureCurrent(source, event),
+			);
+			return { status: "updated", diagnostics };
+		} catch (error) {
+			if (
+				error instanceof EventConcurrentModificationError ||
+				error instanceof EventNotFoundError ||
+				error instanceof ScheduledEventError
+			)
+				throw error;
+			const reason =
+				error instanceof EventWebsiteError ? error.kind : "unavailable";
+			return {
+				status: "updated",
+				diagnostics: [
+					...diagnostics,
+					{
+						code: `publication.website.${reason}`,
+						severity: "error",
+						field: "Website",
+						message: `Website event listing: ${reason}`,
+					},
+				],
+			};
+		}
 	}
 }

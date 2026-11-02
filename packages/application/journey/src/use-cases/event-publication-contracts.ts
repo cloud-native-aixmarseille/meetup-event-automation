@@ -88,6 +88,7 @@ export type EventPublicationConfiguration<
 		): string;
 	};
 	gateway: EventPublicationGateway<Event>;
+	website?: import("@meetup-automation/publication").EventWebsiteRepository;
 	journal: PublicationJournal;
 	approval: OrganizerApproval;
 };

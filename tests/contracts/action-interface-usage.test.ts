@@ -4,6 +4,53 @@ import type { Workflow } from "./support.js";
 
 describe("operational interface evidence", () => {
 	it.each([
+		{
+			consumer: {
+				uses: "$/actions/publication/reconcile-event",
+				with: { "website-token": `\${{ steps.website.outputs.token }}` },
+			},
+			consumed: true,
+		},
+		{
+			consumer: { run: `echo '\${{ steps.website.outputs.token }}'` },
+			consumed: false,
+		},
+		{
+			consumer: {
+				uses: "$/actions/publication/reconcile-event",
+				with: { "website-token": "unrelated" },
+			},
+			consumed: false,
+		},
+		{
+			consumer: {
+				uses: "unknown/action@sha",
+				with: { token: `\${{ steps.website.outputs.token }}` },
+			},
+			consumed: false,
+		},
+	])(
+		"counts repository scope only when its token has an operational consumer: $consumed",
+		({ consumer, consumed }) => {
+			// Arrange
+			const repository = `\${{ steps.runtime.outputs.website-repository }}`;
+			const job = {
+				steps: [
+					{
+						id: "website",
+						uses: "actions/create-github-app-token@sha",
+						with: { repositories: repository },
+					},
+					consumer,
+				],
+			};
+			// Act
+			const values = ActionInterfaceUsage.operationalValues(job);
+			// Assert
+			expect(values.includes(repository)).toBe(consumed);
+		},
+	);
+	it.each([
 		[".venv/bin/python -m pip install -r requirements.txt", true],
 		["echo ready", false],
 	])("checks working-directory consumption for %s", (run, consumed) => {

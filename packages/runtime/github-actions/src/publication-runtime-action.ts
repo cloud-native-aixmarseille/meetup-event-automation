@@ -11,6 +11,10 @@ export class PublicationRuntimeAction {
 		const configuration = await this.configuration.load(process.cwd());
 		core.setOutput("runtime-directory", this.runtimeDirectory);
 		core.setOutput(
+			"website-repository",
+			configuration.website?.repository ?? "",
+		);
+		core.setOutput(
 			"requires-challenge-solver",
 			configuration.destinations.some(
 				(destination) => destination.provider === "meetup",

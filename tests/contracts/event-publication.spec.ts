@@ -2,6 +2,35 @@ import { describe, expect, it } from "vitest";
 import { readYaml, type Workflow, workflowExpression } from "./support.js";
 
 describe("event publication workflow", () => {
+	it("uses a separate website token scoped by validated configuration without blocking publication on token failure", async () => {
+		// Arrange
+		const workflow = await readYaml<Workflow>(
+			".github/workflows/event-reconcile.yml",
+		);
+		// Act
+		const steps = workflow.jobs?.manage?.steps ?? [];
+		const token = steps.find((step) => step.id === "website-token");
+		const publication = steps.find((step) => step.id === "publication");
+		// Assert
+		expect(token?.with).toEqual({
+			"client-id": workflowExpression("inputs.github-app-client-id"),
+			"private-key": workflowExpression("secrets.github-app-private-key"),
+			owner: workflowExpression("github.repository_owner"),
+			repositories: workflowExpression(
+				"steps.publication-runtime.outputs.website-repository",
+			),
+			"permission-contents": "write",
+		});
+		expect(token?.if).toBe(
+			workflowExpression(
+				"steps.publication-runtime.outputs.website-repository != ''",
+			),
+		);
+		expect(token?.["continue-on-error"]).toBe(true);
+		expect(publication?.with?.["website-token"]).toBe(
+			workflowExpression("steps.website-token.outputs.token"),
+		);
+	});
 	it("installs dependencies beside the pinned action before publication", async () => {
 		// Arrange
 		const runtimeDirectory = workflowExpression(

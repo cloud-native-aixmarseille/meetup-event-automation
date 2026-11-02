@@ -8,6 +8,26 @@ vi.mock("@actions/core", () => ({ setOutput: vi.fn() }));
 beforeEach(() => vi.clearAllMocks());
 
 describe("publication runtime preparation", () => {
+	it.each([undefined, { repository: "site", path: "events.md" }])(
+		"scopes the website token from the single publication configuration",
+		async (website) => {
+			// Arrange
+			const configuration = new GithubActionsComposition()
+				.eventPublicationConfiguration()
+				.parse(eventPublicationConfigurationFixture());
+			const action = new PublicationRuntimeAction(
+				{ load: vi.fn().mockResolvedValue({ ...configuration, website }) },
+				"/automation/",
+			);
+			// Act
+			await action.run();
+			// Assert
+			expect(core.setOutput).toHaveBeenCalledWith(
+				"website-repository",
+				website?.repository ?? "",
+			);
+		},
+	);
 	it.each([
 		{ providers: ["meetup"], requiresSolver: true },
 		{ providers: ["ocgroups"], requiresSolver: false },

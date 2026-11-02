@@ -2,6 +2,8 @@ import type { EventIdentity, MeetupEvent } from "@meetup-automation/event";
 import { EventDomainComposition } from "@meetup-automation/event";
 import {
 	CommunityGroupUrl,
+	EventWebsiteError,
+	type EventWebsiteRepository,
 	MeetupGroupUrl,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
@@ -1168,5 +1170,153 @@ describe("destination recovery boundaries", () => {
 			collection(f.meetup.dependencies, [f.destinations[0], other]);
 		// Assert
 		expect(create).toThrow("distinct issue fields");
+	});
+});
+
+function websiteFixture(published = false) {
+	const fixture = setupPublication(
+		published ? { publicationLinks: { meetup: publicationUrl } } : {},
+	);
+	const website = {
+		upsert: vi
+			.fn<EventWebsiteRepository["upsert"]>()
+			.mockImplementation(async (_event, guard) => {
+				await guard();
+			}),
+	};
+	const group = MeetupGroupUrl.fromEventUrlPrefix(
+		fixture.dependencies.meetupUrlPrefix,
+	);
+	if (!group) throw new Error("Invalid fixture group");
+	const useCase = collection(fixture.dependencies, [
+		new PublicationDestinationComposition().meetup(
+			{ ...fixture.dependencies, website },
+			group,
+		),
+	]);
+	return { ...fixture, website, useCase };
+}
+describe("published event website synchronization", () => {
+	it.each(["pending", "rejected"] as const)(
+		"does not list a draft with %s approval",
+		async (status) => {
+			// Arrange
+			const f = websiteFixture();
+			f.approval.request.mockResolvedValue({
+				status,
+				notificationFailed: false,
+			});
+			// Act
+			const result = await f.useCase.execute(identity);
+			// Assert
+			expect(result.publications[0].status).toBe("draft");
+			expect(f.website.upsert).not.toHaveBeenCalled();
+		},
+	);
+	it("lists a newly published meetup after persisting its verified URL", async () => {
+		// Arrange
+		const f = websiteFixture();
+		f.approval.request.mockResolvedValue({
+			status: "approved",
+			notificationFailed: false,
+		});
+		// Act
+		const result = await f.useCase.execute(identity);
+		// Assert
+		expect(result.publications[0].status).toBe("updated");
+		expect(f.website.upsert).toHaveBeenCalledExactlyOnceWith(
+			{
+				date: event.date,
+				url: publicationUrl,
+				venue: { name: "Example Host", city: "Example City" },
+			},
+			expect.any(Function),
+		);
+		expect(f.gateway.publish.mock.invocationCallOrder[0]).toBeLessThan(
+			f.website.upsert.mock.invocationCallOrder[0],
+		);
+		expect(f.currentEvent.publicationLinks.meetup).toBe(publicationUrl);
+	});
+	it("synchronizes an already published meetup without asking to publish it again", async () => {
+		// Arrange
+		const f = websiteFixture(true);
+		// Act
+		const result = await f.useCase.execute(identity);
+		// Assert
+		expect(result.publications[0].status).toBe("updated");
+		expect(f.website.upsert).toHaveBeenCalledTimes(1);
+		expect(f.gateway.publish).not.toHaveBeenCalled();
+		expect(f.approval.request).not.toHaveBeenCalled();
+	});
+	it("does not list an event when publication cannot be verified", async () => {
+		// Arrange
+		const f = websiteFixture();
+		f.approval.request.mockResolvedValue({
+			status: "approved",
+			notificationFailed: false,
+		});
+		f.gateway.publish.mockResolvedValue({
+			identity: publicationIdentity(),
+			status: "draft",
+		});
+		// Act
+		const result = await f.useCase.execute(identity);
+		// Assert
+		expect(result.publications[0].status).toBe("blocked");
+		expect(f.website.upsert).not.toHaveBeenCalled();
+	});
+	it.each(["access", "conflict", "format", "unavailable"] as const)(
+		"keeps published state and reports the website %s failure separately",
+		async (kind) => {
+			// Arrange
+			const f = websiteFixture(true);
+			f.website.upsert.mockRejectedValue(new EventWebsiteError(kind));
+			// Act
+			const result = await f.useCase.execute(identity);
+			// Assert
+			expect(result.publications[0].status).toBe("updated");
+			expect(result.diagnostics).toContainEqual(
+				expect.objectContaining({
+					code: `publication.website.${kind}`,
+					field: "Website",
+					severity: "error",
+				}),
+			);
+			expect(f.currentEvent.publicationLinks.meetup).toBe(publicationUrl);
+			expect(f.currentEvent.operationalChecklists.communication).toContainEqual(
+				{ name: "Meetup event published", completed: true },
+			);
+		},
+	);
+	it("recovers a website failure on the next run without republishing Meetup", async () => {
+		// Arrange
+		const f = websiteFixture(true);
+		f.website.upsert.mockRejectedValueOnce(
+			new EventWebsiteError("unavailable"),
+		);
+		// Act
+		const first = await f.useCase.execute(identity);
+		const next = await f.useCase.execute(identity);
+		// Assert
+		expect(first.diagnostics).toContainEqual(
+			expect.objectContaining({ code: "publication.website.unavailable" }),
+		);
+		expect(next.diagnostics).toEqual([]);
+		expect(f.website.upsert).toHaveBeenCalledTimes(2);
+		expect(f.gateway.publish).not.toHaveBeenCalled();
+	});
+	it("rechecks content approval before changing the website", async () => {
+		// Arrange
+		const f = websiteFixture(true);
+		f.website.upsert.mockImplementation(async (_event, guard) => {
+			f.dependencies.contentGate.blocked.mockResolvedValue([
+				{ code: "content.pending" },
+			]);
+			await guard();
+		});
+		// Act
+		const result = f.useCase.execute(identity);
+		// Assert
+		await expect(result).rejects.toMatchObject({ kind: "content-review" });
 	});
 });

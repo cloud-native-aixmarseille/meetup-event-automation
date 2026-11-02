@@ -22,12 +22,13 @@ import {
 } from "@meetup-automation/journey";
 import {
 	EncryptedMeetupSessionStore,
-	MeetupSessionCodec,
 	MeetupEventGatewayComposition,
+	MeetupSessionCodec,
 } from "@meetup-automation/meetup-event-gateway";
 import { OcgroupsEventGatewayComposition } from "@meetup-automation/ocgroups-event-gateway";
 import {
 	CommunityGroupUrl,
+	type EventWebsiteRepository,
 	MeetupEventIdentityPolicy,
 	MeetupGroupUrl,
 	MeetupTopicPolicy,
@@ -43,6 +44,7 @@ type PublicationAdapterInput = EventCompositionInput & {
 	commentAuthorLogin: string;
 	approval: OrganizerApproval;
 	clock: EventClock;
+	website?: EventWebsiteRepository;
 };
 
 /** Provider selection and credentials terminate here; the journey sees owned ports. */
@@ -73,6 +75,7 @@ export class PublicationAdapterComposition {
 				),
 				journal: this.journal(input),
 				gateway: this.meetupGateway(input, adapter, group),
+				website: input.website,
 			},
 			group,
 		);

@@ -5,6 +5,23 @@ import type { MessageId } from "./i18n/catalog.js";
 export const STAGE_GUIDANCE = [
 	...AUTHENTICATION_GUIDANCE,
 	[
+		"publication.website.access",
+		["Website", "comment.guidance.website.access"],
+	],
+	[
+		"publication.website.conflict",
+		["Website", "comment.guidance.website.conflict"],
+	],
+	[
+		"publication.website.format",
+		["Website", "comment.guidance.website.format"],
+	],
+	[
+		"publication.website.unavailable",
+		["Website", "comment.guidance.website.unavailable"],
+	],
+
+	[
 		"publication.content.invalid",
 		["Event materials", "comment.guidance.content.invalid"],
 	],
