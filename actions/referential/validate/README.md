@@ -30,7 +30,7 @@ Validate host and speaker catalogs and report redacted counts and diagnostic cod
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/validate@c5a77283e173656b62ba20c4402433b365b6cb4e # 9.1.0
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/validate@8deffa16dee738b64124004d5037099399600028 # 9.2.0
   with:
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # This input is required.
