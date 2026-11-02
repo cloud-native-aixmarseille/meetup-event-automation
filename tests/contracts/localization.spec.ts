@@ -111,6 +111,7 @@ describe("localization contract", () => {
 						message: privateMessage,
 					},
 					english,
+					{ repository: "example/meetups" },
 				),
 			french: new GithubEventCommentRepositoryComposition()
 				.diagnosticPresenter()
@@ -122,6 +123,7 @@ describe("localization contract", () => {
 						message: privateMessage,
 					},
 					french,
+					{ repository: "example/meetups" },
 				),
 		}));
 
@@ -182,7 +184,9 @@ describe("localization contract", () => {
 			// Act
 			const presented = new GithubEventCommentRepositoryComposition()
 				.diagnosticPresenter()
-				.presentDiagnostic(diagnostic, messages);
+				.presentDiagnostic(diagnostic, messages, {
+					repository: "example/meetups",
+				});
 
 			// Assert
 			expect(presented.message).toBe(messages.t(key));

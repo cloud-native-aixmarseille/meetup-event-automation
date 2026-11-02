@@ -1,5 +1,6 @@
 import type {
 	EventCommentRepository,
+	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
 import type { AutomationConfig } from "@meetup-automation/journey";
@@ -23,6 +24,7 @@ export class ChecklistActionComposition {
 						SERVICES.eventCommentRepository,
 					),
 					container.get<AutomationConfig>(SERVICES.config).event["issue-label"],
+					container.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 				);
 			},
 		});

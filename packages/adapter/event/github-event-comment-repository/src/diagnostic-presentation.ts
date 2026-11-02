@@ -8,6 +8,11 @@ export type DiagnosticPresentation = Readonly<{
 	order: number;
 }>;
 
+export type DiagnosticLinks = Readonly<{
+	repository: string;
+	meetup?: string;
+}>;
+
 export class DiagnosticPresenter {
 	private readonly FIELD_ALIASES = new Map([
 		...FIELD_ORDER.map((field): [string, string] => [field, field]),
@@ -38,7 +43,14 @@ export class DiagnosticPresenter {
 	presentDiagnostic(
 		item: EventDiagnostic,
 		messages: EventCommentMessages,
+		links: DiagnosticLinks,
 	): DiagnosticPresentation {
+		if (item.code === "publication.meetup.uncertain")
+			return {
+				field: "Meetup Link",
+				message: this.meetupRecovery(messages, links),
+				order: FIELD_ORDER.indexOf("Meetup Link"),
+			};
 		const guidance = GUIDANCE.get(item.code);
 		const referential = /^referential\.(host|contact|speaker)\./.test(
 			item.code,
@@ -51,6 +63,27 @@ export class DiagnosticPresenter {
 			: messages.t(referential ? "comment.referential" : "comment.unknown");
 		const order = FIELD_ORDER.indexOf(section);
 		return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+	}
+
+	private meetupRecovery(
+		messages: EventCommentMessages,
+		links: DiagnosticLinks,
+	): string {
+		const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+		return links.meetup
+			? messages.t("comment.guidance.meetup.uncertain", {
+					eventUrl: links.meetup.replace(/[()<>\s]/g, (character) =>
+						character === "("
+							? "%28"
+							: character === ")"
+								? "%29"
+								: encodeURIComponent(character),
+					),
+					workflowUrl,
+				})
+			: messages.t("comment.guidance.meetup.uncertain-missing-link", {
+					workflowUrl,
+				});
 	}
 
 	/** Only known issue headings and numeric agenda positions can reach Markdown. */

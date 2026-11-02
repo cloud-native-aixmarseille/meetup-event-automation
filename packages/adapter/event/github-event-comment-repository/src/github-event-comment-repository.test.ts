@@ -66,6 +66,28 @@ function comment(id: number, body: string, login = "meetup-bot") {
 }
 
 describe("GitHubEventCommentRepository", () => {
+	it("writes recovery links for the current repository and event", async () => {
+		// Arrange
+		const github = client();
+		github.listComments.mockResolvedValue({ data: [] });
+		const repository = adapter(github.value);
+		const diagnostic = {
+			...errorDiagnostic,
+			code: "publication.meetup.uncertain",
+		};
+		const meetup = "https://www.meetup.com/example/events/42/";
+
+		// Act
+		await repository.reconcileDiagnostics(identity, [diagnostic], { meetup });
+
+		// Assert
+		const body = github.createComment.mock.calls[0][0].body;
+		expect(body).toContain(`](${meetup})`);
+		expect(body).toContain(
+			"](https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml)",
+		);
+		expect(body).not.toContain(diagnostic.message);
+	});
 	it("preserves base tasks and trusted attention state while refreshing only social work", async () => {
 		// Arrange
 		const github = client();
@@ -98,6 +120,7 @@ describe("GitHubEventCommentRepository", () => {
 					field: "social.community.announcement",
 				},
 			],
+			{},
 			"social",
 		);
 
@@ -131,11 +154,12 @@ describe("GitHubEventCommentRepository", () => {
 					field: "social.community.d7",
 				},
 			],
+			{},
 			"social",
 		);
-		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+		await repository.reconcileDiagnostics(identity, [errorDiagnostic], {});
 		const unresolved = body;
-		await repository.reconcileDiagnostics(identity, [], "social");
+		await repository.reconcileDiagnostics(identity, [], {}, "social");
 
 		// Assert
 		expect(unresolved).toContain("Post (community, d7)");
@@ -180,7 +204,7 @@ describe("GitHubEventCommentRepository", () => {
 		);
 
 		// Act
-		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+		await repository.reconcileDiagnostics(identity, [errorDiagnostic], {});
 
 		// Assert
 		expect(deleteComment).toHaveBeenCalledWith({
@@ -238,7 +262,11 @@ describe("GitHubEventCommentRepository", () => {
 		);
 
 		// Act
-		const result = repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+		const result = repository.reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 
 		// Assert
 		await expect(result).rejects.toThrow(
@@ -290,7 +318,11 @@ describe("GitHubEventCommentRepository", () => {
 		];
 
 		// Act
-		const result = await repository.reconcileDiagnostics(identity, diagnostics);
+		const result = await repository.reconcileDiagnostics(
+			identity,
+			diagnostics,
+			{},
+		);
 
 		// Assert
 		expect(result.changed).toBe(true);
@@ -344,7 +376,11 @@ describe("GitHubEventCommentRepository", () => {
 		);
 
 		// Act
-		const result = repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+		const result = repository.reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 
 		// Assert
 		await expect(result).rejects.toThrow("Write failed");
@@ -363,7 +399,7 @@ describe("GitHubEventCommentRepository", () => {
 		const repository = adapter(github.value, "meetup-bot");
 
 		// Act
-		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+		await repository.reconcileDiagnostics(identity, [errorDiagnostic], {});
 
 		// Assert
 		expect(github.createComment).toHaveBeenCalledOnce();
@@ -377,9 +413,11 @@ describe("GitHubEventCommentRepository", () => {
 		github.createComment.mockResolvedValue({ data: {} });
 
 		// Act
-		const result = await adapter(github.value).reconcileDiagnostics(identity, [
-			errorDiagnostic,
-		]);
+		const result = await adapter(github.value).reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 
 		// Assert
 		expect(result).toEqual({ changed: true });
@@ -405,6 +443,7 @@ describe("GitHubEventCommentRepository", () => {
 		const actual = await adapter(github.value).reconcileDiagnostics(
 			identity,
 			[],
+			{},
 		);
 
 		// Assert
@@ -423,13 +462,16 @@ describe("GitHubEventCommentRepository", () => {
 				new GithubEventCommentRepositoryComposition().eventCommentMessages(
 					"en",
 				),
+				{ repository: "example/meetups" },
 			);
 		github.listComments.mockResolvedValue({ data: [comment(5, body)] });
 
 		// Act
-		const result = await adapter(github.value).reconcileDiagnostics(identity, [
-			errorDiagnostic,
-		]);
+		const result = await adapter(github.value).reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 
 		// Assert
 		expect(result).toEqual({ changed: false });
@@ -450,9 +492,11 @@ describe("GitHubEventCommentRepository", () => {
 		github.updateComment.mockResolvedValue({ data: {} });
 
 		// Act
-		await adapter(github.value).reconcileDiagnostics(identity, [
-			errorDiagnostic,
-		]);
+		await adapter(github.value).reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 
 		// Assert
 		expect(github.updateComment).toHaveBeenLastCalledWith(
@@ -480,13 +524,14 @@ describe("GitHubEventCommentRepository", () => {
 							new GithubEventCommentRepositoryComposition().eventCommentMessages(
 								"en",
 							),
+							{ repository: "example/meetups" },
 						),
 				),
 			],
 		});
 
 		// Act
-		await adapter(github.value).reconcileDiagnostics(identity, []);
+		await adapter(github.value).reconcileDiagnostics(identity, [], {});
 
 		// Assert
 		expect(github.updateComment).toHaveBeenLastCalledWith(
@@ -507,6 +552,7 @@ describe("GitHubEventCommentRepository", () => {
 				new GithubEventCommentRepositoryComposition().eventCommentMessages(
 					"en",
 				),
+				{ repository: "example/meetups" },
 			);
 		github.listComments
 			.mockResolvedValueOnce({
@@ -523,9 +569,11 @@ describe("GitHubEventCommentRepository", () => {
 		github.minimizeComment.mockResolvedValue({});
 
 		// Act
-		const result = await adapter(github.value).reconcileDiagnostics(identity, [
-			errorDiagnostic,
-		]);
+		const result = await adapter(github.value).reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 		const actual = github.updateComment.mock.calls.map(
 			([input]) => input.comment_id,
 		);
@@ -559,9 +607,11 @@ describe("GitHubEventCommentRepository", () => {
 		github.createComment.mockResolvedValue({ data: {} });
 
 		// Act
-		await adapter(github.value, "meetup-bot").reconcileDiagnostics(identity, [
-			errorDiagnostic,
-		]);
+		await adapter(github.value, "meetup-bot").reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 
 		// Assert
 		expect(github.updateComment).not.toHaveBeenCalled();
@@ -574,9 +624,11 @@ describe("GitHubEventCommentRepository", () => {
 		github.listComments.mockResolvedValue({ data: "not-an-array" });
 
 		// Act
-		const operation = adapter(github.value).reconcileDiagnostics(identity, [
-			errorDiagnostic,
-		]);
+		const operation = adapter(github.value).reconcileDiagnostics(
+			identity,
+			[errorDiagnostic],
+			{},
+		);
 
 		// Assert
 		await expect(operation).rejects.toBeInstanceOf(
@@ -592,6 +644,7 @@ describe("GitHubEventCommentRepository", () => {
 		const operation = adapter(github.value).reconcileDiagnostics(
 			{ repository: "someone/else", issueNumber: 42 },
 			[errorDiagnostic],
+			{},
 		);
 
 		// Assert
@@ -646,7 +699,7 @@ describe("managed diagnostic ownership", () => {
 		const repository = adapter(github.value);
 
 		// Act
-		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+		await repository.reconcileDiagnostics(identity, [errorDiagnostic], {});
 
 		// Assert
 		expect(github.updateComment).not.toHaveBeenCalled();

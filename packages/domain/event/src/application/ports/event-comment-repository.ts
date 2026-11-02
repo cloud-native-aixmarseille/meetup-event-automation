@@ -9,6 +9,7 @@ export interface EventCommentRepository {
 	reconcileDiagnostics(
 		identity: EventIdentity,
 		diagnostics: readonly EventDiagnostic[],
+		links: Readonly<{ meetup?: string }>,
 		/** Replace only public social tasks; keep the independently evaluated checklist. */
 		scope?: "social",
 	): Promise<EventCommentReconciliation>;

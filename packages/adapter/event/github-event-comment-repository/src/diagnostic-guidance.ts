@@ -34,10 +34,6 @@ export const GUIDANCE = new Map<
 >([
 	...STAGE_GUIDANCE,
 	[
-		"publication.meetup.uncertain",
-		["Meetup Link", "comment.guidance.meetup.uncertain"],
-	],
-	[
 		"event.proposals.invalid-selection",
 		["Agenda", "comment.guidance.proposals.invalid-selection"],
 	],

@@ -1,6 +1,8 @@
 export const STAGE_MESSAGES_EN = {
 	"comment.guidance.meetup.uncertain":
-		'Automation could not confirm the changes on Meetup. Open the event on Meetup and compare its title, description and image with the content approved here. Check that its URL is in "Meetup Link", then rerun the "Event / Reconcile active" workflow from Actions. If you cannot find the event or the warning returns, ask a maintainer to investigate the run; do not recreate the event.',
+		'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
+	"comment.guidance.meetup.uncertain-missing-link":
+		'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
 	"comment.guidance.meetup.authentication-configuration":
 		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
 	"comment.guidance.meetup.authentication-captcha-required":
