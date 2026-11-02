@@ -60,6 +60,10 @@ Reconcile configured publication destinations and publish each event after its v
     # This input is required.
     github-token: ""
 
+    # GitHub App token scoped to the configured website repository with contents write; unused when website synchronization is not configured.
+    # This input is required.
+    website-token: ""
+
     # Login of the GitHub App bot that owns the publication journal.
     # This input is required.
     managed-comment-author: ""
@@ -95,6 +99,7 @@ Reconcile configured publication destinations and publish each event after its v
 | **`slack-organizer-channel-id`**   | Organizer Slack channel receiving publication approval requests.                                                                                           | **true**     | -           |
 | **`issue-number`**                 | Meetup source issue number.                                                                                                                                | **true**     | -           |
 | **`github-token`**                 | Consumer repository token with contents read and issues write.                                                                                             | **true**     | -           |
+| **`website-token`**                | GitHub App token scoped to the configured website repository with contents write; unused when website synchronization is not configured.                   | **true**     | -           |
 | **`managed-comment-author`**       | Login of the GitHub App bot that owns the publication journal.                                                                                             | **true**     | -           |
 | **`conference-hall-event`**        | Conference Hall CFP slug used to resolve the current event agenda.                                                                                         | **true**     | -           |
 | **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                                                                                                   | **true**     | -           |
