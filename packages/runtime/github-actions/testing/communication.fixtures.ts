@@ -287,24 +287,26 @@ https://openfeedback.io/event-1
 `;
 }
 
-export function approveBatch(
+export function approveEmailRequests(
 	fixture: ReturnType<typeof githubClients>,
 	choice = "Approve",
+	mailKind?: "host-introduction" | "speaker-introduction",
 ) {
-	const comment = fixture.comments.find((comment) =>
+	const comments = fixture.comments.filter((comment) =>
 		comment.body.startsWith("<!-- meetup-organizer-approval:v1 "),
 	);
-	if (!comment) throw new Error("Missing synthetic approval");
-	const record = JSON.parse(
-		(comment.body.split("\n")[0] ?? "").slice(
-			"<!-- meetup-organizer-approval:v1 ".length,
-			-4,
-		),
-	);
-	comment.body = comment.body.replace(
-		`- [ ] ${choice} sending`,
-		`- [x] ${choice} sending`,
-	);
-	comment.editor = { login: "organizer", __typename: "User" };
-	comment.updated_at = record.requestedAt;
+	if (!comments.length) throw new Error("Missing synthetic approval");
+	for (const comment of comments) {
+		const record = JSON.parse(
+			(comment.body.split("\n")[0] ?? "").slice(
+				"<!-- meetup-organizer-approval:v1 ".length,
+				-4,
+			),
+		);
+		if (mailKind && record.details?.mailKind !== mailKind) continue;
+		const label = `${choice === "Approve" ? "✅" : "❌"} ${choice} sending`;
+		comment.body = comment.body.replace(`- [ ] ${label}`, `- [x] ${label}`);
+		comment.editor = { login: "organizer", __typename: "User" };
+		comment.updated_at = record.requestedAt;
+	}
 }

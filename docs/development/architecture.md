@@ -517,7 +517,13 @@ A decision parser compares controls against exact localized requests rendered
 from trusted metadata. Text proposals expose a bounded editable preview; the
 journey validates replacement text before the adapter can finalize it. The
 original draft remains unchanged and the trusted decision records its exact
-replacement. Decision resolution
+replacement. Preparation email approvals use separate host and speaker scopes.
+Their marked public date/link values are editable; the journey's
+`EmailReviewParameterPolicy` validates the allowlist and value formats. Adapters
+parse that marked region while checking the remainder against trusted rendering.
+Final decisions persist the exact approved overrides beside the source revision;
+private recipients and template inputs remain covered by the source fingerprint.
+Changed source inputs require fresh approval before remaining deliveries. Decision resolution
 verifies the editor's identity and permission separately. It durably records the
 verified human identity and final decision in the original bot comment before
 authorizing the action.
@@ -549,6 +555,11 @@ and uncertain intents are not automatically resent. A definitively deferred
 attempt releases its reservation for a safe retry. The GitHub ledger depends on
 the shared workflow lock; do not dispatch outside the official workflows or
 claim exactly-once delivery.
+The email delivery reporting port projects durable ledger statuses into the
+original approval comments after dispatch. It retains the ledger and hides its
+separate view only after all email evidence has been copied successfully. Approval
+visibility remains governed by delivery completeness and follow-up state; report
+failures cannot release reservations or resend accepted messages.
 
 Event publication uses a configured destination collection in
 `ReconcileEventPublications` and one shared `ReconcileEventPublication` lifecycle.

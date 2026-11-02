@@ -29,6 +29,8 @@ const COMMUNICATION_MESSAGES: Readonly<
 const RUNTIME_MESSAGES: Readonly<
 	Record<CommunicationJourneyDiagnostic["code"], string>
 > = {
+	"communication.email-parameters-invalid":
+		"Reviewed email parameters require valid public dates and HTTPS URLs.",
 	"communication.content-review":
 		"Event content needs current organizer approval.",
 	"communication.feedback-fetch-failed":

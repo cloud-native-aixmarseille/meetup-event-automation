@@ -32,6 +32,7 @@ import type {
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 export interface ManageMeetupCommunicationsDependencies {
+	readonly emailDeliveryReport: import("../ports/email-delivery-report.js").EmailDeliveryReport;
 	readonly contentGate: Pick<EventCopyApprovalGate, "blocked">;
 	readonly feedbackResults: FeedbackTalkResultsGateway;
 	readonly config: AutomationConfig;
@@ -65,7 +66,10 @@ export interface ManageMeetupCommunicationsCollaborators {
 	>;
 	readonly communicationJourneyResults: Pick<
 		CommunicationJourneyResults,
-		"skippedResult" | "emptyCommunicationResult" | "withRuntimeDiagnostics"
+		| "skippedResult"
+		| "emptyCommunicationResult"
+		| "withRuntimeDiagnostics"
+		| "combine"
 	>;
 	readonly eventDocumentConcurrency: Pick<
 		EventDocumentConcurrency,

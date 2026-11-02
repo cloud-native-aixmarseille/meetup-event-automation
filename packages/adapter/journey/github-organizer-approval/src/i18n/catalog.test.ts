@@ -4,6 +4,13 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.delivery.status": {
+		kind: "host_introduction",
+		status: "accepted",
+		count: 1,
+	},
+	"approval.delivery.notice": {},
+	"approval.parameters.instructions": {},
 	"approval.content.image-label": { index: 1 },
 	"approval.social.after-approval": {},
 	"approval.social.details": {

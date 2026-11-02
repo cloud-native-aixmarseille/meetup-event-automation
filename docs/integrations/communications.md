@@ -1,7 +1,8 @@
 # Email and Slack communications
 
 The issue-update and daily-audit workflows request organizer confirmation before
-sending each introduction or thank-you email batch. They post the request on
+sending preparation emails separately for the host and speakers, or a thank-you
+batch. They post each request on
 the meetup issue and alert the meetup organizer Slack channel. Post-event approval,
 task status, and reminders share one follow-up comment and grouped notifications.
 Checked email tasks mean completed; after approval, the automation sends and checks them.
@@ -115,28 +116,35 @@ and plain-text versions include one results link per talk.
 
 ## Confirm an email batch
 
-When a batch is due, the bot creates or updates a confirmation comment on the
-meetup issue. It shows the batch type, event date and maximum recipient count,
-with two choices:
+Preparation emails have one approval comment for the host and one for speakers.
+Approving or refusing one type does not decide the other. Thank-you emails keep
+one approval in the post-event follow-up comment.
+
+Expand **Email details** to review the public recipient names and template
+parameters. For preparation emails, edit the values between backticks in the
+marked list before approving. The editable fields are `eventDate`,
+`eventMeetupUrl`, `eventCncfUrl`, and `eventSlidesUrl` when supplied. Keep their
+names and the surrounding comment unchanged. Dates use `YYYY-MM-DD`; links must
+use HTTPS. These edits apply to this email type only, without changing the issue,
+referentials, or the other email type. Private contact names, addresses and email
+addresses remain in the catalog and cannot be changed from the approval comment.
 
 ```markdown
-- [ ] Approve sending this batch
-- [ ] Reject sending this batch
+- `eventDate` : `2099-06-08`
+- `eventMeetupUrl` : `https://www.meetup.com/example/events/123`
 ```
 
-Expand **Review email details** to see each email's purpose, public host or
-speaker name, and included event, presentation, or talk feedback links. Private
-contact names, email addresses and venue addresses are excluded. The summary
-stays collapsed by default and remains in the comment after a decision.
-Large batches show a bounded summary with explicit counts of omitted emails or
-links. The approval still covers the whole batch.
+Select one choice after saving any parameter edits:
 
-The details belong to the reviewed request. Editing them while selecting an
-approval choice does not authorize sending; the bot restores the trusted request.
+```markdown
+- [ ] ✅ Approve sending
+- [ ] ❌ Reject sending
+```
 
-Click **Approve sending this batch** in that bot comment to authorize sending.
-Click **Reject sending this batch** to refuse it. Leave both unchecked to wait;
-selecting both does not approve anything.
+Leaving both unchecked keeps the request pending and preserves parameter edits.
+Selecting both, editing other parts of the request, or entering invalid values
+does not authorize sending. Speaker thank-you feedback links remain read-only.
+Large batches show a bounded recipient summary with explicit omitted counts.
 
 When the automation processes a valid choice, it updates that same comment to
 show **Approved** or **Rejected**, the organizer, and the decision time. The
@@ -147,8 +155,8 @@ comment is posted.
 
 Anyone with repository **write** access or higher can decide. The automation
 reads the current comment and its last editor from GitHub, checks that editor's
-current repository permission, and accepts only an unchanged request with one
-selected choice. It saves the verified identity before authorizing dispatch and
+current repository permission, and accepts one selected choice with valid public
+parameter edits and otherwise unchanged request content. It saves the verified identity before authorizing dispatch and
 rechecks the recorded organizer's write access before dispatch on later runs.
 GitHub's bot-authored edit history protects the recorded decision against later
 human edits. Missing or unverifiable history blocks sending. Edited request
@@ -167,8 +175,8 @@ For introductions, the automation adds a reaction to the original Slack request:
 delivery. Failed reactions are retried on later reconciliations, including
 after email tasks are complete. They do not reopen the decision or resend mail.
 
-Introductions and thank-you emails require separate approvals. Approval covers
-the host and speaker batch for the current email inputs, including recipient
+Each preparation type and the thank-you batch require separate approvals.
+Approval covers that group's current email inputs, including recipient
 addresses, templates, placeholders, date and policy. Only a fingerprint and
 public facts are persisted; contact details never appear in the request.
 Changes to those inputs create a new request in the same GitHub comment, with
@@ -419,11 +427,14 @@ remaining checklist work without failing CI. A
 rendering or persistence failure and fails CI. Run reconciliation again in either
 case; accepted messages will not be sent twice.
 
-The bot maintains one **Communication status** comment on the meetup issue. It
-groups message requests by type and status, without listing recipients. The
-duplicate-prevention records are stored in an HTML comment in its Markdown source;
-organizers see the status summary, not JSON. Accepted email requests still require
-checking the mail service for actual delivery.
+The bot updates each original email approval with its delivery counts: accepted,
+pending, uncertain, rejected, or awaiting dispatch. Partial or uncertain delivery
+keeps the approval visible; fully accepted delivery resolves it. The underlying
+duplicate-prevention records are retained. Their separate comment is collapsed
+only after all email statuses have been saved in the corresponding approvals;
+records for other delivery types keep their existing view. A failed report update
+does not remove evidence or authorize resending. Accepted email requests still
+require checking the mail service for actual inbox delivery.
 
 Existing records prevent repeated delivery:
 

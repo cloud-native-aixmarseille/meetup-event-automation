@@ -1,5 +1,9 @@
 export { ApprovalNotificationPolicy } from "./approval/approval-notification-policy.js";
 export { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
+export {
+	EmailReviewParameterPolicy,
+	type EmailReviewParameters,
+} from "./approval/email-review-parameters.js";
 export { FollowUpApprovalPolicy } from "./approval/follow-up-approval-policy.js";
 export { CoverArtworkApprovalGate } from "./assets/cover-artwork-approval-gate.js";
 export { CoverArtworkDrafts } from "./assets/cover-artwork-drafts.js";
@@ -10,7 +14,19 @@ export type {
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "./communication/contracts.js";
+export { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
+export {
+	RecoverSocialPublication,
+	type SocialRecoveryInput,
+} from "./communication/recover-social-publication.js";
 export { SocialPostDrafts } from "./communication/social-post-drafts.js";
+export { SocialPublicationApprovalRequest } from "./communication/social-publication-approval-request.js";
+export { SocialPublicationCompletion } from "./communication/social-publication-completion.js";
+export type {
+	SocialPublicationDependencies,
+	SocialPublicationResult,
+	SocialPublicationStatus,
+} from "./communication/social-publication-contracts.js";
 export { JourneyCommunicationComposition } from "./communication-composition.js";
 export type { AutomationConfig } from "./config/automation-config.js";
 export { AutomationConfigFactory } from "./config/automation-config.js";
@@ -26,6 +42,10 @@ export type {
 	ContentSubmission,
 	ContentSubmissions,
 } from "./ports/content-submissions.js";
+export type {
+	EmailDeliveryReport,
+	EmailDeliverySummary,
+} from "./ports/email-delivery-report.js";
 export type { EventDocumentRevision } from "./ports/event-document-revision.js";
 export type * from "./ports/generation.js";
 export type {
@@ -40,6 +60,7 @@ export type {
 	OrganizerApprovalKind,
 	OrganizerApprovalRequest,
 	OrganizerApprovalResult,
+	SocialPublicationApprovalDetails,
 } from "./ports/organizer-approval.js";
 export type {
 	ApprovalEmailDetail,
@@ -93,10 +114,12 @@ export {
 } from "./review/content-workspace.js";
 export { ManageContentReview } from "./review/manage-content-review.js";
 export { SubmitPromotionalContent } from "./review/submit-promotional-content.js";
+export { SocialPublicationComposition } from "./social-publication-composition.js";
 export { AssetRenderProjection } from "./use-cases/asset-render-projection.js";
 export { CommunicationJourneyResults } from "./use-cases/communication-journey-results.js";
 export type { CommunityPublicationSettings } from "./use-cases/community-publication-projection.js";
 export type * from "./use-cases/event-publication-contracts.js";
+export { EventPublicationResults } from "./use-cases/event-publication-results.js";
 export { FindNextAssetEvent } from "./use-cases/find-next-asset-event.js";
 export { ManageMeetupAttention } from "./use-cases/manage-meetup-attention.js";
 export { ManageMeetupCommunications } from "./use-cases/manage-meetup-communications.js";
@@ -114,6 +137,7 @@ export type {
 	ReconcileMeetupIssueFormResult,
 } from "./use-cases/reconcile-meetup-issue-form.js";
 export { ReconcileMeetupIssueForm } from "./use-cases/reconcile-meetup-issue-form.js";
+export { ReconcileMeetupSlidesDelivery } from "./use-cases/reconcile-meetup-slides-delivery.js";
 export {
 	ReconcileMeetupSlidesPdf,
 	type SlidesPdfSource,
@@ -134,22 +158,3 @@ export type {
 	ValidateMeetupReferentialsResult,
 } from "./use-cases/validate-meetup-referentials.js";
 export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referentials.js";
-export { ReconcileMeetupSlidesDelivery } from "./use-cases/reconcile-meetup-slides-delivery.js";
-
-export { EventPublicationResults } from "./use-cases/event-publication-results.js";
-
-export type { SocialPublicationApprovalDetails } from "./ports/organizer-approval.js";
-export { SocialPublicationComposition } from "./social-publication-composition.js";
-export {
-	RecoverSocialPublication,
-	type SocialRecoveryInput,
-} from "./communication/recover-social-publication.js";
-export { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
-export { SocialPublicationCompletion } from "./communication/social-publication-completion.js";
-export type {
-	SocialPublicationDependencies,
-	SocialPublicationResult,
-	SocialPublicationStatus,
-} from "./communication/social-publication-contracts.js";
-
-export { SocialPublicationApprovalRequest } from "./communication/social-publication-approval-request.js";

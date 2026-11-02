@@ -1,5 +1,6 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import {
+	EmailReviewParameterPolicy,
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
 } from "@meetup-automation/journey";
@@ -31,11 +32,13 @@ import { ApprovalSchema } from "./approval-schema.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
 import { ContentApprovalPresenter } from "./content-approval-presenter.js";
 import { ContentTextPreview } from "./content-text-preview.js";
-import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
+import { EmailApprovalDecisionParser } from "./email-approval-decision-parser.js";
 import {
 	EmailApprovalPresenter,
 	type EmailApprovalPresenterArguments,
 } from "./email-approval-presenter.js";
+import { EmailDeliveryPresenter } from "./email-delivery-presenter.js";
+import { EmailParametersPreview } from "./email-parameters-preview.js";
 import {
 	FinalizeApprovalDecision,
 	type FinalizeApprovalDecisionArguments,
@@ -84,7 +87,7 @@ import {
 	type ResolveApprovalDecisionArguments,
 } from "./resolve-approval-decision.js";
 import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
-import { StoredApprovalSchema } from "./stored-approval-schema.js";
+import type { StoredApprovalSchema } from "./stored-approval-schema.js";
 import {
 	TrustedApprovalState,
 	type TrustedApprovalStateArguments,
@@ -101,6 +104,9 @@ export class GithubOrganizerApprovalComposition {
 	): ApprovalDecisionParser {
 		return new ApprovalDecisionParser(
 			new ContentTextPreview(),
+			new EmailApprovalDecisionParser(
+				new EmailParametersPreview(new EmailReviewParameterPolicy()),
+			),
 			new JourneyPolicyComposition().approvalRequestPolicy(),
 			...args,
 		);
@@ -108,7 +114,10 @@ export class GithubOrganizerApprovalComposition {
 	approvalDetailsPresenter(
 		...args: ApprovalDetailsPresenterArguments
 	): ApprovalDetailsPresenter {
-		return new ApprovalDetailsPresenter(...args);
+		return new ApprovalDetailsPresenter(
+			new EmailParametersPreview(new EmailReviewParameterPolicy()),
+			...args,
+		);
 	}
 	approvalDetailsPreview(): ApprovalDetailsPreview {
 		return new ApprovalDetailsPreview();
@@ -165,22 +174,18 @@ export class GithubOrganizerApprovalComposition {
 		return new ApprovalRequestSchemaComposition().create(
 			this.approvalSchema(),
 			this.meetupApprovalDetailsSchema(),
-			this.emailApprovalDetailsSchema(),
+			new ApprovalRequestSchemaComposition().email(this.approvalSchema()),
 		);
 	}
 	approvalSchema(): ApprovalSchema {
 		return new ApprovalSchema();
-	}
-	emailApprovalDetailsSchema(): EmailApprovalDetailsSchema {
-		return new EmailApprovalDetailsSchema({
-			approvalSchema: this.approvalSchema(),
-		});
 	}
 	emailApprovalPresenter(
 		...args: EmailApprovalPresenterArguments
 	): EmailApprovalPresenter {
 		return new EmailApprovalPresenter(
 			{
+				deliveryPresenter: new EmailDeliveryPresenter(args[0]),
 				followUpPresenter: this.followUpPresenter(args[0]),
 				approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
 				approvalRequestPolicy:
@@ -279,13 +284,10 @@ export class GithubOrganizerApprovalComposition {
 		return new ResolveApprovalDecision(...args);
 	}
 	storedApprovalSchema(): StoredApprovalSchema {
-		return new StoredApprovalSchema({
-			approvalSchema: this.approvalSchema(),
-			approvalRequestSchema: this.approvalRequestSchema(),
-			followUpSchema: this.followUpSchema(),
-			approvalRequestPolicy:
-				new JourneyPolicyComposition().approvalRequestPolicy(),
-		});
+		return new ApprovalRequestSchemaComposition().stored(
+			this.approvalRequestSchema(),
+			this.followUpSchema(),
+		);
 	}
 	trustedApprovalState(
 		...args: TrustedApprovalStateArguments

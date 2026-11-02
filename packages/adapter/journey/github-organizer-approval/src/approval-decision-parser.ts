@@ -7,6 +7,7 @@ import type { ContentTextPreview } from "./content-text-preview.js";
 export class ApprovalDecisionParser {
 	constructor(
 		private readonly textPreview: ContentTextPreview,
+		private readonly emailDecisions: import("./email-approval-decision-parser.js").EmailApprovalDecisionParser,
 		private readonly policy: Pick<ApprovalRequestPolicy, "reviewPhase">,
 		private readonly comments: readonly Pick<ApprovalPresenter, "issue">[],
 	) {}
@@ -23,6 +24,8 @@ export class ApprovalDecisionParser {
 		const normalized = body.replace(/\r\n/g, "\n");
 		if (record.kind === "content-review")
 			return this.content(record, normalized);
+		if (record.details?.parameters)
+			return this.emailDecisions.parse(record, normalized, this.comments);
 		for (const comment of this.comments) {
 			for (const status of ["approved", "rejected"] as const) {
 				if (
@@ -94,6 +97,7 @@ export class ApprovalDecisionParser {
 }
 export type ApprovalDecisionParserArguments =
 	ConstructorParameters<typeof ApprovalDecisionParser> extends [
+		unknown,
 		unknown,
 		unknown,
 		...infer Args,

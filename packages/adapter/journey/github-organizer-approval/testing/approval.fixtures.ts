@@ -4,6 +4,7 @@ import {
 	ApprovalNotificationPolicy,
 	ApprovalRequestPolicy,
 	DraftProposalComposition,
+	EmailReviewParameterPolicy,
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
 	type OrganizerApprovalNotification,
@@ -17,6 +18,8 @@ import { ApprovalPresenter } from "../src/approval-presenter.js";
 import { ApprovalRecordFactory } from "../src/approval-record-factory.js";
 import { CommunityApprovalPresenter } from "../src/community-approval-presenter.js";
 import { ContentTextPreview } from "../src/content-text-preview.js";
+import { EmailApprovalDecisionParser } from "../src/email-approval-decision-parser.js";
+import { EmailParametersPreview } from "../src/email-parameters-preview.js";
 import { FinalizeApprovalDecision } from "../src/finalize-approval-decision.js";
 import { GithubApprovalAttentionSource } from "../src/github-approval-attention-source.js";
 import { GithubApprovalClient } from "../src/github-approval-client.js";
@@ -351,6 +354,9 @@ export function approvalDependencies(
 			client,
 			new ApprovalDecisionParser(
 				new ContentTextPreview(),
+				new EmailApprovalDecisionParser(
+					new EmailParametersPreview(new EmailReviewParameterPolicy()),
+				),
 				new ApprovalRequestPolicy(
 					new DraftProposalComposition().fingerprints(),
 				),

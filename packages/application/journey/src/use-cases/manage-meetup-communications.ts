@@ -85,7 +85,7 @@ export class ManageMeetupCommunications {
 			delivery,
 			dispatchEnabled,
 		);
-		const mailApproved =
+		const batches =
 			dispatchEnabled &&
 			(await this.synchronizeApprovals(runtimeDiagnostics)) &&
 			(await this.collaborators
@@ -116,14 +116,14 @@ export class ManageMeetupCommunications {
 				"check",
 				runtimeDiagnostics,
 			);
-		const reconciliation = await this.dependencies
-			.reconcileCommunications(dispatchEnabled)
-			.execute({
-				...deliveryInput,
-				dispatchAuthorized: mailApproved,
-			});
+		const reconciliation = await this.dispatchBatches(
+			batches || [deliveryInput],
+			dispatchEnabled,
+			deliveryInput.mode,
+		);
 
 		if (dispatchEnabled) {
+			await this.dependencies.emailDeliveryReport.synchronize();
 			await this.collaborators
 				.createCompleteCommunicationChecklist(
 					this.dependencies.eventRepository,
@@ -139,6 +139,24 @@ export class ManageMeetupCommunications {
 		return this.collaborators.communicationJourneyResults.withRuntimeDiagnostics(
 			reconciliation,
 			runtimeDiagnostics,
+		);
+	}
+
+	private async dispatchBatches(
+		batches: readonly ReconcileCommunicationsInput[],
+		dispatchEnabled: boolean,
+		mode: "check" | "dispatch",
+	) {
+		const results = [];
+		for (const batch of batches)
+			results.push(
+				await this.dependencies
+					.reconcileCommunications(dispatchEnabled)
+					.execute(batch),
+			);
+		return this.collaborators.communicationJourneyResults.combine(
+			mode,
+			results,
 		);
 	}
 

@@ -1,6 +1,7 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { EventDomainComposition } from "@meetup-automation/event";
 import { ReferentialDomainComposition } from "@meetup-automation/referential";
+import { EmailReviewParameterPolicy } from "./approval/email-review-parameters.js";
 import { JourneyPolicyComposition } from "./policy-composition.js";
 import {
 	ApproveCommunicationBatch,
@@ -28,6 +29,7 @@ export class JourneyCommunicationComposition {
 	): ApproveCommunicationBatch {
 		return new ApproveCommunicationBatch(
 			{
+				parameters: new EmailReviewParameterPolicy(),
 				mailBatchFingerprint:
 					new CommunicationDomainComposition().mailBatchFingerprint(),
 				communicationApprovalDetails:

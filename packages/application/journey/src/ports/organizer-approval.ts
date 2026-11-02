@@ -95,6 +95,8 @@ export interface OrganizerApprovalResult {
 	readonly status: "pending" | "approved" | "rejected" | "iteration-requested";
 	readonly notificationFailed: boolean;
 	readonly invalidText?: boolean;
+	readonly emailParameters?: import("../approval/email-review-parameters.js").EmailReviewParameters;
+	readonly invalidEmailParameters?: boolean;
 	readonly actor?: string;
 	readonly decidedAt?: string;
 	readonly selectedImage?: string;

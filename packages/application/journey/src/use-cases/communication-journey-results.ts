@@ -5,6 +5,25 @@ import type {
 } from "../communication/contracts.js";
 
 export class CommunicationJourneyResults {
+	combine(
+		mode: "check" | "dispatch",
+		results: readonly ReconcileCommunicationsResult[],
+	): ReconcileCommunicationsResult {
+		const combined = this.emptyCommunicationResult(mode, []);
+		const counts = { ...combined.counts };
+		for (const result of results)
+			for (const key of Object.keys(counts) as (keyof typeof counts)[])
+				counts[key] += result.counts[key];
+		return {
+			mode,
+			counts,
+			intentIds: results.flatMap((result) => result.intentIds),
+			completedMailKinds: [
+				...new Set(results.flatMap((result) => result.completedMailKinds)),
+			],
+			diagnostics: results.flatMap((result) => result.diagnostics),
+		};
+	}
 	withRuntimeDiagnostics(
 		result: ReconcileCommunicationsResult,
 		runtimeDiagnostics: readonly CommunicationJourneyDiagnostic[],

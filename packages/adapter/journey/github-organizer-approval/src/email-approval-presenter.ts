@@ -8,6 +8,7 @@ export interface EmailApprovalPresenterCollaborators {
 	readonly approvalRequestPolicy: Pick<ApprovalRequestPolicy, "reviewPhase">;
 	readonly followUpPresenter: Pick<FollowUpPresenter, "render">;
 	readonly approvalDetailsPresenter: Pick<ApprovalDetailsPresenter, "render">;
+	readonly deliveryPresenter: import("./email-delivery-presenter.js").EmailDeliveryPresenter;
 }
 
 export class EmailApprovalPresenter {
@@ -33,15 +34,28 @@ export class EmailApprovalPresenter {
 				.join("\n\n")
 				.trimEnd();
 		const details = record.details
-			? [this.collaborators.approvalDetailsPresenter.render(record.details)]
+			? [
+					this.collaborators.approvalDetailsPresenter.render({
+						...record.details,
+						...(record.decision?.emailParameters
+							? { parameters: record.decision.emailParameters }
+							: {}),
+					}),
+				]
 			: [];
+		if (record.delivery)
+			details.unshift(
+				this.collaborators.deliveryPresenter.render(record.delivery),
+			);
 		if (record.followUp?.attentionDetails)
 			details.push(record.followUp.attentionDetails);
 		if (record.decision)
 			return [
 				...heading,
 				this.messages.t("approval.final", {
-					kind: record.kind.replace("email-", ""),
+					kind:
+						record.details?.mailKind?.replaceAll("-", "_") ??
+						record.kind.replace("email-", ""),
 					date: record.eventDate,
 					count: record.recipientCount,
 					status: record.decision.status,
@@ -53,7 +67,9 @@ export class EmailApprovalPresenter {
 		return [
 			...heading,
 			this.messages.t("approval.request", {
-				kind: record.kind.replace("email-", ""),
+				kind:
+					record.details?.mailKind?.replaceAll("-", "_") ??
+					record.kind.replace("email-", ""),
 				date: record.eventDate,
 				count: record.recipientCount,
 				approveMark: decision.status === "approved" ? "x" : " ",

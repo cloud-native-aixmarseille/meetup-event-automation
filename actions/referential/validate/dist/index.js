@@ -34858,10 +34858,17 @@ var ApprovalRequestPolicy = class {
       return `content:${request.content.key}`;
     if (request.kind === "social-publication")
       return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
+    if (request.kind === "email-introduction" && request.details?.mailKind)
+      return `email:${request.details.mailKind}`;
     return request.kind;
+  }
+  canReplaceCombinedEmail(previous, input, decided) {
+    return !decided && input.kind === "email-introduction" && Boolean(input.details?.mailKind) && previous.kind === "email-introduction" && !previous.details?.mailKind;
   }
   resolved(facts) {
     if (facts.attentionPending) return false;
+    if (facts.deliveryRequired && (!facts.delivery || facts.delivery.some((item) => item.status !== "accepted") || facts.delivery.reduce((count, item) => count + item.count, 0) < (facts.recipientCount ?? 0)))
+      return false;
     if (facts.followUp?.active && facts.followUp.pendingTasks.length > 0)
       return false;
     return this.reviewPhase({
@@ -34899,6 +34906,8 @@ var ApprovalRequestPolicy = class {
       throw new Error("Invalid approval request");
   }
   validateEmailCount(request) {
+    if (request.details?.mailKind && request.kind !== "email-introduction")
+      throw new Error("Invalid preparation email scope");
     if (request.details && request.details.emails.length + request.details.omittedEmails !== request.recipientCount)
       throw new Error("Invalid approval details");
   }
@@ -34915,7 +34924,7 @@ var ApprovalRequestPolicy = class {
   }
   sameDetails(left, right) {
     if (!left || !right) return left === right;
-    return left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
+    return left.mailKind === right.mailKind && this.fingerprints.digest(left.parameters ?? {}) === this.fingerprints.digest(right.parameters ?? {}) && left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
       const other = right.emails[index];
       return other !== void 0 && email.kind === other.kind && email.recipientName === other.recipientName && email.omittedLinks === other.omittedLinks && email.links.length === other.links.length && email.links.every((link, linkIndex) => {
         const otherLink = other.links[linkIndex];
@@ -37120,6 +37129,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.email-parameters-invalid": "Reviewed email parameters require valid public dates and HTTPS URLs.",
   "communication.content-review": "Event content needs current organizer approval.",
   "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
   "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
@@ -39793,6 +39803,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "referential.speaker.last-name.invalid",
   "referential.speaker.mapping.invalid",
   "referential.speaker.phone.invalid",
+  "communication.email-parameters-invalid",
   "communication.approval-pending",
   "communication.approval-rejected",
   "communication.event-concurrently-modified",
@@ -40169,6 +40180,22 @@ var CommunicationDispatchPolicy = class {
 
 // packages/application/journey/src/use-cases/communication-journey-results.ts
 var CommunicationJourneyResults = class {
+  combine(mode, results) {
+    const combined = this.emptyCommunicationResult(mode, []);
+    const counts = { ...combined.counts };
+    for (const result of results)
+      for (const key of Object.keys(counts))
+        counts[key] += result.counts[key];
+    return {
+      mode,
+      counts,
+      intentIds: results.flatMap((result) => result.intentIds),
+      completedMailKinds: [
+        ...new Set(results.flatMap((result) => result.completedMailKinds))
+      ],
+      diagnostics: results.flatMap((result) => result.diagnostics)
+    };
+  }
   withRuntimeDiagnostics(result, runtimeDiagnostics) {
     return {
       ...result,
@@ -49125,6 +49152,93 @@ var AUTHENTICATION_GUIDANCE = [
   ]
 ];
 
+// packages/adapter/event/github-event-comment-repository/src/email-diagnostic-guidance.ts
+var EMAIL_GUIDANCE = [
+  [
+    "communication.email-parameters-invalid",
+    [
+      "Communication",
+      "comment.guidance.communication.email-parameters-invalid"
+    ]
+  ],
+  [
+    "communication.approval-pending",
+    ["Communication", "comment.guidance.communication.approval"]
+  ],
+  [
+    "communication.approval-rejected",
+    ["Communication", "comment.guidance.communication.rejected"]
+  ],
+  [
+    "communication.approval-unavailable",
+    ["Communication", "comment.guidance.communication.approval-unavailable"]
+  ],
+  [
+    "communication.approval-notification-failed",
+    ["Communication", "comment.guidance.communication.approval-notification"]
+  ],
+  [
+    "communication.gateway-delivery-uncertain",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-threw-ambiguous-error",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.ledger-status-write-failed",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-delivery-rejected",
+    ["Communication", "comment.guidance.communication.delivery-rejected"]
+  ],
+  [
+    "communication.gateway-delivery-deferred",
+    ["Communication", "comment.guidance.communication.delivery-deferred"]
+  ],
+  [
+    "communication.invalid-clock",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-identifier",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-time-zone",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.ledger-read-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.ledger-reservation-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.missing-mail-destination",
+    ["Communication", "comment.guidance.communication.destination"]
+  ],
+  [
+    "communication.checklist-update-failed",
+    ["Communication", "comment.guidance.communication.checklist"]
+  ],
+  [
+    "communication.event-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent"]
+  ],
+  [
+    "communication.event-references-unresolved",
+    ["Agenda", "comment.guidance.communication.references"]
+  ],
+  [
+    "communication.referential-catalog-invalid",
+    ["Referentials", "comment.guidance.communication.catalog"]
+  ]
+];
+
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   ...AUTHENTICATION_GUIDANCE,
@@ -49277,82 +49391,7 @@ var STAGE_GUIDANCE = [
     "communication.slides-unavailable",
     ["Event materials", "comment.guidance.assets.slides"]
   ],
-  [
-    "communication.approval-pending",
-    ["Communication", "comment.guidance.communication.approval"]
-  ],
-  [
-    "communication.approval-rejected",
-    ["Communication", "comment.guidance.communication.rejected"]
-  ],
-  [
-    "communication.approval-unavailable",
-    ["Communication", "comment.guidance.communication.approval-unavailable"]
-  ],
-  [
-    "communication.approval-notification-failed",
-    ["Communication", "comment.guidance.communication.approval-notification"]
-  ],
-  [
-    "communication.gateway-delivery-uncertain",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-threw-ambiguous-error",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.ledger-status-write-failed",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-delivery-rejected",
-    ["Communication", "comment.guidance.communication.delivery-rejected"]
-  ],
-  [
-    "communication.gateway-delivery-deferred",
-    ["Communication", "comment.guidance.communication.delivery-deferred"]
-  ],
-  [
-    "communication.invalid-clock",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-identifier",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-time-zone",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.ledger-read-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.ledger-reservation-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.missing-mail-destination",
-    ["Communication", "comment.guidance.communication.destination"]
-  ],
-  [
-    "communication.checklist-update-failed",
-    ["Communication", "comment.guidance.communication.checklist"]
-  ],
-  [
-    "communication.event-concurrently-modified",
-    ["Communication", "comment.guidance.communication.concurrent"]
-  ],
-  [
-    "communication.event-references-unresolved",
-    ["Agenda", "comment.guidance.communication.references"]
-  ],
-  [
-    "communication.referential-catalog-invalid",
-    ["Referentials", "comment.guidance.communication.catalog"]
-  ],
+  ...EMAIL_GUIDANCE,
   [
     "publication.feedback.agenda",
     ["Agenda", "comment.guidance.feedback.agenda"]
@@ -50271,6 +50310,7 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
   "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
   "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
   "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
@@ -50339,6 +50379,7 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
   "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
   "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
   "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",

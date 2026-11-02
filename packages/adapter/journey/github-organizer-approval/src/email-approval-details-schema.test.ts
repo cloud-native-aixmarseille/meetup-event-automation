@@ -1,4 +1,5 @@
 import type { OrganizerApprovalDetails } from "@meetup-automation/journey";
+import { EmailReviewParameterPolicy } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
@@ -38,6 +39,7 @@ describe("approval detail validation", () => {
 		// Act
 		const validate = () =>
 			new EmailApprovalDetailsSchema({
+				parameterPolicy: new EmailReviewParameterPolicy(),
 				approvalSchema:
 					new GithubOrganizerApprovalComposition().approvalSchema(),
 			}).validate(input);
@@ -53,6 +55,7 @@ describe("approval detail validation", () => {
 		// Act
 		const validate = () =>
 			new EmailApprovalDetailsSchema({
+				parameterPolicy: new EmailReviewParameterPolicy(),
 				approvalSchema:
 					new GithubOrganizerApprovalComposition().approvalSchema(),
 			}).validate(input);

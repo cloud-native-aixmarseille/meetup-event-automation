@@ -1,4 +1,6 @@
 export const STAGE_MESSAGES_FR = {
+	"comment.guidance.communication.email-parameters-invalid":
+		"Corrigez les paramètres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des paramètres inchangés. Puis approuvez l'envoi.",
 	"comment.guidance.meetup.uncertain":
 		"La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'événement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuvés ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton \"Run workflow\". Si l'alerte revient, demandez à un mainteneur d'examiner le run.",
 	"comment.guidance.meetup.uncertain-missing-link":

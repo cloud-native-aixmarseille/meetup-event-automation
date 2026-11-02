@@ -25,6 +25,8 @@ export class ApprovalDetailsPreview {
 			}
 		}
 		return {
+			...(details.mailKind ? { mailKind: details.mailKind } : {}),
+			...(details.parameters ? { parameters: details.parameters } : {}),
 			emails,
 			omittedEmails:
 				details.omittedEmails + details.emails.length - emails.length,

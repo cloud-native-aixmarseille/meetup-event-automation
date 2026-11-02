@@ -19,7 +19,7 @@ export interface GithubOrganizerApprovalCollaborators {
 	readonly approvalRequestSchema: Pick<ApprovalRequestSchema, "validate">;
 	readonly approvalRequestPolicy: Pick<
 		ApprovalRequestPolicy,
-		"validate" | "matches" | "scope"
+		"validate" | "matches" | "scope" | "canReplaceCombinedEmail"
 	>;
 	readonly approvalDetailsPreview: Pick<ApprovalDetailsPreview, "create">;
 }
@@ -40,11 +40,7 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 		input = this.reviewedRequest(input);
 		this.collaborators.approvalRequestSchema.validate(input);
 		this.collaborators.approvalRequestPolicy.validate(input);
-		const existing = (await this.repository.states()).find(
-			({ record }) =>
-				this.collaborators.approvalRequestPolicy.scope(record) ===
-				this.collaborators.approvalRequestPolicy.scope(input),
-		);
+		const existing = await this.existingRequest(input);
 		if (
 			existing &&
 			this.collaborators.approvalRequestPolicy.matches(
@@ -64,7 +60,12 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 				throw new Error(
 					"The recorded organizer no longer has approval permission",
 				);
-			if (result.status !== "pending" || result.editedText !== undefined)
+			if (
+				result.status !== "pending" ||
+				result.editedText !== undefined ||
+				result.emailParameters ||
+				result.invalidEmailParameters
+			)
 				return result;
 			return {
 				status: "pending",
@@ -92,6 +93,24 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 			),
 		};
 	}
+	private async existingRequest(input: OrganizerApprovalRequest) {
+		const states = await this.repository.states();
+		return (
+			states.find(
+				({ record }) =>
+					this.collaborators.approvalRequestPolicy.scope(record) ===
+					this.collaborators.approvalRequestPolicy.scope(input),
+			) ??
+			states.find(({ record }) =>
+				this.collaborators.approvalRequestPolicy.canReplaceCombinedEmail(
+					record,
+					input,
+					record.decision !== undefined,
+				),
+			)
+		);
+	}
+
 	async synchronize(): Promise<{ notificationFailed: boolean }> {
 		let notificationFailed = false;
 		for (const state of await this.repository.activeStates()) {

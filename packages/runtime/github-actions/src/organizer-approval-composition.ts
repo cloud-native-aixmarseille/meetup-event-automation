@@ -6,6 +6,7 @@ import {
 import {
 	type ApprovalPresenter,
 	type GithubApprovalClient,
+	GithubEmailDeliveryReport,
 	GithubOrganizerApprovalComposition,
 } from "@meetup-automation/github-organizer-approval";
 import { GithubOrganizerAttentionComposition } from "@meetup-automation/github-organizer-attention";
@@ -39,14 +40,12 @@ export class OrganizerApprovalComposition {
 			new GithubOrganizerApprovalComposition().approvalRecordFactory(
 				randomUUID,
 			);
-		const notifications =
-			new GithubOrganizerApprovalComposition().approvalNotifications(
-				new ApprovalNotificationPolicy(),
-				client,
-				presenter,
-				notificationPort,
-				organizerChannelId,
-			);
+		const notifications = OrganizerApprovalComposition.notifications(
+			client,
+			presenter,
+			notificationPort,
+			organizerChannelId,
+		);
 		const repository =
 			new GithubOrganizerApprovalComposition().githubApprovalRepository(
 				client,
@@ -73,6 +72,11 @@ export class OrganizerApprovalComposition {
 				new GithubOrganizerAttentionComposition().attentionRecord(),
 			);
 		return {
+			emailDeliveryReport: OrganizerApprovalComposition.deliveryReport(
+				repository,
+				finalizer,
+				visibility,
+			),
 			approval:
 				new GithubOrganizerApprovalComposition().githubOrganizerApproval(
 					repository,
@@ -93,5 +97,30 @@ export class OrganizerApprovalComposition {
 					finalizer,
 				),
 		};
+	}
+	private static notifications(
+		client: GithubApprovalClient,
+		presenter: ApprovalPresenter,
+		port: OrganizerApprovalNotification,
+		channel: string,
+	) {
+		return new GithubOrganizerApprovalComposition().approvalNotifications(
+			new ApprovalNotificationPolicy(),
+			client,
+			presenter,
+			port,
+			channel,
+		);
+	}
+
+	private static deliveryReport(
+		repository: ConstructorParameters<typeof GithubEmailDeliveryReport>[0],
+		finalizer: ConstructorParameters<typeof GithubEmailDeliveryReport>[2],
+		visibility: GitHubCommentVisibility,
+	) {
+		return (
+			source: ConstructorParameters<typeof GithubEmailDeliveryReport>[1],
+		) =>
+			new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
 	}
 }

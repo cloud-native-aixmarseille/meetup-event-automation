@@ -123,6 +123,7 @@ const ORGANIZER_CODES = new Set([
 	"referential.speaker.last-name.invalid",
 	"referential.speaker.mapping.invalid",
 	"referential.speaker.phone.invalid",
+	"communication.email-parameters-invalid",
 	"communication.approval-pending",
 	"communication.approval-rejected",
 	"communication.event-concurrently-modified",

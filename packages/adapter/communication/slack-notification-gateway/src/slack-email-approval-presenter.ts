@@ -6,6 +6,7 @@ export class SlackEmailApprovalPresenter {
 	render(request: SlackApprovalRequests["email-introduction"]): string {
 		return this.messages.t("request.introduction", {
 			date: request.eventDate,
+			kind: request.mailKind?.replaceAll("-", "_") ?? "introduction",
 			url: request.approvalUrl,
 			count: request.recipientCount,
 		});

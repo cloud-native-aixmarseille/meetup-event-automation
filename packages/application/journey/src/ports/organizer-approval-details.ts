@@ -15,6 +15,8 @@ export interface ApprovalEmailDetail {
 }
 
 export interface OrganizerApprovalDetails {
+	readonly mailKind?: "host-introduction" | "speaker-introduction";
+	readonly parameters?: import("../approval/email-review-parameters.js").EmailReviewParameters;
 	readonly emails: readonly ApprovalEmailDetail[];
 	readonly omittedEmails: number;
 }

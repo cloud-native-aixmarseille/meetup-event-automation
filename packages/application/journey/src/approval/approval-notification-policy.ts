@@ -15,6 +15,9 @@ export class ApprovalNotificationPolicy {
 					kind: request.kind,
 					eventDate: request.eventDate,
 					recipientCount: request.recipientCount,
+					...(request.details?.mailKind
+						? { mailKind: request.details.mailKind }
+						: {}),
 				};
 			case "meetup-publication":
 			case "community-publication":
