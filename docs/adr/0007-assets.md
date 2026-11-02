@@ -92,6 +92,10 @@ Export the presentation as a managed static PDF in the `slides` child of the
 configured public root. Store cover candidates separately in its `tmp-covers`
 child. Resolve one existing direct child by its fixed name; do not create folders
 or fall back to storing assets in the root.
+After approval, move the selected cover into its managed event folder using the
+event date and `Cover` filename, with the original PNG or JPEG extension. Preserve
+its bytes and identity, and grant unlisted reader access to that image before
+moving it. Other event files and unselected candidates remain unchanged.
 It is a distinct artifact with its own stable file ID and provenance metadata,
 not another template copy or a document binding. Refresh that same managed file
 when the editable source changes; this does not create an immutable revision
@@ -236,3 +240,13 @@ configuration. The original ISO-style expression retains its output.
 | [0016: Host logos](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0016-render-host-logos.md)                               | Added public host logo rendering without changing contact-field ownership.                                                                  |
 | [0023: Presentation PDF](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0023-export-pdf-final-asset.md)                    | Added a separate stable PDF snapshot with provenance and recovery.                                                                          |
 | [0024: Action scopes](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/4f004b0a744a7eebc90503a2f2f77691bab2599f/docs/adr/0024-scoped-actions-and-workflow-composition.md)      | Separated document and PDF actions and superseded PDF readiness as an email prerequisite.                                                   |
+
+### 2026-11-02: keep approved artwork with its event
+
+Selected covers previously remained in `tmp-covers` with the other candidates.
+The event folder now owns the selected file as `YYYY-MM-DD - Cover.png` or `.jpg`.
+This supersedes permanent staging for selected covers only. Moving and renaming
+preserve the approved bytes, ID and URL; explicit image reader access preserves
+its public use when parent permissions change. Verification accepts the recorded
+managed event folder and rejects unrelated moves. Retries inspect the existing
+placement, without copying artwork or altering approval records.

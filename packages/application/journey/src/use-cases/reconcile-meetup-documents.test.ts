@@ -16,11 +16,59 @@ import {
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
 import { JourneyComposition } from "../dependency-composition.js";
+import { publicationCover } from "../../testing/meetup-publication.fixtures.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 import { ReconcileMeetupDocuments } from "./reconcile-meetup-documents.js";
 
 describe("ReconcileMeetupDocuments", () => {
+	it.each([
+		["image/png", "png"],
+		["image/jpeg", "jpg"],
+	] as const)(
+		"places the approved %s cover in the event folder with the %s extension",
+		async (mimeType, extension) => {
+			// Arrange
+			const f = assetJourney();
+			const cover = { ...publicationCover, mimeType };
+			f.contentGate.cover.mockResolvedValue(cover);
+			// Act
+			await f.useCase.execute({ identity });
+			// Assert
+			expect(f.covers.place).toHaveBeenCalledExactlyOnceWith({
+				media: cover,
+				container: expect.objectContaining({
+					id: "new-folder",
+					eventId: `${identity.repository}#42`,
+				}),
+				name: `2026-09-30 - Cover.${extension}`,
+			});
+		},
+	);
+	it("does not move a cover without current approval", async () => {
+		// Arrange
+		const f = assetJourney();
+		// Act
+		await f.useCase.execute({ identity });
+		// Assert
+		expect(f.covers.place).not.toHaveBeenCalled();
+	});
+	it("does not move a cover after a concurrent issue edit", async () => {
+		// Arrange
+		const f = assetJourney();
+		f.contentGate.cover.mockResolvedValue(publicationCover);
+		vi.mocked(f.eventDependencies.repository.find)
+			.mockResolvedValueOnce(sourceDocument)
+			.mockResolvedValueOnce(sourceDocument)
+			.mockResolvedValue({ ...sourceDocument, body: "Changed event" });
+		// Act
+		const result = f.useCase.execute({ identity });
+		// Assert
+		await expect(result).rejects.toMatchObject({
+			name: "EventConcurrentModificationError",
+		});
+		expect(f.covers.place).not.toHaveBeenCalled();
+	});
 	it.each([
 		["copy-only", true, true],
 		["ready", true, true],
@@ -283,6 +331,11 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 		}),
 		updateFile: vi.fn<AssetRepository["updateFile"]>(),
 	};
+	const covers = { place: vi.fn() };
+	const contentGate = {
+		blocked: vi.fn().mockResolvedValue([]),
+		cover: vi.fn(),
+	};
 	const revision = { of: vi.fn().mockReturnValue("a".repeat(64)) };
 	const useCase = new ReconcileMeetupDocuments(
 		{
@@ -292,7 +345,8 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 				new EventDomainComposition().eventRepositoryPatches(),
 		},
 		{
-			contentGate: { blocked: vi.fn().mockResolvedValue([]), cover: vi.fn() },
+			contentGate,
+			covers,
 			revision,
 			eventRepository: eventDependencies.repository,
 			documentCodec: eventDependencies.documentCodec,
@@ -342,5 +396,12 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 				),
 		},
 	);
-	return { eventDependencies, assetRepository, useCase, revision };
+	return {
+		eventDependencies,
+		assetRepository,
+		useCase,
+		revision,
+		covers,
+		contentGate,
+	};
 }

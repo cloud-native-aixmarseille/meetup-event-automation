@@ -3,7 +3,10 @@ import type {
 	EventRepository,
 } from "@meetup-automation/event";
 import { GoogleDocsContentRepositoryComposition } from "@meetup-automation/google-docs-content-repository";
-import { GoogleDriveAssetRepositoryComposition } from "@meetup-automation/google-drive-asset-repository";
+import {
+	GoogleDriveAssetRepositoryComposition,
+	GoogleDriveContentMediaComposition,
+} from "@meetup-automation/google-drive-asset-repository";
 import { GoogleSlidesContentRepositoryComposition } from "@meetup-automation/google-slides-content-repository";
 import { HttpsAssetImageRepositoryComposition } from "@meetup-automation/https-asset-image-repository";
 import {
@@ -15,6 +18,7 @@ import {
 import {
 	type AssetRepository,
 	type ContentRecovery,
+	type EventCoverRepository,
 	PublicationDomainComposition,
 	ReconcileAssetContent,
 	ReconcileEventAssets,
@@ -35,6 +39,7 @@ import { EventSnapshotHash } from "./event-snapshot-hash.js";
 import { PublicationPolicyComposition } from "./publication-policy-composition.js";
 
 export const ASSET_REPOSITORY = Symbol("AssetRepository");
+export const EVENT_COVER_REPOSITORY = Symbol("EventCoverRepository");
 
 type PublicationInput = EventCompositionInput & {
 	readonly locale: string;
@@ -43,6 +48,7 @@ type PublicationInput = EventCompositionInput & {
 	readonly credentials: string;
 	readonly parentFolderId: string;
 	readonly templateFolderId: string;
+	readonly publicFolderId: string;
 	readonly recovery: Readonly<Record<string, ContentRecovery>>;
 	readonly startTime: string;
 };
@@ -50,6 +56,16 @@ type PublicationInput = EventCompositionInput & {
 export class DocumentComposition {
 	static createDocumentContainer(input: PublicationInput) {
 		const container = EventComposition.createEventContainer(input);
+		container
+			.bind<EventCoverRepository>(EVENT_COVER_REPOSITORY)
+			.toDynamicValue(() =>
+				new GoogleDriveContentMediaComposition().create(
+					input.credentials,
+					input.publicFolderId,
+					new HttpsAssetImageRepositoryComposition().contentImageLoader(),
+					new AssetFileNameComposition().create(input.locale),
+				),
+			);
 		container.bind<AssetRepository>(ASSET_REPOSITORY).toDynamicValue(() =>
 			new GoogleDriveAssetRepositoryComposition()
 				.googleDriveAssetRepositoryFactory()
@@ -84,6 +100,7 @@ export class DocumentComposition {
 					input.commentAuthorLogin,
 				),
 				revision: new EventSnapshotHash(),
+				covers: context.get<EventCoverRepository>(EVENT_COVER_REPOSITORY),
 				renderProjection: new JourneyComposition().assetRenderProjection(
 					new GithubActionsComposition().assetRenderPresenterImpl(
 						new GithubActionsComposition().assetMessages(input.locale),

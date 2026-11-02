@@ -290,7 +290,7 @@ forward it as `google-drive-public-folder-id`. Its display name is arbitrary.
 Create these two direct child folders under that root:
 
 - `slides`: generated presentation PDFs, shared across all events.
-- `tmp-covers`: generated cover candidates awaiting or retaining content review.
+- `tmp-covers`: generated cover candidates awaiting review or not selected.
 
 The automation resolves each destination by its exact child name under the
 configured root ID. It requires one existing, non-trashed folder with that name;
@@ -298,7 +298,10 @@ missing, duplicate, malformed, or incomplete lookup results block the operation.
 It never creates destination folders or falls back to writing files in the root.
 The same layout applies when private event folders are archived. It does not
 create per-event public folders. Keep referenced cover candidates: there is no
-automatic cleanup of `tmp-covers`.
+automatic cleanup of unselected candidates in `tmp-covers`. After approval, the
+selected image moves to the event folder as `YYYY-MM-DD - Cover.png` or `.jpg`,
+preserving its format, identity, public URL and approval. See
+[cover storage and verification](content.md) for access requirements.
 
 The service account needs permission to export the source and create/update
 binary files in the event folder, move PDFs into the shared folder, update them,

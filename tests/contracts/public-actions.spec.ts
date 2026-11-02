@@ -219,6 +219,7 @@ const actionContracts = [
 			"google-credentials",
 			"google-drive-folder-id",
 			"google-drive-template-folder-id",
+			"google-drive-public-folder-id",
 			"issue-number",
 		],
 		outputs: ["drive-files", "slides-ready", "pdf-source", "diagnostics"],

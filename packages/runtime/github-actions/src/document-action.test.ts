@@ -44,6 +44,7 @@ beforeEach(() => {
 		"google-credentials": "secret-json",
 		"google-drive-folder-id": "parent",
 		"google-drive-template-folder-id": "templates",
+		"google-drive-public-folder-id": "public",
 	})) {
 		vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
 	}
@@ -169,6 +170,7 @@ describe("publication action boundary", () => {
 				credentials: "secret-json",
 				parentFolderId: "parent",
 				templateFolderId: "templates",
+				publicFolderId: "public",
 			}),
 		);
 		expect(mocks.execute).toHaveBeenCalledWith(
@@ -204,6 +206,7 @@ describe("publication action boundary", () => {
 				credentials: "secret-json",
 				parentFolderId: "parent",
 				templateFolderId: "templates",
+				publicFolderId: "public",
 			}),
 		);
 		expect(mocks.outputs["slides-ready"]).toBe(false);
