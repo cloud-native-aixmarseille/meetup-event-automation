@@ -69030,6 +69030,311 @@ var EventComposition = class _EventComposition {
   }
 };
 
+// packages/adapter/journey/github-automation-state/src/automation-state-codec.ts
+import { createHash as createHash4 } from "node:crypto";
+var AUTOMATION_STATE_MARKER = "<!-- meetup-automation-state:v1 ";
+var AutomationStateCodec = class {
+  scope(body) {
+    if (body.startsWith("<!-- meetup-content-proposal:v1 ")) return "content";
+    if (body.startsWith("<!-- meetup-social-delivery:v1 ")) return "social";
+    if (body.startsWith("<!-- meetup-publication:v1\n")) return "meetup";
+    if (body.startsWith("<!-- community-publication:v1\n")) return "community";
+    return void 0;
+  }
+  managed(body) {
+    return body.startsWith(AUTOMATION_STATE_MARKER) || this.scope(body) !== void 0;
+  }
+  empty() {
+    return {
+      version: 1,
+      records: { content: [], social: [], meetup: [], community: [] },
+      imports: []
+    };
+  }
+  digest(body) {
+    return createHash4("sha256").update(body).digest("hex");
+  }
+  read(body) {
+    const end = body.indexOf(" -->\n", AUTOMATION_STATE_MARKER.length);
+    if (!body.startsWith(AUTOMATION_STATE_MARKER) || end < 0)
+      throw new Error("Invalid automation state envelope");
+    return this.validate(
+      JSON.parse(body.slice(AUTOMATION_STATE_MARKER.length, end))
+    );
+  }
+  write(state) {
+    const json = JSON.stringify(this.validate(state)).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${AUTOMATION_STATE_MARKER}${json} -->`;
+  }
+  validate(value) {
+    if (!this.object(value) || value.version !== 1 || !this.object(value.records) || !Array.isArray(value.imports))
+      throw new Error("Invalid automation state envelope");
+    this.fields(value, ["version", "records", "imports"]);
+    this.fields(value.records, ["content", "social", "meetup", "community"]);
+    const records = this.empty().records;
+    for (const scope of Object.keys(records)) {
+      const entries = value.records[scope];
+      if (!Array.isArray(entries) || entries.some(
+        (body) => typeof body !== "string" || this.scope(body) !== scope
+      ))
+        throw new Error("Invalid automation state records");
+      records[scope] = entries;
+    }
+    const imports = value.imports.map((entry) => {
+      if (!this.object(entry) || typeof entry.id !== "number" || !Number.isSafeInteger(entry.id) || entry.id <= 0 || typeof entry.digest !== "string" || !/^[a-f0-9]{64}$/.test(entry.digest))
+        throw new Error("Invalid automation state import");
+      this.fields(entry, ["id", "digest"]);
+      return { id: entry.id, digest: entry.digest };
+    });
+    if (new Set(imports.map((entry) => entry.id)).size !== imports.length)
+      throw new Error("Duplicate automation state import");
+    return { version: 1, records, imports };
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  fields(value, fields) {
+    if (Object.keys(value).some((key) => !fields.includes(key)))
+      throw new Error("Unsupported automation state field");
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/automation-state-presenter.ts
+var AutomationStatePresenter = class {
+  constructor(codec, messages5) {
+    this.codec = codec;
+    this.messages = messages5;
+  }
+  codec;
+  messages;
+  render(state) {
+    return `${this.codec.write(state)}
+
+${this.messages.t("state.description")}`;
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/github-automation-state.ts
+import { isDeepStrictEqual } from "node:util";
+var GithubAutomationState = class {
+  constructor(client, comments, codec, presenter, visibility) {
+    this.client = client;
+    this.comments = comments;
+    this.codec = codec;
+    this.presenter = presenter;
+    this.visibility = visibility;
+  }
+  client;
+  comments;
+  codec;
+  presenter;
+  visibility;
+  async read(scope) {
+    return (await this.snapshot()).state.records[scope];
+  }
+  async write(scope, previous, next) {
+    const snapshot = await this.snapshot();
+    if (!isDeepStrictEqual(snapshot.state.records[scope], previous))
+      throw new Error("Automation state changed before persistence");
+    await this.persist(snapshot, {
+      ...snapshot.state,
+      records: { ...snapshot.state.records, [scope]: next }
+    });
+  }
+  async reconcile() {
+    const snapshot = await this.snapshot();
+    if (snapshot.anchor || snapshot.sources.length)
+      await this.persist(snapshot, snapshot.state);
+  }
+  async snapshot() {
+    const comments = await this.comments.list();
+    const anchors = comments.filter(
+      (comment) => comment.body?.startsWith(AUTOMATION_STATE_MARKER)
+    );
+    if (anchors.length > 1)
+      throw new Error("Duplicate automation state comments");
+    const anchor = anchors[0];
+    const sources = comments.filter(
+      (comment) => this.codec.scope(comment.body ?? "") !== void 0
+    );
+    if (anchor) {
+      const state2 = this.codec.read(anchor.body ?? "");
+      for (const source of sources) {
+        const imported = state2.imports.find((entry) => entry.id === source.id);
+        if (!imported || imported.digest !== this.codec.digest(source.body ?? ""))
+          throw new Error(
+            "Internal state changed outside the consolidated comment"
+          );
+      }
+      return { state: state2, anchor, sources };
+    }
+    const state = this.codec.empty();
+    for (const source of sources) {
+      const body = source.body ?? "";
+      const scope = this.codec.scope(body);
+      if (scope) state.records[scope] = [...state.records[scope], body];
+    }
+    return {
+      state: {
+        ...state,
+        imports: sources.map((source) => ({
+          id: source.id,
+          digest: this.codec.digest(source.body ?? "")
+        }))
+      },
+      anchor,
+      sources
+    };
+  }
+  async persist(snapshot, state) {
+    const body = this.presenter.render(state);
+    if (body.length > 6e4)
+      throw new Error(
+        "Consolidated automation state exceeds the comment size limit"
+      );
+    const anchor = snapshot.anchor ?? snapshot.sources[0];
+    const id = anchor ? anchor.id : await this.client.create(body);
+    if (anchor) await this.client.replace(id, anchor.body ?? "", body);
+    const saved = await this.snapshot();
+    if (saved.anchor?.id !== id || saved.anchor.body !== body)
+      throw new Error("Automation state persistence readback is uncertain");
+    await this.visibility.synchronize(id, body, true);
+    for (const source of saved.sources)
+      await this.visibility.synchronize(source.id, source.body ?? "", true);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.en.ts
+var EN_MESSAGES6 = {
+  "state.description": "Automation state. This comment is maintained by the bot and kept collapsed."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.fr.ts
+var FR_MESSAGES6 = {
+  "state.description": "\xC9tat de l'automatisation. Ce commentaire est g\xE9r\xE9 par le bot et reste repli\xE9."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/catalog.ts
+var CATALOGS7 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
+
+// packages/adapter/journey/github-automation-state/src/i18n/state-messages.ts
+var StateMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS7, locale);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/state-edit-authority.ts
+import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
+var StateEditAuthority = class {
+  constructor(client, codec, author) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+  }
+  client;
+  codec;
+  author;
+  async verify(current, history) {
+    if (!this.bot(current.editor) && (history[0]?.diff !== current.body || !await this.authorized(current.editor)))
+      throw new Error("Automation state was edited outside automation");
+    let confirmedByBot = this.bot(current.editor);
+    for (const [index, edit] of history.entries()) {
+      if (this.bot(edit.editor)) {
+        confirmedByBot = true;
+        continue;
+      }
+      if (edit.editor?.__typename !== "User" || !confirmedByBot && !await this.authorized(edit.editor) || !this.publicationChange(history[index + 1]?.diff, edit.diff))
+        throw new Error("Automation state was edited outside automation");
+    }
+  }
+  bot(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
+  }
+  async authorized(editor) {
+    return editor?.__typename === "User" && await this.client.canApprove(editor.login);
+  }
+  publicationChange(before, after) {
+    if (!before || !after) return false;
+    const scope = this.codec.scope(before);
+    if (scope === "meetup" || scope === "community")
+      return this.codec.scope(after) === scope;
+    if (!before.startsWith(AUTOMATION_STATE_MARKER) || !after.startsWith(AUTOMATION_STATE_MARKER))
+      return false;
+    const previous = this.codec.read(before);
+    const next = this.codec.read(after);
+    return isDeepStrictEqual2(previous.records.content, next.records.content) && isDeepStrictEqual2(previous.records.social, next.records.social) && isDeepStrictEqual2(previous.imports, next.imports);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/trusted-state-comments.ts
+var TrustedStateComments = class {
+  constructor(client, codec, author, authority) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+    this.authority = authority;
+    if (!/^[a-z\d-]+\[bot\]$/i.test(author))
+      throw new Error("Automation state requires a trusted GitHub App bot");
+  }
+  client;
+  codec;
+  author;
+  authority;
+  async list() {
+    const records = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const current = await this.client.edit(comment);
+      if (current.id !== comment.node_id || current.body !== comment.body)
+        throw new Error("Automation state changed during verification");
+      const managed = this.codec.managed(current.body);
+      if (current.lastEditedAt !== null || current.editor !== null)
+        await this.verifyHistory(comment, current, managed);
+      if (managed) records.push(comment);
+    }
+    return records;
+  }
+  async verifyHistory(comment, current, managed) {
+    const history = await this.client.history(comment);
+    if (!current.editor || history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
+      throw new Error("Automation state history is unavailable");
+    const previouslyManaged = history.some(
+      (edit) => edit.diff !== null && this.codec.managed(edit.diff)
+    );
+    if (!managed && !previouslyManaged) return;
+    if (!managed)
+      throw new Error("Automation state was edited outside automation");
+    await this.authority.verify(current, history);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/dependency-composition.ts
+var GithubAutomationStateComposition = class {
+  create(client, author, locale, visibility) {
+    const codec = new AutomationStateCodec();
+    return new GithubAutomationState(
+      client,
+      new TrustedStateComments(
+        client,
+        codec,
+        author,
+        new StateEditAuthority(client, codec, author)
+      ),
+      codec,
+      new AutomationStatePresenter(
+        codec,
+        new StateMessages(
+          { localeResolver: new LocalizationComposition().localeResolver() },
+          locale
+        )
+      ),
+      visibility
+    );
+  }
+};
+
 // packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
 var ApprovalDecisionParser = class {
   constructor(textPreview, emailDecisions, policy, comments) {
@@ -69188,7 +69493,7 @@ var ApprovalPresenter = class {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES6 = {
+var EN_MESSAGES7 = {
   "approval.delivery.status": "- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {\u2705 Send accepted ({count})} pending {\u23F3 Sending ({count})} uncertain {\u26A0\uFE0F Uncertain result ({count}) \u2014 check the mail service before recovery} rejected {\u274C Send rejected ({count})} other {Awaiting dispatch}}.",
   "approval.delivery.notice": "Accepted means the mail service accepted the request, not that the email reached the inbox.",
   "approval.content.image-label": "#### Image {index, number}",
@@ -69230,7 +69535,7 @@ var EN_MESSAGES6 = {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES6 = {
+var FR_MESSAGES7 = {
   "approval.delivery.status": "- {kind, select, host_introduction {H\xF4te} speaker_introduction {Intervenants} host_thanks {Remerciements h\xF4te} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {\u2705 Envoi accept\xE9 ({count})} pending {\u23F3 Envoi en cours ({count})} uncertain {\u26A0\uFE0F R\xE9sultat incertain ({count}) \u2014 v\xE9rifier le service d'envoi avant toute reprise} rejected {\u274C Envoi refus\xE9 ({count})} other {En attente d'envoi}}.",
   "approval.delivery.notice": "Accept\xE9 signifie que le service d'envoi a pris la demande en charge, pas que l'email a \xE9t\xE9 re\xE7u.",
   "approval.content.image-label": "#### Visuel {index, number}",
@@ -69272,7 +69577,7 @@ var FR_MESSAGES6 = {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS7 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
+var CATALOGS8 = { en: EN_MESSAGES7, fr: FR_MESSAGES7 };
 
 // packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
 var ApprovalPresenterFactory = class {
@@ -69281,7 +69586,7 @@ var ApprovalPresenterFactory = class {
   }
   collaborators;
   supportedLocales() {
-    return Object.keys(CATALOGS7).map(
+    return Object.keys(CATALOGS8).map(
       (locale) => this.collaborators.createApprovalPresenter(
         this.collaborators.createApprovalMessages(locale)
       )
@@ -70965,7 +71270,7 @@ var GithubOrganizerFollowUp = class {
 // packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
 var ApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS7, locale);
+    super(collaborators, CATALOGS8, locale);
   }
 };
 
@@ -71311,45 +71616,39 @@ var GithubContentAuthority = class {
 
 // packages/adapter/journey/github-organizer-approval/src/github-content-proposal-store.ts
 var GithubContentProposalStore = class {
-  constructor(client, author, codec, fingerprints, transitions) {
-    this.client = client;
-    this.author = author;
+  constructor(state, codec, fingerprints, transitions) {
+    this.state = state;
     this.codec = codec;
     this.fingerprints = fingerprints;
     this.transitions = transitions;
   }
-  client;
-  author;
+  state;
   codec;
   fingerprints;
   transitions;
   async load() {
     const records = await this.records();
-    const proposals = records.map((record) => record.proposal);
+    const proposals = records.map((record) => this.codec.read(record));
     return { revision: this.fingerprints.digest(proposals), proposals };
   }
   async save(previous, proposals) {
     const records = await this.records();
-    if (this.fingerprints.digest(records.map((record) => record.proposal)) !== previous.revision)
+    const current = records.map((record) => this.codec.read(record));
+    if (this.fingerprints.digest(current) !== previous.revision)
       throw new Error("Content proposals changed before persistence");
-    if (records.some(
-      (record) => !proposals.some((proposal) => proposal.id === record.proposal.id)
+    if (current.some(
+      (record) => !proposals.some((proposal) => proposal.id === record.id)
     ))
       throw new Error("Content proposal history cannot be removed");
     for (const proposal of proposals) {
-      const existing = records.find(
-        (record) => record.proposal.id === proposal.id
-      );
-      const body = this.codec.write(proposal);
-      if (existing) {
-        this.transitions.validate(existing.proposal, proposal);
-        await this.client.replace(
-          existing.comment.id,
-          existing.comment.body ?? "",
-          body
-        );
-      } else await this.client.create(body);
+      const existing = current.find((record) => record.id === proposal.id);
+      if (existing) this.transitions.validate(existing, proposal);
     }
+    await this.state.write(
+      "content",
+      records,
+      proposals.map((proposal) => this.codec.write(proposal))
+    );
     const saved = await this.load();
     if (proposals.some(
       (proposal) => this.fingerprints.digest(
@@ -71360,35 +71659,11 @@ var GithubContentProposalStore = class {
     return saved;
   }
   async records() {
-    const result = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.author.toLowerCase() || comment.user.type !== "Bot")
-        continue;
-      const edit = await this.client.edit(comment);
-      if (edit.editor && (edit.editor.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))) {
-        await this.requireUnrelated(comment);
-        continue;
-      }
-      if (!edit.editor && edit.lastEditedAt !== null)
-        throw new Error("Content proposal editor is unavailable");
-      if (!edit.body.startsWith(CONTENT_STATE_MARKER)) continue;
-      const proposal = this.codec.read(edit.body);
-      if (result.some((record) => record.proposal.id === proposal.id))
-        throw new Error("Ambiguous content proposal state");
-      result.push({ comment, proposal });
-    }
-    return result;
-  }
-  async requireUnrelated(comment) {
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Content state history was deleted");
-      if (edit.editor?.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))
-        continue;
-      if (edit.diff === null || edit.diff.startsWith(CONTENT_STATE_MARKER))
-        throw new Error("Content proposal state was edited outside automation");
-      return;
-    }
-    throw new Error("Content proposal history could not be verified");
+    const records = await this.state.read("content");
+    const ids = records.map((record) => this.codec.read(record).id);
+    if (new Set(ids).size !== ids.length)
+      throw new Error("Ambiguous content proposal state");
+    return records;
   }
 };
 
@@ -71521,11 +71796,10 @@ var GithubContentStoreComposition = class {
       client
     );
   }
-  store(client, author) {
+  store(state) {
     const fingerprints = new DraftProposalComposition().fingerprints();
     return new GithubContentProposalStore(
-      client,
-      author,
+      state,
       new ContentProposalCodec(
         new ContentValueSchema(new PublicAssetUrl()),
         new DraftProposalComposition().policy(),
@@ -71603,6 +71877,103 @@ var GithubEmailDeliveryReport = class {
         count: expected - matching.length
       });
     return summary2;
+  }
+};
+
+// packages/runtime/github-actions/src/organizer-approval-composition.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
+  static visibility(input) {
+    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
+      input.client,
+      input.owner,
+      input.repo
+    );
+  }
+  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
+    const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
+      randomUUID2
+    );
+    const notifications = _OrganizerApprovalComposition.notifications(
+      client,
+      presenter,
+      notificationPort,
+      organizerChannelId
+    );
+    const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
+      client,
+      new GithubOrganizerApprovalComposition().trustedApprovalState(
+        client,
+        authorLogin
+      ),
+      authorLogin,
+      presenter
+    );
+    const finalizer = new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
+      new GithubOrganizerApprovalComposition().resolveApprovalDecision(
+        client,
+        new GithubOrganizerApprovalComposition().approvalDecisionParser(
+          new GithubOrganizerApprovalComposition().approvalPresenterFactory().supportedLocales()
+        )
+      ),
+      repository,
+      notifications,
+      visibility,
+      new GithubOrganizerAttentionComposition().attentionRecord()
+    );
+    return {
+      emailDeliveryReport: _OrganizerApprovalComposition.deliveryReport(
+        repository,
+        finalizer,
+        visibility
+      ),
+      approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+        repository,
+        records,
+        finalizer,
+        notifications,
+        client
+      ),
+      followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
+        repository,
+        records,
+        finalizer
+      ),
+      attention: new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
+        repository,
+        finalizer
+      )
+    };
+  }
+  static notifications(client, presenter, port, channel) {
+    return new GithubOrganizerApprovalComposition().approvalNotifications(
+      new ApprovalNotificationPolicy(),
+      client,
+      presenter,
+      port,
+      channel
+    );
+  }
+  static deliveryReport(repository, finalizer, visibility) {
+    return (source) => new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
+  }
+};
+
+// packages/runtime/github-actions/src/automation-state-composition.ts
+var AutomationStateComposition = class {
+  create(input) {
+    const client = new GithubOrganizerApprovalComposition().githubApprovalClient(
+      input.client,
+      input.owner,
+      input.repo,
+      input.issueNumber
+    );
+    return new GithubAutomationStateComposition().create(
+      client,
+      input.commentAuthorLogin,
+      input.locale,
+      OrganizerApprovalComposition.visibility(input)
+    );
   }
 };
 
@@ -71695,7 +72066,13 @@ var ContentGateComposition = class {
     const storage = new GithubContentStoreComposition();
     const runtime = new GithubActionsComposition();
     const dependencies = [
-      storage.store(client, author),
+      storage.store(
+        new AutomationStateComposition().create({
+          ...input,
+          issueNumber,
+          commentAuthorLogin: author
+        })
+      ),
       storage.authority(
         client,
         author,
@@ -71884,25 +72261,25 @@ var messages4 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
-var CATALOGS8 = { en: messages3, fr: messages4 };
+var CATALOGS9 = { en: messages3, fr: messages4 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
 var SlackAttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS8, locale);
+    super(collaborators, CATALOGS9, locale);
   }
   failure(resource) {
     const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS8.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+    return Object.hasOwn(CATALOGS9.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
   }
   task(resource) {
     const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS8.en, key) ? key : "task.unknown");
+    return this.t(Object.hasOwn(CATALOGS9.en, key) ? key : "task.unknown");
   }
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES7 = {
+var EN_MESSAGES8 = {
   "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
   "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
   "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
@@ -71911,7 +72288,7 @@ var EN_MESSAGES7 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES7 = {
+var FR_MESSAGES8 = {
   "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
   "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
   "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
@@ -71920,12 +72297,12 @@ var FR_MESSAGES7 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
-var CATALOGS9 = { en: EN_MESSAGES7, fr: FR_MESSAGES7 };
+var CATALOGS10 = { en: EN_MESSAGES8, fr: FR_MESSAGES8 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
 var SlackApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale) {
-    super(collaborators, CATALOGS9, locale);
+    super(collaborators, CATALOGS10, locale);
   }
 };
 
@@ -72084,7 +72461,7 @@ var SlackApprovalPresenter = class {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 var SlackAttentionNotification = class {
   constructor(collaborators, client, channel, presenter) {
     this.collaborators = collaborators;
@@ -72099,7 +72476,7 @@ var SlackAttentionNotification = class {
   channel;
   presenter;
   fingerprint(view) {
-    return createHash4("sha256").update(this.presenter.render(view)).digest("hex");
+    return createHash5("sha256").update(this.presenter.render(view)).digest("hex");
   }
   async post(view) {
     const response = await this.client.post(
@@ -72404,85 +72781,6 @@ var SlackNotificationGatewayComposition = class {
   }
   slackMessageReference() {
     return new SlackMessageReference();
-  }
-};
-
-// packages/runtime/github-actions/src/organizer-approval-composition.ts
-import { randomUUID as randomUUID2 } from "node:crypto";
-var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
-  static visibility(input) {
-    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
-      input.client,
-      input.owner,
-      input.repo
-    );
-  }
-  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
-    const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
-      randomUUID2
-    );
-    const notifications = _OrganizerApprovalComposition.notifications(
-      client,
-      presenter,
-      notificationPort,
-      organizerChannelId
-    );
-    const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
-      client,
-      new GithubOrganizerApprovalComposition().trustedApprovalState(
-        client,
-        authorLogin
-      ),
-      authorLogin,
-      presenter
-    );
-    const finalizer = new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
-      new GithubOrganizerApprovalComposition().resolveApprovalDecision(
-        client,
-        new GithubOrganizerApprovalComposition().approvalDecisionParser(
-          new GithubOrganizerApprovalComposition().approvalPresenterFactory().supportedLocales()
-        )
-      ),
-      repository,
-      notifications,
-      visibility,
-      new GithubOrganizerAttentionComposition().attentionRecord()
-    );
-    return {
-      emailDeliveryReport: _OrganizerApprovalComposition.deliveryReport(
-        repository,
-        finalizer,
-        visibility
-      ),
-      approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
-        repository,
-        records,
-        finalizer,
-        notifications,
-        client
-      ),
-      followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
-        repository,
-        records,
-        finalizer
-      ),
-      attention: new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
-        repository,
-        finalizer
-      )
-    };
-  }
-  static notifications(client, presenter, port, channel) {
-    return new GithubOrganizerApprovalComposition().approvalNotifications(
-      new ApprovalNotificationPolicy(),
-      client,
-      presenter,
-      port,
-      channel
-    );
-  }
-  static deliveryReport(repository, finalizer, visibility) {
-    return (source) => new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
   }
 };
 
@@ -72946,7 +73244,7 @@ var GithubDeliveryLedger = class {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/messages.en.ts
-var EN_MESSAGES8 = {
+var EN_MESSAGES9 = {
   "ledger.title": "### Delivery status",
   "ledger.empty": "No deliveries recorded.",
   "ledger.row": "- {kind}: {status} ({count, number})",
@@ -72957,7 +73255,7 @@ var EN_MESSAGES8 = {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/messages.fr.ts
-var FR_MESSAGES8 = {
+var FR_MESSAGES9 = {
   "ledger.title": "### Suivi des envois",
   "ledger.empty": "Aucun envoi enregistr\xE9.",
   "ledger.row": "- {kind} : {status} ({count, number})",
@@ -72968,12 +73266,12 @@ var FR_MESSAGES8 = {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/catalog.ts
-var CATALOGS10 = { en: EN_MESSAGES8, fr: FR_MESSAGES8 };
+var CATALOGS11 = { en: EN_MESSAGES9, fr: FR_MESSAGES9 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/ledger-messages.ts
 var LedgerMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS10, locale);
+    super(collaborators, CATALOGS11, locale);
   }
 };
 
@@ -73067,7 +73365,7 @@ var LedgerCommentPresenter = class {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/ledger-entry-mapping.ts
-import { createHash as createHash5 } from "node:crypto";
+import { createHash as createHash6 } from "node:crypto";
 var LedgerEntryMapping = class {
   publicEntry(entry) {
     return {
@@ -73096,7 +73394,7 @@ var LedgerEntryMapping = class {
   }
   protectIdentifier(value) {
     if (/^sha256:[0-9a-f]{64}$/.test(value)) return value;
-    return `sha256:${createHash5("sha256").update(value).digest("hex")}`;
+    return `sha256:${createHash6("sha256").update(value).digest("hex")}`;
   }
 };
 
@@ -73260,70 +73558,128 @@ var CommunityPublicationCommentCodec = class _CommunityPublicationCommentCodec {
 
 // packages/adapter/publication/github-publication-journal/src/github-community-publication-journal.ts
 var GithubCommunityPublicationJournal = class {
-  constructor(codec, client, scope, author) {
+  constructor(codec, state) {
     this.codec = codec;
-    this.client = client;
-    this.scope = scope;
-    this.author = author;
-    if (!author.endsWith("[bot]"))
-      throw new Error("Community publication requires the GitHub App bot");
+    this.state = state;
   }
   codec;
-  client;
-  scope;
-  author;
+  state;
   async load() {
     const comment = await this.find();
-    return comment ? this.codec.decode(comment.body ?? "") : void 0;
+    return comment ? this.codec.decode(comment) : void 0;
   }
   async reserve() {
     if (await this.load()) throw new ScheduledEventError("uncertain");
-    await this.client.rest.issues.createComment({
-      ...this.scope,
-      body: this.codec.encode({})
-    });
+    await this.state.write("community", [], [this.codec.encode({})]);
     if (!await this.load()) throw new ScheduledEventError("uncertain");
   }
   async record(identity) {
     const comment = await this.find();
-    const previous = comment ? this.codec.decode(comment.body ?? "").identity : void 0;
+    const previous = comment ? this.codec.decode(comment).identity : void 0;
     if (previous && (previous.id !== identity.id || previous.reviewUrl !== identity.reviewUrl))
       throw new ScheduledEventError("conflict");
-    if (previous && (identity.publicUrl === void 0 || previous.publicUrl === identity.publicUrl))
-      return;
-    const body = this.codec.encode({ identity });
-    if (comment) {
-      await this.client.rest.issues.updateComment({
-        owner: this.scope.owner,
-        repo: this.scope.repo,
-        comment_id: comment.id,
-        body
-      });
-    } else await this.client.rest.issues.createComment({ ...this.scope, body });
+    const body = this.codec.encode({
+      identity: previous && identity.publicUrl === void 0 ? previous : identity
+    });
+    await this.state.write("community", comment ? [comment] : [], [body]);
     const saved = await this.load();
-    if (saved?.identity?.id !== identity.id || saved.identity.publicUrl !== identity.publicUrl)
+    if (saved?.identity?.id !== identity.id || saved.identity.publicUrl !== (identity.publicUrl ?? previous?.publicUrl))
       throw new ScheduledEventError("uncertain");
   }
   async find() {
-    const matches = [];
-    for (let page = 1; page <= 100; page++) {
-      const response = await this.client.rest.issues.listComments({
-        ...this.scope,
-        page,
-        per_page: 100
-      });
-      matches.push(
-        ...response.data.filter(
-          (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && comment.body?.startsWith(CommunityPublicationCommentCodec.marker)
-        )
-      );
-      if (matches.length > 1) throw new ScheduledEventError("conflict");
-      const hasNext = response.headers.link !== void 0 ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!hasNext) return matches[0];
-    }
-    throw new Error(
-      "Community publication journal pagination exceeded its bound"
+    const records = await this.state.read("community");
+    if (records.length > 1) throw new ScheduledEventError("conflict");
+    return records[0];
+  }
+};
+
+// packages/adapter/publication/github-publication-journal/src/github-publication-journal.ts
+var GithubPublicationJournal = class {
+  constructor(collaborators, state) {
+    this.collaborators = collaborators;
+    this.state = state;
+  }
+  collaborators;
+  state;
+  async load() {
+    const comment = await this.find();
+    if (!comment) return void 0;
+    const record = this.collaborators.publicationCommentCodec.decode(comment);
+    if (!record.url) return {};
+    const url = MeetupEventUrl.parse(record.url);
+    if (!url) throw new Error("Invalid Meetup journal identity");
+    return {
+      identity: { id: url.id, reviewUrl: url.value, publicUrl: url.value }
+    };
+  }
+  async reserve() {
+    if (await this.load())
+      throw new Error("Publication creation was already reserved");
+    await this.state.write(
+      "meetup",
+      [],
+      [this.collaborators.publicationCommentCodec.encode({})]
     );
+    if (!await this.load())
+      throw new Error("Publication reservation was not persisted");
+  }
+  async record(identity) {
+    const parsed = MeetupEventUrl.parse(identity.reviewUrl);
+    if (!parsed || parsed.id !== identity.id || parsed.value !== identity.reviewUrl || parsed.value !== identity.publicUrl)
+      throw new Error("Invalid Meetup journal identity");
+    const url = parsed.value;
+    const existing = await this.load();
+    if (existing?.identity?.reviewUrl && existing.identity.reviewUrl !== url)
+      throw new Error("Publication journal identity conflict");
+    const comment = await this.find();
+    const previous = comment ? this.collaborators.publicationCommentCodec.decode(comment) : {};
+    const body = this.collaborators.publicationCommentCodec.encode({
+      ...previous,
+      url
+    });
+    await this.state.write("meetup", comment ? [comment] : [], [body]);
+  }
+  async readCover() {
+    const comment = await this.find();
+    return comment ? this.collaborators.publicationCommentCodec.decode(comment).cover : void 0;
+  }
+  async reserveCover(record) {
+    const previous = await this.readCover();
+    if (previous && (!previous.photoId || previous.groupUrl !== record.groupUrl || previous.fingerprint === record.fingerprint))
+      throw new Error(
+        "Meetup cover upload already reserved or conflicts with its target"
+      );
+    await this.writeCover(record);
+  }
+  async recordCover(record) {
+    const previous = await this.readCover();
+    if (!previous || previous.groupUrl !== record.groupUrl || previous.fingerprint !== record.fingerprint || previous.photoId !== void 0 && previous.photoId !== record.photoId)
+      throw new Error("Meetup cover upload identity conflict");
+    await this.writeCover(record);
+  }
+  async writeCover(cover) {
+    const comment = await this.find();
+    if (!comment)
+      throw new Error("Reserve the event identity before uploading artwork");
+    const previous = this.collaborators.publicationCommentCodec.decode(comment);
+    await this.state.write(
+      "meetup",
+      [comment],
+      [
+        this.collaborators.publicationCommentCodec.encode({
+          ...previous,
+          cover
+        })
+      ]
+    );
+    const persisted = await this.readCover();
+    if (!persisted || persisted.groupUrl !== cover.groupUrl || persisted.fingerprint !== cover.fingerprint || persisted.photoId !== cover.photoId)
+      throw new Error("Meetup cover journal was not persisted");
+  }
+  async find() {
+    const records = await this.state.read("meetup");
+    if (records.length > 1) throw new Error("Multiple publication journals");
+    return records[0];
   }
 };
 
@@ -73367,126 +73723,6 @@ var PublicationCommentCodec = class _PublicationCommentCodec {
       fingerprint: value.fingerprint,
       ...typeof value.photoId === "string" ? { photoId: value.photoId } : {}
     };
-  }
-};
-
-// packages/adapter/publication/github-publication-journal/src/github-publication-journal.ts
-var GithubPublicationJournal = class {
-  constructor(collaborators, client, scope, author) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.scope = scope;
-    this.author = author;
-    if (!author.endsWith("[bot]"))
-      throw new Error("Publication journal requires the GitHub App bot");
-  }
-  collaborators;
-  client;
-  scope;
-  author;
-  async load() {
-    const comment = await this.find();
-    if (!comment) return void 0;
-    const record = this.collaborators.publicationCommentCodec.decode(
-      comment.body ?? ""
-    );
-    if (!record.url) return {};
-    const url = MeetupEventUrl.parse(record.url);
-    if (!url) throw new Error("Invalid Meetup journal identity");
-    return {
-      identity: { id: url.id, reviewUrl: url.value, publicUrl: url.value }
-    };
-  }
-  async reserve() {
-    if (await this.load())
-      throw new Error("Publication creation was already reserved");
-    await this.client.rest.issues.createComment({
-      ...this.scope,
-      body: this.collaborators.publicationCommentCodec.encode({})
-    });
-    if (!await this.load())
-      throw new Error("Publication reservation was not persisted");
-  }
-  async record(identity) {
-    const parsed = MeetupEventUrl.parse(identity.reviewUrl);
-    if (!parsed || parsed.id !== identity.id || parsed.value !== identity.reviewUrl || parsed.value !== identity.publicUrl)
-      throw new Error("Invalid Meetup journal identity");
-    const url = parsed.value;
-    const existing = await this.load();
-    if (existing?.identity?.reviewUrl && existing.identity.reviewUrl !== url)
-      throw new Error("Publication journal identity conflict");
-    if (existing?.identity?.reviewUrl === url) return;
-    const comment = await this.find();
-    const previous = comment ? this.collaborators.publicationCommentCodec.decode(comment.body ?? "") : {};
-    const body = this.collaborators.publicationCommentCodec.encode({
-      ...previous,
-      url
-    });
-    if (comment) {
-      await this.client.rest.issues.updateComment({
-        owner: this.scope.owner,
-        repo: this.scope.repo,
-        comment_id: comment.id,
-        body
-      });
-    } else await this.client.rest.issues.createComment({ ...this.scope, body });
-  }
-  async readCover() {
-    const comment = await this.find();
-    return comment ? this.collaborators.publicationCommentCodec.decode(comment.body ?? "").cover : void 0;
-  }
-  async reserveCover(record) {
-    const previous = await this.readCover();
-    if (previous && (!previous.photoId || previous.groupUrl !== record.groupUrl || previous.fingerprint === record.fingerprint))
-      throw new Error(
-        "Meetup cover upload already reserved or conflicts with its target"
-      );
-    await this.writeCover(record);
-  }
-  async recordCover(record) {
-    const previous = await this.readCover();
-    if (!previous || previous.groupUrl !== record.groupUrl || previous.fingerprint !== record.fingerprint || previous.photoId !== void 0 && previous.photoId !== record.photoId)
-      throw new Error("Meetup cover upload identity conflict");
-    await this.writeCover(record);
-  }
-  async writeCover(cover) {
-    const comment = await this.find();
-    if (!comment)
-      throw new Error("Reserve the event identity before uploading artwork");
-    const previous = this.collaborators.publicationCommentCodec.decode(
-      comment.body ?? ""
-    );
-    await this.client.rest.issues.updateComment({
-      owner: this.scope.owner,
-      repo: this.scope.repo,
-      comment_id: comment.id,
-      body: this.collaborators.publicationCommentCodec.encode({
-        ...previous,
-        cover
-      })
-    });
-    const persisted = await this.readCover();
-    if (!persisted || persisted.groupUrl !== cover.groupUrl || persisted.fingerprint !== cover.fingerprint || persisted.photoId !== cover.photoId)
-      throw new Error("Meetup cover journal was not persisted");
-  }
-  async find() {
-    const matches = [];
-    for (let page = 1; page <= 100; page++) {
-      const response = await this.client.rest.issues.listComments({
-        ...this.scope,
-        page,
-        per_page: 100
-      });
-      matches.push(
-        ...response.data.filter(
-          (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && comment.body?.startsWith(PublicationCommentCodec.marker)
-        )
-      );
-      if (matches.length > 1) throw new Error("Multiple publication journals");
-      const hasNext = response.headers.link !== void 0 ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!hasNext) return matches[0];
-    }
-    throw new Error("Publication journal pagination exceeded its bound");
   }
 };
 
@@ -75016,24 +75252,24 @@ import { spawn as spawn2 } from "node:child_process";
 import { chromium } from "playwright-core";
 
 // packages/adapter/publication/meetup-event-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES9 = {
+var EN_MESSAGES10 = {
   "slides.subject": "Meetup presentation",
   "slides.body": "Hello, here is the link to the meetup slides: {url}"
 };
 
 // packages/adapter/publication/meetup-event-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES9 = {
+var FR_MESSAGES10 = {
   "slides.subject": "Pr\xE9sentation du meetup",
   "slides.body": "Bonjour, voici le lien vers les slides du meetup: {url}"
 };
 
 // packages/adapter/publication/meetup-event-gateway/src/i18n/catalog.ts
-var CATALOGS11 = { en: EN_MESSAGES9, fr: FR_MESSAGES9 };
+var CATALOGS12 = { en: EN_MESSAGES10, fr: FR_MESSAGES10 };
 
 // packages/adapter/publication/meetup-event-gateway/src/i18n/attendee-messages.ts
 var AttendeeMessages = class extends MessageLocalizer {
   constructor(collaborators, locale) {
-    super(collaborators, CATALOGS11, locale);
+    super(collaborators, CATALOGS12, locale);
   }
 };
 
@@ -75382,10 +75618,10 @@ var MeetupCover = class {
 };
 
 // packages/adapter/publication/meetup-event-gateway/src/meetup-cover-image.ts
-import { createHash as createHash6 } from "node:crypto";
+import { createHash as createHash7 } from "node:crypto";
 var MeetupCoverImage = class {
   valid(image, cover) {
-    if (!image.bytes.length || image.bytes.length >= 15e6 || image.mimeType !== cover.mimeType || createHash6("sha256").update(image.bytes).digest("hex") !== cover.fingerprint)
+    if (!image.bytes.length || image.bytes.length >= 15e6 || image.mimeType !== cover.mimeType || createHash7("sha256").update(image.bytes).digest("hex") !== cover.fingerprint)
       return false;
     try {
       const size = imageSize(image.bytes);
@@ -76776,7 +77012,7 @@ var OcgroupsLogin = class {
 };
 
 // packages/adapter/publication/ocgroups-event-gateway/src/ocgroups-photo-image.ts
-import { createHash as createHash7 } from "node:crypto";
+import { createHash as createHash8 } from "node:crypto";
 var OcgroupsPhotoImage = class {
   constructor(page, images) {
     this.page = page;
@@ -76792,13 +77028,13 @@ var OcgroupsPhotoImage = class {
     const cached = this.prepared.get(key);
     if (cached) return cached;
     const image = await this.images.load(cover.url);
-    if (!image.bytes.length || image.bytes.length > 15e6 || image.mimeType !== cover.mimeType || createHash7("sha256").update(image.bytes).digest("hex") !== cover.fingerprint)
+    if (!image.bytes.length || image.bytes.length > 15e6 || image.mimeType !== cover.mimeType || createHash8("sha256").update(image.bytes).digest("hex") !== cover.fingerprint)
       throw new ScheduledEventError("content-review");
     const encoded = await this.encode(image, cover);
     const bytes = Buffer.from(encoded.base64, "base64");
     if (!bytes.length || bytes.length > 1048576)
       throw new ScheduledEventError("content-review");
-    const fingerprint = createHash7("sha256").update(bytes).digest("hex");
+    const fingerprint = createHash8("sha256").update(bytes).digest("hex");
     const name = `${fingerprint}.${encoded.mimeType === "image/png" ? "png" : "jpg"}`;
     const prepared = {
       bytes,
@@ -77176,9 +77412,7 @@ var PublicationAdapterComposition = class {
   }
   journal(input) {
     return new GithubPublicationJournalComposition().githubPublicationJournal(
-      input.client,
-      { owner: input.owner, repo: input.repo, issue_number: input.issueNumber },
-      input.commentAuthorLogin
+      new AutomationStateComposition().create(input)
     );
   }
   ocgroups(input, adapter) {
@@ -77201,13 +77435,7 @@ var PublicationAdapterComposition = class {
         journal: new GithubPublicationJournalComposition().communityJournal(
           group,
           target,
-          input.client,
-          {
-            owner: input.owner,
-            repo: input.repo,
-            issue_number: input.issueNumber
-          },
-          input.commentAuthorLogin
+          new AutomationStateComposition().create(input)
         ),
         gateway: new OcgroupsEventGatewayComposition(
           new HttpsAssetImageRepositoryComposition().contentImageLoader()

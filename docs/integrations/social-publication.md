@@ -163,12 +163,19 @@ jobs:
       ai-api-key: ${{ secrets.GEMINI_API_KEY }}
 ```
 
-For immediate evaluation after a publication approval edit or event change,
+For immediate evaluation after a content review, publication approval edit, or event change,
 call [event-promotion-reconcile.yml](../../.github/workflows/event-promotion-reconcile.yml)
 with the same bindings plus `issue-number`. Use the issue/approval trigger filter
-from [repository setup](../usage/setup.md#process-issue-changes). The workflow prepares missing reminders and processes content reviews before
-publication. Announcements and explicit reminder revisions use the generation
-workflow. The dispatch action itself receives no AI credentials.
+from [repository setup](../usage/setup.md#process-issue-changes). When chaining
+after event reconciliation, run promotion after every successful reconciliation,
+including approval-comment edits. A social-publication approval may invoke
+promotion directly. Filtering comment events to publication approvals alone
+leaves completed content reviews in the social checklist until another social run.
+
+The workflow prepares missing reminders and processes content reviews before
+publication. Its completed social report refreshes the checklist; failed or
+unevaluated social work preserves prior tasks. Announcements and explicit reminder
+revisions use the generation workflow. The dispatch action itself receives no AI credentials.
 
 ## Approve and monitor
 
@@ -192,7 +199,9 @@ changed content. Published corrections remain manual.
 Successful destinations stay complete if another destination fails. The shared
 organizer checklist reports pending, blocked, uncertain and expired work by
 destination and purpose, preserving tasks owned by other workflows. Provider
-receipts and attempts remain in trusted bot-managed comments. Never edit or
+receipts and attempts remain in the `social` section of the issue's single
+[collapsed automation-state comment](../development/reporting.md#internal-automation-state).
+Never edit or
 delete their state to force another send.
 
 Definite transient non-acceptance is retried after at least 60 seconds and any

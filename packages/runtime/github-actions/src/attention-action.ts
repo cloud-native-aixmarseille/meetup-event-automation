@@ -1,3 +1,4 @@
+import type { AutomationStateInput } from "./automation-state-composition.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import type { ManageMeetupAttention } from "@meetup-automation/journey";
@@ -8,6 +9,7 @@ import type { ActionMessages } from "./i18n/action-messages.js";
 import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 export interface AttentionActionCollaborators {
+	readonly reconcileState: (input: AutomationStateInput) => Promise<void>;
 	readonly publicationUrlInput: Pick<
 		PublicationUrlInput,
 		| "readMeetupEventUrlPrefix"
@@ -29,7 +31,7 @@ export class AttentionAction {
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
-		const journey = this.collaborators.createAttention({
+		const input = {
 			meetupEventUrlPrefix:
 				this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
 			communityEventUrlPrefixes:
@@ -47,15 +49,19 @@ export class AttentionAction {
 			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
 				required: true,
 			}),
-		});
+		};
+		const stageResults = this.collaborators.attentionStages.parse(
+			core.getInput("stage-results", { required: true }),
+		);
+		await this.collaborators.reconcileState(input);
+		const journey = this.collaborators.createAttention(input);
 		const identity = {
 			repository: `${context.repo.owner}/${context.repo.repo}`,
 			issueNumber,
 		};
-		const stageResults = core.getInput("stage-results", { required: true });
 		const result = await journey.execute(
 			identity,
-			this.collaborators.attentionStages.parse(stageResults),
+			stageResults,
 			String(context.runId),
 		);
 

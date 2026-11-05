@@ -45145,6 +45145,311 @@ var SocialRecoveryAction = class {
   }
 };
 
+// packages/adapter/journey/github-automation-state/src/automation-state-codec.ts
+import { createHash as createHash3 } from "node:crypto";
+var AUTOMATION_STATE_MARKER = "<!-- meetup-automation-state:v1 ";
+var AutomationStateCodec = class {
+  scope(body) {
+    if (body.startsWith("<!-- meetup-content-proposal:v1 ")) return "content";
+    if (body.startsWith("<!-- meetup-social-delivery:v1 ")) return "social";
+    if (body.startsWith("<!-- meetup-publication:v1\n")) return "meetup";
+    if (body.startsWith("<!-- community-publication:v1\n")) return "community";
+    return void 0;
+  }
+  managed(body) {
+    return body.startsWith(AUTOMATION_STATE_MARKER) || this.scope(body) !== void 0;
+  }
+  empty() {
+    return {
+      version: 1,
+      records: { content: [], social: [], meetup: [], community: [] },
+      imports: []
+    };
+  }
+  digest(body) {
+    return createHash3("sha256").update(body).digest("hex");
+  }
+  read(body) {
+    const end = body.indexOf(" -->\n", AUTOMATION_STATE_MARKER.length);
+    if (!body.startsWith(AUTOMATION_STATE_MARKER) || end < 0)
+      throw new Error("Invalid automation state envelope");
+    return this.validate(
+      JSON.parse(body.slice(AUTOMATION_STATE_MARKER.length, end))
+    );
+  }
+  write(state) {
+    const json = JSON.stringify(this.validate(state)).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${AUTOMATION_STATE_MARKER}${json} -->`;
+  }
+  validate(value) {
+    if (!this.object(value) || value.version !== 1 || !this.object(value.records) || !Array.isArray(value.imports))
+      throw new Error("Invalid automation state envelope");
+    this.fields(value, ["version", "records", "imports"]);
+    this.fields(value.records, ["content", "social", "meetup", "community"]);
+    const records = this.empty().records;
+    for (const scope of Object.keys(records)) {
+      const entries = value.records[scope];
+      if (!Array.isArray(entries) || entries.some(
+        (body) => typeof body !== "string" || this.scope(body) !== scope
+      ))
+        throw new Error("Invalid automation state records");
+      records[scope] = entries;
+    }
+    const imports = value.imports.map((entry) => {
+      if (!this.object(entry) || typeof entry.id !== "number" || !Number.isSafeInteger(entry.id) || entry.id <= 0 || typeof entry.digest !== "string" || !/^[a-f0-9]{64}$/.test(entry.digest))
+        throw new Error("Invalid automation state import");
+      this.fields(entry, ["id", "digest"]);
+      return { id: entry.id, digest: entry.digest };
+    });
+    if (new Set(imports.map((entry) => entry.id)).size !== imports.length)
+      throw new Error("Duplicate automation state import");
+    return { version: 1, records, imports };
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  fields(value, fields) {
+    if (Object.keys(value).some((key) => !fields.includes(key)))
+      throw new Error("Unsupported automation state field");
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/automation-state-presenter.ts
+var AutomationStatePresenter = class {
+  constructor(codec, messages5) {
+    this.codec = codec;
+    this.messages = messages5;
+  }
+  codec;
+  messages;
+  render(state) {
+    return `${this.codec.write(state)}
+
+${this.messages.t("state.description")}`;
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/github-automation-state.ts
+import { isDeepStrictEqual } from "node:util";
+var GithubAutomationState = class {
+  constructor(client, comments, codec, presenter, visibility) {
+    this.client = client;
+    this.comments = comments;
+    this.codec = codec;
+    this.presenter = presenter;
+    this.visibility = visibility;
+  }
+  client;
+  comments;
+  codec;
+  presenter;
+  visibility;
+  async read(scope) {
+    return (await this.snapshot()).state.records[scope];
+  }
+  async write(scope, previous, next) {
+    const snapshot = await this.snapshot();
+    if (!isDeepStrictEqual(snapshot.state.records[scope], previous))
+      throw new Error("Automation state changed before persistence");
+    await this.persist(snapshot, {
+      ...snapshot.state,
+      records: { ...snapshot.state.records, [scope]: next }
+    });
+  }
+  async reconcile() {
+    const snapshot = await this.snapshot();
+    if (snapshot.anchor || snapshot.sources.length)
+      await this.persist(snapshot, snapshot.state);
+  }
+  async snapshot() {
+    const comments = await this.comments.list();
+    const anchors = comments.filter(
+      (comment) => comment.body?.startsWith(AUTOMATION_STATE_MARKER)
+    );
+    if (anchors.length > 1)
+      throw new Error("Duplicate automation state comments");
+    const anchor = anchors[0];
+    const sources = comments.filter(
+      (comment) => this.codec.scope(comment.body ?? "") !== void 0
+    );
+    if (anchor) {
+      const state2 = this.codec.read(anchor.body ?? "");
+      for (const source of sources) {
+        const imported = state2.imports.find((entry) => entry.id === source.id);
+        if (!imported || imported.digest !== this.codec.digest(source.body ?? ""))
+          throw new Error(
+            "Internal state changed outside the consolidated comment"
+          );
+      }
+      return { state: state2, anchor, sources };
+    }
+    const state = this.codec.empty();
+    for (const source of sources) {
+      const body = source.body ?? "";
+      const scope = this.codec.scope(body);
+      if (scope) state.records[scope] = [...state.records[scope], body];
+    }
+    return {
+      state: {
+        ...state,
+        imports: sources.map((source) => ({
+          id: source.id,
+          digest: this.codec.digest(source.body ?? "")
+        }))
+      },
+      anchor,
+      sources
+    };
+  }
+  async persist(snapshot, state) {
+    const body = this.presenter.render(state);
+    if (body.length > 6e4)
+      throw new Error(
+        "Consolidated automation state exceeds the comment size limit"
+      );
+    const anchor = snapshot.anchor ?? snapshot.sources[0];
+    const id = anchor ? anchor.id : await this.client.create(body);
+    if (anchor) await this.client.replace(id, anchor.body ?? "", body);
+    const saved = await this.snapshot();
+    if (saved.anchor?.id !== id || saved.anchor.body !== body)
+      throw new Error("Automation state persistence readback is uncertain");
+    await this.visibility.synchronize(id, body, true);
+    for (const source of saved.sources)
+      await this.visibility.synchronize(source.id, source.body ?? "", true);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "state.description": "Automation state. This comment is maintained by the bot and kept collapsed."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "state.description": "\xC9tat de l'automatisation. Ce commentaire est g\xE9r\xE9 par le bot et reste repli\xE9."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/catalog.ts
+var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+
+// packages/adapter/journey/github-automation-state/src/i18n/state-messages.ts
+var StateMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS3, locale);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/state-edit-authority.ts
+import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
+var StateEditAuthority = class {
+  constructor(client, codec, author) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+  }
+  client;
+  codec;
+  author;
+  async verify(current, history) {
+    if (!this.bot(current.editor) && (history[0]?.diff !== current.body || !await this.authorized(current.editor)))
+      throw new Error("Automation state was edited outside automation");
+    let confirmedByBot = this.bot(current.editor);
+    for (const [index, edit] of history.entries()) {
+      if (this.bot(edit.editor)) {
+        confirmedByBot = true;
+        continue;
+      }
+      if (edit.editor?.__typename !== "User" || !confirmedByBot && !await this.authorized(edit.editor) || !this.publicationChange(history[index + 1]?.diff, edit.diff))
+        throw new Error("Automation state was edited outside automation");
+    }
+  }
+  bot(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
+  }
+  async authorized(editor) {
+    return editor?.__typename === "User" && await this.client.canApprove(editor.login);
+  }
+  publicationChange(before, after) {
+    if (!before || !after) return false;
+    const scope = this.codec.scope(before);
+    if (scope === "meetup" || scope === "community")
+      return this.codec.scope(after) === scope;
+    if (!before.startsWith(AUTOMATION_STATE_MARKER) || !after.startsWith(AUTOMATION_STATE_MARKER))
+      return false;
+    const previous = this.codec.read(before);
+    const next = this.codec.read(after);
+    return isDeepStrictEqual2(previous.records.content, next.records.content) && isDeepStrictEqual2(previous.records.social, next.records.social) && isDeepStrictEqual2(previous.imports, next.imports);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/trusted-state-comments.ts
+var TrustedStateComments = class {
+  constructor(client, codec, author, authority) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+    this.authority = authority;
+    if (!/^[a-z\d-]+\[bot\]$/i.test(author))
+      throw new Error("Automation state requires a trusted GitHub App bot");
+  }
+  client;
+  codec;
+  author;
+  authority;
+  async list() {
+    const records = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const current = await this.client.edit(comment);
+      if (current.id !== comment.node_id || current.body !== comment.body)
+        throw new Error("Automation state changed during verification");
+      const managed = this.codec.managed(current.body);
+      if (current.lastEditedAt !== null || current.editor !== null)
+        await this.verifyHistory(comment, current, managed);
+      if (managed) records.push(comment);
+    }
+    return records;
+  }
+  async verifyHistory(comment, current, managed) {
+    const history = await this.client.history(comment);
+    if (!current.editor || history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
+      throw new Error("Automation state history is unavailable");
+    const previouslyManaged = history.some(
+      (edit) => edit.diff !== null && this.codec.managed(edit.diff)
+    );
+    if (!managed && !previouslyManaged) return;
+    if (!managed)
+      throw new Error("Automation state was edited outside automation");
+    await this.authority.verify(current, history);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/dependency-composition.ts
+var GithubAutomationStateComposition = class {
+  create(client, author, locale, visibility) {
+    const codec = new AutomationStateCodec();
+    return new GithubAutomationState(
+      client,
+      new TrustedStateComments(
+        client,
+        codec,
+        author,
+        new StateEditAuthority(client, codec, author)
+      ),
+      codec,
+      new AutomationStatePresenter(
+        codec,
+        new StateMessages(
+          { localeResolver: new LocalizationComposition().localeResolver() },
+          locale
+        )
+      ),
+      visibility
+    );
+  }
+};
+
 // packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
 var ApprovalDecisionParser = class {
   constructor(textPreview, emailDecisions, policy, comments) {
@@ -45303,7 +45608,7 @@ var ApprovalPresenter = class {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
+var EN_MESSAGES4 = {
   "approval.delivery.status": "- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {\u2705 Send accepted ({count})} pending {\u23F3 Sending ({count})} uncertain {\u26A0\uFE0F Uncertain result ({count}) \u2014 check the mail service before recovery} rejected {\u274C Send rejected ({count})} other {Awaiting dispatch}}.",
   "approval.delivery.notice": "Accepted means the mail service accepted the request, not that the email reached the inbox.",
   "approval.content.image-label": "#### Image {index, number}",
@@ -45345,7 +45650,7 @@ var EN_MESSAGES3 = {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
+var FR_MESSAGES4 = {
   "approval.delivery.status": "- {kind, select, host_introduction {H\xF4te} speaker_introduction {Intervenants} host_thanks {Remerciements h\xF4te} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {\u2705 Envoi accept\xE9 ({count})} pending {\u23F3 Envoi en cours ({count})} uncertain {\u26A0\uFE0F R\xE9sultat incertain ({count}) \u2014 v\xE9rifier le service d'envoi avant toute reprise} rejected {\u274C Envoi refus\xE9 ({count})} other {En attente d'envoi}}.",
   "approval.delivery.notice": "Accept\xE9 signifie que le service d'envoi a pris la demande en charge, pas que l'email a \xE9t\xE9 re\xE7u.",
   "approval.content.image-label": "#### Visuel {index, number}",
@@ -45387,7 +45692,7 @@ var FR_MESSAGES3 = {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+var CATALOGS4 = { en: EN_MESSAGES4, fr: FR_MESSAGES4 };
 
 // packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
 var ApprovalPresenterFactory = class {
@@ -45396,7 +45701,7 @@ var ApprovalPresenterFactory = class {
   }
   collaborators;
   supportedLocales() {
-    return Object.keys(CATALOGS3).map(
+    return Object.keys(CATALOGS4).map(
       (locale) => this.collaborators.createApprovalPresenter(
         this.collaborators.createApprovalMessages(locale)
       )
@@ -47080,7 +47385,7 @@ var GithubOrganizerFollowUp = class {
 // packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
 var ApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS3, locale);
+    super(collaborators, CATALOGS4, locale);
   }
 };
 
@@ -47426,45 +47731,39 @@ var GithubContentAuthority = class {
 
 // packages/adapter/journey/github-organizer-approval/src/github-content-proposal-store.ts
 var GithubContentProposalStore = class {
-  constructor(client, author, codec, fingerprints, transitions) {
-    this.client = client;
-    this.author = author;
+  constructor(state, codec, fingerprints, transitions) {
+    this.state = state;
     this.codec = codec;
     this.fingerprints = fingerprints;
     this.transitions = transitions;
   }
-  client;
-  author;
+  state;
   codec;
   fingerprints;
   transitions;
   async load() {
     const records = await this.records();
-    const proposals = records.map((record) => record.proposal);
+    const proposals = records.map((record) => this.codec.read(record));
     return { revision: this.fingerprints.digest(proposals), proposals };
   }
   async save(previous, proposals) {
     const records = await this.records();
-    if (this.fingerprints.digest(records.map((record) => record.proposal)) !== previous.revision)
+    const current = records.map((record) => this.codec.read(record));
+    if (this.fingerprints.digest(current) !== previous.revision)
       throw new Error("Content proposals changed before persistence");
-    if (records.some(
-      (record) => !proposals.some((proposal) => proposal.id === record.proposal.id)
+    if (current.some(
+      (record) => !proposals.some((proposal) => proposal.id === record.id)
     ))
       throw new Error("Content proposal history cannot be removed");
     for (const proposal of proposals) {
-      const existing = records.find(
-        (record) => record.proposal.id === proposal.id
-      );
-      const body = this.codec.write(proposal);
-      if (existing) {
-        this.transitions.validate(existing.proposal, proposal);
-        await this.client.replace(
-          existing.comment.id,
-          existing.comment.body ?? "",
-          body
-        );
-      } else await this.client.create(body);
+      const existing = current.find((record) => record.id === proposal.id);
+      if (existing) this.transitions.validate(existing, proposal);
     }
+    await this.state.write(
+      "content",
+      records,
+      proposals.map((proposal) => this.codec.write(proposal))
+    );
     const saved = await this.load();
     if (proposals.some(
       (proposal) => this.fingerprints.digest(
@@ -47475,35 +47774,11 @@ var GithubContentProposalStore = class {
     return saved;
   }
   async records() {
-    const result = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.author.toLowerCase() || comment.user.type !== "Bot")
-        continue;
-      const edit = await this.client.edit(comment);
-      if (edit.editor && (edit.editor.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))) {
-        await this.requireUnrelated(comment);
-        continue;
-      }
-      if (!edit.editor && edit.lastEditedAt !== null)
-        throw new Error("Content proposal editor is unavailable");
-      if (!edit.body.startsWith(CONTENT_STATE_MARKER)) continue;
-      const proposal = this.codec.read(edit.body);
-      if (result.some((record) => record.proposal.id === proposal.id))
-        throw new Error("Ambiguous content proposal state");
-      result.push({ comment, proposal });
-    }
-    return result;
-  }
-  async requireUnrelated(comment) {
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Content state history was deleted");
-      if (edit.editor?.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))
-        continue;
-      if (edit.diff === null || edit.diff.startsWith(CONTENT_STATE_MARKER))
-        throw new Error("Content proposal state was edited outside automation");
-      return;
-    }
-    throw new Error("Content proposal history could not be verified");
+    const records = await this.state.read("content");
+    const ids = records.map((record) => this.codec.read(record).id);
+    if (new Set(ids).size !== ids.length)
+      throw new Error("Ambiguous content proposal state");
+    return records;
   }
 };
 
@@ -47636,11 +47911,10 @@ var GithubContentStoreComposition = class {
       client
     );
   }
-  store(client, author) {
+  store(state) {
     const fingerprints = new DraftProposalComposition().fingerprints();
     return new GithubContentProposalStore(
-      client,
-      author,
+      state,
       new ContentProposalCodec(
         new ContentValueSchema(new PublicAssetUrl()),
         new DraftProposalComposition().policy(),
@@ -47718,1186 +47992,6 @@ var GithubEmailDeliveryReport = class {
         count: expected - matching.length
       });
     return summary2;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/github-social-delivery-journal.ts
-import { isDeepStrictEqual } from "node:util";
-var GithubSocialDeliveryJournal = class {
-  constructor(client, comments, codec, transitions) {
-    this.client = client;
-    this.comments = comments;
-    this.codec = codec;
-    this.transitions = transitions;
-  }
-  client;
-  comments;
-  codec;
-  transitions;
-  async load(intentId) {
-    return (await this.records()).find(
-      (entry) => entry.record.intentId === intentId
-    )?.record;
-  }
-  async save(previous, next) {
-    const body = this.codec.write(next);
-    const canonical = this.codec.read(body);
-    const prior = previous ? this.codec.read(this.codec.write(previous)) : void 0;
-    const existing = (await this.records()).find(
-      (entry) => entry.record.intentId === next.intentId
-    );
-    if (!isDeepStrictEqual(existing?.record, prior))
-      throw new Error("Social delivery history changed before persistence");
-    this.transitions.validate(prior, canonical);
-    if (existing) {
-      await this.client.replace(
-        existing.comment.id,
-        existing.comment.body ?? "",
-        body
-      );
-    } else await this.client.create(body);
-    const saved = await this.load(next.intentId);
-    if (!isDeepStrictEqual(saved, canonical))
-      throw new Error("Social delivery persistence readback is uncertain");
-  }
-  async records() {
-    const records = [];
-    for (const comment of await this.comments.list()) {
-      const record = this.codec.read(comment.body ?? "");
-      if (records.some((entry) => entry.record.intentId === record.intentId))
-        throw new Error("Duplicate social delivery journal identity");
-      records.push({ comment, record });
-    }
-    return records;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-attempt-codec.ts
-var SocialJournalAttemptCodec = class {
-  constructor(values) {
-    this.values = values;
-  }
-  values;
-  read(value) {
-    const item = this.values.object(value, [
-      "id",
-      "revision",
-      "reservedAt",
-      "status",
-      "media",
-      "receipt",
-      "code",
-      "retryAt",
-      "recovery"
-    ]);
-    const status = item.status;
-    if (status !== "reserved" && status !== "prepared" && status !== "accepted" && status !== "rejected" && status !== "deferred" && status !== "uncertain" && status !== "stale")
-      throw new Error("Invalid social delivery attempt status");
-    const attempt = {
-      id: this.values.text(item.id, 200),
-      revision: this.values.text(item.revision, 200),
-      reservedAt: this.values.instant(item.reservedAt),
-      status,
-      ...item.media === void 0 ? {} : { media: this.media(item.media) },
-      ...item.receipt === void 0 ? {} : { receipt: this.receipt(item.receipt) },
-      ...item.code === void 0 ? {} : { code: this.values.pattern(item.code, 100, /^[a-z][a-z0-9-]*$/) },
-      ...item.retryAt === void 0 ? {} : { retryAt: this.values.instant(item.retryAt) },
-      ...item.recovery === void 0 ? {} : { recovery: this.recovery(item.recovery) }
-    };
-    this.validate(attempt);
-    return attempt;
-  }
-  media(value) {
-    const item = this.values.object(value, [
-      "assetUrn",
-      "fingerprint",
-      "description"
-    ]);
-    return {
-      assetUrn: this.values.pattern(
-        item.assetUrn,
-        200,
-        /^urn:li:image:[A-Za-z0-9_-]+$/
-      ),
-      fingerprint: this.values.pattern(item.fingerprint, 64, /^[a-f0-9]{64}$/),
-      description: this.values.text(item.description, 4086)
-    };
-  }
-  receipt(value) {
-    const item = this.values.object(value, [
-      "provider",
-      "workspaceId",
-      "channelId",
-      "ts",
-      "organizationUrn",
-      "postUrn",
-      "url"
-    ]);
-    if (item.provider === "slack") {
-      this.values.object(value, [
-        "provider",
-        "workspaceId",
-        "channelId",
-        "ts",
-        "url"
-      ]);
-      return {
-        provider: "slack",
-        workspaceId: this.values.pattern(
-          item.workspaceId,
-          100,
-          /^T[A-Z0-9]{2,}$/
-        ),
-        channelId: this.values.pattern(
-          item.channelId,
-          100,
-          /^[CG][A-Z0-9]{2,}$/
-        ),
-        ts: this.values.pattern(item.ts, 40, /^\d+\.\d+$/),
-        ...item.url === void 0 ? {} : { url: this.values.url(item.url, "slack") }
-      };
-    }
-    this.values.object(value, [
-      "provider",
-      "organizationUrn",
-      "postUrn",
-      "url"
-    ]);
-    if (item.provider !== "linkedin")
-      throw new Error("Invalid social receipt provider");
-    return {
-      provider: "linkedin",
-      organizationUrn: this.values.pattern(
-        item.organizationUrn,
-        100,
-        /^urn:li:organization:[1-9]\d*$/
-      ),
-      postUrn: this.values.pattern(
-        item.postUrn,
-        200,
-        /^urn:li:(?:share|ugcPost|activity):[1-9]\d*$/
-      ),
-      ...item.url === void 0 ? {} : { url: this.values.url(item.url, "linkedin") }
-    };
-  }
-  recovery(value) {
-    const item = this.values.object(value, [
-      "actor",
-      "decidedAt",
-      "outcome",
-      "reference"
-    ]);
-    if (item.outcome !== "published" && item.outcome !== "not-published")
-      throw new Error("Invalid social delivery recovery outcome");
-    return {
-      actor: this.values.pattern(
-        item.actor,
-        39,
-        /^[a-z\d](?:[a-z\d-]*[a-z\d])?$/i
-      ),
-      decidedAt: this.values.instant(item.decidedAt),
-      outcome: item.outcome,
-      reference: this.values.text(item.reference, 2e3)
-    };
-  }
-  validate(attempt) {
-    if (attempt.receipt?.provider === "linkedin" && attempt.receipt.postUrn.startsWith("urn:li:activity:") && attempt.recovery?.outcome !== "published")
-      throw new Error("LinkedIn activity identity requires verified recovery");
-    if (attempt.status === "accepted" !== Boolean(attempt.receipt))
-      throw new Error("Social delivery acceptance requires its receipt");
-    if (attempt.status === "prepared" && !attempt.media)
-      throw new Error("Prepared social delivery requires media");
-    if (attempt.retryAt && attempt.status !== "deferred")
-      throw new Error("Only deferred social delivery has a retry time");
-    if (attempt.recovery) {
-      if (attempt.recovery.outcome === "published" !== (attempt.status === "accepted"))
-        throw new Error("Social delivery recovery contradicts its outcome");
-      if (Date.parse(attempt.recovery.decidedAt) < Date.parse(attempt.reservedAt))
-        throw new Error("Social delivery recovery predates its reservation");
-    }
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/trusted-social-journal-comments.ts
-var SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
-var TrustedSocialJournalComments = class {
-  constructor(client, author) {
-    this.client = client;
-    this.author = author;
-    if (!/^[a-z\d-]+\[bot\]$/i.test(author))
-      throw new Error("Social delivery requires a trusted GitHub App bot");
-  }
-  client;
-  author;
-  async list() {
-    const records = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-        continue;
-      const current = await this.client.edit(comment);
-      if (current.body !== comment.body || current.id !== comment.node_id)
-        throw new Error("Social delivery history changed during verification");
-      const managed = current.body.startsWith(SOCIAL_JOURNAL_MARKER);
-      if (current.lastEditedAt !== null || current.editor !== null)
-        await this.verifyHistory(comment, current, managed);
-      if (managed) records.push(comment);
-    }
-    return records;
-  }
-  async verifyHistory(comment, current, managed) {
-    if (!current.editor)
-      throw new Error("Social delivery history editor is unavailable");
-    const history = await this.client.history(comment);
-    if (history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
-      throw new Error("Social delivery history is unavailable");
-    const previouslyManaged = history.some(
-      (edit) => edit.diff?.startsWith(SOCIAL_JOURNAL_MARKER)
-    );
-    if (!managed && !previouslyManaged) return;
-    if (!managed || !this.trusted(current.editor) || history.some((edit) => !this.trusted(edit.editor)))
-      throw new Error("Social delivery history was edited outside automation");
-  }
-  trusted(editor) {
-    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-codec.ts
-var SocialJournalCodec = class {
-  constructor(values, attempts) {
-    this.values = values;
-    this.attempts = attempts;
-  }
-  values;
-  attempts;
-  read(body) {
-    if (!body.startsWith(SOCIAL_JOURNAL_MARKER) || !body.endsWith(" -->"))
-      throw new Error("Invalid social delivery marker");
-    const value = JSON.parse(
-      body.slice(SOCIAL_JOURNAL_MARKER.length, -4)
-    );
-    return this.parse(value);
-  }
-  write(record) {
-    const value = this.parse(record);
-    const json = JSON.stringify(value).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
-    const body = `${SOCIAL_JOURNAL_MARKER}${json} -->`;
-    if (body.length > 6e4)
-      throw new Error("Social delivery journal comment limit exceeded");
-    return body;
-  }
-  parse(value) {
-    const item = this.values.object(value, [
-      "manual",
-      "intentId",
-      "occurrence",
-      "purpose",
-      "destination",
-      "attempts"
-    ]);
-    if (item.purpose !== "announcement" && item.purpose !== "d7" && item.purpose !== "d0")
-      throw new Error("Invalid social delivery purpose");
-    if (!Array.isArray(item.attempts) || item.attempts.length > 100)
-      throw new Error("Invalid social delivery attempts");
-    const record = {
-      ...item.manual === void 0 ? {} : { manual: this.manual(item.manual) },
-      intentId: this.values.text(item.intentId, 200),
-      occurrence: this.values.text(item.occurrence, 200),
-      purpose: item.purpose,
-      destination: this.destination(item.destination),
-      attempts: item.attempts.map((attempt) => this.attempts.read(attempt))
-    };
-    this.validate(record);
-    return record;
-  }
-  destination(value) {
-    const item = this.values.object(value, [
-      "key",
-      "provider",
-      "label",
-      "workspaceId",
-      "channelId",
-      "organizationUrn"
-    ]);
-    const key = this.values.pattern(item.key, 64, /^[a-z][a-z0-9-]{0,63}$/);
-    const label = this.values.text(item.label, 100);
-    if (item.provider === "slack") {
-      this.values.object(value, [
-        "key",
-        "provider",
-        "label",
-        "workspaceId",
-        "channelId"
-      ]);
-      return {
-        key,
-        label,
-        provider: "slack",
-        workspaceId: this.values.pattern(
-          item.workspaceId,
-          100,
-          /^T[A-Z0-9]{2,}$/
-        ),
-        channelId: this.values.pattern(
-          item.channelId,
-          100,
-          /^[CG][A-Z0-9]{2,}$/
-        )
-      };
-    }
-    this.values.object(value, ["key", "provider", "label", "organizationUrn"]);
-    if (item.provider !== "linkedin")
-      throw new Error("Invalid social destination provider");
-    return {
-      key,
-      label,
-      provider: "linkedin",
-      organizationUrn: this.values.pattern(
-        item.organizationUrn,
-        100,
-        /^urn:li:organization:[1-9]\d*$/
-      )
-    };
-  }
-  validate(record) {
-    if (record.manual && record.attempts.length)
-      throw new Error(
-        "Manual social completion cannot overwrite provider history"
-      );
-    if (new Set(record.attempts.map((attempt) => attempt.id)).size !== record.attempts.length)
-      throw new Error("Duplicate social delivery attempt identity");
-    for (const [index, attempt] of record.attempts.entries()) {
-      const destination = record.destination;
-      if (attempt.media && destination.provider !== "linkedin")
-        throw new Error("Social delivery media belongs to LinkedIn");
-      const receipt = attempt.receipt;
-      if (receipt) this.validateDestination(destination, receipt);
-      if (index < record.attempts.length - 1 && attempt.status !== "rejected" && attempt.status !== "deferred" && attempt.status !== "stale" && attempt.recovery?.outcome !== "not-published")
-        throw new Error("Social delivery attempts contain unsafe replay");
-    }
-  }
-  manual(value) {
-    const item = this.values.object(value, ["recordedAt", "reference"]);
-    return {
-      recordedAt: this.values.instant(item.recordedAt),
-      reference: this.values.text(item.reference, 2e3)
-    };
-  }
-  validateDestination(destination, receipt) {
-    const matches = receipt.provider === "slack" && destination.provider === "slack" ? receipt.workspaceId === destination.workspaceId && receipt.channelId === destination.channelId : receipt.provider === "linkedin" && destination.provider === "linkedin" && receipt.organizationUrn === destination.organizationUrn;
-    if (!matches)
-      throw new Error(
-        "Social receipt destination does not match its reservation"
-      );
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-transition.ts
-import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
-var SocialJournalTransition = class {
-  validate(previous, next) {
-    if (previous?.manual && !isDeepStrictEqual2(previous, next))
-      throw new Error("Manual social completion cannot change");
-    if (!previous) {
-      this.initial(next);
-      return;
-    }
-    if (previous.intentId !== next.intentId || previous.occurrence !== next.occurrence || previous.purpose !== next.purpose || !isDeepStrictEqual2(previous.destination, next.destination))
-      throw new Error("Social delivery identity cannot change");
-    if (next.attempts.length < previous.attempts.length || next.attempts.length > previous.attempts.length + 1)
-      throw new Error("Social delivery history must be preserved");
-    for (const [index, attempt] of previous.attempts.entries()) {
-      const updated = next.attempts[index];
-      if (isDeepStrictEqual2(attempt, updated)) continue;
-      if (!updated || index !== previous.attempts.length - 1)
-        throw new Error("Earlier social delivery attempts cannot change");
-      this.attempt(attempt, updated);
-    }
-    if (next.attempts.length > previous.attempts.length)
-      this.append(previous, next);
-  }
-  initial(next) {
-    if (next.attempts.length > 1 || next.attempts.some(
-      (attempt) => attempt.status !== "reserved" || attempt.media || attempt.recovery
-    ))
-      throw new Error("Social delivery must be reserved before effects");
-  }
-  append(previous, next) {
-    const last = previous.attempts.at(-1);
-    if (last && last.status !== "rejected" && last.status !== "deferred" && last.status !== "stale" && last.recovery?.outcome !== "not-published")
-      throw new Error("Uncertain social delivery cannot be replayed");
-    const added = next.attempts.at(-1);
-    if (added?.status !== "reserved" || added.receipt || added.code || added.retryAt || added.recovery)
-      throw new Error("Social delivery must be reserved before effects");
-    if (added.media && (!isDeepStrictEqual2(last?.media, added.media) || last?.revision !== added.revision))
-      throw new Error("Social delivery cannot reuse unreviewed media");
-    if (last && Date.parse(added.reservedAt) < Date.parse(last.reservedAt))
-      throw new Error("Social delivery attempt predates its history");
-  }
-  attempt(previous, next) {
-    if (previous.status === "accepted" || previous.recovery)
-      throw new Error("Completed social delivery evidence cannot change");
-    if (previous.status === "rejected" || previous.status === "deferred") {
-      this.terminalRecovery(previous, next);
-      return;
-    }
-    if (previous.id !== next.id || previous.revision !== next.revision || previous.reservedAt !== next.reservedAt || previous.media && !isDeepStrictEqual2(previous.media, next.media))
-      throw new Error("Social delivery reservation cannot change");
-    if (previous.status === "uncertain" && !next.recovery)
-      throw new Error("Uncertain social delivery requires explicit recovery");
-    if (next.recovery) {
-      this.recovery(previous, next);
-      return;
-    }
-    if (next.status === "reserved" || previous.status === "prepared" && next.status === "prepared")
-      throw new Error("Social delivery cannot return to an earlier stage");
-  }
-  terminalRecovery(previous, next) {
-    const { recovery, ...evidence } = next;
-    if (recovery?.outcome !== "not-published" || !isDeepStrictEqual2(previous, evidence))
-      throw new Error("Completed social delivery evidence cannot change");
-  }
-  recovery(previous, next) {
-    const {
-      status: previousStatus,
-      receipt: previousReceipt,
-      recovery: previousRecovery,
-      ...previousEvidence
-    } = previous;
-    const { status, receipt, recovery, ...evidence } = next;
-    if (!isDeepStrictEqual2(previousEvidence, evidence))
-      throw new Error("Social recovery cannot change provider evidence");
-    const validOutcome = recovery?.outcome === "published" ? status === "accepted" && Boolean(receipt) : status === previousStatus && isDeepStrictEqual2(receipt, previousReceipt) && !previousRecovery;
-    if (!validOutcome)
-      throw new Error("Invalid social delivery recovery transition");
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/social-journal-value-schema.ts
-var SocialJournalValueSchema = class {
-  object(value, keys) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
-      throw new Error("Invalid social delivery object");
-    return value;
-  }
-  text(value, max) {
-    if (typeof value !== "string" || !value.trim() || value.length > max || [...value].some(
-      (character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127
-    ))
-      throw new Error("Invalid social delivery value");
-    return value;
-  }
-  pattern(value, max, pattern) {
-    const text = this.text(value, max);
-    if (!pattern.test(text))
-      throw new Error("Invalid social delivery identity");
-    return text;
-  }
-  instant(value) {
-    const text = this.text(value, 40);
-    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(text) || !Number.isFinite(Date.parse(text)))
-      throw new Error("Invalid social delivery timestamp");
-    return text;
-  }
-  url(value, provider) {
-    const text = this.text(value, 2e3);
-    const url = new URL(text);
-    const validHost = provider === "slack" ? /^(?:[a-z0-9-]+\.)?slack\.com$/.test(url.hostname) : /^(?:www\.)?linkedin\.com$/.test(url.hostname);
-    if (!validHost || url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.port)
-      throw new Error("Invalid social delivery post URL");
-    return text;
-  }
-};
-
-// packages/adapter/communication/github-social-delivery-journal/src/dependency-composition.ts
-var GithubSocialDeliveryJournalComposition = class {
-  create(client, author) {
-    const values = new SocialJournalValueSchema();
-    const attempts = new SocialJournalAttemptCodec(values);
-    return new GithubSocialDeliveryJournal(
-      client,
-      new TrustedSocialJournalComments(client, author),
-      new SocialJournalCodec(values, attempts),
-      new SocialJournalTransition()
-    );
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
-var messages = {
-  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
-  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
-  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
-  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
-  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
-  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
-  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
-  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
-  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
-  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
-  "failure.social": "Posting failed.",
-  "task.social": "social posts",
-  "action.community-approval-pending": "Approve or reject OCGroups publication.",
-  "failure.communications": "Email preparation or sending failed.",
-  "failure.feedback": "OpenFeedback synchronization failed.",
-  "failure.assets": "Drive file preparation failed.",
-  "failure.event": "Meetup issue update failed.",
-  "task.event-data": "meetup details",
-  "slack.title": "Meetup #{issue}",
-  "slack.more": "+{count, plural, one {# more task} other {# more tasks}} \u2192 View all",
-  "slack.run": "Review run",
-  "slack.review": "Review details",
-  "slack.unknown": "status unverified",
-  "action.missing-date": "Set the event date.",
-  "action.required-data": "Complete or correct: {task}.",
-  "action.host-confirmation": "Select a host in the meetup form.",
-  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
-  "action.approval-pending": "Approve or reject the emails.",
-  "action.integration-failure": "Automation failed: {task}.",
-  "action.delivery-recovery": "Verify delivery before retrying.",
-  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "Unverified stage result: {task}.",
-  "task.approvals": "email approval",
-  "task.delivery": "delivery recovery",
-  "attention.clear": "No pending tasks.",
-  "task.publish-community-event": 'Publish on the CNCF platform and fill in "CNCF Link"',
-  "task.date": "event date",
-  "task.title": "event title",
-  "task.description": "event description",
-  "task.agenda": "talk agenda",
-  "task.agenda-speakers": "talk speakers",
-  "task.agenda-descriptions": "talk descriptions",
-  "task.host": "event host",
-  "task.event-status": "event status",
-  "task.publication-links": "publication links",
-  "task.meetup-link": "Meetup Link",
-  "task.community-link": "CNCF Link",
-  "task.assets-link": "resources folder link",
-  "task.feedback-link": "OpenFeedback Link",
-  "task.confirmations": "speaker confirmation",
-  "task.event-form": "event form",
-  "task.create-asset-folder": "Prepare the asset folder",
-  "task.thank-host": "Thank the host",
-  "task.thank-speakers": "Thank the speakers",
-  "task.share-slides": "Share slides",
-  "task.import-attendance": "Import attendance",
-  "task.share-social": "Post a meetup recap on LinkedIn",
-  "task.event": "event validation",
-  "task.assets": "assets",
-  "task.feedback": "feedback",
-  "task.communications": "communications",
-  "task.unknown": "review the issue"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
-var messages2 = {
-  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
-  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
-  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
-  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
-  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
-  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
-  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
-  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
-  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
-  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "failure.social": "La publication a \xE9chou\xE9.",
-  "task.social": "publications sur les r\xE9seaux",
-  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
-  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
-  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
-  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
-  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
-  "task.event-data": "informations du meetup",
-  "slack.title": "Meetup #{issue}",
-  "slack.more": "+{count, plural, one {# autre t\xE2che} other {# autres t\xE2ches}} \u2192 Tout voir",
-  "slack.run": "Voir l'ex\xE9cution",
-  "slack.review": "Voir les d\xE9tails",
-  "slack.unknown": "statut non v\xE9rifi\xE9",
-  "action.missing-date": "Renseignez la date du meetup.",
-  "action.required-data": "Compl\xE9tez ou corrigez : {task}.",
-  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
-  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
-  "action.approval-pending": "Approuvez ou refusez les emails.",
-  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
-  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
-  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "R\xE9sultat non v\xE9rifi\xE9 : {task}.",
-  "task.approvals": "validation des emails",
-  "task.delivery": "reprise des envois",
-  "attention.clear": "Aucune t\xE2che en attente.",
-  "task.publish-community-event": 'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
-  "task.date": "date du meetup",
-  "task.title": "titre du meetup",
-  "task.description": "description du meetup",
-  "task.agenda": "programme des talks",
-  "task.agenda-speakers": "intervenants des talks",
-  "task.agenda-descriptions": "descriptions des talks",
-  "task.host": "h\xF4te du meetup",
-  "task.event-status": "statut du meetup",
-  "task.publication-links": "liens de publication",
-  "task.meetup-link": "Meetup Link",
-  "task.community-link": "CNCF Link",
-  "task.assets-link": "lien du dossier des ressources",
-  "task.feedback-link": "OpenFeedback Link",
-  "task.confirmations": "confirmation des intervenants",
-  "task.event-form": "formulaire du meetup",
-  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
-  "task.thank-host": "Remerciez l'h\xF4te",
-  "task.thank-speakers": "Remerciez les intervenants",
-  "task.share-slides": "Partagez les pr\xE9sentations",
-  "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
-  "task.event": "validation du meetup",
-  "task.assets": "ressources",
-  "task.feedback": "\xE9valuations",
-  "task.communications": "communications",
-  "task.unknown": "consulter le ticket"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
-var CATALOGS4 = { en: messages, fr: messages2 };
-
-// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
-var SlackAttentionMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS4, locale);
-  }
-  failure(resource) {
-    const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS4.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
-  }
-  task(resource) {
-    const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS4.en, key) ? key : "task.unknown");
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES4 = {
-  "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
-  "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
-  "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
-  "request.introduction": "{kind, select, host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} other {Introduction emails}} \xB7 {date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\nApprove or reject: {url}",
-  "request.publication": "Meetup \xB7 {date}\nReview and approve publication: {url}"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES4 = {
-  "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
-  "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
-  "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
-  "request.introduction": "{kind, select, host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} other {Emails de pr\xE9paration}} \xB7 {date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
-  "request.publication": "Meetup \xB7 {date}\nV\xE9rifiez et validez la publication : {url}"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
-var CATALOGS5 = { en: EN_MESSAGES4, fr: FR_MESSAGES4 };
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
-var SlackApprovalMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale) {
-    super(collaborators, CATALOGS5, locale);
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-api-client.ts
-var SlackApiClient = class {
-  constructor(token, fetcher) {
-    this.token = token;
-    this.fetcher = fetcher;
-  }
-  token;
-  fetcher;
-  async post(method, body) {
-    let response;
-    try {
-      response = await this.fetcher(`https://slack.com/api/${method}`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${this.token}`,
-          "content-type": "application/json; charset=utf-8"
-        },
-        body: JSON.stringify(body)
-      });
-    } catch {
-      return {
-        result: {
-          outcome: "uncertain",
-          diagnosticCode: "unknown-provider-state"
-        }
-      };
-    }
-    if (!response.ok)
-      return {
-        retryAfterSeconds: this.retryAfter(response),
-        result: this.httpRejection(response.status) ?? {
-          outcome: "uncertain",
-          diagnosticCode: "ambiguous-response"
-        }
-      };
-    let payload;
-    try {
-      payload = await response.json();
-    } catch {
-      return {
-        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
-      };
-    }
-    if (typeof payload !== "object" || payload === null || Array.isArray(payload))
-      return {
-        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
-      };
-    const data = payload;
-    return {
-      result: data.ok === true ? { outcome: "accepted" } : this.slackApiRejection(data.error),
-      payload: data
-    };
-  }
-  retryAfter(response) {
-    const value = Number(response.headers.get("retry-after"));
-    return Number.isFinite(value) && value > 0 ? value : void 0;
-  }
-  httpRejection(status) {
-    switch (status) {
-      case 400:
-      case 422:
-        return { outcome: "rejected", diagnosticCode: "invalid-request" };
-      case 401:
-        return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-      case 403:
-        return { outcome: "rejected", diagnosticCode: "permission-denied" };
-      case 404:
-        return {
-          outcome: "rejected",
-          diagnosticCode: "destination-unavailable"
-        };
-      case 429:
-        return { outcome: "deferred", diagnosticCode: "rate-limited" };
-      default:
-        return void 0;
-    }
-  }
-  slackApiRejection(error2) {
-    if (typeof error2 !== "string") {
-      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-    }
-    if ([
-      "invalid_auth",
-      "not_authed",
-      "account_inactive",
-      "token_revoked"
-    ].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-    }
-    if (["channel_not_found", "not_in_channel", "is_archived"].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "destination-unavailable" };
-    }
-    if (["missing_scope", "restricted_action"].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "permission-denied" };
-    }
-    if ([
-      "invalid_arguments",
-      "invalid_arg_name",
-      "msg_too_long",
-      "no_text"
-    ].includes(error2)) {
-      return { outcome: "rejected", diagnosticCode: "invalid-request" };
-    }
-    if (error2 === "ratelimited") {
-      return { outcome: "deferred", diagnosticCode: "rate-limited" };
-    }
-    return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-approval-notification.ts
-var SlackApprovalNotification = class {
-  constructor(collaborators, client, presenter) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.presenter = presenter;
-  }
-  collaborators;
-  client;
-  presenter;
-  async send(input) {
-    const { result, payload } = await this.client.post("chat.postMessage", {
-      channel: input.destination,
-      text: this.presenter.render(input)
-    });
-    if (result.outcome !== "accepted") return result;
-    const message = this.collaborators.slackMessageReference.read(
-      payload,
-      input.destination
-    );
-    return message ? { outcome: "accepted", message } : { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-  }
-  async react(message, decision) {
-    if (!this.collaborators.slackMessageReference.valid(message)) return false;
-    const { result, payload } = await this.client.post("reactions.add", {
-      channel: message.destination,
-      timestamp: message.messageId,
-      name: decision === "approved" ? "white_check_mark" : decision === "iteration-requested" ? "arrows_counterclockwise" : "x"
-    });
-    return result.outcome === "accepted" || payload?.error === "already_reacted";
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-approval-presenter.ts
-var SlackApprovalPresenter = class {
-  constructor(renderers) {
-    this.renderers = renderers;
-  }
-  renderers;
-  render(request2) {
-    return this.renderers[request2.kind].render(request2);
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
-import { createHash as createHash3 } from "node:crypto";
-var SlackAttentionNotification = class {
-  constructor(collaborators, client, channel, presenter) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.channel = channel;
-    this.presenter = presenter;
-    if (!/^[CG][A-Z0-9]+$/.test(channel))
-      throw new Error("Invalid organizer channel");
-  }
-  collaborators;
-  client;
-  channel;
-  presenter;
-  fingerprint(view) {
-    return createHash3("sha256").update(this.presenter.render(view)).digest("hex");
-  }
-  async post(view) {
-    const response = await this.client.post(
-      "chat.postMessage",
-      this.body(this.channel, view)
-    );
-    const { result, payload } = response;
-    if (result.outcome === "uncertain") return { outcome: "uncertain" };
-    if (result.outcome !== "accepted")
-      return {
-        outcome: "retry",
-        retryAfterSeconds: response.retryAfterSeconds
-      };
-    const message = this.collaborators.slackMessageReference.read(
-      payload,
-      this.channel
-    );
-    return message ? { outcome: "accepted", message } : { outcome: "uncertain" };
-  }
-  async update(message, view) {
-    if (!this.collaborators.slackMessageReference.valid(message)) return false;
-    const { result } = await this.client.post("chat.update", {
-      ...this.body(message.destination, view),
-      ts: message.messageId
-    });
-    return result.outcome === "accepted";
-  }
-  body(channel, view) {
-    return {
-      channel,
-      text: this.presenter.render(view),
-      parse: "none",
-      link_names: false,
-      mrkdwn: true,
-      unfurl_links: false,
-      unfurl_media: false
-    };
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-attention-presenter.ts
-var SlackAttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, messages5, checklist) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.issueNumber = issueNumber;
-    this.messages = messages5;
-    this.checklist = checklist;
-    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
-      throw new Error("Invalid attention issue identity");
-    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
-  }
-  collaborators;
-  repository;
-  issueNumber;
-  messages;
-  checklist;
-  issueUrl;
-  render(view) {
-    const title = this.messages.t("slack.title", {
-      issue: String(this.issueNumber)
-    });
-    const actions = this.slackActions(view);
-    const icon = actions.length ? "\u26A0\uFE0F" : "\u2705";
-    const date = this.slackDate(view.state.eventDate);
-    const lines = [
-      `${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` \xB7 ${date}` : ""}`,
-      ""
-    ];
-    lines.push(...actions.slice(0, 6));
-    if (!actions.length)
-      lines.push(this.escape(this.messages.t("attention.clear")));
-    if (actions.length > 6)
-      lines.push(
-        this.link(
-          this.overviewUrl(view.state),
-          this.messages.t("slack.more", { count: actions.length - 6 })
-        )
-      );
-    return lines.join("\n");
-  }
-  slackActions(view) {
-    const selection = this.collaborators.attentionTaskSelection.select(
-      view,
-      this.checklist.read()
-    );
-    return [
-      .../* @__PURE__ */ new Set([
-        ...selection.urgent.map(
-          (episode) => this.slackCondition(episode, view.state)
-        ),
-        ...selection.checklist.map(
-          (entry) => `\u2022 ${this.escape(`${entry.label}: ${entry.description}`)}`
-        ),
-        ...selection.remaining.map(
-          (episode) => this.slackCondition(episode, view.state)
-        )
-      ])
-    ];
-  }
-  slackDate(date) {
-    if (this.collaborators.attentionPolicy.eventDay(date) === void 0)
-      return "";
-    return new Intl.DateTimeFormat(this.messages.locale, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC"
-    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
-  }
-  slackCondition(episode, state) {
-    const text = this.action(episode);
-    const url = this.url(episode, state);
-    const label = this.messages.t(
-      episode.condition.commentId || state.commentId && episode.condition.code === "follow-up" ? "slack.review" : "slack.run"
-    );
-    const link = url === this.overviewUrl(state) ? "" : ` \xB7 ${this.link(url, label)}`;
-    const unknown = episode.status === "unknown" ? ` _(${this.escape(this.messages.t("slack.unknown"))})_` : "";
-    return `\u2022 ${this.escape(text)}${unknown}${link}`;
-  }
-  link(url, label) {
-    return `<${this.escape(url)}|${this.escape(label)}>`;
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  }
-  action(episode) {
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
-      return this.messages.t("action.content-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
-      return this.messages.t("action.social-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
-      return this.messages.t("action.community-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
-      return this.messages.t("action.meetup-approval-pending");
-    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
-      task: this.messages.task(episode.condition.resource)
-    });
-  }
-  url(episode, state) {
-    const runId = episode.runId ?? state.runId;
-    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
-      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
-    if (["integration-failure", "stage-unknown"].includes(
-      episode.condition.code
-    ) && runId && /^\d+$/.test(runId))
-      return `https://github.com/${this.repository}/actions/runs/${runId}`;
-    return this.overviewUrl(state);
-  }
-  overviewUrl(state) {
-    const commentId = state.commentId ?? this.checklist.read().commentId;
-    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-community-approval-presenter.ts
-var SlackCommunityApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.community-publication", {
-      date: request2.eventDate,
-      url: request2.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-content-approval-presenter.ts
-var SlackContentApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.content", {
-      date: request2.eventDate,
-      target: request2.target,
-      url: request2.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-email-approval-presenter.ts
-var SlackEmailApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.introduction", {
-      date: request2.eventDate,
-      kind: request2.mailKind?.replaceAll("-", "_") ?? "introduction",
-      url: request2.approvalUrl,
-      count: request2.recipientCount
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
-var SlackMeetupApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.publication", {
-      date: request2.eventDate,
-      url: request2.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-message-reference.ts
-var SlackMessageReference = class {
-  valid(message) {
-    return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
-  }
-  read(payload, destination) {
-    if (payload?.channel !== destination || typeof payload.ts !== "string")
-      return void 0;
-    const message = { destination, messageId: payload.ts };
-    return this.valid(message) ? message : void 0;
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-social-publication-approval-presenter.ts
-var SlackSocialPublicationApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request2) {
-    return this.messages.t("request.social-publication", {
-      date: request2.eventDate,
-      target: request2.target.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
-      url: request2.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
-var SlackNotificationGatewayComposition = class {
-  slackApiClient(token, fetcher = fetch) {
-    return new SlackApiClient(token, fetcher);
-  }
-  slackApprovalMessages(...args) {
-    return new SlackApprovalMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  slackApprovalNotification(token, presenter, fetcher = fetch) {
-    return new SlackApprovalNotification(
-      {
-        slackMessageReference: this.slackMessageReference()
-      },
-      this.slackApiClient(token, fetcher),
-      presenter
-    );
-  }
-  slackApprovalPresenter(locale) {
-    const messages5 = this.slackApprovalMessages(locale);
-    return new SlackApprovalPresenter({
-      "email-introduction": new SlackEmailApprovalPresenter(messages5),
-      "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
-      "community-publication": new SlackCommunityApprovalPresenter(messages5),
-      "content-review": new SlackContentApprovalPresenter(messages5),
-      "social-publication": new SlackSocialPublicationApprovalPresenter(
-        messages5
-      )
-    });
-  }
-  slackAttentionMessages(...args) {
-    return new SlackAttentionMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  slackAttentionNotification(token, channel, presenter, fetcher = fetch) {
-    return new SlackAttentionNotification(
-      {
-        slackMessageReference: this.slackMessageReference()
-      },
-      this.slackApiClient(token, fetcher),
-      channel,
-      presenter
-    );
-  }
-  slackAttentionPresenter(repository, issueNumber, locale, checklist) {
-    return new SlackAttentionPresenter(
-      {
-        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
-        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
-      },
-      repository,
-      issueNumber,
-      this.slackAttentionMessages(locale),
-      checklist
-    );
-  }
-  slackMessageReference() {
-    return new SlackMessageReference();
   }
 };
 
@@ -50490,7 +49584,7 @@ var STAGE_MESSAGES_FR = {
 };
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS6 = {
+var CATALOGS5 = {
   en: { ...EN_MESSAGES5, ...STAGE_MESSAGES_EN },
   fr: { ...FR_MESSAGES5, ...STAGE_MESSAGES_FR }
 };
@@ -50498,7 +49592,7 @@ var CATALOGS6 = {
 // packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS6, locale);
+    super(collaborators, CATALOGS5, locale);
   }
 };
 
@@ -51225,7 +50319,7 @@ var GithubAttentionResponse = class {
 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
-var messages3 = {
+var messages = {
   "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -51302,7 +50396,7 @@ var messages3 = {
 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
-var messages4 = {
+var messages2 = {
   "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
@@ -51379,20 +50473,20 @@ var messages4 = {
 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
-var CATALOGS7 = { en: messages3, fr: messages4 };
+var CATALOGS6 = { en: messages, fr: messages2 };
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
 var AttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS7, locale);
+    super(collaborators, CATALOGS6, locale);
   }
   failure(resource) {
     const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS7.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+    return Object.hasOwn(CATALOGS6.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
   }
   task(resource) {
     const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
+    return this.t(Object.hasOwn(CATALOGS6.en, key) ? key : "task.unknown");
   }
 };
 
@@ -51568,6 +50662,1161 @@ var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
   }
 };
 
+// packages/runtime/github-actions/src/automation-state-composition.ts
+var AutomationStateComposition = class {
+  create(input) {
+    const client = new GithubOrganizerApprovalComposition().githubApprovalClient(
+      input.client,
+      input.owner,
+      input.repo,
+      input.issueNumber
+    );
+    return new GithubAutomationStateComposition().create(
+      client,
+      input.commentAuthorLogin,
+      input.locale,
+      OrganizerApprovalComposition.visibility(input)
+    );
+  }
+};
+
+// packages/adapter/communication/github-social-delivery-journal/src/github-social-delivery-journal.ts
+import { isDeepStrictEqual as isDeepStrictEqual3 } from "node:util";
+var GithubSocialDeliveryJournal = class {
+  constructor(state, codec, transitions) {
+    this.state = state;
+    this.codec = codec;
+    this.transitions = transitions;
+  }
+  state;
+  codec;
+  transitions;
+  async load(intentId) {
+    return (await this.records()).find(
+      (entry) => entry.record.intentId === intentId
+    )?.record;
+  }
+  async save(previous, next) {
+    const body = this.codec.write(next);
+    const canonical = this.codec.read(body);
+    const prior = previous ? this.codec.read(this.codec.write(previous)) : void 0;
+    const records = await this.records();
+    const existing = records.find(
+      (entry) => entry.record.intentId === next.intentId
+    );
+    if (!isDeepStrictEqual3(existing?.record, prior))
+      throw new Error("Social delivery history changed before persistence");
+    this.transitions.validate(prior, canonical);
+    const nextRecords = records.map(
+      (entry) => entry.record.intentId === next.intentId ? body : entry.body
+    );
+    if (!existing) nextRecords.push(body);
+    await this.state.write(
+      "social",
+      records.map((entry) => entry.body),
+      nextRecords
+    );
+    const saved = await this.load(next.intentId);
+    if (!isDeepStrictEqual3(saved, canonical))
+      throw new Error("Social delivery persistence readback is uncertain");
+  }
+  async records() {
+    const records = [];
+    for (const body of await this.state.read("social")) {
+      const record = this.codec.read(body);
+      if (records.some((entry) => entry.record.intentId === record.intentId))
+        throw new Error("Duplicate social delivery journal identity");
+      records.push({ body, record });
+    }
+    return records;
+  }
+};
+
+// packages/adapter/communication/github-social-delivery-journal/src/social-journal-attempt-codec.ts
+var SocialJournalAttemptCodec = class {
+  constructor(values) {
+    this.values = values;
+  }
+  values;
+  read(value) {
+    const item = this.values.object(value, [
+      "id",
+      "revision",
+      "reservedAt",
+      "status",
+      "media",
+      "receipt",
+      "code",
+      "retryAt",
+      "recovery"
+    ]);
+    const status = item.status;
+    if (status !== "reserved" && status !== "prepared" && status !== "accepted" && status !== "rejected" && status !== "deferred" && status !== "uncertain" && status !== "stale")
+      throw new Error("Invalid social delivery attempt status");
+    const attempt = {
+      id: this.values.text(item.id, 200),
+      revision: this.values.text(item.revision, 200),
+      reservedAt: this.values.instant(item.reservedAt),
+      status,
+      ...item.media === void 0 ? {} : { media: this.media(item.media) },
+      ...item.receipt === void 0 ? {} : { receipt: this.receipt(item.receipt) },
+      ...item.code === void 0 ? {} : { code: this.values.pattern(item.code, 100, /^[a-z][a-z0-9-]*$/) },
+      ...item.retryAt === void 0 ? {} : { retryAt: this.values.instant(item.retryAt) },
+      ...item.recovery === void 0 ? {} : { recovery: this.recovery(item.recovery) }
+    };
+    this.validate(attempt);
+    return attempt;
+  }
+  media(value) {
+    const item = this.values.object(value, [
+      "assetUrn",
+      "fingerprint",
+      "description"
+    ]);
+    return {
+      assetUrn: this.values.pattern(
+        item.assetUrn,
+        200,
+        /^urn:li:image:[A-Za-z0-9_-]+$/
+      ),
+      fingerprint: this.values.pattern(item.fingerprint, 64, /^[a-f0-9]{64}$/),
+      description: this.values.text(item.description, 4086)
+    };
+  }
+  receipt(value) {
+    const item = this.values.object(value, [
+      "provider",
+      "workspaceId",
+      "channelId",
+      "ts",
+      "organizationUrn",
+      "postUrn",
+      "url"
+    ]);
+    if (item.provider === "slack") {
+      this.values.object(value, [
+        "provider",
+        "workspaceId",
+        "channelId",
+        "ts",
+        "url"
+      ]);
+      return {
+        provider: "slack",
+        workspaceId: this.values.pattern(
+          item.workspaceId,
+          100,
+          /^T[A-Z0-9]{2,}$/
+        ),
+        channelId: this.values.pattern(
+          item.channelId,
+          100,
+          /^[CG][A-Z0-9]{2,}$/
+        ),
+        ts: this.values.pattern(item.ts, 40, /^\d+\.\d+$/),
+        ...item.url === void 0 ? {} : { url: this.values.url(item.url, "slack") }
+      };
+    }
+    this.values.object(value, [
+      "provider",
+      "organizationUrn",
+      "postUrn",
+      "url"
+    ]);
+    if (item.provider !== "linkedin")
+      throw new Error("Invalid social receipt provider");
+    return {
+      provider: "linkedin",
+      organizationUrn: this.values.pattern(
+        item.organizationUrn,
+        100,
+        /^urn:li:organization:[1-9]\d*$/
+      ),
+      postUrn: this.values.pattern(
+        item.postUrn,
+        200,
+        /^urn:li:(?:share|ugcPost|activity):[1-9]\d*$/
+      ),
+      ...item.url === void 0 ? {} : { url: this.values.url(item.url, "linkedin") }
+    };
+  }
+  recovery(value) {
+    const item = this.values.object(value, [
+      "actor",
+      "decidedAt",
+      "outcome",
+      "reference"
+    ]);
+    if (item.outcome !== "published" && item.outcome !== "not-published")
+      throw new Error("Invalid social delivery recovery outcome");
+    return {
+      actor: this.values.pattern(
+        item.actor,
+        39,
+        /^[a-z\d](?:[a-z\d-]*[a-z\d])?$/i
+      ),
+      decidedAt: this.values.instant(item.decidedAt),
+      outcome: item.outcome,
+      reference: this.values.text(item.reference, 2e3)
+    };
+  }
+  validate(attempt) {
+    if (attempt.receipt?.provider === "linkedin" && attempt.receipt.postUrn.startsWith("urn:li:activity:") && attempt.recovery?.outcome !== "published")
+      throw new Error("LinkedIn activity identity requires verified recovery");
+    if (attempt.status === "accepted" !== Boolean(attempt.receipt))
+      throw new Error("Social delivery acceptance requires its receipt");
+    if (attempt.status === "prepared" && !attempt.media)
+      throw new Error("Prepared social delivery requires media");
+    if (attempt.retryAt && attempt.status !== "deferred")
+      throw new Error("Only deferred social delivery has a retry time");
+    if (attempt.recovery) {
+      if (attempt.recovery.outcome === "published" !== (attempt.status === "accepted"))
+        throw new Error("Social delivery recovery contradicts its outcome");
+      if (Date.parse(attempt.recovery.decidedAt) < Date.parse(attempt.reservedAt))
+        throw new Error("Social delivery recovery predates its reservation");
+    }
+  }
+};
+
+// packages/adapter/communication/github-social-delivery-journal/src/social-journal-codec.ts
+var SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
+var SocialJournalCodec = class {
+  constructor(values, attempts) {
+    this.values = values;
+    this.attempts = attempts;
+  }
+  values;
+  attempts;
+  read(body) {
+    if (!body.startsWith(SOCIAL_JOURNAL_MARKER) || !body.endsWith(" -->"))
+      throw new Error("Invalid social delivery marker");
+    const value = JSON.parse(
+      body.slice(SOCIAL_JOURNAL_MARKER.length, -4)
+    );
+    return this.parse(value);
+  }
+  write(record) {
+    const value = this.parse(record);
+    const json = JSON.stringify(value).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    const body = `${SOCIAL_JOURNAL_MARKER}${json} -->`;
+    if (body.length > 6e4)
+      throw new Error("Social delivery journal comment limit exceeded");
+    return body;
+  }
+  parse(value) {
+    const item = this.values.object(value, [
+      "manual",
+      "intentId",
+      "occurrence",
+      "purpose",
+      "destination",
+      "attempts"
+    ]);
+    if (item.purpose !== "announcement" && item.purpose !== "d7" && item.purpose !== "d0")
+      throw new Error("Invalid social delivery purpose");
+    if (!Array.isArray(item.attempts) || item.attempts.length > 100)
+      throw new Error("Invalid social delivery attempts");
+    const record = {
+      ...item.manual === void 0 ? {} : { manual: this.manual(item.manual) },
+      intentId: this.values.text(item.intentId, 200),
+      occurrence: this.values.text(item.occurrence, 200),
+      purpose: item.purpose,
+      destination: this.destination(item.destination),
+      attempts: item.attempts.map((attempt) => this.attempts.read(attempt))
+    };
+    this.validate(record);
+    return record;
+  }
+  destination(value) {
+    const item = this.values.object(value, [
+      "key",
+      "provider",
+      "label",
+      "workspaceId",
+      "channelId",
+      "organizationUrn"
+    ]);
+    const key = this.values.pattern(item.key, 64, /^[a-z][a-z0-9-]{0,63}$/);
+    const label = this.values.text(item.label, 100);
+    if (item.provider === "slack") {
+      this.values.object(value, [
+        "key",
+        "provider",
+        "label",
+        "workspaceId",
+        "channelId"
+      ]);
+      return {
+        key,
+        label,
+        provider: "slack",
+        workspaceId: this.values.pattern(
+          item.workspaceId,
+          100,
+          /^T[A-Z0-9]{2,}$/
+        ),
+        channelId: this.values.pattern(
+          item.channelId,
+          100,
+          /^[CG][A-Z0-9]{2,}$/
+        )
+      };
+    }
+    this.values.object(value, ["key", "provider", "label", "organizationUrn"]);
+    if (item.provider !== "linkedin")
+      throw new Error("Invalid social destination provider");
+    return {
+      key,
+      label,
+      provider: "linkedin",
+      organizationUrn: this.values.pattern(
+        item.organizationUrn,
+        100,
+        /^urn:li:organization:[1-9]\d*$/
+      )
+    };
+  }
+  validate(record) {
+    if (record.manual && record.attempts.length)
+      throw new Error(
+        "Manual social completion cannot overwrite provider history"
+      );
+    if (new Set(record.attempts.map((attempt) => attempt.id)).size !== record.attempts.length)
+      throw new Error("Duplicate social delivery attempt identity");
+    for (const [index, attempt] of record.attempts.entries()) {
+      const destination = record.destination;
+      if (attempt.media && destination.provider !== "linkedin")
+        throw new Error("Social delivery media belongs to LinkedIn");
+      const receipt = attempt.receipt;
+      if (receipt) this.validateDestination(destination, receipt);
+      if (index < record.attempts.length - 1 && attempt.status !== "rejected" && attempt.status !== "deferred" && attempt.status !== "stale" && attempt.recovery?.outcome !== "not-published")
+        throw new Error("Social delivery attempts contain unsafe replay");
+    }
+  }
+  manual(value) {
+    const item = this.values.object(value, ["recordedAt", "reference"]);
+    return {
+      recordedAt: this.values.instant(item.recordedAt),
+      reference: this.values.text(item.reference, 2e3)
+    };
+  }
+  validateDestination(destination, receipt) {
+    const matches = receipt.provider === "slack" && destination.provider === "slack" ? receipt.workspaceId === destination.workspaceId && receipt.channelId === destination.channelId : receipt.provider === "linkedin" && destination.provider === "linkedin" && receipt.organizationUrn === destination.organizationUrn;
+    if (!matches)
+      throw new Error(
+        "Social receipt destination does not match its reservation"
+      );
+  }
+};
+
+// packages/adapter/communication/github-social-delivery-journal/src/social-journal-transition.ts
+import { isDeepStrictEqual as isDeepStrictEqual4 } from "node:util";
+var SocialJournalTransition = class {
+  validate(previous, next) {
+    if (previous?.manual && !isDeepStrictEqual4(previous, next))
+      throw new Error("Manual social completion cannot change");
+    if (!previous) {
+      this.initial(next);
+      return;
+    }
+    if (previous.intentId !== next.intentId || previous.occurrence !== next.occurrence || previous.purpose !== next.purpose || !isDeepStrictEqual4(previous.destination, next.destination))
+      throw new Error("Social delivery identity cannot change");
+    if (next.attempts.length < previous.attempts.length || next.attempts.length > previous.attempts.length + 1)
+      throw new Error("Social delivery history must be preserved");
+    for (const [index, attempt] of previous.attempts.entries()) {
+      const updated = next.attempts[index];
+      if (isDeepStrictEqual4(attempt, updated)) continue;
+      if (!updated || index !== previous.attempts.length - 1)
+        throw new Error("Earlier social delivery attempts cannot change");
+      this.attempt(attempt, updated);
+    }
+    if (next.attempts.length > previous.attempts.length)
+      this.append(previous, next);
+  }
+  initial(next) {
+    if (next.attempts.length > 1 || next.attempts.some(
+      (attempt) => attempt.status !== "reserved" || attempt.media || attempt.recovery
+    ))
+      throw new Error("Social delivery must be reserved before effects");
+  }
+  append(previous, next) {
+    const last = previous.attempts.at(-1);
+    if (last && last.status !== "rejected" && last.status !== "deferred" && last.status !== "stale" && last.recovery?.outcome !== "not-published")
+      throw new Error("Uncertain social delivery cannot be replayed");
+    const added = next.attempts.at(-1);
+    if (added?.status !== "reserved" || added.receipt || added.code || added.retryAt || added.recovery)
+      throw new Error("Social delivery must be reserved before effects");
+    if (added.media && (!isDeepStrictEqual4(last?.media, added.media) || last?.revision !== added.revision))
+      throw new Error("Social delivery cannot reuse unreviewed media");
+    if (last && Date.parse(added.reservedAt) < Date.parse(last.reservedAt))
+      throw new Error("Social delivery attempt predates its history");
+  }
+  attempt(previous, next) {
+    if (previous.status === "accepted" || previous.recovery)
+      throw new Error("Completed social delivery evidence cannot change");
+    if (previous.status === "rejected" || previous.status === "deferred") {
+      this.terminalRecovery(previous, next);
+      return;
+    }
+    if (previous.id !== next.id || previous.revision !== next.revision || previous.reservedAt !== next.reservedAt || previous.media && !isDeepStrictEqual4(previous.media, next.media))
+      throw new Error("Social delivery reservation cannot change");
+    if (previous.status === "uncertain" && !next.recovery)
+      throw new Error("Uncertain social delivery requires explicit recovery");
+    if (next.recovery) {
+      this.recovery(previous, next);
+      return;
+    }
+    if (next.status === "reserved" || previous.status === "prepared" && next.status === "prepared")
+      throw new Error("Social delivery cannot return to an earlier stage");
+  }
+  terminalRecovery(previous, next) {
+    const { recovery, ...evidence } = next;
+    if (recovery?.outcome !== "not-published" || !isDeepStrictEqual4(previous, evidence))
+      throw new Error("Completed social delivery evidence cannot change");
+  }
+  recovery(previous, next) {
+    const {
+      status: previousStatus,
+      receipt: previousReceipt,
+      recovery: previousRecovery,
+      ...previousEvidence
+    } = previous;
+    const { status, receipt, recovery, ...evidence } = next;
+    if (!isDeepStrictEqual4(previousEvidence, evidence))
+      throw new Error("Social recovery cannot change provider evidence");
+    const validOutcome = recovery?.outcome === "published" ? status === "accepted" && Boolean(receipt) : status === previousStatus && isDeepStrictEqual4(receipt, previousReceipt) && !previousRecovery;
+    if (!validOutcome)
+      throw new Error("Invalid social delivery recovery transition");
+  }
+};
+
+// packages/adapter/communication/github-social-delivery-journal/src/social-journal-value-schema.ts
+var SocialJournalValueSchema = class {
+  object(value, keys) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
+      throw new Error("Invalid social delivery object");
+    return value;
+  }
+  text(value, max) {
+    if (typeof value !== "string" || !value.trim() || value.length > max || [...value].some(
+      (character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127
+    ))
+      throw new Error("Invalid social delivery value");
+    return value;
+  }
+  pattern(value, max, pattern) {
+    const text = this.text(value, max);
+    if (!pattern.test(text))
+      throw new Error("Invalid social delivery identity");
+    return text;
+  }
+  instant(value) {
+    const text = this.text(value, 40);
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(text) || !Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid social delivery timestamp");
+    return text;
+  }
+  url(value, provider) {
+    const text = this.text(value, 2e3);
+    const url = new URL(text);
+    const validHost = provider === "slack" ? /^(?:[a-z0-9-]+\.)?slack\.com$/.test(url.hostname) : /^(?:www\.)?linkedin\.com$/.test(url.hostname);
+    if (!validHost || url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.port)
+      throw new Error("Invalid social delivery post URL");
+    return text;
+  }
+};
+
+// packages/adapter/communication/github-social-delivery-journal/src/dependency-composition.ts
+var GithubSocialDeliveryJournalComposition = class {
+  create(state) {
+    const values = new SocialJournalValueSchema();
+    const attempts = new SocialJournalAttemptCodec(values);
+    return new GithubSocialDeliveryJournal(
+      state,
+      new SocialJournalCodec(values, attempts),
+      new SocialJournalTransition()
+    );
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
+var messages3 = {
+  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
+  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
+  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
+  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
+  "failure.social": "Posting failed.",
+  "task.social": "social posts",
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
+  "failure.communications": "Email preparation or sending failed.",
+  "failure.feedback": "OpenFeedback synchronization failed.",
+  "failure.assets": "Drive file preparation failed.",
+  "failure.event": "Meetup issue update failed.",
+  "task.event-data": "meetup details",
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# more task} other {# more tasks}} \u2192 View all",
+  "slack.run": "Review run",
+  "slack.review": "Review details",
+  "slack.unknown": "status unverified",
+  "action.missing-date": "Set the event date.",
+  "action.required-data": "Complete or correct: {task}.",
+  "action.host-confirmation": "Select a host in the meetup form.",
+  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.approval-pending": "Approve or reject the emails.",
+  "action.integration-failure": "Automation failed: {task}.",
+  "action.delivery-recovery": "Verify delivery before retrying.",
+  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "Unverified stage result: {task}.",
+  "task.approvals": "email approval",
+  "task.delivery": "delivery recovery",
+  "attention.clear": "No pending tasks.",
+  "task.publish-community-event": 'Publish on the CNCF platform and fill in "CNCF Link"',
+  "task.date": "event date",
+  "task.title": "event title",
+  "task.description": "event description",
+  "task.agenda": "talk agenda",
+  "task.agenda-speakers": "talk speakers",
+  "task.agenda-descriptions": "talk descriptions",
+  "task.host": "event host",
+  "task.event-status": "event status",
+  "task.publication-links": "publication links",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "resources folder link",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "speaker confirmation",
+  "task.event-form": "event form",
+  "task.create-asset-folder": "Prepare the asset folder",
+  "task.thank-host": "Thank the host",
+  "task.thank-speakers": "Thank the speakers",
+  "task.share-slides": "Share slides",
+  "task.import-attendance": "Import attendance",
+  "task.share-social": "Post a meetup recap on LinkedIn",
+  "task.event": "event validation",
+  "task.assets": "assets",
+  "task.feedback": "feedback",
+  "task.communications": "communications",
+  "task.unknown": "review the issue"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
+var messages4 = {
+  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
+  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
+  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "failure.social": "La publication a \xE9chou\xE9.",
+  "task.social": "publications sur les r\xE9seaux",
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
+  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
+  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
+  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
+  "task.event-data": "informations du meetup",
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# autre t\xE2che} other {# autres t\xE2ches}} \u2192 Tout voir",
+  "slack.run": "Voir l'ex\xE9cution",
+  "slack.review": "Voir les d\xE9tails",
+  "slack.unknown": "statut non v\xE9rifi\xE9",
+  "action.missing-date": "Renseignez la date du meetup.",
+  "action.required-data": "Compl\xE9tez ou corrigez : {task}.",
+  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
+  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.approval-pending": "Approuvez ou refusez les emails.",
+  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
+  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "R\xE9sultat non v\xE9rifi\xE9 : {task}.",
+  "task.approvals": "validation des emails",
+  "task.delivery": "reprise des envois",
+  "attention.clear": "Aucune t\xE2che en attente.",
+  "task.publish-community-event": 'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
+  "task.date": "date du meetup",
+  "task.title": "titre du meetup",
+  "task.description": "description du meetup",
+  "task.agenda": "programme des talks",
+  "task.agenda-speakers": "intervenants des talks",
+  "task.agenda-descriptions": "descriptions des talks",
+  "task.host": "h\xF4te du meetup",
+  "task.event-status": "statut du meetup",
+  "task.publication-links": "liens de publication",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "lien du dossier des ressources",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "confirmation des intervenants",
+  "task.event-form": "formulaire du meetup",
+  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
+  "task.thank-host": "Remerciez l'h\xF4te",
+  "task.thank-speakers": "Remerciez les intervenants",
+  "task.share-slides": "Partagez les pr\xE9sentations",
+  "task.import-attendance": "Importez les pr\xE9sences",
+  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
+  "task.event": "validation du meetup",
+  "task.assets": "ressources",
+  "task.feedback": "\xE9valuations",
+  "task.communications": "communications",
+  "task.unknown": "consulter le ticket"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
+var CATALOGS7 = { en: messages3, fr: messages4 };
+
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
+var SlackAttentionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS7, locale);
+  }
+  failure(resource) {
+    const key = `failure.${resource}`;
+    return Object.hasOwn(CATALOGS7.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+  }
+  task(resource) {
+    const key = `task.${resource}`;
+    return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
+var EN_MESSAGES6 = {
+  "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
+  "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
+  "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
+  "request.introduction": "{kind, select, host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} other {Introduction emails}} \xB7 {date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\nApprove or reject: {url}",
+  "request.publication": "Meetup \xB7 {date}\nReview and approve publication: {url}"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
+var FR_MESSAGES6 = {
+  "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
+  "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
+  "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
+  "request.introduction": "{kind, select, host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} other {Emails de pr\xE9paration}} \xB7 {date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
+  "request.publication": "Meetup \xB7 {date}\nV\xE9rifiez et validez la publication : {url}"
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
+var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
+
+// packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
+var SlackApprovalMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS8, locale);
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-api-client.ts
+var SlackApiClient = class {
+  constructor(token, fetcher) {
+    this.token = token;
+    this.fetcher = fetcher;
+  }
+  token;
+  fetcher;
+  async post(method, body) {
+    let response;
+    try {
+      response = await this.fetcher(`https://slack.com/api/${method}`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${this.token}`,
+          "content-type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify(body)
+      });
+    } catch {
+      return {
+        result: {
+          outcome: "uncertain",
+          diagnosticCode: "unknown-provider-state"
+        }
+      };
+    }
+    if (!response.ok)
+      return {
+        retryAfterSeconds: this.retryAfter(response),
+        result: this.httpRejection(response.status) ?? {
+          outcome: "uncertain",
+          diagnosticCode: "ambiguous-response"
+        }
+      };
+    let payload;
+    try {
+      payload = await response.json();
+    } catch {
+      return {
+        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
+      };
+    }
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload))
+      return {
+        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
+      };
+    const data = payload;
+    return {
+      result: data.ok === true ? { outcome: "accepted" } : this.slackApiRejection(data.error),
+      payload: data
+    };
+  }
+  retryAfter(response) {
+    const value = Number(response.headers.get("retry-after"));
+    return Number.isFinite(value) && value > 0 ? value : void 0;
+  }
+  httpRejection(status) {
+    switch (status) {
+      case 400:
+      case 422:
+        return { outcome: "rejected", diagnosticCode: "invalid-request" };
+      case 401:
+        return { outcome: "rejected", diagnosticCode: "authentication-failed" };
+      case 403:
+        return { outcome: "rejected", diagnosticCode: "permission-denied" };
+      case 404:
+        return {
+          outcome: "rejected",
+          diagnosticCode: "destination-unavailable"
+        };
+      case 429:
+        return { outcome: "deferred", diagnosticCode: "rate-limited" };
+      default:
+        return void 0;
+    }
+  }
+  slackApiRejection(error2) {
+    if (typeof error2 !== "string") {
+      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+    }
+    if ([
+      "invalid_auth",
+      "not_authed",
+      "account_inactive",
+      "token_revoked"
+    ].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "authentication-failed" };
+    }
+    if (["channel_not_found", "not_in_channel", "is_archived"].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "destination-unavailable" };
+    }
+    if (["missing_scope", "restricted_action"].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "permission-denied" };
+    }
+    if ([
+      "invalid_arguments",
+      "invalid_arg_name",
+      "msg_too_long",
+      "no_text"
+    ].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "invalid-request" };
+    }
+    if (error2 === "ratelimited") {
+      return { outcome: "deferred", diagnosticCode: "rate-limited" };
+    }
+    return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-approval-notification.ts
+var SlackApprovalNotification = class {
+  constructor(collaborators, client, presenter) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.presenter = presenter;
+  }
+  collaborators;
+  client;
+  presenter;
+  async send(input) {
+    const { result, payload } = await this.client.post("chat.postMessage", {
+      channel: input.destination,
+      text: this.presenter.render(input)
+    });
+    if (result.outcome !== "accepted") return result;
+    const message = this.collaborators.slackMessageReference.read(
+      payload,
+      input.destination
+    );
+    return message ? { outcome: "accepted", message } : { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+  }
+  async react(message, decision) {
+    if (!this.collaborators.slackMessageReference.valid(message)) return false;
+    const { result, payload } = await this.client.post("reactions.add", {
+      channel: message.destination,
+      timestamp: message.messageId,
+      name: decision === "approved" ? "white_check_mark" : decision === "iteration-requested" ? "arrows_counterclockwise" : "x"
+    });
+    return result.outcome === "accepted" || payload?.error === "already_reacted";
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-approval-presenter.ts
+var SlackApprovalPresenter = class {
+  constructor(renderers) {
+    this.renderers = renderers;
+  }
+  renderers;
+  render(request2) {
+    return this.renderers[request2.kind].render(request2);
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
+import { createHash as createHash4 } from "node:crypto";
+var SlackAttentionNotification = class {
+  constructor(collaborators, client, channel, presenter) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.channel = channel;
+    this.presenter = presenter;
+    if (!/^[CG][A-Z0-9]+$/.test(channel))
+      throw new Error("Invalid organizer channel");
+  }
+  collaborators;
+  client;
+  channel;
+  presenter;
+  fingerprint(view) {
+    return createHash4("sha256").update(this.presenter.render(view)).digest("hex");
+  }
+  async post(view) {
+    const response = await this.client.post(
+      "chat.postMessage",
+      this.body(this.channel, view)
+    );
+    const { result, payload } = response;
+    if (result.outcome === "uncertain") return { outcome: "uncertain" };
+    if (result.outcome !== "accepted")
+      return {
+        outcome: "retry",
+        retryAfterSeconds: response.retryAfterSeconds
+      };
+    const message = this.collaborators.slackMessageReference.read(
+      payload,
+      this.channel
+    );
+    return message ? { outcome: "accepted", message } : { outcome: "uncertain" };
+  }
+  async update(message, view) {
+    if (!this.collaborators.slackMessageReference.valid(message)) return false;
+    const { result } = await this.client.post("chat.update", {
+      ...this.body(message.destination, view),
+      ts: message.messageId
+    });
+    return result.outcome === "accepted";
+  }
+  body(channel, view) {
+    return {
+      channel,
+      text: this.presenter.render(view),
+      parse: "none",
+      link_names: false,
+      mrkdwn: true,
+      unfurl_links: false,
+      unfurl_media: false
+    };
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-attention-presenter.ts
+var SlackAttentionPresenter = class {
+  constructor(collaborators, repository, issueNumber, messages5, checklist) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.issueNumber = issueNumber;
+    this.messages = messages5;
+    this.checklist = checklist;
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      throw new Error("Invalid attention issue identity");
+    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
+  }
+  collaborators;
+  repository;
+  issueNumber;
+  messages;
+  checklist;
+  issueUrl;
+  render(view) {
+    const title = this.messages.t("slack.title", {
+      issue: String(this.issueNumber)
+    });
+    const actions = this.slackActions(view);
+    const icon = actions.length ? "\u26A0\uFE0F" : "\u2705";
+    const date = this.slackDate(view.state.eventDate);
+    const lines = [
+      `${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` \xB7 ${date}` : ""}`,
+      ""
+    ];
+    lines.push(...actions.slice(0, 6));
+    if (!actions.length)
+      lines.push(this.escape(this.messages.t("attention.clear")));
+    if (actions.length > 6)
+      lines.push(
+        this.link(
+          this.overviewUrl(view.state),
+          this.messages.t("slack.more", { count: actions.length - 6 })
+        )
+      );
+    return lines.join("\n");
+  }
+  slackActions(view) {
+    const selection = this.collaborators.attentionTaskSelection.select(
+      view,
+      this.checklist.read()
+    );
+    return [
+      .../* @__PURE__ */ new Set([
+        ...selection.urgent.map(
+          (episode) => this.slackCondition(episode, view.state)
+        ),
+        ...selection.checklist.map(
+          (entry) => `\u2022 ${this.escape(`${entry.label}: ${entry.description}`)}`
+        ),
+        ...selection.remaining.map(
+          (episode) => this.slackCondition(episode, view.state)
+        )
+      ])
+    ];
+  }
+  slackDate(date) {
+    if (this.collaborators.attentionPolicy.eventDay(date) === void 0)
+      return "";
+    return new Intl.DateTimeFormat(this.messages.locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
+  }
+  slackCondition(episode, state) {
+    const text = this.action(episode);
+    const url = this.url(episode, state);
+    const label = this.messages.t(
+      episode.condition.commentId || state.commentId && episode.condition.code === "follow-up" ? "slack.review" : "slack.run"
+    );
+    const link = url === this.overviewUrl(state) ? "" : ` \xB7 ${this.link(url, label)}`;
+    const unknown = episode.status === "unknown" ? ` _(${this.escape(this.messages.t("slack.unknown"))})_` : "";
+    return `\u2022 ${this.escape(text)}${unknown}${link}`;
+  }
+  link(url, label) {
+    return `<${this.escape(url)}|${this.escape(label)}>`;
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+  action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
+      return this.messages.t("action.content-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
+      return this.messages.t("action.social-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
+      return this.messages.t("action.meetup-approval-pending");
+    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+  }
+  url(episode, state) {
+    const runId = episode.runId ?? state.runId;
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
+      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
+    if (["integration-failure", "stage-unknown"].includes(
+      episode.condition.code
+    ) && runId && /^\d+$/.test(runId))
+      return `https://github.com/${this.repository}/actions/runs/${runId}`;
+    return this.overviewUrl(state);
+  }
+  overviewUrl(state) {
+    const commentId = state.commentId ?? this.checklist.read().commentId;
+    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-community-approval-presenter.ts
+var SlackCommunityApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.community-publication", {
+      date: request2.eventDate,
+      url: request2.approvalUrl
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-content-approval-presenter.ts
+var SlackContentApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.content", {
+      date: request2.eventDate,
+      target: request2.target,
+      url: request2.approvalUrl
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-email-approval-presenter.ts
+var SlackEmailApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.introduction", {
+      date: request2.eventDate,
+      kind: request2.mailKind?.replaceAll("-", "_") ?? "introduction",
+      url: request2.approvalUrl,
+      count: request2.recipientCount
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
+var SlackMeetupApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.publication", {
+      date: request2.eventDate,
+      url: request2.approvalUrl
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-message-reference.ts
+var SlackMessageReference = class {
+  valid(message) {
+    return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
+  }
+  read(payload, destination) {
+    if (payload?.channel !== destination || typeof payload.ts !== "string")
+      return void 0;
+    const message = { destination, messageId: payload.ts };
+    return this.valid(message) ? message : void 0;
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/slack-social-publication-approval-presenter.ts
+var SlackSocialPublicationApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.social-publication", {
+      date: request2.eventDate,
+      target: request2.target.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
+      url: request2.approvalUrl
+    });
+  }
+};
+
+// packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
+var SlackNotificationGatewayComposition = class {
+  slackApiClient(token, fetcher = fetch) {
+    return new SlackApiClient(token, fetcher);
+  }
+  slackApprovalMessages(...args) {
+    return new SlackApprovalMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  slackApprovalNotification(token, presenter, fetcher = fetch) {
+    return new SlackApprovalNotification(
+      {
+        slackMessageReference: this.slackMessageReference()
+      },
+      this.slackApiClient(token, fetcher),
+      presenter
+    );
+  }
+  slackApprovalPresenter(locale) {
+    const messages5 = this.slackApprovalMessages(locale);
+    return new SlackApprovalPresenter({
+      "email-introduction": new SlackEmailApprovalPresenter(messages5),
+      "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
+      "community-publication": new SlackCommunityApprovalPresenter(messages5),
+      "content-review": new SlackContentApprovalPresenter(messages5),
+      "social-publication": new SlackSocialPublicationApprovalPresenter(
+        messages5
+      )
+    });
+  }
+  slackAttentionMessages(...args) {
+    return new SlackAttentionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  slackAttentionNotification(token, channel, presenter, fetcher = fetch) {
+    return new SlackAttentionNotification(
+      {
+        slackMessageReference: this.slackMessageReference()
+      },
+      this.slackApiClient(token, fetcher),
+      channel,
+      presenter
+    );
+  }
+  slackAttentionPresenter(repository, issueNumber, locale, checklist) {
+    return new SlackAttentionPresenter(
+      {
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
+      },
+      repository,
+      issueNumber,
+      this.slackAttentionMessages(locale),
+      checklist
+    );
+  }
+  slackMessageReference() {
+    return new SlackMessageReference();
+  }
+};
+
 // packages/runtime/github-actions/src/social-recovery-composition.ts
 var SocialRecoveryComposition = class {
   create(input) {
@@ -51593,12 +51842,10 @@ var SocialRecoveryComposition = class {
     const fingerprints = new DraftProposalComposition().fingerprints();
     return new RecoverSocialPublication(
       new GithubSocialDeliveryJournalComposition().create(
-        client,
-        input.commentAuthorLogin
+        new AutomationStateComposition().create(input)
       ),
       new GithubContentStoreComposition().store(
-        client,
-        input.commentAuthorLogin
+        new AutomationStateComposition().create(input)
       ),
       approvals,
       new SocialPublicationApprovalRequest(

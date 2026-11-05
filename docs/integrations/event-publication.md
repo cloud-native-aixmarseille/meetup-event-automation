@@ -303,6 +303,12 @@ text and clears coordinates and state codes, which are not configured fields.
 
 Each provider reserves creation in a trusted bot-authored journal before saving.
 It records the observed identity before saved-field verification or issue writes.
+The journals live in the `meetup` and `community` sections of the issue's
+[collapsed automation-state comment](../development/reporting.md#internal-automation-state).
+Maintainers with repository write access can correct those sections using the
+procedures below. Preserve all other sections, the envelope, and import metadata.
+Apply corrections to the consolidated comment; imported standalone comments are
+retained as history and must not be edited.
 Retain journals and the same GitHub App identity across runs. Duplicate journals,
 invalid identities, changed targets, and conflicting issue links block
 synchronization. Link manually published events before the first run; titles are

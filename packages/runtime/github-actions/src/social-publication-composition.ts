@@ -1,3 +1,4 @@
+import { AutomationStateComposition } from "./automation-state-composition.js";
 import { randomUUID } from "node:crypto";
 import {
 	EventDocumentConcurrency,
@@ -74,8 +75,7 @@ export class SocialPublicationComposition {
 			timing: base.timing,
 			approvals,
 			journal: new GithubSocialDeliveryJournalComposition().create(
-				base.client,
-				input.commentAuthorLogin,
+				new AutomationStateComposition().create(input),
 			),
 			configuration,
 			canApprove: base.client.canApprove.bind(base.client),

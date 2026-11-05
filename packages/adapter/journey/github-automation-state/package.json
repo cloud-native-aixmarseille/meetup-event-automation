@@ -1,0 +1,11 @@
+{
+	"name": "@meetup-automation/github-automation-state",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": "./src/index.ts",
+	"dependencies": {
+		"@meetup-automation/journey": "workspace:*",
+		"@meetup-automation/localization": "workspace:*"
+	}
+}

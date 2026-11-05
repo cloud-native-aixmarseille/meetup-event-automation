@@ -7,7 +7,7 @@ import { SocialJournalAttemptCodec } from "../src/social-journal-attempt-codec.j
 import { SocialJournalCodec } from "../src/social-journal-codec.js";
 import { SocialJournalTransition } from "../src/social-journal-transition.js";
 import { SocialJournalValueSchema } from "../src/social-journal-value-schema.js";
-import { journalClientFixture } from "./journal-client.fixtures.js";
+import { automationStateFixture } from "../../../journey/github-automation-state/testing/state.fixtures.js";
 
 export function socialRecord(
 	attempts: readonly SocialDeliveryAttempt[] = [],
@@ -40,16 +40,11 @@ export function socialAttempt(
 }
 
 export function socialJournalFixture() {
-	const f = journalClientFixture();
+	const f = automationStateFixture();
 	const values = new SocialJournalValueSchema();
 	const attempts = new SocialJournalAttemptCodec(values);
 	const codec = new SocialJournalCodec(values, attempts);
 	const transitions = new SocialJournalTransition();
-	const journal = new GithubSocialDeliveryJournal(
-		f.client,
-		f.trusted,
-		codec,
-		transitions,
-	);
+	const journal = new GithubSocialDeliveryJournal(f.state, codec, transitions);
 	return { ...f, values, attempts, codec, transitions, journal };
 }

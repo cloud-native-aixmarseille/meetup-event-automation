@@ -81341,8 +81341,310 @@ var SocialPublicationAction = class {
   }
 };
 
-// packages/runtime/github-actions/src/social-publication-composition.ts
-import { randomUUID as randomUUID4 } from "node:crypto";
+// packages/adapter/journey/github-automation-state/src/automation-state-codec.ts
+import { createHash as createHash3 } from "node:crypto";
+var AUTOMATION_STATE_MARKER = "<!-- meetup-automation-state:v1 ";
+var AutomationStateCodec = class {
+  scope(body) {
+    if (body.startsWith("<!-- meetup-content-proposal:v1 ")) return "content";
+    if (body.startsWith("<!-- meetup-social-delivery:v1 ")) return "social";
+    if (body.startsWith("<!-- meetup-publication:v1\n")) return "meetup";
+    if (body.startsWith("<!-- community-publication:v1\n")) return "community";
+    return void 0;
+  }
+  managed(body) {
+    return body.startsWith(AUTOMATION_STATE_MARKER) || this.scope(body) !== void 0;
+  }
+  empty() {
+    return {
+      version: 1,
+      records: { content: [], social: [], meetup: [], community: [] },
+      imports: []
+    };
+  }
+  digest(body) {
+    return createHash3("sha256").update(body).digest("hex");
+  }
+  read(body) {
+    const end = body.indexOf(" -->\n", AUTOMATION_STATE_MARKER.length);
+    if (!body.startsWith(AUTOMATION_STATE_MARKER) || end < 0)
+      throw new Error("Invalid automation state envelope");
+    return this.validate(
+      JSON.parse(body.slice(AUTOMATION_STATE_MARKER.length, end))
+    );
+  }
+  write(state) {
+    const json = JSON.stringify(this.validate(state)).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${AUTOMATION_STATE_MARKER}${json} -->`;
+  }
+  validate(value) {
+    if (!this.object(value) || value.version !== 1 || !this.object(value.records) || !Array.isArray(value.imports))
+      throw new Error("Invalid automation state envelope");
+    this.fields(value, ["version", "records", "imports"]);
+    this.fields(value.records, ["content", "social", "meetup", "community"]);
+    const records = this.empty().records;
+    for (const scope of Object.keys(records)) {
+      const entries = value.records[scope];
+      if (!Array.isArray(entries) || entries.some(
+        (body) => typeof body !== "string" || this.scope(body) !== scope
+      ))
+        throw new Error("Invalid automation state records");
+      records[scope] = entries;
+    }
+    const imports = value.imports.map((entry) => {
+      if (!this.object(entry) || typeof entry.id !== "number" || !Number.isSafeInteger(entry.id) || entry.id <= 0 || typeof entry.digest !== "string" || !/^[a-f0-9]{64}$/.test(entry.digest))
+        throw new Error("Invalid automation state import");
+      this.fields(entry, ["id", "digest"]);
+      return { id: entry.id, digest: entry.digest };
+    });
+    if (new Set(imports.map((entry) => entry.id)).size !== imports.length)
+      throw new Error("Duplicate automation state import");
+    return { version: 1, records, imports };
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  fields(value, fields2) {
+    if (Object.keys(value).some((key) => !fields2.includes(key)))
+      throw new Error("Unsupported automation state field");
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/automation-state-presenter.ts
+var AutomationStatePresenter = class {
+  constructor(codec, messages5) {
+    this.codec = codec;
+    this.messages = messages5;
+  }
+  codec;
+  messages;
+  render(state) {
+    return `${this.codec.write(state)}
+
+${this.messages.t("state.description")}`;
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/github-automation-state.ts
+import { isDeepStrictEqual } from "node:util";
+var GithubAutomationState = class {
+  constructor(client, comments, codec, presenter, visibility) {
+    this.client = client;
+    this.comments = comments;
+    this.codec = codec;
+    this.presenter = presenter;
+    this.visibility = visibility;
+  }
+  client;
+  comments;
+  codec;
+  presenter;
+  visibility;
+  async read(scope) {
+    return (await this.snapshot()).state.records[scope];
+  }
+  async write(scope, previous, next) {
+    const snapshot = await this.snapshot();
+    if (!isDeepStrictEqual(snapshot.state.records[scope], previous))
+      throw new Error("Automation state changed before persistence");
+    await this.persist(snapshot, {
+      ...snapshot.state,
+      records: { ...snapshot.state.records, [scope]: next }
+    });
+  }
+  async reconcile() {
+    const snapshot = await this.snapshot();
+    if (snapshot.anchor || snapshot.sources.length)
+      await this.persist(snapshot, snapshot.state);
+  }
+  async snapshot() {
+    const comments = await this.comments.list();
+    const anchors = comments.filter(
+      (comment) => comment.body?.startsWith(AUTOMATION_STATE_MARKER)
+    );
+    if (anchors.length > 1)
+      throw new Error("Duplicate automation state comments");
+    const anchor = anchors[0];
+    const sources = comments.filter(
+      (comment) => this.codec.scope(comment.body ?? "") !== void 0
+    );
+    if (anchor) {
+      const state2 = this.codec.read(anchor.body ?? "");
+      for (const source of sources) {
+        const imported = state2.imports.find((entry) => entry.id === source.id);
+        if (!imported || imported.digest !== this.codec.digest(source.body ?? ""))
+          throw new Error(
+            "Internal state changed outside the consolidated comment"
+          );
+      }
+      return { state: state2, anchor, sources };
+    }
+    const state = this.codec.empty();
+    for (const source of sources) {
+      const body = source.body ?? "";
+      const scope = this.codec.scope(body);
+      if (scope) state.records[scope] = [...state.records[scope], body];
+    }
+    return {
+      state: {
+        ...state,
+        imports: sources.map((source) => ({
+          id: source.id,
+          digest: this.codec.digest(source.body ?? "")
+        }))
+      },
+      anchor,
+      sources
+    };
+  }
+  async persist(snapshot, state) {
+    const body = this.presenter.render(state);
+    if (body.length > 6e4)
+      throw new Error(
+        "Consolidated automation state exceeds the comment size limit"
+      );
+    const anchor = snapshot.anchor ?? snapshot.sources[0];
+    const id = anchor ? anchor.id : await this.client.create(body);
+    if (anchor) await this.client.replace(id, anchor.body ?? "", body);
+    const saved = await this.snapshot();
+    if (saved.anchor?.id !== id || saved.anchor.body !== body)
+      throw new Error("Automation state persistence readback is uncertain");
+    await this.visibility.synchronize(id, body, true);
+    for (const source of saved.sources)
+      await this.visibility.synchronize(source.id, source.body ?? "", true);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "state.description": "Automation state. This comment is maintained by the bot and kept collapsed."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "state.description": "\xC9tat de l'automatisation. Ce commentaire est g\xE9r\xE9 par le bot et reste repli\xE9."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/catalog.ts
+var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+
+// packages/adapter/journey/github-automation-state/src/i18n/state-messages.ts
+var StateMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS3, locale);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/state-edit-authority.ts
+import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
+var StateEditAuthority = class {
+  constructor(client, codec, author) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+  }
+  client;
+  codec;
+  author;
+  async verify(current, history) {
+    if (!this.bot(current.editor) && (history[0]?.diff !== current.body || !await this.authorized(current.editor)))
+      throw new Error("Automation state was edited outside automation");
+    let confirmedByBot = this.bot(current.editor);
+    for (const [index, edit] of history.entries()) {
+      if (this.bot(edit.editor)) {
+        confirmedByBot = true;
+        continue;
+      }
+      if (edit.editor?.__typename !== "User" || !confirmedByBot && !await this.authorized(edit.editor) || !this.publicationChange(history[index + 1]?.diff, edit.diff))
+        throw new Error("Automation state was edited outside automation");
+    }
+  }
+  bot(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
+  }
+  async authorized(editor) {
+    return editor?.__typename === "User" && await this.client.canApprove(editor.login);
+  }
+  publicationChange(before, after) {
+    if (!before || !after) return false;
+    const scope = this.codec.scope(before);
+    if (scope === "meetup" || scope === "community")
+      return this.codec.scope(after) === scope;
+    if (!before.startsWith(AUTOMATION_STATE_MARKER) || !after.startsWith(AUTOMATION_STATE_MARKER))
+      return false;
+    const previous = this.codec.read(before);
+    const next = this.codec.read(after);
+    return isDeepStrictEqual2(previous.records.content, next.records.content) && isDeepStrictEqual2(previous.records.social, next.records.social) && isDeepStrictEqual2(previous.imports, next.imports);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/trusted-state-comments.ts
+var TrustedStateComments = class {
+  constructor(client, codec, author, authority) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+    this.authority = authority;
+    if (!/^[a-z\d-]+\[bot\]$/i.test(author))
+      throw new Error("Automation state requires a trusted GitHub App bot");
+  }
+  client;
+  codec;
+  author;
+  authority;
+  async list() {
+    const records = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const current = await this.client.edit(comment);
+      if (current.id !== comment.node_id || current.body !== comment.body)
+        throw new Error("Automation state changed during verification");
+      const managed = this.codec.managed(current.body);
+      if (current.lastEditedAt !== null || current.editor !== null)
+        await this.verifyHistory(comment, current, managed);
+      if (managed) records.push(comment);
+    }
+    return records;
+  }
+  async verifyHistory(comment, current, managed) {
+    const history = await this.client.history(comment);
+    if (!current.editor || history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
+      throw new Error("Automation state history is unavailable");
+    const previouslyManaged = history.some(
+      (edit) => edit.diff !== null && this.codec.managed(edit.diff)
+    );
+    if (!managed && !previouslyManaged) return;
+    if (!managed)
+      throw new Error("Automation state was edited outside automation");
+    await this.authority.verify(current, history);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/dependency-composition.ts
+var GithubAutomationStateComposition = class {
+  create(client, author, locale, visibility) {
+    const codec = new AutomationStateCodec();
+    return new GithubAutomationState(
+      client,
+      new TrustedStateComments(
+        client,
+        codec,
+        author,
+        new StateEditAuthority(client, codec, author)
+      ),
+      codec,
+      new AutomationStatePresenter(
+        codec,
+        new StateMessages(
+          { localeResolver: new LocalizationComposition().localeResolver() },
+          locale
+        )
+      ),
+      visibility
+    );
+  }
+};
 
 // packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
 var ApprovalDecisionParser = class {
@@ -81502,7 +81804,7 @@ var ApprovalPresenter = class {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
+var EN_MESSAGES4 = {
   "approval.delivery.status": "- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {\u2705 Send accepted ({count})} pending {\u23F3 Sending ({count})} uncertain {\u26A0\uFE0F Uncertain result ({count}) \u2014 check the mail service before recovery} rejected {\u274C Send rejected ({count})} other {Awaiting dispatch}}.",
   "approval.delivery.notice": "Accepted means the mail service accepted the request, not that the email reached the inbox.",
   "approval.content.image-label": "#### Image {index, number}",
@@ -81544,7 +81846,7 @@ var EN_MESSAGES3 = {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
+var FR_MESSAGES4 = {
   "approval.delivery.status": "- {kind, select, host_introduction {H\xF4te} speaker_introduction {Intervenants} host_thanks {Remerciements h\xF4te} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {\u2705 Envoi accept\xE9 ({count})} pending {\u23F3 Envoi en cours ({count})} uncertain {\u26A0\uFE0F R\xE9sultat incertain ({count}) \u2014 v\xE9rifier le service d'envoi avant toute reprise} rejected {\u274C Envoi refus\xE9 ({count})} other {En attente d'envoi}}.",
   "approval.delivery.notice": "Accept\xE9 signifie que le service d'envoi a pris la demande en charge, pas que l'email a \xE9t\xE9 re\xE7u.",
   "approval.content.image-label": "#### Visuel {index, number}",
@@ -81586,7 +81888,7 @@ var FR_MESSAGES3 = {
 };
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+var CATALOGS4 = { en: EN_MESSAGES4, fr: FR_MESSAGES4 };
 
 // packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
 var ApprovalPresenterFactory = class {
@@ -81595,7 +81897,7 @@ var ApprovalPresenterFactory = class {
   }
   collaborators;
   supportedLocales() {
-    return Object.keys(CATALOGS3).map(
+    return Object.keys(CATALOGS4).map(
       (locale) => this.collaborators.createApprovalPresenter(
         this.collaborators.createApprovalMessages(locale)
       )
@@ -83279,7 +83581,7 @@ var GithubOrganizerFollowUp = class {
 // packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
 var ApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS3, locale);
+    super(collaborators, CATALOGS4, locale);
   }
 };
 
@@ -83625,45 +83927,39 @@ var GithubContentAuthority = class {
 
 // packages/adapter/journey/github-organizer-approval/src/github-content-proposal-store.ts
 var GithubContentProposalStore = class {
-  constructor(client, author, codec, fingerprints, transitions) {
-    this.client = client;
-    this.author = author;
+  constructor(state, codec, fingerprints, transitions) {
+    this.state = state;
     this.codec = codec;
     this.fingerprints = fingerprints;
     this.transitions = transitions;
   }
-  client;
-  author;
+  state;
   codec;
   fingerprints;
   transitions;
   async load() {
     const records = await this.records();
-    const proposals = records.map((record) => record.proposal);
+    const proposals = records.map((record) => this.codec.read(record));
     return { revision: this.fingerprints.digest(proposals), proposals };
   }
   async save(previous, proposals) {
     const records = await this.records();
-    if (this.fingerprints.digest(records.map((record) => record.proposal)) !== previous.revision)
+    const current = records.map((record) => this.codec.read(record));
+    if (this.fingerprints.digest(current) !== previous.revision)
       throw new Error("Content proposals changed before persistence");
-    if (records.some(
-      (record) => !proposals.some((proposal) => proposal.id === record.proposal.id)
+    if (current.some(
+      (record) => !proposals.some((proposal) => proposal.id === record.id)
     ))
       throw new Error("Content proposal history cannot be removed");
     for (const proposal of proposals) {
-      const existing = records.find(
-        (record) => record.proposal.id === proposal.id
-      );
-      const body = this.codec.write(proposal);
-      if (existing) {
-        this.transitions.validate(existing.proposal, proposal);
-        await this.client.replace(
-          existing.comment.id,
-          existing.comment.body ?? "",
-          body
-        );
-      } else await this.client.create(body);
+      const existing = current.find((record) => record.id === proposal.id);
+      if (existing) this.transitions.validate(existing, proposal);
     }
+    await this.state.write(
+      "content",
+      records,
+      proposals.map((proposal) => this.codec.write(proposal))
+    );
     const saved = await this.load();
     if (proposals.some(
       (proposal) => this.fingerprints.digest(
@@ -83674,35 +83970,11 @@ var GithubContentProposalStore = class {
     return saved;
   }
   async records() {
-    const result = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.author.toLowerCase() || comment.user.type !== "Bot")
-        continue;
-      const edit = await this.client.edit(comment);
-      if (edit.editor && (edit.editor.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))) {
-        await this.requireUnrelated(comment);
-        continue;
-      }
-      if (!edit.editor && edit.lastEditedAt !== null)
-        throw new Error("Content proposal editor is unavailable");
-      if (!edit.body.startsWith(CONTENT_STATE_MARKER)) continue;
-      const proposal = this.codec.read(edit.body);
-      if (result.some((record) => record.proposal.id === proposal.id))
-        throw new Error("Ambiguous content proposal state");
-      result.push({ comment, proposal });
-    }
-    return result;
-  }
-  async requireUnrelated(comment) {
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Content state history was deleted");
-      if (edit.editor?.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))
-        continue;
-      if (edit.diff === null || edit.diff.startsWith(CONTENT_STATE_MARKER))
-        throw new Error("Content proposal state was edited outside automation");
-      return;
-    }
-    throw new Error("Content proposal history could not be verified");
+    const records = await this.state.read("content");
+    const ids = records.map((record) => this.codec.read(record).id);
+    if (new Set(ids).size !== ids.length)
+      throw new Error("Ambiguous content proposal state");
+    return records;
   }
 };
 
@@ -83835,11 +84107,10 @@ var GithubContentStoreComposition = class {
       client
     );
   }
-  store(client, author) {
+  store(state) {
     const fingerprints = new DraftProposalComposition().fingerprints();
     return new GithubContentProposalStore(
-      client,
-      author,
+      state,
       new ContentProposalCodec(
         new ContentValueSchema(new PublicAssetUrl()),
         new DraftProposalComposition().policy(),
@@ -83920,17 +84191,2703 @@ var GithubEmailDeliveryReport = class {
   }
 };
 
-// packages/adapter/communication/github-social-delivery-journal/src/github-social-delivery-journal.ts
-import { isDeepStrictEqual } from "node:util";
-var GithubSocialDeliveryJournal = class {
-  constructor(client, comments, codec, transitions) {
+// packages/runtime/github-actions/src/organizer-approval-composition.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+var DiagnosticCommentPresenter = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  render(diagnostics, messages5, links) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (this.collaborators.organizerDiagnosticPolicy.suppressed(
+        item,
+        diagnostics
+      )) {
+        continue;
+      }
+      const presentation = this.collaborators.diagnosticPresenter.presentDiagnostic(
+        item,
+        messages5,
+        links
+      );
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
+    }
+    if (actionable.size === 0) {
+      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+${messages5.t("comment.resolved")}`;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
+        numeric: true
+      }) || left.message.localeCompare(right.message, messages5.locale)
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-sections.ts
+var SOCIAL_DIAGNOSTIC_START = "<!-- meetup-automation:social-diagnostics:v1 -->";
+var SOCIAL_DIAGNOSTIC_END = "<!-- /meetup-automation:social-diagnostics:v1 -->";
+var DiagnosticCommentSections = class {
+  merge(previous, rendered, scope) {
+    const current = this.read(previous);
+    if (!scope && !current.social) return rendered;
+    const base = this.tasks(scope === "social" ? current.base : rendered);
+    const social = this.tasks(
+      scope === "social" ? rendered : current.social
+    ).filter((line) => !base.includes(line));
+    if (!base.length && !social.length) return rendered;
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      ...base,
+      ...social.length ? [SOCIAL_DIAGNOSTIC_START, ...social, SOCIAL_DIAGNOSTIC_END] : []
+    ].join("\n");
+  }
+  hasSocial(body) {
+    return Boolean(this.read(body).social);
+  }
+  read(body) {
+    if (!body.includes("meetup-automation:social-diagnostics:"))
+      return { base: body, social: "" };
+    const start = body.indexOf(SOCIAL_DIAGNOSTIC_START);
+    const end = body.indexOf(SOCIAL_DIAGNOSTIC_END);
+    if (start < 0 || end < start || body.split(SOCIAL_DIAGNOSTIC_START).length !== 2 || body.split(SOCIAL_DIAGNOSTIC_END).length !== 2)
+      throw new Error("Invalid social diagnostic section");
+    return {
+      base: body.slice(0, start) + body.slice(end + SOCIAL_DIAGNOSTIC_END.length),
+      social: body.slice(start + SOCIAL_DIAGNOSTIC_START.length, end)
+    };
+  }
+  tasks(body) {
+    return [
+      ...new Set(
+        body.split("\n").filter((line) => /^- \[[ x]\] \*\*.+?\*\*: .+$/.test(line))
+      )
+    ];
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/authentication-diagnostic-guidance.ts
+var AUTHENTICATION_GUIDANCE = [
+  [
+    "publication.meetup.authentication",
+    ["Meetup Link", "comment.guidance.meetup.authentication"]
+  ],
+  [
+    "publication.meetup.authentication-configuration",
+    ["Meetup Link", "comment.guidance.meetup.authentication-configuration"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-required",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-required"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-rejected",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-rejected"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-captcha-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-one-time-code",
+    ["Meetup Link", "comment.guidance.meetup.authentication-one-time-code"]
+  ],
+  [
+    "publication.meetup.authentication-credentials-rejected",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-credentials-rejected"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-session-not-reusable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-session-not-reusable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-page-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-page-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-form-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-submit-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-submit-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-redirect-timeout",
+    ["Meetup Link", "comment.guidance.meetup.authentication-redirect-timeout"]
+  ],
+  [
+    "publication.meetup.authentication-account-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-account-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-account-mismatch",
+    ["Meetup Link", "comment.guidance.meetup.authentication-account-mismatch"]
+  ],
+  [
+    "publication.meetup.authentication-unexpected-page",
+    ["Meetup Link", "comment.guidance.meetup.authentication-unexpected-page"]
+  ],
+  [
+    "publication.meetup.authentication-rate-limited",
+    ["Meetup Link", "comment.guidance.meetup.authentication-rate-limited"]
+  ],
+  [
+    "publication.meetup.authentication-browser",
+    ["Meetup Link", "comment.guidance.meetup.authentication-browser"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/email-diagnostic-guidance.ts
+var EMAIL_GUIDANCE = [
+  [
+    "communication.email-parameters-invalid",
+    [
+      "Communication",
+      "comment.guidance.communication.email-parameters-invalid"
+    ]
+  ],
+  [
+    "communication.approval-pending",
+    ["Communication", "comment.guidance.communication.approval"]
+  ],
+  [
+    "communication.approval-rejected",
+    ["Communication", "comment.guidance.communication.rejected"]
+  ],
+  [
+    "communication.approval-unavailable",
+    ["Communication", "comment.guidance.communication.approval-unavailable"]
+  ],
+  [
+    "communication.approval-notification-failed",
+    ["Communication", "comment.guidance.communication.approval-notification"]
+  ],
+  [
+    "communication.gateway-delivery-uncertain",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-threw-ambiguous-error",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.ledger-status-write-failed",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-delivery-rejected",
+    ["Communication", "comment.guidance.communication.delivery-rejected"]
+  ],
+  [
+    "communication.gateway-delivery-deferred",
+    ["Communication", "comment.guidance.communication.delivery-deferred"]
+  ],
+  [
+    "communication.invalid-clock",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-identifier",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-time-zone",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.ledger-read-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.ledger-reservation-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.missing-mail-destination",
+    ["Communication", "comment.guidance.communication.destination"]
+  ],
+  [
+    "communication.checklist-update-failed",
+    ["Communication", "comment.guidance.communication.checklist"]
+  ],
+  [
+    "communication.event-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent"]
+  ],
+  [
+    "communication.event-references-unresolved",
+    ["Agenda", "comment.guidance.communication.references"]
+  ],
+  [
+    "communication.referential-catalog-invalid",
+    ["Referentials", "comment.guidance.communication.catalog"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
+var STAGE_GUIDANCE = [
+  ...AUTHENTICATION_GUIDANCE,
+  [
+    "publication.website.access",
+    ["Website", "comment.guidance.website.access"]
+  ],
+  [
+    "publication.website.conflict",
+    ["Website", "comment.guidance.website.conflict"]
+  ],
+  [
+    "publication.website.format",
+    ["Website", "comment.guidance.website.format"]
+  ],
+  [
+    "publication.website.unavailable",
+    ["Website", "comment.guidance.website.unavailable"]
+  ],
+  [
+    "publication.content.invalid",
+    ["Event materials", "comment.guidance.content.invalid"]
+  ],
+  [
+    "communication.social.evaluation-failed",
+    ["Communication", "comment.guidance.social.evaluation-failed"]
+  ],
+  [
+    "communication.social.pending",
+    ["Communication", "comment.guidance.social.pending"]
+  ],
+  [
+    "communication.social.missing",
+    ["Communication", "comment.guidance.social.missing"]
+  ],
+  [
+    "communication.social.content-pending",
+    ["Communication", "comment.guidance.social.content-pending"]
+  ],
+  [
+    "communication.social.generation-recovery",
+    ["Communication", "comment.guidance.social.generation-recovery"]
+  ],
+  [
+    "communication.social.preparation-failed",
+    ["Communication", "comment.guidance.social.preparation-failed"]
+  ],
+  [
+    "communication.social.blocked",
+    ["Communication", "comment.guidance.social.blocked"]
+  ],
+  [
+    "communication.social.uncertain",
+    ["Communication", "comment.guidance.social.uncertain"]
+  ],
+  [
+    "communication.social.expired",
+    ["Communication", "comment.guidance.social.expired"]
+  ],
+  [
+    "publication.meetup.slides-source",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
+  ],
+  [
+    "publication.meetup.slides-link",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-link"]
+  ],
+  [
+    "publication.meetup.slides-pdf-pending",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"]
+  ],
+  [
+    "publication.meetup.slides-delivery-recovery",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-delivery-recovery"
+    ]
+  ],
+  [
+    "publication.meetup.slides-form-unavailable",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.slides-source-changed",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-source-changed"
+    ]
+  ],
+  [
+    "publication.content.prerequisites",
+    ["Event materials", "comment.guidance.content.prerequisites"]
+  ],
+  [
+    "publication.content.pending",
+    ["Event materials", "comment.guidance.content.pending"]
+  ],
+  [
+    "publication.content.rejected",
+    ["Event materials", "comment.guidance.content.rejected"]
+  ],
+  [
+    "publication.content.iteration-requested",
+    ["Event materials", "comment.guidance.content.iteration-requested"]
+  ],
+  [
+    "publication.content.recovery",
+    ["Event materials", "comment.guidance.content.recovery"]
+  ],
+  [
+    "publication.content.stale",
+    ["Event materials", "comment.guidance.content.stale"]
+  ],
+  [
+    "publication.content.title-review",
+    ["Event materials", "comment.guidance.content.title-review"]
+  ],
+  [
+    "publication.content.description-review",
+    ["Event materials", "comment.guidance.content.description-review"]
+  ],
+  [
+    "publication.meetup.content-review",
+    ["Event materials", "comment.guidance.content.review"]
+  ],
+  [
+    "communication.content-review",
+    ["Event materials", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.assets.pdf.source",
+    ["Event materials", "comment.guidance.pdf.source"]
+  ],
+  [
+    "publication.assets.pdf.source-pending",
+    ["Event materials", "comment.guidance.pdf.source-pending"]
+  ],
+  [
+    "publication.assets.pdf.revision",
+    ["Event materials", "comment.guidance.pdf.revision"]
+  ],
+  [
+    "publication.assets.pdf.conflict",
+    ["Event materials", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.recovery",
+    ["Event materials", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.limit",
+    ["Event materials", "comment.guidance.pdf.limit"]
+  ],
+  [
+    "publication.assets.pdf.sharing",
+    ["Event materials", "comment.guidance.pdf.sharing"]
+  ],
+  [
+    "publication.assets.pdf.invalid",
+    ["Event materials", "comment.guidance.pdf.invalid"]
+  ],
+  [
+    "communication.checklist-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent-checklist"]
+  ],
+  [
+    "publication.feedback.conflict",
+    ["OpenFeedback Link", "comment.guidance.feedback.conflict"]
+  ],
+  [
+    "communication.feedback-unavailable",
+    ["OpenFeedback Link", "comment.guidance.feedback.results"]
+  ],
+  [
+    "communication.feedback-fetch-failed",
+    ["OpenFeedback Link", "comment.guidance.feedback.access"]
+  ],
+  [
+    "communication.slides-unavailable",
+    ["Event materials", "comment.guidance.assets.slides"]
+  ],
+  ...EMAIL_GUIDANCE,
+  [
+    "publication.feedback.agenda",
+    ["Agenda", "comment.guidance.feedback.agenda"]
+  ],
+  [
+    "publication.feedback.prerequisites",
+    ["OpenFeedback Link", "comment.guidance.feedback.prerequisites"]
+  ],
+  [
+    "publication.feedback-link.prerequisites",
+    ["Meetup issue", "comment.guidance.feedback-link.prerequisites"]
+  ],
+  [
+    "publication.feedback-link.ambiguous-date",
+    ["Meetup issue", "comment.guidance.feedback-link.ambiguous-date"]
+  ],
+  [
+    "publication.assets.prerequisites",
+    ["Drive Link", "comment.guidance.assets.prerequisites"]
+  ],
+  [
+    "publication.assets.file.drift",
+    ["Event materials", "comment.guidance.assets.drift"]
+  ],
+  [
+    "publication.assets.content.contract",
+    ["Event materials", "comment.guidance.assets.template"]
+  ],
+  [
+    "publication.assets.content.location",
+    ["Event materials", "comment.guidance.assets.template"]
+  ],
+  [
+    "publication.assets.content.missing",
+    ["Event materials", "comment.guidance.assets.missing"]
+  ],
+  [
+    "publication.assets.content.conflict",
+    ["Event materials", "comment.guidance.assets.recovery"]
+  ],
+  [
+    "publication.assets.content.recovery",
+    ["Event materials", "comment.guidance.assets.recovery"]
+  ],
+  [
+    "publication.assets.content.revision",
+    ["Event materials", "comment.guidance.assets.revision"]
+  ],
+  [
+    "publication.assets.content.image",
+    ["Event materials", "comment.guidance.assets.image"]
+  ],
+  [
+    "publication.assets.content.image-source",
+    ["Event materials", "comment.guidance.assets.image-source"]
+  ],
+  [
+    "publication.assets.content.image-format",
+    ["Event materials", "comment.guidance.assets.image-format"]
+  ],
+  [
+    "publication.assets.content.image-size",
+    ["Event materials", "comment.guidance.assets.image-size"]
+  ],
+  [
+    "publication.assets.content.image-dimensions",
+    ["Event materials", "comment.guidance.assets.image-dimensions"]
+  ],
+  [
+    "publication.assets.content.image-download",
+    ["Event materials", "comment.guidance.assets.image-download"]
+  ],
+  [
+    "publication.assets.content.image-changed",
+    ["Event materials", "comment.guidance.assets.image-changed"]
+  ],
+  [
+    "publication.assets.content.fallback",
+    ["Event materials", "comment.guidance.assets.fallback"]
+  ],
+  [
+    "communication.invalid-event-date",
+    ["Event Date", "comment.guidance.event.date.invalid"]
+  ],
+  [
+    "communication.occurrence-status-unknown",
+    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.ts
+var FIELD_ORDER = [
+  "Event Title",
+  "Event Date",
+  "Hoster",
+  "Event Description",
+  "Agenda",
+  "Meetup Link",
+  "CNCF Link",
+  "Drive Link",
+  "OpenFeedback Link",
+  "Event materials",
+  "Communication",
+  "Automated introduction emails",
+  "Aperitif",
+  "Restaurant / Bar",
+  "Post event",
+  "Automated thank-you emails",
+  "Speaker confirmation",
+  "Event Status",
+  "Issue format",
+  "Referentials",
+  "Meetup issue"
+];
+var GUIDANCE = new Map([
+  ...STAGE_GUIDANCE,
+  [
+    "event.proposals.invalid-selection",
+    ["Agenda", "comment.guidance.proposals.invalid-selection"]
+  ],
+  [
+    "event.proposals.not-found",
+    ["Agenda", "comment.guidance.proposals.not-found"]
+  ],
+  [
+    "event.proposals.not-accepted",
+    ["Agenda", "comment.guidance.proposals.not-accepted"]
+  ],
+  [
+    "referential.source.unavailable",
+    ["Agenda", "comment.guidance.proposals.unavailable"]
+  ],
+  [
+    "referential.source.invalid",
+    ["Agenda", "comment.guidance.proposals.invalid"]
+  ],
+  [
+    "referential.source.rate-limited",
+    ["Agenda", "comment.guidance.proposals.rate-limited"]
+  ],
+  [
+    "referential.source.mapping-required",
+    ["Agenda", "comment.guidance.proposals.mapping-required"]
+  ],
+  [
+    "referential.source.conflict",
+    ["Agenda", "comment.guidance.proposals.conflict"]
+  ],
+  [
+    "event.proposals.unavailable",
+    ["Agenda", "comment.guidance.proposals.unavailable"]
+  ],
+  ["event.proposals.invalid", ["Agenda", "comment.guidance.proposals.invalid"]],
+  [
+    "event.proposals.rate-limited",
+    ["Agenda", "comment.guidance.proposals.rate-limited"]
+  ],
+  [
+    "event.proposals.mapping-required",
+    ["Agenda", "comment.guidance.proposals.mapping-required"]
+  ],
+  [
+    "event.proposals.conflict",
+    ["Agenda", "comment.guidance.proposals.conflict"]
+  ],
+  [
+    "event.title.missing",
+    ["Event Title", "comment.guidance.event.title.missing"]
+  ],
+  ["event.date.missing", ["Event Date", "comment.guidance.event.date.missing"]],
+  ["event.date.invalid", ["Event Date", "comment.guidance.event.date.invalid"]],
+  [
+    "event.description.missing",
+    ["Event Description", "comment.guidance.event.description.missing"]
+  ],
+  ["event.hoster.missing", ["Hoster", "comment.guidance.event.hoster.missing"]],
+  ["event.hoster.invalid", ["Hoster", "comment.guidance.event.hoster.invalid"]],
+  [
+    "event.hoster.multiple",
+    ["Hoster", "comment.guidance.event.hoster.multiple"]
+  ],
+  ["event.agenda.missing", ["Agenda", "comment.guidance.event.agenda.missing"]],
+  [
+    "event.agenda.legacy-line-invalid",
+    ["Agenda", "comment.guidance.event.agenda.legacy-line-invalid"]
+  ],
+  [
+    "event.agenda.speaker.missing",
+    ["Agenda", "comment.guidance.event.agenda.speaker.missing"]
+  ],
+  [
+    "event.agenda.speaker.invalid",
+    ["Agenda", "comment.guidance.event.agenda.speaker.invalid"]
+  ],
+  [
+    "event.agenda.description.missing",
+    ["Agenda", "comment.guidance.event.agenda.description.missing"]
+  ],
+  [
+    "publication.meetup.unpublished",
+    ["Meetup Link", "comment.guidance.publication.meetup.unpublished"]
+  ],
+  [
+    "publication.meetup.missing",
+    ["Meetup Link", "comment.guidance.publication.meetup.missing"]
+  ],
+  [
+    "publication.community.missing",
+    ["CNCF Link", "comment.guidance.publication.community.missing"]
+  ],
+  [
+    "publication.assets.missing",
+    ["Drive Link", "comment.guidance.publication.assets.missing"]
+  ],
+  [
+    "event.link.meetup.invalid",
+    ["Meetup Link", "comment.guidance.event.link.meetup.invalid"]
+  ],
+  [
+    "event.link.community.invalid",
+    ["CNCF Link", "comment.guidance.event.link.community.invalid"]
+  ],
+  [
+    "event.link.feedback.invalid",
+    ["OpenFeedback Link", "comment.guidance.event.link.feedback.invalid"]
+  ],
+  [
+    "event.link.assets.invalid",
+    ["Drive Link", "comment.guidance.event.link.assets.invalid"]
+  ],
+  [
+    "publication.meetup-url.invalid",
+    ["Meetup Link", "comment.guidance.publication.meetup-url.invalid"]
+  ],
+  [
+    "publication.community-url.invalid",
+    ["CNCF Link", "comment.guidance.publication.community-url.invalid"]
+  ],
+  [
+    "publication.asset-url.invalid",
+    ["Drive Link", "comment.guidance.publication.asset-url.invalid"]
+  ],
+  [
+    "event.confirmation.speakers.missing",
+    [
+      "Speaker confirmation",
+      "comment.guidance.event.confirmation.speakers.missing"
+    ]
+  ],
+  [
+    "event.logistics.intent.invalid",
+    ["Logistics", "comment.guidance.event.logistics.intent.invalid"]
+  ],
+  [
+    "event.occurrence-status.invalid",
+    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
+  ],
+  [
+    "event.occurrence-status.label-conflict",
+    ["Event Status", "comment.guidance.event.occurrence-status.label-conflict"]
+  ],
+  [
+    "event.document.heading.missing",
+    ["Issue format", "comment.guidance.event.document.heading.missing"]
+  ],
+  [
+    "event.document.heading.duplicate",
+    ["Issue format", "comment.guidance.event.document.heading.duplicate"]
+  ],
+  [
+    "event.document.checkbox.invalid",
+    ["Issue format", "comment.guidance.event.document.checkbox.invalid"]
+  ],
+  [
+    "event.document.invalid-field-type",
+    ["Issue format", "comment.guidance.event.document.invalid-field-type"]
+  ],
+  [
+    "event.document.invalid-hoster-type",
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-type"]
+  ],
+  [
+    "event.document.invalid-hoster-entry",
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-entry"]
+  ],
+  [
+    "event.document.invalid-agenda-type",
+    ["Agenda", "comment.guidance.event.document.invalid-agenda-type"]
+  ],
+  [
+    "event.document.schema-marker.duplicate",
+    ["Issue format", "comment.guidance.event.document.schema-marker.duplicate"]
+  ],
+  [
+    "event.document.schema-version.unsupported",
+    [
+      "Issue format",
+      "comment.guidance.event.document.schema-version.unsupported"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.missing",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.missing"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.duplicate",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.duplicate"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.invalid",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.invalid"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.legacy",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.legacy"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.stale",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.stale"
+    ]
+  ],
+  [
+    "referential.reference.host.unknown",
+    ["Hoster", "comment.guidance.referential.reference.host.unknown"]
+  ],
+  [
+    "referential.reference.host.ambiguous",
+    ["Hoster", "comment.guidance.referential.reference.host.ambiguous"]
+  ],
+  [
+    "referential.reference.host.display-name-mismatch",
+    [
+      "Hoster",
+      "comment.guidance.referential.reference.host.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.host.invalid",
+    ["Hoster", "comment.guidance.referential.reference.host.invalid"]
+  ],
+  [
+    "referential.reference.speaker.unknown",
+    ["Agenda", "comment.guidance.referential.reference.speaker.unknown"]
+  ],
+  [
+    "referential.reference.speaker.ambiguous",
+    ["Agenda", "comment.guidance.referential.reference.speaker.ambiguous"]
+  ],
+  [
+    "referential.reference.speaker.display-name-mismatch",
+    [
+      "Agenda",
+      "comment.guidance.referential.reference.speaker.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.speaker.invalid",
+    ["Agenda", "comment.guidance.referential.reference.speaker.invalid"]
+  ]
+]);
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-presentation.ts
+var DiagnosticPresenter = class {
+  FIELD_ALIASES = new Map([
+    ...FIELD_ORDER.map((field) => [field, field]),
+    ["Slides & Content", "Event materials"],
+    ["eventTitle", "Event Title"],
+    ["event_title", "Event Title"],
+    ["date", "Event Date"],
+    ["event_date", "Event Date"],
+    ["host", "Hoster"],
+    ["hoster", "Hoster"],
+    ["hostReference", "Hoster"],
+    ["description", "Event Description"],
+    ["event_description", "Event Description"],
+    ["agenda", "Agenda"],
+    ["publicationLinks.meetup", "Meetup Link"],
+    ["meetup_link", "Meetup Link"],
+    ["publicationLinks.community", "CNCF Link"],
+    ["cncf_link", "CNCF Link"],
+    ["publicationLinks.assets", "Drive Link"],
+    ["drive_link", "Drive Link"],
+    ["publicationLinks.feedback", "OpenFeedback Link"],
+    ["openfeedback_link", "OpenFeedback Link"],
+    ["confirmations.speakers", "Speaker confirmation"],
+    ["occurrenceStatus", "Event Status"],
+    ["event_status", "Event Status"]
+  ]);
+  presentDiagnostic(item, messages5, links) {
+    if (item.code.startsWith("publication.assets.content.image"))
+      return this.imageDiagnostic(item, messages5);
+    if (item.code === "publication.meetup.uncertain")
+      return {
+        field: "Meetup Link",
+        message: this.meetupRecovery(messages5, links),
+        order: FIELD_ORDER.indexOf("Meetup Link")
+      };
+    const guidance = GUIDANCE.get(item.code);
+    const referential = /^referential\.(host|contact|speaker)\./.test(
+      item.code
+    );
+    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
+    const [field, section] = this.publicField(item.field, fallback, messages5);
+    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
+    const order = FIELD_ORDER.indexOf(section);
+    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  imageDiagnostic(item, messages5) {
+    const location = item.field?.match(
+      /^assets\.image\/([a-zA-Z0-9_-]{1,100})\/(cover|host-logo|speaker-picture|fallback|embedded)\/([a-zA-Z0-9_.:-]{1,100})$/
+    );
+    const guidance = GUIDANCE.get(item.code);
+    const context3 = location ? messages5.t("comment.assets.image-context", {
+      kind: location[2].replaceAll("-", "_"),
+      slot: location[3],
+      documentUrl: `https://drive.google.com/file/d/${location[1]}/view`
+    }) : "";
+    const recovery = location?.[2] === "cover" ? messages5.t("comment.assets.cover-recovery") : "";
+    return {
+      field: "Event materials",
+      message: [
+        context3,
+        messages5.t(guidance?.[1] ?? "comment.guidance.assets.image"),
+        recovery
+      ].filter(Boolean).join(" "),
+      order: FIELD_ORDER.indexOf("Event materials")
+    };
+  }
+  meetupRecovery(messages5, links) {
+    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+    return links.meetup ? messages5.t("comment.guidance.meetup.uncertain", {
+      eventUrl: links.meetup.replace(
+        /[()<>\s]/g,
+        (character) => character === "(" ? "%28" : character === ")" ? "%29" : encodeURIComponent(character)
+      ),
+      workflowUrl
+    }) : messages5.t("comment.guidance.meetup.uncertain-missing-link", {
+      workflowUrl
+    });
+  }
+  /** Only known issue headings and numeric agenda positions can reach Markdown. */
+  publicField(field, fallback, messages5) {
+    const social = field?.match(
+      /^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/
+    );
+    if (social)
+      return [
+        messages5.t("comment.social.target", {
+          destination: social[1],
+          purpose: social[2]
+        }),
+        "Communication"
+      ];
+    const known = this.FIELD_ALIASES.get(field ?? "");
+    if (known) return [known, known];
+    const agenda = field?.match(
+      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
+    );
+    if (agenda) {
+      const entry = Number(agenda[1]) + 1;
+      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
+        speaker: Number(agenda[3]) + 1
+      });
+      return [
+        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
+        "Agenda"
+      ];
+    }
+    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
+    if (speaker)
+      return [
+        messages5.t("comment.agenda.speaker", {
+          speaker: Number(speaker[1]) + 1
+        }),
+        "Agenda"
+      ];
+    return [fallback, fallback];
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-comment-visibility.ts
+var GitHubCommentVisibility = class {
+  constructor(api, owner, repo) {
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+  }
+  api;
+  owner;
+  repo;
+  async synchronize(commentId, expectedBody, resolved) {
+    const { data } = await this.api.rest.issues.getComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+    if (!data.node_id || data.body !== expectedBody)
+      throw new Error("Comment changed before visibility update");
+    const response = await this.api.graphql(
+      `query CommentVisibility($id: ID!) {
+				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
+			}`,
+      { id: data.node_id }
+    );
+    if (!this.object(response) || !this.object(response.node))
+      throw new Error("Invalid comment visibility response");
+    const comment = response.node;
+    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
+      throw new Error("Comment changed before visibility update");
+    if (resolved === comment.isMinimized) return;
+    if (!resolved && comment.minimizedReason !== "resolved") return;
+    await this.change(data.node_id, resolved);
+  }
+  async change(id, resolved) {
+    const mutation = resolved ? `mutation ResolveComment($id: ID!) {
+				minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
+					minimizedComment { isMinimized }
+				}
+			}` : `mutation ReopenComment($id: ID!) {
+				unminimizeComment(input: { subjectId: $id }) {
+					unminimizedComment { isMinimized }
+				}
+			}`;
+    const response = await this.api.graphql(mutation, { id });
+    const result = this.object(response) ? response[resolved ? "minimizeComment" : "unminimizeComment"] : void 0;
+    const comment = this.object(result) ? result[resolved ? "minimizedComment" : "unminimizedComment"] : void 0;
+    if (!this.object(comment) || comment.isMinimized !== resolved)
+      throw new Error("Comment visibility update was not confirmed");
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
+var GitHubEventCommentRepositoryConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryConfigurationError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
+var GitHubEventCommentRepositoryResponseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryResponseError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
+var GitHubEventCommentRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(
+      `GitHub event comment repository is scoped to ${expected}, not ${received}`
+    );
+    this.name = "GitHubEventCommentRepositoryScopeError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository.ts
+var GitHubEventCommentRepository = class {
+  constructor(collaborators, client, options) {
+    this.collaborators = collaborators;
     this.client = client;
-    this.comments = comments;
+    this.options = options;
+    this.messages = this.collaborators.createEventCommentMessages(
+      options.locale
+    );
+    this.owner = this.requireRepositoryPart(options.owner, "owner");
+    this.repo = this.requireRepositoryPart(options.repo, "repo");
+    this.repositoryName = `${this.owner}/${this.repo}`;
+    this.authorLogin = options.authorLogin.trim();
+    if (!this.authorLogin)
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        "Managed comment author is required"
+      );
+  }
+  collaborators;
+  client;
+  options;
+  messages;
+  owner;
+  repo;
+  repositoryName;
+  authorLogin;
+  async reconcileDiagnostics(identity, diagnostics, links, scope) {
+    this.assertScope(identity.repository);
+    const managedComments = await this.listManagedComments(
+      identity.issueNumber
+    );
+    const retired = managedComments.filter(
+      (comment) => comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
+    );
+    const [canonical, ...duplicates] = managedComments.filter(
+      (comment) => !retired.includes(comment)
+    );
+    let changed = await this.retireComments(identity.issueNumber, duplicates);
+    const body = await this.body(
+      identity.issueNumber,
+      canonical,
+      diagnostics,
+      links,
+      scope
+    );
+    if (!canonical) {
+      if ((!retired.length || scope === "social") && !diagnostics.some((item) => item.severity !== "info")) {
+        return { changed };
+      }
+      await this.client.rest.issues.createComment({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber,
+        body
+      });
+      if (!scope)
+        await this.retireComments(identity.issueNumber, retired, true);
+      return { changed: true };
+    }
+    if (canonical.body !== body) {
+      await this.updateComment(canonical.id, body);
+      changed = true;
+    }
+    if (scope) return { changed };
+    const retiredChanged = await this.retireComments(
+      identity.issueNumber,
+      retired,
+      true
+    );
+    return { changed: changed || retiredChanged };
+  }
+  async body(issueNumber, canonical, diagnostics, links, scope) {
+    const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
+      issueNumber,
+      canonical.id,
+      canonical.body
+    ) : { body: canonical?.body ?? "", retained: "" };
+    const rendered = this.collaborators.diagnosticCommentPresenter.render(
+      diagnostics,
+      this.messages,
+      { repository: this.repositoryName, meetup: links.meetup }
+    );
+    const body = this.collaborators.diagnosticCommentSections.merge(
+      previous.body,
+      rendered,
+      scope
+    );
+    return previous.retained ? `${body}
+
+${previous.retained}` : body;
+  }
+  async listManagedComments(issueNumber) {
+    const comments = [];
+    let page = 1;
+    let hasNextPage = true;
+    while (hasNextPage) {
+      const response = await this.client.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: issueNumber,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data)) {
+        throw new GitHubEventCommentRepositoryResponseError(
+          "GitHub comment list response must contain an array"
+        );
+      }
+      for (const rawComment of response.data) {
+        const comment = this.mapComment(rawComment);
+        if (comment && this.isManagedComment(comment)) {
+          comments.push(comment);
+        }
+      }
+      const linkHeader = this.readHeader(response.headers, "link");
+      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+      page += 1;
+    }
+    return comments.sort((left, right) => left.id - right.id);
+  }
+  isManagedComment(comment) {
+    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
+      return false;
+    }
+    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
+  }
+  async retireComments(issueNumber, duplicates, deleteReports = false) {
+    for (const duplicate of duplicates) {
+      const previous = this.options.retainedContent ? await this.options.retainedContent.load(
+        issueNumber,
+        duplicate.id,
+        duplicate.body
+      ) : void 0;
+      if (previous?.retained || this.collaborators.diagnosticCommentSections.hasSocial(
+        previous?.body ?? duplicate.body
+      ))
+        throw new Error("Duplicate diagnostic comment contains managed state");
+      if (deleteReports && this.client.rest.issues.deleteComment) {
+        await this.client.rest.issues.deleteComment({
+          owner: this.owner,
+          repo: this.repo,
+          comment_id: duplicate.id
+        });
+        continue;
+      }
+      await this.updateComment(
+        duplicate.id,
+        `${DUPLICATE_COMMENT_MARKER}
+
+${this.messages.t("comment.duplicate")}`
+      );
+      if (this.client.minimizeComment) {
+        await this.client.minimizeComment({
+          commentId: duplicate.id,
+          classifier: "OUTDATED"
+        });
+      }
+    }
+    return duplicates.length > 0;
+  }
+  async updateComment(commentId, body) {
+    await this.client.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventCommentRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  mapComment(data) {
+    if (!this.isRecord(data)) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment must be an object"
+      );
+    }
+    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment identifier must be a positive integer"
+      );
+    }
+    if (data.body === null) {
+      return null;
+    }
+    if (typeof data.body !== "string") {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment body must be a string or null"
+      );
+    }
+    const user = this.isRecord(data.user) ? data.user : void 0;
+    return {
+      id: Number(data.id),
+      body: data.body,
+      authorLogin: typeof user?.login === "string" ? user.login : void 0,
+      authorType: typeof user?.type === "string" ? user.type : void 0
+    };
+  }
+  requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
+var EN_MESSAGES5 = {
+  "comment.guidance.website.access": "Meetup is published, but the website update was denied. Ask a maintainer to check the configured repository and file, the GitHub App installation, and its Contents write permission.",
+  "comment.guidance.website.conflict": "Meetup is published, but the calendar contains conflicting rows or concurrent edits. Ask a maintainer to check the calendar, then rerun synchronization.",
+  "comment.guidance.website.format": "Meetup is published, but the calendar format is unsupported. Ask a maintainer to check the year headings and three-column month, date, and venue table.",
+  "comment.guidance.website.unavailable": "Meetup is published, but GitHub could not confirm the website update. Rerun synchronization; it will reuse the same calendar entry.",
+  "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
+  "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
+  "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+  "comment.guidance.content.stale": "The event changed. Generate and review a new proposal.",
+  "comment.guidance.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
+  "comment.guidance.content.iteration-requested": "A new proposal was requested. Run generation again.",
+  "comment.guidance.content.rejected": "Content rejected. Submit a replacement for review.",
+  "comment.guidance.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
+  "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
+  "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
+  "comment.guidance.content.review": "Review the title, description, and cover in their proposal comments.",
+  "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
+  "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
+  "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
+  "comment.guidance.proposals.rate-limited": "Conference Hall rate limit reached. Wait before retrying.",
+  "comment.guidance.proposals.mapping-required": "Synchronize Conference Hall speakers and merge their identity mappings, then retry.",
+  "comment.guidance.proposals.conflict": "Conflicting Conference Hall identifiers. Check the proposal and speaker mappings.",
+  "comment.guidance.proposals.not-found": "Proposal number not found in this CFP. Check its Conference Hall URL.",
+  "comment.guidance.proposals.not-accepted": "Accept the selected proposal in Conference Hall and check that the speaker has not declined.",
+  "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
+  "comment.resolved": "\u2705 Event details complete.",
+  "comment.duplicate": "Superseded duplicate automation comment.",
+  "comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
+  "comment.referential": "Ask a maintainer to correct the host or speaker catalog.",
+  "comment.agenda.item": "Agenda (item {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", speaker {speaker}",
+  "comment.agenda.speaker": "Agenda (speaker {speaker})",
+  "comment.guidance.event.title.missing": "Edit and approve the proposed title.",
+  "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
+  "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
+  "comment.guidance.event.description.missing": "Edit and approve the proposed description.",
+  "comment.guidance.event.hoster.missing": "Select a host from the host list.",
+  "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
+  "comment.guidance.event.agenda.missing": "Add at least one talk using `- Speaker: Talk description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Use `- Speaker: Talk description` for each agenda line.",
+  "comment.guidance.event.agenda.speaker.missing": "Add at least one speaker for this talk.",
+  "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
+  "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
+  "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
+  "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
+  "comment.guidance.publication.community.missing": "Publish the CNCF event and fill in its public link.",
+  "comment.guidance.publication.assets.missing": "Sync assets to create the event Drive folder.",
+  "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
+  "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
+  "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
+  "comment.guidance.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
+  "comment.guidance.publication.community-url.invalid": "Use this group's CNCF / OCGroups event URL.",
+  "comment.guidance.publication.asset-url.invalid": "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirm the speakers, then add the `speakers:confirmed` label.",
+  "comment.guidance.event.logistics.intent.invalid": "Choose `Yes` or `No`, or leave the response empty if undecided.",
+  "comment.guidance.event.occurrence-status.invalid": "Use `scheduled`, `postponed`, `held`, or `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "Restore this section heading from the meetup issue template.",
+  "comment.guidance.event.document.heading.duplicate": "Keep a single section with this heading and merge its content.",
+  "comment.guidance.event.document.checkbox.invalid": "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks.",
+  "comment.guidance.event.document.invalid-field-type": "Enter a text response in this field.",
+  "comment.guidance.event.document.invalid-hoster-type": "Select one host from the host list.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.document.invalid-agenda-type": "Write the agenda as a list of `- Speaker: Talk description` lines.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Ask a maintainer to repair the duplicate automation metadata in the issue description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Ask a maintainer to update the automation to support this issue format.",
+  "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.event.document.reference-metadata.stale": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.referential.reference.host.unknown": "Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
+  "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
+var FR_MESSAGES5 = {
+  "comment.guidance.website.access": "Le meetup est publi\xE9, mais la mise \xE0 jour du site a \xE9t\xE9 refus\xE9e. Demandez \xE0 un mainteneur de v\xE9rifier le d\xE9p\xF4t et le fichier configur\xE9s, l'installation de la GitHub App et son droit Contents en \xE9criture.",
+  "comment.guidance.website.conflict": "Le meetup est publi\xE9, mais plusieurs lignes ou des modifications simultan\xE9es emp\xEAchent la mise \xE0 jour du calendrier. Demandez \xE0 un mainteneur de v\xE9rifier le calendrier, puis relancez la synchronisation.",
+  "comment.guidance.website.format": "Le meetup est publi\xE9, mais le format du calendrier n'est pas reconnu. Demandez \xE0 un mainteneur de v\xE9rifier les titres des ann\xE9es et le tableau \xE0 trois colonnes : mois, date et lieu.",
+  "comment.guidance.website.unavailable": "Le meetup est publi\xE9, mais GitHub n'a pas confirm\xE9 la mise \xE0 jour du site. Relancez la synchronisation ; elle r\xE9utilisera la m\xEAme ligne du calendrier.",
+  "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
+  "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
+  "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+  "comment.guidance.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
+  "comment.guidance.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
+  "comment.guidance.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
+  "comment.guidance.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
+  "comment.guidance.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
+  "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
+  "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
+  "comment.guidance.content.review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
+  "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
+  "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
+  "comment.guidance.proposals.rate-limited": "Limite API Conference Hall atteinte. Patientez avant de r\xE9essayer.",
+  "comment.guidance.proposals.mapping-required": "Synchronisez les intervenants Conference Hall et fusionnez leurs identit\xE9s, puis r\xE9essayez.",
+  "comment.guidance.proposals.conflict": "Identifiants Conference Hall en conflit. V\xE9rifiez les propositions et les identit\xE9s des intervenants.",
+  "comment.guidance.proposals.not-found": "Num\xE9ro de proposition introuvable dans ce CFP. V\xE9rifiez son URL Conference Hall.",
+  "comment.guidance.proposals.not-accepted": "Acceptez la proposition dans Conference Hall et v\xE9rifiez que l'intervenant ne l'a pas refus\xE9e.",
+  "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
+  "comment.resolved": "\u2705 Informations compl\xE8tes.",
+  "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
+  "comment.unknown": "Demandez \xE0 un responsable de consulter les diagnostics du workflow.",
+  "comment.referential": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
+  "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", intervenant {speaker}",
+  "comment.agenda.speaker": "Programme (intervenant {speaker})",
+  "comment.guidance.event.title.missing": "Modifiez et validez le titre propos\xE9.",
+  "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
+  "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
+  "comment.guidance.event.description.missing": "Modifiez et validez la description propos\xE9e.",
+  "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
+  "comment.guidance.event.agenda.missing": "Ajoutez au moins une conf\xE9rence au format `- Intervenant: Description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Utilisez `- Intervenant: Description` pour chaque ligne du programme.",
+  "comment.guidance.event.agenda.speaker.missing": "Ajoutez au moins un intervenant pour cette conf\xE9rence.",
+  "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
+  "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
+  "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
+  "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
+  "comment.guidance.publication.community.missing": "Publiez l'\xE9v\xE9nement CNCF et renseignez son lien public.",
+  "comment.guidance.publication.assets.missing": "Synchronisez les fichiers pour cr\xE9er le dossier Drive du meetup.",
+  "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
+  "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
+  "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.meetup-url.invalid": "Utilisez l'URL Meetup de ce groupe, termin\xE9e par l'identifiant num\xE9rique de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.community-url.invalid": "Utilisez l'URL CNCF / OCGroups de ce groupe.",
+  "comment.guidance.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
+  "comment.guidance.event.logistics.intent.invalid": "Choisissez `Yes` ou `No`, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
+  "comment.guidance.event.occurrence-status.invalid": "Utilisez `scheduled`, `postponed`, `held` ou `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Conservez un seul label de statut : `event:postponed`, `event:held` ou `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "R\xE9tablissez cet en-t\xEAte de section \xE0 partir du mod\xE8le d'issue.",
+  "comment.guidance.event.document.heading.duplicate": "Conservez une seule section avec cet en-t\xEAte et fusionnez son contenu.",
+  "comment.guidance.event.document.checkbox.invalid": "Utilisez `- [ ] T\xE2che` pour les t\xE2ches \xE0 faire et `- [x] T\xE2che` pour les t\xE2ches termin\xE9es.",
+  "comment.guidance.event.document.invalid-field-type": "Saisissez une r\xE9ponse textuelle dans ce champ.",
+  "comment.guidance.event.document.invalid-hoster-type": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.document.invalid-agenda-type": "R\xE9digez le programme sous forme de lignes `- Intervenant: Description`.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es d'automatisation en double dans la description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Demandez \xE0 un responsable de mettre \xE0 jour l'automatisation pour prendre en charge ce format d'issue.",
+  "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.referential.reference.host.unknown": "H\xF4te introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
+  "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Intervenant introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
+var STAGE_MESSAGES_EN = {
+  "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
+  "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
+  "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
+  "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "comment.guidance.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "comment.guidance.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "comment.guidance.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
+  "comment.social.target": "Post ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Review this post's draft in the issue. Once its content is approved, a separate publication request will be shown.",
+  "comment.guidance.social.missing": "This reminder has no draft. Run promotion reconciliation to prepare it, then review the content and publication requests.",
+  "comment.guidance.social.generation-recovery": "Reminder generation needs recovery. Inspect its content proposal and use the content recovery procedure before retrying.",
+  "comment.guidance.social.preparation-failed": "Reminder preparation failed. Check the workflow run and retry after correcting the technical error.",
+  "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
+  "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
+  "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
+  "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
+  "comment.guidance.social.evaluation-failed": "Could not check publication. Check source access and delivery records before retrying.",
+  "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
+  "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
+  "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
+  "comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
+  "comment.guidance.assets.slides": "Complete the presentation and its public link before sending emails.",
+  "comment.guidance.communication.approval": "Approve or reject the emails.",
+  "comment.guidance.communication.rejected": "Emails rejected. Change their content to request a new approval.",
+  "comment.guidance.communication.approval-unavailable": "Approval could not be verified. Check the approval request, then retry.",
+  "comment.guidance.communication.approval-notification": "Slack notification failed. Review the email approval comment in this issue.",
+  "comment.guidance.communication.delivery-uncertain": "Verify delivery before retrying.",
+  "comment.guidance.communication.delivery-rejected": "Delivery rejected. Check the mail gateway before retrying.",
+  "comment.guidance.communication.delivery-deferred": "Delivery deferred; the next run will retry.",
+  "comment.guidance.communication.configuration": "Ask a maintainer to check the communication workflow configuration.",
+  "comment.guidance.communication.ledger": "Check the delivery ledger before retrying.",
+  "comment.guidance.communication.destination": "Add an email address for each recipient.",
+  "comment.guidance.communication.content": "Complete the notification content before retrying.",
+  "comment.guidance.communication.checklist": "Sync again to mark completed email tasks.",
+  "comment.guidance.communication.concurrent": "The issue changed during processing. Retry after editing.",
+  "comment.guidance.communication.references": "Select known hosts and speakers before sending emails.",
+  "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
+  "comment.guidance.feedback.agenda": "Complete talk subjects and speakers before synchronizing OpenFeedback.",
+  "comment.guidance.feedback.prerequisites": "Complete the title, date and OpenFeedback link.",
+  "comment.guidance.feedback-link.prerequisites": "Check the active meetup selected for the shared link and complete its OpenFeedback URL.",
+  "comment.guidance.feedback-link.ambiguous-date": "Several active meetups share the selected date. Select the shared feedback target manually.",
+  "comment.guidance.assets.prerequisites": "Select the host and date before preparing Drive files.",
+  "comment.guidance.assets.drift": "Restore the missing Drive file or its expected template metadata.",
+  "comment.guidance.assets.template": "Fix the template tokens, image slots or supported document structure.",
+  "comment.guidance.assets.missing": "Complete the required text and links for the presentation.",
+  "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
+  "comment.guidance.assets.revision": "The document changed. Retry after editing.",
+  "comment.guidance.assets.image": "Automation could not validate a document image. Rerun synchronization to identify the image and failure reason.",
+  "comment.assets.image-context": "{kind, select, cover {Approved generated cover} host_logo {Host logo} speaker_picture {Speaker photo} fallback {Template fallback image} other {Embedded document image}} (slot `{slot}`) in [this document]({documentUrl}).",
+  "comment.assets.cover-recovery": "Ask a maintainer to repair the automated cover handling; the approved image should remain usable.",
+  "comment.guidance.assets.image-source": "The image source is invalid: a public HTTPS URL and an image description are required.",
+  "comment.guidance.assets.image-format": "The image data or content type is invalid. Supported formats: PNG, JPEG and GIF.",
+  "comment.guidance.assets.image-size": "The image download reaches the 50 MB limit.",
+  "comment.guidance.assets.image-dimensions": "The image dimensions are invalid or exceed 25 megapixels.",
+  "comment.guidance.assets.image-download": "Automation could not download the image. Rerun synchronization; if this persists, ask a maintainer to investigate the run.",
+  "comment.guidance.assets.image-changed": "The image bytes differ from the approved cover.",
+  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
+  "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
+  "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
+  "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
+  "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
+  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 50 MB limit.",
+  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
+  "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
+var STAGE_MESSAGES_FR = {
+  "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
+  "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
+  "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
+  "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "comment.guidance.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "comment.guidance.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "comment.guidance.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
+  "comment.social.target": "Publication ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Examinez le brouillon de cette publication dans l'issue. Apr\xE8s validation du contenu, une demande distincte permettra d'autoriser sa publication.",
+  "comment.guidance.social.missing": "Ce rappel n'a pas de brouillon. Relancez la r\xE9conciliation des publications pour le pr\xE9parer, puis examinez les demandes de validation du contenu et de publication.",
+  "comment.guidance.social.generation-recovery": "La g\xE9n\xE9ration de ce rappel n\xE9cessite une reprise. Examinez sa proposition et suivez la proc\xE9dure de reprise du contenu avant de r\xE9essayer.",
+  "comment.guidance.social.preparation-failed": "La pr\xE9paration de ce rappel a \xE9chou\xE9. Consultez le workflow et relancez-le apr\xE8s correction de l'erreur technique.",
+  "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
+  "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
+  "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
+  "comment.guidance.social.evaluation-failed": "Publication non v\xE9rifiable. V\xE9rifiez les acc\xE8s aux sources et le registre des envois avant de relancer.",
+  "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
+  "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
+  "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
+  "comment.guidance.feedback.access": "V\xE9rifiez les acc\xE8s OpenFeedback, puis r\xE9essayez.",
+  "comment.guidance.assets.slides": "Compl\xE9tez la pr\xE9sentation et son lien public avant les envois.",
+  "comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
+  "comment.guidance.communication.rejected": "Emails refus\xE9s. Modifiez leur contenu pour demander une nouvelle validation.",
+  "comment.guidance.communication.approval-unavailable": "Approbation non v\xE9rifiable. V\xE9rifiez la demande d'approbation, puis r\xE9essayez.",
+  "comment.guidance.communication.approval-notification": "La notification Slack a \xE9chou\xE9. Validez les emails dans le commentaire de cette issue.",
+  "comment.guidance.communication.delivery-uncertain": "V\xE9rifiez l'envoi avant toute reprise.",
+  "comment.guidance.communication.delivery-rejected": "Envoi refus\xE9. V\xE9rifiez la passerelle d'envoi avant de r\xE9essayer.",
+  "comment.guidance.communication.delivery-deferred": "Envoi diff\xE9r\xE9 ; la prochaine ex\xE9cution r\xE9essaiera.",
+  "comment.guidance.communication.configuration": "Demandez \xE0 un responsable de v\xE9rifier la configuration des communications.",
+  "comment.guidance.communication.ledger": "V\xE9rifiez le registre des envois avant de r\xE9essayer.",
+  "comment.guidance.communication.destination": "Ajoutez une adresse email pour chaque destinataire.",
+  "comment.guidance.communication.content": "Compl\xE9tez le contenu de la notification avant de r\xE9essayer.",
+  "comment.guidance.communication.checklist": "Relancez pour cocher les t\xE2ches d'email termin\xE9es.",
+  "comment.guidance.communication.concurrent": "Le ticket a chang\xE9 pendant le traitement. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.communication.references": "S\xE9lectionnez des h\xF4tes et intervenants connus avant les envois.",
+  "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
+  "comment.guidance.feedback.agenda": "Compl\xE9tez les sujets et intervenants avant de synchroniser OpenFeedback.",
+  "comment.guidance.feedback.prerequisites": "Compl\xE9tez le titre, la date et le lien OpenFeedback.",
+  "comment.guidance.feedback-link.prerequisites": "V\xE9rifiez le meetup actif s\xE9lectionn\xE9 pour le lien partag\xE9 et compl\xE9tez son URL OpenFeedback.",
+  "comment.guidance.feedback-link.ambiguous-date": "Plusieurs meetups actifs ont la date s\xE9lectionn\xE9e. Choisissez manuellement la cible du lien partag\xE9.",
+  "comment.guidance.assets.prerequisites": "S\xE9lectionnez l'h\xF4te et la date avant de pr\xE9parer les fichiers Drive.",
+  "comment.guidance.assets.drift": "Restaurez le fichier Drive manquant ou ses m\xE9tadonn\xE9es de mod\xE8le.",
+  "comment.guidance.assets.template": "Corrigez les variables, emplacements d'images ou la structure du mod\xE8le.",
+  "comment.guidance.assets.missing": "Compl\xE9tez les textes et liens requis pour la pr\xE9sentation.",
+  "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
+  "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.assets.image": "La synchronisation n'a pas pu v\xE9rifier une image du document. Relancez-la pour identifier l'image et la cause de l'\xE9chec.",
+  "comment.assets.image-context": "{kind, select, cover {Visuel de couverture g\xE9n\xE9r\xE9 et approuv\xE9} host_logo {Logo de l'h\xF4te} speaker_picture {Photo de l'intervenant} fallback {Image de secours du mod\xE8le} other {Image int\xE9gr\xE9e au document}} (emplacement `{slot}`) dans [ce document]({documentUrl}).",
+  "comment.assets.cover-recovery": "Demandez \xE0 un mainteneur de corriger le traitement automatique du visuel ; l'image approuv\xE9e doit rester utilisable.",
+  "comment.guidance.assets.image-source": "La source de l'image est invalide : une URL HTTPS publique et une description sont n\xE9cessaires.",
+  "comment.guidance.assets.image-format": "Les donn\xE9es ou le type de contenu de l'image sont invalides. Formats pris en charge : PNG, JPEG et GIF.",
+  "comment.guidance.assets.image-size": "Le t\xE9l\xE9chargement de l'image atteint la limite de 50 Mo.",
+  "comment.guidance.assets.image-dimensions": "Les dimensions de l'image sont invalides ou d\xE9passent 25 m\xE9gapixels.",
+  "comment.guidance.assets.image-download": "La synchronisation n'a pas pu t\xE9l\xE9charger l'image. Relancez-la ; si l'\xE9chec persiste, demandez \xE0 un mainteneur d'examiner le run.",
+  "comment.guidance.assets.image-changed": "Le contenu de l'image diff\xE8re du visuel de couverture approuv\xE9.",
+  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
+  "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
+  "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
+  "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
+  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 50 Mo.",
+  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
+  "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
+var CATALOGS5 = {
+  en: { ...EN_MESSAGES5, ...STAGE_MESSAGES_EN },
+  fr: { ...FR_MESSAGES5, ...STAGE_MESSAGES_FR }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
+var EventCommentMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS5, locale);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
+var GithubEventCommentRepositoryComposition = class {
+  githubCommentVisibility(...args) {
+    return new GitHubCommentVisibility(...args);
+  }
+  diagnosticCommentSections() {
+    return new DiagnosticCommentSections();
+  }
+  diagnosticCommentPresenter() {
+    return new DiagnosticCommentPresenter({
+      organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+      diagnosticPresenter: this.diagnosticPresenter()
+    });
+  }
+  diagnosticPresenter() {
+    return new DiagnosticPresenter();
+  }
+  eventCommentMessages(...args) {
+    return new EventCommentMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  gitHubEventCommentRepository(...args) {
+    return new GitHubEventCommentRepository(
+      {
+        diagnosticCommentSections: this.diagnosticCommentSections(),
+        diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
+        createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
+      },
+      ...args
+    );
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-record.ts
+var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
+var AttentionRecord = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body) {
+    const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
+    const line = lines[0];
+    if (lines.length !== 1 || !line?.endsWith(" -->"))
+      throw new Error("Invalid attention record");
+    const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
+    return this.decode(input);
+  }
+  marker(state) {
+    const safe = this.decode({ ...state, version: 1 });
+    return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
+  }
+  decode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    if (!Array.isArray(data.episodes) || data.episodes.length > 300)
+      throw new Error("Invalid attention episodes");
+    this.collaborators.attentionRecordFields.choice(data.version, [1]);
+    const state = {
+      eventDate: this.collaborators.attentionRecordFields.text(
+        data.eventDate,
+        /^(?:\d{4}-\d{2}-\d{2})?$/
+      ),
+      stopped: this.collaborators.attentionRecordFields.choice(data.stopped, [
+        true,
+        false
+      ]),
+      episodes: data.episodes.map(this.episode.bind(this)),
+      post: data.post === void 0 ? void 0 : this.post(data.post),
+      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      )
+    };
+    this.collaborators.attentionStateRules.validate(state);
+    return state;
+  }
+  episode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      condition: this.condition(data.condition),
+      episode: this.collaborators.attentionRecordFields.integer(
+        data.episode,
+        true
+      ),
+      openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
+      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
+        "active",
+        "unknown",
+        "resolved",
+        "stopped"
+      ]),
+      lastWindow: data.lastWindow === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
+        data.lastWindow,
+        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
+      )
+    };
+  }
+  condition(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      key: this.collaborators.attentionRecordFields.text(
+        data.key,
+        /^[a-z0-9:-]{1,180}$/
+      ),
+      code: this.collaborators.attentionRecordFields.choice(
+        data.code,
+        ATTENTION_CODES
+      ),
+      owner: this.collaborators.attentionRecordFields.choice(data.owner, [
+        "event",
+        "assets",
+        "feedback",
+        "communications",
+        "social",
+        "content",
+        "approvals",
+        "delivery"
+      ]),
+      resource: this.collaborators.attentionRecordFields.text(
+        data.resource,
+        /^[a-z0-9:-]{1,128}$/
+      ),
+      severity: this.collaborators.attentionRecordFields.choice(data.severity, [
+        "warning",
+        "error"
+      ]),
+      policy: this.collaborators.attentionRecordFields.choice(data.policy, [
+        "preparation",
+        "daily",
+        "weekly",
+        "approval",
+        "occurrence",
+        "follow-up",
+        "none"
+      ]),
+      since: data.since === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.since),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      ),
+      recovery: data.recovery === void 0 ? void 0 : this.collaborators.attentionRecordFields.choice(data.recovery, [
+        true
+      ])
+    };
+  }
+  post(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      reservationId: this.collaborators.attentionRecordFields.text(
+        data.reservationId,
+        /^attention:\d+:\d+$/
+      ),
+      day: this.collaborators.attentionRecordFields.integer(data.day),
+      reservedAt: this.collaborators.attentionRecordFields.instant(
+        data.reservedAt
+      ),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
+        "pending",
+        "accepted",
+        "retry"
+      ]),
+      retryAt: data.retryAt === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.retryAt),
+      fingerprint: data.fingerprint === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
+        data.fingerprint,
+        /^[a-f0-9]{64}$/
+      ),
+      message: data.message === void 0 ? void 0 : this.message(data.message)
+    };
+  }
+  message(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      destination: this.collaborators.attentionRecordFields.text(
+        data.destination,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      ),
+      messageId: this.collaborators.attentionRecordFields.text(
+        data.messageId,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      )
+    };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-comment-retention.ts
+var AttentionCommentRetention = class {
+  constructor(collaborators, api, owner, repo, author) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.author = author;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  author;
+  async load(issueNumber, commentId, before) {
+    const client = this.collaborators.createGithubAttentionClient(
+      this.api,
+      this.owner,
+      this.repo,
+      issueNumber
+    );
+    const comment = (await client.list()).find((item) => item.id === commentId);
+    if (!comment || comment.body !== before)
+      throw new Error("Diagnostic comment changed before persistence");
+    const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
+    const offset = body.indexOf(ATTENTION_MARKER);
+    if (offset < 0) return { body, retained: "" };
+    this.collaborators.attentionRecord.read(body);
+    return {
+      body: body.slice(0, offset).trimEnd(),
+      retained: body.slice(offset)
+    };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-diagnostic-checklist.ts
+var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  body = "";
+  commentId;
+  set(commentId, body) {
+    if (!body.startsWith(DIAGNOSTIC_MARKER) || !Number.isSafeInteger(commentId) || commentId < 1)
+      throw new Error("Invalid diagnostic checklist");
+    this.commentId = commentId;
+    this.body = body.split(ATTENTION_MARKER, 1)[0].trim();
+  }
+  prefix() {
+    return this.body;
+  }
+  read() {
+    const entries = [...new Set(this.body.split("\n"))].flatMap((line) => {
+      const match = /^- \[ \] \*\*(.+?)\*\*: (.+)$/.exec(line);
+      if (!match) return [];
+      const [, label, description] = match;
+      return [
+        {
+          label,
+          description,
+          field: _AttentionDiagnosticChecklist.FIELDS.get(label) ?? "other",
+          action: this.action(description)
+        }
+      ];
+    });
+    return { commentId: this.commentId, entries };
+  }
+  action(description) {
+    for (const locale of ["en", "fr"]) {
+      const messages5 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages5.t("action.content-approval-pending"))
+        return "content-approval";
+      if (description === messages5.t("action.social-approval-pending"))
+        return "social-approval";
+      if (description === messages5.t("action.approval-pending"))
+        return "email-approval";
+      if (description === messages5.t("action.community-approval-pending"))
+        return "community-approval";
+      if (description === messages5.t("action.meetup-approval-pending"))
+        return "meetup-approval";
+      if (description === messages5.t("action.delivery-recovery"))
+        return "delivery-recovery";
+    }
+    return void 0;
+  }
+  static FIELDS = /* @__PURE__ */ new Map([
+    ["Event Title", "title"],
+    ["Event Description", "description"],
+    ["Drive Link", "assets"],
+    ["Event materials", "assets"],
+    ["OpenFeedback Link", "feedback"],
+    ["Event Date", "date"],
+    ["Hoster", "host"],
+    ["Host confirmation", "host-confirmation"],
+    ["Speaker confirmation", "speaker-confirmation"],
+    ["Meetup Link", "meetup"],
+    ["CNCF Link", "community"],
+    ["Agenda", "agenda"]
+  ]);
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-presenter.ts
+var AttentionPresenter = class {
+  constructor(collaborators, repository, issueNumber, diagnostics, messages5) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.diagnostics = diagnostics;
+    this.messages = messages5;
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      throw new Error("Invalid attention issue identity");
+    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
+  }
+  collaborators;
+  repository;
+  diagnostics;
+  messages;
+  issueUrl;
+  retired(commentId) {
+    return [this.diagnostics.prefix(), this.redirect(commentId)].filter(Boolean).join("\n\n");
+  }
+  redirect(commentId) {
+    return this.messages.t("attention.redirect", {
+      url: `${this.issueUrl}#issuecomment-${commentId}`
+    });
+  }
+  issue(state, metadata) {
+    return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
+  }
+  resolved(state) {
+    return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
+  }
+  details(state) {
+    const view = this.collaborators.attentionPolicy.view(state);
+    const lines = this.status(state);
+    for (const episode of this.collaborators.attentionTaskSelection.select(
+      view,
+      this.diagnostics.read()
+    ).details) {
+      const url = this.url(episode, state);
+      const link = url === this.overviewUrl(state) ? "" : ` ([${this.messages.t("attention.review")}](${url}))`;
+      lines.push(`- [ ] ${this.text(episode)}${link}`);
+    }
+    if (!view.conditions.length && !this.diagnostics.prefix() && !lines.length)
+      lines.push(this.messages.t("attention.clear"));
+    return [...new Set(lines)].join("\n");
+  }
+  status(state) {
+    return state.post?.status === "pending" ? [`- [ ] ${this.messages.t("attention.pending")}`] : [];
+  }
+  text(episode) {
+    const text = this.action(episode);
+    return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
+  }
+  action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
+      return this.messages.t("action.content-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
+      return this.messages.t("action.social-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
+      return this.messages.t("action.meetup-approval-pending");
+    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+  }
+  url(episode, state) {
+    const runId = episode.runId ?? state.runId;
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
+      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
+    if (["integration-failure", "stage-unknown"].includes(
+      episode.condition.code
+    ) && runId && /^\d+$/.test(runId))
+      return `https://github.com/${this.repository}/actions/runs/${runId}`;
+    return this.overviewUrl(state);
+  }
+  overviewUrl(state) {
+    const commentId = state.commentId ?? this.diagnostics.read().commentId;
+    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-record-fields.ts
+var AttentionRecordFields = class {
+  record(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      throw new Error("Invalid attention record object");
+    return value;
+  }
+  text(value, pattern) {
+    if (typeof value !== "string" || !pattern.test(value))
+      throw new Error("Invalid attention record text");
+    return value;
+  }
+  integer(value, positive = false) {
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
+      throw new Error("Invalid attention record integer");
+    return value;
+  }
+  choice(value, values) {
+    const found = values.find((candidate) => candidate === value);
+    if (found === void 0)
+      throw new Error("Invalid attention record variant");
+    return found;
+  }
+  instant(value) {
+    const text = this.text(value, /^\d{4}-\d{2}-\d{2}T/);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid attention record timestamp");
+    return text;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-client.ts
+var GithubAttentionClient = class {
+  constructor(collaborators, api, owner, repo, issue2) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.issue = issue2;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  issue;
+  async list() {
+    const comments = [];
+    let page = 1;
+    while (page <= 20) {
+      const response = await this.api.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issue,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data))
+        throw new Error("Invalid attention comment response");
+      comments.push(
+        ...response.data.map(
+          this.collaborators.githubAttentionResponse.comment.bind(
+            this.collaborators.githubAttentionResponse
+          )
+        )
+      );
+      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!next) return comments;
+      page += 1;
+    }
+    throw new Error("Attention comment limit exceeded");
+  }
+  async create(body) {
+    const response = await this.api.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issue,
+      body
+    });
+    if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    return response.data.id;
+  }
+  async update(commentId, body) {
+    await this.api.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  async replace(commentId, before, after) {
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Attention comment changed before persistence");
+    await this.update(commentId, after);
+  }
+  async remove(commentId, before) {
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Attention comment changed before removal");
+    await this.api.rest.issues.deleteComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+  }
+  async edit(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing attention comment node identity");
+    const result = await this.api.graphql(
+      `query AttentionCommentEditor($id: ID!) {
+				node(id: $id) {
+					... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					}
+				}
+			}`,
+      { id: comment.node_id }
+    );
+    return this.collaborators.githubAttentionResponse.current(result, comment);
+  }
+  checkHistoryLimit(count) {
+    if (count > 2e3) throw new Error("Attention history limit exceeded");
+  }
+  async history(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing attention comment node identity");
+    const edits = [];
+    let after;
+    do {
+      const response = await this.api.graphql(
+        `query AttentionCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+        { id: comment.node_id, ...after ? { after } : {} }
+      );
+      const history = this.collaborators.githubAttentionResponse.history(
+        response,
+        comment
+      );
+      edits.push(...history.nodes);
+      this.checkHistoryLimit(edits.length);
+      if (!history.hasNextPage) return edits;
+      const next = history.endCursor;
+      if (!next || next === after)
+        throw new Error("Invalid attention history cursor");
+      after = next;
+    } while (after);
+    return edits;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
+var GithubAttentionRepository = class {
+  constructor(collaborators, client, author, presenter, checklist, visibility) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.author = author;
+    this.presenter = presenter;
+    this.checklist = checklist;
+    this.visibility = visibility;
+  }
+  collaborators;
+  client;
+  author;
+  presenter;
+  checklist;
+  visibility;
+  snapshot;
+  obsolete;
+  previous;
+  loaded = false;
+  async load() {
+    const trusted = this.collaborators.createTrustedAttentionState(
+      this.client,
+      this.author
+    );
+    const records = [];
+    let diagnostic;
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const body = await trusted.body(comment);
+      const snapshot = { id: comment.id, body: comment.body ?? "" };
+      if (body.startsWith(DIAGNOSTIC_MARKER) && !diagnostic) {
+        diagnostic = snapshot;
+        this.checklist.set(comment.id, body);
+      }
+      if (body.includes(ATTENTION_MARKER))
+        records.push({
+          snapshot,
+          state: this.collaborators.attentionRecord.read(body),
+          diagnostic: body.startsWith(DIAGNOSTIC_MARKER)
+        });
+    }
+    this.select(records, diagnostic);
+    this.loaded = true;
+    return this.previous;
+  }
+  select(records, diagnostic) {
+    const canonical = records.find((item) => item.diagnostic) ?? records[0];
+    if (records.length > 1 && (records.length !== 2 || !canonical?.diagnostic || records.every((item) => item.diagnostic) || records.some(
+      (item) => !this.collaborators.attentionStateEquality.equal(
+        item.state,
+        canonical.state
+      )
+    )))
+      throw new Error("Multiple attention records");
+    this.snapshot = diagnostic ?? canonical?.snapshot;
+    this.previous = canonical?.state;
+    this.obsolete = records.find(
+      (item) => item.snapshot.id !== this.snapshot?.id
+    )?.snapshot;
+  }
+  async save(state) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before writing");
+    await this.consolidate();
+    const body = this.presenter.issue(
+      state,
+      this.collaborators.attentionRecord.marker(state)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    if (this.snapshot) {
+      if (this.snapshot.body !== body)
+        await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    } else {
+      if ((await this.client.list()).some(
+        (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
+      ))
+        throw new Error("Attention state changed before creation");
+      const id = await this.client.create(body);
+      this.snapshot = { id, body };
+    }
+    this.snapshot.body = body;
+    await this.visibility.synchronize(
+      this.snapshot.id,
+      body,
+      this.presenter.resolved(state)
+    );
+  }
+  async consolidate() {
+    if (!this.obsolete || !this.snapshot || !this.previous) return;
+    const body = this.presenter.issue(
+      this.previous,
+      this.collaborators.attentionRecord.marker(this.previous)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    this.snapshot.body = body;
+    await this.client.remove(this.obsolete.id, this.obsolete.body);
+    this.obsolete = void 0;
+  }
+  async retire(commentId) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before retiring");
+    if (!this.snapshot) return;
+    await this.consolidate();
+    await this.client.replace(
+      this.snapshot.id,
+      this.snapshot.body,
+      this.presenter.retired(commentId)
+    );
+    this.snapshot = void 0;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-response.ts
+var GithubAttentionResponse = class {
+  record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("Invalid attention API object");
+    return value;
+  }
+  comment(value) {
+    const data = this.record(value);
+    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
+      throw new Error("Invalid attention comment body");
+    if (data.node_id !== void 0 && typeof data.node_id !== "string")
+      throw new Error("Invalid attention comment node");
+    let user;
+    if (data.user !== null && data.user !== void 0) {
+      const actor = this.record(data.user);
+      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
+        throw new Error("Invalid attention comment author");
+      user = { login: actor.login, type: actor.type };
+    }
+    return { id: data.id, body: data.body, node_id: data.node_id, user };
+  }
+  current(value, comment) {
+    const node = this.node(value, comment);
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: this.nullableText(node.lastEditedAt),
+      editor: this.editor(node.editor)
+    };
+  }
+  history(value, comment) {
+    const node = this.node(value, comment);
+    const edits = this.record(node.userContentEdits);
+    const page = this.record(edits.pageInfo);
+    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
+      throw new Error("Attention history is unavailable");
+    return {
+      nodes: edits.nodes.map(this.edit.bind(this)),
+      hasNextPage: page.hasNextPage,
+      endCursor: this.nullableText(page.endCursor)
+    };
+  }
+  node(value, comment) {
+    const result = this.record(value);
+    const node = this.record(result.node);
+    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
+      throw new Error("Attention comment changed during verification");
+    return { ...node, id: node.id, body: node.body };
+  }
+  edit(value) {
+    const data = this.record(value);
+    return {
+      diff: this.nullableText(data.diff),
+      deletedAt: this.nullableText(data.deletedAt),
+      editor: this.editor(data.editor)
+    };
+  }
+  nullableText(value) {
+    if (value !== null && typeof value !== "string")
+      throw new Error("Invalid attention API text");
+    return value;
+  }
+  editor(value) {
+    if (value === null) return null;
+    const actor = this.record(value);
+    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
+      throw new Error("Invalid attention editor");
+    return { login: actor.login, __typename: actor.__typename };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
+var messages = {
+  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
+  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
+  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
+  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
+  "failure.social": "Posting failed.",
+  "task.social": "social posts",
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
+  "failure.communications": "Email preparation or sending failed.",
+  "failure.feedback": "OpenFeedback synchronization failed.",
+  "failure.assets": "Drive file preparation failed.",
+  "failure.event": "Meetup issue update failed.",
+  "task.event-data": "meetup details",
+  "attention.redirect": "[Post-event tasks and approvals]({url})",
+  "attention.review": "Review details",
+  "attention.unknown": "status unverified",
+  "action.missing-date": "Set the event date.",
+  "action.required-data": "Complete or correct: {task}.",
+  "action.host-confirmation": "Select a host in the meetup form.",
+  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.approval-pending": "Approve or reject the emails.",
+  "action.integration-failure": "Automation failed: {task}.",
+  "action.delivery-recovery": "Verify delivery before retrying.",
+  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "Unverified stage result: {task}.",
+  "task.approvals": "email approval",
+  "task.delivery": "delivery recovery",
+  "attention.clear": "No pending tasks.",
+  "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
+  "task.publish-community-event": 'Publish on the CNCF platform and fill in "CNCF Link"',
+  "task.date": "event date",
+  "task.title": "event title",
+  "task.description": "event description",
+  "task.agenda": "talk agenda",
+  "task.agenda-speakers": "talk speakers",
+  "task.agenda-descriptions": "talk descriptions",
+  "task.host": "event host",
+  "task.event-status": "event status",
+  "task.publication-links": "publication links",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "resources folder link",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "speaker confirmation",
+  "task.event-form": "event form",
+  "task.create-asset-folder": "Prepare the asset folder",
+  "task.thank-host": "Thank the host",
+  "task.thank-speakers": "Thank the speakers",
+  "task.share-slides": "Share slides",
+  "task.import-attendance": "Import attendance",
+  "task.share-social": "Post a meetup recap on LinkedIn",
+  "task.event": "event validation",
+  "task.assets": "assets",
+  "task.feedback": "feedback",
+  "task.content": "content",
+  "task.communications": "communications",
+  "task.unknown": "review the issue"
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
+var messages2 = {
+  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
+  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
+  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "failure.social": "La publication a \xE9chou\xE9.",
+  "task.social": "publications sur les r\xE9seaux",
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
+  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
+  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
+  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
+  "task.event-data": "informations du meetup",
+  "attention.redirect": "[T\xE2ches et approbations apr\xE8s le meetup]({url})",
+  "attention.review": "Voir les d\xE9tails",
+  "attention.unknown": "statut non v\xE9rifi\xE9",
+  "action.missing-date": "Renseignez la date du meetup.",
+  "action.required-data": "Compl\xE9tez ou corrigez : {task}.",
+  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
+  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.approval-pending": "Approuvez ou refusez les emails.",
+  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
+  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "R\xE9sultat non v\xE9rifi\xE9 : {task}.",
+  "task.approvals": "validation des emails",
+  "task.delivery": "reprise des envois",
+  "attention.clear": "Aucune t\xE2che en attente.",
+  "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
+  "task.publish-community-event": 'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
+  "task.date": "date du meetup",
+  "task.title": "titre du meetup",
+  "task.description": "description du meetup",
+  "task.agenda": "programme des talks",
+  "task.agenda-speakers": "intervenants des talks",
+  "task.agenda-descriptions": "descriptions des talks",
+  "task.host": "h\xF4te du meetup",
+  "task.event-status": "statut du meetup",
+  "task.publication-links": "liens de publication",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "lien du dossier des ressources",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "confirmation des intervenants",
+  "task.event-form": "formulaire du meetup",
+  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
+  "task.thank-host": "Remerciez l'h\xF4te",
+  "task.thank-speakers": "Remerciez les intervenants",
+  "task.share-slides": "Partagez les pr\xE9sentations",
+  "task.import-attendance": "Importez les pr\xE9sences",
+  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
+  "task.event": "validation du meetup",
+  "task.assets": "ressources",
+  "task.feedback": "\xE9valuations",
+  "task.content": "contenu",
+  "task.communications": "communications",
+  "task.unknown": "consulter le ticket"
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
+var CATALOGS6 = { en: messages, fr: messages2 };
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
+var AttentionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS6, locale);
+  }
+  failure(resource) {
+    const key = `failure.${resource}`;
+    return Object.hasOwn(CATALOGS6.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+  }
+  task(resource) {
+    const key = `task.${resource}`;
+    return this.t(Object.hasOwn(CATALOGS6.en, key) ? key : "task.unknown");
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/trusted-attention-state.ts
+var TrustedAttentionState = class {
+  constructor(client, author) {
+    this.client = client;
+    this.author = author;
+  }
+  client;
+  author;
+  async body(comment) {
+    if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+      throw new Error("Untrusted attention author");
+    const current = await this.client.edit(comment);
+    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
+      return current.body;
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Attention history was deleted");
+      if (this.isAuthor(edit.editor)) {
+        if (edit.diff === null)
+          throw new Error("Attention history is unavailable");
+        return edit.diff;
+      }
+    }
+    throw new Error("Trusted attention history is unavailable");
+  }
+  isAuthor(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
+var GithubOrganizerAttentionComposition = class {
+  attentionRecordFields() {
+    return new AttentionRecordFields();
+  }
+  attentionCommentRetention(...args) {
+    return new AttentionCommentRetention(
+      {
+        attentionRecord: this.attentionRecord(),
+        createGithubAttentionClient: (...args2) => this.githubAttentionClient(...args2),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
+      },
+      ...args
+    );
+  }
+  attentionDiagnosticChecklist() {
+    return new AttentionDiagnosticChecklist({
+      createAttentionMessages: (...args) => this.attentionMessages(...args)
+    });
+  }
+  attentionMessages(...args) {
+    return new AttentionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  attentionPresenter(...args) {
+    return new AttentionPresenter(
+      {
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection()
+      },
+      ...args
+    );
+  }
+  attentionRecord() {
+    return new AttentionRecord({
+      attentionRecordFields: this.attentionRecordFields(),
+      attentionStateRules: new CommunicationDomainComposition().attentionStateRules()
+    });
+  }
+  githubAttentionClient(...args) {
+    return new GithubAttentionClient(
+      { githubAttentionResponse: this.githubAttentionResponse() },
+      ...args
+    );
+  }
+  githubAttentionRepository(...args) {
+    return new GithubAttentionRepository(
+      {
+        attentionRecord: this.attentionRecord(),
+        attentionStateEquality: new CommunicationDomainComposition().attentionStateEquality(),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
+      },
+      ...args
+    );
+  }
+  githubAttentionResponse() {
+    return new GithubAttentionResponse();
+  }
+  trustedAttentionState(...args) {
+    return new TrustedAttentionState(...args);
+  }
+};
+
+// packages/runtime/github-actions/src/organizer-approval-composition.ts
+var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
+  static visibility(input) {
+    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
+      input.client,
+      input.owner,
+      input.repo
+    );
+  }
+  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
+    const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
+      randomUUID2
+    );
+    const notifications = _OrganizerApprovalComposition.notifications(
+      client,
+      presenter,
+      notificationPort,
+      organizerChannelId
+    );
+    const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
+      client,
+      new GithubOrganizerApprovalComposition().trustedApprovalState(
+        client,
+        authorLogin
+      ),
+      authorLogin,
+      presenter
+    );
+    const finalizer = new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
+      new GithubOrganizerApprovalComposition().resolveApprovalDecision(
+        client,
+        new GithubOrganizerApprovalComposition().approvalDecisionParser(
+          new GithubOrganizerApprovalComposition().approvalPresenterFactory().supportedLocales()
+        )
+      ),
+      repository,
+      notifications,
+      visibility,
+      new GithubOrganizerAttentionComposition().attentionRecord()
+    );
+    return {
+      emailDeliveryReport: _OrganizerApprovalComposition.deliveryReport(
+        repository,
+        finalizer,
+        visibility
+      ),
+      approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+        repository,
+        records,
+        finalizer,
+        notifications,
+        client
+      ),
+      followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
+        repository,
+        records,
+        finalizer
+      ),
+      attention: new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
+        repository,
+        finalizer
+      )
+    };
+  }
+  static notifications(client, presenter, port, channel) {
+    return new GithubOrganizerApprovalComposition().approvalNotifications(
+      new ApprovalNotificationPolicy(),
+      client,
+      presenter,
+      port,
+      channel
+    );
+  }
+  static deliveryReport(repository, finalizer, visibility) {
+    return (source) => new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
+  }
+};
+
+// packages/runtime/github-actions/src/automation-state-composition.ts
+var AutomationStateComposition = class {
+  create(input) {
+    const client = new GithubOrganizerApprovalComposition().githubApprovalClient(
+      input.client,
+      input.owner,
+      input.repo,
+      input.issueNumber
+    );
+    return new GithubAutomationStateComposition().create(
+      client,
+      input.commentAuthorLogin,
+      input.locale,
+      OrganizerApprovalComposition.visibility(input)
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/social-publication-composition.ts
+import { randomUUID as randomUUID4 } from "node:crypto";
+
+// packages/adapter/communication/github-social-delivery-journal/src/github-social-delivery-journal.ts
+import { isDeepStrictEqual as isDeepStrictEqual3 } from "node:util";
+var GithubSocialDeliveryJournal = class {
+  constructor(state, codec, transitions) {
+    this.state = state;
     this.codec = codec;
     this.transitions = transitions;
   }
-  client;
-  comments;
+  state;
   codec;
   transitions;
   async load(intentId) {
@@ -83942,30 +86899,33 @@ var GithubSocialDeliveryJournal = class {
     const body = this.codec.write(next);
     const canonical = this.codec.read(body);
     const prior = previous ? this.codec.read(this.codec.write(previous)) : void 0;
-    const existing = (await this.records()).find(
+    const records = await this.records();
+    const existing = records.find(
       (entry) => entry.record.intentId === next.intentId
     );
-    if (!isDeepStrictEqual(existing?.record, prior))
+    if (!isDeepStrictEqual3(existing?.record, prior))
       throw new Error("Social delivery history changed before persistence");
     this.transitions.validate(prior, canonical);
-    if (existing) {
-      await this.client.replace(
-        existing.comment.id,
-        existing.comment.body ?? "",
-        body
-      );
-    } else await this.client.create(body);
+    const nextRecords = records.map(
+      (entry) => entry.record.intentId === next.intentId ? body : entry.body
+    );
+    if (!existing) nextRecords.push(body);
+    await this.state.write(
+      "social",
+      records.map((entry) => entry.body),
+      nextRecords
+    );
     const saved = await this.load(next.intentId);
-    if (!isDeepStrictEqual(saved, canonical))
+    if (!isDeepStrictEqual3(saved, canonical))
       throw new Error("Social delivery persistence readback is uncertain");
   }
   async records() {
     const records = [];
-    for (const comment of await this.comments.list()) {
-      const record = this.codec.read(comment.body ?? "");
+    for (const body of await this.state.read("social")) {
+      const record = this.codec.read(body);
       if (records.some((entry) => entry.record.intentId === record.intentId))
         throw new Error("Duplicate social delivery journal identity");
-      records.push({ comment, record });
+      records.push({ body, record });
     }
     return records;
   }
@@ -84117,51 +87077,8 @@ var SocialJournalAttemptCodec = class {
   }
 };
 
-// packages/adapter/communication/github-social-delivery-journal/src/trusted-social-journal-comments.ts
-var SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
-var TrustedSocialJournalComments = class {
-  constructor(client, author) {
-    this.client = client;
-    this.author = author;
-    if (!/^[a-z\d-]+\[bot\]$/i.test(author))
-      throw new Error("Social delivery requires a trusted GitHub App bot");
-  }
-  client;
-  author;
-  async list() {
-    const records = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-        continue;
-      const current = await this.client.edit(comment);
-      if (current.body !== comment.body || current.id !== comment.node_id)
-        throw new Error("Social delivery history changed during verification");
-      const managed = current.body.startsWith(SOCIAL_JOURNAL_MARKER);
-      if (current.lastEditedAt !== null || current.editor !== null)
-        await this.verifyHistory(comment, current, managed);
-      if (managed) records.push(comment);
-    }
-    return records;
-  }
-  async verifyHistory(comment, current, managed) {
-    if (!current.editor)
-      throw new Error("Social delivery history editor is unavailable");
-    const history = await this.client.history(comment);
-    if (history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
-      throw new Error("Social delivery history is unavailable");
-    const previouslyManaged = history.some(
-      (edit) => edit.diff?.startsWith(SOCIAL_JOURNAL_MARKER)
-    );
-    if (!managed && !previouslyManaged) return;
-    if (!managed || !this.trusted(current.editor) || history.some((edit) => !this.trusted(edit.editor)))
-      throw new Error("Social delivery history was edited outside automation");
-  }
-  trusted(editor) {
-    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
 // packages/adapter/communication/github-social-delivery-journal/src/social-journal-codec.ts
+var SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
 var SocialJournalCodec = class {
   constructor(values, attempts) {
     this.values = values;
@@ -84292,22 +87209,22 @@ var SocialJournalCodec = class {
 };
 
 // packages/adapter/communication/github-social-delivery-journal/src/social-journal-transition.ts
-import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
+import { isDeepStrictEqual as isDeepStrictEqual4 } from "node:util";
 var SocialJournalTransition = class {
   validate(previous, next) {
-    if (previous?.manual && !isDeepStrictEqual2(previous, next))
+    if (previous?.manual && !isDeepStrictEqual4(previous, next))
       throw new Error("Manual social completion cannot change");
     if (!previous) {
       this.initial(next);
       return;
     }
-    if (previous.intentId !== next.intentId || previous.occurrence !== next.occurrence || previous.purpose !== next.purpose || !isDeepStrictEqual2(previous.destination, next.destination))
+    if (previous.intentId !== next.intentId || previous.occurrence !== next.occurrence || previous.purpose !== next.purpose || !isDeepStrictEqual4(previous.destination, next.destination))
       throw new Error("Social delivery identity cannot change");
     if (next.attempts.length < previous.attempts.length || next.attempts.length > previous.attempts.length + 1)
       throw new Error("Social delivery history must be preserved");
     for (const [index, attempt] of previous.attempts.entries()) {
       const updated = next.attempts[index];
-      if (isDeepStrictEqual2(attempt, updated)) continue;
+      if (isDeepStrictEqual4(attempt, updated)) continue;
       if (!updated || index !== previous.attempts.length - 1)
         throw new Error("Earlier social delivery attempts cannot change");
       this.attempt(attempt, updated);
@@ -84328,7 +87245,7 @@ var SocialJournalTransition = class {
     const added = next.attempts.at(-1);
     if (added?.status !== "reserved" || added.receipt || added.code || added.retryAt || added.recovery)
       throw new Error("Social delivery must be reserved before effects");
-    if (added.media && (!isDeepStrictEqual2(last?.media, added.media) || last?.revision !== added.revision))
+    if (added.media && (!isDeepStrictEqual4(last?.media, added.media) || last?.revision !== added.revision))
       throw new Error("Social delivery cannot reuse unreviewed media");
     if (last && Date.parse(added.reservedAt) < Date.parse(last.reservedAt))
       throw new Error("Social delivery attempt predates its history");
@@ -84340,7 +87257,7 @@ var SocialJournalTransition = class {
       this.terminalRecovery(previous, next);
       return;
     }
-    if (previous.id !== next.id || previous.revision !== next.revision || previous.reservedAt !== next.reservedAt || previous.media && !isDeepStrictEqual2(previous.media, next.media))
+    if (previous.id !== next.id || previous.revision !== next.revision || previous.reservedAt !== next.reservedAt || previous.media && !isDeepStrictEqual4(previous.media, next.media))
       throw new Error("Social delivery reservation cannot change");
     if (previous.status === "uncertain" && !next.recovery)
       throw new Error("Uncertain social delivery requires explicit recovery");
@@ -84353,7 +87270,7 @@ var SocialJournalTransition = class {
   }
   terminalRecovery(previous, next) {
     const { recovery, ...evidence } = next;
-    if (recovery?.outcome !== "not-published" || !isDeepStrictEqual2(previous, evidence))
+    if (recovery?.outcome !== "not-published" || !isDeepStrictEqual4(previous, evidence))
       throw new Error("Completed social delivery evidence cannot change");
   }
   recovery(previous, next) {
@@ -84364,9 +87281,9 @@ var SocialJournalTransition = class {
       ...previousEvidence
     } = previous;
     const { status, receipt, recovery, ...evidence } = next;
-    if (!isDeepStrictEqual2(previousEvidence, evidence))
+    if (!isDeepStrictEqual4(previousEvidence, evidence))
       throw new Error("Social recovery cannot change provider evidence");
-    const validOutcome = recovery?.outcome === "published" ? status === "accepted" && Boolean(receipt) : status === previousStatus && isDeepStrictEqual2(receipt, previousReceipt) && !previousRecovery;
+    const validOutcome = recovery?.outcome === "published" ? status === "accepted" && Boolean(receipt) : status === previousStatus && isDeepStrictEqual4(receipt, previousReceipt) && !previousRecovery;
     if (!validOutcome)
       throw new Error("Invalid social delivery recovery transition");
   }
@@ -84410,12 +87327,11 @@ var SocialJournalValueSchema = class {
 
 // packages/adapter/communication/github-social-delivery-journal/src/dependency-composition.ts
 var GithubSocialDeliveryJournalComposition = class {
-  create(client, author) {
+  create(state) {
     const values = new SocialJournalValueSchema();
     const attempts = new SocialJournalAttemptCodec(values);
     return new GithubSocialDeliveryJournal(
-      client,
-      new TrustedSocialJournalComments(client, author),
+      state,
       new SocialJournalCodec(values, attempts),
       new SocialJournalTransition()
     );
@@ -84530,7 +87446,7 @@ var DriveBoundedStream = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/drive-content-image.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash4 } from "node:crypto";
 
 // node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
 var decoder = new TextDecoder();
@@ -85550,13 +88466,13 @@ var DriveContentImage = class {
       mimeType,
       width: size.width,
       height: size.height,
-      fingerprint: createHash3("sha256").update(image.bytes).digest("hex")
+      fingerprint: createHash4("sha256").update(image.bytes).digest("hex")
     };
   }
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/drive-content-location.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 var DriveContentLocation = class {
   constructor(client, folders, sharing) {
     this.client = client;
@@ -85575,7 +88491,7 @@ var DriveContentLocation = class {
   }
   async place(input) {
     const { media, container, name } = input;
-    const key = createHash4("sha256").update(`${container.eventId}:assets:v1`).digest("hex");
+    const key = createHash5("sha256").update(`${container.eventId}:assets:v1`).digest("hex");
     if (!await this.eventFolder(container.id, key))
       throw new ContentMediaChangedError(
         "Cover destination is not this event's managed folder"
@@ -86193,7 +89109,7 @@ var HttpsAssetImageRepositoryComposition = class {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
-var messages = {
+var messages3 = {
   "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -86270,7 +89186,7 @@ var messages = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
-var messages2 = {
+var messages4 = {
   "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
@@ -86347,25 +89263,25 @@ var messages2 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
-var CATALOGS4 = { en: messages, fr: messages2 };
+var CATALOGS7 = { en: messages3, fr: messages4 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
 var SlackAttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS4, locale);
+    super(collaborators, CATALOGS7, locale);
   }
   failure(resource) {
     const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS4.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+    return Object.hasOwn(CATALOGS7.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
   }
   task(resource) {
     const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS4.en, key) ? key : "task.unknown");
+    return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
   }
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES4 = {
+var EN_MESSAGES6 = {
   "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
   "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
   "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
@@ -86374,7 +89290,7 @@ var EN_MESSAGES4 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES4 = {
+var FR_MESSAGES6 = {
   "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
   "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
   "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
@@ -86383,12 +89299,12 @@ var FR_MESSAGES4 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
-var CATALOGS5 = { en: EN_MESSAGES4, fr: FR_MESSAGES4 };
+var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
 var SlackApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale) {
-    super(collaborators, CATALOGS5, locale);
+    super(collaborators, CATALOGS8, locale);
   }
 };
 
@@ -86547,7 +89463,7 @@ var SlackApprovalPresenter = class {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
-import { createHash as createHash5 } from "node:crypto";
+import { createHash as createHash6 } from "node:crypto";
 var SlackAttentionNotification = class {
   constructor(collaborators, client, channel, presenter) {
     this.collaborators = collaborators;
@@ -86562,7 +89478,7 @@ var SlackAttentionNotification = class {
   channel;
   presenter;
   fingerprint(view) {
-    return createHash5("sha256").update(this.presenter.render(view)).digest("hex");
+    return createHash6("sha256").update(this.presenter.render(view)).digest("hex");
   }
   async post(view) {
     const response = await this.client.post(
@@ -86880,7 +89796,7 @@ var AssetFileNameComposition = class {
 };
 
 // packages/runtime/github-actions/src/draft-workspace-composition.ts
-import { randomUUID as randomUUID2 } from "node:crypto";
+import { randomUUID as randomUUID3 } from "node:crypto";
 
 // packages/adapter/referential/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
@@ -87180,7 +90096,7 @@ var CsvReferentialRepository = class {
 };
 
 // packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
-import { createHash as createHash6 } from "node:crypto";
+import { createHash as createHash7 } from "node:crypto";
 import { readFile as readFile6, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join5 } from "node:path";
 var CsvSpeakerCatalogStore = class {
@@ -87264,7 +90180,7 @@ var CsvSpeakerCatalogStore = class {
     return { csv, state, historicalIds };
   }
   revision(csv, state, historicalIds) {
-    return createHash6("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+    return createHash7("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
 
@@ -89262,1639 +92178,6 @@ var CsvReferentialRepositoryComposition = class {
   }
 };
 
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
-var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-presenter.ts
-var DiagnosticCommentPresenter = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  render(diagnostics, messages5, links) {
-    const actionable = /* @__PURE__ */ new Map();
-    for (const item of diagnostics) {
-      if (this.collaborators.organizerDiagnosticPolicy.suppressed(
-        item,
-        diagnostics
-      )) {
-        continue;
-      }
-      const presentation = this.collaborators.diagnosticPresenter.presentDiagnostic(
-        item,
-        messages5,
-        links
-      );
-      actionable.set(
-        `${presentation.field}:${presentation.message}`,
-        presentation
-      );
-    }
-    if (actionable.size === 0) {
-      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
-
-${messages5.t("comment.resolved")}`;
-    }
-    const lines = [...actionable.values()].sort(
-      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
-        numeric: true
-      }) || left.message.localeCompare(right.message, messages5.locale)
-    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
-    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-sections.ts
-var SOCIAL_DIAGNOSTIC_START = "<!-- meetup-automation:social-diagnostics:v1 -->";
-var SOCIAL_DIAGNOSTIC_END = "<!-- /meetup-automation:social-diagnostics:v1 -->";
-var DiagnosticCommentSections = class {
-  merge(previous, rendered, scope) {
-    const current = this.read(previous);
-    if (!scope && !current.social) return rendered;
-    const base = this.tasks(scope === "social" ? current.base : rendered);
-    const social = this.tasks(
-      scope === "social" ? rendered : current.social
-    ).filter((line) => !base.includes(line));
-    if (!base.length && !social.length) return rendered;
-    return [
-      EVENT_DIAGNOSTIC_COMMENT_MARKER,
-      "",
-      ...base,
-      ...social.length ? [SOCIAL_DIAGNOSTIC_START, ...social, SOCIAL_DIAGNOSTIC_END] : []
-    ].join("\n");
-  }
-  hasSocial(body) {
-    return Boolean(this.read(body).social);
-  }
-  read(body) {
-    if (!body.includes("meetup-automation:social-diagnostics:"))
-      return { base: body, social: "" };
-    const start = body.indexOf(SOCIAL_DIAGNOSTIC_START);
-    const end = body.indexOf(SOCIAL_DIAGNOSTIC_END);
-    if (start < 0 || end < start || body.split(SOCIAL_DIAGNOSTIC_START).length !== 2 || body.split(SOCIAL_DIAGNOSTIC_END).length !== 2)
-      throw new Error("Invalid social diagnostic section");
-    return {
-      base: body.slice(0, start) + body.slice(end + SOCIAL_DIAGNOSTIC_END.length),
-      social: body.slice(start + SOCIAL_DIAGNOSTIC_START.length, end)
-    };
-  }
-  tasks(body) {
-    return [
-      ...new Set(
-        body.split("\n").filter((line) => /^- \[[ x]\] \*\*.+?\*\*: .+$/.test(line))
-      )
-    ];
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/authentication-diagnostic-guidance.ts
-var AUTHENTICATION_GUIDANCE = [
-  [
-    "publication.meetup.authentication",
-    ["Meetup Link", "comment.guidance.meetup.authentication"]
-  ],
-  [
-    "publication.meetup.authentication-configuration",
-    ["Meetup Link", "comment.guidance.meetup.authentication-configuration"]
-  ],
-  [
-    "publication.meetup.authentication-captcha-required",
-    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-required"]
-  ],
-  [
-    "publication.meetup.authentication-captcha-rejected",
-    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-rejected"]
-  ],
-  [
-    "publication.meetup.authentication-captcha-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-captcha-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-one-time-code",
-    ["Meetup Link", "comment.guidance.meetup.authentication-one-time-code"]
-  ],
-  [
-    "publication.meetup.authentication-credentials-rejected",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-credentials-rejected"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-session-not-reusable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-session-not-reusable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-login-page-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-login-page-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-login-form-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-login-form-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-submit-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-submit-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-redirect-timeout",
-    ["Meetup Link", "comment.guidance.meetup.authentication-redirect-timeout"]
-  ],
-  [
-    "publication.meetup.authentication-account-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-account-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-account-mismatch",
-    ["Meetup Link", "comment.guidance.meetup.authentication-account-mismatch"]
-  ],
-  [
-    "publication.meetup.authentication-unexpected-page",
-    ["Meetup Link", "comment.guidance.meetup.authentication-unexpected-page"]
-  ],
-  [
-    "publication.meetup.authentication-rate-limited",
-    ["Meetup Link", "comment.guidance.meetup.authentication-rate-limited"]
-  ],
-  [
-    "publication.meetup.authentication-browser",
-    ["Meetup Link", "comment.guidance.meetup.authentication-browser"]
-  ]
-];
-
-// packages/adapter/event/github-event-comment-repository/src/email-diagnostic-guidance.ts
-var EMAIL_GUIDANCE = [
-  [
-    "communication.email-parameters-invalid",
-    [
-      "Communication",
-      "comment.guidance.communication.email-parameters-invalid"
-    ]
-  ],
-  [
-    "communication.approval-pending",
-    ["Communication", "comment.guidance.communication.approval"]
-  ],
-  [
-    "communication.approval-rejected",
-    ["Communication", "comment.guidance.communication.rejected"]
-  ],
-  [
-    "communication.approval-unavailable",
-    ["Communication", "comment.guidance.communication.approval-unavailable"]
-  ],
-  [
-    "communication.approval-notification-failed",
-    ["Communication", "comment.guidance.communication.approval-notification"]
-  ],
-  [
-    "communication.gateway-delivery-uncertain",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-threw-ambiguous-error",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.ledger-status-write-failed",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-delivery-rejected",
-    ["Communication", "comment.guidance.communication.delivery-rejected"]
-  ],
-  [
-    "communication.gateway-delivery-deferred",
-    ["Communication", "comment.guidance.communication.delivery-deferred"]
-  ],
-  [
-    "communication.invalid-clock",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-identifier",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-time-zone",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.ledger-read-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.ledger-reservation-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.missing-mail-destination",
-    ["Communication", "comment.guidance.communication.destination"]
-  ],
-  [
-    "communication.checklist-update-failed",
-    ["Communication", "comment.guidance.communication.checklist"]
-  ],
-  [
-    "communication.event-concurrently-modified",
-    ["Communication", "comment.guidance.communication.concurrent"]
-  ],
-  [
-    "communication.event-references-unresolved",
-    ["Agenda", "comment.guidance.communication.references"]
-  ],
-  [
-    "communication.referential-catalog-invalid",
-    ["Referentials", "comment.guidance.communication.catalog"]
-  ]
-];
-
-// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
-var STAGE_GUIDANCE = [
-  ...AUTHENTICATION_GUIDANCE,
-  [
-    "publication.website.access",
-    ["Website", "comment.guidance.website.access"]
-  ],
-  [
-    "publication.website.conflict",
-    ["Website", "comment.guidance.website.conflict"]
-  ],
-  [
-    "publication.website.format",
-    ["Website", "comment.guidance.website.format"]
-  ],
-  [
-    "publication.website.unavailable",
-    ["Website", "comment.guidance.website.unavailable"]
-  ],
-  [
-    "publication.content.invalid",
-    ["Event materials", "comment.guidance.content.invalid"]
-  ],
-  [
-    "communication.social.evaluation-failed",
-    ["Communication", "comment.guidance.social.evaluation-failed"]
-  ],
-  [
-    "communication.social.pending",
-    ["Communication", "comment.guidance.social.pending"]
-  ],
-  [
-    "communication.social.missing",
-    ["Communication", "comment.guidance.social.missing"]
-  ],
-  [
-    "communication.social.content-pending",
-    ["Communication", "comment.guidance.social.content-pending"]
-  ],
-  [
-    "communication.social.generation-recovery",
-    ["Communication", "comment.guidance.social.generation-recovery"]
-  ],
-  [
-    "communication.social.preparation-failed",
-    ["Communication", "comment.guidance.social.preparation-failed"]
-  ],
-  [
-    "communication.social.blocked",
-    ["Communication", "comment.guidance.social.blocked"]
-  ],
-  [
-    "communication.social.uncertain",
-    ["Communication", "comment.guidance.social.uncertain"]
-  ],
-  [
-    "communication.social.expired",
-    ["Communication", "comment.guidance.social.expired"]
-  ],
-  [
-    "publication.meetup.slides-source",
-    ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
-  ],
-  [
-    "publication.meetup.slides-link",
-    ["Automated slide sharing", "comment.guidance.meetup.slides-link"]
-  ],
-  [
-    "publication.meetup.slides-pdf-pending",
-    ["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"]
-  ],
-  [
-    "publication.meetup.slides-delivery-recovery",
-    [
-      "Automated slide sharing",
-      "comment.guidance.meetup.slides-delivery-recovery"
-    ]
-  ],
-  [
-    "publication.meetup.slides-form-unavailable",
-    [
-      "Automated slide sharing",
-      "comment.guidance.meetup.slides-form-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.slides-source-changed",
-    [
-      "Automated slide sharing",
-      "comment.guidance.meetup.slides-source-changed"
-    ]
-  ],
-  [
-    "publication.content.prerequisites",
-    ["Event materials", "comment.guidance.content.prerequisites"]
-  ],
-  [
-    "publication.content.pending",
-    ["Event materials", "comment.guidance.content.pending"]
-  ],
-  [
-    "publication.content.rejected",
-    ["Event materials", "comment.guidance.content.rejected"]
-  ],
-  [
-    "publication.content.iteration-requested",
-    ["Event materials", "comment.guidance.content.iteration-requested"]
-  ],
-  [
-    "publication.content.recovery",
-    ["Event materials", "comment.guidance.content.recovery"]
-  ],
-  [
-    "publication.content.stale",
-    ["Event materials", "comment.guidance.content.stale"]
-  ],
-  [
-    "publication.content.title-review",
-    ["Event materials", "comment.guidance.content.title-review"]
-  ],
-  [
-    "publication.content.description-review",
-    ["Event materials", "comment.guidance.content.description-review"]
-  ],
-  [
-    "publication.meetup.content-review",
-    ["Event materials", "comment.guidance.content.review"]
-  ],
-  [
-    "communication.content-review",
-    ["Event materials", "comment.guidance.content.review"]
-  ],
-  [
-    "publication.assets.pdf.source",
-    ["Event materials", "comment.guidance.pdf.source"]
-  ],
-  [
-    "publication.assets.pdf.source-pending",
-    ["Event materials", "comment.guidance.pdf.source-pending"]
-  ],
-  [
-    "publication.assets.pdf.revision",
-    ["Event materials", "comment.guidance.pdf.revision"]
-  ],
-  [
-    "publication.assets.pdf.conflict",
-    ["Event materials", "comment.guidance.pdf.recovery"]
-  ],
-  [
-    "publication.assets.pdf.recovery",
-    ["Event materials", "comment.guidance.pdf.recovery"]
-  ],
-  [
-    "publication.assets.pdf.limit",
-    ["Event materials", "comment.guidance.pdf.limit"]
-  ],
-  [
-    "publication.assets.pdf.sharing",
-    ["Event materials", "comment.guidance.pdf.sharing"]
-  ],
-  [
-    "publication.assets.pdf.invalid",
-    ["Event materials", "comment.guidance.pdf.invalid"]
-  ],
-  [
-    "communication.checklist-concurrently-modified",
-    ["Communication", "comment.guidance.communication.concurrent-checklist"]
-  ],
-  [
-    "publication.feedback.conflict",
-    ["OpenFeedback Link", "comment.guidance.feedback.conflict"]
-  ],
-  [
-    "communication.feedback-unavailable",
-    ["OpenFeedback Link", "comment.guidance.feedback.results"]
-  ],
-  [
-    "communication.feedback-fetch-failed",
-    ["OpenFeedback Link", "comment.guidance.feedback.access"]
-  ],
-  [
-    "communication.slides-unavailable",
-    ["Event materials", "comment.guidance.assets.slides"]
-  ],
-  ...EMAIL_GUIDANCE,
-  [
-    "publication.feedback.agenda",
-    ["Agenda", "comment.guidance.feedback.agenda"]
-  ],
-  [
-    "publication.feedback.prerequisites",
-    ["OpenFeedback Link", "comment.guidance.feedback.prerequisites"]
-  ],
-  [
-    "publication.feedback-link.prerequisites",
-    ["Meetup issue", "comment.guidance.feedback-link.prerequisites"]
-  ],
-  [
-    "publication.feedback-link.ambiguous-date",
-    ["Meetup issue", "comment.guidance.feedback-link.ambiguous-date"]
-  ],
-  [
-    "publication.assets.prerequisites",
-    ["Drive Link", "comment.guidance.assets.prerequisites"]
-  ],
-  [
-    "publication.assets.file.drift",
-    ["Event materials", "comment.guidance.assets.drift"]
-  ],
-  [
-    "publication.assets.content.contract",
-    ["Event materials", "comment.guidance.assets.template"]
-  ],
-  [
-    "publication.assets.content.location",
-    ["Event materials", "comment.guidance.assets.template"]
-  ],
-  [
-    "publication.assets.content.missing",
-    ["Event materials", "comment.guidance.assets.missing"]
-  ],
-  [
-    "publication.assets.content.conflict",
-    ["Event materials", "comment.guidance.assets.recovery"]
-  ],
-  [
-    "publication.assets.content.recovery",
-    ["Event materials", "comment.guidance.assets.recovery"]
-  ],
-  [
-    "publication.assets.content.revision",
-    ["Event materials", "comment.guidance.assets.revision"]
-  ],
-  [
-    "publication.assets.content.image",
-    ["Event materials", "comment.guidance.assets.image"]
-  ],
-  [
-    "publication.assets.content.image-source",
-    ["Event materials", "comment.guidance.assets.image-source"]
-  ],
-  [
-    "publication.assets.content.image-format",
-    ["Event materials", "comment.guidance.assets.image-format"]
-  ],
-  [
-    "publication.assets.content.image-size",
-    ["Event materials", "comment.guidance.assets.image-size"]
-  ],
-  [
-    "publication.assets.content.image-dimensions",
-    ["Event materials", "comment.guidance.assets.image-dimensions"]
-  ],
-  [
-    "publication.assets.content.image-download",
-    ["Event materials", "comment.guidance.assets.image-download"]
-  ],
-  [
-    "publication.assets.content.image-changed",
-    ["Event materials", "comment.guidance.assets.image-changed"]
-  ],
-  [
-    "publication.assets.content.fallback",
-    ["Event materials", "comment.guidance.assets.fallback"]
-  ],
-  [
-    "communication.invalid-event-date",
-    ["Event Date", "comment.guidance.event.date.invalid"]
-  ],
-  [
-    "communication.occurrence-status-unknown",
-    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
-  ]
-];
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.ts
-var FIELD_ORDER = [
-  "Event Title",
-  "Event Date",
-  "Hoster",
-  "Event Description",
-  "Agenda",
-  "Meetup Link",
-  "CNCF Link",
-  "Drive Link",
-  "OpenFeedback Link",
-  "Event materials",
-  "Communication",
-  "Automated introduction emails",
-  "Aperitif",
-  "Restaurant / Bar",
-  "Post event",
-  "Automated thank-you emails",
-  "Speaker confirmation",
-  "Event Status",
-  "Issue format",
-  "Referentials",
-  "Meetup issue"
-];
-var GUIDANCE = new Map([
-  ...STAGE_GUIDANCE,
-  [
-    "event.proposals.invalid-selection",
-    ["Agenda", "comment.guidance.proposals.invalid-selection"]
-  ],
-  [
-    "event.proposals.not-found",
-    ["Agenda", "comment.guidance.proposals.not-found"]
-  ],
-  [
-    "event.proposals.not-accepted",
-    ["Agenda", "comment.guidance.proposals.not-accepted"]
-  ],
-  [
-    "referential.source.unavailable",
-    ["Agenda", "comment.guidance.proposals.unavailable"]
-  ],
-  [
-    "referential.source.invalid",
-    ["Agenda", "comment.guidance.proposals.invalid"]
-  ],
-  [
-    "referential.source.rate-limited",
-    ["Agenda", "comment.guidance.proposals.rate-limited"]
-  ],
-  [
-    "referential.source.mapping-required",
-    ["Agenda", "comment.guidance.proposals.mapping-required"]
-  ],
-  [
-    "referential.source.conflict",
-    ["Agenda", "comment.guidance.proposals.conflict"]
-  ],
-  [
-    "event.proposals.unavailable",
-    ["Agenda", "comment.guidance.proposals.unavailable"]
-  ],
-  ["event.proposals.invalid", ["Agenda", "comment.guidance.proposals.invalid"]],
-  [
-    "event.proposals.rate-limited",
-    ["Agenda", "comment.guidance.proposals.rate-limited"]
-  ],
-  [
-    "event.proposals.mapping-required",
-    ["Agenda", "comment.guidance.proposals.mapping-required"]
-  ],
-  [
-    "event.proposals.conflict",
-    ["Agenda", "comment.guidance.proposals.conflict"]
-  ],
-  [
-    "event.title.missing",
-    ["Event Title", "comment.guidance.event.title.missing"]
-  ],
-  ["event.date.missing", ["Event Date", "comment.guidance.event.date.missing"]],
-  ["event.date.invalid", ["Event Date", "comment.guidance.event.date.invalid"]],
-  [
-    "event.description.missing",
-    ["Event Description", "comment.guidance.event.description.missing"]
-  ],
-  ["event.hoster.missing", ["Hoster", "comment.guidance.event.hoster.missing"]],
-  ["event.hoster.invalid", ["Hoster", "comment.guidance.event.hoster.invalid"]],
-  [
-    "event.hoster.multiple",
-    ["Hoster", "comment.guidance.event.hoster.multiple"]
-  ],
-  ["event.agenda.missing", ["Agenda", "comment.guidance.event.agenda.missing"]],
-  [
-    "event.agenda.legacy-line-invalid",
-    ["Agenda", "comment.guidance.event.agenda.legacy-line-invalid"]
-  ],
-  [
-    "event.agenda.speaker.missing",
-    ["Agenda", "comment.guidance.event.agenda.speaker.missing"]
-  ],
-  [
-    "event.agenda.speaker.invalid",
-    ["Agenda", "comment.guidance.event.agenda.speaker.invalid"]
-  ],
-  [
-    "event.agenda.description.missing",
-    ["Agenda", "comment.guidance.event.agenda.description.missing"]
-  ],
-  [
-    "publication.meetup.unpublished",
-    ["Meetup Link", "comment.guidance.publication.meetup.unpublished"]
-  ],
-  [
-    "publication.meetup.missing",
-    ["Meetup Link", "comment.guidance.publication.meetup.missing"]
-  ],
-  [
-    "publication.community.missing",
-    ["CNCF Link", "comment.guidance.publication.community.missing"]
-  ],
-  [
-    "publication.assets.missing",
-    ["Drive Link", "comment.guidance.publication.assets.missing"]
-  ],
-  [
-    "event.link.meetup.invalid",
-    ["Meetup Link", "comment.guidance.event.link.meetup.invalid"]
-  ],
-  [
-    "event.link.community.invalid",
-    ["CNCF Link", "comment.guidance.event.link.community.invalid"]
-  ],
-  [
-    "event.link.feedback.invalid",
-    ["OpenFeedback Link", "comment.guidance.event.link.feedback.invalid"]
-  ],
-  [
-    "event.link.assets.invalid",
-    ["Drive Link", "comment.guidance.event.link.assets.invalid"]
-  ],
-  [
-    "publication.meetup-url.invalid",
-    ["Meetup Link", "comment.guidance.publication.meetup-url.invalid"]
-  ],
-  [
-    "publication.community-url.invalid",
-    ["CNCF Link", "comment.guidance.publication.community-url.invalid"]
-  ],
-  [
-    "publication.asset-url.invalid",
-    ["Drive Link", "comment.guidance.publication.asset-url.invalid"]
-  ],
-  [
-    "event.confirmation.speakers.missing",
-    [
-      "Speaker confirmation",
-      "comment.guidance.event.confirmation.speakers.missing"
-    ]
-  ],
-  [
-    "event.logistics.intent.invalid",
-    ["Logistics", "comment.guidance.event.logistics.intent.invalid"]
-  ],
-  [
-    "event.occurrence-status.invalid",
-    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
-  ],
-  [
-    "event.occurrence-status.label-conflict",
-    ["Event Status", "comment.guidance.event.occurrence-status.label-conflict"]
-  ],
-  [
-    "event.document.heading.missing",
-    ["Issue format", "comment.guidance.event.document.heading.missing"]
-  ],
-  [
-    "event.document.heading.duplicate",
-    ["Issue format", "comment.guidance.event.document.heading.duplicate"]
-  ],
-  [
-    "event.document.checkbox.invalid",
-    ["Issue format", "comment.guidance.event.document.checkbox.invalid"]
-  ],
-  [
-    "event.document.invalid-field-type",
-    ["Issue format", "comment.guidance.event.document.invalid-field-type"]
-  ],
-  [
-    "event.document.invalid-hoster-type",
-    ["Hoster", "comment.guidance.event.document.invalid-hoster-type"]
-  ],
-  [
-    "event.document.invalid-hoster-entry",
-    ["Hoster", "comment.guidance.event.document.invalid-hoster-entry"]
-  ],
-  [
-    "event.document.invalid-agenda-type",
-    ["Agenda", "comment.guidance.event.document.invalid-agenda-type"]
-  ],
-  [
-    "event.document.schema-marker.duplicate",
-    ["Issue format", "comment.guidance.event.document.schema-marker.duplicate"]
-  ],
-  [
-    "event.document.schema-version.unsupported",
-    [
-      "Issue format",
-      "comment.guidance.event.document.schema-version.unsupported"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.missing",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.missing"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.duplicate",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.duplicate"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.invalid",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.invalid"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.legacy",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.legacy"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.stale",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.stale"
-    ]
-  ],
-  [
-    "referential.reference.host.unknown",
-    ["Hoster", "comment.guidance.referential.reference.host.unknown"]
-  ],
-  [
-    "referential.reference.host.ambiguous",
-    ["Hoster", "comment.guidance.referential.reference.host.ambiguous"]
-  ],
-  [
-    "referential.reference.host.display-name-mismatch",
-    [
-      "Hoster",
-      "comment.guidance.referential.reference.host.display-name-mismatch"
-    ]
-  ],
-  [
-    "referential.reference.host.invalid",
-    ["Hoster", "comment.guidance.referential.reference.host.invalid"]
-  ],
-  [
-    "referential.reference.speaker.unknown",
-    ["Agenda", "comment.guidance.referential.reference.speaker.unknown"]
-  ],
-  [
-    "referential.reference.speaker.ambiguous",
-    ["Agenda", "comment.guidance.referential.reference.speaker.ambiguous"]
-  ],
-  [
-    "referential.reference.speaker.display-name-mismatch",
-    [
-      "Agenda",
-      "comment.guidance.referential.reference.speaker.display-name-mismatch"
-    ]
-  ],
-  [
-    "referential.reference.speaker.invalid",
-    ["Agenda", "comment.guidance.referential.reference.speaker.invalid"]
-  ]
-]);
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-presentation.ts
-var DiagnosticPresenter = class {
-  FIELD_ALIASES = new Map([
-    ...FIELD_ORDER.map((field) => [field, field]),
-    ["Slides & Content", "Event materials"],
-    ["eventTitle", "Event Title"],
-    ["event_title", "Event Title"],
-    ["date", "Event Date"],
-    ["event_date", "Event Date"],
-    ["host", "Hoster"],
-    ["hoster", "Hoster"],
-    ["hostReference", "Hoster"],
-    ["description", "Event Description"],
-    ["event_description", "Event Description"],
-    ["agenda", "Agenda"],
-    ["publicationLinks.meetup", "Meetup Link"],
-    ["meetup_link", "Meetup Link"],
-    ["publicationLinks.community", "CNCF Link"],
-    ["cncf_link", "CNCF Link"],
-    ["publicationLinks.assets", "Drive Link"],
-    ["drive_link", "Drive Link"],
-    ["publicationLinks.feedback", "OpenFeedback Link"],
-    ["openfeedback_link", "OpenFeedback Link"],
-    ["confirmations.speakers", "Speaker confirmation"],
-    ["occurrenceStatus", "Event Status"],
-    ["event_status", "Event Status"]
-  ]);
-  presentDiagnostic(item, messages5, links) {
-    if (item.code.startsWith("publication.assets.content.image"))
-      return this.imageDiagnostic(item, messages5);
-    if (item.code === "publication.meetup.uncertain")
-      return {
-        field: "Meetup Link",
-        message: this.meetupRecovery(messages5, links),
-        order: FIELD_ORDER.indexOf("Meetup Link")
-      };
-    const guidance = GUIDANCE.get(item.code);
-    const referential = /^referential\.(host|contact|speaker)\./.test(
-      item.code
-    );
-    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
-    const [field, section] = this.publicField(item.field, fallback, messages5);
-    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
-    const order = FIELD_ORDER.indexOf(section);
-    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
-  }
-  imageDiagnostic(item, messages5) {
-    const location = item.field?.match(
-      /^assets\.image\/([a-zA-Z0-9_-]{1,100})\/(cover|host-logo|speaker-picture|fallback|embedded)\/([a-zA-Z0-9_.:-]{1,100})$/
-    );
-    const guidance = GUIDANCE.get(item.code);
-    const context3 = location ? messages5.t("comment.assets.image-context", {
-      kind: location[2].replaceAll("-", "_"),
-      slot: location[3],
-      documentUrl: `https://drive.google.com/file/d/${location[1]}/view`
-    }) : "";
-    const recovery = location?.[2] === "cover" ? messages5.t("comment.assets.cover-recovery") : "";
-    return {
-      field: "Event materials",
-      message: [
-        context3,
-        messages5.t(guidance?.[1] ?? "comment.guidance.assets.image"),
-        recovery
-      ].filter(Boolean).join(" "),
-      order: FIELD_ORDER.indexOf("Event materials")
-    };
-  }
-  meetupRecovery(messages5, links) {
-    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
-    return links.meetup ? messages5.t("comment.guidance.meetup.uncertain", {
-      eventUrl: links.meetup.replace(
-        /[()<>\s]/g,
-        (character) => character === "(" ? "%28" : character === ")" ? "%29" : encodeURIComponent(character)
-      ),
-      workflowUrl
-    }) : messages5.t("comment.guidance.meetup.uncertain-missing-link", {
-      workflowUrl
-    });
-  }
-  /** Only known issue headings and numeric agenda positions can reach Markdown. */
-  publicField(field, fallback, messages5) {
-    const social = field?.match(
-      /^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/
-    );
-    if (social)
-      return [
-        messages5.t("comment.social.target", {
-          destination: social[1],
-          purpose: social[2]
-        }),
-        "Communication"
-      ];
-    const known = this.FIELD_ALIASES.get(field ?? "");
-    if (known) return [known, known];
-    const agenda = field?.match(
-      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
-    );
-    if (agenda) {
-      const entry = Number(agenda[1]) + 1;
-      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
-        speaker: Number(agenda[3]) + 1
-      });
-      return [
-        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
-        "Agenda"
-      ];
-    }
-    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
-    if (speaker)
-      return [
-        messages5.t("comment.agenda.speaker", {
-          speaker: Number(speaker[1]) + 1
-        }),
-        "Agenda"
-      ];
-    return [fallback, fallback];
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-comment-visibility.ts
-var GitHubCommentVisibility = class {
-  constructor(api, owner, repo) {
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-  }
-  api;
-  owner;
-  repo;
-  async synchronize(commentId, expectedBody, resolved) {
-    const { data } = await this.api.rest.issues.getComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId
-    });
-    if (!data.node_id || data.body !== expectedBody)
-      throw new Error("Comment changed before visibility update");
-    const response = await this.api.graphql(
-      `query CommentVisibility($id: ID!) {
-				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
-			}`,
-      { id: data.node_id }
-    );
-    if (!this.object(response) || !this.object(response.node))
-      throw new Error("Invalid comment visibility response");
-    const comment = response.node;
-    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
-      throw new Error("Comment changed before visibility update");
-    if (resolved === comment.isMinimized) return;
-    if (!resolved && comment.minimizedReason !== "resolved") return;
-    await this.change(data.node_id, resolved);
-  }
-  async change(id, resolved) {
-    const mutation = resolved ? `mutation ResolveComment($id: ID!) {
-				minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
-					minimizedComment { isMinimized }
-				}
-			}` : `mutation ReopenComment($id: ID!) {
-				unminimizeComment(input: { subjectId: $id }) {
-					unminimizedComment { isMinimized }
-				}
-			}`;
-    const response = await this.api.graphql(mutation, { id });
-    const result = this.object(response) ? response[resolved ? "minimizeComment" : "unminimizeComment"] : void 0;
-    const comment = this.object(result) ? result[resolved ? "minimizedComment" : "unminimizedComment"] : void 0;
-    if (!this.object(comment) || comment.isMinimized !== resolved)
-      throw new Error("Comment visibility update was not confirmed");
-  }
-  object(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
-var GitHubEventCommentRepositoryConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventCommentRepositoryConfigurationError";
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
-var GitHubEventCommentRepositoryResponseError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventCommentRepositoryResponseError";
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
-var GitHubEventCommentRepositoryScopeError = class extends Error {
-  constructor(expected, received) {
-    super(
-      `GitHub event comment repository is scoped to ${expected}, not ${received}`
-    );
-    this.name = "GitHubEventCommentRepositoryScopeError";
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository.ts
-var GitHubEventCommentRepository = class {
-  constructor(collaborators, client, options) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.options = options;
-    this.messages = this.collaborators.createEventCommentMessages(
-      options.locale
-    );
-    this.owner = this.requireRepositoryPart(options.owner, "owner");
-    this.repo = this.requireRepositoryPart(options.repo, "repo");
-    this.repositoryName = `${this.owner}/${this.repo}`;
-    this.authorLogin = options.authorLogin.trim();
-    if (!this.authorLogin)
-      throw new GitHubEventCommentRepositoryConfigurationError(
-        "Managed comment author is required"
-      );
-  }
-  collaborators;
-  client;
-  options;
-  messages;
-  owner;
-  repo;
-  repositoryName;
-  authorLogin;
-  async reconcileDiagnostics(identity, diagnostics, links, scope) {
-    this.assertScope(identity.repository);
-    const managedComments = await this.listManagedComments(
-      identity.issueNumber
-    );
-    const retired = managedComments.filter(
-      (comment) => comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
-    );
-    const [canonical, ...duplicates] = managedComments.filter(
-      (comment) => !retired.includes(comment)
-    );
-    let changed = await this.retireComments(identity.issueNumber, duplicates);
-    const body = await this.body(
-      identity.issueNumber,
-      canonical,
-      diagnostics,
-      links,
-      scope
-    );
-    if (!canonical) {
-      if ((!retired.length || scope === "social") && !diagnostics.some((item) => item.severity !== "info")) {
-        return { changed };
-      }
-      await this.client.rest.issues.createComment({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: identity.issueNumber,
-        body
-      });
-      if (!scope)
-        await this.retireComments(identity.issueNumber, retired, true);
-      return { changed: true };
-    }
-    if (canonical.body !== body) {
-      await this.updateComment(canonical.id, body);
-      changed = true;
-    }
-    if (scope) return { changed };
-    const retiredChanged = await this.retireComments(
-      identity.issueNumber,
-      retired,
-      true
-    );
-    return { changed: changed || retiredChanged };
-  }
-  async body(issueNumber, canonical, diagnostics, links, scope) {
-    const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
-      issueNumber,
-      canonical.id,
-      canonical.body
-    ) : { body: canonical?.body ?? "", retained: "" };
-    const rendered = this.collaborators.diagnosticCommentPresenter.render(
-      diagnostics,
-      this.messages,
-      { repository: this.repositoryName, meetup: links.meetup }
-    );
-    const body = this.collaborators.diagnosticCommentSections.merge(
-      previous.body,
-      rendered,
-      scope
-    );
-    return previous.retained ? `${body}
-
-${previous.retained}` : body;
-  }
-  async listManagedComments(issueNumber) {
-    const comments = [];
-    let page = 1;
-    let hasNextPage = true;
-    while (hasNextPage) {
-      const response = await this.client.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: issueNumber,
-        page,
-        per_page: 100
-      });
-      if (!Array.isArray(response.data)) {
-        throw new GitHubEventCommentRepositoryResponseError(
-          "GitHub comment list response must contain an array"
-        );
-      }
-      for (const rawComment of response.data) {
-        const comment = this.mapComment(rawComment);
-        if (comment && this.isManagedComment(comment)) {
-          comments.push(comment);
-        }
-      }
-      const linkHeader = this.readHeader(response.headers, "link");
-      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
-      page += 1;
-    }
-    return comments.sort((left, right) => left.id - right.id);
-  }
-  isManagedComment(comment) {
-    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
-      return false;
-    }
-    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
-  }
-  async retireComments(issueNumber, duplicates, deleteReports = false) {
-    for (const duplicate of duplicates) {
-      const previous = this.options.retainedContent ? await this.options.retainedContent.load(
-        issueNumber,
-        duplicate.id,
-        duplicate.body
-      ) : void 0;
-      if (previous?.retained || this.collaborators.diagnosticCommentSections.hasSocial(
-        previous?.body ?? duplicate.body
-      ))
-        throw new Error("Duplicate diagnostic comment contains managed state");
-      if (deleteReports && this.client.rest.issues.deleteComment) {
-        await this.client.rest.issues.deleteComment({
-          owner: this.owner,
-          repo: this.repo,
-          comment_id: duplicate.id
-        });
-        continue;
-      }
-      await this.updateComment(
-        duplicate.id,
-        `${DUPLICATE_COMMENT_MARKER}
-
-${this.messages.t("comment.duplicate")}`
-      );
-      if (this.client.minimizeComment) {
-        await this.client.minimizeComment({
-          commentId: duplicate.id,
-          classifier: "OUTDATED"
-        });
-      }
-    }
-    return duplicates.length > 0;
-  }
-  async updateComment(commentId, body) {
-    await this.client.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
-  }
-  assertScope(repository) {
-    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
-      throw new GitHubEventCommentRepositoryScopeError(
-        this.repositoryName,
-        repository
-      );
-    }
-  }
-  mapComment(data) {
-    if (!this.isRecord(data)) {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment must be an object"
-      );
-    }
-    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment identifier must be a positive integer"
-      );
-    }
-    if (data.body === null) {
-      return null;
-    }
-    if (typeof data.body !== "string") {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment body must be a string or null"
-      );
-    }
-    const user = this.isRecord(data.user) ? data.user : void 0;
-    return {
-      id: Number(data.id),
-      body: data.body,
-      authorLogin: typeof user?.login === "string" ? user.login : void 0,
-      authorType: typeof user?.type === "string" ? user.type : void 0
-    };
-  }
-  requireRepositoryPart(value, name) {
-    const normalized = value.trim();
-    if (normalized === "" || normalized.includes("/")) {
-      throw new GitHubEventCommentRepositoryConfigurationError(
-        `GitHub ${name} must be a non-empty repository name segment`
-      );
-    }
-    return normalized;
-  }
-  readHeader(headers, name) {
-    const value = headers?.[name];
-    return typeof value === "string" ? value : void 0;
-  }
-  isRecord(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES5 = {
-  "comment.guidance.website.access": "Meetup is published, but the website update was denied. Ask a maintainer to check the configured repository and file, the GitHub App installation, and its Contents write permission.",
-  "comment.guidance.website.conflict": "Meetup is published, but the calendar contains conflicting rows or concurrent edits. Ask a maintainer to check the calendar, then rerun synchronization.",
-  "comment.guidance.website.format": "Meetup is published, but the calendar format is unsupported. Ask a maintainer to check the year headings and three-column month, date, and venue table.",
-  "comment.guidance.website.unavailable": "Meetup is published, but GitHub could not confirm the website update. Rerun synchronization; it will reuse the same calendar entry.",
-  "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
-  "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
-  "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
-  "comment.guidance.content.stale": "The event changed. Generate and review a new proposal.",
-  "comment.guidance.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
-  "comment.guidance.content.iteration-requested": "A new proposal was requested. Run generation again.",
-  "comment.guidance.content.rejected": "Content rejected. Submit a replacement for review.",
-  "comment.guidance.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
-  "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
-  "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
-  "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
-  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
-  "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
-  "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
-  "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
-  "comment.guidance.content.review": "Review the title, description, and cover in their proposal comments.",
-  "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
-  "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
-  "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
-  "comment.guidance.proposals.rate-limited": "Conference Hall rate limit reached. Wait before retrying.",
-  "comment.guidance.proposals.mapping-required": "Synchronize Conference Hall speakers and merge their identity mappings, then retry.",
-  "comment.guidance.proposals.conflict": "Conflicting Conference Hall identifiers. Check the proposal and speaker mappings.",
-  "comment.guidance.proposals.not-found": "Proposal number not found in this CFP. Check its Conference Hall URL.",
-  "comment.guidance.proposals.not-accepted": "Accept the selected proposal in Conference Hall and check that the speaker has not declined.",
-  "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
-  "comment.resolved": "\u2705 Event details complete.",
-  "comment.duplicate": "Superseded duplicate automation comment.",
-  "comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
-  "comment.referential": "Ask a maintainer to correct the host or speaker catalog.",
-  "comment.agenda.item": "Agenda (item {item}{speaker})",
-  "comment.agenda.speaker-suffix": ", speaker {speaker}",
-  "comment.agenda.speaker": "Agenda (speaker {speaker})",
-  "comment.guidance.event.title.missing": "Edit and approve the proposed title.",
-  "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
-  "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
-  "comment.guidance.event.description.missing": "Edit and approve the proposed description.",
-  "comment.guidance.event.hoster.missing": "Select a host from the host list.",
-  "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
-  "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
-  "comment.guidance.event.agenda.missing": "Add at least one talk using `- Speaker: Talk description`.",
-  "comment.guidance.event.agenda.legacy-line-invalid": "Use `- Speaker: Talk description` for each agenda line.",
-  "comment.guidance.event.agenda.speaker.missing": "Add at least one speaker for this talk.",
-  "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
-  "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
-  "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
-  "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
-  "comment.guidance.publication.community.missing": "Publish the CNCF event and fill in its public link.",
-  "comment.guidance.publication.assets.missing": "Sync assets to create the event Drive folder.",
-  "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
-  "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
-  "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
-  "comment.guidance.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
-  "comment.guidance.publication.community-url.invalid": "Use this group's CNCF / OCGroups event URL.",
-  "comment.guidance.publication.asset-url.invalid": "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
-  "comment.guidance.event.confirmation.speakers.missing": "Confirm the speakers, then add the `speakers:confirmed` label.",
-  "comment.guidance.event.logistics.intent.invalid": "Choose `Yes` or `No`, or leave the response empty if undecided.",
-  "comment.guidance.event.occurrence-status.invalid": "Use `scheduled`, `postponed`, `held`, or `cancelled`.",
-  "comment.guidance.event.occurrence-status.label-conflict": "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`.",
-  "comment.guidance.event.document.heading.missing": "Restore this section heading from the meetup issue template.",
-  "comment.guidance.event.document.heading.duplicate": "Keep a single section with this heading and merge its content.",
-  "comment.guidance.event.document.checkbox.invalid": "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks.",
-  "comment.guidance.event.document.invalid-field-type": "Enter a text response in this field.",
-  "comment.guidance.event.document.invalid-hoster-type": "Select one host from the host list.",
-  "comment.guidance.event.document.invalid-hoster-entry": "Use a host name or stable ID from the host list.",
-  "comment.guidance.event.document.invalid-agenda-type": "Write the agenda as a list of `- Speaker: Talk description` lines.",
-  "comment.guidance.event.document.schema-marker.duplicate": "Ask a maintainer to repair the duplicate automation metadata in the issue description.",
-  "comment.guidance.event.document.schema-version.unsupported": "Ask a maintainer to update the automation to support this issue format.",
-  "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and speakers, then sync the issue to update their references.",
-  "comment.guidance.event.document.reference-metadata.stale": "Check the host and speakers, then sync the issue to update their references.",
-  "comment.guidance.referential.reference.host.unknown": "Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
-  "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
-  "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES5 = {
-  "comment.guidance.website.access": "Le meetup est publi\xE9, mais la mise \xE0 jour du site a \xE9t\xE9 refus\xE9e. Demandez \xE0 un mainteneur de v\xE9rifier le d\xE9p\xF4t et le fichier configur\xE9s, l'installation de la GitHub App et son droit Contents en \xE9criture.",
-  "comment.guidance.website.conflict": "Le meetup est publi\xE9, mais plusieurs lignes ou des modifications simultan\xE9es emp\xEAchent la mise \xE0 jour du calendrier. Demandez \xE0 un mainteneur de v\xE9rifier le calendrier, puis relancez la synchronisation.",
-  "comment.guidance.website.format": "Le meetup est publi\xE9, mais le format du calendrier n'est pas reconnu. Demandez \xE0 un mainteneur de v\xE9rifier les titres des ann\xE9es et le tableau \xE0 trois colonnes : mois, date et lieu.",
-  "comment.guidance.website.unavailable": "Le meetup est publi\xE9, mais GitHub n'a pas confirm\xE9 la mise \xE0 jour du site. Relancez la synchronisation ; elle r\xE9utilisera la m\xEAme ligne du calendrier.",
-  "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
-  "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
-  "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
-  "comment.guidance.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
-  "comment.guidance.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
-  "comment.guidance.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
-  "comment.guidance.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
-  "comment.guidance.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
-  "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
-  "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
-  "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
-  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
-  "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
-  "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
-  "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
-  "comment.guidance.content.review": "Validez le titre, la description et le visuel dans leurs commentaires.",
-  "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
-  "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
-  "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
-  "comment.guidance.proposals.rate-limited": "Limite API Conference Hall atteinte. Patientez avant de r\xE9essayer.",
-  "comment.guidance.proposals.mapping-required": "Synchronisez les intervenants Conference Hall et fusionnez leurs identit\xE9s, puis r\xE9essayez.",
-  "comment.guidance.proposals.conflict": "Identifiants Conference Hall en conflit. V\xE9rifiez les propositions et les identit\xE9s des intervenants.",
-  "comment.guidance.proposals.not-found": "Num\xE9ro de proposition introuvable dans ce CFP. V\xE9rifiez son URL Conference Hall.",
-  "comment.guidance.proposals.not-accepted": "Acceptez la proposition dans Conference Hall et v\xE9rifiez que l'intervenant ne l'a pas refus\xE9e.",
-  "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
-  "comment.resolved": "\u2705 Informations compl\xE8tes.",
-  "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
-  "comment.unknown": "Demandez \xE0 un responsable de consulter les diagnostics du workflow.",
-  "comment.referential": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
-  "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
-  "comment.agenda.speaker-suffix": ", intervenant {speaker}",
-  "comment.agenda.speaker": "Programme (intervenant {speaker})",
-  "comment.guidance.event.title.missing": "Modifiez et validez le titre propos\xE9.",
-  "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
-  "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
-  "comment.guidance.event.description.missing": "Modifiez et validez la description propos\xE9e.",
-  "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
-  "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
-  "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
-  "comment.guidance.event.agenda.missing": "Ajoutez au moins une conf\xE9rence au format `- Intervenant: Description`.",
-  "comment.guidance.event.agenda.legacy-line-invalid": "Utilisez `- Intervenant: Description` pour chaque ligne du programme.",
-  "comment.guidance.event.agenda.speaker.missing": "Ajoutez au moins un intervenant pour cette conf\xE9rence.",
-  "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
-  "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
-  "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
-  "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
-  "comment.guidance.publication.community.missing": "Publiez l'\xE9v\xE9nement CNCF et renseignez son lien public.",
-  "comment.guidance.publication.assets.missing": "Synchronisez les fichiers pour cr\xE9er le dossier Drive du meetup.",
-  "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
-  "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
-  "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.meetup-url.invalid": "Utilisez l'URL Meetup de ce groupe, termin\xE9e par l'identifiant num\xE9rique de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.community-url.invalid": "Utilisez l'URL CNCF / OCGroups de ce groupe.",
-  "comment.guidance.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
-  "comment.guidance.event.confirmation.speakers.missing": "Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
-  "comment.guidance.event.logistics.intent.invalid": "Choisissez `Yes` ou `No`, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
-  "comment.guidance.event.occurrence-status.invalid": "Utilisez `scheduled`, `postponed`, `held` ou `cancelled`.",
-  "comment.guidance.event.occurrence-status.label-conflict": "Conservez un seul label de statut : `event:postponed`, `event:held` ou `event:cancelled`.",
-  "comment.guidance.event.document.heading.missing": "R\xE9tablissez cet en-t\xEAte de section \xE0 partir du mod\xE8le d'issue.",
-  "comment.guidance.event.document.heading.duplicate": "Conservez une seule section avec cet en-t\xEAte et fusionnez son contenu.",
-  "comment.guidance.event.document.checkbox.invalid": "Utilisez `- [ ] T\xE2che` pour les t\xE2ches \xE0 faire et `- [x] T\xE2che` pour les t\xE2ches termin\xE9es.",
-  "comment.guidance.event.document.invalid-field-type": "Saisissez une r\xE9ponse textuelle dans ce champ.",
-  "comment.guidance.event.document.invalid-hoster-type": "S\xE9lectionnez un h\xF4te dans la liste.",
-  "comment.guidance.event.document.invalid-hoster-entry": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
-  "comment.guidance.event.document.invalid-agenda-type": "R\xE9digez le programme sous forme de lignes `- Intervenant: Description`.",
-  "comment.guidance.event.document.schema-marker.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es d'automatisation en double dans la description.",
-  "comment.guidance.event.document.schema-version.unsupported": "Demandez \xE0 un responsable de mettre \xE0 jour l'automatisation pour prendre en charge ce format d'issue.",
-  "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
-  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
-  "comment.guidance.referential.reference.host.unknown": "H\xF4te introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [host-0001]`.",
-  "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
-  "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
-  "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l'h\xF4te [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "Intervenant introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
-  "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
-var STAGE_MESSAGES_EN = {
-  "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
-  "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
-  "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
-  "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
-  "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
-  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
-  "comment.guidance.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
-  "comment.guidance.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
-  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
-  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
-  "comment.guidance.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
-  "comment.guidance.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
-  "comment.guidance.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
-  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
-  "comment.guidance.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
-  "comment.guidance.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
-  "comment.guidance.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
-  "comment.guidance.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
-  "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
-  "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
-  "comment.social.target": "Post ({destination}, {purpose})",
-  "comment.guidance.social.content-pending": "Review this post's draft in the issue. Once its content is approved, a separate publication request will be shown.",
-  "comment.guidance.social.missing": "This reminder has no draft. Run promotion reconciliation to prepare it, then review the content and publication requests.",
-  "comment.guidance.social.generation-recovery": "Reminder generation needs recovery. Inspect its content proposal and use the content recovery procedure before retrying.",
-  "comment.guidance.social.preparation-failed": "Reminder preparation failed. Check the workflow run and retry after correcting the technical error.",
-  "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
-  "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
-  "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
-  "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
-  "comment.guidance.social.evaluation-failed": "Could not check publication. Check source access and delivery records before retrying.",
-  "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
-  "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
-  "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
-  "comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
-  "comment.guidance.assets.slides": "Complete the presentation and its public link before sending emails.",
-  "comment.guidance.communication.approval": "Approve or reject the emails.",
-  "comment.guidance.communication.rejected": "Emails rejected. Change their content to request a new approval.",
-  "comment.guidance.communication.approval-unavailable": "Approval could not be verified. Check the approval request, then retry.",
-  "comment.guidance.communication.approval-notification": "Slack notification failed. Review the email approval comment in this issue.",
-  "comment.guidance.communication.delivery-uncertain": "Verify delivery before retrying.",
-  "comment.guidance.communication.delivery-rejected": "Delivery rejected. Check the mail gateway before retrying.",
-  "comment.guidance.communication.delivery-deferred": "Delivery deferred; the next run will retry.",
-  "comment.guidance.communication.configuration": "Ask a maintainer to check the communication workflow configuration.",
-  "comment.guidance.communication.ledger": "Check the delivery ledger before retrying.",
-  "comment.guidance.communication.destination": "Add an email address for each recipient.",
-  "comment.guidance.communication.content": "Complete the notification content before retrying.",
-  "comment.guidance.communication.checklist": "Sync again to mark completed email tasks.",
-  "comment.guidance.communication.concurrent": "The issue changed during processing. Retry after editing.",
-  "comment.guidance.communication.references": "Select known hosts and speakers before sending emails.",
-  "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
-  "comment.guidance.feedback.agenda": "Complete talk subjects and speakers before synchronizing OpenFeedback.",
-  "comment.guidance.feedback.prerequisites": "Complete the title, date and OpenFeedback link.",
-  "comment.guidance.feedback-link.prerequisites": "Check the active meetup selected for the shared link and complete its OpenFeedback URL.",
-  "comment.guidance.feedback-link.ambiguous-date": "Several active meetups share the selected date. Select the shared feedback target manually.",
-  "comment.guidance.assets.prerequisites": "Select the host and date before preparing Drive files.",
-  "comment.guidance.assets.drift": "Restore the missing Drive file or its expected template metadata.",
-  "comment.guidance.assets.template": "Fix the template tokens, image slots or supported document structure.",
-  "comment.guidance.assets.missing": "Complete the required text and links for the presentation.",
-  "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
-  "comment.guidance.assets.revision": "The document changed. Retry after editing.",
-  "comment.guidance.assets.image": "Automation could not validate a document image. Rerun synchronization to identify the image and failure reason.",
-  "comment.assets.image-context": "{kind, select, cover {Approved generated cover} host_logo {Host logo} speaker_picture {Speaker photo} fallback {Template fallback image} other {Embedded document image}} (slot `{slot}`) in [this document]({documentUrl}).",
-  "comment.assets.cover-recovery": "Ask a maintainer to repair the automated cover handling; the approved image should remain usable.",
-  "comment.guidance.assets.image-source": "The image source is invalid: a public HTTPS URL and an image description are required.",
-  "comment.guidance.assets.image-format": "The image data or content type is invalid. Supported formats: PNG, JPEG and GIF.",
-  "comment.guidance.assets.image-size": "The image download reaches the 50 MB limit.",
-  "comment.guidance.assets.image-dimensions": "The image dimensions are invalid or exceed 25 megapixels.",
-  "comment.guidance.assets.image-download": "Automation could not download the image. Rerun synchronization; if this persists, ask a maintainer to investigate the run.",
-  "comment.guidance.assets.image-changed": "The image bytes differ from the approved cover.",
-  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
-  "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
-  "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
-  "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
-  "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
-  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 50 MB limit.",
-  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
-  "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
-var STAGE_MESSAGES_FR = {
-  "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
-  "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
-  "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
-  "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
-  "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
-  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
-  "comment.guidance.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
-  "comment.guidance.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
-  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
-  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
-  "comment.guidance.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
-  "comment.guidance.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
-  "comment.guidance.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
-  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
-  "comment.guidance.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
-  "comment.guidance.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
-  "comment.guidance.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
-  "comment.guidance.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
-  "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
-  "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
-  "comment.social.target": "Publication ({destination}, {purpose})",
-  "comment.guidance.social.content-pending": "Examinez le brouillon de cette publication dans l'issue. Apr\xE8s validation du contenu, une demande distincte permettra d'autoriser sa publication.",
-  "comment.guidance.social.missing": "Ce rappel n'a pas de brouillon. Relancez la r\xE9conciliation des publications pour le pr\xE9parer, puis examinez les demandes de validation du contenu et de publication.",
-  "comment.guidance.social.generation-recovery": "La g\xE9n\xE9ration de ce rappel n\xE9cessite une reprise. Examinez sa proposition et suivez la proc\xE9dure de reprise du contenu avant de r\xE9essayer.",
-  "comment.guidance.social.preparation-failed": "La pr\xE9paration de ce rappel a \xE9chou\xE9. Consultez le workflow et relancez-le apr\xE8s correction de l'erreur technique.",
-  "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
-  "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
-  "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
-  "comment.guidance.social.evaluation-failed": "Publication non v\xE9rifiable. V\xE9rifiez les acc\xE8s aux sources et le registre des envois avant de relancer.",
-  "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
-  "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
-  "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
-  "comment.guidance.feedback.access": "V\xE9rifiez les acc\xE8s OpenFeedback, puis r\xE9essayez.",
-  "comment.guidance.assets.slides": "Compl\xE9tez la pr\xE9sentation et son lien public avant les envois.",
-  "comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
-  "comment.guidance.communication.rejected": "Emails refus\xE9s. Modifiez leur contenu pour demander une nouvelle validation.",
-  "comment.guidance.communication.approval-unavailable": "Approbation non v\xE9rifiable. V\xE9rifiez la demande d'approbation, puis r\xE9essayez.",
-  "comment.guidance.communication.approval-notification": "La notification Slack a \xE9chou\xE9. Validez les emails dans le commentaire de cette issue.",
-  "comment.guidance.communication.delivery-uncertain": "V\xE9rifiez l'envoi avant toute reprise.",
-  "comment.guidance.communication.delivery-rejected": "Envoi refus\xE9. V\xE9rifiez la passerelle d'envoi avant de r\xE9essayer.",
-  "comment.guidance.communication.delivery-deferred": "Envoi diff\xE9r\xE9 ; la prochaine ex\xE9cution r\xE9essaiera.",
-  "comment.guidance.communication.configuration": "Demandez \xE0 un responsable de v\xE9rifier la configuration des communications.",
-  "comment.guidance.communication.ledger": "V\xE9rifiez le registre des envois avant de r\xE9essayer.",
-  "comment.guidance.communication.destination": "Ajoutez une adresse email pour chaque destinataire.",
-  "comment.guidance.communication.content": "Compl\xE9tez le contenu de la notification avant de r\xE9essayer.",
-  "comment.guidance.communication.checklist": "Relancez pour cocher les t\xE2ches d'email termin\xE9es.",
-  "comment.guidance.communication.concurrent": "Le ticket a chang\xE9 pendant le traitement. R\xE9essayez apr\xE8s les modifications.",
-  "comment.guidance.communication.references": "S\xE9lectionnez des h\xF4tes et intervenants connus avant les envois.",
-  "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
-  "comment.guidance.feedback.agenda": "Compl\xE9tez les sujets et intervenants avant de synchroniser OpenFeedback.",
-  "comment.guidance.feedback.prerequisites": "Compl\xE9tez le titre, la date et le lien OpenFeedback.",
-  "comment.guidance.feedback-link.prerequisites": "V\xE9rifiez le meetup actif s\xE9lectionn\xE9 pour le lien partag\xE9 et compl\xE9tez son URL OpenFeedback.",
-  "comment.guidance.feedback-link.ambiguous-date": "Plusieurs meetups actifs ont la date s\xE9lectionn\xE9e. Choisissez manuellement la cible du lien partag\xE9.",
-  "comment.guidance.assets.prerequisites": "S\xE9lectionnez l'h\xF4te et la date avant de pr\xE9parer les fichiers Drive.",
-  "comment.guidance.assets.drift": "Restaurez le fichier Drive manquant ou ses m\xE9tadonn\xE9es de mod\xE8le.",
-  "comment.guidance.assets.template": "Corrigez les variables, emplacements d'images ou la structure du mod\xE8le.",
-  "comment.guidance.assets.missing": "Compl\xE9tez les textes et liens requis pour la pr\xE9sentation.",
-  "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
-  "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
-  "comment.guidance.assets.image": "La synchronisation n'a pas pu v\xE9rifier une image du document. Relancez-la pour identifier l'image et la cause de l'\xE9chec.",
-  "comment.assets.image-context": "{kind, select, cover {Visuel de couverture g\xE9n\xE9r\xE9 et approuv\xE9} host_logo {Logo de l'h\xF4te} speaker_picture {Photo de l'intervenant} fallback {Image de secours du mod\xE8le} other {Image int\xE9gr\xE9e au document}} (emplacement `{slot}`) dans [ce document]({documentUrl}).",
-  "comment.assets.cover-recovery": "Demandez \xE0 un mainteneur de corriger le traitement automatique du visuel ; l'image approuv\xE9e doit rester utilisable.",
-  "comment.guidance.assets.image-source": "La source de l'image est invalide : une URL HTTPS publique et une description sont n\xE9cessaires.",
-  "comment.guidance.assets.image-format": "Les donn\xE9es ou le type de contenu de l'image sont invalides. Formats pris en charge : PNG, JPEG et GIF.",
-  "comment.guidance.assets.image-size": "Le t\xE9l\xE9chargement de l'image atteint la limite de 50 Mo.",
-  "comment.guidance.assets.image-dimensions": "Les dimensions de l'image sont invalides ou d\xE9passent 25 m\xE9gapixels.",
-  "comment.guidance.assets.image-download": "La synchronisation n'a pas pu t\xE9l\xE9charger l'image. Relancez-la ; si l'\xE9chec persiste, demandez \xE0 un mainteneur d'examiner le run.",
-  "comment.guidance.assets.image-changed": "Le contenu de l'image diff\xE8re du visuel de couverture approuv\xE9.",
-  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
-  "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
-  "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
-  "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
-  "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
-  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 50 Mo.",
-  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
-  "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS6 = {
-  en: { ...EN_MESSAGES5, ...STAGE_MESSAGES_EN },
-  fr: { ...FR_MESSAGES5, ...STAGE_MESSAGES_FR }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
-var EventCommentMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS6, locale);
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
-var GithubEventCommentRepositoryComposition = class {
-  githubCommentVisibility(...args) {
-    return new GitHubCommentVisibility(...args);
-  }
-  diagnosticCommentSections() {
-    return new DiagnosticCommentSections();
-  }
-  diagnosticCommentPresenter() {
-    return new DiagnosticCommentPresenter({
-      organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
-      diagnosticPresenter: this.diagnosticPresenter()
-    });
-  }
-  diagnosticPresenter() {
-    return new DiagnosticPresenter();
-  }
-  eventCommentMessages(...args) {
-    return new EventCommentMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  gitHubEventCommentRepository(...args) {
-    return new GitHubEventCommentRepository(
-      {
-        diagnosticCommentSections: this.diagnosticCommentSections(),
-        diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
-        createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
-      },
-      ...args
-    );
-  }
-};
-
 // packages/adapter/event/github-event-repository/src/github-event-repository-configuration-error.ts
 var GitHubEventRepositoryConfigurationError = class extends Error {
   constructor(message) {
@@ -92831,959 +94114,6 @@ var GithubIssueFormEventDocumentCodecComposition = class {
   }
 };
 
-// packages/adapter/communication/github-organizer-attention/src/attention-record.ts
-var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
-var AttentionRecord = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  read(body) {
-    const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
-    const line = lines[0];
-    if (lines.length !== 1 || !line?.endsWith(" -->"))
-      throw new Error("Invalid attention record");
-    const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
-    return this.decode(input);
-  }
-  marker(state) {
-    const safe = this.decode({ ...state, version: 1 });
-    return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
-  }
-  decode(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    if (!Array.isArray(data.episodes) || data.episodes.length > 300)
-      throw new Error("Invalid attention episodes");
-    this.collaborators.attentionRecordFields.choice(data.version, [1]);
-    const state = {
-      eventDate: this.collaborators.attentionRecordFields.text(
-        data.eventDate,
-        /^(?:\d{4}-\d{2}-\d{2})?$/
-      ),
-      stopped: this.collaborators.attentionRecordFields.choice(data.stopped, [
-        true,
-        false
-      ]),
-      episodes: data.episodes.map(this.episode.bind(this)),
-      post: data.post === void 0 ? void 0 : this.post(data.post),
-      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
-      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
-        data.commentId,
-        true
-      )
-    };
-    this.collaborators.attentionStateRules.validate(state);
-    return state;
-  }
-  episode(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      condition: this.condition(data.condition),
-      episode: this.collaborators.attentionRecordFields.integer(
-        data.episode,
-        true
-      ),
-      openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
-      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
-      status: this.collaborators.attentionRecordFields.choice(data.status, [
-        "active",
-        "unknown",
-        "resolved",
-        "stopped"
-      ]),
-      lastWindow: data.lastWindow === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
-        data.lastWindow,
-        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
-      )
-    };
-  }
-  condition(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      key: this.collaborators.attentionRecordFields.text(
-        data.key,
-        /^[a-z0-9:-]{1,180}$/
-      ),
-      code: this.collaborators.attentionRecordFields.choice(
-        data.code,
-        ATTENTION_CODES
-      ),
-      owner: this.collaborators.attentionRecordFields.choice(data.owner, [
-        "event",
-        "assets",
-        "feedback",
-        "communications",
-        "social",
-        "content",
-        "approvals",
-        "delivery"
-      ]),
-      resource: this.collaborators.attentionRecordFields.text(
-        data.resource,
-        /^[a-z0-9:-]{1,128}$/
-      ),
-      severity: this.collaborators.attentionRecordFields.choice(data.severity, [
-        "warning",
-        "error"
-      ]),
-      policy: this.collaborators.attentionRecordFields.choice(data.policy, [
-        "preparation",
-        "daily",
-        "weekly",
-        "approval",
-        "occurrence",
-        "follow-up",
-        "none"
-      ]),
-      since: data.since === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.since),
-      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
-        data.commentId,
-        true
-      ),
-      recovery: data.recovery === void 0 ? void 0 : this.collaborators.attentionRecordFields.choice(data.recovery, [
-        true
-      ])
-    };
-  }
-  post(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      reservationId: this.collaborators.attentionRecordFields.text(
-        data.reservationId,
-        /^attention:\d+:\d+$/
-      ),
-      day: this.collaborators.attentionRecordFields.integer(data.day),
-      reservedAt: this.collaborators.attentionRecordFields.instant(
-        data.reservedAt
-      ),
-      status: this.collaborators.attentionRecordFields.choice(data.status, [
-        "pending",
-        "accepted",
-        "retry"
-      ]),
-      retryAt: data.retryAt === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.retryAt),
-      fingerprint: data.fingerprint === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
-        data.fingerprint,
-        /^[a-f0-9]{64}$/
-      ),
-      message: data.message === void 0 ? void 0 : this.message(data.message)
-    };
-  }
-  message(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      destination: this.collaborators.attentionRecordFields.text(
-        data.destination,
-        /^[a-zA-Z0-9._:-]{1,128}$/
-      ),
-      messageId: this.collaborators.attentionRecordFields.text(
-        data.messageId,
-        /^[a-zA-Z0-9._:-]{1,128}$/
-      )
-    };
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-comment-retention.ts
-var AttentionCommentRetention = class {
-  constructor(collaborators, api, owner, repo, author) {
-    this.collaborators = collaborators;
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.author = author;
-  }
-  collaborators;
-  api;
-  owner;
-  repo;
-  author;
-  async load(issueNumber, commentId, before) {
-    const client = this.collaborators.createGithubAttentionClient(
-      this.api,
-      this.owner,
-      this.repo,
-      issueNumber
-    );
-    const comment = (await client.list()).find((item) => item.id === commentId);
-    if (!comment || comment.body !== before)
-      throw new Error("Diagnostic comment changed before persistence");
-    const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
-    const offset = body.indexOf(ATTENTION_MARKER);
-    if (offset < 0) return { body, retained: "" };
-    this.collaborators.attentionRecord.read(body);
-    return {
-      body: body.slice(0, offset).trimEnd(),
-      retained: body.slice(offset)
-    };
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-diagnostic-checklist.ts
-var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  body = "";
-  commentId;
-  set(commentId, body) {
-    if (!body.startsWith(DIAGNOSTIC_MARKER) || !Number.isSafeInteger(commentId) || commentId < 1)
-      throw new Error("Invalid diagnostic checklist");
-    this.commentId = commentId;
-    this.body = body.split(ATTENTION_MARKER, 1)[0].trim();
-  }
-  prefix() {
-    return this.body;
-  }
-  read() {
-    const entries = [...new Set(this.body.split("\n"))].flatMap((line) => {
-      const match = /^- \[ \] \*\*(.+?)\*\*: (.+)$/.exec(line);
-      if (!match) return [];
-      const [, label, description] = match;
-      return [
-        {
-          label,
-          description,
-          field: _AttentionDiagnosticChecklist.FIELDS.get(label) ?? "other",
-          action: this.action(description)
-        }
-      ];
-    });
-    return { commentId: this.commentId, entries };
-  }
-  action(description) {
-    for (const locale of ["en", "fr"]) {
-      const messages5 = this.collaborators.createAttentionMessages(locale);
-      if (description === messages5.t("action.content-approval-pending"))
-        return "content-approval";
-      if (description === messages5.t("action.social-approval-pending"))
-        return "social-approval";
-      if (description === messages5.t("action.approval-pending"))
-        return "email-approval";
-      if (description === messages5.t("action.community-approval-pending"))
-        return "community-approval";
-      if (description === messages5.t("action.meetup-approval-pending"))
-        return "meetup-approval";
-      if (description === messages5.t("action.delivery-recovery"))
-        return "delivery-recovery";
-    }
-    return void 0;
-  }
-  static FIELDS = /* @__PURE__ */ new Map([
-    ["Event Title", "title"],
-    ["Event Description", "description"],
-    ["Drive Link", "assets"],
-    ["Event materials", "assets"],
-    ["OpenFeedback Link", "feedback"],
-    ["Event Date", "date"],
-    ["Hoster", "host"],
-    ["Host confirmation", "host-confirmation"],
-    ["Speaker confirmation", "speaker-confirmation"],
-    ["Meetup Link", "meetup"],
-    ["CNCF Link", "community"],
-    ["Agenda", "agenda"]
-  ]);
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-presenter.ts
-var AttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, diagnostics, messages5) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.diagnostics = diagnostics;
-    this.messages = messages5;
-    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
-      throw new Error("Invalid attention issue identity");
-    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
-  }
-  collaborators;
-  repository;
-  diagnostics;
-  messages;
-  issueUrl;
-  retired(commentId) {
-    return [this.diagnostics.prefix(), this.redirect(commentId)].filter(Boolean).join("\n\n");
-  }
-  redirect(commentId) {
-    return this.messages.t("attention.redirect", {
-      url: `${this.issueUrl}#issuecomment-${commentId}`
-    });
-  }
-  issue(state, metadata) {
-    return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
-  }
-  resolved(state) {
-    return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
-  }
-  details(state) {
-    const view = this.collaborators.attentionPolicy.view(state);
-    const lines = this.status(state);
-    for (const episode of this.collaborators.attentionTaskSelection.select(
-      view,
-      this.diagnostics.read()
-    ).details) {
-      const url = this.url(episode, state);
-      const link = url === this.overviewUrl(state) ? "" : ` ([${this.messages.t("attention.review")}](${url}))`;
-      lines.push(`- [ ] ${this.text(episode)}${link}`);
-    }
-    if (!view.conditions.length && !this.diagnostics.prefix() && !lines.length)
-      lines.push(this.messages.t("attention.clear"));
-    return [...new Set(lines)].join("\n");
-  }
-  status(state) {
-    return state.post?.status === "pending" ? [`- [ ] ${this.messages.t("attention.pending")}`] : [];
-  }
-  text(episode) {
-    const text = this.action(episode);
-    return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
-  }
-  action(episode) {
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
-      return this.messages.t("action.content-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
-      return this.messages.t("action.social-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
-      return this.messages.t("action.community-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
-      return this.messages.t("action.meetup-approval-pending");
-    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
-      task: this.messages.task(episode.condition.resource)
-    });
-  }
-  url(episode, state) {
-    const runId = episode.runId ?? state.runId;
-    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
-      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
-    if (["integration-failure", "stage-unknown"].includes(
-      episode.condition.code
-    ) && runId && /^\d+$/.test(runId))
-      return `https://github.com/${this.repository}/actions/runs/${runId}`;
-    return this.overviewUrl(state);
-  }
-  overviewUrl(state) {
-    const commentId = state.commentId ?? this.diagnostics.read().commentId;
-    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-record-fields.ts
-var AttentionRecordFields = class {
-  record(value) {
-    if (typeof value !== "object" || value === null || Array.isArray(value))
-      throw new Error("Invalid attention record object");
-    return value;
-  }
-  text(value, pattern) {
-    if (typeof value !== "string" || !pattern.test(value))
-      throw new Error("Invalid attention record text");
-    return value;
-  }
-  integer(value, positive = false) {
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
-      throw new Error("Invalid attention record integer");
-    return value;
-  }
-  choice(value, values) {
-    const found = values.find((candidate) => candidate === value);
-    if (found === void 0)
-      throw new Error("Invalid attention record variant");
-    return found;
-  }
-  instant(value) {
-    const text = this.text(value, /^\d{4}-\d{2}-\d{2}T/);
-    if (!Number.isFinite(Date.parse(text)))
-      throw new Error("Invalid attention record timestamp");
-    return text;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/github-attention-client.ts
-var GithubAttentionClient = class {
-  constructor(collaborators, api, owner, repo, issue2) {
-    this.collaborators = collaborators;
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.issue = issue2;
-  }
-  collaborators;
-  api;
-  owner;
-  repo;
-  issue;
-  async list() {
-    const comments = [];
-    let page = 1;
-    while (page <= 20) {
-      const response = await this.api.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: this.issue,
-        page,
-        per_page: 100
-      });
-      if (!Array.isArray(response.data))
-        throw new Error("Invalid attention comment response");
-      comments.push(
-        ...response.data.map(
-          this.collaborators.githubAttentionResponse.comment.bind(
-            this.collaborators.githubAttentionResponse
-          )
-        )
-      );
-      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!next) return comments;
-      page += 1;
-    }
-    throw new Error("Attention comment limit exceeded");
-  }
-  async create(body) {
-    const response = await this.api.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: this.issue,
-      body
-    });
-    if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
-      throw new Error("Invalid attention comment identity");
-    return response.data.id;
-  }
-  async update(commentId, body) {
-    await this.api.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
-  }
-  async replace(commentId, before, after) {
-    const current = (await this.list()).find(
-      (comment) => comment.id === commentId
-    );
-    if (current?.body !== before)
-      throw new Error("Attention comment changed before persistence");
-    await this.update(commentId, after);
-  }
-  async remove(commentId, before) {
-    const current = (await this.list()).find(
-      (comment) => comment.id === commentId
-    );
-    if (current?.body !== before)
-      throw new Error("Attention comment changed before removal");
-    await this.api.rest.issues.deleteComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId
-    });
-  }
-  async edit(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing attention comment node identity");
-    const result = await this.api.graphql(
-      `query AttentionCommentEditor($id: ID!) {
-				node(id: $id) {
-					... on IssueComment {
-						id body lastEditedAt editor { login __typename }
-					}
-				}
-			}`,
-      { id: comment.node_id }
-    );
-    return this.collaborators.githubAttentionResponse.current(result, comment);
-  }
-  checkHistoryLimit(count) {
-    if (count > 2e3) throw new Error("Attention history limit exceeded");
-  }
-  async history(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing attention comment node identity");
-    const edits = [];
-    let after;
-    do {
-      const response = await this.api.graphql(
-        `query AttentionCommentHistory($id: ID!, $after: String) {
-				node(id: $id) { ... on IssueComment {
-					id body userContentEdits(first: 100, after: $after) {
-						nodes { diff deletedAt editor { login __typename } }
-						pageInfo { hasNextPage endCursor }
-					}
-				} }
-			}`,
-        { id: comment.node_id, ...after ? { after } : {} }
-      );
-      const history = this.collaborators.githubAttentionResponse.history(
-        response,
-        comment
-      );
-      edits.push(...history.nodes);
-      this.checkHistoryLimit(edits.length);
-      if (!history.hasNextPage) return edits;
-      const next = history.endCursor;
-      if (!next || next === after)
-        throw new Error("Invalid attention history cursor");
-      after = next;
-    } while (after);
-    return edits;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
-var GithubAttentionRepository = class {
-  constructor(collaborators, client, author, presenter, checklist, visibility) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.author = author;
-    this.presenter = presenter;
-    this.checklist = checklist;
-    this.visibility = visibility;
-  }
-  collaborators;
-  client;
-  author;
-  presenter;
-  checklist;
-  visibility;
-  snapshot;
-  obsolete;
-  previous;
-  loaded = false;
-  async load() {
-    const trusted = this.collaborators.createTrustedAttentionState(
-      this.client,
-      this.author
-    );
-    const records = [];
-    let diagnostic;
-    for (const comment of await this.client.list()) {
-      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-        continue;
-      const body = await trusted.body(comment);
-      const snapshot = { id: comment.id, body: comment.body ?? "" };
-      if (body.startsWith(DIAGNOSTIC_MARKER) && !diagnostic) {
-        diagnostic = snapshot;
-        this.checklist.set(comment.id, body);
-      }
-      if (body.includes(ATTENTION_MARKER))
-        records.push({
-          snapshot,
-          state: this.collaborators.attentionRecord.read(body),
-          diagnostic: body.startsWith(DIAGNOSTIC_MARKER)
-        });
-    }
-    this.select(records, diagnostic);
-    this.loaded = true;
-    return this.previous;
-  }
-  select(records, diagnostic) {
-    const canonical = records.find((item) => item.diagnostic) ?? records[0];
-    if (records.length > 1 && (records.length !== 2 || !canonical?.diagnostic || records.every((item) => item.diagnostic) || records.some(
-      (item) => !this.collaborators.attentionStateEquality.equal(
-        item.state,
-        canonical.state
-      )
-    )))
-      throw new Error("Multiple attention records");
-    this.snapshot = diagnostic ?? canonical?.snapshot;
-    this.previous = canonical?.state;
-    this.obsolete = records.find(
-      (item) => item.snapshot.id !== this.snapshot?.id
-    )?.snapshot;
-  }
-  async save(state) {
-    if (!this.loaded)
-      throw new Error("Attention state must be loaded before writing");
-    await this.consolidate();
-    const body = this.presenter.issue(
-      state,
-      this.collaborators.attentionRecord.marker(state)
-    );
-    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
-    if (this.snapshot) {
-      if (this.snapshot.body !== body)
-        await this.client.replace(this.snapshot.id, this.snapshot.body, body);
-    } else {
-      if ((await this.client.list()).some(
-        (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
-      ))
-        throw new Error("Attention state changed before creation");
-      const id = await this.client.create(body);
-      this.snapshot = { id, body };
-    }
-    this.snapshot.body = body;
-    await this.visibility.synchronize(
-      this.snapshot.id,
-      body,
-      this.presenter.resolved(state)
-    );
-  }
-  async consolidate() {
-    if (!this.obsolete || !this.snapshot || !this.previous) return;
-    const body = this.presenter.issue(
-      this.previous,
-      this.collaborators.attentionRecord.marker(this.previous)
-    );
-    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
-    await this.client.replace(this.snapshot.id, this.snapshot.body, body);
-    this.snapshot.body = body;
-    await this.client.remove(this.obsolete.id, this.obsolete.body);
-    this.obsolete = void 0;
-  }
-  async retire(commentId) {
-    if (!this.loaded)
-      throw new Error("Attention state must be loaded before retiring");
-    if (!this.snapshot) return;
-    await this.consolidate();
-    await this.client.replace(
-      this.snapshot.id,
-      this.snapshot.body,
-      this.presenter.retired(commentId)
-    );
-    this.snapshot = void 0;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/github-attention-response.ts
-var GithubAttentionResponse = class {
-  record(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value))
-      throw new Error("Invalid attention API object");
-    return value;
-  }
-  comment(value) {
-    const data = this.record(value);
-    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
-      throw new Error("Invalid attention comment identity");
-    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
-      throw new Error("Invalid attention comment body");
-    if (data.node_id !== void 0 && typeof data.node_id !== "string")
-      throw new Error("Invalid attention comment node");
-    let user;
-    if (data.user !== null && data.user !== void 0) {
-      const actor = this.record(data.user);
-      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
-        throw new Error("Invalid attention comment author");
-      user = { login: actor.login, type: actor.type };
-    }
-    return { id: data.id, body: data.body, node_id: data.node_id, user };
-  }
-  current(value, comment) {
-    const node = this.node(value, comment);
-    return {
-      id: node.id,
-      body: node.body,
-      lastEditedAt: this.nullableText(node.lastEditedAt),
-      editor: this.editor(node.editor)
-    };
-  }
-  history(value, comment) {
-    const node = this.node(value, comment);
-    const edits = this.record(node.userContentEdits);
-    const page = this.record(edits.pageInfo);
-    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
-      throw new Error("Attention history is unavailable");
-    return {
-      nodes: edits.nodes.map(this.edit.bind(this)),
-      hasNextPage: page.hasNextPage,
-      endCursor: this.nullableText(page.endCursor)
-    };
-  }
-  node(value, comment) {
-    const result = this.record(value);
-    const node = this.record(result.node);
-    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
-      throw new Error("Attention comment changed during verification");
-    return { ...node, id: node.id, body: node.body };
-  }
-  edit(value) {
-    const data = this.record(value);
-    return {
-      diff: this.nullableText(data.diff),
-      deletedAt: this.nullableText(data.deletedAt),
-      editor: this.editor(data.editor)
-    };
-  }
-  nullableText(value) {
-    if (value !== null && typeof value !== "string")
-      throw new Error("Invalid attention API text");
-    return value;
-  }
-  editor(value) {
-    if (value === null) return null;
-    const actor = this.record(value);
-    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
-      throw new Error("Invalid attention editor");
-    return { login: actor.login, __typename: actor.__typename };
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
-var messages3 = {
-  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
-  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
-  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
-  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
-  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
-  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
-  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
-  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
-  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
-  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
-  "failure.social": "Posting failed.",
-  "task.social": "social posts",
-  "action.community-approval-pending": "Approve or reject OCGroups publication.",
-  "failure.communications": "Email preparation or sending failed.",
-  "failure.feedback": "OpenFeedback synchronization failed.",
-  "failure.assets": "Drive file preparation failed.",
-  "failure.event": "Meetup issue update failed.",
-  "task.event-data": "meetup details",
-  "attention.redirect": "[Post-event tasks and approvals]({url})",
-  "attention.review": "Review details",
-  "attention.unknown": "status unverified",
-  "action.missing-date": "Set the event date.",
-  "action.required-data": "Complete or correct: {task}.",
-  "action.host-confirmation": "Select a host in the meetup form.",
-  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
-  "action.approval-pending": "Approve or reject the emails.",
-  "action.integration-failure": "Automation failed: {task}.",
-  "action.delivery-recovery": "Verify delivery before retrying.",
-  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "Unverified stage result: {task}.",
-  "task.approvals": "email approval",
-  "task.delivery": "delivery recovery",
-  "attention.clear": "No pending tasks.",
-  "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
-  "task.publish-community-event": 'Publish on the CNCF platform and fill in "CNCF Link"',
-  "task.date": "event date",
-  "task.title": "event title",
-  "task.description": "event description",
-  "task.agenda": "talk agenda",
-  "task.agenda-speakers": "talk speakers",
-  "task.agenda-descriptions": "talk descriptions",
-  "task.host": "event host",
-  "task.event-status": "event status",
-  "task.publication-links": "publication links",
-  "task.meetup-link": "Meetup Link",
-  "task.community-link": "CNCF Link",
-  "task.assets-link": "resources folder link",
-  "task.feedback-link": "OpenFeedback Link",
-  "task.confirmations": "speaker confirmation",
-  "task.event-form": "event form",
-  "task.create-asset-folder": "Prepare the asset folder",
-  "task.thank-host": "Thank the host",
-  "task.thank-speakers": "Thank the speakers",
-  "task.share-slides": "Share slides",
-  "task.import-attendance": "Import attendance",
-  "task.share-social": "Post a meetup recap on LinkedIn",
-  "task.event": "event validation",
-  "task.assets": "assets",
-  "task.feedback": "feedback",
-  "task.content": "content",
-  "task.communications": "communications",
-  "task.unknown": "review the issue"
-};
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
-var messages4 = {
-  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
-  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
-  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
-  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
-  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
-  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
-  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
-  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
-  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
-  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "failure.social": "La publication a \xE9chou\xE9.",
-  "task.social": "publications sur les r\xE9seaux",
-  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
-  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
-  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
-  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
-  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
-  "task.event-data": "informations du meetup",
-  "attention.redirect": "[T\xE2ches et approbations apr\xE8s le meetup]({url})",
-  "attention.review": "Voir les d\xE9tails",
-  "attention.unknown": "statut non v\xE9rifi\xE9",
-  "action.missing-date": "Renseignez la date du meetup.",
-  "action.required-data": "Compl\xE9tez ou corrigez : {task}.",
-  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
-  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
-  "action.approval-pending": "Approuvez ou refusez les emails.",
-  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
-  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
-  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "R\xE9sultat non v\xE9rifi\xE9 : {task}.",
-  "task.approvals": "validation des emails",
-  "task.delivery": "reprise des envois",
-  "attention.clear": "Aucune t\xE2che en attente.",
-  "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
-  "task.publish-community-event": 'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
-  "task.date": "date du meetup",
-  "task.title": "titre du meetup",
-  "task.description": "description du meetup",
-  "task.agenda": "programme des talks",
-  "task.agenda-speakers": "intervenants des talks",
-  "task.agenda-descriptions": "descriptions des talks",
-  "task.host": "h\xF4te du meetup",
-  "task.event-status": "statut du meetup",
-  "task.publication-links": "liens de publication",
-  "task.meetup-link": "Meetup Link",
-  "task.community-link": "CNCF Link",
-  "task.assets-link": "lien du dossier des ressources",
-  "task.feedback-link": "OpenFeedback Link",
-  "task.confirmations": "confirmation des intervenants",
-  "task.event-form": "formulaire du meetup",
-  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
-  "task.thank-host": "Remerciez l'h\xF4te",
-  "task.thank-speakers": "Remerciez les intervenants",
-  "task.share-slides": "Partagez les pr\xE9sentations",
-  "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
-  "task.event": "validation du meetup",
-  "task.assets": "ressources",
-  "task.feedback": "\xE9valuations",
-  "task.content": "contenu",
-  "task.communications": "communications",
-  "task.unknown": "consulter le ticket"
-};
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
-var CATALOGS7 = { en: messages3, fr: messages4 };
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
-var AttentionMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS7, locale);
-  }
-  failure(resource) {
-    const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS7.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
-  }
-  task(resource) {
-    const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/trusted-attention-state.ts
-var TrustedAttentionState = class {
-  constructor(client, author) {
-    this.client = client;
-    this.author = author;
-  }
-  client;
-  author;
-  async body(comment) {
-    if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-      throw new Error("Untrusted attention author");
-    const current = await this.client.edit(comment);
-    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
-      return current.body;
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Attention history was deleted");
-      if (this.isAuthor(edit.editor)) {
-        if (edit.diff === null)
-          throw new Error("Attention history is unavailable");
-        return edit.diff;
-      }
-    }
-    throw new Error("Trusted attention history is unavailable");
-  }
-  isAuthor(editor) {
-    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
-var GithubOrganizerAttentionComposition = class {
-  attentionRecordFields() {
-    return new AttentionRecordFields();
-  }
-  attentionCommentRetention(...args) {
-    return new AttentionCommentRetention(
-      {
-        attentionRecord: this.attentionRecord(),
-        createGithubAttentionClient: (...args2) => this.githubAttentionClient(...args2),
-        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
-      },
-      ...args
-    );
-  }
-  attentionDiagnosticChecklist() {
-    return new AttentionDiagnosticChecklist({
-      createAttentionMessages: (...args) => this.attentionMessages(...args)
-    });
-  }
-  attentionMessages(...args) {
-    return new AttentionMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  attentionPresenter(...args) {
-    return new AttentionPresenter(
-      {
-        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
-        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection()
-      },
-      ...args
-    );
-  }
-  attentionRecord() {
-    return new AttentionRecord({
-      attentionRecordFields: this.attentionRecordFields(),
-      attentionStateRules: new CommunicationDomainComposition().attentionStateRules()
-    });
-  }
-  githubAttentionClient(...args) {
-    return new GithubAttentionClient(
-      { githubAttentionResponse: this.githubAttentionResponse() },
-      ...args
-    );
-  }
-  githubAttentionRepository(...args) {
-    return new GithubAttentionRepository(
-      {
-        attentionRecord: this.attentionRecord(),
-        attentionStateEquality: new CommunicationDomainComposition().attentionStateEquality(),
-        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
-      },
-      ...args
-    );
-  }
-  githubAttentionResponse() {
-    return new GithubAttentionResponse();
-  }
-  trustedAttentionState(...args) {
-    return new TrustedAttentionState(...args);
-  }
-};
-
 // packages/adapter/time/system-clock/src/system-communication-clock.ts
 var SystemCommunicationClock = class {
   constructor(dateFactory) {
@@ -93817,27 +94147,27 @@ var SystemClockComposition = class {
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES6 = {
+var EN_MESSAGES7 = {
   "form.speakers.guidance": "Copy the speaker references into the agenda.",
   "form.speakers.show": "Available speakers"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES6 = {
+var FR_MESSAGES7 = {
   "form.speakers.guidance": "Copiez les r\xE9f\xE9rences des intervenants dans le programme.",
   "form.speakers.show": "Intervenants disponibles"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS8 = {
-  en: { ...EN_MESSAGES6 },
-  fr: { ...FR_MESSAGES6 }
+var CATALOGS9 = {
+  en: { ...EN_MESSAGES7 },
+  fr: { ...FR_MESSAGES7 }
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS8, locale);
+    super(collaborators, CATALOGS9, locale);
   }
 };
 
@@ -101558,13 +101888,13 @@ var DraftWorkspaceComposition = class {
       input.issueNumber
     );
     const storage = new GithubContentStoreComposition();
-    const store = storage.store(client, input.commentAuthorLogin);
+    const store = storage.store(new AutomationStateComposition().create(input));
     const definitions = new DraftProposalComposition();
     const fingerprints = definitions.fingerprints();
     const timing = new SocialPostTiming();
     const policy = definitions.policy();
     const factory = new ContentProposalFactory(
-      randomUUID2,
+      randomUUID3,
       () => (/* @__PURE__ */ new Date()).toISOString()
     );
     const workspace = new ContentWorkspace({
@@ -101606,85 +101936,6 @@ var DraftWorkspaceComposition = class {
         (actor) => client.canApprove(actor)
       )
     };
-  }
-};
-
-// packages/runtime/github-actions/src/organizer-approval-composition.ts
-import { randomUUID as randomUUID3 } from "node:crypto";
-var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
-  static visibility(input) {
-    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
-      input.client,
-      input.owner,
-      input.repo
-    );
-  }
-  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
-    const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
-      randomUUID3
-    );
-    const notifications = _OrganizerApprovalComposition.notifications(
-      client,
-      presenter,
-      notificationPort,
-      organizerChannelId
-    );
-    const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
-      client,
-      new GithubOrganizerApprovalComposition().trustedApprovalState(
-        client,
-        authorLogin
-      ),
-      authorLogin,
-      presenter
-    );
-    const finalizer = new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
-      new GithubOrganizerApprovalComposition().resolveApprovalDecision(
-        client,
-        new GithubOrganizerApprovalComposition().approvalDecisionParser(
-          new GithubOrganizerApprovalComposition().approvalPresenterFactory().supportedLocales()
-        )
-      ),
-      repository,
-      notifications,
-      visibility,
-      new GithubOrganizerAttentionComposition().attentionRecord()
-    );
-    return {
-      emailDeliveryReport: _OrganizerApprovalComposition.deliveryReport(
-        repository,
-        finalizer,
-        visibility
-      ),
-      approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
-        repository,
-        records,
-        finalizer,
-        notifications,
-        client
-      ),
-      followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
-        repository,
-        records,
-        finalizer
-      ),
-      attention: new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
-        repository,
-        finalizer
-      )
-    };
-  }
-  static notifications(client, presenter, port, channel) {
-    return new GithubOrganizerApprovalComposition().approvalNotifications(
-      new ApprovalNotificationPolicy(),
-      client,
-      presenter,
-      port,
-      channel
-    );
-  }
-  static deliveryReport(repository, finalizer, visibility) {
-    return (source) => new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
   }
 };
 
@@ -101804,12 +102055,12 @@ var LinkedInImageStatus = class {
 };
 
 // packages/adapter/communication/linkedin-social-gateway/src/linkedin-image-validation.ts
-import { createHash as createHash7 } from "node:crypto";
+import { createHash as createHash8 } from "node:crypto";
 var LinkedInImageValidation = class {
   valid(input) {
     if (!/^urn:li:organization:[1-9]\d*$/.test(
       input.destination.organizationUrn
-    ) || !input.description.trim() || input.description.length > 4086 || input.bytes.length === 0 || input.bytes.length >= 5e7 || !/^[a-f0-9]{64}$/.test(input.fingerprint) || createHash7("sha256").update(input.bytes).digest("hex") !== input.fingerprint)
+    ) || !input.description.trim() || input.description.length > 4086 || input.bytes.length === 0 || input.bytes.length >= 5e7 || !/^[a-f0-9]{64}$/.test(input.fingerprint) || createHash8("sha256").update(input.bytes).digest("hex") !== input.fingerprint)
       return false;
     try {
       const size = imageSize(input.bytes);
@@ -102233,8 +102484,7 @@ var SocialPublicationComposition2 = class {
       timing: base.timing,
       approvals,
       journal: new GithubSocialDeliveryJournalComposition().create(
-        base.client,
-        input.commentAuthorLogin
+        new AutomationStateComposition().create(input)
       ),
       configuration,
       canApprove: base.client.canApprove.bind(base.client),

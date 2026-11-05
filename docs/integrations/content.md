@@ -348,6 +348,8 @@ repository write permission. The recovery records that actor and comment
 revision, preserves the old proposal, and is consumed once. A cover recovery
 starts a new four-request batch; it does not silently retry an uncertain slot.
 
+Proposals are stored in the `content` section of the issue's single
+[collapsed automation-state comment](../development/reporting.md#internal-automation-state).
 Do not edit or delete bot-owned proposal state. Restore damaged state from its
 verified history before continuing. Media and proposal history are retained
 until an organizer deliberately removes them; no automatic retention cleanup

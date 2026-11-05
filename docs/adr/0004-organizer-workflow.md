@@ -122,6 +122,22 @@ an operational responsibility.
 
 ## Decision history
 
+On 2026-11-05, internal proposal and publication records moved into one
+authoritative, always-minimized state comment per issue. Separate marker-only
+comments had appeared as blank entries in the organizer conversation. The
+shared adapter preserves independent record schemas and checked transitions,
+imports existing records, and minimizes the retained originals after readback.
+Approval requests and organizer checklists keep their existing interfaces.
+Attention reconciliation reapplies state visibility on unchanged runs.
+
+A separate GitHub storage branch was considered and rejected in favor of one
+issue comment. This avoids another storage location and permission requirement,
+at the cost of GitHub's comment size limit and shared edit history. Oversized
+state must fail without truncation. Publication recovery remains available to
+maintainers without permitting changes to proposal or social-delivery authority.
+The current contract is documented in
+[internal automation state](../development/reporting.md#internal-automation-state).
+
 On 2026-11-01, scoped reporting replaced the assumption that every workflow
 evaluated all preparation stages. Source runs moved into attention episodes;
 the prior global run link could point an old failure at an unrelated successful

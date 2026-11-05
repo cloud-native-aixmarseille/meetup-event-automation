@@ -9,7 +9,7 @@ import type {
 } from "@meetup-automation/journey";
 import type { ContentValueSchema } from "./content-value-schema.js";
 
-export const CONTENT_STATE_MARKER = "<!-- meetup-content-proposal:v1 ";
+const CONTENT_STATE_MARKER = "<!-- meetup-content-proposal:v1 ";
 export class ContentProposalCodec {
 	constructor(
 		private readonly values: ContentValueSchema,

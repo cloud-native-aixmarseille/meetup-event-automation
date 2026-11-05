@@ -1,41 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { automationStateFixture } from "../../../journey/github-automation-state/testing/state.fixtures.js";
+import { describe, expect, it } from "vitest";
 import { GithubPublicationJournalComposition } from "./dependency-composition.js";
 import { GithubPublicationJournal } from "./github-publication-journal.js";
 
-function fixture(
-	initial: { id: number; body: string; user: { login: string } }[] = [],
-) {
-	const comments = [...initial];
-	const issues = {
-		listComments: vi
-			.fn()
-			.mockImplementation(async () => ({ data: comments, headers: {} })),
-		createComment: vi.fn().mockImplementation(async ({ body }) => {
-			comments.push({
-				id: comments.length + 1,
-				body,
-				user: { login: "organizer[bot]" },
-			});
-		}),
-		updateComment: vi.fn().mockImplementation(async ({ comment_id, body }) => {
-			const comment = comments.find((item) => item.id === comment_id);
-			if (comment) comment.body = body;
-		}),
-	};
+function fixture(initial: Parameters<typeof automationStateFixture>[0] = []) {
+	const f = automationStateFixture(initial, "organizer[bot]");
 	const journal = new GithubPublicationJournal(
 		{
 			publicationCommentCodec:
 				new GithubPublicationJournalComposition().publicationCommentCodec(),
 		},
-		{ rest: { issues } },
-		{
-			owner: "example",
-			repo: "events",
-			issue_number: 42,
-		},
-		"organizer[bot]",
+		f.state,
 	);
-	return { journal, issues, comments };
+	return { journal, ...f };
 }
 
 describe("GitHub publication journal", () => {
@@ -62,7 +39,7 @@ describe("GitHub publication journal", () => {
 
 	it("does not overwrite an uncertain upload with another reservation", async () => {
 		// Arrange
-		const { journal, issues } = fixture();
+		const { journal, client } = fixture();
 		const cover = {
 			groupUrl: "https://www.meetup.com/example/",
 			fingerprint: "a".repeat(64),
@@ -76,7 +53,7 @@ describe("GitHub publication journal", () => {
 		});
 		// Assert
 		await expect(result).rejects.toThrow("already reserved");
-		expect(issues.updateComment).toHaveBeenCalledTimes(1);
+		expect(client.replace).toHaveBeenCalledTimes(1);
 	});
 
 	it("retains the event identity when replacing confirmed artwork", async () => {
@@ -130,7 +107,7 @@ describe("GitHub publication journal", () => {
 	);
 	it("persists a reservation and remote identity across new instances", async () => {
 		// Arrange
-		const { journal, comments, issues } = fixture();
+		const { journal, comments, client } = fixture();
 		const url = "https://www.meetup.com/example/events/123/";
 
 		// Act
@@ -144,9 +121,9 @@ describe("GitHub publication journal", () => {
 		expect(saved).toEqual({
 			identity: { id: "123", reviewUrl: url, publicUrl: url },
 		});
-		expect(issues.createComment).toHaveBeenCalledTimes(1);
-		expect(issues.updateComment).toHaveBeenCalledTimes(1);
-		expect(comments[0]?.body).toContain('"state":"saved"');
+		expect(client.create).toHaveBeenCalledTimes(1);
+		expect(client.replace).toHaveBeenCalledTimes(1);
+		expect(await fixture(comments).journal.load()).toEqual(saved);
 	});
 
 	it("ignores forged markers from other authors", async () => {
@@ -213,7 +190,7 @@ describe("GitHub publication journal", () => {
 
 	it("refuses a second reservation", async () => {
 		// Arrange
-		const { journal, issues } = fixture();
+		const { journal, client } = fixture();
 		await journal.reserve();
 
 		// Act
@@ -221,7 +198,7 @@ describe("GitHub publication journal", () => {
 
 		// Assert
 		await expect(result).rejects.toThrow("already reserved");
-		expect(issues.createComment).toHaveBeenCalledTimes(1);
+		expect(client.create).toHaveBeenCalledTimes(1);
 	});
 
 	it("does not replace an established remote identity", async () => {
@@ -242,28 +219,15 @@ describe("GitHub publication journal", () => {
 		await expect(result).rejects.toThrow("identity conflict");
 	});
 
-	it("checks every page and fails closed when several trusted journals exist", async () => {
+	it("fails closed when several publication records exist", async () => {
 		// Arrange
-		const { journal, issues } = fixture();
-		const comment = {
-			id: 1,
-			user: { login: "organizer[bot]" },
-			body: '<!-- meetup-publication:v1\n{"state":"pending"}\n-->',
-		};
-		issues.listComments
-			.mockResolvedValueOnce({
-				data: [comment],
-				headers: { link: '<https://api.github.com/next>; rel="next"' },
-			})
-			.mockResolvedValueOnce({ data: [{ ...comment, id: 2 }], headers: {} });
-
+		const body = '<!-- meetup-publication:v1\n{"state":"pending"}\n-->';
+		const { journal } = fixture(
+			[1, 2].map((id) => ({ id, body, user: { login: "organizer[bot]" } })),
+		);
 		// Act
 		const result = journal.load();
-
 		// Assert
 		await expect(result).rejects.toThrow("Multiple");
-		expect(issues.listComments).toHaveBeenLastCalledWith(
-			expect.objectContaining({ page: 2 }),
-		);
 	});
 });

@@ -1,3 +1,4 @@
+import { AutomationStateComposition } from "./automation-state-composition.js";
 import { randomUUID } from "node:crypto";
 import { SocialPostTiming } from "@meetup-automation/communication";
 import {
@@ -42,7 +43,7 @@ export class DraftWorkspaceComposition {
 				input.issueNumber,
 			);
 		const storage = new GithubContentStoreComposition();
-		const store = storage.store(client, input.commentAuthorLogin);
+		const store = storage.store(new AutomationStateComposition().create(input));
 		const definitions = new DraftProposalComposition();
 		const fingerprints = definitions.fingerprints();
 		const timing = new SocialPostTiming();

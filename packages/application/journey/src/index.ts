@@ -160,3 +160,7 @@ export type {
 	ValidateMeetupReferentialsResult,
 } from "./use-cases/validate-meetup-referentials.js";
 export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referentials.js";
+export type {
+	AutomationStateRepository,
+	AutomationStateScope,
+} from "./ports/automation-state.js";

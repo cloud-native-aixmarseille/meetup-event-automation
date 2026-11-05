@@ -41,6 +41,7 @@
 		"@meetup-automation/slack-social-gateway": "workspace:*",
 		"@meetup-automation/linkedin-social-gateway": "workspace:*",
 		"@meetup-automation/github-social-delivery-journal": "workspace:*",
-		"@meetup-automation/github-event-website": "workspace:*"
+		"@meetup-automation/github-event-website": "workspace:*",
+		"@meetup-automation/github-automation-state": "workspace:*"
 	}
 }

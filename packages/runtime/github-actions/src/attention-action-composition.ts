@@ -1,3 +1,4 @@
+import { AutomationStateComposition } from "./automation-state-composition.js";
 import { ManageMeetupAttention } from "@meetup-automation/journey";
 import { AttentionAction } from "./attention-action.js";
 import { AttentionComposition } from "./attention-composition.js";
@@ -7,6 +8,8 @@ export class AttentionActionComposition {
 
 	attentionAction(): AttentionAction {
 		return new AttentionAction({
+			reconcileState: (input) =>
+				new AutomationStateComposition().create(input).reconcile(),
 			publicationUrlInput: this.runtime.publicationUrlInput(),
 			createAttention: (input) => {
 				const container = AttentionComposition.create(input);

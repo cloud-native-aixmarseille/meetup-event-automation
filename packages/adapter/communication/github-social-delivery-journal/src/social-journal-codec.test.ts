@@ -5,7 +5,7 @@ import {
 	socialRecord,
 } from "../testing/social-journal.fixtures.js";
 import { SocialJournalCodec } from "./social-journal-codec.js";
-import { SOCIAL_JOURNAL_MARKER } from "./trusted-social-journal-comments.js";
+import { SOCIAL_JOURNAL_MARKER } from "./social-journal-codec.js";
 
 describe("social delivery stored schema", () => {
 	it("preserves a verified LinkedIn activity permalink without inventing a share identity", () => {
