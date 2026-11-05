@@ -5,6 +5,9 @@ type DiagnosticCategory = "technical" | "organizer" | "informational";
 
 const ORGANIZER_CODES = new Set([
 	"communication.social.pending",
+	"communication.social.content-pending",
+	"communication.social.missing",
+	"communication.social.generation-recovery",
 	"communication.social.blocked",
 	"communication.social.uncertain",
 	"communication.social.expired",

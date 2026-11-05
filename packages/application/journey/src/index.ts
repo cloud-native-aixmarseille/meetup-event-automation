@@ -15,6 +15,8 @@ export type {
 	ManageMeetupCommunicationsResult,
 } from "./communication/contracts.js";
 export { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
+export { PrepareSocialReminders } from "./communication/prepare-social-reminders.js";
+export { SocialReminderPlans } from "./communication/social-reminder-plans.js";
 export {
 	RecoverSocialPublication,
 	type SocialRecoveryInput,

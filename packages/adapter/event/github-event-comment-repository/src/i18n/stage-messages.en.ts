@@ -40,6 +40,14 @@ export const STAGE_MESSAGES_EN = {
 	"comment.guidance.meetup.authentication":
 		"Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
 	"comment.social.target": "Post ({destination}, {purpose})",
+	"comment.guidance.social.content-pending":
+		"Review this post's draft in the issue. Once its content is approved, a separate publication request will be shown.",
+	"comment.guidance.social.missing":
+		"This reminder has no draft. Run promotion reconciliation to prepare it, then review the content and publication requests.",
+	"comment.guidance.social.generation-recovery":
+		"Reminder generation needs recovery. Inspect its content proposal and use the content recovery procedure before retrying.",
+	"comment.guidance.social.preparation-failed":
+		"Reminder preparation failed. Check the workflow run and retry after correcting the technical error.",
 	"comment.guidance.social.pending":
 		"Review the announcement and approve publication for this destination.",
 	"comment.guidance.social.blocked":

@@ -40,6 +40,14 @@ export const STAGE_MESSAGES_FR = {
 	"comment.guidance.meetup.authentication":
 		"Connexion automatique Meetup interrompue sans étape précise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic détaillé.",
 	"comment.social.target": "Publication ({destination}, {purpose})",
+	"comment.guidance.social.content-pending":
+		"Examinez le brouillon de cette publication dans l'issue. Après validation du contenu, une demande distincte permettra d'autoriser sa publication.",
+	"comment.guidance.social.missing":
+		"Ce rappel n'a pas de brouillon. Relancez la réconciliation des publications pour le préparer, puis examinez les demandes de validation du contenu et de publication.",
+	"comment.guidance.social.generation-recovery":
+		"La génération de ce rappel nécessite une reprise. Examinez sa proposition et suivez la procédure de reprise du contenu avant de réessayer.",
+	"comment.guidance.social.preparation-failed":
+		"La préparation de ce rappel a échoué. Consultez le workflow et relancez-le après correction de l'erreur technique.",
 	"comment.guidance.social.pending":
 		"Vérifiez l'annonce et approuvez sa publication pour cette destination.",
 	"comment.guidance.social.blocked":

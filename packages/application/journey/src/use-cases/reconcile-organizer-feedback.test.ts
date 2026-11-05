@@ -58,55 +58,58 @@ describe("merged organizer feedback reconciliation", () => {
 			expect(events.applyPatch).not.toHaveBeenCalled();
 		},
 	);
-	it("refreshes social tasks independently when other stages were not evaluated", async () => {
-		// Arrange
-		const events = {
-			find: vi.fn().mockResolvedValue({ labels: ["meetup"] }),
-			applyPatch: vi.fn(),
-			listPage: vi.fn(),
-		};
-		const comments = { reconcileDiagnostics: vi.fn() };
-		const useCase = new ReconcileOrganizerFeedback(
-			{
-				attentionStageEvaluation:
-					new JourneyPolicyComposition().attentionStageEvaluation(),
-			},
-			events,
-			comments,
-			"meetup",
-			{
-				decode: vi.fn().mockReturnValue({
-					event: createTestEvent({ publicationLinks: {} }),
-					diagnostics: [],
+	it.each(["communication.social.uncertain", "communication.social.missing"])(
+		"refreshes %s independently when other stages were not evaluated",
+		async (code) => {
+			// Arrange
+			const events = {
+				find: vi.fn().mockResolvedValue({ labels: ["meetup"] }),
+				applyPatch: vi.fn(),
+				listPage: vi.fn(),
+			};
+			const comments = { reconcileDiagnostics: vi.fn() };
+			const useCase = new ReconcileOrganizerFeedback(
+				{
+					attentionStageEvaluation:
+						new JourneyPolicyComposition().attentionStageEvaluation(),
+				},
+				events,
+				comments,
+				"meetup",
+				{
+					decode: vi.fn().mockReturnValue({
+						event: createTestEvent({ publicationLinks: {} }),
+						diagnostics: [],
+					}),
+				},
+			);
+			const identity = { repository: "example/meetups", issueNumber: 42 };
+			const diagnostic = {
+				code,
+				severity: "warning" as const,
+				message: "uncertain",
+				field: "social.community.announcement",
+			};
+
+			// Act
+			const result = await useCase.execute(
+				identity,
+				attentionReports({
+					event: { outcome: "unknown", reported: false },
+					social: { diagnostics: [diagnostic] },
 				}),
-			},
-		);
-		const identity = { repository: "example/meetups", issueNumber: 42 };
-		const diagnostic = {
-			code: "communication.social.uncertain",
-			severity: "warning" as const,
-			message: "uncertain",
-			field: "social.community.announcement",
-		};
+			);
 
-		// Act
-		const result = await useCase.execute(
-			identity,
-			attentionReports({
-				event: { outcome: "unknown", reported: false },
-				social: { diagnostics: [diagnostic] },
-			}),
-		);
-
-		// Assert
-		expect(result).toEqual({ updated: true });
-		expect(comments.reconcileDiagnostics).toHaveBeenCalledExactlyOnceWith(
-			identity,
-			[{ ...diagnostic, category: "incomplete" }],
-			{ meetup: undefined },
-			"social",
-		);
-	});
+			// Assert
+			expect(result).toEqual({ updated: true });
+			expect(comments.reconcileDiagnostics).toHaveBeenCalledExactlyOnceWith(
+				identity,
+				[{ ...diagnostic, category: "incomplete" }],
+				{ meetup: undefined },
+				"social",
+			);
+		},
+	);
 	it.each([
 		{ outcome: "failure" as const },
 		{ outcome: "unknown" as const },
@@ -114,7 +117,7 @@ describe("merged organizer feedback reconciliation", () => {
 		{
 			diagnostics: [
 				{
-					code: "communication.social.evaluation-failed",
+					code: "communication.social.preparation-failed",
 					severity: "error" as const,
 					message: "failed",
 				},

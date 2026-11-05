@@ -1,11 +1,23 @@
-# Goal: Publish approved announcements and reminders to configured destinations.
-# Behavior: Recheck exact publication authority, due times and durable delivery
-# records, then report each destination under the event lock.
+# Goal: Prepare missing reminders and publish approved social posts.
+# Behavior: Prepare and review drafts, then recheck publication authority, due
+# times and durable delivery records under the event lock.
 
 name: Event / Promotion / Reconcile
 on:
   workflow_call:
     inputs:
+      google-drive-public-folder-id:
+        description: Public Drive root containing reviewed content media.
+        required: true
+        type: string
+      ai-provider:
+        description: AI provider used to prepare missing reminder drafts (gemini).
+        required: true
+        type: string
+      ai-model:
+        description: Structured-text model used to prepare reminder drafts.
+        required: true
+        type: string
       meetup-event-url-prefix:
         description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
         required: true
@@ -39,6 +51,12 @@ on:
         required: true
         type: string
     secrets:
+      google-credentials:
+        description: Google service-account JSON for content review and LinkedIn media verification.
+        required: true
+      ai-api-key:
+        description: API key for reminder draft generation.
+        required: true
       conference-hall-api-key:
         description: Read-only Conference Hall event API key.
         required: true
@@ -80,8 +98,45 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Prepare missing reminders
+        id: reminders
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/communication/prepare-reminders
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      - name: Review drafts
+        id: review
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        uses: $/actions/organizer/review-drafts
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       - name: Reconcile social publication
         id: social
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
         uses: $/actions/communication/reconcile-social
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
@@ -97,8 +152,12 @@ jobs:
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
     outputs:
+      reminders-outcome: ${{ steps.reminders.outcome }}
+      reminders-diagnostics: ${{ steps.reminders.outputs.diagnostics }}
+      review-outcome: ${{ steps.review.outcome }}
+      review-diagnostics: ${{ steps.review.outputs.diagnostics }}
       initialized: ${{ steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
-      social-outcome: ${{ steps.social.outcome }}
+      social-outcome: ${{ steps.review.outcome == 'success' && steps.social.outcome || steps.review.outcome }}
       social-diagnostics: ${{ steps.social.outputs.diagnostics }}
   report:
     needs: publish
@@ -114,7 +173,7 @@ jobs:
       github-app-client-id: ${{ inputs.github-app-client-id }}
       slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       issue-number: ${{ inputs.issue-number }}
-      stage-results: '{"social":[{"outcome":${{ toJSON(needs.publish.outputs.social-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.social-diagnostics) }}}]}'
+      stage-results: '{"content":[{"outcome":${{ toJSON(needs.publish.outputs.review-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.review-diagnostics) }}}],"social":[{"outcome":${{ toJSON(needs.publish.outputs.reminders-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.reminders-diagnostics) }}},{"outcome":${{ toJSON(needs.publish.outputs.social-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.social-diagnostics) }}}]}'
     secrets:
       github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials

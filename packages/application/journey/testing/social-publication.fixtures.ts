@@ -114,6 +114,10 @@ export async function socialFixture(
 	const images = { prepare: vi.fn() };
 	let serial = 0;
 	const dependencies = {
+		reminderPlans: {
+			targets: vi.fn((): ContentTarget[] => []),
+			read: vi.fn(async () => state.context),
+		},
 		store: f.store,
 		journal,
 		workspace: {

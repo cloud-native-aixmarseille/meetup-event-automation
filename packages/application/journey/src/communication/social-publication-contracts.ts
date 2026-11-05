@@ -15,10 +15,13 @@ import type { PromotionalContentFingerprint } from "../proposals/promotional-con
 import type { PromotionalContentPolicy } from "../proposals/promotional-content-policy.js";
 import type { ContentProposalStore } from "../proposals/promotional-content-ports.js";
 import type { ContentWorkspace } from "../review/content-workspace.js";
+import type { SocialReminderPlans } from "./social-reminder-plans.js";
 
 export type SocialPublicationStatus =
+	| "missing"
 	| "published"
 	| "pending"
+	| "content-pending"
 	| "scheduled"
 	| "blocked"
 	| "complete"
@@ -32,6 +35,7 @@ export interface SocialPublicationResult {
 	readonly diagnostics: readonly EventDiagnostic[];
 }
 export interface SocialPublicationDependencies {
+	readonly reminderPlans: Pick<SocialReminderPlans, "targets" | "read">;
 	readonly store: ContentProposalStore;
 	readonly workspace: Pick<ContentWorkspace, "read">;
 	readonly policy: Pick<PromotionalContentPolicy, "eligible" | "current">;

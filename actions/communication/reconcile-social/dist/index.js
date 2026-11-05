@@ -66091,18 +66091,20 @@ var CommunicationDiagnosticProjection = class {
 
 // packages/application/journey/src/communication/reconcile-social-publications.ts
 var ReconcileSocialPublications = class {
-  constructor(dependencies, review, requests, intents, delivery) {
+  constructor(dependencies, review, requests, intents, delivery, reminders) {
     this.dependencies = dependencies;
     this.review = review;
     this.requests = requests;
     this.intents = intents;
     this.delivery = delivery;
+    this.reminders = reminders;
   }
   dependencies;
   review;
   requests;
   intents;
   delivery;
+  reminders;
   async execute(identity) {
     const snapshot = await this.dependencies.store.load();
     const configured = await this.dependencies.configuration();
@@ -66133,6 +66135,9 @@ var ReconcileSocialPublications = class {
         });
       }
     }
+    publications.push(
+      ...await this.reminders.evaluate(identity, configured, latest)
+    );
     await this.dependencies.completion.record(identity, publications);
     return {
       publications,
@@ -66145,6 +66150,8 @@ var ReconcileSocialPublications = class {
     if (record.manual) return "manual";
     const attempt = record.attempts.at(-1);
     if (attempt?.status === "accepted") return "complete";
+    const pending = await this.review.pendingContent(identity, proposal);
+    if (pending) return pending;
     const context3 = await this.review.context(identity, proposal);
     if (!context3) return "blocked";
     if (!attempt && record.purpose === "announcement" && context3.event.operationalChecklists.communication.some(
@@ -66206,6 +66213,34 @@ var ReconcileSocialPublications = class {
         }
       ]
     };
+  }
+};
+
+// packages/application/journey/src/communication/social-reminder-plans.ts
+var SocialReminderPlans = class {
+  constructor(workspace, timing, publication, language, now2) {
+    this.workspace = workspace;
+    this.timing = timing;
+    this.publication = publication;
+    this.language = language;
+    this.now = now2;
+  }
+  workspace;
+  timing;
+  publication;
+  language;
+  now;
+  targets(destinations) {
+    return destinations.flatMap((destination) => [
+      `${destination.key}:d7`,
+      `${destination.key}:d0`
+    ]);
+  }
+  async read(identity, target) {
+    const context3 = await this.workspace.read(identity, target, this.language);
+    if (!context3 || !this.publication.isPublished(context3.event) || this.timing.expired(context3.plan, this.now()))
+      return void 0;
+    return context3;
   }
 };
 
@@ -69119,6 +69154,9 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       "communication.approval-pending",
       "communication.approval-rejected",
       "communication.social.pending",
+      "communication.social.content-pending",
+      "communication.social.missing",
+      "communication.social.generation-recovery",
       "communication.social.blocked",
       "communication.social.uncertain",
       "communication.social.expired",
@@ -69147,6 +69185,9 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "communication.social.pending",
+  "communication.social.content-pending",
+  "communication.social.missing",
+  "communication.social.generation-recovery",
   "communication.social.blocked",
   "communication.social.uncertain",
   "communication.social.expired",
@@ -71535,6 +71576,37 @@ var ContentWorkspace = class {
   }
 };
 
+// packages/application/journey/src/communication/missing-social-reminders.ts
+var MissingSocialReminders = class {
+  constructor(plans) {
+    this.plans = plans;
+  }
+  plans;
+  async evaluate(identity, destinations, proposals) {
+    const missing = [];
+    for (const target of this.plans.targets(destinations)) {
+      const context3 = await this.plans.read(identity, target);
+      if (!context3 || proposals.get(target)?.plan.facts.date === context3.plan.facts.date)
+        continue;
+      missing.push({
+        target,
+        occurrence: context3.plan.facts.date,
+        status: "missing",
+        diagnostics: [
+          {
+            code: "communication.social.missing",
+            severity: "warning",
+            category: "incomplete",
+            field: `social.${target.replace(":", ".")}`,
+            message: "Social reminder draft is missing"
+          }
+        ]
+      });
+    }
+    return missing;
+  }
+};
+
 // packages/application/journey/src/communication/social-publication-stale-error.ts
 var SocialPublicationStaleError = class extends Error {
 };
@@ -71701,6 +71773,15 @@ var SocialPublicationReview = class {
   dependencies;
   requests;
   publication;
+  async pendingContent(identity, proposal) {
+    if (proposal.decision || !proposal.draft) return void 0;
+    const context3 = await this.dependencies.workspace.read(
+      identity,
+      proposal.plan.target,
+      proposal.plan.language
+    );
+    return context3 && this.dependencies.policy.current(proposal, context3.plan) && !this.dependencies.timing.expired(context3.plan, this.dependencies.now()) ? "content-pending" : "blocked";
+  }
   async context(identity, proposal) {
     const destination = proposal.plan.destination;
     if (!destination || !proposal.decision || !proposal.draft) return void 0;
@@ -71777,7 +71858,8 @@ var SocialPublicationComposition = class {
       review,
       requests,
       intents,
-      new SocialPublicationDelivery(dependencies, intents, review)
+      new SocialPublicationDelivery(dependencies, intents, review),
+      new MissingSocialReminders(dependencies.reminderPlans)
     );
   }
 };
@@ -76149,6 +76231,7 @@ var EN_MESSAGES2 = {
   "action.communication.recover-social": "Recover a social post",
   "report.social.recovery": "social_recovery={status}",
   "action.communication.reconcile-social": "Update social posts",
+  "action.communication.prepare-reminders": "Prepare social reminders",
   "report.social.empty": "social_publications=0",
   "report.social.result": "social_target={target} status={status}",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
@@ -76322,6 +76405,7 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
   "action.communication.recover-social": "Reprendre une publication",
   "report.social.recovery": "reprise_sociale={status}",
+  "action.communication.prepare-reminders": "Pr\xE9parer les rappels du meetup",
   "action.communication.reconcile-social": "Mettre \xE0 jour les publications sur les r\xE9seaux",
   "report.social.empty": "publications_sociales=0",
   "report.social.result": "cible_sociale={target} statut={status}",
@@ -89477,6 +89561,22 @@ var STAGE_GUIDANCE = [
     ["Communication", "comment.guidance.social.pending"]
   ],
   [
+    "communication.social.missing",
+    ["Communication", "comment.guidance.social.missing"]
+  ],
+  [
+    "communication.social.content-pending",
+    ["Communication", "comment.guidance.social.content-pending"]
+  ],
+  [
+    "communication.social.generation-recovery",
+    ["Communication", "comment.guidance.social.generation-recovery"]
+  ],
+  [
+    "communication.social.preparation-failed",
+    ["Communication", "comment.guidance.social.preparation-failed"]
+  ],
+  [
     "communication.social.blocked",
     ["Communication", "comment.guidance.social.blocked"]
   ],
@@ -90608,6 +90708,10 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
   "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
   "comment.social.target": "Post ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Review this post's draft in the issue. Once its content is approved, a separate publication request will be shown.",
+  "comment.guidance.social.missing": "This reminder has no draft. Run promotion reconciliation to prepare it, then review the content and publication requests.",
+  "comment.guidance.social.generation-recovery": "Reminder generation needs recovery. Inspect its content proposal and use the content recovery procedure before retrying.",
+  "comment.guidance.social.preparation-failed": "Reminder preparation failed. Check the workflow run and retry after correcting the technical error.",
   "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
   "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
   "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
@@ -90685,6 +90789,10 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
   "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
   "comment.social.target": "Publication ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Examinez le brouillon de cette publication dans l'issue. Apr\xE8s validation du contenu, une demande distincte permettra d'autoriser sa publication.",
+  "comment.guidance.social.missing": "Ce rappel n'a pas de brouillon. Relancez la r\xE9conciliation des publications pour le pr\xE9parer, puis examinez les demandes de validation du contenu et de publication.",
+  "comment.guidance.social.generation-recovery": "La g\xE9n\xE9ration de ce rappel n\xE9cessite une reprise. Examinez sa proposition et suivez la proc\xE9dure de reprise du contenu avant de r\xE9essayer.",
+  "comment.guidance.social.preparation-failed": "La pr\xE9paration de ce rappel a \xE9chou\xE9. Consultez le workflow et relancez-le apr\xE8s correction de l'erreur technique.",
   "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
   "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
@@ -102111,6 +102219,13 @@ var SocialPublicationComposition2 = class {
     const settings = new SocialPublicationConfiguration(new RuntimeInput());
     const configuration = async () => (await settings.load(process.cwd())).destinations;
     return new SocialPublicationComposition().create({
+      reminderPlans: new SocialReminderPlans(
+        base.workspace,
+        base.timing,
+        new MeetupPublicationChecklist(),
+        input.locale,
+        () => (/* @__PURE__ */ new Date()).toISOString()
+      ),
       store: base.store,
       workspace: base.workspace,
       policy: base.policy,

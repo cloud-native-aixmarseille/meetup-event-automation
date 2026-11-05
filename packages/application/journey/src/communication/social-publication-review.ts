@@ -6,7 +6,10 @@ import type {
 import type { ContentProposal } from "../proposals/promotional-content.js";
 import type { ContentContext } from "../review/content-workspace.js";
 import type { SocialPublicationApprovalRequest } from "./social-publication-approval-request.js";
-import type { SocialPublicationDependencies } from "./social-publication-contracts.js";
+import type {
+	SocialPublicationDependencies,
+	SocialPublicationStatus,
+} from "./social-publication-contracts.js";
 import { SocialPublicationStaleError } from "./social-publication-stale-error.js";
 
 export class SocialPublicationReview {
@@ -32,6 +35,22 @@ export class SocialPublicationReview {
 			"isPublished"
 		>,
 	) {}
+	async pendingContent(
+		identity: EventIdentity,
+		proposal: ContentProposal,
+	): Promise<SocialPublicationStatus | undefined> {
+		if (proposal.decision || !proposal.draft) return undefined;
+		const context = await this.dependencies.workspace.read(
+			identity,
+			proposal.plan.target,
+			proposal.plan.language,
+		);
+		return context &&
+			this.dependencies.policy.current(proposal, context.plan) &&
+			!this.dependencies.timing.expired(context.plan, this.dependencies.now())
+			? "content-pending"
+			: "blocked";
+	}
 	async context(
 		identity: EventIdentity,
 		proposal: ContentProposal,

@@ -10,6 +10,7 @@ import type {
 import type { SocialPublicationDelivery } from "./social-publication-delivery.js";
 import type { SocialPublicationIntents } from "./social-publication-intents.js";
 import type { SocialPublicationReview } from "./social-publication-review.js";
+import type { MissingSocialReminders } from "./missing-social-reminders.js";
 
 export class ReconcileSocialPublications {
 	constructor(
@@ -18,6 +19,7 @@ export class ReconcileSocialPublications {
 		private readonly requests: SocialPublicationApprovalRequest,
 		private readonly intents: SocialPublicationIntents,
 		private readonly delivery: SocialPublicationDelivery,
+		private readonly reminders: Pick<MissingSocialReminders, "evaluate">,
 	) {}
 	async execute(identity: EventIdentity) {
 		const snapshot = await this.dependencies.store.load();
@@ -51,6 +53,9 @@ export class ReconcileSocialPublications {
 				});
 			}
 		}
+		publications.push(
+			...(await this.reminders.evaluate(identity, configured, latest)),
+		);
 		await this.dependencies.completion.record(identity, publications);
 		return {
 			publications,
@@ -66,6 +71,8 @@ export class ReconcileSocialPublications {
 		if (record.manual) return "manual";
 		const attempt = record.attempts.at(-1);
 		if (attempt?.status === "accepted") return "complete";
+		const pending = await this.review.pendingContent(identity, proposal);
+		if (pending) return pending;
 		const context = await this.review.context(identity, proposal);
 		if (!context) return "blocked";
 		if (

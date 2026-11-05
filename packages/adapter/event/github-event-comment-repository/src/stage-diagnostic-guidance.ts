@@ -34,6 +34,22 @@ export const STAGE_GUIDANCE = [
 		["Communication", "comment.guidance.social.pending"],
 	],
 	[
+		"communication.social.missing",
+		["Communication", "comment.guidance.social.missing"],
+	],
+	[
+		"communication.social.content-pending",
+		["Communication", "comment.guidance.social.content-pending"],
+	],
+	[
+		"communication.social.generation-recovery",
+		["Communication", "comment.guidance.social.generation-recovery"],
+	],
+	[
+		"communication.social.preparation-failed",
+		["Communication", "comment.guidance.social.preparation-failed"],
+	],
+	[
 		"communication.social.blocked",
 		["Communication", "comment.guidance.social.blocked"],
 	],

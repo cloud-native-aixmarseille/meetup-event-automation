@@ -10,8 +10,23 @@ import { GenerateDraftAction } from "./generate-draft-action.js";
 import { ReviewDraftsAction } from "./review-drafts-action.js";
 import { SocialDraftTargetInput } from "./social-draft-target-input.js";
 import { SocialPostComposition } from "./social-post-composition.js";
+import { SocialReminderComposition } from "./social-reminder-composition.js";
+import { PrepareRemindersAction } from "./prepare-reminders-action.js";
 
 export class DraftActionComposition {
+	reminders() {
+		const input = new DraftSourceComposition().create();
+		const media = new DraftMediaInputReader(input);
+		const composition = new SocialReminderComposition();
+		return new PrepareRemindersAction(
+			async (locale) => ({
+				...(await input.read(locale)),
+				...media.announcement(),
+			}),
+			new GithubActionsComposition().aiInput(),
+			composition.create.bind(composition),
+		);
+	}
 	eventCopy() {
 		const input = new DraftSourceComposition().create();
 		const target = new DraftTargetInput(["title", "description"]);

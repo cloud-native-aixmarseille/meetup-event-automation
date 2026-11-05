@@ -63,6 +63,19 @@ function fixture(target: ContentTarget = "title") {
 }
 
 describe("content review coordination", () => {
+	it("identifies the destination and milestone when reminder content awaits approval", async () => {
+		// Arrange
+		const f = fixture("slack-engineering:d0");
+		// Act
+		const result = await f.manager.execute(identity);
+		// Assert
+		expect(result).toMatchObject([
+			{
+				code: "publication.content.pending",
+				field: "social.slack-engineering.d0",
+			},
+		]);
+	});
 	it.each(["accepted", "scheduled"] as const)(
 		"keeps submission diagnostics after an approved draft is %s",
 		async (status) => {
@@ -102,7 +115,11 @@ describe("content review coordination", () => {
 	it.each([
 		["title", "pending", "title"],
 		["description", "rejected", "description"],
-		["slack-engineering:announcement", "stale", "assets"],
+		[
+			"slack-engineering:announcement",
+			"stale",
+			"social.slack-engineering.announcement",
+		],
 		["cover", "iteration-requested", "assets"],
 	] as const)(
 		"reports %s review status %s without applying content",
@@ -162,7 +179,7 @@ describe("content review coordination", () => {
 			{
 				code: "publication.content.stale",
 				severity: "warning",
-				field: "assets",
+				field: "title",
 				message: "Content source is no longer eligible",
 			},
 		]);

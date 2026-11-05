@@ -36,6 +36,7 @@ export const EN_MESSAGES = {
 	"action.communication.recover-social": "Recover a social post",
 	"report.social.recovery": "social_recovery={status}",
 	"action.communication.reconcile-social": "Update social posts",
+	"action.communication.prepare-reminders": "Prepare social reminders",
 	"report.social.empty": "social_publications=0",
 	"report.social.result": "social_target={target} status={status}",
 	"diagnostic.publication.meetup.slides-source":

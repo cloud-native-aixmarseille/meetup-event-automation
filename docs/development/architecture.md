@@ -76,6 +76,15 @@ runs one helper at a time and continues after a destination fails. Consumers
 own destination configuration and triggers, without parsing or routing that list.
 Generation actions retain content validation, approval and recovery policies.
 
+Promotion reconciliation holds the same event lock across reminder preparation,
+content review, dispatch and reporting. Journey selects unexpired D-7/D0 plans
+for published events and reuses the existing durable generation services.
+Automatic preparation preserves existing proposals for the occurrence; explicit
+generation owns revisions and recovery. Dispatch independently reports missing
+reminders, so an empty proposal store cannot hide expected work. The preparation
+and dispatch results form social-stage evidence; review owns content-stage
+evidence. Provider dispatch receives no AI credentials.
+
 Document reconciliation passes public asset identities, protected folder IDs and
 an opaque canonical issue revision to PDF export. The revision covers repository,
 issue number, state, title, sorted labels and body; the PDF operation rereads and
