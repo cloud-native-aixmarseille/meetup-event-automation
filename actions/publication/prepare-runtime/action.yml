@@ -6,7 +6,7 @@ inputs:
     required: true
 outputs:
   website-repository:
-    description: Configured website repository in the consumer organization, used to scope its GitHub App token; empty when website synchronization is not configured.
+    description: Configured site repository in the consumer organization, used to scope its GitHub App token; empty when site synchronization is not configured.
   runtime-directory:
     description: Absolute automation directory containing the locked Node.js and Python runtime dependencies for this action revision.
   requires-challenge-solver:

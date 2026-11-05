@@ -219,7 +219,7 @@ describe("internal CI contracts", () => {
 		expect(communication?.with?.["slides-ready"]).toBe("true");
 	});
 
-	it("delegates documentation updates to reusable release workflows", async () => {
+	it("regenerates documentation independently of source validation", async () => {
 		// Arrange
 		const workflow = await readWorkflow("__main-ci");
 
@@ -227,7 +227,7 @@ describe("internal CI contracts", () => {
 		const release = workflow.jobs?.release ?? {};
 
 		// Assert
-		expect(release.needs).toBe("ci");
+		expect(release.needs).toBeUndefined();
 		expect(release.uses).toMatch(
 			/^hoverkraft-tech\/ci-github-publish\/\.github\/workflows\/release-actions\.yml@[0-9a-f]{40}$/,
 		);

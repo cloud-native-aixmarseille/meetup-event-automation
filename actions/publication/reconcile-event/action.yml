@@ -23,7 +23,7 @@ inputs:
     description: Consumer repository token with contents read and issues write.
     required: true
   website-token:
-    description: GitHub App token scoped to the configured website repository with contents write; unused when website synchronization is not configured.
+    description: GitHub App token scoped to the configured site repository with contents write; unused when site synchronization is not configured.
     required: true
   managed-comment-author:
     description: Login of the GitHub App bot that owns the publication journal.
