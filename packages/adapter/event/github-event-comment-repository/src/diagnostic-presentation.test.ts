@@ -12,6 +12,32 @@ const diagnostic: EventDiagnostic = {
 };
 
 describe("organizer diagnostic presentation", () => {
+	it.each(["en", "fr"])(
+		"identifies the missing reminder in %s without exposing raw diagnostics",
+		(locale) => {
+			// Arrange
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
+			const item = {
+				...diagnostic,
+				code: "communication.social.missing",
+				field: "social.engineering.d0",
+			};
+			// Act
+			const result = new DiagnosticPresenter().presentDiagnostic(
+				item,
+				messages,
+				{ repository: "example/meetups" },
+			);
+			// Assert
+			expect(result.field).toContain("engineering");
+			expect(result.field).toContain("d0");
+			expect(result.message).toContain(locale === "fr" ? "brouillon" : "draft");
+			expect(result.message).not.toContain(diagnostic.message);
+		},
+	);
 	it.each([
 		["en", "host-logo", "Host logo", "invalid"],
 		["fr", "host-logo", "Logo de l'hôte", "invalides"],

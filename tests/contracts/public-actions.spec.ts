@@ -136,6 +136,24 @@ const actionContracts = [
 		outputs: ["diagnostics"],
 	},
 	{
+		directory: "actions/communication/prepare-reminders",
+		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
+			"conference-hall-api-key",
+			"conference-hall-event",
+			"github-token",
+			"issue-number",
+			"managed-comment-author",
+			"google-credentials",
+			"ai-provider",
+			"ai-model",
+			"ai-api-key",
+		],
+		outputs: ["diagnostics"],
+	},
+	{
 		directory: "actions/communication/generate-linkedin-post",
 		inputs: [
 			"asset-folder-url-prefix",

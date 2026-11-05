@@ -270,6 +270,15 @@ reporting for the batch; a failed destination does not cancel the remaining ones
 This keeps orchestration with automation while preserving consumer ownership of
 destinations and credentials.
 
+2026-11-05: promotion reconciliation prepares missing D-7/D0 drafts for
+published events before content review and dispatch. The existing generation
+reservation, editorial decisions and publication approval remain separate.
+Preparation keeps proposals already recorded for the event date; revisions and
+uncertain-generation recovery remain explicit. Missing reminder diagnostics are
+computed independently of stored proposals. Promotion workflows therefore
+require explicit AI and Drive bindings, while the provider dispatch action
+continues to accept neither AI nor general Drive credentials.
+
 [pinned-communications]: https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/5a80cd5013781ff071bea0dfda49044bc4071c5f/docs/integrations/communications.md
 [slack-post]: https://docs.slack.dev/reference/methods/chat.postMessage/
 [slack-limits]: https://docs.slack.dev/apis/web-api/rate-limits/

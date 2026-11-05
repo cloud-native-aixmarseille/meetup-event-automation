@@ -48,6 +48,7 @@ workflow generates adjacent readme references.
 | [assets/generate-cover](../actions/assets/generate-cover/action.yml)                               | Generate cover artwork candidates.                                    |
 | [communication/generate-slack-post](../actions/communication/generate-slack-post/action.yml)       | Generate Slack post proposals.                                        |
 | [communication/generate-linkedin-post](../actions/communication/generate-linkedin-post/action.yml) | Generate LinkedIn post proposals.                                     |
+| [communication/prepare-reminders](../actions/communication/prepare-reminders/action.yml)           | Prepare missing D-7 and D0 reminder drafts.                           |
 | [communication/reconcile-social](../actions/communication/reconcile-social/action.yml)             | Publish approved social posts to configured destinations.             |
 | [communication/recover-social](../actions/communication/recover-social/action.yml)                 | Record an approved delivery recovery without publishing.              |
 | [organizer/review-drafts](../actions/organizer/review-drafts/action.yml)                           | Import, review and apply current drafts.                              |

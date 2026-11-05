@@ -32,10 +32,12 @@ describe("social publication workflow boundaries", () => {
 			"needs.publish.outputs.social-diagnostics",
 		);
 		expect(publish?.outputs?.["social-outcome"]).toBe(
-			workflowExpression("steps.social.outcome"),
+			workflowExpression(
+				"steps.review.outcome == 'success' && steps.social.outcome || steps.review.outcome",
+			),
 		);
 	});
-	it("requires only configured provider credentials and no AI or mandatory Google account", async () => {
+	it("keeps generation and review credentials outside the public dispatch action", async () => {
 		// Arrange
 		const workflow = await readWorkflow("event-promotion-reconcile");
 		const action = await readYaml<ActionManifest>(
@@ -47,11 +49,30 @@ describe("social publication workflow boundaries", () => {
 		// Assert
 		expect(inputs).toContain("social-credentials");
 		expect(secrets).toContain("social-credentials");
-		expect([...inputs, ...secrets].some((name) => name.startsWith("ai-"))).toBe(
-			false,
-		);
+		expect(inputs.some((name) => name.startsWith("ai-"))).toBe(false);
 		expect(inputs).not.toContain("google-credentials");
-		expect(secrets).not.toContain("google-credentials");
+		expect(secrets).toContain("google-credentials");
+		expect(secrets).toContain("ai-api-key");
+		const steps = workflow.jobs?.publish?.steps ?? [];
+		const prepare = steps.find((step) => step.id === "reminders");
+		const review = steps.find((step) => step.id === "review");
+		const publish = steps.find((step) => step.id === "social");
+		expect(prepare?.uses).toBe("$/actions/communication/prepare-reminders");
+		expect(review?.uses).toBe("$/actions/organizer/review-drafts");
+		expect(steps.findIndex((step) => step.id === "reminders")).toBeLessThan(
+			steps.findIndex((step) => step.id === "review"),
+		);
+		expect(steps.findIndex((step) => step.id === "review")).toBeLessThan(
+			steps.findIndex((step) => step.id === "social"),
+		);
+		expect(publish?.if).toContain("!cancelled()");
+		expect(publish?.with).not.toHaveProperty("ai-api-key");
+		expect(workflow.jobs?.report?.with?.["stage-results"]).toContain(
+			"needs.publish.outputs.reminders-diagnostics",
+		);
+		expect(workflow.jobs?.report?.with?.["stage-results"]).toContain(
+			"needs.publish.outputs.review-diagnostics",
+		);
 		expect(action.outputs).toEqual({
 			diagnostics: { description: "Redacted social-publication diagnostics." },
 		});

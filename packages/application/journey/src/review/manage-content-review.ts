@@ -32,7 +32,7 @@ export class ManageContentReview {
 				diagnostics.push({
 					code: "publication.content.stale",
 					severity: "warning",
-					field: "assets",
+					field: this.field(proposal.plan.target),
 					message: "Content source is no longer eligible",
 				});
 				continue;
@@ -48,14 +48,17 @@ export class ManageContentReview {
 			diagnostics.push({
 				code: `publication.content.${applied}`,
 				severity: "warning",
-				field:
-					proposal.plan.target === "title" ||
-					proposal.plan.target === "description"
-						? proposal.plan.target
-						: "assets",
+				field: this.field(proposal.plan.target),
 				message: `Content ${proposal.plan.target}: ${applied}`,
 			});
 		}
 		return diagnostics;
+	}
+	private field(target: string): string {
+		return target.includes(":")
+			? `social.${target.replace(":", ".")}`
+			: target === "title" || target === "description"
+				? target
+				: "assets";
 	}
 }

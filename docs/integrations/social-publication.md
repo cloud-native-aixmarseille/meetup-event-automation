@@ -2,8 +2,9 @@
 
 The promotion workflows publish reviewed announcements and D-7/D0 reminders to
 configured Slack channels and one community LinkedIn Page. They use separate
-publication approvals, retain each destination's delivery history, and require no
-AI credentials. [Content generation and review](content.md) prepares the copy
+publication approvals and retain each destination's delivery history. Promotion
+reconciliation prepares missing reminder drafts before reviewing and publishing
+eligible posts. Only the preparation step receives AI credentials. [Content generation and review](content.md) prepares the copy
 and LinkedIn announcement image.
 
 ## Configure destinations
@@ -114,9 +115,19 @@ Use a published automation release containing these entry points. Replace
 `RELEASE_SHA` below with its full commit SHA and keep all consumer workflow pins
 consistent. The reusable workflows provide the shared per-event lock.
 
-The scheduled scan evaluates open meetup issues in a bounded matrix. A
-15-minute consumer schedule also permits unattended delivery of approved
-reminders. GitHub schedules are best effort; delivery is not guaranteed at an
+The scheduled scan evaluates open meetup issues in a bounded matrix. For each
+published event, it prepares missing D-7 and D0 drafts for every configured
+destination as soon as public event facts are ready. This gives organizers time
+to review before the configured reminder hour. It skips closed sending windows;
+a late event-day scan can still prepare D0 before event start. Existing drafts,
+editorial decisions and delivery records are retained. Changed content requires
+explicit regeneration and review; an uncertain generation requires recovery.
+
+The workflow processes content reviews before checking separate publication
+approvals. Missing reminders are reported by destination and milestone even
+when no social proposals exist. Preparation failures preserve unresolved social
+tasks, and failure for one destination does not stop preparation for the others.
+A 15-minute consumer schedule permits unattended delivery of approved reminders. GitHub schedules are best effort; delivery is not guaranteed at an
 exact minute.
 
 ```yaml
@@ -140,19 +151,24 @@ jobs:
       conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
+      google-drive-public-folder-id: ${{ vars.GOOGLE_DRIVE_PUBLIC_FOLDER_ID }}
+      ai-provider: gemini
+      ai-model: ${{ vars.GEMINI_MODEL }}
     secrets:
       conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
       slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
       social-credentials: ${{ secrets.SOCIAL_CREDENTIALS }}
+      google-credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
+      ai-api-key: ${{ secrets.GEMINI_API_KEY }}
 ```
 
 For immediate evaluation after a publication approval edit or event change,
 call [event-promotion-reconcile.yml](../../.github/workflows/event-promotion-reconcile.yml)
 with the same bindings plus `issue-number`. Use the issue/approval trigger filter
-from [repository setup](../usage/setup.md#process-issue-changes). Social
-reconciliation consumes existing reviewed drafts; it does not generate or import
-new submissions. Run content review first when processing a new draft.
+from [repository setup](../usage/setup.md#process-issue-changes). The workflow prepares missing reminders and processes content reviews before
+publication. Announcements and explicit reminder revisions use the generation
+workflow. The dispatch action itself receives no AI credentials.
 
 ## Approve and monitor
 

@@ -36,6 +36,7 @@ export const FR_MESSAGES = {
 		"Corrigez le texte du commentaire : titre sur une ligne de 80 caractères maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
 	"action.communication.recover-social": "Reprendre une publication",
 	"report.social.recovery": "reprise_sociale={status}",
+	"action.communication.prepare-reminders": "Préparer les rappels du meetup",
 	"action.communication.reconcile-social":
 		"Mettre à jour les publications sur les réseaux",
 	"report.social.empty": "publications_sociales=0",

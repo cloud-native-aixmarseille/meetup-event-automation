@@ -3,6 +3,23 @@ import { identity } from "../../testing/meetup-journey.fixtures.js";
 import { socialFixture } from "../../testing/social-publication.fixtures.js";
 
 describe("social publication reconciliation", () => {
+	it("reports an absent event-day draft instead of an empty successful publication scan", async () => {
+		// Arrange
+		const f = await socialFixture("slack-engineering:d0");
+		await f.store.save(await f.store.load(), []);
+		f.dependencies.reminderPlans.targets.mockReturnValue([
+			"slack-engineering:d0",
+		]);
+		// Act
+		const result = await f.useCase.execute(identity);
+		// Assert
+		expect(result.publications).toMatchObject([
+			{ target: "slack-engineering:d0", status: "missing" },
+		]);
+		expect(result.diagnostics[0].code).toBe("communication.social.missing");
+		expect(f.posts.publish).not.toHaveBeenCalled();
+		expect(f.dependencies.approvals.request).not.toHaveBeenCalled();
+	});
 	it("reserves before sending and never resends an accepted occurrence", async () => {
 		// Arrange
 		const f = await socialFixture();
@@ -54,7 +71,7 @@ describe("social publication reconciliation", () => {
 		"inactive",
 		"unconfirmed",
 		"changed-destination",
-	])("blocks %s content", async (scenario) => {
+	])("does not publish %s content", async (scenario) => {
 		// Arrange
 		const f = await socialFixture();
 		if (scenario === "unreviewed")
@@ -86,7 +103,9 @@ describe("social publication reconciliation", () => {
 		const result = await f.useCase.execute(identity);
 
 		// Assert
-		expect(result.publications[0].status).toBe("blocked");
+		expect(result.publications[0].status).toBe(
+			scenario === "unreviewed" ? "content-pending" : "blocked",
+		);
 		expect(f.posts.publish).not.toHaveBeenCalled();
 	});
 	it("retains an uncertain reservation after a crash and requires recovery", async () => {

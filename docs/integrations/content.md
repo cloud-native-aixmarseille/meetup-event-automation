@@ -313,6 +313,12 @@ no fallback is accepted. Rendering verifies the selected image bytes against the
 and preserves existing binding conflict and recovery rules. This integration
 does not upload a cover to the Meetup browser editor.
 
+Promotion reconciliation automatically prepares missing reminder drafts for
+published events once their public facts are ready. It reuses existing proposals
+for the same event date, including edits, rejections and generation reservations.
+Use explicit generation for a requested revision or changed source, and content
+recovery for an uncertain generation. Announcements remain explicitly requested.
+
 Reminders use calendar dates in the event's time zone, including daylight-saving
 changes. D-7 and D0 each require approval for every destination. The planned hour
 is shown in review. [Social publication](social-publication.md) requires a

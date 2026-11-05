@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
 	EventDocumentConcurrency,
+	MeetupPublicationChecklist,
 	type MeetupEvent,
 } from "@meetup-automation/event";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
@@ -10,6 +11,7 @@ import { HttpsAssetImageRepositoryComposition } from "@meetup-automation/https-a
 import {
 	SocialPublicationComposition as JourneySocialPublicationComposition,
 	SocialPublicationCompletion,
+	SocialReminderPlans,
 } from "@meetup-automation/journey";
 import {
 	ContentFingerprint,
@@ -58,6 +60,13 @@ export class SocialPublicationComposition {
 		const configuration = async () =>
 			(await settings.load(process.cwd())).destinations;
 		return new JourneySocialPublicationComposition().create({
+			reminderPlans: new SocialReminderPlans(
+				base.workspace,
+				base.timing,
+				new MeetupPublicationChecklist(),
+				input.locale,
+				() => new Date().toISOString(),
+			),
 			store: base.store,
 			workspace: base.workspace,
 			policy: base.policy,

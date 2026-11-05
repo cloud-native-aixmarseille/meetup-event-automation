@@ -1,10 +1,22 @@
-# Goal: Evaluate due social announcements and reminders for all active events.
+# Goal: Prepare and publish reviewed social reminders for active events.
 # Behavior: List open meetup issues and reconcile up to four issues concurrently;
-# the per-event workflow holds the shared event lock and evaluates timing.
+# the per-event workflow prepares missing reminders and evaluates timing.
 name: Event / Promotion / Reconcile active events
 on:
   workflow_call:
     inputs:
+      google-drive-public-folder-id:
+        description: Public Drive root containing reviewed content media.
+        required: true
+        type: string
+      ai-provider:
+        description: AI provider used to prepare missing reminder drafts (gemini).
+        required: true
+        type: string
+      ai-model:
+        description: Structured-text model used to prepare reminder drafts.
+        required: true
+        type: string
       meetup-event-url-prefix:
         description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
         required: true
@@ -34,6 +46,12 @@ on:
         required: true
         type: string
     secrets:
+      google-credentials:
+        description: Google service-account JSON for content review and LinkedIn media verification.
+        required: true
+      ai-api-key:
+        description: API key for reminder draft generation.
+        required: true
       conference-hall-api-key:
         description: Read-only Conference Hall event API key.
         required: true
@@ -78,6 +96,9 @@ jobs:
     permissions:
       contents: read
     with:
+      google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+      ai-provider: ${{ inputs.ai-provider }}
+      ai-model: ${{ inputs.ai-model }}
       meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
       community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
       asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
@@ -87,6 +108,8 @@ jobs:
       conference-hall-event: ${{ inputs.conference-hall-event }}
       issue-number: ${{ matrix.issue-number }}
     secrets:
+      google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials

@@ -40470,6 +40470,9 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       "communication.approval-pending",
       "communication.approval-rejected",
       "communication.social.pending",
+      "communication.social.content-pending",
+      "communication.social.missing",
+      "communication.social.generation-recovery",
       "communication.social.blocked",
       "communication.social.uncertain",
       "communication.social.expired",
@@ -40498,6 +40501,9 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "communication.social.pending",
+  "communication.social.content-pending",
+  "communication.social.missing",
+  "communication.social.generation-recovery",
   "communication.social.blocked",
   "communication.social.uncertain",
   "communication.social.expired",
@@ -46925,6 +46931,7 @@ var EN_MESSAGES2 = {
   "action.communication.recover-social": "Recover a social post",
   "report.social.recovery": "social_recovery={status}",
   "action.communication.reconcile-social": "Update social posts",
+  "action.communication.prepare-reminders": "Prepare social reminders",
   "report.social.empty": "social_publications=0",
   "report.social.result": "social_target={target} status={status}",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
@@ -47098,6 +47105,7 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
   "action.communication.recover-social": "Reprendre une publication",
   "report.social.recovery": "reprise_sociale={status}",
+  "action.communication.prepare-reminders": "Pr\xE9parer les rappels du meetup",
   "action.communication.reconcile-social": "Mettre \xE0 jour les publications sur les r\xE9seaux",
   "report.social.empty": "publications_sociales=0",
   "report.social.result": "cible_sociale={target} statut={status}",
@@ -50320,6 +50328,22 @@ var STAGE_GUIDANCE = [
     ["Communication", "comment.guidance.social.pending"]
   ],
   [
+    "communication.social.missing",
+    ["Communication", "comment.guidance.social.missing"]
+  ],
+  [
+    "communication.social.content-pending",
+    ["Communication", "comment.guidance.social.content-pending"]
+  ],
+  [
+    "communication.social.generation-recovery",
+    ["Communication", "comment.guidance.social.generation-recovery"]
+  ],
+  [
+    "communication.social.preparation-failed",
+    ["Communication", "comment.guidance.social.preparation-failed"]
+  ],
+  [
     "communication.social.blocked",
     ["Communication", "comment.guidance.social.blocked"]
   ],
@@ -51451,6 +51475,10 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
   "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
   "comment.social.target": "Post ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Review this post's draft in the issue. Once its content is approved, a separate publication request will be shown.",
+  "comment.guidance.social.missing": "This reminder has no draft. Run promotion reconciliation to prepare it, then review the content and publication requests.",
+  "comment.guidance.social.generation-recovery": "Reminder generation needs recovery. Inspect its content proposal and use the content recovery procedure before retrying.",
+  "comment.guidance.social.preparation-failed": "Reminder preparation failed. Check the workflow run and retry after correcting the technical error.",
   "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
   "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
   "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
@@ -51528,6 +51556,10 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
   "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
   "comment.social.target": "Publication ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Examinez le brouillon de cette publication dans l'issue. Apr\xE8s validation du contenu, une demande distincte permettra d'autoriser sa publication.",
+  "comment.guidance.social.missing": "Ce rappel n'a pas de brouillon. Relancez la r\xE9conciliation des publications pour le pr\xE9parer, puis examinez les demandes de validation du contenu et de publication.",
+  "comment.guidance.social.generation-recovery": "La g\xE9n\xE9ration de ce rappel n\xE9cessite une reprise. Examinez sa proposition et suivez la proc\xE9dure de reprise du contenu avant de r\xE9essayer.",
+  "comment.guidance.social.preparation-failed": "La pr\xE9paration de ce rappel a \xE9chou\xE9. Consultez le workflow et relancez-le apr\xE8s correction de l'erreur technique.",
   "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
   "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",

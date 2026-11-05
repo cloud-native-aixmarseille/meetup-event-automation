@@ -1,6 +1,7 @@
 import { SocialRecoveryReference } from "@meetup-automation/communication";
 import { MeetupPublicationChecklist } from "@meetup-automation/event";
 import { ReconcileSocialPublications } from "./communication/reconcile-social-publications.js";
+import { MissingSocialReminders } from "./communication/missing-social-reminders.js";
 import { RecoverSocialPublication } from "./communication/recover-social-publication.js";
 import { SocialPublicationApprovalRequest } from "./communication/social-publication-approval-request.js";
 import type { SocialPublicationDependencies } from "./communication/social-publication-contracts.js";
@@ -43,6 +44,7 @@ export class SocialPublicationComposition {
 			requests,
 			intents,
 			new SocialPublicationDelivery(dependencies, intents, review),
+			new MissingSocialReminders(dependencies.reminderPlans),
 		);
 	}
 }

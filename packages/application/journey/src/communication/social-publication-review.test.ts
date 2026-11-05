@@ -7,6 +7,36 @@ import { SocialPublicationIntents } from "./social-publication-intents.js";
 import { SocialPublicationReview } from "./social-publication-review.js";
 
 describe("last-moment social authority", () => {
+	it.each(["current", "expired", "unavailable", "changed"])(
+		"reports pending content only while its source is current: %s",
+		async (scenario) => {
+			// Arrange
+			const f = await socialFixture("slack-engineering:d0");
+			const proposal = { ...f.proposal, decision: null };
+			if (scenario === "expired") f.state.now = "2026-10-28T17:45:00Z";
+			if (scenario === "unavailable") f.state.context = undefined;
+			if (scenario === "changed")
+				proposal.plan = {
+					...proposal.plan,
+					sourceFingerprint: "changed-source",
+				};
+			const review = new SocialPublicationReview(
+				f.dependencies,
+				new SocialPublicationApprovalRequest(
+					f.dependencies.timing,
+					f.fingerprints,
+				),
+				new MeetupPublicationChecklist(),
+			);
+			// Act
+			const status = await review.pendingContent(identity, proposal);
+			// Assert
+			expect(status).toBe(
+				scenario === "current" ? "content-pending" : "blocked",
+			);
+			expect(f.dependencies.approvals.request).not.toHaveBeenCalled();
+		},
+	);
 	it("blocks a write when an approval read crosses event start", async () => {
 		// Arrange
 		const f = await socialFixture();
