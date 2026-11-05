@@ -23,6 +23,47 @@ import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 
+describe("publication requests without decorative icons", () => {
+	it.each(["pending", "approved", "rejected"] as const)(
+		"refreshes the existing comment and preserves a %s choice",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			const composition = new GithubOrganizerApprovalComposition();
+			const approvals = composition.githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+			await approvals.request(socialPublicationRequest);
+			const record = composition
+				.approvalCommentCodec()
+				.read(f.comments[0]?.body ?? "");
+			decision(f, {
+				body: f.presenter
+					.issue(record, { status })
+					.replace(/(- \[[ x]\]) [✅❌] /g, "$1 "),
+			});
+
+			// Act
+			const result = await approvals.request(socialPublicationRequest);
+
+			// Assert
+			expect(result.status).toBe(status);
+			expect(f.create).toHaveBeenCalledOnce();
+			if (status === "pending") {
+				expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve publication");
+				expect(f.comments[0]?.body).toContain("- [ ] ❌ Reject publication");
+			} else {
+				expect(f.comments[0]?.body).not.toContain("- [");
+				expect(f.permission).toHaveBeenCalled();
+			}
+		},
+	);
+});
+
 describe("email parameter approval integrity", () => {
 	it.each(["write", "read"])(
 		"checks %s access before authorizing edited parameters",
@@ -1314,7 +1355,7 @@ describe("Meetup publication approvals", () => {
 		// Assert
 		expect(result.status).toBe("pending");
 		expect(f.create).toHaveBeenCalledOnce();
-		expect(f.comments[0]?.body).toContain("- [ ] Approve publication");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve publication");
 	});
 
 	it("rejects publication approval from a user without repository write permission", async () => {
@@ -1476,7 +1517,7 @@ describe("OCGroups publication approvals", () => {
 		// Assert
 		expect(result.status).toBe("pending");
 		expect(f.create).toHaveBeenCalledOnce();
-		expect(f.comments[0]?.body).toContain("- [ ] Approve publication");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve publication");
 	});
 
 	it("rejects publication approval from a user without repository write permission", async () => {

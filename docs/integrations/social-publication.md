@@ -184,8 +184,8 @@ content review. A valid URL alone does not prove publication: the Meetup
 publication task must also be complete. Social reconciliation then creates a
 separate bot-owned publication request for each destination and purpose.
 
-Check the exact text, destination identity, image, planned time and expiry. Edit
-only the approval checkbox. The existing organizer approval mechanism validates
+Check the exact text, destination identity, image, planned time and expiry. Select
+either **✅ Approve publication** or **❌ Reject publication**. The organizer approval mechanism validates
 the editor's current repository permission and preserves the decision before any
 provider write. Content approval alone never sends a public post.
 

@@ -25,6 +25,52 @@ import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { SocialPublicationApprovalPresenter } from "./social-publication-approval-presenter.js";
 
 describe("approval decision parsing", () => {
+	it.each(
+		["en", "fr"].flatMap((locale) =>
+			[publicationRequest, communityRequest, socialPublicationRequest].flatMap(
+				(input) =>
+					(["approved", "rejected"] as const).map((status) => ({
+						locale,
+						input,
+						status,
+					})),
+			),
+		),
+	)(
+		"preserves $input.kind $status without decorative icons in $locale",
+		({ locale, input, status }) => {
+			// Arrange
+			const composition = new GithubOrganizerApprovalComposition();
+			const record = createStoredApproval(input);
+			const presenter = composition.approvalPresenter(
+				composition.approvalMessages(locale),
+			);
+			const parser = new ApprovalDecisionParser(
+				new ContentTextPreview(),
+				new EmailApprovalDecisionParser(
+					new EmailParametersPreview(new EmailReviewParameterPolicy()),
+				),
+				new ApprovalRequestPolicy(
+					new DraftProposalComposition().fingerprints(),
+				),
+				composition.approvalPresenterFactory().supportedLocales(),
+			);
+			const body = presenter
+				.issue(record, { status })
+				.replace(/(- \[[ x]\]) [✅❌] /g, "$1 ");
+
+			// Act
+			const result = parser.parse(record, body);
+			const changed = parser.parse(
+				record,
+				body.replace(record.revision, "a".repeat(64)),
+			);
+
+			// Assert
+			expect(result).toEqual({ status });
+			expect(changed).toEqual({ status: "pending" });
+		},
+	);
 	it.each(["en", "fr"])(
 		"verifies exact social publication checkbox decisions in %s",
 		(locale) => {
