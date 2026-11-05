@@ -4,6 +4,11 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"comment.assets.image-context": {
+		kind: "host-logo",
+		slot: "logo",
+		documentUrl: "https://drive.google.com/file/d/example/view",
+	},
 	"comment.guidance.meetup.uncertain": {
 		eventUrl: "https://www.meetup.com/example/events/42/",
 		workflowUrl:

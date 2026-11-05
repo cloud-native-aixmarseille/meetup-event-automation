@@ -5,6 +5,7 @@ import type {
 } from "../domain/asset-content.js";
 import type { AssetFileName } from "../domain/asset-file-name.js";
 import { ContentError } from "../domain/content-error.js";
+import { ContentImageError } from "../domain/content-image-error.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
 	AssetContainer,
@@ -60,7 +61,7 @@ export class ReconcileAssetFile {
 			return { file, status };
 		} catch (error) {
 			if (!(error instanceof ContentError)) throw error;
-			return this.failed(file, error, input.diagnostics);
+			return this.failed(file, error, input.diagnostics, input.template.id);
 		}
 	}
 
@@ -91,8 +92,16 @@ export class ReconcileAssetFile {
 		file: AssetFile | undefined,
 		error: ContentError,
 		diagnostics: PublicationDiagnostic[],
+		templateId: string,
 	): { file?: AssetFile; status: ContentStatus } {
-		diagnostics.push(this.diagnostic(error.code));
+		diagnostics.push(
+			error instanceof ContentImageError
+				? {
+						...this.diagnostic(`image-${error.reason}`),
+						field: `assets.image/${file?.id ?? templateId}/${error.location?.kind ?? "embedded"}/${error.location?.slot ?? "unknown"}`,
+					}
+				: this.diagnostic(error.code),
+		);
 		return {
 			file,
 			status:

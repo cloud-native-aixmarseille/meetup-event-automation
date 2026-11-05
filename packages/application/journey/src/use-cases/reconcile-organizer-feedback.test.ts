@@ -174,6 +174,16 @@ describe("merged organizer feedback reconciliation", () => {
 	it.each([
 		{ reported: false },
 		{
+			diagnostics: [
+				{
+					code: "publication.assets.content.image-download",
+					severity: "warning" as const,
+					message: "Image download failed",
+					field: "assets.image/document/embedded/logo",
+				},
+			],
+		},
+		{
 			outcome: "failure" as const,
 			diagnostics: [
 				{

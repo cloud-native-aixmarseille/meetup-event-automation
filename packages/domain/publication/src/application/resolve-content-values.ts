@@ -9,6 +9,7 @@ import type {
 import type { AssetTemplateRenderer } from "../domain/asset-template-renderer.js";
 import type { ContentContractPolicy } from "../domain/content-contract-policy.js";
 import { ContentError } from "../domain/content-error.js";
+import { ContentImageError } from "../domain/content-image-error.js";
 import type { ContentFingerprint } from "../domain/content-fingerprint.js";
 import type { ContentTextKey } from "../domain/content-text-key.js";
 import type { AssetImageRepository } from "./content-ports.js";
@@ -130,6 +131,26 @@ export class ResolveContentValues {
 		field: ImageField,
 		model: PublicAssetModel,
 	): Promise<ContentValue> {
+		try {
+			return await this.resolveImage(field, model);
+		} catch (error) {
+			if (!(error instanceof ContentImageError)) throw error;
+			throw error.at({
+				kind:
+					field.token === "event.cover"
+						? "cover"
+						: field.token === "host.logo"
+							? "host-logo"
+							: "speaker-picture",
+				slot: this.sourceSlot(field),
+			});
+		}
+	}
+
+	private async resolveImage(
+		field: ImageField,
+		model: PublicAssetModel,
+	): Promise<ContentValue> {
 		if (field.token === "event.cover") return this.cover(field, model);
 		const host = field.token === "host.logo";
 		const sourceSlot = this.sourceSlot(field);
@@ -137,9 +158,6 @@ export class ResolveContentValues {
 		const hostId = host ? model.hostLogo?.hostId : undefined;
 		const speakerId = host ? undefined : model.pictures[sourceSlot]?.speakerId;
 		const identity = hostId ?? speakerId;
-		const fallback = field.fallback
-			? await this.images.validate(field.fallback)
-			: undefined;
 		try {
 			if (
 				!picture ||
@@ -147,7 +165,7 @@ export class ResolveContentValues {
 					identity ?? "",
 				)
 			)
-				throw new ContentError("image");
+				throw new ContentImageError("source");
 			const validated = await this.images.validate(picture);
 			return {
 				type: "image",
@@ -161,10 +179,15 @@ export class ResolveContentValues {
 				fallback: false,
 				fit: field.fit,
 			};
-		} catch {
-			if (field.required || !field.fallback || !fallback)
-				throw new ContentError("image");
-			const validated = fallback;
+		} catch (error) {
+			if (
+				!(error instanceof ContentImageError) ||
+				error.reason === "download" ||
+				field.required ||
+				!field.fallback
+			)
+				throw error;
+			const validated = await this.fallback(field);
 			return {
 				type: "image",
 				key: field.slot,
@@ -177,6 +200,15 @@ export class ResolveContentValues {
 			};
 		}
 	}
+	private async fallback(field: ImageField) {
+		if (!field.fallback) throw new ContentImageError("source");
+		try {
+			return await this.images.validate(field.fallback);
+		} catch (error) {
+			if (!(error instanceof ContentImageError)) throw error;
+			throw error.at({ kind: "fallback", slot: field.slot });
+		}
+	}
 	private async cover(
 		field: ImageField,
 		model: PublicAssetModel,
@@ -184,7 +216,7 @@ export class ResolveContentValues {
 		if (!model.cover) throw new ContentError("missing");
 		const validated = await this.images.validate(model.cover);
 		if (validated.fingerprint !== model.cover.fingerprint)
-			throw new ContentError("image");
+			throw new ContentImageError("changed");
 		return {
 			type: "image",
 			key: field.slot,

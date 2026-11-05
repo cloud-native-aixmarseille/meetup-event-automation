@@ -28864,6 +28864,21 @@ var DiscoverAssetContent = class {
   }
 };
 
+// packages/domain/publication/src/domain/content-image-error.ts
+var ContentImageError = class _ContentImageError extends ContentError {
+  constructor(reason, location) {
+    super("image");
+    this.reason = reason;
+    this.location = location;
+    this.name = "ContentImageError";
+  }
+  reason;
+  location;
+  at(location) {
+    return new _ContentImageError(this.reason, this.location ?? location);
+  }
+};
+
 // packages/domain/publication/src/application/reconcile-asset-file.ts
 var ReconcileAssetFile = class {
   constructor(names, repository, content) {
@@ -28899,7 +28914,7 @@ var ReconcileAssetFile = class {
       return { file, status };
     } catch (error2) {
       if (!(error2 instanceof ContentError)) throw error2;
-      return this.failed(file, error2, input.diagnostics);
+      return this.failed(file, error2, input.diagnostics, input.template.id);
     }
   }
   async prepare(input, file) {
@@ -28917,8 +28932,13 @@ var ReconcileAssetFile = class {
       model: contract ? await input.model?.(contract) : void 0
     };
   }
-  failed(file, error2, diagnostics) {
-    diagnostics.push(this.diagnostic(error2.code));
+  failed(file, error2, diagnostics, templateId) {
+    diagnostics.push(
+      error2 instanceof ContentImageError ? {
+        ...this.diagnostic(`image-${error2.reason}`),
+        field: `assets.image/${file?.id ?? templateId}/${error2.location?.kind ?? "embedded"}/${error2.location?.slot ?? "unknown"}`
+      } : this.diagnostic(error2.code)
+    );
     return {
       file,
       status: error2.code === "conflict" ? "conflict" : error2.code === "recovery" ? "recovery-required" : "pending"
@@ -29078,6 +29098,17 @@ var ResolveContentValues = class {
     return field.sourceSlot ?? field.slot;
   }
   async image(field, model) {
+    try {
+      return await this.resolveImage(field, model);
+    } catch (error2) {
+      if (!(error2 instanceof ContentImageError)) throw error2;
+      throw error2.at({
+        kind: field.token === "event.cover" ? "cover" : field.token === "host.logo" ? "host-logo" : "speaker-picture",
+        slot: this.sourceSlot(field)
+      });
+    }
+  }
+  async resolveImage(field, model) {
     if (field.token === "event.cover") return this.cover(field, model);
     const host = field.token === "host.logo";
     const sourceSlot = this.sourceSlot(field);
@@ -29085,12 +29116,11 @@ var ResolveContentValues = class {
     const hostId = host ? model.hostLogo?.hostId : void 0;
     const speakerId = host ? void 0 : model.pictures[sourceSlot]?.speakerId;
     const identity = hostId ?? speakerId;
-    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
     try {
       if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
         identity ?? ""
       ))
-        throw new ContentError("image");
+        throw new ContentImageError("source");
       const validated = await this.images.validate(picture);
       return {
         type: "image",
@@ -29104,10 +29134,10 @@ var ResolveContentValues = class {
         fallback: false,
         fit: field.fit
       };
-    } catch {
-      if (field.required || !field.fallback || !fallback)
-        throw new ContentError("image");
-      const validated = fallback;
+    } catch (error2) {
+      if (!(error2 instanceof ContentImageError) || error2.reason === "download" || field.required || !field.fallback)
+        throw error2;
+      const validated = await this.fallback(field);
       return {
         type: "image",
         key: field.slot,
@@ -29120,11 +29150,20 @@ var ResolveContentValues = class {
       };
     }
   }
+  async fallback(field) {
+    if (!field.fallback) throw new ContentImageError("source");
+    try {
+      return await this.images.validate(field.fallback);
+    } catch (error2) {
+      if (!(error2 instanceof ContentImageError)) throw error2;
+      throw error2.at({ kind: "fallback", slot: field.slot });
+    }
+  }
   async cover(field, model) {
     if (!model.cover) throw new ContentError("missing");
     const validated = await this.images.validate(model.cover);
     if (validated.fingerprint !== model.cover.fingerprint)
-      throw new ContentError("image");
+      throw new ContentImageError("changed");
     return {
       type: "image",
       key: field.slot,
@@ -33245,6 +33284,11 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.assets.content.recovery",
   "publication.assets.content.revision",
   "publication.assets.content.image",
+  "publication.assets.content.image-source",
+  "publication.assets.content.image-format",
+  "publication.assets.content.image-size",
+  "publication.assets.content.image-dimensions",
+  "publication.assets.content.image-changed",
   "publication.assets.file.drift",
   "publication.assets.missing",
   "publication.assets.prerequisites",
@@ -34495,13 +34539,7 @@ var ReconcileMeetupDocuments = class {
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
-      diagnostics: [
-        ...contentDiagnostics,
-        ...assets.diagnostics.map((item) => ({
-          ...item,
-          field: "publicationLinks.assets"
-        }))
-      ]
+      diagnostics: [...contentDiagnostics, ...assets.diagnostics]
     };
   }
   async placeCover(media, container, date) {
@@ -35167,6 +35205,10 @@ var AttentionStageInput = class {
     });
   }
   safeField(field) {
+    if (typeof field === "string" && /^assets\.image\/[a-zA-Z0-9_-]{1,100}\/(cover|host-logo|speaker-picture|fallback|embedded)\/[a-zA-Z0-9_.:-]{1,100}$/.test(
+      field
+    ))
+      return true;
     if (typeof field !== "string" || field.length > 160) return false;
     return /^social\.[a-z0-9][a-z0-9-]{0,63}\.(announcement|d7|d0)$/.test(field) || ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
       field

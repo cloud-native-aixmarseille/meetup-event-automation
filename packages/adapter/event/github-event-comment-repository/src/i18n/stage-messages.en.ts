@@ -109,7 +109,23 @@ export const STAGE_MESSAGES_EN = {
 	"comment.guidance.assets.revision":
 		"The document changed. Retry after editing.",
 	"comment.guidance.assets.image":
-		"Use a public HTTPS PNG, JPEG or GIF image under 50 MB and 25 megapixels.",
+		"Automation could not validate a document image. Rerun synchronization to identify the image and failure reason.",
+	"comment.assets.image-context":
+		"{kind, select, cover {Approved generated cover} host_logo {Host logo} speaker_picture {Speaker photo} fallback {Template fallback image} other {Embedded document image}} (slot `{slot}`) in [this document]({documentUrl}).",
+	"comment.assets.cover-recovery":
+		"Ask a maintainer to repair the automated cover handling; the approved image should remain usable.",
+	"comment.guidance.assets.image-source":
+		"The image source is invalid: a public HTTPS URL and an image description are required.",
+	"comment.guidance.assets.image-format":
+		"The image data or content type is invalid. Supported formats: PNG, JPEG and GIF.",
+	"comment.guidance.assets.image-size":
+		"The image download reaches the 50 MB limit.",
+	"comment.guidance.assets.image-dimensions":
+		"The image dimensions are invalid or exceed 25 megapixels.",
+	"comment.guidance.assets.image-download":
+		"Automation could not download the image. Rerun synchronization; if this persists, ask a maintainer to investigate the run.",
+	"comment.guidance.assets.image-changed":
+		"The image bytes differ from the approved cover.",
 	"comment.guidance.assets.fallback":
 		"A generic image is in use. Check the speaker photo or host logo.",
 	"comment.guidance.pdf.source":

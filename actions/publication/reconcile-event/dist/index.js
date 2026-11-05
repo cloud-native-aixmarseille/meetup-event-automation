@@ -37282,6 +37282,21 @@ var DiscoverAssetContent = class {
   }
 };
 
+// packages/domain/publication/src/domain/content-image-error.ts
+var ContentImageError = class _ContentImageError extends ContentError {
+  constructor(reason, location) {
+    super("image");
+    this.reason = reason;
+    this.location = location;
+    this.name = "ContentImageError";
+  }
+  reason;
+  location;
+  at(location) {
+    return new _ContentImageError(this.reason, this.location ?? location);
+  }
+};
+
 // packages/domain/publication/src/application/reconcile-asset-file.ts
 var ReconcileAssetFile = class {
   constructor(names, repository, content) {
@@ -37317,7 +37332,7 @@ var ReconcileAssetFile = class {
       return { file, status };
     } catch (error2) {
       if (!(error2 instanceof ContentError)) throw error2;
-      return this.failed(file, error2, input.diagnostics);
+      return this.failed(file, error2, input.diagnostics, input.template.id);
     }
   }
   async prepare(input, file) {
@@ -37335,8 +37350,13 @@ var ReconcileAssetFile = class {
       model: contract ? await input.model?.(contract) : void 0
     };
   }
-  failed(file, error2, diagnostics) {
-    diagnostics.push(this.diagnostic(error2.code));
+  failed(file, error2, diagnostics, templateId) {
+    diagnostics.push(
+      error2 instanceof ContentImageError ? {
+        ...this.diagnostic(`image-${error2.reason}`),
+        field: `assets.image/${file?.id ?? templateId}/${error2.location?.kind ?? "embedded"}/${error2.location?.slot ?? "unknown"}`
+      } : this.diagnostic(error2.code)
+    );
     return {
       file,
       status: error2.code === "conflict" ? "conflict" : error2.code === "recovery" ? "recovery-required" : "pending"
@@ -37496,6 +37516,17 @@ var ResolveContentValues = class {
     return field.sourceSlot ?? field.slot;
   }
   async image(field, model) {
+    try {
+      return await this.resolveImage(field, model);
+    } catch (error2) {
+      if (!(error2 instanceof ContentImageError)) throw error2;
+      throw error2.at({
+        kind: field.token === "event.cover" ? "cover" : field.token === "host.logo" ? "host-logo" : "speaker-picture",
+        slot: this.sourceSlot(field)
+      });
+    }
+  }
+  async resolveImage(field, model) {
     if (field.token === "event.cover") return this.cover(field, model);
     const host = field.token === "host.logo";
     const sourceSlot = this.sourceSlot(field);
@@ -37503,12 +37534,11 @@ var ResolveContentValues = class {
     const hostId = host ? model.hostLogo?.hostId : void 0;
     const speakerId = host ? void 0 : model.pictures[sourceSlot]?.speakerId;
     const identity = hostId ?? speakerId;
-    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
     try {
       if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
         identity ?? ""
       ))
-        throw new ContentError("image");
+        throw new ContentImageError("source");
       const validated = await this.images.validate(picture);
       return {
         type: "image",
@@ -37522,10 +37552,10 @@ var ResolveContentValues = class {
         fallback: false,
         fit: field.fit
       };
-    } catch {
-      if (field.required || !field.fallback || !fallback)
-        throw new ContentError("image");
-      const validated = fallback;
+    } catch (error2) {
+      if (!(error2 instanceof ContentImageError) || error2.reason === "download" || field.required || !field.fallback)
+        throw error2;
+      const validated = await this.fallback(field);
       return {
         type: "image",
         key: field.slot,
@@ -37538,11 +37568,20 @@ var ResolveContentValues = class {
       };
     }
   }
+  async fallback(field) {
+    if (!field.fallback) throw new ContentImageError("source");
+    try {
+      return await this.images.validate(field.fallback);
+    } catch (error2) {
+      if (!(error2 instanceof ContentImageError)) throw error2;
+      throw error2.at({ kind: "fallback", slot: field.slot });
+    }
+  }
   async cover(field, model) {
     if (!model.cover) throw new ContentError("missing");
     const validated = await this.images.validate(model.cover);
     if (validated.fingerprint !== model.cover.fingerprint)
-      throw new ContentError("image");
+      throw new ContentImageError("changed");
     return {
       type: "image",
       key: field.slot,
@@ -42011,6 +42050,11 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.assets.content.recovery",
   "publication.assets.content.revision",
   "publication.assets.content.image",
+  "publication.assets.content.image-source",
+  "publication.assets.content.image-format",
+  "publication.assets.content.image-size",
+  "publication.assets.content.image-dimensions",
+  "publication.assets.content.image-changed",
   "publication.assets.file.drift",
   "publication.assets.missing",
   "publication.assets.prerequisites",
@@ -43261,13 +43305,7 @@ var ReconcileMeetupDocuments = class {
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
-      diagnostics: [
-        ...contentDiagnostics,
-        ...assets.diagnostics.map((item) => ({
-          ...item,
-          field: "publicationLinks.assets"
-        }))
-      ]
+      diagnostics: [...contentDiagnostics, ...assets.diagnostics]
     };
   }
   async placeCover(media, container, date) {
@@ -44966,6 +45004,10 @@ var AttentionStageInput = class {
     });
   }
   safeField(field) {
+    if (typeof field === "string" && /^assets\.image\/[a-zA-Z0-9_-]{1,100}\/(cover|host-logo|speaker-picture|fallback|embedded)\/[a-zA-Z0-9_.:-]{1,100}$/.test(
+      field
+    ))
+      return true;
     if (typeof field !== "string" || field.length > 160) return false;
     return /^social\.[a-z0-9][a-z0-9-]{0,63}\.(announcement|d7|d0)$/.test(field) || ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
       field
@@ -57184,6 +57226,30 @@ var STAGE_GUIDANCE = [
     ["Event materials", "comment.guidance.assets.image"]
   ],
   [
+    "publication.assets.content.image-source",
+    ["Event materials", "comment.guidance.assets.image-source"]
+  ],
+  [
+    "publication.assets.content.image-format",
+    ["Event materials", "comment.guidance.assets.image-format"]
+  ],
+  [
+    "publication.assets.content.image-size",
+    ["Event materials", "comment.guidance.assets.image-size"]
+  ],
+  [
+    "publication.assets.content.image-dimensions",
+    ["Event materials", "comment.guidance.assets.image-dimensions"]
+  ],
+  [
+    "publication.assets.content.image-download",
+    ["Event materials", "comment.guidance.assets.image-download"]
+  ],
+  [
+    "publication.assets.content.image-changed",
+    ["Event materials", "comment.guidance.assets.image-changed"]
+  ],
+  [
     "publication.assets.content.fallback",
     ["Event materials", "comment.guidance.assets.fallback"]
   ],
@@ -57510,6 +57576,8 @@ var DiagnosticPresenter = class {
     ["event_status", "Event Status"]
   ]);
   presentDiagnostic(item, messages5, links) {
+    if (item.code.startsWith("publication.assets.content.image"))
+      return this.imageDiagnostic(item, messages5);
     if (item.code === "publication.meetup.uncertain")
       return {
         field: "Meetup Link",
@@ -57525,6 +57593,27 @@ var DiagnosticPresenter = class {
     const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
     const order = FIELD_ORDER.indexOf(section);
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  imageDiagnostic(item, messages5) {
+    const location = item.field?.match(
+      /^assets\.image\/([a-zA-Z0-9_-]{1,100})\/(cover|host-logo|speaker-picture|fallback|embedded)\/([a-zA-Z0-9_.:-]{1,100})$/
+    );
+    const guidance = GUIDANCE.get(item.code);
+    const context3 = location ? messages5.t("comment.assets.image-context", {
+      kind: location[2].replaceAll("-", "_"),
+      slot: location[3],
+      documentUrl: `https://drive.google.com/file/d/${location[1]}/view`
+    }) : "";
+    const recovery = location?.[2] === "cover" ? messages5.t("comment.assets.cover-recovery") : "";
+    return {
+      field: "Event materials",
+      message: [
+        context3,
+        messages5.t(guidance?.[1] ?? "comment.guidance.assets.image"),
+        recovery
+      ].filter(Boolean).join(" "),
+      order: FIELD_ORDER.indexOf("Event materials")
+    };
   }
   meetupRecovery(messages5, links) {
     const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
@@ -58113,7 +58202,15 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.assets.missing": "Complete the required text and links for the presentation.",
   "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
   "comment.guidance.assets.revision": "The document changed. Retry after editing.",
-  "comment.guidance.assets.image": "Use a public HTTPS PNG, JPEG or GIF image under 50 MB and 25 megapixels.",
+  "comment.guidance.assets.image": "Automation could not validate a document image. Rerun synchronization to identify the image and failure reason.",
+  "comment.assets.image-context": "{kind, select, cover {Approved generated cover} host_logo {Host logo} speaker_picture {Speaker photo} fallback {Template fallback image} other {Embedded document image}} (slot `{slot}`) in [this document]({documentUrl}).",
+  "comment.assets.cover-recovery": "Ask a maintainer to repair the automated cover handling; the approved image should remain usable.",
+  "comment.guidance.assets.image-source": "The image source is invalid: a public HTTPS URL and an image description are required.",
+  "comment.guidance.assets.image-format": "The image data or content type is invalid. Supported formats: PNG, JPEG and GIF.",
+  "comment.guidance.assets.image-size": "The image download reaches the 50 MB limit.",
+  "comment.guidance.assets.image-dimensions": "The image dimensions are invalid or exceed 25 megapixels.",
+  "comment.guidance.assets.image-download": "Automation could not download the image. Rerun synchronization; if this persists, ask a maintainer to investigate the run.",
+  "comment.guidance.assets.image-changed": "The image bytes differ from the approved cover.",
   "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
   "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
   "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
@@ -58182,7 +58279,15 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.assets.missing": "Compl\xE9tez les textes et liens requis pour la pr\xE9sentation.",
   "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
   "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
-  "comment.guidance.assets.image": "Utilisez une image PNG, JPEG ou GIF publique en HTTPS, de moins de 50 Mo et 25 m\xE9gapixels.",
+  "comment.guidance.assets.image": "La synchronisation n'a pas pu v\xE9rifier une image du document. Relancez-la pour identifier l'image et la cause de l'\xE9chec.",
+  "comment.assets.image-context": "{kind, select, cover {Visuel de couverture g\xE9n\xE9r\xE9 et approuv\xE9} host_logo {Logo de l'h\xF4te} speaker_picture {Photo de l'intervenant} fallback {Image de secours du mod\xE8le} other {Image int\xE9gr\xE9e au document}} (emplacement `{slot}`) dans [ce document]({documentUrl}).",
+  "comment.assets.cover-recovery": "Demandez \xE0 un mainteneur de corriger le traitement automatique du visuel ; l'image approuv\xE9e doit rester utilisable.",
+  "comment.guidance.assets.image-source": "La source de l'image est invalide : une URL HTTPS publique et une description sont n\xE9cessaires.",
+  "comment.guidance.assets.image-format": "Les donn\xE9es ou le type de contenu de l'image sont invalides. Formats pris en charge : PNG, JPEG et GIF.",
+  "comment.guidance.assets.image-size": "Le t\xE9l\xE9chargement de l'image atteint la limite de 50 Mo.",
+  "comment.guidance.assets.image-dimensions": "Les dimensions de l'image sont invalides ou d\xE9passent 25 m\xE9gapixels.",
+  "comment.guidance.assets.image-download": "La synchronisation n'a pas pu t\xE9l\xE9charger l'image. Relancez-la ; si l'\xE9chec persiste, demandez \xE0 un mainteneur d'examiner le run.",
+  "comment.guidance.assets.image-changed": "Le contenu de l'image diff\xE8re du visuel de couverture approuv\xE9.",
   "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
   "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
   "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
@@ -60421,6 +60526,7 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
     ["Event Title", "title"],
     ["Event Description", "description"],
     ["Drive Link", "assets"],
+    ["Event materials", "assets"],
     ["OpenFeedback Link", "feedback"],
     ["Event Date", "date"],
     ["Hoster", "host"],
@@ -73598,7 +73704,7 @@ var BoundedImageDownload = class {
       if (!addresses.length || addresses.some(
         (item) => !this.collaborators.publicImageUrl.publicAddress(item.address)
       ))
-        throw new ContentError("image");
+        throw new ContentImageError("source");
       const response = await new Promise((resolve4, reject) => {
         const req = this.send(
           url,
@@ -73614,7 +73720,7 @@ var BoundedImageDownload = class {
       });
       if ([301, 302, 303, 307, 308].includes(response.statusCode ?? 0)) {
         response.destroy();
-        if (!response.headers.location) throw new ContentError("image");
+        if (!response.headers.location) throw new ContentImageError("download");
         url = this.collaborators.publicImageUrl.parse(
           new URL(response.headers.location, url).href,
           temporary
@@ -73623,7 +73729,7 @@ var BoundedImageDownload = class {
       }
       if (response.statusCode !== 200 || response.headers["content-encoding"]) {
         response.destroy();
-        throw new ContentError("image");
+        throw new ContentImageError("download");
       }
       return {
         bytes: await this.body(response),
@@ -73631,7 +73737,7 @@ var BoundedImageDownload = class {
         url: url.href
       };
     }
-    throw new ContentError("image");
+    throw new ContentImageError("download");
   }
   async body(response) {
     const chunks = [];
@@ -73640,7 +73746,7 @@ var BoundedImageDownload = class {
       size += chunk.length;
       if (size >= 5e7) {
         response.destroy();
-        throw new ContentError("image");
+        throw new ContentImageError("size");
       }
       chunks.push(chunk);
     }
@@ -73653,7 +73759,7 @@ var BoundedImageDownload = class {
       return await Promise.race([
         this.resolve(hostname.replace(/^\[|\]$/g, ""), { all: true }),
         new Promise((_resolve, reject) => {
-          cancel = () => reject(new ContentError("image"));
+          cancel = () => reject(new ContentImageError("download"));
           signal.addEventListener("abort", cancel, { once: true });
         })
       ]);
@@ -74678,27 +74784,37 @@ var HttpsAssetImageRepository = class {
   download;
   async validate(source) {
     try {
-      if (!source.description?.trim()) throw new ContentError("image");
+      if (!source.description?.trim()) throw new ContentImageError("source");
       const result = await this.compatibleImage(source.url);
-      const size = imageSize(result.bytes);
+      const size = this.dimensions(result.bytes);
       const mimeTypes = {
         png: "image/png",
         jpg: "image/jpeg",
         gif: "image/gif"
       };
-      if (!size.type || mimeTypes[size.type] !== result.mediaType || !size.width || !size.height || size.width * size.height > 25e6)
-        throw new ContentError("image");
+      if (!size.type || mimeTypes[size.type] !== result.mediaType)
+        throw new ContentImageError("format");
+      if (!size.width || !size.height || size.width * size.height > 25e6)
+        throw new ContentImageError("dimensions");
       return {
         fingerprint: this.collaborators.contentFingerprint.of(result.bytes),
         source: { url: result.url, description: source.description }
       };
+    } catch (error2) {
+      if (error2 instanceof ContentImageError) throw error2;
+      throw new ContentImageError("download");
+    }
+  }
+  dimensions(bytes) {
+    try {
+      return imageSize(bytes);
     } catch {
-      throw new ContentError("image");
+      throw new ContentImageError("format");
     }
   }
   async compatibleImage(url) {
     const result = await this.download.get(url);
-    if (result.mediaType !== "image/webp" || imageSize(result.bytes).type !== "webp")
+    if (result.mediaType !== "image/webp" || this.dimensions(result.bytes).type !== "webp")
       return result;
     const compatibleUrl = this.collaborators.wixImageUrl.png(result.url);
     return compatibleUrl ? this.download.get(compatibleUrl) : result;
@@ -74708,7 +74824,7 @@ var HttpsAssetImageRepository = class {
       const { bytes } = await this.download.get(url, true);
       return this.collaborators.contentFingerprint.of(bytes);
     } catch {
-      throw new ContentError("image");
+      throw new ContentImageError("download");
     }
   }
 };
@@ -74732,18 +74848,19 @@ import { isIP } from "node:net";
 var import_ipaddr = __toESM(require_ipaddr(), 1);
 var PublicImageUrl = class {
   parse(value, temporary = false) {
+    if (!URL.canParse(value)) throw new ContentImageError("source");
     const url = new URL(value);
     if (url.protocol !== "https:" || url.username || url.password || url.hash || url.port && url.port !== "443" || !temporary && Buffer.byteLength(value) > 2048)
-      throw new ContentError("image");
+      throw new ContentImageError("source");
     if (!temporary && [...url.searchParams.keys()].some(
       (key) => /token|signature|credential|secret|key|auth|expires/i.test(key)
     ))
-      throw new ContentError("image");
+      throw new ContentImageError("source");
     const host = url.hostname.replace(/^\[|\]$/g, "");
     if (isIP(host) && !this.publicAddress(host))
-      throw new ContentError("image");
+      throw new ContentImageError("source");
     if (!host.includes(".") || /(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host))
-      throw new ContentError("image");
+      throw new ContentImageError("source");
     return url;
   }
   publicAddress(address) {

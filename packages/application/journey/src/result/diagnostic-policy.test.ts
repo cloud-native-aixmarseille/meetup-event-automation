@@ -25,6 +25,11 @@ describe("diagnostic policy", () => {
 		"publication.meetup.slides-link",
 		"publication.meetup.slides-source-changed",
 		"publication.assets.content.conflict",
+		"publication.assets.content.image-source",
+		"publication.assets.content.image-format",
+		"publication.assets.content.image-size",
+		"publication.assets.content.image-dimensions",
+		"publication.assets.content.image-changed",
 		"publication.assets.pdf.source",
 		"publication.assets.pdf.source-pending",
 		"publication.assets.pdf.revision",
@@ -90,6 +95,7 @@ describe("diagnostic policy", () => {
 
 	it.each([
 		"publication.assets.pdf.invalid",
+		"publication.assets.content.image-download",
 		"communication.gateway-delivery-uncertain",
 		"communication.gateway-delivery-rejected",
 		"communication.gateway-delivery-deferred",

@@ -247,7 +247,17 @@ folders, template copies and document content on every invocation. Call it under
 `slides-ready` is true only when a slides URL exists and its content is copy-only
 or ready. Rendering codes appear in the technical report and `diagnostics`
 output; organizer corrections and recovery guidance appear in the merged
-checklist. The `pdf-source` output contains public file identities and an opaque
+checklist. Image diagnostics identify the document, image role and slot, and
+distinguish invalid sources, formats, size, dimensions and changed approved cover
+bytes. They belong to **Event materials**; **Drive Link** identifies the folder.
+Source URLs, temporary image URLs and provider responses are never included.
+Download failures fail the action and preserve unresolved checklist tasks. Check
+the run's image location and rerun synchronization before replacing an image.
+An optional portrait or logo uses its fallback only when its source is missing
+or invalid; an unused fallback is not downloaded. A failed download does not
+silently substitute another image. Generated covers are validated before storage
+and remain subject to approval and byte verification when reused.
+The `pdf-source` output contains public file identities and an opaque
 issue revision. `assets/reconcile-slides-pdf` checks this revision against a fresh
 issue read before exporting; an intervening edit requires a rerun. The managed folder URL is saved on the issue.
 Both event workflows produce feedback before rendering and pass the

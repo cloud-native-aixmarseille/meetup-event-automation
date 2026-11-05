@@ -226,6 +226,30 @@ export const STAGE_GUIDANCE = [
 		["Event materials", "comment.guidance.assets.image"],
 	],
 	[
+		"publication.assets.content.image-source",
+		["Event materials", "comment.guidance.assets.image-source"],
+	],
+	[
+		"publication.assets.content.image-format",
+		["Event materials", "comment.guidance.assets.image-format"],
+	],
+	[
+		"publication.assets.content.image-size",
+		["Event materials", "comment.guidance.assets.image-size"],
+	],
+	[
+		"publication.assets.content.image-dimensions",
+		["Event materials", "comment.guidance.assets.image-dimensions"],
+	],
+	[
+		"publication.assets.content.image-download",
+		["Event materials", "comment.guidance.assets.image-download"],
+	],
+	[
+		"publication.assets.content.image-changed",
+		["Event materials", "comment.guidance.assets.image-changed"],
+	],
+	[
 		"publication.assets.content.fallback",
 		["Event materials", "comment.guidance.assets.fallback"],
 	],

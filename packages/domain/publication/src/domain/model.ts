@@ -19,7 +19,7 @@ export type PublicationEvent = Readonly<{
 export type PublicationDiagnostic = Readonly<{
 	code: string;
 	severity: "info" | "warning" | "error";
-	field: keyof PublicationReferences;
+	field: keyof PublicationReferences | `assets.image/${string}`;
 	message: string;
 	fixAvailable?: boolean;
 	fixApplied?: boolean;

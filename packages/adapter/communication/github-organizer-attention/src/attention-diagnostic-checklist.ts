@@ -77,6 +77,7 @@ export class AttentionDiagnosticChecklist implements AttentionChecklistSource {
 		["Event Title", "title"],
 		["Event Description", "description"],
 		["Drive Link", "assets"],
+		["Event materials", "assets"],
 		["OpenFeedback Link", "feedback"],
 		["Event Date", "date"],
 		["Hoster", "host"],

@@ -12,6 +12,68 @@ const diagnostic: EventDiagnostic = {
 };
 
 describe("organizer diagnostic presentation", () => {
+	it.each([
+		["en", "host-logo", "Host logo", "invalid"],
+		["fr", "host-logo", "Logo de l'hôte", "invalides"],
+		["en", "speaker-picture", "Speaker photo", "invalid"],
+		["fr", "speaker-picture", "Photo de l'intervenant", "invalides"],
+		["en", "cover", "Approved generated cover", "maintainer"],
+		["fr", "cover", "Visuel de couverture généré et approuvé", "mainteneur"],
+	])(
+		"identifies the document and %s %s image without blaming the folder link",
+		(locale, kind, label, reason) => {
+			// Arrange
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
+			const item = {
+				...diagnostic,
+				code: "publication.assets.content.image-format",
+				field: `assets.image/document_123/${kind}/portrait-2`,
+			};
+			// Act
+			const result = new DiagnosticPresenter().presentDiagnostic(
+				item,
+				messages,
+				{ repository: "example/meetups" },
+			);
+			// Assert
+			expect(result.field).toBe("Event materials");
+			expect(result.message).toContain(label);
+			expect(result.message).toContain(reason);
+			expect(result.message).toContain("`portrait-2`");
+			expect(result.message).toContain(
+				"https://drive.google.com/file/d/document_123/view",
+			);
+			expect(result.message).not.toContain(diagnostic.message);
+		},
+	);
+	it.each([
+		"publicationLinks.assets",
+		"assets.image/document/host-logo/private@example.test",
+		"assets.image/document/host-logo/](https://evil.test)",
+	])("does not expose an unrecognized image location: %s", (field) => {
+		// Arrange
+		const messages = new EventCommentMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"en",
+		);
+		const item = {
+			...diagnostic,
+			code: "publication.assets.content.image",
+			field,
+		};
+		// Act
+		const result = new DiagnosticPresenter().presentDiagnostic(item, messages, {
+			repository: "example/meetups",
+		});
+		// Assert
+		expect(result.field).toBe("Event materials");
+		expect(result.message).toContain("identify the image and failure reason");
+		expect(result.message).not.toContain(field);
+		expect(result.message).not.toContain(diagnostic.message);
+	});
 	it.each(["fr", "en"])(
 		"links the event and the consumer workflow in %s",
 		(locale) => {

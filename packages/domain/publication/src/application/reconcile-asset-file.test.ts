@@ -1,11 +1,76 @@
 import { describe, expect, it, vi } from "vitest";
 import { contentFixture } from "../../testing/content.fixtures.js";
 import { ContentError } from "../domain/content-error.js";
+import { ContentImageError } from "../domain/content-image-error.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type { AssetRepository } from "./ports.js";
 import { ReconcileAssetFile } from "./reconcile-asset-file.js";
 
 describe("asset file failure classification", () => {
+	it.each(["format", "download"] as const)(
+		"retains the document, image and %s reason without writing the file",
+		async (reason) => {
+			// Arrange
+			const f = contentFixture();
+			vi.spyOn(f.service, "definition").mockResolvedValue(f.input.contract);
+			vi.spyOn(f.service, "execute").mockRejectedValue(
+				new ContentImageError(reason, { kind: "host-logo", slot: "logo" }),
+			);
+			const file = {
+				id: "document_123",
+				name: "Announcement",
+				templateId: f.input.templateId,
+				kind: "slides",
+				mimeType: f.input.mimeType,
+				contentManaged: true,
+			};
+			const repository: AssetRepository = {
+				findContainer: vi.fn(),
+				ensureContainer: vi.fn(),
+				listTemplates: vi.fn(),
+				listFiles: vi.fn(),
+				copyTemplate: vi.fn(),
+				updateFile: vi.fn(),
+			};
+			const diagnostics: PublicationDiagnostic[] = [];
+			const service = new ReconcileAssetFile(
+				{ render: (template) => template },
+				repository,
+				f.service,
+			);
+			// Act
+			const result = await service.execute({
+				container: {
+					id: "folder",
+					url: "https://example.test/folder",
+					name: "Meetup",
+					eventId: "event",
+				},
+				template: {
+					id: f.input.templateId,
+					name: "Announcement",
+					kind: "slides",
+					mimeType: f.input.mimeType,
+					contentContract: f.input.contract,
+				},
+				currentFiles: [file],
+				date: "2099-01-01",
+				mode: "fix",
+				diagnostics,
+				model: async () => f.input.model,
+			});
+			// Assert
+			expect(result.status).toBe("pending");
+			expect(diagnostics).toContainEqual(
+				expect.objectContaining({
+					code: `publication.assets.content.image-${reason}`,
+					field: "assets.image/document_123/host-logo/logo",
+				}),
+			);
+			expect(repository.copyTemplate).not.toHaveBeenCalled();
+			expect(repository.updateFile).not.toHaveBeenCalled();
+		},
+	);
 	it("does not enroll an existing file while checking recovery", async () => {
 		// Arrange
 		const f = contentFixture();

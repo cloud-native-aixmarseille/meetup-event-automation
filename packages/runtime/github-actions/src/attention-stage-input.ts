@@ -115,6 +115,13 @@ export class AttentionStageInput {
 	}
 
 	private safeField(field: unknown): field is string {
+		if (
+			typeof field === "string" &&
+			/^assets\.image\/[a-zA-Z0-9_-]{1,100}\/(cover|host-logo|speaker-picture|fallback|embedded)\/[a-zA-Z0-9_.:-]{1,100}$/.test(
+				field,
+			)
+		)
+			return true;
 		if (typeof field !== "string" || field.length > 160) return false;
 		return (
 			/^social\.[a-z0-9][a-z0-9-]{0,63}\.(announcement|d7|d0)$/.test(field) ||
