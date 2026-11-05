@@ -33,6 +33,8 @@ export const messages = {
 		"La vérification de l'événement Meetup a échoué. Vérifiez l'événement enregistré avant de relancer.",
 	"action.content-approval-pending":
 		"Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+	"action.social-target-approval-pending":
+		"Publication à approuver : {target}.",
 	"action.social-approval-pending":
 		"Vérifiez l'annonce et approuvez sa publication pour cette destination.",
 	"failure.social": "La publication a échoué.",

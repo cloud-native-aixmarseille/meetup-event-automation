@@ -22,6 +22,9 @@ export class GithubApprovalAttentionSource implements AttentionApprovalSource {
 			if (state.record.recipientCount === 0) continue;
 			const decision = await this.finalizer.execute(state);
 			result.push({
+				...(state.record.kind === "social-publication"
+					? { target: state.record.social.target }
+					: {}),
 				revision: state.record.revision,
 				requestedAt: state.record.requestedAt,
 				commentId: state.comment.id,

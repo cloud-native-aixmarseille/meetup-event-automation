@@ -33,9 +33,7 @@ describe("social publication workflow boundaries", () => {
 			"needs.publish.outputs.social-diagnostics",
 		);
 		expect(publish?.outputs?.["social-outcome"]).toBe(
-			workflowExpression(
-				"steps.review.outcome == 'success' && steps.social.outcome || steps.review.outcome",
-			),
+			workflowExpression("steps.social.outcome"),
 		);
 	});
 	it("keeps generation and review credentials outside the public dispatch action", async () => {
@@ -78,6 +76,80 @@ describe("social publication workflow boundaries", () => {
 			diagnostics: { description: "Redacted social-publication diagnostics." },
 		});
 	});
+	it.each([
+		{ event: "issue_comment", kind: "social-publication", drafts: false },
+		{ event: "issue_comment", kind: "content-review", drafts: true },
+		{ event: "schedule", kind: "", drafts: true },
+		{ event: "workflow_dispatch", kind: "", drafts: true },
+	])(
+		"routes $event / $kind with truthful stage reports",
+		async ({ event, kind, drafts }) => {
+			// Arrange
+			const workflow = await readWorkflow("event-promotion-reconcile");
+			const github = {
+				event_name: event,
+				event: { comment: { body: JSON.stringify({ kind }) } },
+			};
+			const context = {
+				github,
+				cancelled: () => false,
+				contains: (value: string, part: string) => value.includes(part),
+				toJSON: JSON.stringify,
+				format: (value: string, ...args: string[]) =>
+					value.replace(/{{|}}|{(\d+)}/g, (match, index: string) =>
+						match === "{{" ? "{" : match === "}}" ? "}" : args[Number(index)],
+					),
+				steps: {
+					"app-token": { outcome: "success" },
+					checkout: { outcome: "success" },
+				},
+				needs: {
+					publish: {
+						outputs: {
+							"social-outcome": "success",
+							"social-diagnostics": "[]",
+							"review-outcome": drafts ? "success" : "skipped",
+							"review-diagnostics": drafts ? "[]" : "",
+							"reminders-outcome": drafts ? "success" : "skipped",
+							"reminders-diagnostics": drafts ? "[]" : "",
+						},
+					},
+				},
+			};
+			const evaluate = (value: unknown) =>
+				runInNewContext(
+					String(value)
+						.trim()
+						.slice(3, -2)
+						.replace(/\.([a-z][a-z0-9-]*-[a-z0-9-]+)/g, "['$1']"),
+					context,
+				);
+
+			// Act
+			const steps = workflow.jobs?.publish?.steps ?? [];
+			const prepare = evaluate(steps.find(({ id }) => id === "reminders")?.if);
+			const review = evaluate(steps.find(({ id }) => id === "review")?.if);
+			const publish = evaluate(steps.find(({ id }) => id === "social")?.if);
+			const reports = JSON.parse(
+				evaluate(workflow.jobs?.report?.with?.["stage-results"]),
+			);
+
+			// Assert
+			expect(prepare).toBe(drafts);
+			expect(review).toBe(drafts);
+			expect(publish).toBe(true);
+			expect(Object.keys(reports)).toEqual(
+				drafts ? ["content", "social"] : ["social"],
+			);
+			expect(reports.social).toHaveLength(drafts ? 2 : 1);
+			expect(
+				reports.social.every(
+					(item: { outcome: string }) => item.outcome === "success",
+				),
+			).toBe(true);
+		},
+	);
+
 	it("keeps recovery under the event lock without publishing or requesting provider credentials", async () => {
 		// Arrange
 		const workflow = await readWorkflow("event-promotion-recover");

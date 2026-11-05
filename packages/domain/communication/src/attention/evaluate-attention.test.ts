@@ -56,6 +56,39 @@ describe("actionable attention conditions", () => {
 			}),
 		]);
 	});
+	it("keeps pending social decisions independent of failed delivery evaluation", () => {
+		// Arrange
+		const input = facts({
+			approvals: ["approved", "pending"].map((status, index) => ({
+				kind: "social-publication" as const,
+				revision: String(index).repeat(64),
+				status: status as "approved" | "pending",
+				target: `slack-channel-${index}:d0`,
+				eventDate: "2099-06-08",
+				requestedAt: "2099-06-01T10:00:00Z",
+				commentId: 200 + index,
+			})),
+			stages: [{ owner: "social", outcome: "failure", blocked: false }],
+		});
+		const evaluate = new CommunicationDomainComposition().evaluateAttention();
+
+		// Act
+		const observation = evaluate.execute(
+			input,
+			new Date("2099-06-02T10:00:00Z"),
+		);
+
+		// Assert
+		expect(
+			observation.conditions.filter(({ code }) => code === "approval-pending"),
+		).toEqual([
+			expect.objectContaining({ target: "slack-channel-1:d0", commentId: 201 }),
+		]);
+		expect(observation.conditions).toContainEqual(
+			expect.objectContaining({ code: "integration-failure", owner: "social" }),
+		);
+	});
+
 	it("links pending OCGroups approval to its own request", () => {
 		// Arrange
 		const input = facts({

@@ -59,6 +59,12 @@ export class FinalizeApprovalDecision {
 		await this.refreshVisibility(persisted);
 		return {
 			status: decision.status,
+			...(record.decision
+				? {
+						actor: record.decision.actor,
+						decidedAt: record.decision.decidedAt,
+					}
+				: {}),
 			...(record.kind === "content-review" || record.details?.parameters
 				? decision
 				: {}),

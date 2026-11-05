@@ -31219,7 +31219,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       ),
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
-        (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
+        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && this.actionFor(episode) !== "social-approval")) && !(episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
@@ -31362,6 +31362,7 @@ var EvaluateAttention = class {
             approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
+          target: approval.target,
           since: approval.requestedAt,
           commentId: approval.commentId
         });
@@ -34013,6 +34014,7 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
   collaborators;
   suppressed(item, diagnostics) {
     if (item.severity === "info" || item.fixApplied === true) return true;
+    if (item.code === "communication.social.pending") return true;
     const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
     return causes?.some(
       (prefix) => diagnostics.some(
@@ -46869,6 +46871,10 @@ var FinalizeApprovalDecision = class {
     await this.refreshVisibility(persisted);
     return {
       status: decision.status,
+      ...record.decision ? {
+        actor: record.decision.actor,
+        decidedAt: record.decision.decidedAt
+      } : {},
       ...record.kind === "content-review" || record.details?.parameters ? decision : {},
       notificationFailed: await this.notifications.react(record, comment.id)
     };
@@ -46969,6 +46975,7 @@ var GithubApprovalAttentionSource = class {
       if (state.record.recipientCount === 0) continue;
       const decision = await this.finalizer.execute(state);
       result.push({
+        ...state.record.kind === "social-publication" ? { target: state.record.social.target } : {},
         revision: state.record.revision,
         requestedAt: state.record.requestedAt,
         commentId: state.comment.id,
@@ -49712,6 +49719,7 @@ var AttentionRecord = class {
   condition(input) {
     const data = this.collaborators.attentionRecordFields.record(input);
     return {
+      ...this.target(data.target),
       key: this.collaborators.attentionRecordFields.text(
         data.key,
         /^[a-z0-9:-]{1,180}$/
@@ -49755,6 +49763,14 @@ var AttentionRecord = class {
       recovery: data.recovery === void 0 ? void 0 : this.collaborators.attentionRecordFields.choice(data.recovery, [
         true
       ])
+    };
+  }
+  target(value) {
+    return value === void 0 ? {} : {
+      target: this.collaborators.attentionRecordFields.text(
+        value,
+        /^[a-z0-9:-]{1,200}$/
+      )
     };
   }
   post(input) {
@@ -49955,7 +49971,9 @@ var AttentionPresenter = class {
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
       return this.messages.t("action.content-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
-      return this.messages.t("action.social-approval-pending");
+      return episode.condition.target ? this.messages.t("action.social-target-approval-pending", {
+        target: episode.condition.target
+      }) : this.messages.t("action.social-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
       return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
@@ -50349,6 +50367,7 @@ var messages = {
   "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
   "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
   "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
+  "action.social-target-approval-pending": "Publication approval: {target}.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
   "failure.social": "Posting failed.",
   "task.social": "social posts",
@@ -50426,6 +50445,7 @@ var messages2 = {
   "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
   "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
   "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+  "action.social-target-approval-pending": "Publication \xE0 approuver : {target}.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "failure.social": "La publication a \xE9chou\xE9.",
   "task.social": "publications sur les r\xE9seaux",
@@ -51170,6 +51190,7 @@ var messages3 = {
   "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
   "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
   "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
+  "action.social-target-approval-pending": "Publication approval: {target}.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
   "failure.social": "Posting failed.",
   "task.social": "social posts",
@@ -51247,6 +51268,7 @@ var messages4 = {
   "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
   "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
   "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+  "action.social-target-approval-pending": "Publication \xE0 approuver : {target}.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "failure.social": "La publication a \xE9chou\xE9.",
   "task.social": "publications sur les r\xE9seaux",
@@ -51652,7 +51674,9 @@ var SlackAttentionPresenter = class {
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
       return this.messages.t("action.content-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
-      return this.messages.t("action.social-approval-pending");
+      return episode.condition.target ? this.messages.t("action.social-target-approval-pending", {
+        target: episode.condition.target
+      }) : this.messages.t("action.social-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
       return this.messages.t("action.community-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")

@@ -116,7 +116,7 @@ describe("GitHubEventCommentRepository", () => {
 			[
 				{
 					...errorDiagnostic,
-					code: "communication.social.pending",
+					code: "communication.social.blocked",
 					field: "social.community.announcement",
 				},
 			],

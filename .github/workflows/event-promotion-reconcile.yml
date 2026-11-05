@@ -1,6 +1,7 @@
 # Goal: Prepare missing reminders and publish approved social posts.
-# Behavior: Prepare and review drafts, then recheck publication authority, due
-# times and durable delivery records under the event lock.
+# Behavior: Publication decisions go directly to guarded delivery. Other triggers
+# prepare and review drafts first. Recheck authority, due times and durable
+# delivery records under the event lock.
 
 name: Event / Promotion / Reconcile
 on:
@@ -99,7 +100,9 @@ jobs:
           persist-credentials: false
       - name: Prepare missing reminders
         id: reminders
-        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        if: >-
+          ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' &&
+              !(github.event_name == 'issue_comment' && contains(github.event.comment.body, '"kind":"social-publication"')) }}
         uses: $/actions/communication/prepare-reminders
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
@@ -117,7 +120,9 @@ jobs:
           ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       - name: Review drafts
         id: review
-        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
+        if: >-
+          ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' &&
+              !(github.event_name == 'issue_comment' && contains(github.event.comment.body, '"kind":"social-publication"')) }}
         uses: $/actions/organizer/review-drafts
         with:
           meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
@@ -156,7 +161,7 @@ jobs:
       review-outcome: ${{ steps.review.outcome }}
       review-diagnostics: ${{ steps.review.outputs.diagnostics }}
       initialized: ${{ steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
-      social-outcome: ${{ steps.review.outcome == 'success' && steps.social.outcome || steps.review.outcome }}
+      social-outcome: ${{ steps.social.outcome }}
       social-diagnostics: ${{ steps.social.outputs.diagnostics }}
   report:
     needs: publish
@@ -172,7 +177,14 @@ jobs:
       github-app-client-id: ${{ inputs.github-app-client-id }}
       slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       issue-number: ${{ inputs.issue-number }}
-      stage-results: '{"content":[{"outcome":${{ toJSON(needs.publish.outputs.review-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.review-diagnostics) }}}],"social":[{"outcome":${{ toJSON(needs.publish.outputs.reminders-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.reminders-diagnostics) }}},{"outcome":${{ toJSON(needs.publish.outputs.social-outcome) }},"diagnostics":${{ toJSON(needs.publish.outputs.social-diagnostics) }}}]}'
+      stage-results: >-
+        ${{ github.event_name == 'issue_comment' && contains(github.event.comment.body, '"kind":"social-publication"') &&
+            format('{{"social":[{{"outcome":{0},"diagnostics":{1}}}]}}',
+              toJSON(needs.publish.outputs.social-outcome), toJSON(needs.publish.outputs.social-diagnostics)) ||
+            format('{{"content":[{{"outcome":{0},"diagnostics":{1}}}],"social":[{{"outcome":{2},"diagnostics":{3}}},{{"outcome":{4},"diagnostics":{5}}}]}}',
+              toJSON(needs.publish.outputs.review-outcome), toJSON(needs.publish.outputs.review-diagnostics),
+              toJSON(needs.publish.outputs.reminders-outcome), toJSON(needs.publish.outputs.reminders-diagnostics),
+              toJSON(needs.publish.outputs.social-outcome), toJSON(needs.publish.outputs.social-diagnostics)) }}
     secrets:
       github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
       slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials

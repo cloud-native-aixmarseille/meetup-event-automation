@@ -30,6 +30,7 @@ type AttentionPolicy =
 	| "follow-up"
 	| "none";
 export interface AttentionCondition {
+	readonly target?: string;
 	readonly key: string;
 	readonly code: AttentionCode;
 	readonly owner: AttentionOwner;
@@ -96,6 +97,7 @@ export type AttentionPostResult =
 	| { readonly outcome: "uncertain" }
 	| { readonly outcome: "retry"; readonly retryAfterSeconds?: number };
 export interface AttentionApproval {
+	readonly target?: string;
 	readonly revision: string;
 	readonly requestedAt: string;
 	readonly commentId: number;
