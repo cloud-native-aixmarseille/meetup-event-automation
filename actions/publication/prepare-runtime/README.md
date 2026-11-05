@@ -53,11 +53,11 @@ Validate the destination collection and locate its required browser authenticati
 
 ## Outputs
 
-| **Output**                      | **Description**                                                                                                                                       |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`website-repository`**        | Configured website repository in the consumer organization, used to scope its GitHub App token; empty when website synchronization is not configured. |
-| **`runtime-directory`**         | Absolute automation directory containing the locked Node.js and Python runtime dependencies for this action revision.                                 |
-| **`requires-challenge-solver`** | Whether the configured destinations require the Python challenge-solver runtime.                                                                      |
+| **Output**                      | **Description**                                                                                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`website-repository`**        | Configured site repository in the consumer organization, used to scope its GitHub App token; empty when site synchronization is not configured. |
+| **`runtime-directory`**         | Absolute automation directory containing the locked Node.js and Python runtime dependencies for this action revision.                           |
+| **`requires-challenge-solver`** | Whether the configured destinations require the Python challenge-solver runtime.                                                                |
 
 <!-- outputs:end -->
 <!-- examples:start -->
