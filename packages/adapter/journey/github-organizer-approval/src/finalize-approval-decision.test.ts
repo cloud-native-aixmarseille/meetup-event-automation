@@ -1,6 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { fixture, request } from "../testing/approval.fixtures.js";
+import {
+	decision,
+	fixture,
+	request,
+	publicationRequest,
+	communityRequest,
+} from "../testing/approval.fixtures.js";
+import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 import type { FinalizeApprovalDecision } from "./finalize-approval-decision.js";
+
+describe("verified publication authority", () => {
+	it.each([socialPublicationRequest, publicationRequest, communityRequest])(
+		"returns the persisted organizer identity for $kind",
+		async (input) => {
+			// Arrange
+			const f = fixture();
+			await f.repository.save(f.records.create(input));
+			decision(f);
+			const [pending] = await f.repository.states();
+			if (!pending) throw new Error("Missing approval fixture");
+
+			// Act
+			const result = await f.finalizer.execute(pending);
+			const [persisted] = await f.repository.states();
+			if (!persisted) throw new Error("Missing persisted approval");
+			const repeated = await f.finalizer.execute(persisted);
+
+			// Assert
+			const expected = {
+				status: "approved",
+				actor: "organizer",
+				decidedAt: request.requestedAt,
+			};
+			expect(result).toMatchObject(expected);
+			expect(repeated).toMatchObject(expected);
+			expect(persisted.record.decision).toEqual(expected);
+		},
+	);
+});
 
 describe("follow-up comment completion", () => {
 	it.each([

@@ -4,6 +4,7 @@ import {
 } from "@meetup-automation/localization";
 import { CATALOGS, type MessageId } from "./catalog.js";
 export interface MessageParameters {
+	"action.social-target-approval-pending": { target: string };
 	"action.required-data": { task: string };
 	"slack.title": { issue: string };
 	"slack.more": { count: number };

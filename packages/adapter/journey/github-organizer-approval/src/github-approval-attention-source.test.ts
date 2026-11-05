@@ -1,8 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { fixture } from "../testing/approval.fixtures.js";
+import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 import { contentRequest } from "../testing/content.fixtures.js";
 
 describe("approval attention", () => {
+	it("exposes the destination of a verified social approval", async () => {
+		// Arrange
+		const f = fixture();
+		await f.repository.save(f.records.create(socialPublicationRequest));
+
+		// Act
+		const attention = await f.attention.synchronizeApprovals();
+
+		// Assert
+		expect(attention).toEqual([
+			expect.objectContaining({
+				target: socialPublicationRequest.social.target,
+				status: "pending",
+				commentId: 100,
+			}),
+		]);
+	});
+
 	it("resolves historical decisions while keeping the latest pending proposal visible", async () => {
 		// Arrange
 		const f = fixture();

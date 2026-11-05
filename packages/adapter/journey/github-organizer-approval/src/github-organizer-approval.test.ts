@@ -547,7 +547,12 @@ describe("organizer approval requests", () => {
 		const result = await approvals.request(request);
 
 		// Assert
-		expect(result).toEqual({ status: "approved", notificationFailed: false });
+		expect(result).toEqual({
+			status: "approved",
+			notificationFailed: false,
+			actor: "organizer",
+			decidedAt: request.requestedAt,
+		});
 		expect(f.comments[0]?.body).toContain("✅ Approved");
 		expect(f.react).not.toHaveBeenCalled();
 		expect(f.dispatch).toHaveBeenCalledTimes(1);
@@ -579,7 +584,12 @@ describe("organizer approval requests", () => {
 		const result = await approvals.request(request);
 
 		// Assert
-		expect(result).toEqual({ status: "approved", notificationFailed: true });
+		expect(result).toEqual({
+			status: "approved",
+			notificationFailed: true,
+			actor: "organizer",
+			decidedAt: request.requestedAt,
+		});
 		expect(f.react).not.toHaveBeenCalled();
 		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});

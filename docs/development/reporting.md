@@ -87,6 +87,11 @@ an earlier technical alert instead of leaving that alert unverified.
 Missing diagnostics, including `null` when GitHub suppresses a job output,
 count as unreported evidence. They do not replace an explicit empty diagnostic
 array and cannot clear checklist tasks.
+Pending social publication decisions come from verified approval attention, with
+one destination-specific link to each review comment. They are not duplicated as
+diagnostic checklist instructions. A recorded decision clears its approval task
+independently of delivery success; delivery failures keep their own run link.
+
 Social publication has an optional independent stage in the same canonical
 comment. Reports include only the stages attempted by their workflow. An omitted
 stage is outside that run's scope: it creates no alert and leaves existing evidence

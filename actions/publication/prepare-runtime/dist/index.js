@@ -29986,7 +29986,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       ),
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
-        (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
+        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && this.actionFor(episode) !== "social-approval")) && !(episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
@@ -30129,6 +30129,7 @@ var EvaluateAttention = class {
             approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
+          target: approval.target,
           since: approval.requestedAt,
           commentId: approval.commentId
         });
@@ -32573,6 +32574,7 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
   collaborators;
   suppressed(item, diagnostics) {
     if (item.severity === "info" || item.fixApplied === true) return true;
+    if (item.code === "communication.social.pending") return true;
     const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
     return causes?.some(
       (prefix) => diagnostics.some(

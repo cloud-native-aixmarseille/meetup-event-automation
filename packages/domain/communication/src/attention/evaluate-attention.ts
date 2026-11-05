@@ -177,6 +177,7 @@ export class EvaluateAttention {
 							: approval.revision,
 						"approval",
 					),
+					target: approval.target,
 					since: approval.requestedAt,
 					commentId: approval.commentId,
 				});

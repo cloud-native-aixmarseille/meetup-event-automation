@@ -9,6 +9,20 @@ const diagnostic: PublicDiagnostic = {
 	message: "private@example.test",
 };
 describe("organizer diagnostic root causes", () => {
+	it("leaves social approval instructions to verified approval attention", () => {
+		// Arrange
+		const item = { ...diagnostic, code: "communication.social.pending" };
+		const policy = new OrganizerDiagnosticPolicy({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+		});
+
+		// Act
+		const suppressed = policy.suppressed(item, [item]);
+
+		// Assert
+		expect(suppressed).toBe(true);
+	});
+
 	it.each([
 		[
 			"publication.assets.pdf.source-pending",

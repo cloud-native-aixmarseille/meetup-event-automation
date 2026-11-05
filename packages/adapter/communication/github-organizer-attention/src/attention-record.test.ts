@@ -19,6 +19,21 @@ describe("attention record validation", () => {
 		// Assert
 		expect(restored.episodes[0]?.runId).toBe("100");
 	});
+	it("round-trips the social destination for an approval link", () => {
+		// Arrange
+		const record = new GithubOrganizerAttentionComposition().attentionRecord();
+		const pending = episode("approval-pending", "social-publication:revision");
+		pending.condition = { ...pending.condition, target: "slack-community:d0" };
+
+		// Act
+		const restored = record.read(
+			record.marker({ ...state(), episodes: [pending] }),
+		);
+
+		// Assert
+		expect(restored.episodes[0]?.condition.target).toBe("slack-community:d0");
+	});
+
 	it.each([
 		{ version: 2 },
 		{ runId: "private@example.test" },

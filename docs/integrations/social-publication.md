@@ -4,7 +4,7 @@ The promotion workflows publish reviewed announcements and D-7/D0 reminders to
 configured Slack channels and one community LinkedIn Page. They use separate
 publication approvals and retain each destination's delivery history. Promotion
 reconciliation prepares missing reminder drafts before reviewing and publishing
-eligible posts. Only the preparation step receives AI credentials. [Content generation and review](content.md) prepares the copy
+eligible posts. A publication approval edit goes directly to delivery checks. Only the preparation step receives AI credentials. [Content generation and review](content.md) prepares the copy
 and LinkedIn announcement image.
 
 ## Configure destinations
@@ -172,12 +172,20 @@ including approval-comment edits. A social-publication approval may invoke
 promotion directly. Filtering comment events to publication approvals alone
 leaves completed content reviews in the social checklist until another social run.
 
-The workflow prepares missing reminders and processes content reviews before
-publication. Its completed social report refreshes the checklist; failed or
+For content reviews, event changes, scheduled scans and manual runs, the workflow
+prepares missing reminders and processes content reviews before publication.
+Publication approval edits skip those steps: delivery rechecks the current content,
+organizer authority, sending window and duplicate-send record itself. The report
+includes only attempted stages. Its completed social report refreshes the checklist; failed or
 unevaluated social work preserves prior tasks. Announcements and explicit reminder
 revisions use the generation workflow. The dispatch action itself receives no AI credentials.
 
 ## Approve and monitor
+
+The overview links to each pending destination's approval comment. Record the
+decision in that comment; the overview removes the approval task once the verified
+decision is saved, even if delivery fails. Delivery failures retain a separate link
+to the failed run. Completed approval comments are hidden automatically.
 
 Select the confirmed host, confirm speakers, publish the registration page, and complete the
 content review. A valid URL alone does not prove publication: the Meetup

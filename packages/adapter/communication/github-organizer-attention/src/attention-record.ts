@@ -92,6 +92,7 @@ export class AttentionRecord {
 	private condition(input: unknown): AttentionCondition {
 		const data = this.collaborators.attentionRecordFields.record(input);
 		return {
+			...this.target(data.target),
 			key: this.collaborators.attentionRecordFields.text(
 				data.key,
 				/^[a-z0-9:-]{1,180}$/,
@@ -146,6 +147,17 @@ export class AttentionRecord {
 						]),
 		};
 	}
+	private target(value: unknown): Pick<AttentionCondition, "target"> {
+		return value === undefined
+			? {}
+			: {
+					target: this.collaborators.attentionRecordFields.text(
+						value,
+						/^[a-z0-9:-]{1,200}$/,
+					),
+				};
+	}
+
 	private post(input: unknown): NonNullable<AttentionState["post"]> {
 		const data = this.collaborators.attentionRecordFields.record(input);
 		return {

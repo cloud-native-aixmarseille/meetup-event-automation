@@ -89,6 +89,50 @@ describe("GitHub attention presentation", () => {
 		expect(body).not.toContain("email batch");
 	});
 
+	it("links each pending social destination and removes decided work despite a delivery failure", () => {
+		// Arrange
+		const { presenter } = fixture();
+		const pending = ["slack-one:d0", "slack-two:d0"].map((target, index) => {
+			const value = episode(
+				"approval-pending",
+				`social-publication:revision-${index}`,
+			);
+			return {
+				...value,
+				condition: { ...value.condition, target, commentId: 200 + index },
+			};
+		});
+		const overview = {
+			...state(),
+			commentId: 100,
+			post: undefined,
+			episodes: pending,
+		};
+
+		// Act
+		const before = presenter.issue(overview, "");
+		const after = presenter.issue(
+			{
+				...overview,
+				episodes: [
+					{ ...pending[0], status: "resolved" },
+					pending[1],
+					episode("integration-failure", "social"),
+				],
+			},
+			"",
+		);
+
+		// Assert
+		expect(before).toContain("Publication approval: slack-one:d0.");
+		expect(before).toContain("#issuecomment-200");
+		expect(before).toContain("Publication approval: slack-two:d0.");
+		expect(before).toContain("#issuecomment-201");
+		expect(after).not.toContain("#issuecomment-200");
+		expect(after).toContain("#issuecomment-201");
+		expect(after).toContain("failed");
+	});
+
 	it("keeps supplied metadata separate from localized task formatting", () => {
 		// Arrange
 		const checklist = new AttentionDiagnosticChecklist({

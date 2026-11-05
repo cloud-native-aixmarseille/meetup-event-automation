@@ -33,6 +33,7 @@ export const messages = {
 		"Meetup event verification failed. Check the saved event before retrying.",
 	"action.content-approval-pending":
 		"Edit the proposed text if needed, then approve or request another proposal.",
+	"action.social-target-approval-pending": "Publication approval: {target}.",
 	"action.social-approval-pending":
 		"Review the announcement and approve publication for this destination.",
 	"failure.social": "Posting failed.",
