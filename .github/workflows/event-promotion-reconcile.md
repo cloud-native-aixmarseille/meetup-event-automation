@@ -21,9 +21,9 @@
 
 ## Overview
 
-Goal: Publish approved announcements and reminders to configured destinations.
-Behavior: Recheck exact publication authority, due times and durable delivery
-records, then report each destination under the event lock.
+Goal: Prepare missing reminders and publish approved social posts.
+Behavior: Prepare and review drafts, then recheck publication authority, due
+times and durable delivery records under the event lock.
 
 ### Permissions
 
@@ -43,10 +43,18 @@ on:
 permissions: {}
 jobs:
   event-promotion-reconcile:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-reconcile.yml@8deffa16dee738b64124004d5037099399600028 # 9.2.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-reconcile.yml@6ab77e308f07ae0703a2c72b8bf84febf1b2f849 # 9.2.1
     permissions:
       contents: read
     secrets:
+      # Google service-account JSON for content review and LinkedIn media verification.
+      # This input is required.
+      google-credentials: ""
+
+      # API key for reminder draft generation.
+      # This input is required.
+      ai-api-key: ""
+
       # Read-only Conference Hall event API key.
       # This input is required.
       conference-hall-api-key: ""
@@ -63,6 +71,18 @@ jobs:
       # This input is required.
       github-app-private-key: ""
     with:
+      # Public Drive root containing reviewed content media.
+      # This input is required.
+      google-drive-public-folder-id: ""
+
+      # AI provider used to prepare missing reminder drafts (gemini).
+      # This input is required.
+      ai-provider: ""
+
+      # Structured-text model used to prepare reminder drafts.
+      # This input is required.
+      ai-model: ""
+
       # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
       # This input is required.
       meetup-event-url-prefix: ""
@@ -103,16 +123,19 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**                          | **Description**                                                                                                                    | **Required** | **Type**   | **Default** |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`meetup-event-url-prefix`**      | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | **string** | -           |
-| **`community-event-url-prefixes`** | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | **string** | -           |
-| **`asset-folder-url-prefix`**      | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | **string** | -           |
-| **`locale`**                       | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | **string** | -           |
-| **`issue-number`**                 | Meetup issue number.                                                                                                               | **true**     | **number** | -           |
-| **`conference-hall-event`**        | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | **string** | -           |
-| **`slack-organizer-channel-id`**   | Internal organizer channel receiving content reviews.                                                                              | **true**     | **string** | -           |
-| **`github-app-client-id`**         | GitHub App client ID for the consumer repository.                                                                                  | **true**     | **string** | -           |
+| **Input**                           | **Description**                                                                                                                    | **Required** | **Type**   | **Default** |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`google-drive-public-folder-id`** | Public Drive root containing reviewed content media.                                                                               | **true**     | **string** | -           |
+| **`ai-provider`**                   | AI provider used to prepare missing reminder drafts (gemini).                                                                      | **true**     | **string** | -           |
+| **`ai-model`**                      | Structured-text model used to prepare reminder drafts.                                                                             | **true**     | **string** | -           |
+| **`meetup-event-url-prefix`**       | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | **string** | -           |
+| **`community-event-url-prefixes`**  | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | **string** | -           |
+| **`asset-folder-url-prefix`**       | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | **string** | -           |
+| **`locale`**                        | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | **string** | -           |
+| **`issue-number`**                  | Meetup issue number.                                                                                                               | **true**     | **number** | -           |
+| **`conference-hall-event`**         | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | **string** | -           |
+| **`slack-organizer-channel-id`**    | Internal organizer channel receiving content reviews.                                                                              | **true**     | **string** | -           |
+| **`github-app-client-id`**          | GitHub App client ID for the consumer repository.                                                                                  | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -121,6 +144,8 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                  | **Required** |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------ |
+| **`google-credentials`**      | Google service-account JSON for content review and LinkedIn media verification.                                  | **true**     |
+| **`ai-api-key`**              | API key for reminder draft generation.                                                                           | **true**     |
 | **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                         | **true**     |
 | **`slack-token`**             | Slack bot token for organizer review requests and decision reactions.                                            | **true**     |
 | **`social-credentials`**      | JSON tokens keyed by configured Slack workspace, plus LinkedIn access and Google media credentials when enabled. | **true**     |
