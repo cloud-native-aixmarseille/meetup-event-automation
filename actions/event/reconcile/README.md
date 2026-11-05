@@ -30,7 +30,7 @@ Read one meetup issue, derive lifecycle and readiness, and persist safe issue up
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/reconcile@611f9cf35a34f3172552adac4c5bee84beda2f7d # 10.0.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/reconcile@c01e7b3926a25edf6bfe0eed3c2d2488ccbd8bfd # 10.0.3
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
