@@ -30,7 +30,7 @@ Request a verified organizer decision about an uncertain recorded social deliver
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/recover-social@611f9cf35a34f3172552adac4c5bee84beda2f7d # 10.0.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/recover-social@c01e7b3926a25edf6bfe0eed3c2d2488ccbd8bfd # 10.0.3
   with:
     # GitHub token with issue read and write permissions.
     # This input is required.
