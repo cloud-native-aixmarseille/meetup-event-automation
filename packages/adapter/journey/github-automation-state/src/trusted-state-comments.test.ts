@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { journalClientFixture } from "../testing/journal-client.fixtures.js";
-import {
-	SOCIAL_JOURNAL_MARKER,
-	TrustedSocialJournalComments,
-} from "./trusted-social-journal-comments.js";
+import { automationStateFixture } from "../testing/state.fixtures.js";
+import { TrustedStateComments } from "./trusted-state-comments.js";
+const SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
 
-describe("trusted social delivery history", () => {
+describe("trusted internal state history", () => {
 	it("reads bot-owned records while ignoring organizer and other bot comments", async () => {
 		// Arrange
-		const f = journalClientFixture();
+		const f = automationStateFixture();
 		await f.client.create(`${SOCIAL_JOURNAL_MARKER}{} -->`);
 		f.comments.push(
 			{
@@ -32,7 +30,7 @@ describe("trusted social delivery history", () => {
 	});
 	it("accepts a bot update with intact bot-owned history", async () => {
 		// Arrange
-		const f = journalClientFixture();
+		const f = automationStateFixture();
 		const body = `${SOCIAL_JOURNAL_MARKER}{} -->`;
 		await f.client.create(body);
 		await f.client.replace(
@@ -49,7 +47,7 @@ describe("trusted social delivery history", () => {
 	});
 	it("blocks an organizer edit that removes the delivery marker", async () => {
 		// Arrange
-		const f = journalClientFixture();
+		const f = automationStateFixture();
 		const body = `${SOCIAL_JOURNAL_MARKER}{} -->`;
 		await f.client.create(body);
 		await f.client.replace(1, body, "Removed delivery record");
@@ -70,10 +68,10 @@ describe("trusted social delivery history", () => {
 		"blocks hidden or deleted earlier record history (%s)",
 		async (deletedAt) => {
 			// Arrange
-			const f = journalClientFixture();
+			const f = automationStateFixture();
 			const body = `${SOCIAL_JOURNAL_MARKER}{} -->`;
 			await f.client.create(body);
-			await f.client.replace(1, body, body);
+			await f.client.replace(1, body, body.replace("{}", '{"next":true}'));
 			f.histories.set(1, [
 				{
 					diff: null,
@@ -91,10 +89,10 @@ describe("trusted social delivery history", () => {
 	);
 	it("blocks an edited record when its edit history is missing", async () => {
 		// Arrange
-		const f = journalClientFixture();
+		const f = automationStateFixture();
 		const body = `${SOCIAL_JOURNAL_MARKER}{} -->`;
 		await f.client.create(body);
-		await f.client.replace(1, body, body);
+		await f.client.replace(1, body, body.replace("{}", '{"next":true}'));
 		f.histories.set(1, []);
 
 		// Act
@@ -105,9 +103,14 @@ describe("trusted social delivery history", () => {
 	});
 	it("blocks concurrent edits between comment enumeration and editor inspection", async () => {
 		// Arrange
-		const f = journalClientFixture();
+		const f = automationStateFixture();
 		await f.client.create(`${SOCIAL_JOURNAL_MARKER}{} -->`);
-		f.comments[0] = { ...f.comments[0], body: "Changed" };
+		f.client.edit.mockResolvedValue({
+			id: "comment-1",
+			body: "Changed",
+			editor: null,
+			lastEditedAt: null,
+		});
 
 		// Act
 		const load = f.trusted.list();
@@ -117,11 +120,11 @@ describe("trusted social delivery history", () => {
 	});
 	it("rejects user-owned storage identities", () => {
 		// Arrange
-		const f = journalClientFixture();
+		const f = automationStateFixture();
 
 		// Act
 		const construct = () =>
-			new TrustedSocialJournalComments(f.client, "organizer");
+			new TrustedStateComments(f.client, f.codec, "organizer", f.authority);
 
 		// Assert
 		expect(construct).toThrow("trusted GitHub App bot");

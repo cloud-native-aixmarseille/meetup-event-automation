@@ -1,3 +1,4 @@
+import { AutomationStateComposition } from "./automation-state-composition.js";
 import { SocialPostTiming } from "@meetup-automation/communication";
 import {
 	GithubContentStoreComposition,
@@ -33,7 +34,13 @@ export class ContentGateComposition {
 		const storage = new GithubContentStoreComposition();
 		const runtime = new GithubActionsComposition();
 		const dependencies: ConstructorParameters<typeof EventCopyApprovalGate> = [
-			storage.store(client, author),
+			storage.store(
+				new AutomationStateComposition().create({
+					...input,
+					issueNumber,
+					commentAuthorLogin: author,
+				}),
+			),
 			storage.authority(
 				client,
 				author,

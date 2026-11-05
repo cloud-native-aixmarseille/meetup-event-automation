@@ -1,3 +1,4 @@
+import { AutomationStateComposition } from "./automation-state-composition.js";
 import type { getOctokit } from "@actions/github";
 import {
 	SocialPostTiming,
@@ -50,12 +51,10 @@ export class SocialRecoveryComposition {
 		const fingerprints = new DraftProposalComposition().fingerprints();
 		return new RecoverSocialPublication(
 			new GithubSocialDeliveryJournalComposition().create(
-				client,
-				input.commentAuthorLogin,
+				new AutomationStateComposition().create(input),
 			),
 			new GithubContentStoreComposition().store(
-				client,
-				input.commentAuthorLogin,
+				new AutomationStateComposition().create(input),
 			),
 			approvals,
 			new SocialPublicationApprovalRequest(

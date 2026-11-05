@@ -6,31 +6,9 @@ import {
 	type PublicationJournal,
 	type PublicationRecord,
 } from "@meetup-automation/publication";
-import { PublicationCommentCodec } from "./publication-comment-codec.js";
+import type { PublicationCommentCodec } from "./publication-comment-codec.js";
 
-type Comment = {
-	id: number;
-	body?: string | null;
-	user?: { login: string } | null;
-};
-type Scope = { owner: string; repo: string; issue_number: number };
-export interface JournalClient {
-	rest: {
-		issues: {
-			listComments(input: Scope & { page: number; per_page: number }): Promise<{
-				data: Comment[];
-				headers: { link?: string };
-			}>;
-			createComment(input: Scope & { body: string }): Promise<unknown>;
-			updateComment(input: {
-				owner: string;
-				repo: string;
-				comment_id: number;
-				body: string;
-			}): Promise<unknown>;
-		};
-	};
-}
+import type { AutomationStateRepository } from "@meetup-automation/journey";
 
 export interface GithubPublicationJournalCollaborators {
 	readonly publicationCommentCodec: Pick<
@@ -44,20 +22,13 @@ export class GithubPublicationJournal
 {
 	constructor(
 		private readonly collaborators: GithubPublicationJournalCollaborators,
-		private readonly client: JournalClient,
-		private readonly scope: Scope,
-		private readonly author: string,
-	) {
-		if (!author.endsWith("[bot]"))
-			throw new Error("Publication journal requires the GitHub App bot");
-	}
+		private readonly state: Pick<AutomationStateRepository, "read" | "write">,
+	) {}
 
 	async load(): Promise<PublicationRecord | undefined> {
 		const comment = await this.find();
 		if (!comment) return undefined;
-		const record = this.collaborators.publicationCommentCodec.decode(
-			comment.body ?? "",
-		);
+		const record = this.collaborators.publicationCommentCodec.decode(comment);
 		if (!record.url) return {};
 		const url = MeetupEventUrl.parse(record.url);
 		if (!url) throw new Error("Invalid Meetup journal identity");
@@ -69,10 +40,11 @@ export class GithubPublicationJournal
 	async reserve(): Promise<void> {
 		if (await this.load())
 			throw new Error("Publication creation was already reserved");
-		await this.client.rest.issues.createComment({
-			...this.scope,
-			body: this.collaborators.publicationCommentCodec.encode({}),
-		});
+		await this.state.write(
+			"meetup",
+			[],
+			[this.collaborators.publicationCommentCodec.encode({})],
+		);
 		if (!(await this.load()))
 			throw new Error("Publication reservation was not persisted");
 	}
@@ -90,30 +62,21 @@ export class GithubPublicationJournal
 		const existing = await this.load();
 		if (existing?.identity?.reviewUrl && existing.identity.reviewUrl !== url)
 			throw new Error("Publication journal identity conflict");
-		if (existing?.identity?.reviewUrl === url) return;
 		const comment = await this.find();
 		const previous = comment
-			? this.collaborators.publicationCommentCodec.decode(comment.body ?? "")
+			? this.collaborators.publicationCommentCodec.decode(comment)
 			: {};
 		const body = this.collaborators.publicationCommentCodec.encode({
 			...previous,
 			url,
 		});
-		if (comment) {
-			await this.client.rest.issues.updateComment({
-				owner: this.scope.owner,
-				repo: this.scope.repo,
-				comment_id: comment.id,
-				body,
-			});
-		} else await this.client.rest.issues.createComment({ ...this.scope, body });
+		await this.state.write("meetup", comment ? [comment] : [], [body]);
 	}
 
 	async readCover(): Promise<MeetupCoverRecord | undefined> {
 		const comment = await this.find();
 		return comment
-			? this.collaborators.publicationCommentCodec.decode(comment.body ?? "")
-					.cover
+			? this.collaborators.publicationCommentCodec.decode(comment).cover
 			: undefined;
 	}
 
@@ -151,18 +114,17 @@ export class GithubPublicationJournal
 		const comment = await this.find();
 		if (!comment)
 			throw new Error("Reserve the event identity before uploading artwork");
-		const previous = this.collaborators.publicationCommentCodec.decode(
-			comment.body ?? "",
+		const previous = this.collaborators.publicationCommentCodec.decode(comment);
+		await this.state.write(
+			"meetup",
+			[comment],
+			[
+				this.collaborators.publicationCommentCodec.encode({
+					...previous,
+					cover,
+				}),
+			],
 		);
-		await this.client.rest.issues.updateComment({
-			owner: this.scope.owner,
-			repo: this.scope.repo,
-			comment_id: comment.id,
-			body: this.collaborators.publicationCommentCodec.encode({
-				...previous,
-				cover,
-			}),
-		});
 		const persisted = await this.readCover();
 		if (
 			!persisted ||
@@ -173,29 +135,10 @@ export class GithubPublicationJournal
 			throw new Error("Meetup cover journal was not persisted");
 	}
 
-	private async find(): Promise<Comment | undefined> {
-		const matches: Comment[] = [];
-		for (let page = 1; page <= 100; page++) {
-			const response = await this.client.rest.issues.listComments({
-				...this.scope,
-				page,
-				per_page: 100,
-			});
-			matches.push(
-				...response.data.filter(
-					(comment) =>
-						comment.user?.login.toLowerCase() === this.author.toLowerCase() &&
-						comment.body?.startsWith(PublicationCommentCodec.marker),
-				),
-			);
-			if (matches.length > 1) throw new Error("Multiple publication journals");
-			const hasNext =
-				response.headers.link !== undefined
-					? /<[^>]+>;\s*rel="next"/.test(response.headers.link)
-					: response.data.length === 100;
-			if (!hasNext) return matches[0];
-		}
-		throw new Error("Publication journal pagination exceeded its bound");
+	private async find(): Promise<string | undefined> {
+		const records = await this.state.read("meetup");
+		if (records.length > 1) throw new Error("Multiple publication journals");
+		return records[0];
 	}
 }
 export type GithubPublicationJournalArguments =

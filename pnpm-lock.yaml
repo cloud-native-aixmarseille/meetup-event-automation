@@ -101,6 +101,9 @@ importers:
       '@meetup-automation/communication':
         specifier: workspace:*
         version: link:../../../domain/communication
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../../application/journey
 
   packages/adapter/communication/linkedin-social-gateway:
     dependencies:
@@ -159,6 +162,15 @@ importers:
         specifier: workspace:*
         version: link:../../../application/journey
 
+  packages/adapter/journey/github-automation-state:
+    dependencies:
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../../application/journey
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../../presentation/localization
+
   packages/adapter/journey/github-organizer-approval:
     dependencies:
       '@meetup-automation/communication':
@@ -203,6 +215,9 @@ importers:
 
   packages/adapter/publication/github-publication-journal:
     dependencies:
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../../application/journey
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../../domain/publication
@@ -382,6 +397,9 @@ importers:
       '@meetup-automation/gemini-generation-gateway':
         specifier: workspace:*
         version: link:../../adapter/generation/gemini-generation-gateway
+      '@meetup-automation/github-automation-state':
+        specifier: workspace:*
+        version: link:../../adapter/journey/github-automation-state
       '@meetup-automation/github-delivery-ledger':
         specifier: workspace:*
         version: link:../../adapter/communication/github-delivery-ledger

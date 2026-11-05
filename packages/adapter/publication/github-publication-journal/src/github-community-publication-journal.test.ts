@@ -1,8 +1,9 @@
+import { automationStateFixture } from "../../../journey/github-automation-state/testing/state.fixtures.js";
 import {
 	CommunityEventIdentityPolicy,
 	CommunityGroupUrl,
 } from "@meetup-automation/publication";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { CommunityPublicationCommentCodec } from "./community-publication-comment-codec.js";
 import { GithubCommunityPublicationJournal } from "./github-community-publication-journal.js";
 
@@ -14,7 +15,7 @@ const identity = {
 };
 const complete = { ...identity, publicUrl: `${prefix}example` };
 function fixture(
-	initial: { id: number; body: string; user: { login: string } }[] = [],
+	initial: Parameters<typeof automationStateFixture>[0] = [],
 	target = "target",
 ) {
 	const group = CommunityGroupUrl.parse(prefix);
@@ -23,30 +24,9 @@ function fixture(
 		new CommunityEventIdentityPolicy(group),
 		target,
 	);
-	const comments = [...initial];
-	const issues = {
-		listComments: vi.fn(async () => ({ data: comments, headers: {} })),
-		createComment: vi.fn(async ({ body }: { body: string }) => {
-			comments.push({
-				id: comments.length + 1,
-				body,
-				user: { login: "automation[bot]" },
-			});
-		}),
-		updateComment: vi.fn(
-			async ({ comment_id, body }: { comment_id: number; body: string }) => {
-				const comment = comments.find((item) => item.id === comment_id);
-				if (comment) comment.body = body;
-			},
-		),
-	};
-	const journal = new GithubCommunityPublicationJournal(
-		codec,
-		{ rest: { issues } },
-		{ owner: "example", repo: "events", issue_number: 42 },
-		"automation[bot]",
-	);
-	return { journal, comments, issues, codec };
+	const f = automationStateFixture(initial, "automation[bot]");
+	const journal = new GithubCommunityPublicationJournal(codec, f.state);
+	return { journal, ...f, publicationCodec: codec };
 }
 describe("community publication journal", () => {
 	it("persists a UUID without a public slug and enriches it after verification", async () => {
@@ -61,8 +41,8 @@ describe("community publication journal", () => {
 		// Assert
 		expect(savedId).toEqual({ identity });
 		expect(saved).toEqual({ identity: complete });
-		expect(f.issues.createComment).toHaveBeenCalledOnce();
-		expect(f.issues.updateComment).toHaveBeenCalledTimes(2);
+		expect(f.client.create).toHaveBeenCalledOnce();
+		expect(f.client.replace).toHaveBeenCalledTimes(2);
 	});
 	it("can record an observed UUID even if no reservation was visible", async () => {
 		// Arrange
@@ -72,7 +52,7 @@ describe("community publication journal", () => {
 		const saved = await f.journal.load();
 		// Assert
 		expect(saved).toEqual({ identity });
-		expect(f.issues.createComment).toHaveBeenCalledOnce();
+		expect(f.client.create).toHaveBeenCalledOnce();
 	});
 	it("retains the public URL during a later partial save observation", async () => {
 		// Arrange
@@ -83,7 +63,7 @@ describe("community publication journal", () => {
 		const saved = await f.journal.load();
 		// Assert
 		expect(saved).toEqual({ identity: complete });
-		expect(f.issues.updateComment).not.toHaveBeenCalled();
+		expect(await f.journal.load()).toEqual({ identity: complete });
 	});
 	it("allows a new public slug for the same immutable event identity", async () => {
 		// Arrange
@@ -107,7 +87,7 @@ describe("community publication journal", () => {
 		});
 		// Assert
 		await expect(result).rejects.toThrow("conflict");
-		expect(f.issues.updateComment).not.toHaveBeenCalled();
+		expect(f.client.replace).not.toHaveBeenCalled();
 	});
 	it("blocks a target configuration change", async () => {
 		// Arrange
@@ -142,7 +122,8 @@ describe("community publication journal", () => {
 		// Arrange
 		const f = fixture();
 		await f.journal.record(complete);
-		f.comments.push({ ...f.comments[0], id: 2 });
+		const record = f.publicationCodec.encode({ identity: complete });
+		await f.state.write("community", [record], [record, record]);
 		// Act
 		const result = f.journal.load();
 		// Assert
@@ -156,6 +137,6 @@ describe("community publication journal", () => {
 		const result = f.journal.reserve();
 		// Assert
 		await expect(result).rejects.toThrow("uncertain");
-		expect(f.issues.createComment).toHaveBeenCalledOnce();
+		expect(f.client.create).toHaveBeenCalledOnce();
 	});
 });

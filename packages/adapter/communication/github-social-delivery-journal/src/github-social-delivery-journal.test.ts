@@ -146,7 +146,7 @@ describe("durable social delivery journal", () => {
 		// Assert
 		expect(firstSaved).toEqual(first);
 		expect(secondSaved).toEqual(second);
-		expect(f.client.create).toHaveBeenCalledTimes(2);
+		expect(f.client.create).toHaveBeenCalledTimes(1);
 	});
 	it("rejects a stale snapshot when another run has reserved delivery", async () => {
 		// Arrange
@@ -210,7 +210,7 @@ describe("durable social delivery journal", () => {
 
 		// Assert
 		await expect(save).rejects.toThrow("GitHub unavailable");
-		expect(f.codec.read(f.comments[0].body ?? "")).toEqual(record);
+		expect(await f.journal.load(record.intentId)).toEqual(record);
 	});
 	it("rejects duplicated bot-owned intent identities", async () => {
 		// Arrange

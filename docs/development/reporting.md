@@ -128,6 +128,47 @@ A reported prerequisite block replaces a stale unknown-stage alert with its
 concrete diagnostic. It does not resolve earlier integration failures until the
 blocked integration can actually be evaluated.
 
+### Internal automation state
+
+Content proposals, social delivery records, and Meetup and OCGroups publication
+journals share one authoritative bot comment per issue. The
+`meetup-automation-state:v1` envelope retains each adapter's serialized records
+in independent sections. Organizer approval requests and checklists retain their
+existing controls and visibility rules.
+
+Every state write verifies the current section, preserves the other sections,
+checks persistence by rereading, and minimizes the comment with `RESOLVED`.
+Internal state stays minimized even while work is pending. Attention
+reconciliation also consolidates and minimizes state before sending organizer
+notifications, including runs with unchanged state. Visibility failures fail the
+operation; a rerun retries without creating another comment. GitHub still shows
+an expandable collapsed placeholder. Creation and minimization are separate API
+requests, so a new comment can briefly appear before minimization succeeds.
+
+Existing standalone records are imported together after verifying their author
+and edit history. The oldest record comment becomes the consolidated comment;
+the other originals are minimized only after successful readback. Their bodies
+and edit histories remain available. Imported originals are no longer writable
+state: changes to them block reconciliation instead of replacing current data.
+
+The shared GitHub adapter owns the envelope, provenance, guarded writes, and
+visibility. Feature adapters retain schema validation and transition checks.
+Queries do not migrate or change visibility. Writes and attention reconciliation
+own those effects and require the existing repository/issue workflow lock;
+GitHub comment updates do not provide an atomic compare-and-swap operation.
+
+Duplicate envelopes, unavailable or altered history, stale writes, and uncertain
+readback block persistence. A maintainer with repository write access may recover
+only the `meetup` and `community` sections, following the
+[publication recovery procedures](../integrations/event-publication.md#recover-an-interrupted-run).
+Proposal, social delivery, and import metadata changes must come from the trusted
+bot. Every human recovery edit is checked against its preceding saved body.
+
+The complete rendered comment must fit within the adapter's 60,000-character
+budget. Oversized state fails before writing; it is never truncated or split into
+additional comments. Preserve the consolidated comment and its edit history.
+Recover damaged or deleted state before resuming automation.
+
 ## Validation
 
 `tests/contracts/action-reporting.spec.ts` enforces runner and rendering ownership.

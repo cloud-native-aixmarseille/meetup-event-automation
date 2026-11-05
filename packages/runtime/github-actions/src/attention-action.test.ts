@@ -8,7 +8,11 @@ import { AttentionComposition } from "./attention-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 
-const boundary = vi.hoisted(() => ({ execute: vi.fn(), feedback: vi.fn() }));
+const boundary = vi.hoisted(() => ({
+	execute: vi.fn(),
+	feedback: vi.fn(),
+	reconcileState: vi.fn(),
+}));
 vi.mock("@actions/core", () => ({
 	getInput: (name: string) =>
 		({
@@ -53,6 +57,7 @@ describe("attention action reporting", () => {
 
 			// Act
 			const report = await new AttentionAction({
+				reconcileState: boundary.reconcileState,
 				publicationUrlInput:
 					new GithubActionsComposition().publicationUrlInput(),
 				createAttention: (input) => {
@@ -69,6 +74,10 @@ describe("attention action reporting", () => {
 			);
 
 			// Assert
+			expect(boundary.reconcileState).toHaveBeenCalledOnce();
+			expect(boundary.reconcileState.mock.invocationCallOrder[0]).toBeLessThan(
+				boundary.execute.mock.invocationCallOrder[0] ?? 0,
+			);
 			expect(Boolean(report.failure)).toBe(notificationFailed);
 			expect(report.details.join(" ")).toContain("attention=persisted");
 			expect(core.setOutput).not.toHaveBeenCalled();
@@ -87,6 +96,7 @@ describe("attention action reporting", () => {
 
 		// Act
 		const report = await new AttentionAction({
+			reconcileState: boundary.reconcileState,
 			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createAttention: (input) => {
 				const container = AttentionComposition.create(input);
@@ -99,5 +109,30 @@ describe("attention action reporting", () => {
 		// Assert
 		expect(report.details.join(" ")).toContain("skipped");
 		expect(report.failure).toBeUndefined();
+	});
+	it("prevents organizer notifications when state cannot be hidden", async () => {
+		// Arrange
+		boundary.reconcileState.mockRejectedValueOnce(
+			new Error("State visibility is unconfirmed"),
+		);
+		const action = new AttentionAction({
+			reconcileState: boundary.reconcileState,
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
+			createAttention: (input) => {
+				const container = AttentionComposition.create(input);
+				return container.get(ManageMeetupAttention);
+			},
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			attentionStages: new GithubActionsComposition().attentionStages(),
+		});
+
+		// Act
+		const result = action.run(
+			new GithubActionsComposition().actionMessages("en"),
+		);
+
+		// Assert
+		await expect(result).rejects.toThrow("State visibility is unconfirmed");
+		expect(boundary.execute).not.toHaveBeenCalled();
 	});
 });

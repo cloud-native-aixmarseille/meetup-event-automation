@@ -27983,6 +27983,3976 @@ var require_ReflectLite = __commonJS({
   }
 });
 
+// packages/presentation/localization/src/locale-resolver.ts
+var LocaleResolver = class {
+  resolveLocale(requested) {
+    try {
+      const language = new Intl.Locale(
+        requested.trim().replaceAll("_", "-") || "en"
+      ).language;
+      return language === "fr" ? "fr" : "en";
+    } catch {
+      return "en";
+    }
+  }
+};
+
+// packages/presentation/localization/src/dependency-composition.ts
+var LocalizationComposition = class {
+  localeResolver() {
+    return new LocaleResolver();
+  }
+};
+
+// node_modules/.pnpm/@formatjs+fast-memoize@3.1.7/node_modules/@formatjs/fast-memoize/index.js
+function memoize(fn3, options) {
+  const cache = options && options.cache ? options.cache : cacheDefault;
+  const serializer = options && options.serializer ? options.serializer : serializerDefault;
+  return (options && options.strategy ? options.strategy : strategyDefault)(fn3, {
+    cache,
+    serializer
+  });
+}
+function isPrimitive(value) {
+  return value == null || typeof value === "number" || typeof value === "boolean";
+}
+function monadic(fn3, cache, serializer, arg) {
+  const cacheKey = isPrimitive(arg) ? arg : serializer(arg);
+  let computedValue = cache.get(cacheKey);
+  if (typeof computedValue === "undefined") {
+    computedValue = fn3.call(this, arg);
+    cache.set(cacheKey, computedValue);
+  }
+  return computedValue;
+}
+function variadic(fn3, cache, serializer) {
+  const args = Array.prototype.slice.call(arguments, 3);
+  const cacheKey = serializer(args);
+  let computedValue = cache.get(cacheKey);
+  if (typeof computedValue === "undefined") {
+    computedValue = fn3.apply(this, args);
+    cache.set(cacheKey, computedValue);
+  }
+  return computedValue;
+}
+function assemble(fn3, context3, strategy, cache, serialize) {
+  return strategy.bind(context3, fn3, cache, serialize);
+}
+function strategyDefault(fn3, options) {
+  const strategy = fn3.length === 1 ? monadic : variadic;
+  return assemble(fn3, this, strategy, options.cache.create(), options.serializer);
+}
+function strategyVariadic(fn3, options) {
+  return assemble(fn3, this, variadic, options.cache.create(), options.serializer);
+}
+function strategyMonadic(fn3, options) {
+  return assemble(fn3, this, monadic, options.cache.create(), options.serializer);
+}
+var serializerDefault = function() {
+  return JSON.stringify(arguments);
+};
+var ObjectWithoutPrototypeCache = class {
+  constructor() {
+    this.cache = /* @__PURE__ */ Object.create(null);
+  }
+  get(key) {
+    return this.cache[key];
+  }
+  set(key, value) {
+    this.cache[key] = value;
+  }
+};
+var cacheDefault = { create: function create() {
+  return new ObjectWithoutPrototypeCache();
+} };
+var strategies = {
+  variadic: strategyVariadic,
+  monadic: strategyMonadic
+};
+
+// node_modules/.pnpm/@formatjs+icu-skeleton-parser@2.1.12/node_modules/@formatjs/icu-skeleton-parser/index.js
+var DATE_TIME_REGEX = /(?:[Eec]{1,6}|G{1,5}|[Qq]{1,5}|(?:[yYur]+|U{1,5})|[ML]{1,5}|d{1,2}|D{1,3}|F{1}|[abB]{1,5}|[hkHK]{1,2}|w{1,2}|W{1}|m{1,2}|s{1,2}|[zZOvVxX]{1,4})(?=([^']*'[^']*')*[^']*$)/g;
+function parseDateTimeSkeleton(skeleton) {
+  const result = {};
+  skeleton.replace(DATE_TIME_REGEX, (match) => {
+    const len = match.length;
+    switch (match[0]) {
+      case "G":
+        result.era = len === 4 ? "long" : len === 5 ? "narrow" : "short";
+        break;
+      case "y":
+        result.year = len === 2 ? "2-digit" : "numeric";
+        break;
+      case "Y":
+      case "u":
+      case "U":
+      case "r":
+        throw new RangeError("`Y/u/U/r` (year) patterns are not supported, use `y` instead");
+      case "q":
+      case "Q":
+        throw new RangeError("`q/Q` (quarter) patterns are not supported");
+      case "M":
+      case "L":
+        result.month = [
+          "numeric",
+          "2-digit",
+          "short",
+          "long",
+          "narrow"
+        ][len - 1];
+        break;
+      case "w":
+      case "W":
+        throw new RangeError("`w/W` (week) patterns are not supported");
+      case "d":
+        result.day = ["numeric", "2-digit"][len - 1];
+        break;
+      case "D":
+      case "F":
+      case "g":
+        throw new RangeError("`D/F/g` (day) patterns are not supported, use `d` instead");
+      case "E":
+        result.weekday = len === 4 ? "long" : len === 5 ? "narrow" : "short";
+        break;
+      case "e":
+        if (len < 4) throw new RangeError("`e..eee` (weekday) patterns are not supported");
+        result.weekday = [
+          "short",
+          "long",
+          "narrow",
+          "short"
+        ][len - 3];
+        break;
+      case "c":
+        if (len < 4) throw new RangeError("`c..ccc` (weekday) patterns are not supported");
+        result.weekday = [
+          "short",
+          "long",
+          "narrow",
+          "short"
+        ][len - 3];
+        break;
+      case "a":
+        result.hour12 = true;
+        break;
+      case "b":
+      case "B":
+        throw new RangeError("`b/B` (period) patterns are not supported, use `a` instead");
+      case "h":
+        result.hourCycle = "h12";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "H":
+        result.hourCycle = "h23";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "K":
+        result.hourCycle = "h11";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "k":
+        result.hourCycle = "h24";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "j":
+      case "J":
+      case "C":
+        throw new RangeError("`j/J/C` (hour) patterns are not supported, use `h/H/K/k` instead");
+      case "m":
+        result.minute = ["numeric", "2-digit"][len - 1];
+        break;
+      case "s":
+        result.second = ["numeric", "2-digit"][len - 1];
+        break;
+      case "S":
+      case "A":
+        throw new RangeError("`S/A` (second) patterns are not supported, use `s` instead");
+      case "z":
+        result.timeZoneName = len < 4 ? "short" : "long";
+        break;
+      case "Z":
+      case "O":
+      case "v":
+      case "V":
+      case "X":
+      case "x":
+        throw new RangeError("`Z/O/v/V/X/x` (timeZone) patterns are not supported, use `z` instead");
+    }
+    return "";
+  });
+  return result;
+}
+var WHITE_SPACE_REGEX = /[\t-\r \x85\u200E\u200F\u2028\u2029]/i;
+function parseNumberSkeletonFromString(skeleton) {
+  if (skeleton.length === 0) throw new Error("Number skeleton cannot be empty");
+  const stringTokens = skeleton.split(WHITE_SPACE_REGEX).filter((x3) => x3.length > 0);
+  const tokens = [];
+  for (const stringToken of stringTokens) {
+    let stemAndOptions = stringToken.split("/");
+    if (stemAndOptions.length === 0) throw new Error("Invalid number skeleton");
+    const [stem, ...options] = stemAndOptions;
+    for (const option of options) if (option.length === 0) throw new Error("Invalid number skeleton");
+    tokens.push({
+      stem,
+      options
+    });
+  }
+  return tokens;
+}
+function icuUnitToEcma(unit) {
+  return unit.replace(/^(.*?)-/, "");
+}
+var FRACTION_PRECISION_REGEX = /^\.(?:(0+)(\*)?|(#+)|(0+)(#+))$/g;
+var SIGNIFICANT_PRECISION_REGEX = /^(@+)?(\+|#+)?[rs]?$/g;
+var INTEGER_WIDTH_REGEX = /(\*)(0+)|(#+)(0+)|(0+)/g;
+var CONCISE_INTEGER_WIDTH_REGEX = /^(0+)$/;
+function parseSignificantPrecision(str) {
+  const result = {};
+  if (str[str.length - 1] === "r") result.roundingPriority = "morePrecision";
+  else if (str[str.length - 1] === "s") result.roundingPriority = "lessPrecision";
+  str.replace(SIGNIFICANT_PRECISION_REGEX, function(_2, g1, g2) {
+    if (typeof g2 !== "string") {
+      result.minimumSignificantDigits = g1.length;
+      result.maximumSignificantDigits = g1.length;
+    } else if (g2 === "+") result.minimumSignificantDigits = g1.length;
+    else if (g1[0] === "#") result.maximumSignificantDigits = g1.length;
+    else {
+      result.minimumSignificantDigits = g1.length;
+      result.maximumSignificantDigits = g1.length + (typeof g2 === "string" ? g2.length : 0);
+    }
+    return "";
+  });
+  return result;
+}
+function parseSign(str) {
+  switch (str) {
+    case "sign-auto":
+      return { signDisplay: "auto" };
+    case "sign-accounting":
+    case "()":
+      return { currencySign: "accounting" };
+    case "sign-always":
+    case "+!":
+      return { signDisplay: "always" };
+    case "sign-accounting-always":
+    case "()!":
+      return {
+        signDisplay: "always",
+        currencySign: "accounting"
+      };
+    case "sign-except-zero":
+    case "+?":
+      return { signDisplay: "exceptZero" };
+    case "sign-accounting-except-zero":
+    case "()?":
+      return {
+        signDisplay: "exceptZero",
+        currencySign: "accounting"
+      };
+    case "sign-never":
+    case "+_":
+      return { signDisplay: "never" };
+  }
+}
+function parseConciseScientificAndEngineeringStem(stem) {
+  let result;
+  if (stem[0] === "E" && stem[1] === "E") {
+    result = { notation: "engineering" };
+    stem = stem.slice(2);
+  } else if (stem[0] === "E") {
+    result = { notation: "scientific" };
+    stem = stem.slice(1);
+  }
+  if (result) {
+    const signDisplay = stem.slice(0, 2);
+    if (signDisplay === "+!") {
+      result.signDisplay = "always";
+      stem = stem.slice(2);
+    } else if (signDisplay === "+?") {
+      result.signDisplay = "exceptZero";
+      stem = stem.slice(2);
+    }
+    if (!CONCISE_INTEGER_WIDTH_REGEX.test(stem)) throw new Error("Malformed concise eng/scientific notation");
+    result.minimumIntegerDigits = stem.length;
+  }
+  return result;
+}
+function parseNotationOptions(opt) {
+  const result = {};
+  const signOpts = parseSign(opt);
+  if (signOpts) return signOpts;
+  return result;
+}
+function parseNumberSkeleton(tokens) {
+  let result = {};
+  for (const token of tokens) {
+    switch (token.stem) {
+      case "percent":
+      case "%":
+        result.style = "percent";
+        continue;
+      case "%x100":
+        result.style = "percent";
+        result.scale = 100;
+        continue;
+      case "currency":
+        result.style = "currency";
+        result.currency = token.options[0];
+        continue;
+      case "group-off":
+      case ",_":
+        result.useGrouping = false;
+        continue;
+      case "precision-integer":
+      case ".":
+        result.maximumFractionDigits = 0;
+        continue;
+      case "measure-unit":
+      case "unit":
+        result.style = "unit";
+        result.unit = icuUnitToEcma(token.options[0]);
+        continue;
+      case "compact-short":
+      case "K":
+        result.notation = "compact";
+        result.compactDisplay = "short";
+        continue;
+      case "compact-long":
+      case "KK":
+        result.notation = "compact";
+        result.compactDisplay = "long";
+        continue;
+      case "scientific":
+        result = {
+          ...result,
+          notation: "scientific",
+          ...token.options.reduce((all, opt) => ({
+            ...all,
+            ...parseNotationOptions(opt)
+          }), {})
+        };
+        continue;
+      case "engineering":
+        result = {
+          ...result,
+          notation: "engineering",
+          ...token.options.reduce((all, opt) => ({
+            ...all,
+            ...parseNotationOptions(opt)
+          }), {})
+        };
+        continue;
+      case "notation-simple":
+        result.notation = "standard";
+        continue;
+      case "unit-width-narrow":
+        result.currencyDisplay = "narrowSymbol";
+        result.unitDisplay = "narrow";
+        continue;
+      case "unit-width-short":
+        result.currencyDisplay = "code";
+        result.unitDisplay = "short";
+        continue;
+      case "unit-width-full-name":
+        result.currencyDisplay = "name";
+        result.unitDisplay = "long";
+        continue;
+      case "unit-width-iso-code":
+        result.currencyDisplay = "symbol";
+        continue;
+      case "scale":
+        result.scale = parseFloat(token.options[0]);
+        continue;
+      case "rounding-mode-floor":
+        result.roundingMode = "floor";
+        continue;
+      case "rounding-mode-ceiling":
+        result.roundingMode = "ceil";
+        continue;
+      case "rounding-mode-down":
+        result.roundingMode = "trunc";
+        continue;
+      case "rounding-mode-up":
+        result.roundingMode = "expand";
+        continue;
+      case "rounding-mode-half-even":
+        result.roundingMode = "halfEven";
+        continue;
+      case "rounding-mode-half-down":
+        result.roundingMode = "halfTrunc";
+        continue;
+      case "rounding-mode-half-up":
+        result.roundingMode = "halfExpand";
+        continue;
+      case "integer-width":
+        if (token.options.length > 1) throw new RangeError("integer-width stems only accept a single optional option");
+        token.options[0].replace(INTEGER_WIDTH_REGEX, function(_2, g1, g2, g3, g4, g5) {
+          if (g1) result.minimumIntegerDigits = g2.length;
+          else if (g3 && g4) throw new Error("We currently do not support maximum integer digits");
+          else if (g5) throw new Error("We currently do not support exact integer digits");
+          return "";
+        });
+        continue;
+    }
+    if (CONCISE_INTEGER_WIDTH_REGEX.test(token.stem)) {
+      result.minimumIntegerDigits = token.stem.length;
+      continue;
+    }
+    if (FRACTION_PRECISION_REGEX.test(token.stem)) {
+      if (token.options.length > 1) throw new RangeError("Fraction-precision stems only accept a single optional option");
+      token.stem.replace(FRACTION_PRECISION_REGEX, function(_2, g1, g2, g3, g4, g5) {
+        if (g2 === "*") result.minimumFractionDigits = g1.length;
+        else if (g3 && g3[0] === "#") result.maximumFractionDigits = g3.length;
+        else if (g4 && g5) {
+          result.minimumFractionDigits = g4.length;
+          result.maximumFractionDigits = g4.length + g5.length;
+        } else {
+          result.minimumFractionDigits = g1.length;
+          result.maximumFractionDigits = g1.length;
+        }
+        return "";
+      });
+      const opt = token.options[0];
+      if (opt === "w") result = {
+        ...result,
+        trailingZeroDisplay: "stripIfInteger"
+      };
+      else if (opt) result = {
+        ...result,
+        ...parseSignificantPrecision(opt)
+      };
+      continue;
+    }
+    if (SIGNIFICANT_PRECISION_REGEX.test(token.stem)) {
+      result = {
+        ...result,
+        ...parseSignificantPrecision(token.stem)
+      };
+      continue;
+    }
+    const signOpts = parseSign(token.stem);
+    if (signOpts) result = {
+      ...result,
+      ...signOpts
+    };
+    const conciseScientificAndEngineeringOpts = parseConciseScientificAndEngineeringStem(token.stem);
+    if (conciseScientificAndEngineeringOpts) result = {
+      ...result,
+      ...conciseScientificAndEngineeringOpts
+    };
+  }
+  return result;
+}
+
+// node_modules/.pnpm/@formatjs+icu-messageformat-parser@3.5.21/node_modules/@formatjs/icu-messageformat-parser/index.js
+var ErrorKind = /* @__PURE__ */ (function(ErrorKind2) {
+  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_CLOSING_BRACE"] = 1] = "EXPECT_ARGUMENT_CLOSING_BRACE";
+  ErrorKind2[ErrorKind2["EMPTY_ARGUMENT"] = 2] = "EMPTY_ARGUMENT";
+  ErrorKind2[ErrorKind2["MALFORMED_ARGUMENT"] = 3] = "MALFORMED_ARGUMENT";
+  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_TYPE"] = 4] = "EXPECT_ARGUMENT_TYPE";
+  ErrorKind2[ErrorKind2["INVALID_ARGUMENT_TYPE"] = 5] = "INVALID_ARGUMENT_TYPE";
+  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_STYLE"] = 6] = "EXPECT_ARGUMENT_STYLE";
+  ErrorKind2[ErrorKind2["INVALID_NUMBER_SKELETON"] = 7] = "INVALID_NUMBER_SKELETON";
+  ErrorKind2[ErrorKind2["INVALID_DATE_TIME_SKELETON"] = 8] = "INVALID_DATE_TIME_SKELETON";
+  ErrorKind2[ErrorKind2["EXPECT_NUMBER_SKELETON"] = 9] = "EXPECT_NUMBER_SKELETON";
+  ErrorKind2[ErrorKind2["EXPECT_DATE_TIME_SKELETON"] = 10] = "EXPECT_DATE_TIME_SKELETON";
+  ErrorKind2[ErrorKind2["UNCLOSED_QUOTE_IN_ARGUMENT_STYLE"] = 11] = "UNCLOSED_QUOTE_IN_ARGUMENT_STYLE";
+  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_OPTIONS"] = 12] = "EXPECT_SELECT_ARGUMENT_OPTIONS";
+  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_OFFSET_VALUE"] = 13] = "EXPECT_PLURAL_ARGUMENT_OFFSET_VALUE";
+  ErrorKind2[ErrorKind2["INVALID_PLURAL_ARGUMENT_OFFSET_VALUE"] = 14] = "INVALID_PLURAL_ARGUMENT_OFFSET_VALUE";
+  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_SELECTOR"] = 15] = "EXPECT_SELECT_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_SELECTOR"] = 16] = "EXPECT_PLURAL_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_SELECTOR_FRAGMENT"] = 17] = "EXPECT_SELECT_ARGUMENT_SELECTOR_FRAGMENT";
+  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_SELECTOR_FRAGMENT"] = 18] = "EXPECT_PLURAL_ARGUMENT_SELECTOR_FRAGMENT";
+  ErrorKind2[ErrorKind2["INVALID_PLURAL_ARGUMENT_SELECTOR"] = 19] = "INVALID_PLURAL_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["DUPLICATE_PLURAL_ARGUMENT_SELECTOR"] = 20] = "DUPLICATE_PLURAL_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["DUPLICATE_SELECT_ARGUMENT_SELECTOR"] = 21] = "DUPLICATE_SELECT_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["MISSING_OTHER_CLAUSE"] = 22] = "MISSING_OTHER_CLAUSE";
+  ErrorKind2[ErrorKind2["INVALID_TAG"] = 23] = "INVALID_TAG";
+  ErrorKind2[ErrorKind2["INVALID_TAG_NAME"] = 25] = "INVALID_TAG_NAME";
+  ErrorKind2[ErrorKind2["UNMATCHED_CLOSING_TAG"] = 26] = "UNMATCHED_CLOSING_TAG";
+  ErrorKind2[ErrorKind2["UNCLOSED_TAG"] = 27] = "UNCLOSED_TAG";
+  return ErrorKind2;
+})({});
+var TYPE = /* @__PURE__ */ (function(TYPE2) {
+  TYPE2[TYPE2["literal"] = 0] = "literal";
+  TYPE2[TYPE2["argument"] = 1] = "argument";
+  TYPE2[TYPE2["number"] = 2] = "number";
+  TYPE2[TYPE2["date"] = 3] = "date";
+  TYPE2[TYPE2["time"] = 4] = "time";
+  TYPE2[TYPE2["select"] = 5] = "select";
+  TYPE2[TYPE2["plural"] = 6] = "plural";
+  TYPE2[TYPE2["pound"] = 7] = "pound";
+  TYPE2[TYPE2["tag"] = 8] = "tag";
+  return TYPE2;
+})({});
+function isLiteralElement(el2) {
+  return el2.type === 0;
+}
+function isArgumentElement(el2) {
+  return el2.type === 1;
+}
+function isNumberElement(el2) {
+  return el2.type === 2;
+}
+function isDateElement(el2) {
+  return el2.type === 3;
+}
+function isTimeElement(el2) {
+  return el2.type === 4;
+}
+function isSelectElement(el2) {
+  return el2.type === 5;
+}
+function isPluralElement(el2) {
+  return el2.type === 6;
+}
+function isPoundElement(el2) {
+  return el2.type === 7;
+}
+function isTagElement(el2) {
+  return el2.type === 8;
+}
+function isNumberSkeleton(el2) {
+  return !!(el2 && typeof el2 === "object" && el2.type === 0);
+}
+function isDateTimeSkeleton(el2) {
+  return !!(el2 && typeof el2 === "object" && el2.type === 1);
+}
+var SPACE_SEPARATOR_REGEX = /[ \xA0\u1680\u2000-\u200A\u202F\u205F\u3000]/;
+var IDENTIFIER_PREFIX_REGEX = /([^\t-\r -\/:-@\[-\^`\{-~\x85\xA0-\xA7\xA9\xAB\xAC\xAE\xB0\xB1\xB6\xBB\xBF\xD7\xF7\u1680\u2000-\u200A\u2010-\u2029\u202F-\u203E\u2041-\u2053\u2055-\u205F\u2190-\u245F\u2500-\u2775\u2794-\u2BFF\u2E00-\u2E7F\u3000-\u3003\u3008-\u3020\u3030\uFD3E\uFD3F\uFE45\uFE46]*)/g;
+var timeData = {
+  "001": ["H", "h"],
+  "419": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "AC": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "AD": ["H", "hB"],
+  "AE": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "AF": [
+    "H",
+    "hb",
+    "hB",
+    "h"
+  ],
+  "AG": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "AI": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "AL": [
+    "h",
+    "H",
+    "hB"
+  ],
+  "AM": ["H", "hB"],
+  "AO": ["H", "hB"],
+  "AR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "AS": ["h", "H"],
+  "AT": ["H", "hB"],
+  "AU": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "AW": ["H", "hB"],
+  "AX": ["H"],
+  "AZ": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "BA": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "BB": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "BD": [
+    "h",
+    "hB",
+    "H"
+  ],
+  "BE": ["H", "hB"],
+  "BF": ["H", "hB"],
+  "BG": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "BH": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "BI": ["H", "h"],
+  "BJ": ["H", "hB"],
+  "BL": ["H", "hB"],
+  "BM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "BN": [
+    "hb",
+    "hB",
+    "h",
+    "H"
+  ],
+  "BO": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "BQ": ["H"],
+  "BR": ["H", "hB"],
+  "BS": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "BT": ["h", "H"],
+  "BW": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "BY": ["H", "h"],
+  "BZ": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CA": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "CC": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CD": ["hB", "H"],
+  "CF": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "CG": ["H", "hB"],
+  "CH": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "CI": ["H", "hB"],
+  "CK": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CL": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CM": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "CN": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ],
+  "CO": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CP": ["H"],
+  "CR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CU": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CV": ["H", "hB"],
+  "CW": ["H", "hB"],
+  "CX": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CY": [
+    "h",
+    "H",
+    "hb",
+    "hB"
+  ],
+  "CZ": ["H"],
+  "DE": ["H", "hB"],
+  "DG": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "DJ": ["h", "H"],
+  "DK": ["H"],
+  "DM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "DO": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "DZ": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "EA": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "EC": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "EE": ["H", "hB"],
+  "EG": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "EH": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "ER": ["h", "H"],
+  "ES": [
+    "H",
+    "hB",
+    "h",
+    "hb"
+  ],
+  "ET": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "FI": ["H"],
+  "FJ": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "FK": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "FM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "FO": ["H", "h"],
+  "FR": ["H", "hB"],
+  "GA": ["H", "hB"],
+  "GB": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GD": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "GE": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "GF": ["H", "hB"],
+  "GG": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GH": ["h", "H"],
+  "GI": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GL": ["H", "h"],
+  "GM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "GN": ["H", "hB"],
+  "GP": ["H", "hB"],
+  "GQ": [
+    "H",
+    "hB",
+    "h",
+    "hb"
+  ],
+  "GR": [
+    "h",
+    "H",
+    "hb",
+    "hB"
+  ],
+  "GS": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GT": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "GU": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "GW": ["H", "hB"],
+  "GY": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "HK": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "HN": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "HR": ["H", "hB"],
+  "HU": ["H", "h"],
+  "IC": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "ID": ["H"],
+  "IE": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "IL": ["H", "hB"],
+  "IM": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "IN": ["h", "H"],
+  "IO": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "IQ": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "IR": ["hB", "H"],
+  "IS": ["H"],
+  "IT": ["H", "hB"],
+  "JE": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "JM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "JO": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "JP": [
+    "H",
+    "K",
+    "h"
+  ],
+  "KE": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "KG": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "KH": [
+    "hB",
+    "h",
+    "H",
+    "hb"
+  ],
+  "KI": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "KM": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "KN": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "KP": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "KR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "KW": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "KY": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "KZ": ["H", "hB"],
+  "LA": [
+    "H",
+    "hb",
+    "hB",
+    "h"
+  ],
+  "LB": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "LC": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "LI": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "LK": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "LR": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "LS": ["h", "H"],
+  "LT": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "LU": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "LV": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ],
+  "LY": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "MA": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "MC": ["H", "hB"],
+  "MD": ["H", "hB"],
+  "ME": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "MF": ["H", "hB"],
+  "MG": ["H", "h"],
+  "MH": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "MK": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "ML": ["H"],
+  "MM": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "MN": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "MO": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "MP": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "MQ": ["H", "hB"],
+  "MR": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "MS": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "MT": ["H", "h"],
+  "MU": ["H", "h"],
+  "MV": ["H", "h"],
+  "MW": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "MX": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "MY": [
+    "hb",
+    "hB",
+    "h",
+    "H"
+  ],
+  "MZ": ["H", "hB"],
+  "NA": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "NC": ["H", "hB"],
+  "NE": ["H"],
+  "NF": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NG": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NI": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "NL": ["H", "hB"],
+  "NO": ["H", "h"],
+  "NP": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "NR": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NU": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NZ": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "OM": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "PA": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "PE": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "PF": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "PG": ["h", "H"],
+  "PH": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "PK": [
+    "h",
+    "hB",
+    "H"
+  ],
+  "PL": ["H", "h"],
+  "PM": ["H", "hB"],
+  "PN": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "PR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "PS": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "PT": ["H", "hB"],
+  "PW": ["h", "H"],
+  "PY": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "QA": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "RE": ["H", "hB"],
+  "RO": ["H", "hB"],
+  "RS": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "RU": ["H"],
+  "RW": ["H", "h"],
+  "SA": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "SB": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "SC": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "SD": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "SE": ["H"],
+  "SG": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "SH": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "SI": ["H", "hB"],
+  "SJ": ["H"],
+  "SK": ["H"],
+  "SL": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "SM": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "SN": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "SO": ["h", "H"],
+  "SR": ["H", "hB"],
+  "SS": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "ST": ["H", "hB"],
+  "SV": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "SX": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "SY": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "SZ": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "TA": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "TC": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "TD": [
+    "h",
+    "H",
+    "hB"
+  ],
+  "TF": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "TG": ["H", "hB"],
+  "TH": ["H", "h"],
+  "TJ": ["H", "h"],
+  "TL": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ],
+  "TM": ["H", "h"],
+  "TN": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "TO": ["h", "H"],
+  "TR": ["H", "hB"],
+  "TT": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "TW": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "TZ": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "UA": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "UG": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "UM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "US": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "UY": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "UZ": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "VA": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "VC": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "VE": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "VG": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "VI": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "VN": ["H", "h"],
+  "VU": ["h", "H"],
+  "WF": ["H", "hB"],
+  "WS": ["h", "H"],
+  "XK": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "YE": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "YT": ["H", "hB"],
+  "ZA": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "ZM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "ZW": ["H", "h"],
+  "af-ZA": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "ar-001": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "ca-ES": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "en-001": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "en-HK": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "en-IL": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "en-MY": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "es-BR": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "es-ES": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "es-GQ": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "fr-CA": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "gl-ES": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "gu-IN": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "hi-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "it-CH": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "it-IT": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "kn-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "ku-SY": ["H", "hB"],
+  "ml-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "mr-IN": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "pa-IN": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "ta-IN": [
+    "hB",
+    "h",
+    "hb",
+    "H"
+  ],
+  "te-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "zu-ZA": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ]
+};
+function getBestPattern(skeleton, locale) {
+  let skeletonCopy = "";
+  for (let patternPos = 0; patternPos < skeleton.length; patternPos++) {
+    const patternChar = skeleton.charAt(patternPos);
+    if (patternChar === "j") {
+      let extraLength = 0;
+      while (patternPos + 1 < skeleton.length && skeleton.charAt(patternPos + 1) === patternChar) {
+        extraLength++;
+        patternPos++;
+      }
+      let hourLen = 1 + (extraLength & 1);
+      let dayPeriodLen = extraLength < 2 ? 1 : 3 + (extraLength >> 1);
+      let dayPeriodChar = "a";
+      let hourChar = getDefaultHourSymbolFromLocale(locale);
+      if (hourChar == "H" || hourChar == "k") dayPeriodLen = 0;
+      while (dayPeriodLen-- > 0) skeletonCopy += dayPeriodChar;
+      while (hourLen-- > 0) skeletonCopy = hourChar + skeletonCopy;
+    } else if (patternChar === "J") skeletonCopy += "H";
+    else skeletonCopy += patternChar;
+  }
+  return skeletonCopy;
+}
+function getDefaultHourSymbolFromLocale(locale) {
+  let hourCycle = locale.hourCycle;
+  if (hourCycle === void 0) {
+    const localeWithHourCycles = locale;
+    hourCycle = localeWithHourCycles.getHourCycles?.()[0] ?? localeWithHourCycles.hourCycles?.[0];
+  }
+  if (hourCycle) switch (hourCycle) {
+    case "h24":
+      return "k";
+    case "h23":
+      return "H";
+    case "h12":
+      return "h";
+    case "h11":
+      return "K";
+    default:
+      throw new Error("Invalid hourCycle");
+  }
+  const languageTag = locale.language;
+  let regionTag;
+  if (languageTag !== "root") regionTag = locale.maximize().region;
+  return (timeData[`${languageTag}-${regionTag}`] || timeData[regionTag || ""] || timeData[languageTag || ""] || timeData[`${languageTag}-001`] || timeData["001"])[0].charAt(0);
+}
+var SPACE_SEPARATOR_START_REGEX = new RegExp(`^${SPACE_SEPARATOR_REGEX.source}*`);
+var SPACE_SEPARATOR_END_REGEX = new RegExp(`${SPACE_SEPARATOR_REGEX.source}*$`);
+function createLocation(start, end) {
+  return {
+    start,
+    end
+  };
+}
+var hasNativeFromEntries = !!Object.fromEntries;
+var hasTrimStart = !!String.prototype.trimStart;
+var hasTrimEnd = !!String.prototype.trimEnd;
+var fromEntries = hasNativeFromEntries ? Object.fromEntries : function fromEntries2(entries) {
+  const obj = {};
+  for (const [k2, v3] of entries) obj[k2] = v3;
+  return obj;
+};
+var trimStart = hasTrimStart ? function trimStart2(s) {
+  return s.trimStart();
+} : function trimStart3(s) {
+  return s.replace(SPACE_SEPARATOR_START_REGEX, "");
+};
+var trimEnd = hasTrimEnd ? function trimEnd2(s) {
+  return s.trimEnd();
+} : function trimEnd3(s) {
+  return s.replace(SPACE_SEPARATOR_END_REGEX, "");
+};
+var IDENTIFIER_PREFIX_RE = createIdentifierPrefixRegex();
+function createIdentifierPrefixRegex() {
+  try {
+    const regex = new RegExp("([^\\p{White_Space}\\p{Pattern_Syntax}]*)", "yu");
+    if (regex.exec("a ")?.[1] === "a") return regex;
+  } catch {
+  }
+  return IDENTIFIER_PREFIX_REGEX;
+}
+function matchIdentifierAtIndex(s, index) {
+  IDENTIFIER_PREFIX_RE.lastIndex = index;
+  return IDENTIFIER_PREFIX_RE.exec(s)[1] ?? "";
+}
+function plainTopLevelEndPosition(message) {
+  if (message.length === 0) return null;
+  let line = 1;
+  let column = 1;
+  for (let offset = 0; offset < message.length; ) {
+    const code = message.charCodeAt(offset);
+    switch (code) {
+      case 35:
+      case 39:
+      case 60:
+      case 123:
+      case 125:
+        return null;
+    }
+    if (code === 10) {
+      line++;
+      column = 1;
+      offset++;
+    } else {
+      column++;
+      if (code >= 55296 && code <= 56319 && offset + 1 < message.length) {
+        const next = message.charCodeAt(offset + 1);
+        offset += next >= 56320 && next <= 57343 ? 2 : 1;
+      } else offset++;
+    }
+  }
+  return {
+    offset: message.length,
+    line,
+    column
+  };
+}
+var Parser = class {
+  constructor(message, options = {}) {
+    this.message = message;
+    this.position = {
+      offset: 0,
+      line: 1,
+      column: 1
+    };
+    this.ignoreTag = !!options.ignoreTag;
+    this.locale = options.locale;
+    this.requiresOtherClause = !!options.requiresOtherClause;
+    this.shouldParseSkeletons = !!options.shouldParseSkeletons;
+  }
+  parse() {
+    if (this.offset() !== 0) throw Error("parser can only be used once");
+    if (this.message.length > 0) {
+      const firstCode = this.message.charCodeAt(0);
+      if (firstCode !== 35 && firstCode !== 39 && firstCode !== 60 && firstCode !== 123 && firstCode !== 125) {
+        const plainEndPosition = plainTopLevelEndPosition(this.message);
+        if (plainEndPosition) {
+          const start = this.clonePosition();
+          this.position = plainEndPosition;
+          return {
+            val: [{
+              type: 0,
+              value: this.message,
+              location: createLocation(start, this.clonePosition())
+            }],
+            err: null
+          };
+        }
+      }
+    }
+    return this.parseMessage(0, "", false);
+  }
+  parseMessage(nestingLevel, parentArgType, expectingCloseTag) {
+    let elements = [];
+    while (!this.isEOF()) {
+      const char = this.char();
+      if (char === 123) {
+        const result = this.parseArgument(nestingLevel, expectingCloseTag);
+        if (result.err) return result;
+        elements.push(result.val);
+      } else if (char === 125 && nestingLevel > 0) break;
+      else if (char === 35 && (parentArgType === "plural" || parentArgType === "selectordinal")) {
+        const position = this.clonePosition();
+        this.bump();
+        elements.push({
+          type: 7,
+          location: createLocation(position, this.clonePosition())
+        });
+      } else if (char === 60 && !this.ignoreTag && this.peek() === 47) {
+        if (expectingCloseTag) break;
+        else return this.error(26, createLocation(this.clonePosition(), this.clonePosition()));
+      } else if (char === 60 && !this.ignoreTag && _isAlpha(this.peek() || 0)) {
+        const result = this.parseTag(nestingLevel, parentArgType);
+        if (result.err) return result;
+        elements.push(result.val);
+      } else {
+        const result = this.parseLiteral(nestingLevel, parentArgType);
+        if (result.err) return result;
+        elements.push(result.val);
+      }
+    }
+    return {
+      val: elements,
+      err: null
+    };
+  }
+  /**
+  * A tag name must start with an ASCII lower/upper case letter. The grammar is based on the
+  * [custom element name][] except that a dash is NOT always mandatory and uppercase letters
+  * are accepted:
+  *
+  * ```
+  * tag ::= "<" tagName (whitespace)* "/>" | "<" tagName (whitespace)* ">" message "</" tagName (whitespace)* ">"
+  * tagName ::= [a-z] (PENChar)*
+  * PENChar ::=
+  *     "-" | "." | [0-9] | "_" | [a-z] | [A-Z] | #xB7 | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x37D] |
+  *     [#x37F-#x1FFF] | [#x200C-#x200D] | [#x203F-#x2040] | [#x2070-#x218F] | [#x2C00-#x2FEF] |
+  *     [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
+  * ```
+  *
+  * [custom element name]: https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
+  * NOTE: We're a bit more lax here since HTML technically does not allow uppercase HTML element but we do
+  * since other tag-based engines like React allow it
+  */
+  parseTag(nestingLevel, parentArgType) {
+    const startPosition = this.clonePosition();
+    this.bump();
+    const tagName = this.parseTagName();
+    this.bumpSpace();
+    if (this.bumpIf("/>")) return {
+      val: {
+        type: 0,
+        value: `<${tagName}/>`,
+        location: createLocation(startPosition, this.clonePosition())
+      },
+      err: null
+    };
+    else if (this.bumpIf(">")) {
+      const childrenResult = this.parseMessage(nestingLevel + 1, parentArgType, true);
+      if (childrenResult.err) return childrenResult;
+      const children = childrenResult.val;
+      const endTagStartPosition = this.clonePosition();
+      if (this.bumpIf("</")) {
+        if (this.isEOF() || !_isAlpha(this.char())) return this.error(23, createLocation(endTagStartPosition, this.clonePosition()));
+        const closingTagNameStartPosition = this.clonePosition();
+        if (tagName !== this.parseTagName()) return this.error(26, createLocation(closingTagNameStartPosition, this.clonePosition()));
+        this.bumpSpace();
+        if (!this.bumpIf(">")) return this.error(23, createLocation(endTagStartPosition, this.clonePosition()));
+        return {
+          val: {
+            type: 8,
+            value: tagName,
+            children,
+            location: createLocation(startPosition, this.clonePosition())
+          },
+          err: null
+        };
+      } else return this.error(27, createLocation(startPosition, this.clonePosition()));
+    } else return this.error(23, createLocation(startPosition, this.clonePosition()));
+  }
+  /**
+  * This method assumes that the caller has peeked ahead for the first tag character.
+  */
+  parseTagName() {
+    const startOffset = this.offset();
+    this.bump();
+    while (!this.isEOF() && _isPotentialElementNameChar(this.char())) this.bump();
+    return this.message.slice(startOffset, this.offset());
+  }
+  parseLiteral(nestingLevel, parentArgType) {
+    const start = this.clonePosition();
+    let value = "";
+    while (true) {
+      const parseQuoteResult = this.tryParseQuote(parentArgType);
+      if (parseQuoteResult) {
+        value += parseQuoteResult;
+        continue;
+      }
+      const parseUnquotedResult = this.tryParseUnquoted(nestingLevel, parentArgType);
+      if (parseUnquotedResult) {
+        value += parseUnquotedResult;
+        continue;
+      }
+      const parseLeftAngleResult = this.tryParseLeftAngleBracket();
+      if (parseLeftAngleResult) {
+        value += parseLeftAngleResult;
+        continue;
+      }
+      break;
+    }
+    const location = createLocation(start, this.clonePosition());
+    return {
+      val: {
+        type: 0,
+        value,
+        location
+      },
+      err: null
+    };
+  }
+  tryParseLeftAngleBracket() {
+    if (!this.isEOF() && this.char() === 60 && (this.ignoreTag || !_isAlphaOrSlash(this.peek() || 0))) {
+      this.bump();
+      return "<";
+    }
+    return null;
+  }
+  /**
+  * Starting with ICU 4.8, an ASCII apostrophe only starts quoted text if it immediately precedes
+  * a character that requires quoting (that is, "only where needed"), and works the same in
+  * nested messages as on the top level of the pattern. The new behavior is otherwise compatible.
+  */
+  tryParseQuote(parentArgType) {
+    if (this.isEOF() || this.char() !== 39) return null;
+    switch (this.peek()) {
+      case 39:
+        this.bump();
+        this.bump();
+        return "'";
+      case 123:
+      case 60:
+      case 62:
+      case 125:
+        break;
+      case 35:
+        if (parentArgType === "plural" || parentArgType === "selectordinal") break;
+        return null;
+      default:
+        return null;
+    }
+    this.bump();
+    const codePoints = [this.char()];
+    this.bump();
+    while (!this.isEOF()) {
+      const ch = this.char();
+      if (ch === 39) {
+        if (this.peek() === 39) {
+          codePoints.push(39);
+          this.bump();
+        } else {
+          this.bump();
+          break;
+        }
+      } else codePoints.push(ch);
+      this.bump();
+    }
+    return String.fromCodePoint(...codePoints);
+  }
+  tryParseUnquoted(nestingLevel, parentArgType) {
+    if (this.isEOF()) return null;
+    const ch = this.char();
+    if (ch === 60 || ch === 123 || ch === 35 && (parentArgType === "plural" || parentArgType === "selectordinal") || ch === 125 && nestingLevel > 0) return null;
+    else {
+      this.bump();
+      return String.fromCodePoint(ch);
+    }
+  }
+  parseArgument(nestingLevel, expectingCloseTag) {
+    const openingBracePosition = this.clonePosition();
+    this.bump();
+    this.bumpSpace();
+    if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+    if (this.char() === 125) {
+      this.bump();
+      return this.error(2, createLocation(openingBracePosition, this.clonePosition()));
+    }
+    let value = this.parseIdentifierIfPossible().value;
+    if (!value) return this.error(3, createLocation(openingBracePosition, this.clonePosition()));
+    this.bumpSpace();
+    if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+    switch (this.char()) {
+      case 125:
+        this.bump();
+        return {
+          val: {
+            type: 1,
+            value,
+            location: createLocation(openingBracePosition, this.clonePosition())
+          },
+          err: null
+        };
+      case 44:
+        this.bump();
+        this.bumpSpace();
+        if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+        return this.parseArgumentOptions(nestingLevel, expectingCloseTag, value, openingBracePosition);
+      default:
+        return this.error(3, createLocation(openingBracePosition, this.clonePosition()));
+    }
+  }
+  /**
+  * Advance the parser until the end of the identifier, if it is currently on
+  * an identifier character. Return an empty string otherwise.
+  */
+  parseIdentifierIfPossible() {
+    const startingPosition = this.clonePosition();
+    const startOffset = this.offset();
+    const value = matchIdentifierAtIndex(this.message, startOffset);
+    const endOffset = startOffset + value.length;
+    this.bumpTo(endOffset);
+    return {
+      value,
+      location: createLocation(startingPosition, this.clonePosition())
+    };
+  }
+  parseArgumentOptions(nestingLevel, expectingCloseTag, value, openingBracePosition) {
+    let typeStartPosition = this.clonePosition();
+    let argType = this.parseIdentifierIfPossible().value;
+    let typeEndPosition = this.clonePosition();
+    switch (argType) {
+      case "":
+        return this.error(4, createLocation(typeStartPosition, typeEndPosition));
+      case "number":
+      case "date":
+      case "time": {
+        this.bumpSpace();
+        let styleAndLocation = null;
+        if (this.bumpIf(",")) {
+          this.bumpSpace();
+          const styleStartPosition = this.clonePosition();
+          const result = this.parseSimpleArgStyleIfPossible();
+          if (result.err) return result;
+          const style = trimEnd(result.val);
+          if (style.length === 0) return this.error(6, createLocation(this.clonePosition(), this.clonePosition()));
+          styleAndLocation = {
+            style,
+            styleLocation: createLocation(styleStartPosition, this.clonePosition())
+          };
+        }
+        const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
+        if (argCloseResult.err) return argCloseResult;
+        const location = createLocation(openingBracePosition, this.clonePosition());
+        if (styleAndLocation && styleAndLocation.style.startsWith("::")) {
+          let skeleton = trimStart(styleAndLocation.style.slice(2));
+          if (argType === "number") {
+            const result = this.parseNumberSkeletonFromString(skeleton, styleAndLocation.styleLocation);
+            if (result.err) return result;
+            return {
+              val: {
+                type: 2,
+                value,
+                location,
+                style: result.val
+              },
+              err: null
+            };
+          } else {
+            if (skeleton.length === 0) return this.error(10, location);
+            let dateTimePattern = skeleton;
+            if (this.locale) dateTimePattern = getBestPattern(skeleton, this.locale);
+            const style = {
+              type: 1,
+              pattern: dateTimePattern,
+              location: styleAndLocation.styleLocation,
+              parsedOptions: this.shouldParseSkeletons ? parseDateTimeSkeleton(dateTimePattern) : {}
+            };
+            return {
+              val: {
+                type: argType === "date" ? 3 : 4,
+                value,
+                location,
+                style
+              },
+              err: null
+            };
+          }
+        }
+        return {
+          val: {
+            type: argType === "number" ? 2 : argType === "date" ? 3 : 4,
+            value,
+            location,
+            style: styleAndLocation?.style ?? null
+          },
+          err: null
+        };
+      }
+      case "plural":
+      case "selectordinal":
+      case "select": {
+        const typeEndPosition2 = this.clonePosition();
+        this.bumpSpace();
+        if (!this.bumpIf(",")) return this.error(12, createLocation(typeEndPosition2, { ...typeEndPosition2 }));
+        this.bumpSpace();
+        let identifierAndLocation = this.parseIdentifierIfPossible();
+        let pluralOffset = 0;
+        if (argType !== "select" && identifierAndLocation.value === "offset") {
+          if (!this.bumpIf(":")) return this.error(13, createLocation(this.clonePosition(), this.clonePosition()));
+          this.bumpSpace();
+          const result = this.tryParseDecimalInteger(13, 14);
+          if (result.err) return result;
+          this.bumpSpace();
+          identifierAndLocation = this.parseIdentifierIfPossible();
+          pluralOffset = result.val;
+        }
+        const optionsResult = this.tryParsePluralOrSelectOptions(nestingLevel, argType, expectingCloseTag, identifierAndLocation);
+        if (optionsResult.err) return optionsResult;
+        const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
+        if (argCloseResult.err) return argCloseResult;
+        const location = createLocation(openingBracePosition, this.clonePosition());
+        if (argType === "select") return {
+          val: {
+            type: 5,
+            value,
+            options: fromEntries(optionsResult.val),
+            location
+          },
+          err: null
+        };
+        else return {
+          val: {
+            type: 6,
+            value,
+            options: fromEntries(optionsResult.val),
+            offset: pluralOffset,
+            pluralType: argType === "plural" ? "cardinal" : "ordinal",
+            location
+          },
+          err: null
+        };
+      }
+      default:
+        return this.error(5, createLocation(typeStartPosition, typeEndPosition));
+    }
+  }
+  tryParseArgumentClose(openingBracePosition) {
+    if (this.isEOF() || this.char() !== 125) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+    this.bump();
+    return {
+      val: true,
+      err: null
+    };
+  }
+  /**
+  * See: https://github.com/unicode-org/icu/blob/af7ed1f6d2298013dc303628438ec4abe1f16479/icu4c/source/common/messagepattern.cpp#L659
+  */
+  parseSimpleArgStyleIfPossible() {
+    let nestedBraces = 0;
+    const startPosition = this.clonePosition();
+    while (!this.isEOF()) switch (this.char()) {
+      case 39: {
+        this.bump();
+        let apostrophePosition = this.clonePosition();
+        if (!this.bumpUntil("'")) return this.error(11, createLocation(apostrophePosition, this.clonePosition()));
+        this.bump();
+        break;
+      }
+      case 123:
+        nestedBraces += 1;
+        this.bump();
+        break;
+      case 125:
+        if (nestedBraces > 0) nestedBraces -= 1;
+        else return {
+          val: this.message.slice(startPosition.offset, this.offset()),
+          err: null
+        };
+        break;
+      default:
+        this.bump();
+    }
+    return {
+      val: this.message.slice(startPosition.offset, this.offset()),
+      err: null
+    };
+  }
+  parseNumberSkeletonFromString(skeleton, location) {
+    let tokens = [];
+    try {
+      tokens = parseNumberSkeletonFromString(skeleton);
+    } catch {
+      return this.error(7, location);
+    }
+    return {
+      val: {
+        type: 0,
+        tokens,
+        location,
+        parsedOptions: this.shouldParseSkeletons ? parseNumberSkeleton(tokens) : {}
+      },
+      err: null
+    };
+  }
+  /**
+  * @param nesting_level The current nesting level of messages.
+  *     This can be positive when parsing message fragment in select or plural argument options.
+  * @param parent_arg_type The parent argument's type.
+  * @param parsed_first_identifier If provided, this is the first identifier-like selector of
+  *     the argument. It is a by-product of a previous parsing attempt.
+  * @param expecting_close_tag If true, this message is directly or indirectly nested inside
+  *     between a pair of opening and closing tags. The nested message will not parse beyond
+  *     the closing tag boundary.
+  */
+  tryParsePluralOrSelectOptions(nestingLevel, parentArgType, expectCloseTag, parsedFirstIdentifier) {
+    let hasOtherClause = false;
+    const options = [];
+    const parsedSelectors = /* @__PURE__ */ new Set();
+    let { value: selector, location: selectorLocation } = parsedFirstIdentifier;
+    while (true) {
+      if (selector.length === 0) {
+        const startPosition = this.clonePosition();
+        if (parentArgType !== "select" && this.bumpIf("=")) {
+          const result = this.tryParseDecimalInteger(16, 19);
+          if (result.err) return result;
+          selectorLocation = createLocation(startPosition, this.clonePosition());
+          selector = this.message.slice(startPosition.offset, this.offset());
+        } else break;
+      }
+      if (parsedSelectors.has(selector)) return this.error(parentArgType === "select" ? 21 : 20, selectorLocation);
+      if (selector === "other") hasOtherClause = true;
+      this.bumpSpace();
+      const openingBracePosition = this.clonePosition();
+      if (!this.bumpIf("{")) return this.error(parentArgType === "select" ? 17 : 18, createLocation(this.clonePosition(), this.clonePosition()));
+      const fragmentResult = this.parseMessage(nestingLevel + 1, parentArgType, expectCloseTag);
+      if (fragmentResult.err) return fragmentResult;
+      const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
+      if (argCloseResult.err) return argCloseResult;
+      options.push([selector, {
+        value: fragmentResult.val,
+        location: createLocation(openingBracePosition, this.clonePosition())
+      }]);
+      parsedSelectors.add(selector);
+      this.bumpSpace();
+      ({ value: selector, location: selectorLocation } = this.parseIdentifierIfPossible());
+    }
+    if (options.length === 0) return this.error(parentArgType === "select" ? 15 : 16, createLocation(this.clonePosition(), this.clonePosition()));
+    if (this.requiresOtherClause && !hasOtherClause) return this.error(22, createLocation(this.clonePosition(), this.clonePosition()));
+    return {
+      val: options,
+      err: null
+    };
+  }
+  tryParseDecimalInteger(expectNumberError, invalidNumberError) {
+    let sign = 1;
+    const startingPosition = this.clonePosition();
+    if (this.bumpIf("+")) {
+    } else if (this.bumpIf("-")) sign = -1;
+    let hasDigits = false;
+    let decimal = 0;
+    while (!this.isEOF()) {
+      const ch = this.char();
+      if (ch >= 48 && ch <= 57) {
+        hasDigits = true;
+        decimal = decimal * 10 + (ch - 48);
+        this.bump();
+      } else break;
+    }
+    const location = createLocation(startingPosition, this.clonePosition());
+    if (!hasDigits) return this.error(expectNumberError, location);
+    decimal *= sign;
+    if (!Number.isSafeInteger(decimal)) return this.error(invalidNumberError, location);
+    return {
+      val: decimal,
+      err: null
+    };
+  }
+  offset() {
+    return this.position.offset;
+  }
+  isEOF() {
+    return this.offset() === this.message.length;
+  }
+  clonePosition() {
+    return {
+      offset: this.position.offset,
+      line: this.position.line,
+      column: this.position.column
+    };
+  }
+  /**
+  * Return the code point at the current position of the parser.
+  * Throws if the index is out of bound.
+  */
+  char() {
+    const offset = this.position.offset;
+    if (offset >= this.message.length) throw Error("out of bound");
+    const code = this.message.codePointAt(offset);
+    if (code === void 0) throw Error(`Offset ${offset} is at invalid UTF-16 code unit boundary`);
+    return code;
+  }
+  error(kind, location) {
+    return {
+      val: null,
+      err: {
+        kind,
+        message: this.message,
+        location
+      }
+    };
+  }
+  /** Bump the parser to the next UTF-16 code unit. */
+  bump() {
+    if (this.isEOF()) return;
+    const code = this.char();
+    if (code === 10) {
+      this.position.line += 1;
+      this.position.column = 1;
+      this.position.offset += 1;
+    } else {
+      this.position.column += 1;
+      this.position.offset += code < 65536 ? 1 : 2;
+    }
+  }
+  /**
+  * If the substring starting at the current position of the parser has
+  * the given prefix, then bump the parser to the character immediately
+  * following the prefix and return true. Otherwise, don't bump the parser
+  * and return false.
+  */
+  bumpIf(prefix) {
+    const offset = this.offset();
+    if (this.message.slice(offset, offset + prefix.length) === prefix) {
+      for (let i = 0; i < prefix.length; i++) this.bump();
+      return true;
+    }
+    return false;
+  }
+  /**
+  * Bump the parser until the pattern character is found and return `true`.
+  * Otherwise bump to the end of the file and return `false`.
+  */
+  bumpUntil(pattern) {
+    const currentOffset = this.offset();
+    const index = this.message.indexOf(pattern, currentOffset);
+    if (index >= 0) {
+      this.bumpTo(index);
+      return true;
+    } else {
+      this.bumpTo(this.message.length);
+      return false;
+    }
+  }
+  /**
+  * Bump the parser to the target offset.
+  * If target offset is beyond the end of the input, bump the parser to the end of the input.
+  */
+  bumpTo(targetOffset) {
+    if (this.offset() > targetOffset) throw Error(`targetOffset ${targetOffset} must be greater than or equal to the current offset ${this.offset()}`);
+    targetOffset = Math.min(targetOffset, this.message.length);
+    while (true) {
+      const offset = this.offset();
+      if (offset === targetOffset) break;
+      if (offset > targetOffset) throw Error(`targetOffset ${targetOffset} is at invalid UTF-16 code unit boundary`);
+      this.bump();
+      if (this.isEOF()) break;
+    }
+  }
+  /** advance the parser through all whitespace to the next non-whitespace code unit. */
+  bumpSpace() {
+    while (!this.isEOF() && _isWhiteSpace(this.char())) this.bump();
+  }
+  /**
+  * Peek at the *next* Unicode codepoint in the input without advancing the parser.
+  * If the input has been exhausted, then this returns null.
+  */
+  peek() {
+    if (this.isEOF()) return null;
+    const code = this.char();
+    const offset = this.offset();
+    return this.message.charCodeAt(offset + (code >= 65536 ? 2 : 1)) ?? null;
+  }
+};
+function _isAlpha(codepoint) {
+  return codepoint >= 97 && codepoint <= 122 || codepoint >= 65 && codepoint <= 90;
+}
+function _isAlphaOrSlash(codepoint) {
+  return _isAlpha(codepoint) || codepoint === 47;
+}
+function _isPotentialElementNameChar(c) {
+  return c === 45 || c === 46 || c >= 48 && c <= 57 || c === 95 || c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 183 || c >= 192 && c <= 214 || c >= 216 && c <= 246 || c >= 248 && c <= 893 || c >= 895 && c <= 8191 || c >= 8204 && c <= 8205 || c >= 8255 && c <= 8256 || c >= 8304 && c <= 8591 || c >= 11264 && c <= 12271 || c >= 12289 && c <= 55295 || c >= 63744 && c <= 64975 || c >= 65008 && c <= 65533 || c >= 65536 && c <= 983039;
+}
+function _isWhiteSpace(c) {
+  return c >= 9 && c <= 13 || c === 32 || c === 133 || c >= 8206 && c <= 8207 || c === 8232 || c === 8233;
+}
+function pruneLocation(els) {
+  els.forEach((el2) => {
+    delete el2.location;
+    if (isSelectElement(el2) || isPluralElement(el2)) for (const k2 in el2.options) {
+      delete el2.options[k2].location;
+      pruneLocation(el2.options[k2].value);
+    }
+    else if (isNumberElement(el2) && isNumberSkeleton(el2.style)) delete el2.style.location;
+    else if ((isDateElement(el2) || isTimeElement(el2)) && isDateTimeSkeleton(el2.style)) delete el2.style.location;
+    else if (isTagElement(el2)) pruneLocation(el2.children);
+  });
+}
+function parse(message, opts = {}) {
+  opts = {
+    shouldParseSkeletons: true,
+    requiresOtherClause: true,
+    ...opts
+  };
+  const result = new Parser(message, opts).parse();
+  if (result.err) {
+    const error2 = SyntaxError(ErrorKind[result.err.kind]);
+    error2.location = result.err.location;
+    error2.originalMessage = result.err.message;
+    throw error2;
+  }
+  if (!opts?.captureLocation) pruneLocation(result.val);
+  return result.val;
+}
+
+// node_modules/.pnpm/intl-messageformat@12.1.3/node_modules/intl-messageformat/index.js
+var ErrorCode = /* @__PURE__ */ (function(ErrorCode2) {
+  ErrorCode2["MISSING_VALUE"] = "MISSING_VALUE";
+  ErrorCode2["INVALID_VALUE"] = "INVALID_VALUE";
+  ErrorCode2["MISSING_INTL_API"] = "MISSING_INTL_API";
+  return ErrorCode2;
+})({});
+var FormatError = class extends Error {
+  constructor(msg, code, originalMessage) {
+    super(msg);
+    this.code = code;
+    this.originalMessage = originalMessage;
+  }
+  toString() {
+    return `[formatjs Error: ${this.code}] ${this.message}`;
+  }
+};
+var InvalidValueError = class extends FormatError {
+  constructor(variableId, value, options, originalMessage) {
+    super(`Invalid values for "${variableId}": "${value}". Options are "${Object.keys(options).join('", "')}"`, "INVALID_VALUE", originalMessage);
+  }
+};
+var InvalidValueTypeError = class extends FormatError {
+  constructor(value, type, originalMessage) {
+    super(`Value for "${value}" must be of type ${type}`, "INVALID_VALUE", originalMessage);
+  }
+};
+var MissingValueError = class extends FormatError {
+  constructor(variableId, originalMessage) {
+    super(`The intl string context variable "${variableId}" was not provided to the string "${originalMessage}"`, "MISSING_VALUE", originalMessage);
+  }
+};
+function mergeLiteral(parts) {
+  if (parts.length < 2) return parts;
+  return parts.reduce((all, part) => {
+    const lastPart = all[all.length - 1];
+    if (!lastPart || lastPart.type !== 0 || part.type !== 0) all.push(part);
+    else lastPart.value += part.value;
+    return all;
+  }, []);
+}
+function isFormatXMLElementFn(el2) {
+  return typeof el2 === "function";
+}
+function formatToParts(els, locales, formatters, formats, values, currentPluralValue, originalMessage) {
+  if (els.length === 1 && isLiteralElement(els[0])) return [{
+    type: 0,
+    value: els[0].value
+  }];
+  const result = [];
+  for (const el2 of els) {
+    if (isLiteralElement(el2)) {
+      result.push({
+        type: 0,
+        value: el2.value
+      });
+      continue;
+    }
+    if (isPoundElement(el2)) {
+      if (typeof currentPluralValue === "number") result.push({
+        type: 0,
+        value: formatters.getNumberFormat(locales).format(currentPluralValue)
+      });
+      continue;
+    }
+    const { value: varName } = el2;
+    if (!(values && varName in values)) throw new MissingValueError(varName, originalMessage);
+    let value = values[varName];
+    if (isArgumentElement(el2)) {
+      if (!value || typeof value === "string" || typeof value === "number" || typeof value === "bigint") value = typeof value === "string" || typeof value === "number" || typeof value === "bigint" ? String(value) : "";
+      result.push({
+        type: typeof value === "string" ? 0 : 1,
+        value
+      });
+      continue;
+    }
+    if (isDateElement(el2)) {
+      const style = typeof el2.style === "string" ? formats.date[el2.style] : isDateTimeSkeleton(el2.style) ? el2.style.parsedOptions : void 0;
+      result.push({
+        type: 0,
+        value: formatters.getDateTimeFormat(locales, style).format(value)
+      });
+      continue;
+    }
+    if (isTimeElement(el2)) {
+      const style = typeof el2.style === "string" ? formats.time[el2.style] : isDateTimeSkeleton(el2.style) ? el2.style.parsedOptions : formats.time.medium;
+      result.push({
+        type: 0,
+        value: formatters.getDateTimeFormat(locales, style).format(value)
+      });
+      continue;
+    }
+    if (isNumberElement(el2)) {
+      const style = typeof el2.style === "string" ? formats.number[el2.style] : isNumberSkeleton(el2.style) ? el2.style.parsedOptions : void 0;
+      if (style && style.scale) {
+        const scale = style.scale || 1;
+        if (typeof value === "bigint") {
+          if (!Number.isInteger(scale)) throw new TypeError(`Cannot apply fractional scale ${scale} to bigint value. Scale must be an integer when formatting bigint.`);
+          value = value * BigInt(scale);
+        } else value = value * scale;
+      }
+      result.push({
+        type: 0,
+        value: formatters.getNumberFormat(locales, style).format(value)
+      });
+      continue;
+    }
+    if (isTagElement(el2)) {
+      const { children, value: value2 } = el2;
+      const formatFn = values[value2];
+      if (!isFormatXMLElementFn(formatFn)) throw new InvalidValueTypeError(value2, "function", originalMessage);
+      let chunks = formatFn(formatToParts(children, locales, formatters, formats, values, currentPluralValue).map((p) => p.value));
+      if (!Array.isArray(chunks)) chunks = [chunks];
+      result.push(...chunks.map((c) => {
+        return {
+          type: typeof c === "string" ? 0 : 1,
+          value: c
+        };
+      }));
+    }
+    if (isSelectElement(el2)) {
+      const key = value;
+      const opt = (Object.prototype.hasOwnProperty.call(el2.options, key) ? el2.options[key] : void 0) || el2.options.other;
+      if (!opt) throw new InvalidValueError(el2.value, value, Object.keys(el2.options), originalMessage);
+      result.push(...formatToParts(opt.value, locales, formatters, formats, values));
+      continue;
+    }
+    if (isPluralElement(el2)) {
+      const exactKey = `=${value}`;
+      let opt = Object.prototype.hasOwnProperty.call(el2.options, exactKey) ? el2.options[exactKey] : void 0;
+      if (!opt) {
+        if (!Intl.PluralRules) throw new FormatError(`Intl.PluralRules is not available in this environment.
+Try polyfilling it using "@formatjs/intl-pluralrules"
+`, "MISSING_INTL_API", originalMessage);
+        const numericValue2 = typeof value === "bigint" ? Number(value) : value;
+        const rule = formatters.getPluralRules(locales, { type: el2.pluralType }).select(numericValue2 - (el2.offset || 0));
+        opt = (Object.prototype.hasOwnProperty.call(el2.options, rule) ? el2.options[rule] : void 0) || el2.options.other;
+      }
+      if (!opt) throw new InvalidValueError(el2.value, value, Object.keys(el2.options), originalMessage);
+      const numericValue = typeof value === "bigint" ? Number(value) : value;
+      result.push(...formatToParts(opt.value, locales, formatters, formats, values, numericValue - (el2.offset || 0)));
+      continue;
+    }
+  }
+  return mergeLiteral(result);
+}
+function mergeConfig(c1, c2) {
+  if (!c2) return c1;
+  return {
+    ...c1,
+    ...c2,
+    ...Object.keys(c1).reduce((all, k2) => {
+      all[k2] = {
+        ...c1[k2],
+        ...c2[k2]
+      };
+      return all;
+    }, {})
+  };
+}
+function mergeConfigs(defaultConfig, configs) {
+  if (!configs) return defaultConfig;
+  return Object.keys(defaultConfig).reduce((all, k2) => {
+    all[k2] = mergeConfig(defaultConfig[k2], configs[k2]);
+    return all;
+  }, { ...defaultConfig });
+}
+function createFastMemoizeCache(store) {
+  return { create() {
+    return {
+      get(key) {
+        return store[key];
+      },
+      set(key, value) {
+        store[key] = value;
+      }
+    };
+  } };
+}
+function createDefaultFormatters(cache = {
+  number: {},
+  dateTime: {},
+  pluralRules: {}
+}) {
+  return {
+    getNumberFormat: memoize((...args) => new Intl.NumberFormat(...args), {
+      cache: createFastMemoizeCache(cache.number),
+      strategy: strategies.variadic
+    }),
+    getDateTimeFormat: memoize((...args) => new Intl.DateTimeFormat(...args), {
+      cache: createFastMemoizeCache(cache.dateTime),
+      strategy: strategies.variadic
+    }),
+    getPluralRules: memoize((...args) => new Intl.PluralRules(...args), {
+      cache: createFastMemoizeCache(cache.pluralRules),
+      strategy: strategies.variadic
+    })
+  };
+}
+var IntlMessageFormat = class IntlMessageFormat2 {
+  constructor(message, locales = IntlMessageFormat2.defaultLocale, overrideFormats, opts) {
+    this.formatterCache = {
+      number: {},
+      dateTime: {},
+      pluralRules: {}
+    };
+    this.format = ((values) => {
+      const parts = this.formatToParts(values);
+      if (parts.length === 1) return parts[0].value;
+      const result = parts.reduce((all, part) => {
+        if (!all.length || part.type !== 0 || typeof all[all.length - 1] !== "string") all.push(part.value);
+        else all[all.length - 1] += part.value;
+        return all;
+      }, []);
+      if (result.length <= 1) return result[0] || "";
+      return result;
+    });
+    this.formatToParts = ((values) => formatToParts(this.ast, this.locales, this.formatters, this.formats, values, void 0, this.message));
+    this.resolvedOptions = () => ({ locale: this.resolvedLocale?.toString() || Intl.NumberFormat.supportedLocalesOf(this.locales)[0] });
+    this.getAst = () => this.ast;
+    this.locales = locales;
+    this.resolvedLocale = IntlMessageFormat2.resolveLocale(locales);
+    if (typeof message === "string") {
+      this.message = message;
+      if (!IntlMessageFormat2.__parse) throw new TypeError("IntlMessageFormat.__parse must be set to process `message` of type `string`");
+      const { ...parseOpts } = opts || {};
+      this.ast = IntlMessageFormat2.__parse(message, {
+        ...parseOpts,
+        locale: this.resolvedLocale
+      });
+    } else this.ast = message;
+    if (!Array.isArray(this.ast)) throw new TypeError("A message must be provided as a String or AST.");
+    this.formats = mergeConfigs(IntlMessageFormat2.formats, overrideFormats);
+    this.formatters = opts && opts.formatters || createDefaultFormatters(this.formatterCache);
+  }
+  static {
+    this.memoizedDefaultLocale = null;
+  }
+  static get defaultLocale() {
+    if (!IntlMessageFormat2.memoizedDefaultLocale) IntlMessageFormat2.memoizedDefaultLocale = new Intl.NumberFormat().resolvedOptions().locale;
+    return IntlMessageFormat2.memoizedDefaultLocale;
+  }
+  static {
+    this.resolveLocale = (locales) => {
+      if (typeof Intl.Locale === "undefined") return;
+      const supportedLocales = Intl.NumberFormat.supportedLocalesOf(locales);
+      if (supportedLocales.length > 0) return new Intl.Locale(supportedLocales[0]);
+      return new Intl.Locale(typeof locales === "string" ? locales : locales[0]);
+    };
+  }
+  static {
+    this.__parse = parse;
+  }
+  static {
+    this.formats = {
+      number: {
+        integer: { maximumFractionDigits: 0 },
+        currency: { style: "currency" },
+        percent: { style: "percent" }
+      },
+      date: {
+        short: {
+          month: "numeric",
+          day: "numeric",
+          year: "2-digit"
+        },
+        medium: {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        },
+        long: {
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        },
+        full: {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        }
+      },
+      time: {
+        short: {
+          hour: "numeric",
+          minute: "numeric"
+        },
+        medium: {
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric"
+        },
+        long: {
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          timeZoneName: "short"
+        },
+        full: {
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          timeZoneName: "short"
+        }
+      }
+    };
+  }
+};
+
+// node_modules/.pnpm/@formatjs+intl@6.1.3/node_modules/@formatjs/intl/index.js
+var IntlError = class IntlError2 extends Error {
+  constructor(code, message, exception) {
+    const err = exception ? exception instanceof Error ? exception : new Error(String(exception)) : void 0;
+    super(`[@formatjs/intl Error ${code}] ${message}
+${err ? `
+${err.message}
+${err.stack}` : ""}`);
+    this.code = code;
+    if (typeof Error.captureStackTrace === "function") Error.captureStackTrace(this, IntlError2);
+  }
+};
+var UnsupportedFormatterError = class extends IntlError {
+  constructor(message, exception) {
+    super("UNSUPPORTED_FORMATTER", message, exception);
+  }
+};
+var InvalidConfigError = class extends IntlError {
+  constructor(message, exception) {
+    super("INVALID_CONFIG", message, exception);
+  }
+};
+var MissingDataError = class extends IntlError {
+  constructor(message, exception) {
+    super("MISSING_DATA", message, exception);
+  }
+};
+var IntlFormatError = class extends IntlError {
+  constructor(message, locale, exception) {
+    super("FORMAT_ERROR", `${message}
+Locale: ${locale}
+`, exception);
+    this.locale = locale;
+  }
+};
+var MessageFormatError = class extends IntlFormatError {
+  constructor(message, locale, descriptor, exception) {
+    super(`${message}
+MessageID: ${descriptor?.id}
+Default Message: ${descriptor?.defaultMessage}
+Description: ${descriptor?.description}
+`, locale, exception);
+    this.descriptor = descriptor;
+    this.locale = locale;
+  }
+};
+var MissingTranslationError = class extends IntlError {
+  constructor(descriptor, locale) {
+    super("MISSING_TRANSLATION", `Missing message: "${descriptor.id}" for locale "${locale}", using ${descriptor.defaultMessage ? `default message (${typeof descriptor.defaultMessage === "string" ? descriptor.defaultMessage : descriptor.defaultMessage.map((e) => e.value ?? JSON.stringify(e)).join()})` : "id"} as fallback.`);
+    this.descriptor = descriptor;
+  }
+};
+function invariant(condition, message, Err = Error) {
+  if (!condition) throw new Err(message);
+}
+function filterProps(props, allowlist, defaults2 = {}) {
+  return allowlist.reduce((filtered, name) => {
+    if (name in props) filtered[name] = props[name];
+    else if (name in defaults2) filtered[name] = defaults2[name];
+    return filtered;
+  }, {});
+}
+var defaultErrorHandler = (error2) => {
+  if (process.env.NODE_ENV !== "production") console.error(error2);
+};
+var defaultWarnHandler = (warning2) => {
+  if (process.env.NODE_ENV !== "production") console.warn(warning2);
+};
+var DEFAULT_INTL_CONFIG = {
+  formats: {},
+  messages: {},
+  timeZone: void 0,
+  defaultLocale: "en",
+  defaultFormats: {},
+  fallbackOnEmptyString: true,
+  onError: defaultErrorHandler,
+  onWarn: defaultWarnHandler
+};
+function createIntlCache() {
+  return {
+    dateTime: {},
+    number: {},
+    message: {},
+    duration: {},
+    relativeTime: {},
+    pluralRules: {},
+    list: {},
+    displayNames: {}
+  };
+}
+function createFastMemoizeCache2(store) {
+  return { create() {
+    return {
+      get(key) {
+        return store[key];
+      },
+      set(key, value) {
+        store[key] = value;
+      }
+    };
+  } };
+}
+function createFormatters(cache = createIntlCache()) {
+  const RelativeTimeFormat = Intl.RelativeTimeFormat;
+  const ListFormat = Intl.ListFormat;
+  const DisplayNames = Intl.DisplayNames;
+  const getDateTimeFormat = memoize((...args) => new Intl.DateTimeFormat(...args), {
+    cache: createFastMemoizeCache2(cache.dateTime),
+    strategy: strategies.variadic
+  });
+  const getNumberFormat = memoize((...args) => new Intl.NumberFormat(...args), {
+    cache: createFastMemoizeCache2(cache.number),
+    strategy: strategies.variadic
+  });
+  const getPluralRules = memoize((...args) => new Intl.PluralRules(...args), {
+    cache: createFastMemoizeCache2(cache.pluralRules),
+    strategy: strategies.variadic
+  });
+  return {
+    getDateTimeFormat,
+    getNumberFormat,
+    getMessageFormat: memoize((message, locales, overrideFormats, opts) => new IntlMessageFormat(message, locales, overrideFormats, {
+      formatters: {
+        getNumberFormat,
+        getDateTimeFormat,
+        getPluralRules
+      },
+      ...opts
+    }), {
+      cache: createFastMemoizeCache2(cache.message),
+      strategy: strategies.variadic
+    }),
+    getDurationFormat: memoize((...args) => new Intl.DurationFormat(...args), {
+      cache: createFastMemoizeCache2(cache.duration),
+      strategy: strategies.variadic
+    }),
+    getRelativeTimeFormat: memoize((...args) => new RelativeTimeFormat(...args), {
+      cache: createFastMemoizeCache2(cache.relativeTime),
+      strategy: strategies.variadic
+    }),
+    getPluralRules,
+    getListFormat: memoize((...args) => new ListFormat(...args), {
+      cache: createFastMemoizeCache2(cache.list),
+      strategy: strategies.variadic
+    }),
+    getDisplayNames: memoize((...args) => new DisplayNames(...args), {
+      cache: createFastMemoizeCache2(cache.displayNames),
+      strategy: strategies.variadic
+    })
+  };
+}
+function getNamedFormat(formats, type, name, onError) {
+  const formatType = formats && formats[type];
+  let format;
+  if (formatType) format = formatType[name];
+  if (format) return format;
+  onError(new UnsupportedFormatterError(`No ${type} format named: ${name}`));
+}
+function setTimeZoneInOptions(opts, timeZone) {
+  return Object.keys(opts).reduce((all, k2) => {
+    all[k2] = {
+      timeZone,
+      ...opts[k2]
+    };
+    return all;
+  }, {});
+}
+function deepMergeOptions(opts1, opts2) {
+  return Object.keys({
+    ...opts1,
+    ...opts2
+  }).reduce((all, k2) => {
+    all[k2] = {
+      ...opts1[k2],
+      ...opts2[k2]
+    };
+    return all;
+  }, {});
+}
+function deepMergeFormatsAndSetTimeZone(f1, timeZone) {
+  if (!timeZone) return f1;
+  const mfFormats = IntlMessageFormat.formats;
+  return {
+    ...mfFormats,
+    ...f1,
+    date: deepMergeOptions(setTimeZoneInOptions(mfFormats.date, timeZone), setTimeZoneInOptions(f1.date || {}, timeZone)),
+    time: deepMergeOptions(setTimeZoneInOptions(mfFormats.time, timeZone), setTimeZoneInOptions(f1.time || {}, timeZone))
+  };
+}
+function getMessageDescriptorContext(messageDescriptor) {
+  const { defaultMessage } = messageDescriptor;
+  try {
+    return defaultMessage !== void 0 ? `
+Default Message: ${typeof defaultMessage === "string" ? defaultMessage : JSON.stringify(defaultMessage)}` : `
+Message Descriptor: ${JSON.stringify(messageDescriptor)}`;
+  } catch {
+    return "";
+  }
+}
+var formatMessage = ({ locale, formats, messages: messages5, defaultLocale, defaultFormats, fallbackOnEmptyString, onError, timeZone, defaultRichTextElements }, state, messageDescriptor = { id: "" }, values, opts) => {
+  const { id: msgId, defaultMessage } = messageDescriptor;
+  if (!msgId) invariant(false, `[@formatjs/intl] An \`id\` must be provided to format a message. You can either:
+1. Configure your build toolchain with [babel-plugin-formatjs](https://formatjs.github.io/docs/tooling/babel-plugin)
+or [@formatjs/ts-transformer](https://formatjs.github.io/docs/tooling/ts-transformer) OR
+2. Configure your \`eslint\` config to include [eslint-plugin-formatjs](https://formatjs.github.io/docs/tooling/linter#enforce-id)
+to autofix this issue${getMessageDescriptorContext(messageDescriptor)}`);
+  const id = String(msgId);
+  const message = messages5 && Object.prototype.hasOwnProperty.call(messages5, id) && messages5[id];
+  if (Array.isArray(message) && message.length === 1 && message[0].type === TYPE.literal) return message[0].value;
+  values = {
+    ...defaultRichTextElements,
+    ...values
+  };
+  formats = deepMergeFormatsAndSetTimeZone(formats, timeZone);
+  defaultFormats = deepMergeFormatsAndSetTimeZone(defaultFormats, timeZone);
+  if (!message) {
+    if (fallbackOnEmptyString === false && message === "") return message;
+    if (!defaultMessage || locale && locale.toLowerCase() !== defaultLocale.toLowerCase()) onError(new MissingTranslationError(messageDescriptor, locale));
+    if (defaultMessage) try {
+      return state.getMessageFormat(defaultMessage, defaultLocale, defaultFormats, opts).format(values);
+    } catch (e) {
+      onError(new MessageFormatError(`Error formatting default message for: "${id}", rendering default message verbatim`, locale, messageDescriptor, e));
+      return typeof defaultMessage === "string" ? defaultMessage : id;
+    }
+    return id;
+  }
+  try {
+    return state.getMessageFormat(message, locale, formats, {
+      formatters: state,
+      ...opts
+    }).format(values);
+  } catch (e) {
+    onError(new MessageFormatError(`Error formatting message: "${id}", using ${defaultMessage ? "default message" : "id"} as fallback.`, locale, messageDescriptor, e));
+  }
+  if (defaultMessage) try {
+    return state.getMessageFormat(defaultMessage, defaultLocale, defaultFormats, opts).format(values);
+  } catch (e) {
+    onError(new MessageFormatError(`Error formatting the default message for: "${id}", rendering message verbatim`, locale, messageDescriptor, e));
+  }
+  if (typeof message === "string") return message;
+  if (typeof defaultMessage === "string") return defaultMessage;
+  return id;
+};
+var DATE_TIME_FORMAT_OPTIONS = [
+  "formatMatcher",
+  "timeZone",
+  "hour12",
+  "weekday",
+  "era",
+  "year",
+  "month",
+  "day",
+  "hour",
+  "minute",
+  "second",
+  "timeZoneName",
+  "hourCycle",
+  "dateStyle",
+  "timeStyle",
+  "calendar",
+  "numberingSystem",
+  "fractionalSecondDigits"
+];
+function getFormatter$3({ locale, formats, onError, timeZone }, type, getDateTimeFormat, options = {}) {
+  const { format } = options;
+  const defaults2 = {
+    ...timeZone && { timeZone },
+    ...format && getNamedFormat(formats, type, format, onError)
+  };
+  let filteredOptions = filterProps(options, DATE_TIME_FORMAT_OPTIONS, defaults2);
+  if (type === "time" && !filteredOptions.hour && !filteredOptions.minute && !filteredOptions.second && !filteredOptions.timeStyle && !filteredOptions.dateStyle) filteredOptions = {
+    ...filteredOptions,
+    hour: "numeric",
+    minute: "numeric"
+  };
+  return getDateTimeFormat(locale, filteredOptions);
+}
+function formatDate(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "date", getDateTimeFormat, options).format(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting date.", config.locale, e));
+  }
+  return String(date);
+}
+function formatTime(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "time", getDateTimeFormat, options).format(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting time.", config.locale, e));
+  }
+  return String(date);
+}
+function formatDateTimeRange(config, getDateTimeFormat, from, to3, options = {}) {
+  const fromDate = typeof from === "string" ? new Date(from || 0) : from;
+  const toDate = typeof to3 === "string" ? new Date(to3 || 0) : to3;
+  try {
+    return getFormatter$3(config, "dateTimeRange", getDateTimeFormat, options).formatRange(fromDate, toDate);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting date time range.", config.locale, e));
+  }
+  return String(fromDate);
+}
+function formatDateToParts(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "date", getDateTimeFormat, options).formatToParts(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting date.", config.locale, e));
+  }
+  return [];
+}
+function formatTimeToParts(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "time", getDateTimeFormat, options).formatToParts(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting time.", config.locale, e));
+  }
+  return [];
+}
+var DURATION_FORMAT_OPTIONS = [
+  "style",
+  "numberingSystem",
+  "years",
+  "yearsDisplay",
+  "months",
+  "monthsDisplay",
+  "weeks",
+  "weeksDisplay",
+  "days",
+  "daysDisplay",
+  "hours",
+  "hoursDisplay",
+  "minutes",
+  "minutesDisplay",
+  "seconds",
+  "secondsDisplay",
+  "milliseconds",
+  "millisecondsDisplay",
+  "microseconds",
+  "microsecondsDisplay",
+  "nanoseconds",
+  "nanosecondsDisplay",
+  "fractionalDigits"
+];
+function getFormatter$2({ locale, formats, onError }, getDurationFormat, options) {
+  if (!Intl.DurationFormat) {
+    onError(new FormatError('Intl.DurationFormat is not available in this environment.\nTry polyfilling it using "@formatjs/intl-durationformat"', ErrorCode.MISSING_INTL_API));
+    return;
+  }
+  const { format } = options;
+  const defaults2 = format && getNamedFormat(formats, "duration", format, onError) || {};
+  return getDurationFormat(locale, filterProps(options, DURATION_FORMAT_OPTIONS, defaults2));
+}
+function formatDuration(config, getDurationFormat, value, options = {}) {
+  try {
+    return getFormatter$2(config, getDurationFormat, options)?.format(value) ?? "";
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting duration.", config.locale, e));
+  }
+  return "";
+}
+function formatDurationToParts(config, getDurationFormat, value, options = {}) {
+  try {
+    return getFormatter$2(config, getDurationFormat, options)?.formatToParts(value) ?? [];
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting duration.", config.locale, e));
+  }
+  return [];
+}
+var DISPLAY_NAMES_OPTONS = [
+  "style",
+  "type",
+  "fallback",
+  "languageDisplay"
+];
+function formatDisplayName({ locale, onError }, getDisplayNames, value, options) {
+  if (!Intl.DisplayNames) onError(new FormatError(`Intl.DisplayNames is not available in this environment.
+Try polyfilling it using "@formatjs/intl-displaynames"
+`, ErrorCode.MISSING_INTL_API));
+  const filteredOptions = filterProps(options, DISPLAY_NAMES_OPTONS);
+  try {
+    return getDisplayNames(locale, filteredOptions).of(value);
+  } catch (e) {
+    onError(new IntlFormatError("Error formatting display name.", locale, e));
+  }
+}
+var LIST_FORMAT_OPTIONS = ["type", "style"];
+var now = Date.now();
+function generateToken(i) {
+  return `${now}_${i}_${now}`;
+}
+function formatList(opts, getListFormat, values, options = {}) {
+  const results = formatListToParts(opts, getListFormat, values, options).reduce((all, el2) => {
+    const val = el2.value;
+    if (typeof val !== "string") all.push(val);
+    else if (typeof all[all.length - 1] === "string") all[all.length - 1] += val;
+    else all.push(val);
+    return all;
+  }, []);
+  return results.length === 1 ? results[0] : results.length === 0 ? "" : results;
+}
+function formatListToParts({ locale, onError }, getListFormat, values, options = {}) {
+  if (!Intl.ListFormat) onError(new FormatError(`Intl.ListFormat is not available in this environment.
+Try polyfilling it using "@formatjs/intl-listformat"
+`, ErrorCode.MISSING_INTL_API));
+  const filteredOptions = filterProps(options, LIST_FORMAT_OPTIONS);
+  try {
+    const richValues = {};
+    const serializedValues = Array.from(values).map((v3, i) => {
+      if (typeof v3 === "object" && v3 !== null) {
+        const id = generateToken(i);
+        richValues[id] = v3;
+        return id;
+      }
+      return String(v3);
+    });
+    return getListFormat(locale, filteredOptions).formatToParts(serializedValues).map((part) => part.type === "literal" ? part : {
+      ...part,
+      value: richValues[part.value] || part.value
+    });
+  } catch (e) {
+    onError(new IntlFormatError("Error formatting list.", locale, e));
+  }
+  return values;
+}
+var PLURAL_FORMAT_OPTIONS = ["type"];
+function formatPlural({ locale, onError }, getPluralRules, value, options = {}) {
+  if (!Intl.PluralRules) onError(new FormatError(`Intl.PluralRules is not available in this environment.
+Try polyfilling it using "@formatjs/intl-pluralrules"
+`, ErrorCode.MISSING_INTL_API));
+  const filteredOptions = filterProps(options, PLURAL_FORMAT_OPTIONS);
+  try {
+    return getPluralRules(locale, filteredOptions).select(value);
+  } catch (e) {
+    onError(new IntlFormatError("Error formatting plural.", locale, e));
+  }
+  return "other";
+}
+var RELATIVE_TIME_FORMAT_OPTIONS = ["numeric", "style"];
+function getFormatter$1({ locale, formats, onError }, getRelativeTimeFormat, options = {}) {
+  const { format } = options;
+  const defaults2 = !!format && getNamedFormat(formats, "relative", format, onError) || {};
+  return getRelativeTimeFormat(locale, filterProps(options, RELATIVE_TIME_FORMAT_OPTIONS, defaults2));
+}
+function formatRelativeTime(config, getRelativeTimeFormat, value, unit, options = {}) {
+  if (!unit) unit = "second";
+  if (!Intl.RelativeTimeFormat) config.onError(new FormatError(`Intl.RelativeTimeFormat is not available in this environment.
+Try polyfilling it using "@formatjs/intl-relativetimeformat"
+`, ErrorCode.MISSING_INTL_API));
+  try {
+    return getFormatter$1(config, getRelativeTimeFormat, options).format(value, unit);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting relative time.", config.locale, e));
+  }
+  return String(value);
+}
+var NUMBER_FORMAT_OPTIONS = [
+  "style",
+  "currency",
+  "unit",
+  "unitDisplay",
+  "useGrouping",
+  "minimumIntegerDigits",
+  "minimumFractionDigits",
+  "maximumFractionDigits",
+  "minimumSignificantDigits",
+  "maximumSignificantDigits",
+  "compactDisplay",
+  "currencyDisplay",
+  "currencySign",
+  "notation",
+  "signDisplay",
+  "unit",
+  "unitDisplay",
+  "numberingSystem",
+  "trailingZeroDisplay",
+  "roundingPriority",
+  "roundingIncrement",
+  "roundingMode"
+];
+function getFormatter({ locale, formats, onError }, getNumberFormat, options = {}) {
+  const { format } = options;
+  const defaults2 = format && getNamedFormat(formats, "number", format, onError) || {};
+  return getNumberFormat(locale, filterProps(options, NUMBER_FORMAT_OPTIONS, defaults2));
+}
+function formatNumber(config, getNumberFormat, value, options = {}) {
+  try {
+    return getFormatter(config, getNumberFormat, options).format(value);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting number.", config.locale, e));
+  }
+  return String(value);
+}
+function formatNumberToParts(config, getNumberFormat, value, options = {}) {
+  try {
+    return getFormatter(config, getNumberFormat, options).formatToParts(value);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting number.", config.locale, e));
+  }
+  return [];
+}
+function messagesContainString(messages5) {
+  return typeof (messages5 ? messages5[Object.keys(messages5)[0]] : void 0) === "string";
+}
+function verifyConfigMessages(config) {
+  if (config.onWarn && config.defaultRichTextElements && messagesContainString(config.messages || {})) config.onWarn(`[@formatjs/intl] "defaultRichTextElements" was specified but "message" was not pre-compiled. 
+Please consider using "@formatjs/cli" to pre-compile your messages for performance.
+For more details see https://formatjs.github.io/docs/getting-started/message-distribution`);
+}
+function createIntl(config, cache) {
+  const formatters = createFormatters(cache);
+  const resolvedConfig = {
+    ...DEFAULT_INTL_CONFIG,
+    ...config
+  };
+  const { locale, defaultLocale, onError } = resolvedConfig;
+  if (!locale) {
+    if (onError) onError(new InvalidConfigError(`"locale" was not configured, using "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl/api#intlshape for more details`));
+    resolvedConfig.locale = resolvedConfig.defaultLocale || "en";
+  } else if (!Intl.NumberFormat.supportedLocalesOf(locale).length && onError) onError(new MissingDataError(`Missing locale data for locale: "${locale}" in Intl.NumberFormat. Using default locale: "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl#runtime-requirements for more details`));
+  else if (!Intl.DateTimeFormat.supportedLocalesOf(locale).length && onError) onError(new MissingDataError(`Missing locale data for locale: "${locale}" in Intl.DateTimeFormat. Using default locale: "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl#runtime-requirements for more details`));
+  verifyConfigMessages(resolvedConfig);
+  return {
+    ...resolvedConfig,
+    formatters,
+    formatNumber: formatNumber.bind(null, resolvedConfig, formatters.getNumberFormat),
+    formatNumberToParts: formatNumberToParts.bind(null, resolvedConfig, formatters.getNumberFormat),
+    formatDuration: formatDuration.bind(null, resolvedConfig, formatters.getDurationFormat),
+    formatDurationToParts: formatDurationToParts.bind(null, resolvedConfig, formatters.getDurationFormat),
+    formatRelativeTime: formatRelativeTime.bind(null, resolvedConfig, formatters.getRelativeTimeFormat),
+    formatDate: formatDate.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatDateToParts: formatDateToParts.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatTime: formatTime.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatDateTimeRange: formatDateTimeRange.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatTimeToParts: formatTimeToParts.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatPlural: formatPlural.bind(null, resolvedConfig, formatters.getPluralRules),
+    formatMessage: formatMessage.bind(null, resolvedConfig, formatters),
+    $t: formatMessage.bind(null, resolvedConfig, formatters),
+    formatList: formatList.bind(null, resolvedConfig, formatters.getListFormat),
+    formatListToParts: formatListToParts.bind(null, resolvedConfig, formatters.getListFormat),
+    formatDisplayName: formatDisplayName.bind(null, resolvedConfig, formatters.getDisplayNames)
+  };
+}
+
+// packages/presentation/localization/src/message-localizer.ts
+var MessageLocalizer = class {
+  constructor(collaborators, catalogs, locale = "en") {
+    this.collaborators = collaborators;
+    this.catalogs = catalogs;
+    this.locale = this.collaborators.localeResolver.resolveLocale(locale);
+    this.intl = createIntl(
+      {
+        locale: this.locale,
+        defaultLocale: "en",
+        messages: catalogs[this.locale],
+        onError: this.keepFormattingErrorsPrivate.bind(this),
+        onWarn: this.keepFormattingErrorsPrivate.bind(this)
+      },
+      createIntlCache()
+    );
+  }
+  collaborators;
+  catalogs;
+  locale;
+  intl;
+  t(key, ...args) {
+    return this.intl.formatMessage(
+      { id: key, defaultMessage: this.catalogs.en[key] },
+      args[0],
+      { ignoreTag: true }
+    );
+  }
+  keepFormattingErrorsPrivate() {
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/automation-state-codec.ts
+import { createHash } from "node:crypto";
+var AUTOMATION_STATE_MARKER = "<!-- meetup-automation-state:v1 ";
+var AutomationStateCodec = class {
+  scope(body) {
+    if (body.startsWith("<!-- meetup-content-proposal:v1 ")) return "content";
+    if (body.startsWith("<!-- meetup-social-delivery:v1 ")) return "social";
+    if (body.startsWith("<!-- meetup-publication:v1\n")) return "meetup";
+    if (body.startsWith("<!-- community-publication:v1\n")) return "community";
+    return void 0;
+  }
+  managed(body) {
+    return body.startsWith(AUTOMATION_STATE_MARKER) || this.scope(body) !== void 0;
+  }
+  empty() {
+    return {
+      version: 1,
+      records: { content: [], social: [], meetup: [], community: [] },
+      imports: []
+    };
+  }
+  digest(body) {
+    return createHash("sha256").update(body).digest("hex");
+  }
+  read(body) {
+    const end = body.indexOf(" -->\n", AUTOMATION_STATE_MARKER.length);
+    if (!body.startsWith(AUTOMATION_STATE_MARKER) || end < 0)
+      throw new Error("Invalid automation state envelope");
+    return this.validate(
+      JSON.parse(body.slice(AUTOMATION_STATE_MARKER.length, end))
+    );
+  }
+  write(state) {
+    const json = JSON.stringify(this.validate(state)).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${AUTOMATION_STATE_MARKER}${json} -->`;
+  }
+  validate(value) {
+    if (!this.object(value) || value.version !== 1 || !this.object(value.records) || !Array.isArray(value.imports))
+      throw new Error("Invalid automation state envelope");
+    this.fields(value, ["version", "records", "imports"]);
+    this.fields(value.records, ["content", "social", "meetup", "community"]);
+    const records = this.empty().records;
+    for (const scope of Object.keys(records)) {
+      const entries = value.records[scope];
+      if (!Array.isArray(entries) || entries.some(
+        (body) => typeof body !== "string" || this.scope(body) !== scope
+      ))
+        throw new Error("Invalid automation state records");
+      records[scope] = entries;
+    }
+    const imports = value.imports.map((entry) => {
+      if (!this.object(entry) || typeof entry.id !== "number" || !Number.isSafeInteger(entry.id) || entry.id <= 0 || typeof entry.digest !== "string" || !/^[a-f0-9]{64}$/.test(entry.digest))
+        throw new Error("Invalid automation state import");
+      this.fields(entry, ["id", "digest"]);
+      return { id: entry.id, digest: entry.digest };
+    });
+    if (new Set(imports.map((entry) => entry.id)).size !== imports.length)
+      throw new Error("Duplicate automation state import");
+    return { version: 1, records, imports };
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  fields(value, fields) {
+    if (Object.keys(value).some((key) => !fields.includes(key)))
+      throw new Error("Unsupported automation state field");
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/automation-state-presenter.ts
+var AutomationStatePresenter = class {
+  constructor(codec, messages5) {
+    this.codec = codec;
+    this.messages = messages5;
+  }
+  codec;
+  messages;
+  render(state) {
+    return `${this.codec.write(state)}
+
+${this.messages.t("state.description")}`;
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/github-automation-state.ts
+import { isDeepStrictEqual } from "node:util";
+var GithubAutomationState = class {
+  constructor(client, comments, codec, presenter, visibility) {
+    this.client = client;
+    this.comments = comments;
+    this.codec = codec;
+    this.presenter = presenter;
+    this.visibility = visibility;
+  }
+  client;
+  comments;
+  codec;
+  presenter;
+  visibility;
+  async read(scope) {
+    return (await this.snapshot()).state.records[scope];
+  }
+  async write(scope, previous, next) {
+    const snapshot = await this.snapshot();
+    if (!isDeepStrictEqual(snapshot.state.records[scope], previous))
+      throw new Error("Automation state changed before persistence");
+    await this.persist(snapshot, {
+      ...snapshot.state,
+      records: { ...snapshot.state.records, [scope]: next }
+    });
+  }
+  async reconcile() {
+    const snapshot = await this.snapshot();
+    if (snapshot.anchor || snapshot.sources.length)
+      await this.persist(snapshot, snapshot.state);
+  }
+  async snapshot() {
+    const comments = await this.comments.list();
+    const anchors = comments.filter(
+      (comment) => comment.body?.startsWith(AUTOMATION_STATE_MARKER)
+    );
+    if (anchors.length > 1)
+      throw new Error("Duplicate automation state comments");
+    const anchor = anchors[0];
+    const sources = comments.filter(
+      (comment) => this.codec.scope(comment.body ?? "") !== void 0
+    );
+    if (anchor) {
+      const state2 = this.codec.read(anchor.body ?? "");
+      for (const source of sources) {
+        const imported = state2.imports.find((entry) => entry.id === source.id);
+        if (!imported || imported.digest !== this.codec.digest(source.body ?? ""))
+          throw new Error(
+            "Internal state changed outside the consolidated comment"
+          );
+      }
+      return { state: state2, anchor, sources };
+    }
+    const state = this.codec.empty();
+    for (const source of sources) {
+      const body = source.body ?? "";
+      const scope = this.codec.scope(body);
+      if (scope) state.records[scope] = [...state.records[scope], body];
+    }
+    return {
+      state: {
+        ...state,
+        imports: sources.map((source) => ({
+          id: source.id,
+          digest: this.codec.digest(source.body ?? "")
+        }))
+      },
+      anchor,
+      sources
+    };
+  }
+  async persist(snapshot, state) {
+    const body = this.presenter.render(state);
+    if (body.length > 6e4)
+      throw new Error(
+        "Consolidated automation state exceeds the comment size limit"
+      );
+    const anchor = snapshot.anchor ?? snapshot.sources[0];
+    const id = anchor ? anchor.id : await this.client.create(body);
+    if (anchor) await this.client.replace(id, anchor.body ?? "", body);
+    const saved = await this.snapshot();
+    if (saved.anchor?.id !== id || saved.anchor.body !== body)
+      throw new Error("Automation state persistence readback is uncertain");
+    await this.visibility.synchronize(id, body, true);
+    for (const source of saved.sources)
+      await this.visibility.synchronize(source.id, source.body ?? "", true);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.en.ts
+var EN_MESSAGES = {
+  "state.description": "Automation state. This comment is maintained by the bot and kept collapsed."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/messages.fr.ts
+var FR_MESSAGES = {
+  "state.description": "\xC9tat de l'automatisation. Ce commentaire est g\xE9r\xE9 par le bot et reste repli\xE9."
+};
+
+// packages/adapter/journey/github-automation-state/src/i18n/catalog.ts
+var CATALOGS = { en: EN_MESSAGES, fr: FR_MESSAGES };
+
+// packages/adapter/journey/github-automation-state/src/i18n/state-messages.ts
+var StateMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS, locale);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/state-edit-authority.ts
+import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
+var StateEditAuthority = class {
+  constructor(client, codec, author) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+  }
+  client;
+  codec;
+  author;
+  async verify(current, history) {
+    if (!this.bot(current.editor) && (history[0]?.diff !== current.body || !await this.authorized(current.editor)))
+      throw new Error("Automation state was edited outside automation");
+    let confirmedByBot = this.bot(current.editor);
+    for (const [index, edit] of history.entries()) {
+      if (this.bot(edit.editor)) {
+        confirmedByBot = true;
+        continue;
+      }
+      if (edit.editor?.__typename !== "User" || !confirmedByBot && !await this.authorized(edit.editor) || !this.publicationChange(history[index + 1]?.diff, edit.diff))
+        throw new Error("Automation state was edited outside automation");
+    }
+  }
+  bot(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
+  }
+  async authorized(editor) {
+    return editor?.__typename === "User" && await this.client.canApprove(editor.login);
+  }
+  publicationChange(before, after) {
+    if (!before || !after) return false;
+    const scope = this.codec.scope(before);
+    if (scope === "meetup" || scope === "community")
+      return this.codec.scope(after) === scope;
+    if (!before.startsWith(AUTOMATION_STATE_MARKER) || !after.startsWith(AUTOMATION_STATE_MARKER))
+      return false;
+    const previous = this.codec.read(before);
+    const next = this.codec.read(after);
+    return isDeepStrictEqual2(previous.records.content, next.records.content) && isDeepStrictEqual2(previous.records.social, next.records.social) && isDeepStrictEqual2(previous.imports, next.imports);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/trusted-state-comments.ts
+var TrustedStateComments = class {
+  constructor(client, codec, author, authority) {
+    this.client = client;
+    this.codec = codec;
+    this.author = author;
+    this.authority = authority;
+    if (!/^[a-z\d-]+\[bot\]$/i.test(author))
+      throw new Error("Automation state requires a trusted GitHub App bot");
+  }
+  client;
+  codec;
+  author;
+  authority;
+  async list() {
+    const records = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const current = await this.client.edit(comment);
+      if (current.id !== comment.node_id || current.body !== comment.body)
+        throw new Error("Automation state changed during verification");
+      const managed = this.codec.managed(current.body);
+      if (current.lastEditedAt !== null || current.editor !== null)
+        await this.verifyHistory(comment, current, managed);
+      if (managed) records.push(comment);
+    }
+    return records;
+  }
+  async verifyHistory(comment, current, managed) {
+    const history = await this.client.history(comment);
+    if (!current.editor || history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
+      throw new Error("Automation state history is unavailable");
+    const previouslyManaged = history.some(
+      (edit) => edit.diff !== null && this.codec.managed(edit.diff)
+    );
+    if (!managed && !previouslyManaged) return;
+    if (!managed)
+      throw new Error("Automation state was edited outside automation");
+    await this.authority.verify(current, history);
+  }
+};
+
+// packages/adapter/journey/github-automation-state/src/dependency-composition.ts
+var GithubAutomationStateComposition = class {
+  create(client, author, locale, visibility) {
+    const codec = new AutomationStateCodec();
+    return new GithubAutomationState(
+      client,
+      new TrustedStateComments(
+        client,
+        codec,
+        author,
+        new StateEditAuthority(client, codec, author)
+      ),
+      codec,
+      new AutomationStatePresenter(
+        codec,
+        new StateMessages(
+          { localeResolver: new LocalizationComposition().localeResolver() },
+          locale
+        )
+      ),
+      visibility
+    );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
+var ApprovalDecisionParser = class {
+  constructor(textPreview, emailDecisions, policy, comments) {
+    this.textPreview = textPreview;
+    this.emailDecisions = emailDecisions;
+    this.policy = policy;
+    this.comments = comments;
+  }
+  textPreview;
+  emailDecisions;
+  policy;
+  comments;
+  parse(record, body) {
+    if (this.policy.reviewPhase({
+      recipientCount: record.recipientCount,
+      followUpActive: record.followUp?.active,
+      decided: record.decision !== void 0
+    }) !== "pending")
+      return { status: "pending" };
+    const normalized = body.replace(/\r\n/g, "\n");
+    if (record.kind === "content-review")
+      return this.content(record, normalized);
+    if (record.details?.parameters)
+      return this.emailDecisions.parse(record, normalized, this.comments);
+    for (const comment of this.comments) {
+      for (const status of ["approved", "rejected"]) {
+        if (normalized.replace(/- \[X\]/g, "- [x]") === comment.issue(record, { status }))
+          return { status };
+      }
+    }
+    return { status: "pending" };
+  }
+  content(record, body) {
+    if (record.content.target !== "cover") return this.text(record, body);
+    const approvals = record.content.draft.media.map(
+      (media) => ({
+        status: "approved",
+        selectedImage: media.id
+      })
+    );
+    for (const decision of [
+      ...approvals,
+      { status: "rejected" },
+      { status: "iteration-requested" }
+    ])
+      if (this.comments.some(
+        (comment) => comment.issue(record, decision) === body.replace(/- \[X\]/g, "- [x]")
+      ))
+        return decision;
+    return { status: "pending" };
+  }
+  text(record, body) {
+    const edited = this.textPreview.read(body);
+    if (!edited) return { status: "pending" };
+    const original = this.textPreview.replace(
+      body.replace(/- \[X\]/g, "- [x]"),
+      record.content.draft.text
+    );
+    for (const status of [
+      "approved",
+      "pending",
+      "rejected",
+      "iteration-requested"
+    ]) {
+      if (!this.comments.some(
+        (comment) => comment.issue(record, { status }) === original
+      ))
+        continue;
+      if ((status === "approved" || status === "pending") && edited.text !== record.content.draft.text)
+        return { status, editedText: edited.text };
+      return { status };
+    }
+    return { status: "pending" };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-notifications.ts
+var ApprovalNotifications = class {
+  constructor(policy, client, presenter, notifications, channelId) {
+    this.policy = policy;
+    this.client = client;
+    this.presenter = presenter;
+    this.notifications = notifications;
+    this.channelId = channelId;
+  }
+  policy;
+  client;
+  presenter;
+  notifications;
+  channelId;
+  async send(record, commentId) {
+    const facts = this.policy.notificationFor(record);
+    if (!facts) return false;
+    if (record.notification !== "new" && record.notification !== "retry")
+      return record.notification === "reserved";
+    const before = this.presenter.issue(record, { status: "pending" });
+    record.notification = "reserved";
+    const reserved = this.presenter.issue(record, { status: "pending" });
+    await this.client.replace(commentId, before, reserved);
+    try {
+      const result = await this.notifications.send({
+        ...facts,
+        destination: this.channelId,
+        approvalUrl: this.client.url(commentId)
+      });
+      record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
+      if (result.outcome === "accepted" && result.message)
+        record.notificationMessage = result.message;
+    } catch {
+    }
+    await this.client.replace(
+      commentId,
+      reserved,
+      this.presenter.issue(record, { status: "pending" })
+    );
+    return record.notification !== "sent";
+  }
+  async react(record, commentId) {
+    if (!this.policy.notificationFor(record)) return false;
+    if (!record.decision || record.reactionSent) return false;
+    if (!record.notificationMessage) return record.notification !== "sent";
+    const before = this.presenter.issue(record, record.decision);
+    try {
+      const accepted = await this.notifications.react(
+        record.notificationMessage,
+        record.decision.status
+      );
+      if (!accepted) return true;
+      record.reactionSent = true;
+      await this.client.replace(
+        commentId,
+        before,
+        this.presenter.issue(record, record.decision)
+      );
+      return false;
+    } catch {
+      return true;
+    }
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-presenter.ts
+var ApprovalPresenter = class {
+  constructor(codec, renderers) {
+    this.codec = codec;
+    this.renderers = renderers;
+  }
+  codec;
+  renderers;
+  issue(record, decision) {
+    return [
+      this.codec.marker(record),
+      this.renderers[record.kind].issue(record, decision)
+    ].filter(Boolean).join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
+var EN_MESSAGES2 = {
+  "approval.delivery.status": "- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {\u2705 Send accepted ({count})} pending {\u23F3 Sending ({count})} uncertain {\u26A0\uFE0F Uncertain result ({count}) \u2014 check the mail service before recovery} rejected {\u274C Send rejected ({count})} other {Awaiting dispatch}}.",
+  "approval.delivery.notice": "Accepted means the mail service accepted the request, not that the email reached the inbox.",
+  "approval.content.image-label": "#### Image {index, number}",
+  "approval.social.after-approval": "after approval",
+  "approval.social.details": "### Publish on {target}\n\n{destination} \xB7 {identity}\n\nScheduled for: {plannedAt}; expires: {expiresAt}.\n\nReview the post below.",
+  "approval.social.request": "Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.social.evidence": "Evidence: {reference}\n\nResult: {outcome, select, published {published} not_published {not published} other {unknown}}.",
+  "approval.social.recovery": "Check the evidence above before selecting a choice.\n\n- [{approveMark}] {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] Keep publication blocked",
+  "approval.social.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSee the delivery status for the result.",
+  "approval.community.details": "### Publish on CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing may notify group members and speakers.",
+  "approval.community.request": "Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.community.final": "{status, select, approved {\u2705 CNCF publication approved} rejected {\u274C CNCF publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nCNCF Link is added after publication is verified.",
+  "approval.content.planned": "Scheduled for: {time}.",
+  "approval.content.slot": "Image {index}: {status, select, complete {ready} reserved {result unknown; check before retrying} failed {generation failed} other {not generated}}.",
+  "approval.content.title": "### {target, select, title {Meetup title} description {Meetup description} cover {Meetup covers} other {Text for {target}}}",
+  "approval.content.request": "{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] \u274C Reject\n- [{iterateMark}] \u{1F504} Generate another proposal",
+  "approval.content.text-choice": "- [{mark}] \u2705 Approve",
+  "approval.content.image-choice": "- [{mark}] \u2705 Choose image {index, number}",
+  "approval.content.final": "{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} iteration_requested {\u{1F504} New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
+  "approval.meetup.details": "### Publish on Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
+  "approval.meetup.request": "Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.meetup.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
+  "follow-up.title": "## Post-event follow-up \xB7 {date}",
+  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
+  "follow-up.stopped": "Follow-up paused.",
+  "follow-up.waiting": "Thank-you emails are not ready yet.",
+  "follow-up.emails-complete": "No thank-you emails pending.",
+  "approval.parameters.instructions": "Edit the values between backticks, then approve sending. Private contact details stay in the catalog.",
+  "approval.details.summary": "Email details",
+  "approval.details.email": "{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thank-you} speaker_thanks {Speaker thank-you} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Event links, slides, and logistics.} speaker_introduction {Event links, arrival details, and talk instructions.} host_thanks {Thanks and an invitation to host again.} speaker_thanks {Thanks, talk feedback, and a request for suggestions.} other {Planned email.}}",
+  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
+  "approval.details.feedback": "Feedback results: {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# more email.} other {# more emails.}}",
+  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
+  "approval.final": "### {kind, select, introduction {Introduction emails} host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
+  "approval.request": "### {kind, select, introduction {Introduction emails} host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] \u2705 Approve sending\n- [{rejectMark}] \u274C Reject sending"
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
+var FR_MESSAGES2 = {
+  "approval.delivery.status": "- {kind, select, host_introduction {H\xF4te} speaker_introduction {Intervenants} host_thanks {Remerciements h\xF4te} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {\u2705 Envoi accept\xE9 ({count})} pending {\u23F3 Envoi en cours ({count})} uncertain {\u26A0\uFE0F R\xE9sultat incertain ({count}) \u2014 v\xE9rifier le service d'envoi avant toute reprise} rejected {\u274C Envoi refus\xE9 ({count})} other {En attente d'envoi}}.",
+  "approval.delivery.notice": "Accept\xE9 signifie que le service d'envoi a pris la demande en charge, pas que l'email a \xE9t\xE9 re\xE7u.",
+  "approval.content.image-label": "#### Visuel {index, number}",
+  "approval.social.after-approval": "apr\xE8s approbation",
+  "approval.social.details": "### Publier sur {target}\n\n{destination} \xB7 {identity}\n\nPublication : {plannedAt} ; expiration : {expiresAt}.\n\nV\xE9rifiez le message ci-dessous.",
+  "approval.social.request": "Cochez un choix pour publier ce message \xE0 la destination indiqu\xE9e. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.social.evidence": "Preuve : {reference}\n\nR\xE9sultat : {outcome, select, published {publi\xE9} not_published {non publi\xE9} other {inconnu}}.",
+  "approval.social.recovery": "V\xE9rifiez la preuve ci-dessus avant de choisir.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identifiant} not_published {Confirmer qu'aucun message n'a \xE9t\xE9 publi\xE9 et autoriser un nouvel essai apr\xE8s validation} other {Confirmer la reprise}}\n- [{rejectMark}] Garder la publication bloqu\xE9e",
+  "approval.social.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nConsultez le suivi des envois pour le r\xE9sultat.",
+  "approval.community.details": "### Publier sur CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut notifier les membres du groupe et les intervenants.",
+  "approval.community.request": "Cochez un choix. La validation inclut les notifications OCGroups.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.community.final": "{status, select, approved {\u2705 Publication CNCF approuv\xE9e} rejected {\u274C Publication CNCF refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCNCF Link sera ajout\xE9 apr\xE8s v\xE9rification de la publication.",
+  "approval.content.planned": "Publication pr\xE9vue : {time}.",
+  "approval.content.slot": "Visuel {index} : {status, select, complete {pr\xEAt} reserved {r\xE9sultat inconnu ; v\xE9rifiez avant de relancer} failed {g\xE9n\xE9ration en \xE9chec} other {non g\xE9n\xE9r\xE9}}.",
+  "approval.content.title": "### {target, select, title {Titre du meetup} description {Description du meetup} cover {Visuels du meetup} other {Texte pour {target}}}",
+  "approval.content.request": "{target, select, cover {Choisissez un visuel.} other {Modifiez le texte de ce commentaire si besoin, puis cochez un choix.}} La publication se valide s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] \u274C Refuser\n- [{iterateMark}] \u{1F504} G\xE9n\xE9rer une autre proposition",
+  "approval.content.text-choice": "- [{mark}] \u2705 Approuver",
+  "approval.content.image-choice": "- [{mark}] \u2705 Choisir le visuel {index, number}",
+  "approval.content.final": "{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.{image, plural, =0 {} other {\n\nVisuel choisi : #}}",
+  "approval.meetup.details": "### Publier sur Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon Meetup]({url}).",
+  "approval.meetup.request": "Cochez un choix. L'automatisation publiera le brouillon approuv\xE9.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.meetup.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'\xE9v\xE9nement reste en brouillon.} other {}}",
+  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
+  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.stopped": "Suivi suspendu.",
+  "follow-up.waiting": "Les emails de remerciement ne sont pas encore pr\xEAts.",
+  "follow-up.emails-complete": "Aucun email de remerciement en attente.",
+  "approval.parameters.instructions": "Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonn\xE9es priv\xE9es restent dans le r\xE9f\xE9rentiel.",
+  "approval.details.summary": "D\xE9tail des emails",
+  "approval.details.email": "{kind, select, host_introduction {Informations pour l'h\xF4te} speaker_introduction {Informations pour l'intervenant} host_thanks {Remerciement \xE0 l'h\xF4te} speaker_thanks {Remerciement \xE0 l'intervenant} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Liens du meetup, slides et logistique.} speaker_introduction {Liens du meetup, acc\xE8s au lieu et consignes pour le talk.} host_thanks {Remerciements et proposition d'accueillir un prochain meetup.} speaker_thanks {Remerciements, retours sur le talk et demande de suggestions.} other {Email pr\xE9vu.}}",
+  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
+  "approval.details.feedback": "R\xE9sultats des retours : {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# autre email.} other {# autres emails.}}",
+  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
+  "approval.final": "### {kind, select, introduction {Emails de pr\xE9paration} host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\n{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Les emails d\xE9j\xE0 envoy\xE9s ne seront pas renvoy\xE9s.} rejected {Ces emails ne seront pas envoy\xE9s.} other {}}",
+  "approval.request": "### {kind, select, introduction {Emails de pr\xE9paration} host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\nCochez un choix. Les emails d\xE9j\xE0 envoy\xE9s sont ignor\xE9s. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] \u2705 Approuver l'envoi\n- [{rejectMark}] \u274C Refuser l'envoi"
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
+var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
+
+// packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
+var ApprovalPresenterFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  supportedLocales() {
+    return Object.keys(CATALOGS2).map(
+      (locale) => this.collaborators.createApprovalPresenter(
+        this.collaborators.createApprovalMessages(locale)
+      )
+    );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-record-factory.ts
+var ApprovalRecordFactory = class {
+  constructor(collaborators, nextIdentity) {
+    this.collaborators = collaborators;
+    this.nextIdentity = nextIdentity;
+  }
+  collaborators;
+  nextIdentity;
+  create(request2) {
+    this.collaborators.approvalRequestSchema.validate(request2);
+    this.collaborators.approvalRequestPolicy.validate(request2);
+    return this.allocate(request2);
+  }
+  placeholder(input) {
+    return this.allocate({
+      ...this.collaborators.followUpApprovalPolicy.placeholder(input),
+      followUp: {
+        active: input.active,
+        pendingTasks: input.pendingTasks
+      }
+    });
+  }
+  allocate(request2) {
+    const record = {
+      ...request2,
+      requestId: `approval-${this.nextIdentity()}`,
+      notification: "new"
+    };
+    this.collaborators.storedApprovalSchema.validate(record);
+    return record;
+  }
+};
+
 // packages/application/journey/src/approval/approval-notification-policy.ts
 var ApprovalNotificationPolicy = class {
   notificationFor(request2) {
@@ -29353,10 +33323,10 @@ var ContentContractPolicy = class {
 };
 
 // packages/domain/publication/src/domain/content-fingerprint.ts
-import { createHash } from "node:crypto";
+import { createHash as createHash2 } from "node:crypto";
 var ContentFingerprint = class {
   of(value) {
-    return createHash("sha256").update(value).digest("hex");
+    return createHash2("sha256").update(value).digest("hex");
   }
 };
 
@@ -31463,7 +35433,7 @@ var CommunicationIdempotency = class {
 };
 
 // packages/domain/communication/src/mail-batch-fingerprint.ts
-import { createHash as createHash2 } from "node:crypto";
+import { createHash as createHash3 } from "node:crypto";
 var MailBatchFingerprint = class {
   create(eventDate, timeZone, intents) {
     const messages5 = intents.map((intent) => ({
@@ -31475,7 +35445,7 @@ var MailBatchFingerprint = class {
         typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
       ])
     })).sort((a, b2) => a.id.localeCompare(b2.id));
-    return createHash2("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages5 })).digest("hex");
+    return createHash3("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages5 })).digest("hex");
   }
 };
 
@@ -36730,6 +40700,4526 @@ var DraftProposalComposition = class {
   }
 };
 
+// packages/adapter/journey/github-organizer-approval/src/content-value-schema.ts
+var ContentValueSchema = class {
+  constructor(urls) {
+    this.urls = urls;
+  }
+  urls;
+  object(value, keys) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
+      throw new Error("Invalid content object");
+    return value;
+  }
+  text(value, max) {
+    if (typeof value !== "string" || value.length > max)
+      throw new Error("Invalid content text");
+    return value;
+  }
+  list(value, max) {
+    if (!Array.isArray(value) || value.length > max)
+      throw new Error("Invalid content list");
+    return value;
+  }
+  media(value) {
+    const item = this.object(value, [
+      "source",
+      "id",
+      "url",
+      "fingerprint",
+      "description",
+      "mimeType",
+      "width",
+      "height",
+      "sourceRevision"
+    ]);
+    const id = this.text(item.id, 200), url = this.text(item.url, 2e3);
+    const description = this.text(item.description, 1e3), sourceRevision = this.text(item.sourceRevision, 200);
+    const fingerprint = this.text(item.fingerprint, 64);
+    if (!id || !description.trim() || !sourceRevision || !this.urls.valid(url) || /[<>\r\n]/.test(url) || !/^[a-f0-9]{64}$/.test(fingerprint))
+      throw new Error("Invalid content media identity");
+    if (item.mimeType !== "image/png" && item.mimeType !== "image/jpeg")
+      throw new Error("Invalid content media format");
+    if (!Number.isSafeInteger(item.width) || !Number.isSafeInteger(item.height) || Number(item.width) <= 0 || Number(item.height) <= 0 || Number(item.width) * Number(item.height) > 25e6)
+      throw new Error("Invalid content dimensions");
+    const source = item.source === void 0 ? void 0 : this.object(item.source, ["id", "revision"]);
+    return {
+      ...source ? {
+        source: {
+          id: this.text(source.id, 200),
+          revision: this.text(source.revision, 200)
+        }
+      } : {},
+      id,
+      url,
+      description,
+      sourceRevision,
+      fingerprint,
+      mimeType: item.mimeType,
+      width: Number(item.width),
+      height: Number(item.height)
+    };
+  }
+  destination(value) {
+    const item = this.object(value, [
+      "key",
+      "provider",
+      "label",
+      "workspaceId",
+      "channelId",
+      "organizationUrn"
+    ]);
+    const key = this.text(item.key, 64);
+    const label = this.text(item.label, 100);
+    if (!/^[a-z][a-z0-9-]{0,63}$/.test(key) || !label.trim() || /[<>\r\n]/.test(label))
+      throw new Error("Invalid content destination identity");
+    if (item.provider === "slack") {
+      this.object(value, [
+        "key",
+        "provider",
+        "label",
+        "workspaceId",
+        "channelId"
+      ]);
+      const workspaceId = this.text(item.workspaceId, 100);
+      const channelId = this.text(item.channelId, 100);
+      if (!/^T[A-Z0-9]{2,}$/.test(workspaceId) || !/^[CG][A-Z0-9]{2,}$/.test(channelId))
+        throw new Error("Invalid content Slack destination");
+      return { key, label, provider: "slack", workspaceId, channelId };
+    }
+    this.object(value, ["key", "provider", "label", "organizationUrn"]);
+    const organizationUrn = this.text(item.organizationUrn, 100);
+    if (item.provider !== "linkedin" || !/^urn:li:organization:[1-9]\d*$/.test(organizationUrn))
+      throw new Error("Invalid content LinkedIn destination");
+    return { key, label, provider: "linkedin", organizationUrn };
+  }
+  draft(value) {
+    const item = this.object(value, ["text", "media"]);
+    return {
+      text: this.text(item.text, 12e3),
+      media: this.list(item.media, 4).map((image) => this.media(image))
+    };
+  }
+  facts(value) {
+    const item = this.object(value, [
+      "date",
+      "startTime",
+      "endTime",
+      "timeZone",
+      "month",
+      "eventDescription",
+      "host",
+      "talks",
+      "registrationUrl",
+      "aperitif",
+      "mentions",
+      "announcement"
+    ]);
+    const host = this.object(item.host, ["name", "city"]);
+    const registrationUrl = this.text(item.registrationUrl, 2e3);
+    if (registrationUrl && !this.urls.valid(registrationUrl))
+      throw new Error("Invalid registration URL");
+    if (typeof item.aperitif !== "boolean")
+      throw new Error("Invalid content logistics");
+    return {
+      date: this.text(item.date, 10),
+      startTime: this.text(item.startTime, 5),
+      endTime: this.text(item.endTime, 5),
+      timeZone: this.text(item.timeZone, 100),
+      month: this.text(item.month, 40),
+      ...item.eventDescription === void 0 ? {} : { eventDescription: this.text(item.eventDescription, 49e3) },
+      host: {
+        name: this.text(host.name, 200),
+        city: this.text(host.city, 200)
+      },
+      talks: this.list(item.talks, 10).map((talk) => this.talk(talk)),
+      registrationUrl,
+      aperitif: item.aperitif,
+      mentions: this.list(item.mentions, 20).map(
+        (name) => this.text(name, 100)
+      ),
+      announcement: item.announcement === null ? null : this.media(item.announcement)
+    };
+  }
+  talk(value) {
+    const item = this.object(value, ["id", "title", "abstract", "speakers"]);
+    return {
+      id: this.text(item.id, 200),
+      title: this.text(item.title, 500),
+      abstract: this.text(item.abstract, 3e3),
+      speakers: this.list(item.speakers, 10).map((speaker) => {
+        const person = this.object(speaker, ["id", "name"]);
+        return {
+          id: this.text(person.id, 200),
+          name: this.text(person.name, 200)
+        };
+      })
+    };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-comment-codec.ts
+var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
+var ApprovalCommentCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body) {
+    const line = body.split("\n", 1)[0];
+    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
+      throw new Error("Invalid approval record");
+    const record = JSON.parse(line.slice(APPROVAL_MARKER.length, -4));
+    this.collaborators.storedApprovalSchema.validate(record);
+    return record;
+  }
+  marker(record) {
+    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${APPROVAL_MARKER}${json} -->`;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-details-presenter.ts
+var ApprovalDetailsPresenter = class {
+  constructor(parameters, messages5) {
+    this.parameters = parameters;
+    this.messages = messages5;
+  }
+  parameters;
+  messages;
+  render(details) {
+    const lines = [
+      "<details>",
+      `<summary>${this.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
+      "",
+      ...details.parameters ? [
+        this.messages.t("approval.parameters.instructions", {}),
+        "",
+        this.parameters.render(details.parameters),
+        ""
+      ] : [],
+      ...details.emails.map(
+        (email) => this.email(details.parameters ? { ...email, links: [] } : email)
+      )
+    ];
+    if (details.omittedEmails > 0)
+      lines.push(
+        `<p>${this.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
+      );
+    return [...lines, "", "</details>"].join("\n");
+  }
+  email(email) {
+    const heading = this.messages.t("approval.details.email", {
+      kind: email.kind.replaceAll("-", "_")
+    });
+    const name = email.recipientName ? `: ${this.escape(email.recipientName)}` : "";
+    const lines = [
+      `<p><strong>${this.escape(heading)}${name}</strong></p>`,
+      `<p>${this.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
+    ];
+    if (email.links.length)
+      lines.push(
+        "<ul>",
+        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
+        "</ul>"
+      );
+    if (email.omittedLinks > 0)
+      lines.push(
+        `<p>${this.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
+      );
+    return lines.join("\n");
+  }
+  link(link) {
+    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
+      title: link.title ?? ""
+    }) : this.messages.t("approval.details.link", { kind: link.kind });
+    return `<a href="${this.escape(link.url)}">${this.escape(label)}</a>`;
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-details-preview.ts
+var ApprovalDetailsPreview = class {
+  create(details) {
+    const emails = details.emails.slice(0, 20).map((email) => ({
+      ...email,
+      recipientName: this.text(email.recipientName),
+      links: email.links.slice(0, 8).map((link) => ({
+        ...link,
+        ...link.title === void 0 ? {} : { title: this.text(link.title) }
+      })),
+      omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0)
+    }));
+    while (JSON.stringify(emails).length > 4e3) {
+      const largest = [...emails].sort(
+        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
+      )[0];
+      if (largest?.links.length) {
+        largest.links.pop();
+        largest.omittedLinks++;
+      } else {
+        emails.pop();
+      }
+    }
+    return {
+      ...details.mailKind ? { mailKind: details.mailKind } : {},
+      ...details.parameters ? { parameters: details.parameters } : {},
+      emails,
+      omittedEmails: details.omittedEmails + details.emails.length - emails.length
+    };
+  }
+  text(value) {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-request-schema.ts
+var ApprovalRequestSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
+      throw new Error("Invalid approval request");
+    if (value.kind === "social-publication") {
+      this.social(value);
+      return;
+    }
+    if (value.social !== void 0)
+      throw new Error("Invalid social publication approval kind");
+    if (value.kind === "content-review") {
+      if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
+        throw new Error("Invalid content approval fields");
+      this.collaborators.contentApprovalSchema.validate(value.content);
+      return;
+    }
+    if (value.content !== void 0)
+      throw new Error("Invalid content approval kind");
+    if (value.kind === "community-publication" || value.kind === "meetup-publication") {
+      this.publication(value);
+      return;
+    }
+    if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !this.collaborators.approvalSchema.count(value.recipientCount))
+      throw new Error("Invalid approval request");
+    this.collaborators.emailApprovalDetailsSchema.validate(value.details);
+  }
+  social(value) {
+    if (value.content !== void 0 || value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
+      throw new Error("Invalid social publication approval fields");
+    this.collaborators.socialPublicationApprovalSchema.validate(value.social);
+  }
+  publication(value) {
+    if (value.recipientCount !== void 0 || value.details !== void 0)
+      throw new Error("Invalid publication approval fields");
+    if (value.kind === "community-publication")
+      this.collaborators.communityApprovalDetailsSchema.validate(
+        value.publication
+      );
+    else
+      this.collaborators.meetupApprovalDetailsSchema.validate(
+        value.publication
+      );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
+var ApprovalSchema = class {
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  count(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  }
+  text(value, maximum) {
+    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/community-approval-details-schema.ts
+var CommunityApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || !this.reviewUrl(value.url) || !this.text(value.title, 120) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
+      throw new Error("Invalid community approval details");
+  }
+  reviewUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && value === `${url.origin}${url.pathname}` && /^\/dashboard\/group\/events\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\/update$/.test(
+        url.pathname
+      );
+    } catch {
+      return false;
+    }
+  }
+  text(value, maximum) {
+    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-approval-schema.ts
+var ContentApprovalSchema = class {
+  constructor(schema, policy, values) {
+    this.schema = schema;
+    this.policy = policy;
+    this.values = values;
+  }
+  schema;
+  policy;
+  values;
+  validate(value) {
+    if (!this.schema.object(value) || typeof value.key !== "string" || !/^content-[a-f0-9-]{36}$/.test(value.key) || !this.policy.target(value.target) || !["en", "fr"].includes(String(value.language)) || typeof value.origin !== "string" || !value.origin || value.origin.length > 200)
+      throw new Error("Invalid content approval");
+    this.values.object(value, [
+      "key",
+      "target",
+      "language",
+      "origin",
+      "draft",
+      "plannedAt",
+      "attempts"
+    ]);
+    const draft = this.values.draft(value.draft);
+    if (value.target === "cover" && (!draft.media.length || draft.text))
+      throw new Error("Invalid cover preview");
+    if (value.target !== "cover" && !draft.text.trim())
+      throw new Error("Missing content preview");
+    this.schedule(value);
+  }
+  schedule(value) {
+    if (value.plannedAt !== void 0 && (typeof value.plannedAt !== "string" || !Number.isFinite(Date.parse(value.plannedAt))))
+      throw new Error("Invalid planned publication time");
+    if (value.attempts !== void 0 && (!Array.isArray(value.attempts) || value.attempts.length !== 4 || value.attempts.some(
+      (phase) => !["not-started", "reserved", "complete", "failed"].includes(phase)
+    )))
+      throw new Error("Invalid cover attempt summary");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-approval-details-schema.ts
+var EmailApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(details) {
+    if (details === void 0) return;
+    if (!this.collaborators.approvalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !this.collaborators.approvalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(this.email.bind(this)))
+      throw new Error("Invalid approval details");
+    if (details.mailKind !== void 0 && (!["host-introduction", "speaker-introduction"].includes(
+      String(details.mailKind)
+    ) || !details.emails.every((email) => email.kind === details.mailKind)))
+      throw new Error("Invalid email approval scope");
+    if (details.parameters !== void 0)
+      this.collaborators.parameterPolicy.validate(details.parameters);
+  }
+  email(email) {
+    return this.collaborators.approvalSchema.object(email) && typeof email.kind === "string" && [
+      "host-introduction",
+      "speaker-introduction",
+      "host-thanks",
+      "speaker-thanks"
+    ].includes(email.kind) && this.collaborators.approvalSchema.text(email.recipientName, 200) && this.collaborators.approvalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(this.link.bind(this));
+  }
+  link(link) {
+    return this.collaborators.approvalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || this.collaborators.approvalSchema.text(link.title, 200)) && this.url(link.url);
+  }
+  url(value) {
+    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
+      return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/social-publication-approval-schema.ts
+var SocialPublicationApprovalSchema = class {
+  constructor(values) {
+    this.values = values;
+  }
+  values;
+  validate(value) {
+    const item = this.values.object(value, [
+      "intentId",
+      "target",
+      "destinationLabel",
+      "destinationIdentity",
+      "text",
+      "media",
+      "plannedAt",
+      "expiresAt",
+      "recovery"
+    ]);
+    for (const field of [
+      "intentId",
+      "target",
+      "destinationLabel",
+      "destinationIdentity"
+    ])
+      if (!this.values.text(item[field], 200).trim() || /[\r\n]/.test(String(item[field])))
+        throw new Error("Invalid social publication identity");
+    if (!this.values.text(item.text, 2800).trim())
+      throw new Error("Missing social publication text");
+    for (const media of this.values.list(item.media, 1))
+      this.values.media(media);
+    const plannedAt = this.values.text(item.plannedAt, 40);
+    const expiresAt = this.values.text(item.expiresAt, 40);
+    if (plannedAt !== "after-approval" && !Number.isFinite(Date.parse(plannedAt)) || !Number.isFinite(Date.parse(expiresAt)) || plannedAt !== "after-approval" && Date.parse(plannedAt) >= Date.parse(expiresAt))
+      throw new Error("Invalid social publication window");
+    if (item.recovery !== void 0) this.recovery(item.recovery);
+  }
+  recovery(value) {
+    const item = this.values.object(value, ["outcome", "reference"]);
+    if (item.outcome !== "published" && item.outcome !== "not-published")
+      throw new Error("Invalid social publication recovery outcome");
+    if (!this.values.text(item.reference, 2e3).trim())
+      throw new Error("Missing social publication recovery evidence");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
+var StoredApprovalSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value))
+      throw new Error("Invalid approval state");
+    const state = value;
+    this.collaborators.approvalRequestSchema.validate(value);
+    this.collaborators.followUpSchema.validate(state.followUp);
+    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
+      hasFollowUp: state.followUp !== void 0,
+      decided: state.decision !== void 0
+    });
+    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
+      (status) => status === state.notification
+    ))
+      throw new Error("Invalid approval state");
+    if (state.decision !== void 0) {
+      this.decision(state.decision);
+      const decision = state.decision;
+      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0 || decision.editedText !== void 0))
+        throw new Error("Invalid content decision kind");
+      this.emailDecision(value, decision);
+      if (value.kind === "content-review")
+        this.contentDecision(value, decision);
+    }
+    if (state.delivery !== void 0)
+      this.delivery(state.delivery, value.details, state.decision);
+    if (state.notificationMessage !== void 0)
+      this.notificationMessage(state.notificationMessage);
+    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
+      throw new Error("Invalid approval reaction state");
+  }
+  emailDecision(value, decision) {
+    if (decision.emailParameters !== void 0) {
+      if (decision.status !== "approved" || !value.details?.parameters)
+        throw new Error("Invalid email parameter decision");
+      this.collaborators.parameterPolicy.validateEdit(
+        value.details.parameters,
+        decision.emailParameters
+      );
+    }
+  }
+  delivery(value, details, decision) {
+    if (!details || !this.collaborators.approvalSchema.object(decision) || decision.status !== "approved" || !Array.isArray(value) || value.length > 20)
+      throw new Error("Invalid email delivery report");
+    for (const item of value)
+      if (!this.collaborators.approvalSchema.object(item) || !details.emails.some((email) => email.kind === item.kind) || !["not-sent", "accepted", "pending", "uncertain", "rejected"].includes(
+        String(item.status)
+      ) || typeof item.count !== "number" || !Number.isSafeInteger(item.count) || item.count < 0)
+        throw new Error("Invalid email delivery status");
+  }
+  decision(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
+      String(value.status)
+    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
+      throw new Error("Invalid final approval decision");
+  }
+  contentDecision(value, decision) {
+    const selected = decision.selectedImage;
+    if (decision.editedText !== void 0 && (decision.status !== "approved" || value.content.target === "cover" || typeof decision.editedText !== "string" || !decision.editedText.trim() || decision.editedText.length > 12e3))
+      throw new Error("Invalid approved text edit");
+    if (value.content.target === "cover" && decision.status === "approved") {
+      if (!value.content.draft.media.some((media) => media.id === selected))
+        throw new Error("Missing approved cover identity");
+    } else if (selected !== void 0)
+      throw new Error("Unexpected cover identity");
+  }
+  notificationMessage(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
+      throw new Error("Invalid approval notification reference");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/approval-request-schema-composition.ts
+var ApprovalRequestSchemaComposition = class {
+  email(approvalSchema) {
+    return new EmailApprovalDetailsSchema({
+      approvalSchema,
+      parameterPolicy: new EmailReviewParameterPolicy()
+    });
+  }
+  stored(approvalRequestSchema, followUpSchema) {
+    return new StoredApprovalSchema({
+      approvalRequestSchema,
+      followUpSchema,
+      approvalSchema: new ApprovalSchema(),
+      parameterPolicy: new EmailReviewParameterPolicy(),
+      approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+    });
+  }
+  create(approvalSchema, meetupApprovalDetailsSchema, emailApprovalDetailsSchema) {
+    const values = new ContentValueSchema(new PublicAssetUrl());
+    return new ApprovalRequestSchema({
+      approvalSchema,
+      meetupApprovalDetailsSchema,
+      emailApprovalDetailsSchema,
+      socialPublicationApprovalSchema: new SocialPublicationApprovalSchema(
+        values
+      ),
+      contentApprovalSchema: new ContentApprovalSchema(
+        approvalSchema,
+        new DraftProposalComposition().policy(),
+        values
+      ),
+      communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
+        approvalSchema,
+        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+      })
+    });
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/community-approval-presenter.ts
+var CommunityApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.community.details", {
+      title: this.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: this.escape(details.timeZone),
+      venue: this.escape(details.venue.name),
+      city: this.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.community.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.community.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [content, controls].join("\n\n");
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-approval-presenter.ts
+var ContentApprovalPresenter = class {
+  constructor(messages5, textPreview) {
+    this.messages = messages5;
+    this.textPreview = textPreview;
+  }
+  messages;
+  textPreview;
+  issue(record, decision) {
+    const content = record.content;
+    return [
+      this.messages.t("approval.content.title", {
+        target: content.target
+      }),
+      content.plannedAt ? this.messages.t("approval.content.planned", {
+        time: content.plannedAt
+      }) : "",
+      ...(content.attempts ?? []).map(
+        (status, index) => status === "complete" ? "" : this.messages.t("approval.content.slot", {
+          index: index + 1,
+          status: status.replaceAll("-", "_")
+        })
+      ),
+      content.draft.text ? this.textPreview.render(
+        record.decision?.editedText ?? content.draft.text
+      ) : "",
+      ...content.draft.media.map(
+        (media, index) => [
+          this.messages.t("approval.content.image-label", { index: index + 1 }),
+          `![${this.escape(media.description)}](<${media.url}>)`
+        ].join("\n\n")
+      ),
+      record.decision ? this.messages.t("approval.content.final", {
+        status: record.decision.status.replaceAll("-", "_"),
+        actor: record.decision.actor,
+        decidedAt: record.decision.decidedAt,
+        image: content.draft.media.findIndex(
+          (media) => media.id === record.decision?.selectedImage
+        ) + 1
+      }) : this.controls(record, decision)
+    ].filter(Boolean).join("\n\n");
+  }
+  controls(record, decision) {
+    const images = record.content.target === "cover" ? record.content.draft.media : [];
+    const approve = images.length ? images.map(
+      (image, index) => this.messages.t("approval.content.image-choice", {
+        mark: decision.status === "approved" && decision.selectedImage === image.id ? "x" : " ",
+        index: index + 1
+      })
+    ).join("\n") : this.messages.t("approval.content.text-choice", {
+      mark: decision.status === "approved" ? "x" : " "
+    });
+    return this.messages.t("approval.content.request", {
+      target: record.content.target,
+      approve,
+      rejectMark: decision.status === "rejected" ? "x" : " ",
+      iterateMark: decision.status === "iteration-requested" ? "x" : " "
+    });
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-text-preview.ts
+var ContentTextPreview = class {
+  start = "<!-- meetup-content:text -->";
+  end = "<!-- /meetup-content:text -->";
+  render(text) {
+    const fence = "`".repeat(
+      Math.max(3, ...(text.match(/`+/g) ?? []).map((run) => run.length + 1))
+    );
+    return `${this.start}
+${fence}
+${text}
+${fence}
+${this.end}`;
+  }
+  read(body) {
+    const start = body.indexOf(this.start);
+    const end = body.indexOf(this.end);
+    if (start < 0 || end < start || body.indexOf(this.start, start + 1) !== -1 || body.indexOf(this.end, end + 1) !== -1)
+      return void 0;
+    const block = body.slice(start + this.start.length, end).trim();
+    const match = /^(`{3,})\n([\s\S]*)\n\1$/.exec(block);
+    if (!match || new RegExp(`^ {0,3}\`{${match[1].length},}[ \\t]*$`, "m").test(
+      match[2]
+    ))
+      return void 0;
+    return { text: match[2], start, end: end + this.end.length };
+  }
+  replace(body, text) {
+    const current = this.read(body);
+    return current ? body.slice(0, current.start) + this.render(text) + body.slice(current.end) : void 0;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-approval-decision-parser.ts
+var EmailApprovalDecisionParser = class {
+  constructor(parameters) {
+    this.parameters = parameters;
+  }
+  parameters;
+  parse(record, body, presenters) {
+    const original = record.details?.parameters;
+    if (!original) return { status: "pending" };
+    try {
+      const edited = this.parameters.read(body, original);
+      const restored = this.parameters.restore(
+        body.replace(/- \[X\]/g, "- [x]"),
+        original
+      );
+      for (const status of ["pending", "approved", "rejected"]) {
+        if (presenters.some(
+          (presenter) => presenter.issue(record, { status }) === restored
+        ))
+          return {
+            status,
+            ...status === "approved" || status === "pending" && Object.entries(original).some(
+              ([key, value]) => edited[key] !== value
+            ) ? { emailParameters: edited } : {}
+          };
+      }
+    } catch {
+      return { status: "pending", invalidEmailParameters: true };
+    }
+    return { status: "pending", invalidEmailParameters: true };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-approval-presenter.ts
+var EmailApprovalPresenter = class {
+  constructor(collaborators, messages5) {
+    this.collaborators = collaborators;
+    this.messages = messages5;
+  }
+  collaborators;
+  messages;
+  issue(record, decision) {
+    const heading = [...this.collaborators.followUpPresenter.render(record)];
+    const phase = this.collaborators.approvalRequestPolicy.reviewPhase({
+      recipientCount: record.recipientCount,
+      followUpActive: record.followUp?.active,
+      decided: record.decision !== void 0
+    });
+    if (phase === "inactive")
+      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
+    const details = record.details ? [
+      this.collaborators.approvalDetailsPresenter.render({
+        ...record.details,
+        ...record.decision?.emailParameters ? { parameters: record.decision.emailParameters } : {}
+      })
+    ] : [];
+    if (record.delivery)
+      details.unshift(
+        this.collaborators.deliveryPresenter.render(record.delivery)
+      );
+    if (record.followUp?.attentionDetails)
+      details.push(record.followUp.attentionDetails);
+    if (record.decision)
+      return [
+        ...heading,
+        this.messages.t("approval.final", {
+          kind: record.details?.mailKind?.replaceAll("-", "_") ?? record.kind.replace("email-", ""),
+          date: record.eventDate,
+          count: record.recipientCount,
+          status: record.decision.status,
+          actor: record.decision.actor,
+          decidedAt: record.decision.decidedAt
+        }),
+        ...details
+      ].join("\n\n");
+    return [
+      ...heading,
+      this.messages.t("approval.request", {
+        kind: record.details?.mailKind?.replaceAll("-", "_") ?? record.kind.replace("email-", ""),
+        date: record.eventDate,
+        count: record.recipientCount,
+        approveMark: decision.status === "approved" ? "x" : " ",
+        rejectMark: decision.status === "rejected" ? "x" : " "
+      }),
+      ...details
+    ].join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-delivery-presenter.ts
+var EmailDeliveryPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(delivery) {
+    return [
+      ...delivery.map(
+        (item) => this.messages.t("approval.delivery.status", {
+          kind: item.kind.replaceAll("-", "_"),
+          status: item.status.replaceAll("-", "_"),
+          count: item.count
+        })
+      ),
+      this.messages.t("approval.delivery.notice", {})
+    ].join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/email-parameters-preview.ts
+var START = "<!-- meetup-email:parameters -->";
+var END = "<!-- /meetup-email:parameters -->";
+var EmailParametersPreview = class {
+  constructor(policy) {
+    this.policy = policy;
+  }
+  policy;
+  render(parameters) {
+    return [
+      START,
+      ...Object.entries(parameters).map(
+        ([key, value]) => `- \`${key}\` : \`${value}\``
+      ),
+      END
+    ].join("\n");
+  }
+  read(body, original) {
+    const section = this.section(body);
+    const values = {};
+    for (const line of section.split("\n").slice(1, -1)) {
+      const match = /^- `([A-Za-z]+)` : `([^`\r\n]*)`$/.exec(line);
+      if (!match?.[1] || match[2] === void 0 || Object.hasOwn(values, match[1]))
+        throw new Error("Invalid email parameter list");
+      values[match[1]] = match[2];
+    }
+    this.policy.validateEdit(original, values);
+    return values;
+  }
+  restore(body, parameters) {
+    return body.replace(this.section(body), this.render(parameters));
+  }
+  section(body) {
+    if (body.split(START).length !== 2 || body.split(END).length !== 2)
+      throw new Error("Missing or duplicate email parameter list");
+    const start = body.indexOf(START);
+    const end = body.indexOf(END);
+    if (end < start) throw new Error("Invalid email parameter list");
+    return body.slice(start, end + END.length);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/finalize-approval-decision.ts
+var FinalizeApprovalDecision = class {
+  constructor(collaborators, decisions, repository, notifications, visibility, attentionCodec) {
+    this.collaborators = collaborators;
+    this.decisions = decisions;
+    this.repository = repository;
+    this.notifications = notifications;
+    this.visibility = visibility;
+    this.attentionCodec = attentionCodec;
+  }
+  collaborators;
+  decisions;
+  repository;
+  notifications;
+  visibility;
+  attentionCodec;
+  async execute(state, validateText) {
+    const { record, comment } = state;
+    const decision = await this.decisions.execute(record, comment);
+    if (this.pendingEmailEdit(record, decision))
+      return { ...decision, notificationFailed: false };
+    const textValid = decision.editedText === void 0 || validateText?.(decision.editedText);
+    if (!record.decision && decision.editedText !== void 0 && (decision.status === "pending" || !textValid))
+      return {
+        status: "pending",
+        notificationFailed: false,
+        editedText: decision.editedText,
+        invalidText: textValid === false
+      };
+    this.recordDecision(record, decision);
+    const persisted = await this.repository.save(record, state);
+    await this.refreshVisibility(persisted);
+    return {
+      status: decision.status,
+      ...record.kind === "content-review" || record.details?.parameters ? decision : {},
+      notificationFailed: await this.notifications.react(record, comment.id)
+    };
+  }
+  recordDecision(record, decision) {
+    if (decision.status !== "pending" && !record.decision) {
+      if (!decision.actor || !decision.decidedAt)
+        throw new Error("Missing verified approval identity");
+      record.decision = {
+        status: decision.status,
+        actor: decision.actor,
+        decidedAt: decision.decidedAt,
+        ...decision.emailParameters ? { emailParameters: decision.emailParameters } : {},
+        ...decision.editedText === void 0 ? {} : { editedText: decision.editedText },
+        ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
+      };
+    }
+  }
+  pendingEmailEdit(record, decision) {
+    return !record.decision && decision.status === "pending" && Boolean(decision.emailParameters || decision.invalidEmailParameters);
+  }
+  async refreshVisibility(state) {
+    const { record, comment } = state;
+    const attention = record.followUp?.attention;
+    const resolved = this.collaborators.approvalRequestPolicy.resolved({
+      decided: record.decision !== void 0,
+      deliveryRequired: record.decision?.status === "approved" && Boolean(record.details?.parameters || record.delivery),
+      delivery: record.delivery,
+      recipientCount: record.recipientCount,
+      followUp: record.followUp,
+      attentionPending: attention !== void 0 && !this.collaborators.attentionPolicy.resolved(
+        this.attentionCodec.read(attention)
+      )
+    });
+    await this.visibility.synchronize(comment.id, comment.body ?? "", resolved);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/follow-up-presenter.ts
+var FollowUpPresenter = class {
+  constructor(policy, messages5) {
+    this.policy = policy;
+    this.messages = messages5;
+  }
+  policy;
+  messages;
+  render(record) {
+    if (!record.followUp) return [];
+    const lines = [
+      this.messages.t("follow-up.title", { date: record.eventDate }),
+      this.messages.t("follow-up.instructions", {})
+    ];
+    for (const task of FOLLOW_UP_TASKS) {
+      const pending = record.followUp.pendingTasks.includes(task);
+      lines.push(
+        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
+      );
+    }
+    const progress = this.policy.progressState(
+      record.followUp,
+      record.recipientCount ?? 0
+    );
+    if (progress !== "review")
+      lines.push(this.messages.t(`follow-up.${progress}`, {}));
+    return lines;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/follow-up-schema.ts
+var FollowUpSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (value === void 0) return;
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
+      throw new Error("Invalid post-event follow-up state");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-attention-source.ts
+var GithubApprovalAttentionSource = class {
+  constructor(repository, finalizer) {
+    this.repository = repository;
+    this.finalizer = finalizer;
+  }
+  repository;
+  finalizer;
+  async synchronizeApprovals() {
+    const result = [];
+    for (const state of await this.repository.states()) {
+      if (!state.record.decision) continue;
+      const persisted = await this.repository.save(state.record, state);
+      await this.finalizer.refreshVisibility(persisted);
+    }
+    for (const state of await this.repository.activeStates()) {
+      if (state.record.recipientCount === 0) continue;
+      const decision = await this.finalizer.execute(state);
+      result.push({
+        revision: state.record.revision,
+        requestedAt: state.record.requestedAt,
+        commentId: state.comment.id,
+        eventDate: state.record.eventDate,
+        kind: state.record.kind,
+        status: decision.status
+      });
+    }
+    return result;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-client.ts
+var GithubApprovalClient = class {
+  constructor(collaborators, api, owner, repo, issue2) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.issue = issue2;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  issue;
+  async list() {
+    const comments = [];
+    let page = 1;
+    while (true) {
+      const raw = await this.api.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issue,
+        page,
+        per_page: 100
+      });
+      const response = this.collaborators.githubApprovalResponse.comments(raw);
+      comments.push(...response.data);
+      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!next) return comments;
+      page += 1;
+    }
+  }
+  async create(body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
+    const response = await this.api.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issue,
+      body
+    });
+    return this.collaborators.githubApprovalResponse.identity(response);
+  }
+  async update(commentId, body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
+    await this.api.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  async canApprove(username) {
+    const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
+      owner: this.owner,
+      repo: this.repo,
+      username
+    });
+    const permission = this.collaborators.githubApprovalResponse.permission(response);
+    return ["write", "maintain", "admin"].includes(permission);
+  }
+  async replace(commentId, before, after) {
+    if (before === after) return;
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Approval comment changed before persistence");
+    await this.update(commentId, after);
+  }
+  async edit(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const result = await this.api.graphql(
+      `query ApprovalCommentEditor($id: ID!) {
+				node(id: $id) {
+					... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					}
+				}
+			}`,
+      { id: comment.node_id }
+    );
+    return this.collaborators.githubApprovalResponse.edit(result, comment);
+  }
+  url(commentId) {
+    return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
+  }
+  async history(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const edits = [];
+    let after;
+    do {
+      const response = await this.api.graphql(
+        `query ApprovalCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+        { id: comment.node_id, ...after ? { after } : {} }
+      );
+      const history = this.collaborators.githubApprovalResponse.history(
+        response,
+        comment
+      );
+      edits.push(...history.nodes);
+      if (!history.pageInfo.hasNextPage) return edits;
+      const next = history.pageInfo.endCursor;
+      if (!next || next === after)
+        throw new Error("Invalid approval history cursor");
+      after = next;
+    } while (after);
+    return edits;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-repository.ts
+var GithubApprovalRepository = class {
+  constructor(collaborators, client, trusted, authorLogin, presenter) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.trusted = trusted;
+    this.authorLogin = authorLogin;
+    this.presenter = presenter;
+  }
+  collaborators;
+  client;
+  trusted;
+  authorLogin;
+  presenter;
+  async states() {
+    const states = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
+        continue;
+      const record = await this.trusted.read(comment);
+      if (!record) continue;
+      if (states.some(
+        (state) => this.collaborators.approvalRequestPolicy.scope(state.record) === this.collaborators.approvalRequestPolicy.scope(record)
+      ))
+        throw new Error("Ambiguous approval state");
+      states.push({ record, comment });
+    }
+    return states;
+  }
+  async activeStates() {
+    const active = /* @__PURE__ */ new Map();
+    for (const state of await this.states()) {
+      const record = state.record;
+      const key = record.kind === "content-review" ? `content:${record.content.target}` : this.collaborators.approvalRequestPolicy.scope(record);
+      active.set(key, state);
+    }
+    return [...active.values()];
+  }
+  async save(record, existing) {
+    this.collaborators.storedApprovalSchema.validate(record);
+    const body = this.presenter.issue(
+      record,
+      record.decision ?? { status: "pending" }
+    );
+    if (!existing) {
+      const id = await this.client.create(body);
+      return { record, comment: { id, body } };
+    }
+    await this.client.replace(
+      existing.comment.id,
+      existing.comment.body ?? "",
+      body
+    );
+    existing.comment = { ...existing.comment, body };
+    return { record, comment: existing.comment };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-approval-response.ts
+var GithubApprovalResponse = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  comments(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.data) || !value.data.every(this.comment.bind(this)) || !this.collaborators.approvalSchema.object(value.headers) || value.headers.link !== void 0 && typeof value.headers.link !== "string")
+      throw new Error("Invalid approval comment response");
+    return { data: value.data, headers: { link: value.headers.link } };
+  }
+  identity(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || !this.collaborators.approvalSchema.count(value.data.id) || value.data.id === 0)
+      throw new Error("Invalid approval comment identity");
+    return value.data.id;
+  }
+  permission(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || typeof value.data.permission !== "string")
+      throw new Error("Invalid approval permission response");
+    return value.data.permission;
+  }
+  edit(value, comment) {
+    const node = this.snapshot(value, comment);
+    if (!this.nullableText(node.lastEditedAt) || !this.actor(node.editor))
+      throw new Error("Invalid approval editor response");
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: node.lastEditedAt,
+      editor: node.editor
+    };
+  }
+  history(value, comment) {
+    const node = this.snapshot(value, comment);
+    const history = node.userContentEdits;
+    if (!this.collaborators.approvalSchema.object(history) || !Array.isArray(history.nodes) || !history.nodes.every(this.historyEdit.bind(this)) || !this.collaborators.approvalSchema.object(history.pageInfo) || typeof history.pageInfo.hasNextPage !== "boolean" || !this.nullableText(history.pageInfo.endCursor))
+      throw new Error("Approval history is unavailable");
+    return {
+      nodes: history.nodes,
+      pageInfo: {
+        hasNextPage: history.pageInfo.hasNextPage,
+        endCursor: history.pageInfo.endCursor
+      }
+    };
+  }
+  snapshot(value, comment) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
+      throw new Error("Approval comment changed during verification");
+    return { ...value.node, id: value.node.id, body: value.node.body };
+  }
+  comment(value) {
+    return this.collaborators.approvalSchema.object(value) && this.collaborators.approvalSchema.count(value.id) && value.id > 0 && (value.node_id === void 0 || typeof value.node_id === "string") && (value.body === void 0 || this.nullableText(value.body)) && (value.user === void 0 || value.user === null || this.collaborators.approvalSchema.object(value.user) && typeof value.user.login === "string");
+  }
+  historyEdit(value) {
+    return this.collaborators.approvalSchema.object(value) && this.nullableText(value.diff) && this.nullableText(value.deletedAt) && this.actor(value.editor);
+  }
+  actor(value) {
+    return value === null || this.collaborators.approvalSchema.object(value) && typeof value.login === "string" && typeof value.__typename === "string";
+  }
+  nullableText(value) {
+    return value === null || typeof value === "string";
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-follow-up-attention-repository.ts
+var GithubFollowUpAttentionRepository = class {
+  constructor(approvals, previous, codec, presentation) {
+    this.approvals = approvals;
+    this.previous = previous;
+    this.codec = codec;
+    this.presentation = presentation;
+  }
+  approvals;
+  previous;
+  codec;
+  presentation;
+  sharedCommentId;
+  async load() {
+    const shared = await this.approvals.followUpAttention();
+    this.sharedCommentId = shared?.commentId;
+    const previous = await this.previous.load();
+    return shared?.body ? this.codec.read(shared.body) : previous;
+  }
+  async save(state) {
+    if (!this.sharedCommentId) return this.previous.save(state);
+    await this.approvals.saveFollowUpAttention(
+      this.codec.marker(state),
+      this.presentation.details(state)
+    );
+    await this.previous.retire(this.sharedCommentId);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-organizer-approval.ts
+var GithubOrganizerApproval = class {
+  constructor(collaborators, repository, records, finalizer, notifications, permissions) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.records = records;
+    this.finalizer = finalizer;
+    this.notifications = notifications;
+    this.permissions = permissions;
+  }
+  collaborators;
+  repository;
+  records;
+  finalizer;
+  notifications;
+  permissions;
+  async request(input, validateText) {
+    input = this.reviewedRequest(input);
+    this.collaborators.approvalRequestSchema.validate(input);
+    this.collaborators.approvalRequestPolicy.validate(input);
+    const existing = await this.existingRequest(input);
+    if (existing && this.collaborators.approvalRequestPolicy.matches(
+      existing.record,
+      input,
+      existing.record.decision?.status ?? "pending"
+    )) {
+      const result = await this.finalizer.execute(existing, validateText);
+      if ((result.status === "approved" || result.status === "iteration-requested") && !await this.permissions.canApprove(
+        existing.record.decision?.actor ?? ""
+      ))
+        throw new Error(
+          "The recorded organizer no longer has approval permission"
+        );
+      if (result.status !== "pending" || result.editedText !== void 0 || result.emailParameters || result.invalidEmailParameters)
+        return result;
+      return {
+        status: "pending",
+        notificationFailed: await this.notifications.send(
+          existing.record,
+          existing.comment.id
+        )
+      };
+    }
+    const record = this.records.create(input);
+    const followUp = this.collaborators.followUpApprovalPolicy.initialFor(
+      input,
+      existing?.record.followUp
+    );
+    if (followUp)
+      record.followUp = { ...existing?.record.followUp, ...followUp };
+    const state = await this.repository.save(record, existing);
+    await this.finalizer.refreshVisibility(state);
+    return {
+      status: "pending",
+      notificationFailed: await this.notifications.send(
+        record,
+        state.comment.id
+      )
+    };
+  }
+  async existingRequest(input) {
+    const states = await this.repository.states();
+    return states.find(
+      ({ record }) => this.collaborators.approvalRequestPolicy.scope(record) === this.collaborators.approvalRequestPolicy.scope(input)
+    ) ?? states.find(
+      ({ record }) => this.collaborators.approvalRequestPolicy.canReplaceCombinedEmail(
+        record,
+        input,
+        record.decision !== void 0
+      )
+    );
+  }
+  async synchronize() {
+    let notificationFailed = false;
+    for (const state of await this.repository.activeStates()) {
+      const result = await this.finalizer.execute(state);
+      notificationFailed = result.notificationFailed || notificationFailed;
+    }
+    return { notificationFailed };
+  }
+  reviewedRequest(input) {
+    if (input.kind === "meetup-publication" || !input.details) return input;
+    return {
+      ...input,
+      details: this.collaborators.approvalDetailsPreview.create(input.details)
+    };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-organizer-follow-up.ts
+var GithubOrganizerFollowUp = class {
+  constructor(policy, repository, records, finalizer) {
+    this.policy = policy;
+    this.repository = repository;
+    this.records = records;
+    this.finalizer = finalizer;
+  }
+  policy;
+  repository;
+  records;
+  finalizer;
+  async synchronizeFollowUp(input) {
+    const existing = (await this.repository.states()).find(
+      ({ record: record2 }) => record2.kind === "email-thanks"
+    );
+    if (!existing && !input.active) return void 0;
+    if (existing) await this.finalizer.execute(existing);
+    const attention = existing?.record.followUp?.attention;
+    const attentionDetails = existing?.record.followUp?.attentionDetails;
+    const record = existing && this.policy.retainRequest(input, existing.record.eventDate) ? existing.record : this.records.placeholder(input);
+    record.followUp = {
+      active: input.active,
+      pendingTasks: input.pendingTasks,
+      attention,
+      attentionDetails
+    };
+    const state = await this.repository.save(record, existing);
+    await this.finalizer.refreshVisibility(state);
+    return state.comment.id;
+  }
+  async followUpAttention() {
+    const state = (await this.repository.states()).find(
+      ({ record }) => record.followUp
+    );
+    return state ? { commentId: state.comment.id, body: state.record.followUp?.attention } : void 0;
+  }
+  async saveFollowUpAttention(body, details) {
+    const state = (await this.repository.states()).find(
+      ({ record }) => record.followUp
+    );
+    if (!state?.record.followUp)
+      throw new Error("Missing post-event follow-up comment");
+    await this.finalizer.execute(state);
+    state.record.followUp = {
+      ...state.record.followUp,
+      attention: body,
+      attentionDetails: details
+    };
+    const persisted = await this.repository.save(state.record, state);
+    await this.finalizer.refreshVisibility(persisted);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
+var ApprovalMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS2, locale);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/meetup-approval-details-schema.ts
+var MeetupApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !this.text(value.title, 80) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
+      throw new Error("Invalid Meetup approval details");
+  }
+  text(value, maximum) {
+    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/meetup-approval-presenter.ts
+var MeetupApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.meetup.details", {
+      title: this.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: this.escape(details.timeZone),
+      venue: this.escape(details.venue.name),
+      city: this.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.meetup.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.meetup.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [content, controls].join("\n\n");
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/resolve-approval-decision.ts
+var ResolveApprovalDecision = class {
+  constructor(client, parser) {
+    this.client = client;
+    this.parser = parser;
+  }
+  client;
+  parser;
+  async execute(record, comment) {
+    if (record.decision) return record.decision;
+    const decision = this.parser.parse(record, comment.body ?? "");
+    if (decision.status === "pending") return decision;
+    const edit = await this.client.edit(comment);
+    const editedAt = Date.parse(edit.lastEditedAt ?? "");
+    if (edit.editor?.__typename !== "User" || !edit.editor.login || edit.editor.login === "ghost" || !Number.isFinite(editedAt) || editedAt < Math.floor(Date.parse(record.requestedAt) / 1e3) * 1e3)
+      return { status: "pending" };
+    return await this.client.canApprove(edit.editor.login) ? {
+      ...decision,
+      actor: edit.editor.login,
+      decidedAt: edit.lastEditedAt ?? void 0
+    } : { status: "pending" };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/social-publication-approval-presenter.ts
+var SocialPublicationApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.social;
+    return [
+      this.messages.t("approval.social.details", {
+        target: this.escape(details.target),
+        destination: this.escape(details.destinationLabel),
+        identity: this.escape(details.destinationIdentity),
+        plannedAt: details.plannedAt === "after-approval" ? this.messages.t("approval.social.after-approval", {}) : details.plannedAt,
+        expiresAt: details.expiresAt
+      }),
+      `<pre>${this.escape(details.text)}</pre>`,
+      ...details.media.map(
+        (media) => [
+          `![${this.escape(media.description)}](<${media.url}>)`,
+          `${this.escape(media.id)} \xB7 ${media.width}\xD7${media.height} \xB7 ${media.mimeType} \xB7 ${media.fingerprint}`
+        ].join("\n\n")
+      ),
+      details.recovery ? this.messages.t("approval.social.evidence", {
+        outcome: details.recovery.outcome.replaceAll("-", "_"),
+        reference: this.escape(details.recovery.reference)
+      }) : "",
+      this.controls(record, decision)
+    ].filter(Boolean).join("\n\n");
+  }
+  controls(record, decision) {
+    if (record.decision)
+      return this.messages.t("approval.social.final", {
+        status: record.decision.status,
+        actor: record.decision.actor,
+        decidedAt: record.decision.decidedAt
+      });
+    const marks = {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    };
+    return record.social.recovery ? this.messages.t("approval.social.recovery", {
+      ...marks,
+      outcome: record.social.recovery.outcome.replaceAll("-", "_")
+    }) : this.messages.t("approval.social.request", marks);
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;").replaceAll("@", "&#64;");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
+var TrustedApprovalState = class {
+  constructor(collaborators, client, authorLogin) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.authorLogin = authorLogin;
+  }
+  collaborators;
+  client;
+  authorLogin;
+  async read(comment) {
+    const current = await this.client.edit(comment);
+    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
+      return this.record(current.body);
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Approval history was deleted");
+      if (this.isAuthor(edit.editor)) {
+        if (edit.diff === null)
+          throw new Error("Approval history is unavailable");
+        return this.record(edit.diff);
+      }
+    }
+    throw new Error("A trusted approval revision could not be verified");
+  }
+  record(body) {
+    if (!body?.startsWith(APPROVAL_MARKER)) return void 0;
+    return this.collaborators.approvalCommentCodec.read(body);
+  }
+  isAuthor(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.authorLogin.toLowerCase().replace(/\[bot\]$/, "");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/dependency-composition.ts
+var GithubOrganizerApprovalComposition = class {
+  approvalCommentCodec() {
+    return new ApprovalCommentCodec({
+      storedApprovalSchema: this.storedApprovalSchema()
+    });
+  }
+  approvalDecisionParser(...args) {
+    return new ApprovalDecisionParser(
+      new ContentTextPreview(),
+      new EmailApprovalDecisionParser(
+        new EmailParametersPreview(new EmailReviewParameterPolicy())
+      ),
+      new JourneyPolicyComposition().approvalRequestPolicy(),
+      ...args
+    );
+  }
+  approvalDetailsPresenter(...args) {
+    return new ApprovalDetailsPresenter(
+      new EmailParametersPreview(new EmailReviewParameterPolicy()),
+      ...args
+    );
+  }
+  approvalDetailsPreview() {
+    return new ApprovalDetailsPreview();
+  }
+  approvalMessages(...args) {
+    return new ApprovalMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  approvalNotifications(...args) {
+    return new ApprovalNotifications(...args);
+  }
+  approvalPresenter(messages5) {
+    const email = this.emailApprovalPresenter(messages5);
+    return new ApprovalPresenter(this.approvalCommentCodec(), {
+      "email-introduction": email,
+      "email-thanks": email,
+      "meetup-publication": this.meetupApprovalPresenter(messages5),
+      "community-publication": new CommunityApprovalPresenter(messages5),
+      "content-review": this.contentApprovalPresenter(messages5),
+      "social-publication": new SocialPublicationApprovalPresenter(messages5)
+    });
+  }
+  contentApprovalPresenter(messages5) {
+    return new ContentApprovalPresenter(messages5, new ContentTextPreview());
+  }
+  approvalPresenterFactory() {
+    return new ApprovalPresenterFactory({
+      createApprovalPresenter: (...args) => this.approvalPresenter(...args),
+      createApprovalMessages: (...args) => this.approvalMessages(...args)
+    });
+  }
+  approvalRecordFactory(...args) {
+    return new ApprovalRecordFactory(
+      {
+        approvalRequestSchema: this.approvalRequestSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        storedApprovalSchema: this.storedApprovalSchema(),
+        followUpApprovalPolicy: new FollowUpApprovalPolicy()
+      },
+      ...args
+    );
+  }
+  approvalRequestSchema() {
+    return new ApprovalRequestSchemaComposition().create(
+      this.approvalSchema(),
+      this.meetupApprovalDetailsSchema(),
+      new ApprovalRequestSchemaComposition().email(this.approvalSchema())
+    );
+  }
+  approvalSchema() {
+    return new ApprovalSchema();
+  }
+  emailApprovalPresenter(...args) {
+    return new EmailApprovalPresenter(
+      {
+        deliveryPresenter: new EmailDeliveryPresenter(args[0]),
+        followUpPresenter: this.followUpPresenter(args[0]),
+        approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+      },
+      ...args
+    );
+  }
+  finalizeApprovalDecision(...args) {
+    return new FinalizeApprovalDecision(
+      {
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
+      },
+      ...args
+    );
+  }
+  followUpPresenter(...args) {
+    return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
+  }
+  followUpSchema() {
+    return new FollowUpSchema({ approvalSchema: this.approvalSchema() });
+  }
+  githubApprovalAttentionSource(...args) {
+    return new GithubApprovalAttentionSource(...args);
+  }
+  githubApprovalClient(...args) {
+    return new GithubApprovalClient(
+      { githubApprovalResponse: this.githubApprovalResponse() },
+      ...args
+    );
+  }
+  githubApprovalRepository(...args) {
+    return new GithubApprovalRepository(
+      {
+        storedApprovalSchema: this.storedApprovalSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+      },
+      ...args
+    );
+  }
+  githubApprovalResponse() {
+    return new GithubApprovalResponse({
+      approvalSchema: this.approvalSchema()
+    });
+  }
+  githubFollowUpAttentionRepository(...args) {
+    return new GithubFollowUpAttentionRepository(...args);
+  }
+  githubOrganizerApproval(...args) {
+    return new GithubOrganizerApproval(
+      {
+        approvalRequestSchema: this.approvalRequestSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        approvalDetailsPreview: this.approvalDetailsPreview(),
+        followUpApprovalPolicy: new FollowUpApprovalPolicy()
+      },
+      ...args
+    );
+  }
+  githubOrganizerFollowUp(...args) {
+    return new GithubOrganizerFollowUp(new FollowUpApprovalPolicy(), ...args);
+  }
+  meetupApprovalDetailsSchema() {
+    return new MeetupApprovalDetailsSchema({
+      approvalSchema: this.approvalSchema(),
+      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+    });
+  }
+  meetupApprovalPresenter(...args) {
+    return new MeetupApprovalPresenter(...args);
+  }
+  resolveApprovalDecision(...args) {
+    return new ResolveApprovalDecision(...args);
+  }
+  storedApprovalSchema() {
+    return new ApprovalRequestSchemaComposition().stored(
+      this.approvalRequestSchema(),
+      this.followUpSchema()
+    );
+  }
+  trustedApprovalState(...args) {
+    return new TrustedApprovalState(
+      { approvalCommentCodec: this.approvalCommentCodec() },
+      ...args
+    );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-email-delivery-report.ts
+var GithubEmailDeliveryReport = class {
+  constructor(approvals, source, finalizer, visibility) {
+    this.approvals = approvals;
+    this.source = source;
+    this.finalizer = finalizer;
+    this.visibility = visibility;
+  }
+  approvals;
+  source;
+  finalizer;
+  visibility;
+  async synchronize() {
+    const snapshot = await this.source.readEmailReport();
+    const covered = /* @__PURE__ */ new Set();
+    for (const state of await this.approvals.states()) {
+      const record = state.record;
+      if (!record.details || record.decision?.status !== "approved") continue;
+      const kinds = new Set(record.details.emails.map((email) => email.kind));
+      const delivery = [...kinds].flatMap(
+        (kind) => this.summary(
+          kind,
+          snapshot.entries,
+          record.details?.mailKind ? record.recipientCount : record.details?.emails.filter((email) => email.kind === kind).length ?? 0
+        )
+      );
+      for (const kind of kinds) covered.add(kind);
+      const persisted = await this.approvals.save(
+        { ...record, delivery },
+        state
+      );
+      await this.finalizer.refreshVisibility(persisted);
+    }
+    if (snapshot.commentId && snapshot.body)
+      await this.visibility.synchronize(
+        snapshot.commentId,
+        snapshot.body,
+        snapshot.entries.length > 0 && !snapshot.hasOtherDeliveries && snapshot.entries.every(({ kind }) => covered.has(kind))
+      );
+  }
+  summary(kind, entries, expected) {
+    const matching = entries.filter((entry) => entry.kind === kind);
+    if (!matching.length)
+      return [{ kind, status: "not-sent", count: expected }];
+    const counts = /* @__PURE__ */ new Map();
+    for (const entry of matching)
+      counts.set(entry.status, (counts.get(entry.status) ?? 0) + 1);
+    const summary2 = [...counts].map(
+      ([status, count]) => ({ kind, status, count })
+    );
+    if (matching.length < expected)
+      summary2.push({
+        kind,
+        status: "not-sent",
+        count: expected - matching.length
+      });
+    return summary2;
+  }
+};
+
+// packages/runtime/github-actions/src/organizer-approval-composition.ts
+import { randomUUID } from "node:crypto";
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+var DiagnosticCommentPresenter = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  render(diagnostics, messages5, links) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (this.collaborators.organizerDiagnosticPolicy.suppressed(
+        item,
+        diagnostics
+      )) {
+        continue;
+      }
+      const presentation = this.collaborators.diagnosticPresenter.presentDiagnostic(
+        item,
+        messages5,
+        links
+      );
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
+    }
+    if (actionable.size === 0) {
+      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+${messages5.t("comment.resolved")}`;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
+        numeric: true
+      }) || left.message.localeCompare(right.message, messages5.locale)
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-sections.ts
+var SOCIAL_DIAGNOSTIC_START = "<!-- meetup-automation:social-diagnostics:v1 -->";
+var SOCIAL_DIAGNOSTIC_END = "<!-- /meetup-automation:social-diagnostics:v1 -->";
+var DiagnosticCommentSections = class {
+  merge(previous, rendered, scope) {
+    const current = this.read(previous);
+    if (!scope && !current.social) return rendered;
+    const base = this.tasks(scope === "social" ? current.base : rendered);
+    const social = this.tasks(
+      scope === "social" ? rendered : current.social
+    ).filter((line) => !base.includes(line));
+    if (!base.length && !social.length) return rendered;
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      ...base,
+      ...social.length ? [SOCIAL_DIAGNOSTIC_START, ...social, SOCIAL_DIAGNOSTIC_END] : []
+    ].join("\n");
+  }
+  hasSocial(body) {
+    return Boolean(this.read(body).social);
+  }
+  read(body) {
+    if (!body.includes("meetup-automation:social-diagnostics:"))
+      return { base: body, social: "" };
+    const start = body.indexOf(SOCIAL_DIAGNOSTIC_START);
+    const end = body.indexOf(SOCIAL_DIAGNOSTIC_END);
+    if (start < 0 || end < start || body.split(SOCIAL_DIAGNOSTIC_START).length !== 2 || body.split(SOCIAL_DIAGNOSTIC_END).length !== 2)
+      throw new Error("Invalid social diagnostic section");
+    return {
+      base: body.slice(0, start) + body.slice(end + SOCIAL_DIAGNOSTIC_END.length),
+      social: body.slice(start + SOCIAL_DIAGNOSTIC_START.length, end)
+    };
+  }
+  tasks(body) {
+    return [
+      ...new Set(
+        body.split("\n").filter((line) => /^- \[[ x]\] \*\*.+?\*\*: .+$/.test(line))
+      )
+    ];
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/authentication-diagnostic-guidance.ts
+var AUTHENTICATION_GUIDANCE = [
+  [
+    "publication.meetup.authentication",
+    ["Meetup Link", "comment.guidance.meetup.authentication"]
+  ],
+  [
+    "publication.meetup.authentication-configuration",
+    ["Meetup Link", "comment.guidance.meetup.authentication-configuration"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-required",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-required"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-rejected",
+    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-rejected"]
+  ],
+  [
+    "publication.meetup.authentication-captcha-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-captcha-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-one-time-code",
+    ["Meetup Link", "comment.guidance.meetup.authentication-one-time-code"]
+  ],
+  [
+    "publication.meetup.authentication-credentials-rejected",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-credentials-rejected"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-session-not-reusable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-session-not-reusable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-page-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-page-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-login-form-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-login-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-submit-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-submit-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-redirect-timeout",
+    ["Meetup Link", "comment.guidance.meetup.authentication-redirect-timeout"]
+  ],
+  [
+    "publication.meetup.authentication-account-unavailable",
+    [
+      "Meetup Link",
+      "comment.guidance.meetup.authentication-account-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.authentication-account-mismatch",
+    ["Meetup Link", "comment.guidance.meetup.authentication-account-mismatch"]
+  ],
+  [
+    "publication.meetup.authentication-unexpected-page",
+    ["Meetup Link", "comment.guidance.meetup.authentication-unexpected-page"]
+  ],
+  [
+    "publication.meetup.authentication-rate-limited",
+    ["Meetup Link", "comment.guidance.meetup.authentication-rate-limited"]
+  ],
+  [
+    "publication.meetup.authentication-browser",
+    ["Meetup Link", "comment.guidance.meetup.authentication-browser"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/email-diagnostic-guidance.ts
+var EMAIL_GUIDANCE = [
+  [
+    "communication.email-parameters-invalid",
+    [
+      "Communication",
+      "comment.guidance.communication.email-parameters-invalid"
+    ]
+  ],
+  [
+    "communication.approval-pending",
+    ["Communication", "comment.guidance.communication.approval"]
+  ],
+  [
+    "communication.approval-rejected",
+    ["Communication", "comment.guidance.communication.rejected"]
+  ],
+  [
+    "communication.approval-unavailable",
+    ["Communication", "comment.guidance.communication.approval-unavailable"]
+  ],
+  [
+    "communication.approval-notification-failed",
+    ["Communication", "comment.guidance.communication.approval-notification"]
+  ],
+  [
+    "communication.gateway-delivery-uncertain",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-threw-ambiguous-error",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.ledger-status-write-failed",
+    ["Communication", "comment.guidance.communication.delivery-uncertain"]
+  ],
+  [
+    "communication.gateway-delivery-rejected",
+    ["Communication", "comment.guidance.communication.delivery-rejected"]
+  ],
+  [
+    "communication.gateway-delivery-deferred",
+    ["Communication", "comment.guidance.communication.delivery-deferred"]
+  ],
+  [
+    "communication.invalid-clock",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-identifier",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.invalid-time-zone",
+    ["Communication", "comment.guidance.communication.configuration"]
+  ],
+  [
+    "communication.ledger-read-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.ledger-reservation-failed",
+    ["Communication", "comment.guidance.communication.ledger"]
+  ],
+  [
+    "communication.missing-mail-destination",
+    ["Communication", "comment.guidance.communication.destination"]
+  ],
+  [
+    "communication.checklist-update-failed",
+    ["Communication", "comment.guidance.communication.checklist"]
+  ],
+  [
+    "communication.event-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent"]
+  ],
+  [
+    "communication.event-references-unresolved",
+    ["Agenda", "comment.guidance.communication.references"]
+  ],
+  [
+    "communication.referential-catalog-invalid",
+    ["Referentials", "comment.guidance.communication.catalog"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
+var STAGE_GUIDANCE = [
+  ...AUTHENTICATION_GUIDANCE,
+  [
+    "publication.website.access",
+    ["Website", "comment.guidance.website.access"]
+  ],
+  [
+    "publication.website.conflict",
+    ["Website", "comment.guidance.website.conflict"]
+  ],
+  [
+    "publication.website.format",
+    ["Website", "comment.guidance.website.format"]
+  ],
+  [
+    "publication.website.unavailable",
+    ["Website", "comment.guidance.website.unavailable"]
+  ],
+  [
+    "publication.content.invalid",
+    ["Event materials", "comment.guidance.content.invalid"]
+  ],
+  [
+    "communication.social.evaluation-failed",
+    ["Communication", "comment.guidance.social.evaluation-failed"]
+  ],
+  [
+    "communication.social.pending",
+    ["Communication", "comment.guidance.social.pending"]
+  ],
+  [
+    "communication.social.missing",
+    ["Communication", "comment.guidance.social.missing"]
+  ],
+  [
+    "communication.social.content-pending",
+    ["Communication", "comment.guidance.social.content-pending"]
+  ],
+  [
+    "communication.social.generation-recovery",
+    ["Communication", "comment.guidance.social.generation-recovery"]
+  ],
+  [
+    "communication.social.preparation-failed",
+    ["Communication", "comment.guidance.social.preparation-failed"]
+  ],
+  [
+    "communication.social.blocked",
+    ["Communication", "comment.guidance.social.blocked"]
+  ],
+  [
+    "communication.social.uncertain",
+    ["Communication", "comment.guidance.social.uncertain"]
+  ],
+  [
+    "communication.social.expired",
+    ["Communication", "comment.guidance.social.expired"]
+  ],
+  [
+    "publication.meetup.slides-source",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
+  ],
+  [
+    "publication.meetup.slides-link",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-link"]
+  ],
+  [
+    "publication.meetup.slides-pdf-pending",
+    ["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"]
+  ],
+  [
+    "publication.meetup.slides-delivery-recovery",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-delivery-recovery"
+    ]
+  ],
+  [
+    "publication.meetup.slides-form-unavailable",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-form-unavailable"
+    ]
+  ],
+  [
+    "publication.meetup.slides-source-changed",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-source-changed"
+    ]
+  ],
+  [
+    "publication.content.prerequisites",
+    ["Event materials", "comment.guidance.content.prerequisites"]
+  ],
+  [
+    "publication.content.pending",
+    ["Event materials", "comment.guidance.content.pending"]
+  ],
+  [
+    "publication.content.rejected",
+    ["Event materials", "comment.guidance.content.rejected"]
+  ],
+  [
+    "publication.content.iteration-requested",
+    ["Event materials", "comment.guidance.content.iteration-requested"]
+  ],
+  [
+    "publication.content.recovery",
+    ["Event materials", "comment.guidance.content.recovery"]
+  ],
+  [
+    "publication.content.stale",
+    ["Event materials", "comment.guidance.content.stale"]
+  ],
+  [
+    "publication.content.title-review",
+    ["Event materials", "comment.guidance.content.title-review"]
+  ],
+  [
+    "publication.content.description-review",
+    ["Event materials", "comment.guidance.content.description-review"]
+  ],
+  [
+    "publication.meetup.content-review",
+    ["Event materials", "comment.guidance.content.review"]
+  ],
+  [
+    "communication.content-review",
+    ["Event materials", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.assets.pdf.source",
+    ["Event materials", "comment.guidance.pdf.source"]
+  ],
+  [
+    "publication.assets.pdf.source-pending",
+    ["Event materials", "comment.guidance.pdf.source-pending"]
+  ],
+  [
+    "publication.assets.pdf.revision",
+    ["Event materials", "comment.guidance.pdf.revision"]
+  ],
+  [
+    "publication.assets.pdf.conflict",
+    ["Event materials", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.recovery",
+    ["Event materials", "comment.guidance.pdf.recovery"]
+  ],
+  [
+    "publication.assets.pdf.limit",
+    ["Event materials", "comment.guidance.pdf.limit"]
+  ],
+  [
+    "publication.assets.pdf.sharing",
+    ["Event materials", "comment.guidance.pdf.sharing"]
+  ],
+  [
+    "publication.assets.pdf.invalid",
+    ["Event materials", "comment.guidance.pdf.invalid"]
+  ],
+  [
+    "communication.checklist-concurrently-modified",
+    ["Communication", "comment.guidance.communication.concurrent-checklist"]
+  ],
+  [
+    "publication.feedback.conflict",
+    ["OpenFeedback Link", "comment.guidance.feedback.conflict"]
+  ],
+  [
+    "communication.feedback-unavailable",
+    ["OpenFeedback Link", "comment.guidance.feedback.results"]
+  ],
+  [
+    "communication.feedback-fetch-failed",
+    ["OpenFeedback Link", "comment.guidance.feedback.access"]
+  ],
+  [
+    "communication.slides-unavailable",
+    ["Event materials", "comment.guidance.assets.slides"]
+  ],
+  ...EMAIL_GUIDANCE,
+  [
+    "publication.feedback.agenda",
+    ["Agenda", "comment.guidance.feedback.agenda"]
+  ],
+  [
+    "publication.feedback.prerequisites",
+    ["OpenFeedback Link", "comment.guidance.feedback.prerequisites"]
+  ],
+  [
+    "publication.feedback-link.prerequisites",
+    ["Meetup issue", "comment.guidance.feedback-link.prerequisites"]
+  ],
+  [
+    "publication.feedback-link.ambiguous-date",
+    ["Meetup issue", "comment.guidance.feedback-link.ambiguous-date"]
+  ],
+  [
+    "publication.assets.prerequisites",
+    ["Drive Link", "comment.guidance.assets.prerequisites"]
+  ],
+  [
+    "publication.assets.file.drift",
+    ["Event materials", "comment.guidance.assets.drift"]
+  ],
+  [
+    "publication.assets.content.contract",
+    ["Event materials", "comment.guidance.assets.template"]
+  ],
+  [
+    "publication.assets.content.location",
+    ["Event materials", "comment.guidance.assets.template"]
+  ],
+  [
+    "publication.assets.content.missing",
+    ["Event materials", "comment.guidance.assets.missing"]
+  ],
+  [
+    "publication.assets.content.conflict",
+    ["Event materials", "comment.guidance.assets.recovery"]
+  ],
+  [
+    "publication.assets.content.recovery",
+    ["Event materials", "comment.guidance.assets.recovery"]
+  ],
+  [
+    "publication.assets.content.revision",
+    ["Event materials", "comment.guidance.assets.revision"]
+  ],
+  [
+    "publication.assets.content.image",
+    ["Event materials", "comment.guidance.assets.image"]
+  ],
+  [
+    "publication.assets.content.image-source",
+    ["Event materials", "comment.guidance.assets.image-source"]
+  ],
+  [
+    "publication.assets.content.image-format",
+    ["Event materials", "comment.guidance.assets.image-format"]
+  ],
+  [
+    "publication.assets.content.image-size",
+    ["Event materials", "comment.guidance.assets.image-size"]
+  ],
+  [
+    "publication.assets.content.image-dimensions",
+    ["Event materials", "comment.guidance.assets.image-dimensions"]
+  ],
+  [
+    "publication.assets.content.image-download",
+    ["Event materials", "comment.guidance.assets.image-download"]
+  ],
+  [
+    "publication.assets.content.image-changed",
+    ["Event materials", "comment.guidance.assets.image-changed"]
+  ],
+  [
+    "publication.assets.content.fallback",
+    ["Event materials", "comment.guidance.assets.fallback"]
+  ],
+  [
+    "communication.invalid-event-date",
+    ["Event Date", "comment.guidance.event.date.invalid"]
+  ],
+  [
+    "communication.occurrence-status-unknown",
+    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
+  ]
+];
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.ts
+var FIELD_ORDER = [
+  "Event Title",
+  "Event Date",
+  "Hoster",
+  "Event Description",
+  "Agenda",
+  "Meetup Link",
+  "CNCF Link",
+  "Drive Link",
+  "OpenFeedback Link",
+  "Event materials",
+  "Communication",
+  "Automated introduction emails",
+  "Aperitif",
+  "Restaurant / Bar",
+  "Post event",
+  "Automated thank-you emails",
+  "Speaker confirmation",
+  "Event Status",
+  "Issue format",
+  "Referentials",
+  "Meetup issue"
+];
+var GUIDANCE = new Map([
+  ...STAGE_GUIDANCE,
+  [
+    "event.proposals.invalid-selection",
+    ["Agenda", "comment.guidance.proposals.invalid-selection"]
+  ],
+  [
+    "event.proposals.not-found",
+    ["Agenda", "comment.guidance.proposals.not-found"]
+  ],
+  [
+    "event.proposals.not-accepted",
+    ["Agenda", "comment.guidance.proposals.not-accepted"]
+  ],
+  [
+    "referential.source.unavailable",
+    ["Agenda", "comment.guidance.proposals.unavailable"]
+  ],
+  [
+    "referential.source.invalid",
+    ["Agenda", "comment.guidance.proposals.invalid"]
+  ],
+  [
+    "referential.source.rate-limited",
+    ["Agenda", "comment.guidance.proposals.rate-limited"]
+  ],
+  [
+    "referential.source.mapping-required",
+    ["Agenda", "comment.guidance.proposals.mapping-required"]
+  ],
+  [
+    "referential.source.conflict",
+    ["Agenda", "comment.guidance.proposals.conflict"]
+  ],
+  [
+    "event.proposals.unavailable",
+    ["Agenda", "comment.guidance.proposals.unavailable"]
+  ],
+  ["event.proposals.invalid", ["Agenda", "comment.guidance.proposals.invalid"]],
+  [
+    "event.proposals.rate-limited",
+    ["Agenda", "comment.guidance.proposals.rate-limited"]
+  ],
+  [
+    "event.proposals.mapping-required",
+    ["Agenda", "comment.guidance.proposals.mapping-required"]
+  ],
+  [
+    "event.proposals.conflict",
+    ["Agenda", "comment.guidance.proposals.conflict"]
+  ],
+  [
+    "event.title.missing",
+    ["Event Title", "comment.guidance.event.title.missing"]
+  ],
+  ["event.date.missing", ["Event Date", "comment.guidance.event.date.missing"]],
+  ["event.date.invalid", ["Event Date", "comment.guidance.event.date.invalid"]],
+  [
+    "event.description.missing",
+    ["Event Description", "comment.guidance.event.description.missing"]
+  ],
+  ["event.hoster.missing", ["Hoster", "comment.guidance.event.hoster.missing"]],
+  ["event.hoster.invalid", ["Hoster", "comment.guidance.event.hoster.invalid"]],
+  [
+    "event.hoster.multiple",
+    ["Hoster", "comment.guidance.event.hoster.multiple"]
+  ],
+  ["event.agenda.missing", ["Agenda", "comment.guidance.event.agenda.missing"]],
+  [
+    "event.agenda.legacy-line-invalid",
+    ["Agenda", "comment.guidance.event.agenda.legacy-line-invalid"]
+  ],
+  [
+    "event.agenda.speaker.missing",
+    ["Agenda", "comment.guidance.event.agenda.speaker.missing"]
+  ],
+  [
+    "event.agenda.speaker.invalid",
+    ["Agenda", "comment.guidance.event.agenda.speaker.invalid"]
+  ],
+  [
+    "event.agenda.description.missing",
+    ["Agenda", "comment.guidance.event.agenda.description.missing"]
+  ],
+  [
+    "publication.meetup.unpublished",
+    ["Meetup Link", "comment.guidance.publication.meetup.unpublished"]
+  ],
+  [
+    "publication.meetup.missing",
+    ["Meetup Link", "comment.guidance.publication.meetup.missing"]
+  ],
+  [
+    "publication.community.missing",
+    ["CNCF Link", "comment.guidance.publication.community.missing"]
+  ],
+  [
+    "publication.assets.missing",
+    ["Drive Link", "comment.guidance.publication.assets.missing"]
+  ],
+  [
+    "event.link.meetup.invalid",
+    ["Meetup Link", "comment.guidance.event.link.meetup.invalid"]
+  ],
+  [
+    "event.link.community.invalid",
+    ["CNCF Link", "comment.guidance.event.link.community.invalid"]
+  ],
+  [
+    "event.link.feedback.invalid",
+    ["OpenFeedback Link", "comment.guidance.event.link.feedback.invalid"]
+  ],
+  [
+    "event.link.assets.invalid",
+    ["Drive Link", "comment.guidance.event.link.assets.invalid"]
+  ],
+  [
+    "publication.meetup-url.invalid",
+    ["Meetup Link", "comment.guidance.publication.meetup-url.invalid"]
+  ],
+  [
+    "publication.community-url.invalid",
+    ["CNCF Link", "comment.guidance.publication.community-url.invalid"]
+  ],
+  [
+    "publication.asset-url.invalid",
+    ["Drive Link", "comment.guidance.publication.asset-url.invalid"]
+  ],
+  [
+    "event.confirmation.speakers.missing",
+    [
+      "Speaker confirmation",
+      "comment.guidance.event.confirmation.speakers.missing"
+    ]
+  ],
+  [
+    "event.logistics.intent.invalid",
+    ["Logistics", "comment.guidance.event.logistics.intent.invalid"]
+  ],
+  [
+    "event.occurrence-status.invalid",
+    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
+  ],
+  [
+    "event.occurrence-status.label-conflict",
+    ["Event Status", "comment.guidance.event.occurrence-status.label-conflict"]
+  ],
+  [
+    "event.document.heading.missing",
+    ["Issue format", "comment.guidance.event.document.heading.missing"]
+  ],
+  [
+    "event.document.heading.duplicate",
+    ["Issue format", "comment.guidance.event.document.heading.duplicate"]
+  ],
+  [
+    "event.document.checkbox.invalid",
+    ["Issue format", "comment.guidance.event.document.checkbox.invalid"]
+  ],
+  [
+    "event.document.invalid-field-type",
+    ["Issue format", "comment.guidance.event.document.invalid-field-type"]
+  ],
+  [
+    "event.document.invalid-hoster-type",
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-type"]
+  ],
+  [
+    "event.document.invalid-hoster-entry",
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-entry"]
+  ],
+  [
+    "event.document.invalid-agenda-type",
+    ["Agenda", "comment.guidance.event.document.invalid-agenda-type"]
+  ],
+  [
+    "event.document.schema-marker.duplicate",
+    ["Issue format", "comment.guidance.event.document.schema-marker.duplicate"]
+  ],
+  [
+    "event.document.schema-version.unsupported",
+    [
+      "Issue format",
+      "comment.guidance.event.document.schema-version.unsupported"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.missing",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.missing"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.duplicate",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.duplicate"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.invalid",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.invalid"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.legacy",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.legacy"
+    ]
+  ],
+  [
+    "event.document.reference-metadata.stale",
+    [
+      "Issue format",
+      "comment.guidance.event.document.reference-metadata.stale"
+    ]
+  ],
+  [
+    "referential.reference.host.unknown",
+    ["Hoster", "comment.guidance.referential.reference.host.unknown"]
+  ],
+  [
+    "referential.reference.host.ambiguous",
+    ["Hoster", "comment.guidance.referential.reference.host.ambiguous"]
+  ],
+  [
+    "referential.reference.host.display-name-mismatch",
+    [
+      "Hoster",
+      "comment.guidance.referential.reference.host.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.host.invalid",
+    ["Hoster", "comment.guidance.referential.reference.host.invalid"]
+  ],
+  [
+    "referential.reference.speaker.unknown",
+    ["Agenda", "comment.guidance.referential.reference.speaker.unknown"]
+  ],
+  [
+    "referential.reference.speaker.ambiguous",
+    ["Agenda", "comment.guidance.referential.reference.speaker.ambiguous"]
+  ],
+  [
+    "referential.reference.speaker.display-name-mismatch",
+    [
+      "Agenda",
+      "comment.guidance.referential.reference.speaker.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.speaker.invalid",
+    ["Agenda", "comment.guidance.referential.reference.speaker.invalid"]
+  ]
+]);
+
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-presentation.ts
+var DiagnosticPresenter = class {
+  FIELD_ALIASES = new Map([
+    ...FIELD_ORDER.map((field) => [field, field]),
+    ["Slides & Content", "Event materials"],
+    ["eventTitle", "Event Title"],
+    ["event_title", "Event Title"],
+    ["date", "Event Date"],
+    ["event_date", "Event Date"],
+    ["host", "Hoster"],
+    ["hoster", "Hoster"],
+    ["hostReference", "Hoster"],
+    ["description", "Event Description"],
+    ["event_description", "Event Description"],
+    ["agenda", "Agenda"],
+    ["publicationLinks.meetup", "Meetup Link"],
+    ["meetup_link", "Meetup Link"],
+    ["publicationLinks.community", "CNCF Link"],
+    ["cncf_link", "CNCF Link"],
+    ["publicationLinks.assets", "Drive Link"],
+    ["drive_link", "Drive Link"],
+    ["publicationLinks.feedback", "OpenFeedback Link"],
+    ["openfeedback_link", "OpenFeedback Link"],
+    ["confirmations.speakers", "Speaker confirmation"],
+    ["occurrenceStatus", "Event Status"],
+    ["event_status", "Event Status"]
+  ]);
+  presentDiagnostic(item, messages5, links) {
+    if (item.code.startsWith("publication.assets.content.image"))
+      return this.imageDiagnostic(item, messages5);
+    if (item.code === "publication.meetup.uncertain")
+      return {
+        field: "Meetup Link",
+        message: this.meetupRecovery(messages5, links),
+        order: FIELD_ORDER.indexOf("Meetup Link")
+      };
+    const guidance = GUIDANCE.get(item.code);
+    const referential = /^referential\.(host|contact|speaker)\./.test(
+      item.code
+    );
+    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
+    const [field, section] = this.publicField(item.field, fallback, messages5);
+    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
+    const order = FIELD_ORDER.indexOf(section);
+    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  imageDiagnostic(item, messages5) {
+    const location = item.field?.match(
+      /^assets\.image\/([a-zA-Z0-9_-]{1,100})\/(cover|host-logo|speaker-picture|fallback|embedded)\/([a-zA-Z0-9_.:-]{1,100})$/
+    );
+    const guidance = GUIDANCE.get(item.code);
+    const context3 = location ? messages5.t("comment.assets.image-context", {
+      kind: location[2].replaceAll("-", "_"),
+      slot: location[3],
+      documentUrl: `https://drive.google.com/file/d/${location[1]}/view`
+    }) : "";
+    const recovery = location?.[2] === "cover" ? messages5.t("comment.assets.cover-recovery") : "";
+    return {
+      field: "Event materials",
+      message: [
+        context3,
+        messages5.t(guidance?.[1] ?? "comment.guidance.assets.image"),
+        recovery
+      ].filter(Boolean).join(" "),
+      order: FIELD_ORDER.indexOf("Event materials")
+    };
+  }
+  meetupRecovery(messages5, links) {
+    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+    return links.meetup ? messages5.t("comment.guidance.meetup.uncertain", {
+      eventUrl: links.meetup.replace(
+        /[()<>\s]/g,
+        (character) => character === "(" ? "%28" : character === ")" ? "%29" : encodeURIComponent(character)
+      ),
+      workflowUrl
+    }) : messages5.t("comment.guidance.meetup.uncertain-missing-link", {
+      workflowUrl
+    });
+  }
+  /** Only known issue headings and numeric agenda positions can reach Markdown. */
+  publicField(field, fallback, messages5) {
+    const social = field?.match(
+      /^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/
+    );
+    if (social)
+      return [
+        messages5.t("comment.social.target", {
+          destination: social[1],
+          purpose: social[2]
+        }),
+        "Communication"
+      ];
+    const known = this.FIELD_ALIASES.get(field ?? "");
+    if (known) return [known, known];
+    const agenda = field?.match(
+      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
+    );
+    if (agenda) {
+      const entry = Number(agenda[1]) + 1;
+      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
+        speaker: Number(agenda[3]) + 1
+      });
+      return [
+        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
+        "Agenda"
+      ];
+    }
+    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
+    if (speaker)
+      return [
+        messages5.t("comment.agenda.speaker", {
+          speaker: Number(speaker[1]) + 1
+        }),
+        "Agenda"
+      ];
+    return [fallback, fallback];
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-comment-visibility.ts
+var GitHubCommentVisibility = class {
+  constructor(api, owner, repo) {
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+  }
+  api;
+  owner;
+  repo;
+  async synchronize(commentId, expectedBody, resolved) {
+    const { data } = await this.api.rest.issues.getComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+    if (!data.node_id || data.body !== expectedBody)
+      throw new Error("Comment changed before visibility update");
+    const response = await this.api.graphql(
+      `query CommentVisibility($id: ID!) {
+				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
+			}`,
+      { id: data.node_id }
+    );
+    if (!this.object(response) || !this.object(response.node))
+      throw new Error("Invalid comment visibility response");
+    const comment = response.node;
+    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
+      throw new Error("Comment changed before visibility update");
+    if (resolved === comment.isMinimized) return;
+    if (!resolved && comment.minimizedReason !== "resolved") return;
+    await this.change(data.node_id, resolved);
+  }
+  async change(id, resolved) {
+    const mutation = resolved ? `mutation ResolveComment($id: ID!) {
+				minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
+					minimizedComment { isMinimized }
+				}
+			}` : `mutation ReopenComment($id: ID!) {
+				unminimizeComment(input: { subjectId: $id }) {
+					unminimizedComment { isMinimized }
+				}
+			}`;
+    const response = await this.api.graphql(mutation, { id });
+    const result = this.object(response) ? response[resolved ? "minimizeComment" : "unminimizeComment"] : void 0;
+    const comment = this.object(result) ? result[resolved ? "minimizedComment" : "unminimizedComment"] : void 0;
+    if (!this.object(comment) || comment.isMinimized !== resolved)
+      throw new Error("Comment visibility update was not confirmed");
+  }
+  object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
+var GitHubEventCommentRepositoryConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryConfigurationError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
+var GitHubEventCommentRepositoryResponseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryResponseError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
+var GitHubEventCommentRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(
+      `GitHub event comment repository is scoped to ${expected}, not ${received}`
+    );
+    this.name = "GitHubEventCommentRepositoryScopeError";
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository.ts
+var GitHubEventCommentRepository = class {
+  constructor(collaborators, client, options) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.options = options;
+    this.messages = this.collaborators.createEventCommentMessages(
+      options.locale
+    );
+    this.owner = this.requireRepositoryPart(options.owner, "owner");
+    this.repo = this.requireRepositoryPart(options.repo, "repo");
+    this.repositoryName = `${this.owner}/${this.repo}`;
+    this.authorLogin = options.authorLogin.trim();
+    if (!this.authorLogin)
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        "Managed comment author is required"
+      );
+  }
+  collaborators;
+  client;
+  options;
+  messages;
+  owner;
+  repo;
+  repositoryName;
+  authorLogin;
+  async reconcileDiagnostics(identity, diagnostics, links, scope) {
+    this.assertScope(identity.repository);
+    const managedComments = await this.listManagedComments(
+      identity.issueNumber
+    );
+    const retired = managedComments.filter(
+      (comment) => comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
+    );
+    const [canonical, ...duplicates] = managedComments.filter(
+      (comment) => !retired.includes(comment)
+    );
+    let changed = await this.retireComments(identity.issueNumber, duplicates);
+    const body = await this.body(
+      identity.issueNumber,
+      canonical,
+      diagnostics,
+      links,
+      scope
+    );
+    if (!canonical) {
+      if ((!retired.length || scope === "social") && !diagnostics.some((item) => item.severity !== "info")) {
+        return { changed };
+      }
+      await this.client.rest.issues.createComment({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber,
+        body
+      });
+      if (!scope)
+        await this.retireComments(identity.issueNumber, retired, true);
+      return { changed: true };
+    }
+    if (canonical.body !== body) {
+      await this.updateComment(canonical.id, body);
+      changed = true;
+    }
+    if (scope) return { changed };
+    const retiredChanged = await this.retireComments(
+      identity.issueNumber,
+      retired,
+      true
+    );
+    return { changed: changed || retiredChanged };
+  }
+  async body(issueNumber, canonical, diagnostics, links, scope) {
+    const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
+      issueNumber,
+      canonical.id,
+      canonical.body
+    ) : { body: canonical?.body ?? "", retained: "" };
+    const rendered = this.collaborators.diagnosticCommentPresenter.render(
+      diagnostics,
+      this.messages,
+      { repository: this.repositoryName, meetup: links.meetup }
+    );
+    const body = this.collaborators.diagnosticCommentSections.merge(
+      previous.body,
+      rendered,
+      scope
+    );
+    return previous.retained ? `${body}
+
+${previous.retained}` : body;
+  }
+  async listManagedComments(issueNumber) {
+    const comments = [];
+    let page = 1;
+    let hasNextPage = true;
+    while (hasNextPage) {
+      const response = await this.client.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: issueNumber,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data)) {
+        throw new GitHubEventCommentRepositoryResponseError(
+          "GitHub comment list response must contain an array"
+        );
+      }
+      for (const rawComment of response.data) {
+        const comment = this.mapComment(rawComment);
+        if (comment && this.isManagedComment(comment)) {
+          comments.push(comment);
+        }
+      }
+      const linkHeader = this.readHeader(response.headers, "link");
+      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+      page += 1;
+    }
+    return comments.sort((left, right) => left.id - right.id);
+  }
+  isManagedComment(comment) {
+    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
+      return false;
+    }
+    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
+  }
+  async retireComments(issueNumber, duplicates, deleteReports = false) {
+    for (const duplicate of duplicates) {
+      const previous = this.options.retainedContent ? await this.options.retainedContent.load(
+        issueNumber,
+        duplicate.id,
+        duplicate.body
+      ) : void 0;
+      if (previous?.retained || this.collaborators.diagnosticCommentSections.hasSocial(
+        previous?.body ?? duplicate.body
+      ))
+        throw new Error("Duplicate diagnostic comment contains managed state");
+      if (deleteReports && this.client.rest.issues.deleteComment) {
+        await this.client.rest.issues.deleteComment({
+          owner: this.owner,
+          repo: this.repo,
+          comment_id: duplicate.id
+        });
+        continue;
+      }
+      await this.updateComment(
+        duplicate.id,
+        `${DUPLICATE_COMMENT_MARKER}
+
+${this.messages.t("comment.duplicate")}`
+      );
+      if (this.client.minimizeComment) {
+        await this.client.minimizeComment({
+          commentId: duplicate.id,
+          classifier: "OUTDATED"
+        });
+      }
+    }
+    return duplicates.length > 0;
+  }
+  async updateComment(commentId, body) {
+    await this.client.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventCommentRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  mapComment(data) {
+    if (!this.isRecord(data)) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment must be an object"
+      );
+    }
+    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment identifier must be a positive integer"
+      );
+    }
+    if (data.body === null) {
+      return null;
+    }
+    if (typeof data.body !== "string") {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment body must be a string or null"
+      );
+    }
+    const user = this.isRecord(data.user) ? data.user : void 0;
+    return {
+      id: Number(data.id),
+      body: data.body,
+      authorLogin: typeof user?.login === "string" ? user.login : void 0,
+      authorType: typeof user?.type === "string" ? user.type : void 0
+    };
+  }
+  requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "comment.guidance.website.access": "Meetup is published, but the website update was denied. Ask a maintainer to check the configured repository and file, the GitHub App installation, and its Contents write permission.",
+  "comment.guidance.website.conflict": "Meetup is published, but the calendar contains conflicting rows or concurrent edits. Ask a maintainer to check the calendar, then rerun synchronization.",
+  "comment.guidance.website.format": "Meetup is published, but the calendar format is unsupported. Ask a maintainer to check the year headings and three-column month, date, and venue table.",
+  "comment.guidance.website.unavailable": "Meetup is published, but GitHub could not confirm the website update. Rerun synchronization; it will reuse the same calendar entry.",
+  "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
+  "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
+  "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
+  "comment.guidance.content.stale": "The event changed. Generate and review a new proposal.",
+  "comment.guidance.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
+  "comment.guidance.content.iteration-requested": "A new proposal was requested. Run generation again.",
+  "comment.guidance.content.rejected": "Content rejected. Submit a replacement for review.",
+  "comment.guidance.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
+  "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
+  "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
+  "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
+  "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
+  "comment.guidance.content.review": "Review the title, description, and cover in their proposal comments.",
+  "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
+  "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
+  "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
+  "comment.guidance.proposals.rate-limited": "Conference Hall rate limit reached. Wait before retrying.",
+  "comment.guidance.proposals.mapping-required": "Synchronize Conference Hall speakers and merge their identity mappings, then retry.",
+  "comment.guidance.proposals.conflict": "Conflicting Conference Hall identifiers. Check the proposal and speaker mappings.",
+  "comment.guidance.proposals.not-found": "Proposal number not found in this CFP. Check its Conference Hall URL.",
+  "comment.guidance.proposals.not-accepted": "Accept the selected proposal in Conference Hall and check that the speaker has not declined.",
+  "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
+  "comment.resolved": "\u2705 Event details complete.",
+  "comment.duplicate": "Superseded duplicate automation comment.",
+  "comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
+  "comment.referential": "Ask a maintainer to correct the host or speaker catalog.",
+  "comment.agenda.item": "Agenda (item {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", speaker {speaker}",
+  "comment.agenda.speaker": "Agenda (speaker {speaker})",
+  "comment.guidance.event.title.missing": "Edit and approve the proposed title.",
+  "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
+  "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
+  "comment.guidance.event.description.missing": "Edit and approve the proposed description.",
+  "comment.guidance.event.hoster.missing": "Select a host from the host list.",
+  "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
+  "comment.guidance.event.agenda.missing": "Add at least one talk using `- Speaker: Talk description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Use `- Speaker: Talk description` for each agenda line.",
+  "comment.guidance.event.agenda.speaker.missing": "Add at least one speaker for this talk.",
+  "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
+  "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
+  "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
+  "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
+  "comment.guidance.publication.community.missing": "Publish the CNCF event and fill in its public link.",
+  "comment.guidance.publication.assets.missing": "Sync assets to create the event Drive folder.",
+  "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
+  "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
+  "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
+  "comment.guidance.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
+  "comment.guidance.publication.community-url.invalid": "Use this group's CNCF / OCGroups event URL.",
+  "comment.guidance.publication.asset-url.invalid": "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirm the speakers, then add the `speakers:confirmed` label.",
+  "comment.guidance.event.logistics.intent.invalid": "Choose `Yes` or `No`, or leave the response empty if undecided.",
+  "comment.guidance.event.occurrence-status.invalid": "Use `scheduled`, `postponed`, `held`, or `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "Restore this section heading from the meetup issue template.",
+  "comment.guidance.event.document.heading.duplicate": "Keep a single section with this heading and merge its content.",
+  "comment.guidance.event.document.checkbox.invalid": "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks.",
+  "comment.guidance.event.document.invalid-field-type": "Enter a text response in this field.",
+  "comment.guidance.event.document.invalid-hoster-type": "Select one host from the host list.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.document.invalid-agenda-type": "Write the agenda as a list of `- Speaker: Talk description` lines.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Ask a maintainer to repair the duplicate automation metadata in the issue description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Ask a maintainer to update the automation to support this issue format.",
+  "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.event.document.reference-metadata.stale": "Check the host and speakers, then sync the issue to update their references.",
+  "comment.guidance.referential.reference.host.unknown": "Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
+  "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "comment.guidance.website.access": "Le meetup est publi\xE9, mais la mise \xE0 jour du site a \xE9t\xE9 refus\xE9e. Demandez \xE0 un mainteneur de v\xE9rifier le d\xE9p\xF4t et le fichier configur\xE9s, l'installation de la GitHub App et son droit Contents en \xE9criture.",
+  "comment.guidance.website.conflict": "Le meetup est publi\xE9, mais plusieurs lignes ou des modifications simultan\xE9es emp\xEAchent la mise \xE0 jour du calendrier. Demandez \xE0 un mainteneur de v\xE9rifier le calendrier, puis relancez la synchronisation.",
+  "comment.guidance.website.format": "Le meetup est publi\xE9, mais le format du calendrier n'est pas reconnu. Demandez \xE0 un mainteneur de v\xE9rifier les titres des ann\xE9es et le tableau \xE0 trois colonnes : mois, date et lieu.",
+  "comment.guidance.website.unavailable": "Le meetup est publi\xE9, mais GitHub n'a pas confirm\xE9 la mise \xE0 jour du site. Relancez la synchronisation ; elle r\xE9utilisera la m\xEAme ligne du calendrier.",
+  "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
+  "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
+  "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
+  "comment.guidance.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
+  "comment.guidance.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
+  "comment.guidance.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
+  "comment.guidance.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
+  "comment.guidance.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
+  "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
+  "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
+  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
+  "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
+  "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
+  "comment.guidance.content.review": "Validez le titre, la description et le visuel dans leurs commentaires.",
+  "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
+  "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
+  "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
+  "comment.guidance.proposals.rate-limited": "Limite API Conference Hall atteinte. Patientez avant de r\xE9essayer.",
+  "comment.guidance.proposals.mapping-required": "Synchronisez les intervenants Conference Hall et fusionnez leurs identit\xE9s, puis r\xE9essayez.",
+  "comment.guidance.proposals.conflict": "Identifiants Conference Hall en conflit. V\xE9rifiez les propositions et les identit\xE9s des intervenants.",
+  "comment.guidance.proposals.not-found": "Num\xE9ro de proposition introuvable dans ce CFP. V\xE9rifiez son URL Conference Hall.",
+  "comment.guidance.proposals.not-accepted": "Acceptez la proposition dans Conference Hall et v\xE9rifiez que l'intervenant ne l'a pas refus\xE9e.",
+  "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
+  "comment.resolved": "\u2705 Informations compl\xE8tes.",
+  "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
+  "comment.unknown": "Demandez \xE0 un responsable de consulter les diagnostics du workflow.",
+  "comment.referential": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
+  "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", intervenant {speaker}",
+  "comment.agenda.speaker": "Programme (intervenant {speaker})",
+  "comment.guidance.event.title.missing": "Modifiez et validez le titre propos\xE9.",
+  "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
+  "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
+  "comment.guidance.event.description.missing": "Modifiez et validez la description propos\xE9e.",
+  "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
+  "comment.guidance.event.agenda.missing": "Ajoutez au moins une conf\xE9rence au format `- Intervenant: Description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Utilisez `- Intervenant: Description` pour chaque ligne du programme.",
+  "comment.guidance.event.agenda.speaker.missing": "Ajoutez au moins un intervenant pour cette conf\xE9rence.",
+  "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
+  "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
+  "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
+  "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
+  "comment.guidance.publication.community.missing": "Publiez l'\xE9v\xE9nement CNCF et renseignez son lien public.",
+  "comment.guidance.publication.assets.missing": "Synchronisez les fichiers pour cr\xE9er le dossier Drive du meetup.",
+  "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
+  "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
+  "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.meetup-url.invalid": "Utilisez l'URL Meetup de ce groupe, termin\xE9e par l'identifiant num\xE9rique de l'\xE9v\xE9nement.",
+  "comment.guidance.publication.community-url.invalid": "Utilisez l'URL CNCF / OCGroups de ce groupe.",
+  "comment.guidance.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
+  "comment.guidance.event.logistics.intent.invalid": "Choisissez `Yes` ou `No`, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
+  "comment.guidance.event.occurrence-status.invalid": "Utilisez `scheduled`, `postponed`, `held` ou `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Conservez un seul label de statut : `event:postponed`, `event:held` ou `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "R\xE9tablissez cet en-t\xEAte de section \xE0 partir du mod\xE8le d'issue.",
+  "comment.guidance.event.document.heading.duplicate": "Conservez une seule section avec cet en-t\xEAte et fusionnez son contenu.",
+  "comment.guidance.event.document.checkbox.invalid": "Utilisez `- [ ] T\xE2che` pour les t\xE2ches \xE0 faire et `- [x] T\xE2che` pour les t\xE2ches termin\xE9es.",
+  "comment.guidance.event.document.invalid-field-type": "Saisissez une r\xE9ponse textuelle dans ce champ.",
+  "comment.guidance.event.document.invalid-hoster-type": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.document.invalid-agenda-type": "R\xE9digez le programme sous forme de lignes `- Intervenant: Description`.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es d'automatisation en double dans la description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Demandez \xE0 un responsable de mettre \xE0 jour l'automatisation pour prendre en charge ce format d'issue.",
+  "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
+  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
+  "comment.guidance.referential.reference.host.unknown": "H\xF4te introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
+  "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l'h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Intervenant introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
+var STAGE_MESSAGES_EN = {
+  "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
+  "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
+  "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
+  "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "comment.guidance.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "comment.guidance.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "comment.guidance.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
+  "comment.social.target": "Post ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Review this post's draft in the issue. Once its content is approved, a separate publication request will be shown.",
+  "comment.guidance.social.missing": "This reminder has no draft. Run promotion reconciliation to prepare it, then review the content and publication requests.",
+  "comment.guidance.social.generation-recovery": "Reminder generation needs recovery. Inspect its content proposal and use the content recovery procedure before retrying.",
+  "comment.guidance.social.preparation-failed": "Reminder preparation failed. Check the workflow run and retry after correcting the technical error.",
+  "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
+  "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
+  "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
+  "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
+  "comment.guidance.social.evaluation-failed": "Could not check publication. Check source access and delivery records before retrying.",
+  "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
+  "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
+  "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
+  "comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
+  "comment.guidance.assets.slides": "Complete the presentation and its public link before sending emails.",
+  "comment.guidance.communication.approval": "Approve or reject the emails.",
+  "comment.guidance.communication.rejected": "Emails rejected. Change their content to request a new approval.",
+  "comment.guidance.communication.approval-unavailable": "Approval could not be verified. Check the approval request, then retry.",
+  "comment.guidance.communication.approval-notification": "Slack notification failed. Review the email approval comment in this issue.",
+  "comment.guidance.communication.delivery-uncertain": "Verify delivery before retrying.",
+  "comment.guidance.communication.delivery-rejected": "Delivery rejected. Check the mail gateway before retrying.",
+  "comment.guidance.communication.delivery-deferred": "Delivery deferred; the next run will retry.",
+  "comment.guidance.communication.configuration": "Ask a maintainer to check the communication workflow configuration.",
+  "comment.guidance.communication.ledger": "Check the delivery ledger before retrying.",
+  "comment.guidance.communication.destination": "Add an email address for each recipient.",
+  "comment.guidance.communication.content": "Complete the notification content before retrying.",
+  "comment.guidance.communication.checklist": "Sync again to mark completed email tasks.",
+  "comment.guidance.communication.concurrent": "The issue changed during processing. Retry after editing.",
+  "comment.guidance.communication.references": "Select known hosts and speakers before sending emails.",
+  "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
+  "comment.guidance.feedback.agenda": "Complete talk subjects and speakers before synchronizing OpenFeedback.",
+  "comment.guidance.feedback.prerequisites": "Complete the title, date and OpenFeedback link.",
+  "comment.guidance.feedback-link.prerequisites": "Check the active meetup selected for the shared link and complete its OpenFeedback URL.",
+  "comment.guidance.feedback-link.ambiguous-date": "Several active meetups share the selected date. Select the shared feedback target manually.",
+  "comment.guidance.assets.prerequisites": "Select the host and date before preparing Drive files.",
+  "comment.guidance.assets.drift": "Restore the missing Drive file or its expected template metadata.",
+  "comment.guidance.assets.template": "Fix the template tokens, image slots or supported document structure.",
+  "comment.guidance.assets.missing": "Complete the required text and links for the presentation.",
+  "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
+  "comment.guidance.assets.revision": "The document changed. Retry after editing.",
+  "comment.guidance.assets.image": "Automation could not validate a document image. Rerun synchronization to identify the image and failure reason.",
+  "comment.assets.image-context": "{kind, select, cover {Approved generated cover} host_logo {Host logo} speaker_picture {Speaker photo} fallback {Template fallback image} other {Embedded document image}} (slot `{slot}`) in [this document]({documentUrl}).",
+  "comment.assets.cover-recovery": "Ask a maintainer to repair the automated cover handling; the approved image should remain usable.",
+  "comment.guidance.assets.image-source": "The image source is invalid: a public HTTPS URL and an image description are required.",
+  "comment.guidance.assets.image-format": "The image data or content type is invalid. Supported formats: PNG, JPEG and GIF.",
+  "comment.guidance.assets.image-size": "The image download reaches the 50 MB limit.",
+  "comment.guidance.assets.image-dimensions": "The image dimensions are invalid or exceed 25 megapixels.",
+  "comment.guidance.assets.image-download": "Automation could not download the image. Rerun synchronization; if this persists, ask a maintainer to investigate the run.",
+  "comment.guidance.assets.image-changed": "The image bytes differ from the approved cover.",
+  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
+  "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
+  "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
+  "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
+  "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
+  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 50 MB limit.",
+  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
+  "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
+var STAGE_MESSAGES_FR = {
+  "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
+  "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
+  "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
+  "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
+  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
+  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "comment.guidance.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "comment.guidance.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "comment.guidance.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "comment.guidance.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "comment.guidance.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "comment.guidance.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "comment.guidance.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
+  "comment.social.target": "Publication ({destination}, {purpose})",
+  "comment.guidance.social.content-pending": "Examinez le brouillon de cette publication dans l'issue. Apr\xE8s validation du contenu, une demande distincte permettra d'autoriser sa publication.",
+  "comment.guidance.social.missing": "Ce rappel n'a pas de brouillon. Relancez la r\xE9conciliation des publications pour le pr\xE9parer, puis examinez les demandes de validation du contenu et de publication.",
+  "comment.guidance.social.generation-recovery": "La g\xE9n\xE9ration de ce rappel n\xE9cessite une reprise. Examinez sa proposition et suivez la proc\xE9dure de reprise du contenu avant de r\xE9essayer.",
+  "comment.guidance.social.preparation-failed": "La pr\xE9paration de ce rappel a \xE9chou\xE9. Consultez le workflow et relancez-le apr\xE8s correction de l'erreur technique.",
+  "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
+  "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
+  "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
+  "comment.guidance.social.evaluation-failed": "Publication non v\xE9rifiable. V\xE9rifiez les acc\xE8s aux sources et le registre des envois avant de relancer.",
+  "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
+  "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
+  "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
+  "comment.guidance.feedback.access": "V\xE9rifiez les acc\xE8s OpenFeedback, puis r\xE9essayez.",
+  "comment.guidance.assets.slides": "Compl\xE9tez la pr\xE9sentation et son lien public avant les envois.",
+  "comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
+  "comment.guidance.communication.rejected": "Emails refus\xE9s. Modifiez leur contenu pour demander une nouvelle validation.",
+  "comment.guidance.communication.approval-unavailable": "Approbation non v\xE9rifiable. V\xE9rifiez la demande d'approbation, puis r\xE9essayez.",
+  "comment.guidance.communication.approval-notification": "La notification Slack a \xE9chou\xE9. Validez les emails dans le commentaire de cette issue.",
+  "comment.guidance.communication.delivery-uncertain": "V\xE9rifiez l'envoi avant toute reprise.",
+  "comment.guidance.communication.delivery-rejected": "Envoi refus\xE9. V\xE9rifiez la passerelle d'envoi avant de r\xE9essayer.",
+  "comment.guidance.communication.delivery-deferred": "Envoi diff\xE9r\xE9 ; la prochaine ex\xE9cution r\xE9essaiera.",
+  "comment.guidance.communication.configuration": "Demandez \xE0 un responsable de v\xE9rifier la configuration des communications.",
+  "comment.guidance.communication.ledger": "V\xE9rifiez le registre des envois avant de r\xE9essayer.",
+  "comment.guidance.communication.destination": "Ajoutez une adresse email pour chaque destinataire.",
+  "comment.guidance.communication.content": "Compl\xE9tez le contenu de la notification avant de r\xE9essayer.",
+  "comment.guidance.communication.checklist": "Relancez pour cocher les t\xE2ches d'email termin\xE9es.",
+  "comment.guidance.communication.concurrent": "Le ticket a chang\xE9 pendant le traitement. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.communication.references": "S\xE9lectionnez des h\xF4tes et intervenants connus avant les envois.",
+  "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
+  "comment.guidance.feedback.agenda": "Compl\xE9tez les sujets et intervenants avant de synchroniser OpenFeedback.",
+  "comment.guidance.feedback.prerequisites": "Compl\xE9tez le titre, la date et le lien OpenFeedback.",
+  "comment.guidance.feedback-link.prerequisites": "V\xE9rifiez le meetup actif s\xE9lectionn\xE9 pour le lien partag\xE9 et compl\xE9tez son URL OpenFeedback.",
+  "comment.guidance.feedback-link.ambiguous-date": "Plusieurs meetups actifs ont la date s\xE9lectionn\xE9e. Choisissez manuellement la cible du lien partag\xE9.",
+  "comment.guidance.assets.prerequisites": "S\xE9lectionnez l'h\xF4te et la date avant de pr\xE9parer les fichiers Drive.",
+  "comment.guidance.assets.drift": "Restaurez le fichier Drive manquant ou ses m\xE9tadonn\xE9es de mod\xE8le.",
+  "comment.guidance.assets.template": "Corrigez les variables, emplacements d'images ou la structure du mod\xE8le.",
+  "comment.guidance.assets.missing": "Compl\xE9tez les textes et liens requis pour la pr\xE9sentation.",
+  "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
+  "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.assets.image": "La synchronisation n'a pas pu v\xE9rifier une image du document. Relancez-la pour identifier l'image et la cause de l'\xE9chec.",
+  "comment.assets.image-context": "{kind, select, cover {Visuel de couverture g\xE9n\xE9r\xE9 et approuv\xE9} host_logo {Logo de l'h\xF4te} speaker_picture {Photo de l'intervenant} fallback {Image de secours du mod\xE8le} other {Image int\xE9gr\xE9e au document}} (emplacement `{slot}`) dans [ce document]({documentUrl}).",
+  "comment.assets.cover-recovery": "Demandez \xE0 un mainteneur de corriger le traitement automatique du visuel ; l'image approuv\xE9e doit rester utilisable.",
+  "comment.guidance.assets.image-source": "La source de l'image est invalide : une URL HTTPS publique et une description sont n\xE9cessaires.",
+  "comment.guidance.assets.image-format": "Les donn\xE9es ou le type de contenu de l'image sont invalides. Formats pris en charge : PNG, JPEG et GIF.",
+  "comment.guidance.assets.image-size": "Le t\xE9l\xE9chargement de l'image atteint la limite de 50 Mo.",
+  "comment.guidance.assets.image-dimensions": "Les dimensions de l'image sont invalides ou d\xE9passent 25 m\xE9gapixels.",
+  "comment.guidance.assets.image-download": "La synchronisation n'a pas pu t\xE9l\xE9charger l'image. Relancez-la ; si l'\xE9chec persiste, demandez \xE0 un mainteneur d'examiner le run.",
+  "comment.guidance.assets.image-changed": "Le contenu de l'image diff\xE8re du visuel de couverture approuv\xE9.",
+  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
+  "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
+  "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
+  "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
+  "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
+  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 50 Mo.",
+  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
+  "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
+var CATALOGS3 = {
+  en: { ...EN_MESSAGES3, ...STAGE_MESSAGES_EN },
+  fr: { ...FR_MESSAGES3, ...STAGE_MESSAGES_FR }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
+var EventCommentMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS3, locale);
+  }
+};
+
+// packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
+var GithubEventCommentRepositoryComposition = class {
+  githubCommentVisibility(...args) {
+    return new GitHubCommentVisibility(...args);
+  }
+  diagnosticCommentSections() {
+    return new DiagnosticCommentSections();
+  }
+  diagnosticCommentPresenter() {
+    return new DiagnosticCommentPresenter({
+      organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+      diagnosticPresenter: this.diagnosticPresenter()
+    });
+  }
+  diagnosticPresenter() {
+    return new DiagnosticPresenter();
+  }
+  eventCommentMessages(...args) {
+    return new EventCommentMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  gitHubEventCommentRepository(...args) {
+    return new GitHubEventCommentRepository(
+      {
+        diagnosticCommentSections: this.diagnosticCommentSections(),
+        diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
+        createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
+      },
+      ...args
+    );
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-record.ts
+var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
+var AttentionRecord = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body) {
+    const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
+    const line = lines[0];
+    if (lines.length !== 1 || !line?.endsWith(" -->"))
+      throw new Error("Invalid attention record");
+    const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
+    return this.decode(input);
+  }
+  marker(state) {
+    const safe = this.decode({ ...state, version: 1 });
+    return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
+  }
+  decode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    if (!Array.isArray(data.episodes) || data.episodes.length > 300)
+      throw new Error("Invalid attention episodes");
+    this.collaborators.attentionRecordFields.choice(data.version, [1]);
+    const state = {
+      eventDate: this.collaborators.attentionRecordFields.text(
+        data.eventDate,
+        /^(?:\d{4}-\d{2}-\d{2})?$/
+      ),
+      stopped: this.collaborators.attentionRecordFields.choice(data.stopped, [
+        true,
+        false
+      ]),
+      episodes: data.episodes.map(this.episode.bind(this)),
+      post: data.post === void 0 ? void 0 : this.post(data.post),
+      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      )
+    };
+    this.collaborators.attentionStateRules.validate(state);
+    return state;
+  }
+  episode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      condition: this.condition(data.condition),
+      episode: this.collaborators.attentionRecordFields.integer(
+        data.episode,
+        true
+      ),
+      openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
+      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
+        "active",
+        "unknown",
+        "resolved",
+        "stopped"
+      ]),
+      lastWindow: data.lastWindow === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
+        data.lastWindow,
+        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
+      )
+    };
+  }
+  condition(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      key: this.collaborators.attentionRecordFields.text(
+        data.key,
+        /^[a-z0-9:-]{1,180}$/
+      ),
+      code: this.collaborators.attentionRecordFields.choice(
+        data.code,
+        ATTENTION_CODES
+      ),
+      owner: this.collaborators.attentionRecordFields.choice(data.owner, [
+        "event",
+        "assets",
+        "feedback",
+        "communications",
+        "social",
+        "content",
+        "approvals",
+        "delivery"
+      ]),
+      resource: this.collaborators.attentionRecordFields.text(
+        data.resource,
+        /^[a-z0-9:-]{1,128}$/
+      ),
+      severity: this.collaborators.attentionRecordFields.choice(data.severity, [
+        "warning",
+        "error"
+      ]),
+      policy: this.collaborators.attentionRecordFields.choice(data.policy, [
+        "preparation",
+        "daily",
+        "weekly",
+        "approval",
+        "occurrence",
+        "follow-up",
+        "none"
+      ]),
+      since: data.since === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.since),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      ),
+      recovery: data.recovery === void 0 ? void 0 : this.collaborators.attentionRecordFields.choice(data.recovery, [
+        true
+      ])
+    };
+  }
+  post(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      reservationId: this.collaborators.attentionRecordFields.text(
+        data.reservationId,
+        /^attention:\d+:\d+$/
+      ),
+      day: this.collaborators.attentionRecordFields.integer(data.day),
+      reservedAt: this.collaborators.attentionRecordFields.instant(
+        data.reservedAt
+      ),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
+        "pending",
+        "accepted",
+        "retry"
+      ]),
+      retryAt: data.retryAt === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.retryAt),
+      fingerprint: data.fingerprint === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
+        data.fingerprint,
+        /^[a-f0-9]{64}$/
+      ),
+      message: data.message === void 0 ? void 0 : this.message(data.message)
+    };
+  }
+  message(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
+    return {
+      destination: this.collaborators.attentionRecordFields.text(
+        data.destination,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      ),
+      messageId: this.collaborators.attentionRecordFields.text(
+        data.messageId,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      )
+    };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-comment-retention.ts
+var AttentionCommentRetention = class {
+  constructor(collaborators, api, owner, repo, author) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.author = author;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  author;
+  async load(issueNumber, commentId, before) {
+    const client = this.collaborators.createGithubAttentionClient(
+      this.api,
+      this.owner,
+      this.repo,
+      issueNumber
+    );
+    const comment = (await client.list()).find((item) => item.id === commentId);
+    if (!comment || comment.body !== before)
+      throw new Error("Diagnostic comment changed before persistence");
+    const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
+    const offset = body.indexOf(ATTENTION_MARKER);
+    if (offset < 0) return { body, retained: "" };
+    this.collaborators.attentionRecord.read(body);
+    return {
+      body: body.slice(0, offset).trimEnd(),
+      retained: body.slice(offset)
+    };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-diagnostic-checklist.ts
+var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  body = "";
+  commentId;
+  set(commentId, body) {
+    if (!body.startsWith(DIAGNOSTIC_MARKER) || !Number.isSafeInteger(commentId) || commentId < 1)
+      throw new Error("Invalid diagnostic checklist");
+    this.commentId = commentId;
+    this.body = body.split(ATTENTION_MARKER, 1)[0].trim();
+  }
+  prefix() {
+    return this.body;
+  }
+  read() {
+    const entries = [...new Set(this.body.split("\n"))].flatMap((line) => {
+      const match = /^- \[ \] \*\*(.+?)\*\*: (.+)$/.exec(line);
+      if (!match) return [];
+      const [, label, description] = match;
+      return [
+        {
+          label,
+          description,
+          field: _AttentionDiagnosticChecklist.FIELDS.get(label) ?? "other",
+          action: this.action(description)
+        }
+      ];
+    });
+    return { commentId: this.commentId, entries };
+  }
+  action(description) {
+    for (const locale of ["en", "fr"]) {
+      const messages5 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages5.t("action.content-approval-pending"))
+        return "content-approval";
+      if (description === messages5.t("action.social-approval-pending"))
+        return "social-approval";
+      if (description === messages5.t("action.approval-pending"))
+        return "email-approval";
+      if (description === messages5.t("action.community-approval-pending"))
+        return "community-approval";
+      if (description === messages5.t("action.meetup-approval-pending"))
+        return "meetup-approval";
+      if (description === messages5.t("action.delivery-recovery"))
+        return "delivery-recovery";
+    }
+    return void 0;
+  }
+  static FIELDS = /* @__PURE__ */ new Map([
+    ["Event Title", "title"],
+    ["Event Description", "description"],
+    ["Drive Link", "assets"],
+    ["Event materials", "assets"],
+    ["OpenFeedback Link", "feedback"],
+    ["Event Date", "date"],
+    ["Hoster", "host"],
+    ["Host confirmation", "host-confirmation"],
+    ["Speaker confirmation", "speaker-confirmation"],
+    ["Meetup Link", "meetup"],
+    ["CNCF Link", "community"],
+    ["Agenda", "agenda"]
+  ]);
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-presenter.ts
+var AttentionPresenter = class {
+  constructor(collaborators, repository, issueNumber, diagnostics, messages5) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.diagnostics = diagnostics;
+    this.messages = messages5;
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      throw new Error("Invalid attention issue identity");
+    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
+  }
+  collaborators;
+  repository;
+  diagnostics;
+  messages;
+  issueUrl;
+  retired(commentId) {
+    return [this.diagnostics.prefix(), this.redirect(commentId)].filter(Boolean).join("\n\n");
+  }
+  redirect(commentId) {
+    return this.messages.t("attention.redirect", {
+      url: `${this.issueUrl}#issuecomment-${commentId}`
+    });
+  }
+  issue(state, metadata) {
+    return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
+  }
+  resolved(state) {
+    return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
+  }
+  details(state) {
+    const view = this.collaborators.attentionPolicy.view(state);
+    const lines = this.status(state);
+    for (const episode of this.collaborators.attentionTaskSelection.select(
+      view,
+      this.diagnostics.read()
+    ).details) {
+      const url = this.url(episode, state);
+      const link = url === this.overviewUrl(state) ? "" : ` ([${this.messages.t("attention.review")}](${url}))`;
+      lines.push(`- [ ] ${this.text(episode)}${link}`);
+    }
+    if (!view.conditions.length && !this.diagnostics.prefix() && !lines.length)
+      lines.push(this.messages.t("attention.clear"));
+    return [...new Set(lines)].join("\n");
+  }
+  status(state) {
+    return state.post?.status === "pending" ? [`- [ ] ${this.messages.t("attention.pending")}`] : [];
+  }
+  text(episode) {
+    const text = this.action(episode);
+    return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
+  }
+  action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
+      return this.messages.t("action.content-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
+      return this.messages.t("action.social-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
+      return this.messages.t("action.community-approval-pending");
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
+      return this.messages.t("action.meetup-approval-pending");
+    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+  }
+  url(episode, state) {
+    const runId = episode.runId ?? state.runId;
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
+      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
+    if (["integration-failure", "stage-unknown"].includes(
+      episode.condition.code
+    ) && runId && /^\d+$/.test(runId))
+      return `https://github.com/${this.repository}/actions/runs/${runId}`;
+    return this.overviewUrl(state);
+  }
+  overviewUrl(state) {
+    const commentId = state.commentId ?? this.diagnostics.read().commentId;
+    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-record-fields.ts
+var AttentionRecordFields = class {
+  record(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      throw new Error("Invalid attention record object");
+    return value;
+  }
+  text(value, pattern) {
+    if (typeof value !== "string" || !pattern.test(value))
+      throw new Error("Invalid attention record text");
+    return value;
+  }
+  integer(value, positive = false) {
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
+      throw new Error("Invalid attention record integer");
+    return value;
+  }
+  choice(value, values) {
+    const found = values.find((candidate) => candidate === value);
+    if (found === void 0)
+      throw new Error("Invalid attention record variant");
+    return found;
+  }
+  instant(value) {
+    const text = this.text(value, /^\d{4}-\d{2}-\d{2}T/);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid attention record timestamp");
+    return text;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-client.ts
+var GithubAttentionClient = class {
+  constructor(collaborators, api, owner, repo, issue2) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.issue = issue2;
+  }
+  collaborators;
+  api;
+  owner;
+  repo;
+  issue;
+  async list() {
+    const comments = [];
+    let page = 1;
+    while (page <= 20) {
+      const response = await this.api.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issue,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data))
+        throw new Error("Invalid attention comment response");
+      comments.push(
+        ...response.data.map(
+          this.collaborators.githubAttentionResponse.comment.bind(
+            this.collaborators.githubAttentionResponse
+          )
+        )
+      );
+      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!next) return comments;
+      page += 1;
+    }
+    throw new Error("Attention comment limit exceeded");
+  }
+  async create(body) {
+    const response = await this.api.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issue,
+      body
+    });
+    if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    return response.data.id;
+  }
+  async update(commentId, body) {
+    await this.api.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  async replace(commentId, before, after) {
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Attention comment changed before persistence");
+    await this.update(commentId, after);
+  }
+  async remove(commentId, before) {
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Attention comment changed before removal");
+    await this.api.rest.issues.deleteComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId
+    });
+  }
+  async edit(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing attention comment node identity");
+    const result = await this.api.graphql(
+      `query AttentionCommentEditor($id: ID!) {
+				node(id: $id) {
+					... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					}
+				}
+			}`,
+      { id: comment.node_id }
+    );
+    return this.collaborators.githubAttentionResponse.current(result, comment);
+  }
+  checkHistoryLimit(count) {
+    if (count > 2e3) throw new Error("Attention history limit exceeded");
+  }
+  async history(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing attention comment node identity");
+    const edits = [];
+    let after;
+    do {
+      const response = await this.api.graphql(
+        `query AttentionCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+        { id: comment.node_id, ...after ? { after } : {} }
+      );
+      const history = this.collaborators.githubAttentionResponse.history(
+        response,
+        comment
+      );
+      edits.push(...history.nodes);
+      this.checkHistoryLimit(edits.length);
+      if (!history.hasNextPage) return edits;
+      const next = history.endCursor;
+      if (!next || next === after)
+        throw new Error("Invalid attention history cursor");
+      after = next;
+    } while (after);
+    return edits;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
+var GithubAttentionRepository = class {
+  constructor(collaborators, client, author, presenter, checklist, visibility) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.author = author;
+    this.presenter = presenter;
+    this.checklist = checklist;
+    this.visibility = visibility;
+  }
+  collaborators;
+  client;
+  author;
+  presenter;
+  checklist;
+  visibility;
+  snapshot;
+  obsolete;
+  previous;
+  loaded = false;
+  async load() {
+    const trusted = this.collaborators.createTrustedAttentionState(
+      this.client,
+      this.author
+    );
+    const records = [];
+    let diagnostic;
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const body = await trusted.body(comment);
+      const snapshot = { id: comment.id, body: comment.body ?? "" };
+      if (body.startsWith(DIAGNOSTIC_MARKER) && !diagnostic) {
+        diagnostic = snapshot;
+        this.checklist.set(comment.id, body);
+      }
+      if (body.includes(ATTENTION_MARKER))
+        records.push({
+          snapshot,
+          state: this.collaborators.attentionRecord.read(body),
+          diagnostic: body.startsWith(DIAGNOSTIC_MARKER)
+        });
+    }
+    this.select(records, diagnostic);
+    this.loaded = true;
+    return this.previous;
+  }
+  select(records, diagnostic) {
+    const canonical = records.find((item) => item.diagnostic) ?? records[0];
+    if (records.length > 1 && (records.length !== 2 || !canonical?.diagnostic || records.every((item) => item.diagnostic) || records.some(
+      (item) => !this.collaborators.attentionStateEquality.equal(
+        item.state,
+        canonical.state
+      )
+    )))
+      throw new Error("Multiple attention records");
+    this.snapshot = diagnostic ?? canonical?.snapshot;
+    this.previous = canonical?.state;
+    this.obsolete = records.find(
+      (item) => item.snapshot.id !== this.snapshot?.id
+    )?.snapshot;
+  }
+  async save(state) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before writing");
+    await this.consolidate();
+    const body = this.presenter.issue(
+      state,
+      this.collaborators.attentionRecord.marker(state)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    if (this.snapshot) {
+      if (this.snapshot.body !== body)
+        await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    } else {
+      if ((await this.client.list()).some(
+        (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
+      ))
+        throw new Error("Attention state changed before creation");
+      const id = await this.client.create(body);
+      this.snapshot = { id, body };
+    }
+    this.snapshot.body = body;
+    await this.visibility.synchronize(
+      this.snapshot.id,
+      body,
+      this.presenter.resolved(state)
+    );
+  }
+  async consolidate() {
+    if (!this.obsolete || !this.snapshot || !this.previous) return;
+    const body = this.presenter.issue(
+      this.previous,
+      this.collaborators.attentionRecord.marker(this.previous)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    this.snapshot.body = body;
+    await this.client.remove(this.obsolete.id, this.obsolete.body);
+    this.obsolete = void 0;
+  }
+  async retire(commentId) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before retiring");
+    if (!this.snapshot) return;
+    await this.consolidate();
+    await this.client.replace(
+      this.snapshot.id,
+      this.snapshot.body,
+      this.presenter.retired(commentId)
+    );
+    this.snapshot = void 0;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-response.ts
+var GithubAttentionResponse = class {
+  record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("Invalid attention API object");
+    return value;
+  }
+  comment(value) {
+    const data = this.record(value);
+    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
+      throw new Error("Invalid attention comment body");
+    if (data.node_id !== void 0 && typeof data.node_id !== "string")
+      throw new Error("Invalid attention comment node");
+    let user;
+    if (data.user !== null && data.user !== void 0) {
+      const actor = this.record(data.user);
+      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
+        throw new Error("Invalid attention comment author");
+      user = { login: actor.login, type: actor.type };
+    }
+    return { id: data.id, body: data.body, node_id: data.node_id, user };
+  }
+  current(value, comment) {
+    const node = this.node(value, comment);
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: this.nullableText(node.lastEditedAt),
+      editor: this.editor(node.editor)
+    };
+  }
+  history(value, comment) {
+    const node = this.node(value, comment);
+    const edits = this.record(node.userContentEdits);
+    const page = this.record(edits.pageInfo);
+    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
+      throw new Error("Attention history is unavailable");
+    return {
+      nodes: edits.nodes.map(this.edit.bind(this)),
+      hasNextPage: page.hasNextPage,
+      endCursor: this.nullableText(page.endCursor)
+    };
+  }
+  node(value, comment) {
+    const result = this.record(value);
+    const node = this.record(result.node);
+    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
+      throw new Error("Attention comment changed during verification");
+    return { ...node, id: node.id, body: node.body };
+  }
+  edit(value) {
+    const data = this.record(value);
+    return {
+      diff: this.nullableText(data.diff),
+      deletedAt: this.nullableText(data.deletedAt),
+      editor: this.editor(data.editor)
+    };
+  }
+  nullableText(value) {
+    if (value !== null && typeof value !== "string")
+      throw new Error("Invalid attention API text");
+    return value;
+  }
+  editor(value) {
+    if (value === null) return null;
+    const actor = this.record(value);
+    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
+      throw new Error("Invalid attention editor");
+    return { login: actor.login, __typename: actor.__typename };
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
+var messages = {
+  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
+  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
+  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
+  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
+  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
+  "failure.social": "Posting failed.",
+  "task.social": "social posts",
+  "action.community-approval-pending": "Approve or reject OCGroups publication.",
+  "failure.communications": "Email preparation or sending failed.",
+  "failure.feedback": "OpenFeedback synchronization failed.",
+  "failure.assets": "Drive file preparation failed.",
+  "failure.event": "Meetup issue update failed.",
+  "task.event-data": "meetup details",
+  "attention.redirect": "[Post-event tasks and approvals]({url})",
+  "attention.review": "Review details",
+  "attention.unknown": "status unverified",
+  "action.missing-date": "Set the event date.",
+  "action.required-data": "Complete or correct: {task}.",
+  "action.host-confirmation": "Select a host in the meetup form.",
+  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.approval-pending": "Approve or reject the emails.",
+  "action.integration-failure": "Automation failed: {task}.",
+  "action.delivery-recovery": "Verify delivery before retrying.",
+  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "Unverified stage result: {task}.",
+  "task.approvals": "email approval",
+  "task.delivery": "delivery recovery",
+  "attention.clear": "No pending tasks.",
+  "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
+  "task.publish-community-event": 'Publish on the CNCF platform and fill in "CNCF Link"',
+  "task.date": "event date",
+  "task.title": "event title",
+  "task.description": "event description",
+  "task.agenda": "talk agenda",
+  "task.agenda-speakers": "talk speakers",
+  "task.agenda-descriptions": "talk descriptions",
+  "task.host": "event host",
+  "task.event-status": "event status",
+  "task.publication-links": "publication links",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "resources folder link",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "speaker confirmation",
+  "task.event-form": "event form",
+  "task.create-asset-folder": "Prepare the asset folder",
+  "task.thank-host": "Thank the host",
+  "task.thank-speakers": "Thank the speakers",
+  "task.share-slides": "Share slides",
+  "task.import-attendance": "Import attendance",
+  "task.share-social": "Post a meetup recap on LinkedIn",
+  "task.event": "event validation",
+  "task.assets": "assets",
+  "task.feedback": "feedback",
+  "task.content": "content",
+  "task.communications": "communications",
+  "task.unknown": "review the issue"
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
+var messages2 = {
+  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
+  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
+  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
+  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
+  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
+  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
+  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
+  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
+  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
+  "failure.social": "La publication a \xE9chou\xE9.",
+  "task.social": "publications sur les r\xE9seaux",
+  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
+  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
+  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
+  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
+  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
+  "task.event-data": "informations du meetup",
+  "attention.redirect": "[T\xE2ches et approbations apr\xE8s le meetup]({url})",
+  "attention.review": "Voir les d\xE9tails",
+  "attention.unknown": "statut non v\xE9rifi\xE9",
+  "action.missing-date": "Renseignez la date du meetup.",
+  "action.required-data": "Compl\xE9tez ou corrigez : {task}.",
+  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
+  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.approval-pending": "Approuvez ou refusez les emails.",
+  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
+  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "R\xE9sultat non v\xE9rifi\xE9 : {task}.",
+  "task.approvals": "validation des emails",
+  "task.delivery": "reprise des envois",
+  "attention.clear": "Aucune t\xE2che en attente.",
+  "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
+  "task.publish-community-event": 'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
+  "task.date": "date du meetup",
+  "task.title": "titre du meetup",
+  "task.description": "description du meetup",
+  "task.agenda": "programme des talks",
+  "task.agenda-speakers": "intervenants des talks",
+  "task.agenda-descriptions": "descriptions des talks",
+  "task.host": "h\xF4te du meetup",
+  "task.event-status": "statut du meetup",
+  "task.publication-links": "liens de publication",
+  "task.meetup-link": "Meetup Link",
+  "task.community-link": "CNCF Link",
+  "task.assets-link": "lien du dossier des ressources",
+  "task.feedback-link": "OpenFeedback Link",
+  "task.confirmations": "confirmation des intervenants",
+  "task.event-form": "formulaire du meetup",
+  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
+  "task.thank-host": "Remerciez l'h\xF4te",
+  "task.thank-speakers": "Remerciez les intervenants",
+  "task.share-slides": "Partagez les pr\xE9sentations",
+  "task.import-attendance": "Importez les pr\xE9sences",
+  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
+  "task.event": "validation du meetup",
+  "task.assets": "ressources",
+  "task.feedback": "\xE9valuations",
+  "task.content": "contenu",
+  "task.communications": "communications",
+  "task.unknown": "consulter le ticket"
+};
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
+var CATALOGS4 = { en: messages, fr: messages2 };
+
+// packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
+var AttentionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS4, locale);
+  }
+  failure(resource) {
+    const key = `failure.${resource}`;
+    return Object.hasOwn(CATALOGS4.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+  }
+  task(resource) {
+    const key = `task.${resource}`;
+    return this.t(Object.hasOwn(CATALOGS4.en, key) ? key : "task.unknown");
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/trusted-attention-state.ts
+var TrustedAttentionState = class {
+  constructor(client, author) {
+    this.client = client;
+    this.author = author;
+  }
+  client;
+  author;
+  async body(comment) {
+    if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+      throw new Error("Untrusted attention author");
+    const current = await this.client.edit(comment);
+    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
+      return current.body;
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Attention history was deleted");
+      if (this.isAuthor(edit.editor)) {
+        if (edit.diff === null)
+          throw new Error("Attention history is unavailable");
+        return edit.diff;
+      }
+    }
+    throw new Error("Trusted attention history is unavailable");
+  }
+  isAuthor(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
+var GithubOrganizerAttentionComposition = class {
+  attentionRecordFields() {
+    return new AttentionRecordFields();
+  }
+  attentionCommentRetention(...args) {
+    return new AttentionCommentRetention(
+      {
+        attentionRecord: this.attentionRecord(),
+        createGithubAttentionClient: (...args2) => this.githubAttentionClient(...args2),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
+      },
+      ...args
+    );
+  }
+  attentionDiagnosticChecklist() {
+    return new AttentionDiagnosticChecklist({
+      createAttentionMessages: (...args) => this.attentionMessages(...args)
+    });
+  }
+  attentionMessages(...args) {
+    return new AttentionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  attentionPresenter(...args) {
+    return new AttentionPresenter(
+      {
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection()
+      },
+      ...args
+    );
+  }
+  attentionRecord() {
+    return new AttentionRecord({
+      attentionRecordFields: this.attentionRecordFields(),
+      attentionStateRules: new CommunicationDomainComposition().attentionStateRules()
+    });
+  }
+  githubAttentionClient(...args) {
+    return new GithubAttentionClient(
+      { githubAttentionResponse: this.githubAttentionResponse() },
+      ...args
+    );
+  }
+  githubAttentionRepository(...args) {
+    return new GithubAttentionRepository(
+      {
+        attentionRecord: this.attentionRecord(),
+        attentionStateEquality: new CommunicationDomainComposition().attentionStateEquality(),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
+      },
+      ...args
+    );
+  }
+  githubAttentionResponse() {
+    return new GithubAttentionResponse();
+  }
+  trustedAttentionState(...args) {
+    return new TrustedAttentionState(...args);
+  }
+};
+
+// packages/runtime/github-actions/src/organizer-approval-composition.ts
+var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
+  static visibility(input) {
+    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
+      input.client,
+      input.owner,
+      input.repo
+    );
+  }
+  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
+    const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
+      randomUUID
+    );
+    const notifications = _OrganizerApprovalComposition.notifications(
+      client,
+      presenter,
+      notificationPort,
+      organizerChannelId
+    );
+    const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
+      client,
+      new GithubOrganizerApprovalComposition().trustedApprovalState(
+        client,
+        authorLogin
+      ),
+      authorLogin,
+      presenter
+    );
+    const finalizer = new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
+      new GithubOrganizerApprovalComposition().resolveApprovalDecision(
+        client,
+        new GithubOrganizerApprovalComposition().approvalDecisionParser(
+          new GithubOrganizerApprovalComposition().approvalPresenterFactory().supportedLocales()
+        )
+      ),
+      repository,
+      notifications,
+      visibility,
+      new GithubOrganizerAttentionComposition().attentionRecord()
+    );
+    return {
+      emailDeliveryReport: _OrganizerApprovalComposition.deliveryReport(
+        repository,
+        finalizer,
+        visibility
+      ),
+      approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+        repository,
+        records,
+        finalizer,
+        notifications,
+        client
+      ),
+      followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
+        repository,
+        records,
+        finalizer
+      ),
+      attention: new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
+        repository,
+        finalizer
+      )
+    };
+  }
+  static notifications(client, presenter, port, channel) {
+    return new GithubOrganizerApprovalComposition().approvalNotifications(
+      new ApprovalNotificationPolicy(),
+      client,
+      presenter,
+      port,
+      channel
+    );
+  }
+  static deliveryReport(repository, finalizer, visibility) {
+    return (source) => new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
+  }
+};
+
+// packages/runtime/github-actions/src/automation-state-composition.ts
+var AutomationStateComposition = class {
+  create(input) {
+    const client = new GithubOrganizerApprovalComposition().githubApprovalClient(
+      input.client,
+      input.owner,
+      input.repo,
+      input.issueNumber
+    );
+    return new GithubAutomationStateComposition().create(
+      client,
+      input.commentAuthorLogin,
+      input.locale,
+      OrganizerApprovalComposition.visibility(input)
+    );
+  }
+};
+
 // node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
 import * as os from "os";
 
@@ -37702,7 +46192,7 @@ function expand(template, context3) {
     return template.replace(/\/$/, "");
   }
 }
-function parse(options) {
+function parse2(options) {
   let method = options.method.toUpperCase();
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
@@ -37766,7 +46256,7 @@ function parse(options) {
   );
 }
 function endpointWithDefaults(defaults2, route, options) {
-  return parse(merge(defaults2, route, options));
+  return parse2(merge(defaults2, route, options));
 }
 function withDefaults(oldDefaults, newDefaults) {
   const DEFAULTS2 = merge(oldDefaults, newDefaults);
@@ -37775,7 +46265,7 @@ function withDefaults(oldDefaults, newDefaults) {
     DEFAULTS: DEFAULTS2,
     defaults: withDefaults.bind(null, DEFAULTS2),
     merge: merge.bind(null, DEFAULTS2),
-    parse
+    parse: parse2
   });
 }
 var endpoint = withDefaults(null, DEFAULTS);
@@ -37821,7 +46311,7 @@ var NullObject = /* @__PURE__ */ (() => {
   C2.prototype = /* @__PURE__ */ Object.create(null);
   return C2;
 })();
-function parse2(header, options) {
+function parse3(header, options) {
   const stopFlags = SEMI_FLAG | (options?.comma === true ? COMMA_FLAG : 0);
   const len = header.length;
   let valueStart = options?.start ?? 0;
@@ -38457,7 +46947,7 @@ async function getResponseData(response) {
   if (!contentType) {
     return response.text().catch(noop);
   }
-  const mimetype = parse2(contentType);
+  const mimetype = parse3(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
@@ -41405,7 +49895,7 @@ var AttentionAction = class {
       "issue-number",
       getInput("issue-number", { required: true })
     );
-    const journey = this.collaborators.createAttention({
+    const input = {
       meetupEventUrlPrefix: this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
       communityEventUrlPrefixes: this.collaborators.publicationUrlInput.readCommunityEventUrlPrefixes(),
       assetFolderUrlPrefix: this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
@@ -41420,15 +49910,19 @@ var AttentionAction = class {
       slackOrganizerChannelId: getInput("slack-organizer-channel-id", {
         required: true
       })
-    });
+    };
+    const stageResults = this.collaborators.attentionStages.parse(
+      getInput("stage-results", { required: true })
+    );
+    await this.collaborators.reconcileState(input);
+    const journey = this.collaborators.createAttention(input);
     const identity = {
       repository: `${context2.repo.owner}/${context2.repo.repo}`,
       issueNumber
     };
-    const stageResults = getInput("stage-results", { required: true });
     const result = await journey.execute(
       identity,
-      this.collaborators.attentionStages.parse(stageResults),
+      stageResults,
       String(context2.runId)
     );
     return {
@@ -41440,3379 +49934,6 @@ var AttentionAction = class {
       diagnostics: [],
       ...result.notificationFailed ? { failure: messages5.t("report.attention.failed") } : {}
     };
-  }
-};
-
-// packages/presentation/localization/src/locale-resolver.ts
-var LocaleResolver = class {
-  resolveLocale(requested) {
-    try {
-      const language = new Intl.Locale(
-        requested.trim().replaceAll("_", "-") || "en"
-      ).language;
-      return language === "fr" ? "fr" : "en";
-    } catch {
-      return "en";
-    }
-  }
-};
-
-// packages/presentation/localization/src/dependency-composition.ts
-var LocalizationComposition = class {
-  localeResolver() {
-    return new LocaleResolver();
-  }
-};
-
-// node_modules/.pnpm/@formatjs+fast-memoize@3.1.7/node_modules/@formatjs/fast-memoize/index.js
-function memoize(fn3, options) {
-  const cache = options && options.cache ? options.cache : cacheDefault;
-  const serializer = options && options.serializer ? options.serializer : serializerDefault;
-  return (options && options.strategy ? options.strategy : strategyDefault)(fn3, {
-    cache,
-    serializer
-  });
-}
-function isPrimitive(value) {
-  return value == null || typeof value === "number" || typeof value === "boolean";
-}
-function monadic(fn3, cache, serializer, arg) {
-  const cacheKey = isPrimitive(arg) ? arg : serializer(arg);
-  let computedValue = cache.get(cacheKey);
-  if (typeof computedValue === "undefined") {
-    computedValue = fn3.call(this, arg);
-    cache.set(cacheKey, computedValue);
-  }
-  return computedValue;
-}
-function variadic(fn3, cache, serializer) {
-  const args = Array.prototype.slice.call(arguments, 3);
-  const cacheKey = serializer(args);
-  let computedValue = cache.get(cacheKey);
-  if (typeof computedValue === "undefined") {
-    computedValue = fn3.apply(this, args);
-    cache.set(cacheKey, computedValue);
-  }
-  return computedValue;
-}
-function assemble(fn3, context3, strategy, cache, serialize) {
-  return strategy.bind(context3, fn3, cache, serialize);
-}
-function strategyDefault(fn3, options) {
-  const strategy = fn3.length === 1 ? monadic : variadic;
-  return assemble(fn3, this, strategy, options.cache.create(), options.serializer);
-}
-function strategyVariadic(fn3, options) {
-  return assemble(fn3, this, variadic, options.cache.create(), options.serializer);
-}
-function strategyMonadic(fn3, options) {
-  return assemble(fn3, this, monadic, options.cache.create(), options.serializer);
-}
-var serializerDefault = function() {
-  return JSON.stringify(arguments);
-};
-var ObjectWithoutPrototypeCache = class {
-  constructor() {
-    this.cache = /* @__PURE__ */ Object.create(null);
-  }
-  get(key) {
-    return this.cache[key];
-  }
-  set(key, value) {
-    this.cache[key] = value;
-  }
-};
-var cacheDefault = { create: function create() {
-  return new ObjectWithoutPrototypeCache();
-} };
-var strategies = {
-  variadic: strategyVariadic,
-  monadic: strategyMonadic
-};
-
-// node_modules/.pnpm/@formatjs+icu-skeleton-parser@2.1.12/node_modules/@formatjs/icu-skeleton-parser/index.js
-var DATE_TIME_REGEX = /(?:[Eec]{1,6}|G{1,5}|[Qq]{1,5}|(?:[yYur]+|U{1,5})|[ML]{1,5}|d{1,2}|D{1,3}|F{1}|[abB]{1,5}|[hkHK]{1,2}|w{1,2}|W{1}|m{1,2}|s{1,2}|[zZOvVxX]{1,4})(?=([^']*'[^']*')*[^']*$)/g;
-function parseDateTimeSkeleton(skeleton) {
-  const result = {};
-  skeleton.replace(DATE_TIME_REGEX, (match) => {
-    const len = match.length;
-    switch (match[0]) {
-      case "G":
-        result.era = len === 4 ? "long" : len === 5 ? "narrow" : "short";
-        break;
-      case "y":
-        result.year = len === 2 ? "2-digit" : "numeric";
-        break;
-      case "Y":
-      case "u":
-      case "U":
-      case "r":
-        throw new RangeError("`Y/u/U/r` (year) patterns are not supported, use `y` instead");
-      case "q":
-      case "Q":
-        throw new RangeError("`q/Q` (quarter) patterns are not supported");
-      case "M":
-      case "L":
-        result.month = [
-          "numeric",
-          "2-digit",
-          "short",
-          "long",
-          "narrow"
-        ][len - 1];
-        break;
-      case "w":
-      case "W":
-        throw new RangeError("`w/W` (week) patterns are not supported");
-      case "d":
-        result.day = ["numeric", "2-digit"][len - 1];
-        break;
-      case "D":
-      case "F":
-      case "g":
-        throw new RangeError("`D/F/g` (day) patterns are not supported, use `d` instead");
-      case "E":
-        result.weekday = len === 4 ? "long" : len === 5 ? "narrow" : "short";
-        break;
-      case "e":
-        if (len < 4) throw new RangeError("`e..eee` (weekday) patterns are not supported");
-        result.weekday = [
-          "short",
-          "long",
-          "narrow",
-          "short"
-        ][len - 3];
-        break;
-      case "c":
-        if (len < 4) throw new RangeError("`c..ccc` (weekday) patterns are not supported");
-        result.weekday = [
-          "short",
-          "long",
-          "narrow",
-          "short"
-        ][len - 3];
-        break;
-      case "a":
-        result.hour12 = true;
-        break;
-      case "b":
-      case "B":
-        throw new RangeError("`b/B` (period) patterns are not supported, use `a` instead");
-      case "h":
-        result.hourCycle = "h12";
-        result.hour = ["numeric", "2-digit"][len - 1];
-        break;
-      case "H":
-        result.hourCycle = "h23";
-        result.hour = ["numeric", "2-digit"][len - 1];
-        break;
-      case "K":
-        result.hourCycle = "h11";
-        result.hour = ["numeric", "2-digit"][len - 1];
-        break;
-      case "k":
-        result.hourCycle = "h24";
-        result.hour = ["numeric", "2-digit"][len - 1];
-        break;
-      case "j":
-      case "J":
-      case "C":
-        throw new RangeError("`j/J/C` (hour) patterns are not supported, use `h/H/K/k` instead");
-      case "m":
-        result.minute = ["numeric", "2-digit"][len - 1];
-        break;
-      case "s":
-        result.second = ["numeric", "2-digit"][len - 1];
-        break;
-      case "S":
-      case "A":
-        throw new RangeError("`S/A` (second) patterns are not supported, use `s` instead");
-      case "z":
-        result.timeZoneName = len < 4 ? "short" : "long";
-        break;
-      case "Z":
-      case "O":
-      case "v":
-      case "V":
-      case "X":
-      case "x":
-        throw new RangeError("`Z/O/v/V/X/x` (timeZone) patterns are not supported, use `z` instead");
-    }
-    return "";
-  });
-  return result;
-}
-var WHITE_SPACE_REGEX = /[\t-\r \x85\u200E\u200F\u2028\u2029]/i;
-function parseNumberSkeletonFromString(skeleton) {
-  if (skeleton.length === 0) throw new Error("Number skeleton cannot be empty");
-  const stringTokens = skeleton.split(WHITE_SPACE_REGEX).filter((x3) => x3.length > 0);
-  const tokens = [];
-  for (const stringToken of stringTokens) {
-    let stemAndOptions = stringToken.split("/");
-    if (stemAndOptions.length === 0) throw new Error("Invalid number skeleton");
-    const [stem, ...options] = stemAndOptions;
-    for (const option of options) if (option.length === 0) throw new Error("Invalid number skeleton");
-    tokens.push({
-      stem,
-      options
-    });
-  }
-  return tokens;
-}
-function icuUnitToEcma(unit) {
-  return unit.replace(/^(.*?)-/, "");
-}
-var FRACTION_PRECISION_REGEX = /^\.(?:(0+)(\*)?|(#+)|(0+)(#+))$/g;
-var SIGNIFICANT_PRECISION_REGEX = /^(@+)?(\+|#+)?[rs]?$/g;
-var INTEGER_WIDTH_REGEX = /(\*)(0+)|(#+)(0+)|(0+)/g;
-var CONCISE_INTEGER_WIDTH_REGEX = /^(0+)$/;
-function parseSignificantPrecision(str) {
-  const result = {};
-  if (str[str.length - 1] === "r") result.roundingPriority = "morePrecision";
-  else if (str[str.length - 1] === "s") result.roundingPriority = "lessPrecision";
-  str.replace(SIGNIFICANT_PRECISION_REGEX, function(_2, g1, g2) {
-    if (typeof g2 !== "string") {
-      result.minimumSignificantDigits = g1.length;
-      result.maximumSignificantDigits = g1.length;
-    } else if (g2 === "+") result.minimumSignificantDigits = g1.length;
-    else if (g1[0] === "#") result.maximumSignificantDigits = g1.length;
-    else {
-      result.minimumSignificantDigits = g1.length;
-      result.maximumSignificantDigits = g1.length + (typeof g2 === "string" ? g2.length : 0);
-    }
-    return "";
-  });
-  return result;
-}
-function parseSign(str) {
-  switch (str) {
-    case "sign-auto":
-      return { signDisplay: "auto" };
-    case "sign-accounting":
-    case "()":
-      return { currencySign: "accounting" };
-    case "sign-always":
-    case "+!":
-      return { signDisplay: "always" };
-    case "sign-accounting-always":
-    case "()!":
-      return {
-        signDisplay: "always",
-        currencySign: "accounting"
-      };
-    case "sign-except-zero":
-    case "+?":
-      return { signDisplay: "exceptZero" };
-    case "sign-accounting-except-zero":
-    case "()?":
-      return {
-        signDisplay: "exceptZero",
-        currencySign: "accounting"
-      };
-    case "sign-never":
-    case "+_":
-      return { signDisplay: "never" };
-  }
-}
-function parseConciseScientificAndEngineeringStem(stem) {
-  let result;
-  if (stem[0] === "E" && stem[1] === "E") {
-    result = { notation: "engineering" };
-    stem = stem.slice(2);
-  } else if (stem[0] === "E") {
-    result = { notation: "scientific" };
-    stem = stem.slice(1);
-  }
-  if (result) {
-    const signDisplay = stem.slice(0, 2);
-    if (signDisplay === "+!") {
-      result.signDisplay = "always";
-      stem = stem.slice(2);
-    } else if (signDisplay === "+?") {
-      result.signDisplay = "exceptZero";
-      stem = stem.slice(2);
-    }
-    if (!CONCISE_INTEGER_WIDTH_REGEX.test(stem)) throw new Error("Malformed concise eng/scientific notation");
-    result.minimumIntegerDigits = stem.length;
-  }
-  return result;
-}
-function parseNotationOptions(opt) {
-  const result = {};
-  const signOpts = parseSign(opt);
-  if (signOpts) return signOpts;
-  return result;
-}
-function parseNumberSkeleton(tokens) {
-  let result = {};
-  for (const token of tokens) {
-    switch (token.stem) {
-      case "percent":
-      case "%":
-        result.style = "percent";
-        continue;
-      case "%x100":
-        result.style = "percent";
-        result.scale = 100;
-        continue;
-      case "currency":
-        result.style = "currency";
-        result.currency = token.options[0];
-        continue;
-      case "group-off":
-      case ",_":
-        result.useGrouping = false;
-        continue;
-      case "precision-integer":
-      case ".":
-        result.maximumFractionDigits = 0;
-        continue;
-      case "measure-unit":
-      case "unit":
-        result.style = "unit";
-        result.unit = icuUnitToEcma(token.options[0]);
-        continue;
-      case "compact-short":
-      case "K":
-        result.notation = "compact";
-        result.compactDisplay = "short";
-        continue;
-      case "compact-long":
-      case "KK":
-        result.notation = "compact";
-        result.compactDisplay = "long";
-        continue;
-      case "scientific":
-        result = {
-          ...result,
-          notation: "scientific",
-          ...token.options.reduce((all, opt) => ({
-            ...all,
-            ...parseNotationOptions(opt)
-          }), {})
-        };
-        continue;
-      case "engineering":
-        result = {
-          ...result,
-          notation: "engineering",
-          ...token.options.reduce((all, opt) => ({
-            ...all,
-            ...parseNotationOptions(opt)
-          }), {})
-        };
-        continue;
-      case "notation-simple":
-        result.notation = "standard";
-        continue;
-      case "unit-width-narrow":
-        result.currencyDisplay = "narrowSymbol";
-        result.unitDisplay = "narrow";
-        continue;
-      case "unit-width-short":
-        result.currencyDisplay = "code";
-        result.unitDisplay = "short";
-        continue;
-      case "unit-width-full-name":
-        result.currencyDisplay = "name";
-        result.unitDisplay = "long";
-        continue;
-      case "unit-width-iso-code":
-        result.currencyDisplay = "symbol";
-        continue;
-      case "scale":
-        result.scale = parseFloat(token.options[0]);
-        continue;
-      case "rounding-mode-floor":
-        result.roundingMode = "floor";
-        continue;
-      case "rounding-mode-ceiling":
-        result.roundingMode = "ceil";
-        continue;
-      case "rounding-mode-down":
-        result.roundingMode = "trunc";
-        continue;
-      case "rounding-mode-up":
-        result.roundingMode = "expand";
-        continue;
-      case "rounding-mode-half-even":
-        result.roundingMode = "halfEven";
-        continue;
-      case "rounding-mode-half-down":
-        result.roundingMode = "halfTrunc";
-        continue;
-      case "rounding-mode-half-up":
-        result.roundingMode = "halfExpand";
-        continue;
-      case "integer-width":
-        if (token.options.length > 1) throw new RangeError("integer-width stems only accept a single optional option");
-        token.options[0].replace(INTEGER_WIDTH_REGEX, function(_2, g1, g2, g3, g4, g5) {
-          if (g1) result.minimumIntegerDigits = g2.length;
-          else if (g3 && g4) throw new Error("We currently do not support maximum integer digits");
-          else if (g5) throw new Error("We currently do not support exact integer digits");
-          return "";
-        });
-        continue;
-    }
-    if (CONCISE_INTEGER_WIDTH_REGEX.test(token.stem)) {
-      result.minimumIntegerDigits = token.stem.length;
-      continue;
-    }
-    if (FRACTION_PRECISION_REGEX.test(token.stem)) {
-      if (token.options.length > 1) throw new RangeError("Fraction-precision stems only accept a single optional option");
-      token.stem.replace(FRACTION_PRECISION_REGEX, function(_2, g1, g2, g3, g4, g5) {
-        if (g2 === "*") result.minimumFractionDigits = g1.length;
-        else if (g3 && g3[0] === "#") result.maximumFractionDigits = g3.length;
-        else if (g4 && g5) {
-          result.minimumFractionDigits = g4.length;
-          result.maximumFractionDigits = g4.length + g5.length;
-        } else {
-          result.minimumFractionDigits = g1.length;
-          result.maximumFractionDigits = g1.length;
-        }
-        return "";
-      });
-      const opt = token.options[0];
-      if (opt === "w") result = {
-        ...result,
-        trailingZeroDisplay: "stripIfInteger"
-      };
-      else if (opt) result = {
-        ...result,
-        ...parseSignificantPrecision(opt)
-      };
-      continue;
-    }
-    if (SIGNIFICANT_PRECISION_REGEX.test(token.stem)) {
-      result = {
-        ...result,
-        ...parseSignificantPrecision(token.stem)
-      };
-      continue;
-    }
-    const signOpts = parseSign(token.stem);
-    if (signOpts) result = {
-      ...result,
-      ...signOpts
-    };
-    const conciseScientificAndEngineeringOpts = parseConciseScientificAndEngineeringStem(token.stem);
-    if (conciseScientificAndEngineeringOpts) result = {
-      ...result,
-      ...conciseScientificAndEngineeringOpts
-    };
-  }
-  return result;
-}
-
-// node_modules/.pnpm/@formatjs+icu-messageformat-parser@3.5.21/node_modules/@formatjs/icu-messageformat-parser/index.js
-var ErrorKind = /* @__PURE__ */ (function(ErrorKind2) {
-  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_CLOSING_BRACE"] = 1] = "EXPECT_ARGUMENT_CLOSING_BRACE";
-  ErrorKind2[ErrorKind2["EMPTY_ARGUMENT"] = 2] = "EMPTY_ARGUMENT";
-  ErrorKind2[ErrorKind2["MALFORMED_ARGUMENT"] = 3] = "MALFORMED_ARGUMENT";
-  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_TYPE"] = 4] = "EXPECT_ARGUMENT_TYPE";
-  ErrorKind2[ErrorKind2["INVALID_ARGUMENT_TYPE"] = 5] = "INVALID_ARGUMENT_TYPE";
-  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_STYLE"] = 6] = "EXPECT_ARGUMENT_STYLE";
-  ErrorKind2[ErrorKind2["INVALID_NUMBER_SKELETON"] = 7] = "INVALID_NUMBER_SKELETON";
-  ErrorKind2[ErrorKind2["INVALID_DATE_TIME_SKELETON"] = 8] = "INVALID_DATE_TIME_SKELETON";
-  ErrorKind2[ErrorKind2["EXPECT_NUMBER_SKELETON"] = 9] = "EXPECT_NUMBER_SKELETON";
-  ErrorKind2[ErrorKind2["EXPECT_DATE_TIME_SKELETON"] = 10] = "EXPECT_DATE_TIME_SKELETON";
-  ErrorKind2[ErrorKind2["UNCLOSED_QUOTE_IN_ARGUMENT_STYLE"] = 11] = "UNCLOSED_QUOTE_IN_ARGUMENT_STYLE";
-  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_OPTIONS"] = 12] = "EXPECT_SELECT_ARGUMENT_OPTIONS";
-  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_OFFSET_VALUE"] = 13] = "EXPECT_PLURAL_ARGUMENT_OFFSET_VALUE";
-  ErrorKind2[ErrorKind2["INVALID_PLURAL_ARGUMENT_OFFSET_VALUE"] = 14] = "INVALID_PLURAL_ARGUMENT_OFFSET_VALUE";
-  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_SELECTOR"] = 15] = "EXPECT_SELECT_ARGUMENT_SELECTOR";
-  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_SELECTOR"] = 16] = "EXPECT_PLURAL_ARGUMENT_SELECTOR";
-  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_SELECTOR_FRAGMENT"] = 17] = "EXPECT_SELECT_ARGUMENT_SELECTOR_FRAGMENT";
-  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_SELECTOR_FRAGMENT"] = 18] = "EXPECT_PLURAL_ARGUMENT_SELECTOR_FRAGMENT";
-  ErrorKind2[ErrorKind2["INVALID_PLURAL_ARGUMENT_SELECTOR"] = 19] = "INVALID_PLURAL_ARGUMENT_SELECTOR";
-  ErrorKind2[ErrorKind2["DUPLICATE_PLURAL_ARGUMENT_SELECTOR"] = 20] = "DUPLICATE_PLURAL_ARGUMENT_SELECTOR";
-  ErrorKind2[ErrorKind2["DUPLICATE_SELECT_ARGUMENT_SELECTOR"] = 21] = "DUPLICATE_SELECT_ARGUMENT_SELECTOR";
-  ErrorKind2[ErrorKind2["MISSING_OTHER_CLAUSE"] = 22] = "MISSING_OTHER_CLAUSE";
-  ErrorKind2[ErrorKind2["INVALID_TAG"] = 23] = "INVALID_TAG";
-  ErrorKind2[ErrorKind2["INVALID_TAG_NAME"] = 25] = "INVALID_TAG_NAME";
-  ErrorKind2[ErrorKind2["UNMATCHED_CLOSING_TAG"] = 26] = "UNMATCHED_CLOSING_TAG";
-  ErrorKind2[ErrorKind2["UNCLOSED_TAG"] = 27] = "UNCLOSED_TAG";
-  return ErrorKind2;
-})({});
-var TYPE = /* @__PURE__ */ (function(TYPE2) {
-  TYPE2[TYPE2["literal"] = 0] = "literal";
-  TYPE2[TYPE2["argument"] = 1] = "argument";
-  TYPE2[TYPE2["number"] = 2] = "number";
-  TYPE2[TYPE2["date"] = 3] = "date";
-  TYPE2[TYPE2["time"] = 4] = "time";
-  TYPE2[TYPE2["select"] = 5] = "select";
-  TYPE2[TYPE2["plural"] = 6] = "plural";
-  TYPE2[TYPE2["pound"] = 7] = "pound";
-  TYPE2[TYPE2["tag"] = 8] = "tag";
-  return TYPE2;
-})({});
-function isLiteralElement(el2) {
-  return el2.type === 0;
-}
-function isArgumentElement(el2) {
-  return el2.type === 1;
-}
-function isNumberElement(el2) {
-  return el2.type === 2;
-}
-function isDateElement(el2) {
-  return el2.type === 3;
-}
-function isTimeElement(el2) {
-  return el2.type === 4;
-}
-function isSelectElement(el2) {
-  return el2.type === 5;
-}
-function isPluralElement(el2) {
-  return el2.type === 6;
-}
-function isPoundElement(el2) {
-  return el2.type === 7;
-}
-function isTagElement(el2) {
-  return el2.type === 8;
-}
-function isNumberSkeleton(el2) {
-  return !!(el2 && typeof el2 === "object" && el2.type === 0);
-}
-function isDateTimeSkeleton(el2) {
-  return !!(el2 && typeof el2 === "object" && el2.type === 1);
-}
-var SPACE_SEPARATOR_REGEX = /[ \xA0\u1680\u2000-\u200A\u202F\u205F\u3000]/;
-var IDENTIFIER_PREFIX_REGEX = /([^\t-\r -\/:-@\[-\^`\{-~\x85\xA0-\xA7\xA9\xAB\xAC\xAE\xB0\xB1\xB6\xBB\xBF\xD7\xF7\u1680\u2000-\u200A\u2010-\u2029\u202F-\u203E\u2041-\u2053\u2055-\u205F\u2190-\u245F\u2500-\u2775\u2794-\u2BFF\u2E00-\u2E7F\u3000-\u3003\u3008-\u3020\u3030\uFD3E\uFD3F\uFE45\uFE46]*)/g;
-var timeData = {
-  "001": ["H", "h"],
-  "419": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "AC": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "AD": ["H", "hB"],
-  "AE": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "AF": [
-    "H",
-    "hb",
-    "hB",
-    "h"
-  ],
-  "AG": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "AI": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "AL": [
-    "h",
-    "H",
-    "hB"
-  ],
-  "AM": ["H", "hB"],
-  "AO": ["H", "hB"],
-  "AR": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "AS": ["h", "H"],
-  "AT": ["H", "hB"],
-  "AU": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "AW": ["H", "hB"],
-  "AX": ["H"],
-  "AZ": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "BA": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "BB": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "BD": [
-    "h",
-    "hB",
-    "H"
-  ],
-  "BE": ["H", "hB"],
-  "BF": ["H", "hB"],
-  "BG": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "BH": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "BI": ["H", "h"],
-  "BJ": ["H", "hB"],
-  "BL": ["H", "hB"],
-  "BM": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "BN": [
-    "hb",
-    "hB",
-    "h",
-    "H"
-  ],
-  "BO": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "BQ": ["H"],
-  "BR": ["H", "hB"],
-  "BS": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "BT": ["h", "H"],
-  "BW": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "BY": ["H", "h"],
-  "BZ": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "CA": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "CC": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "CD": ["hB", "H"],
-  "CF": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "CG": ["H", "hB"],
-  "CH": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "CI": ["H", "hB"],
-  "CK": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "CL": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "CM": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "CN": [
-    "H",
-    "hB",
-    "hb",
-    "h"
-  ],
-  "CO": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "CP": ["H"],
-  "CR": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "CU": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "CV": ["H", "hB"],
-  "CW": ["H", "hB"],
-  "CX": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "CY": [
-    "h",
-    "H",
-    "hb",
-    "hB"
-  ],
-  "CZ": ["H"],
-  "DE": ["H", "hB"],
-  "DG": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "DJ": ["h", "H"],
-  "DK": ["H"],
-  "DM": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "DO": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "DZ": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "EA": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "EC": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "EE": ["H", "hB"],
-  "EG": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "EH": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "ER": ["h", "H"],
-  "ES": [
-    "H",
-    "hB",
-    "h",
-    "hb"
-  ],
-  "ET": [
-    "hB",
-    "hb",
-    "h",
-    "H"
-  ],
-  "FI": ["H"],
-  "FJ": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "FK": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "FM": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "FO": ["H", "h"],
-  "FR": ["H", "hB"],
-  "GA": ["H", "hB"],
-  "GB": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "GD": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "GE": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "GF": ["H", "hB"],
-  "GG": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "GH": ["h", "H"],
-  "GI": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "GL": ["H", "h"],
-  "GM": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "GN": ["H", "hB"],
-  "GP": ["H", "hB"],
-  "GQ": [
-    "H",
-    "hB",
-    "h",
-    "hb"
-  ],
-  "GR": [
-    "h",
-    "H",
-    "hb",
-    "hB"
-  ],
-  "GS": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "GT": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "GU": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "GW": ["H", "hB"],
-  "GY": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "HK": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "HN": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "HR": ["H", "hB"],
-  "HU": ["H", "h"],
-  "IC": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "ID": ["H"],
-  "IE": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "IL": ["H", "hB"],
-  "IM": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "IN": ["h", "H"],
-  "IO": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "IQ": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "IR": ["hB", "H"],
-  "IS": ["H"],
-  "IT": ["H", "hB"],
-  "JE": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "JM": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "JO": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "JP": [
-    "H",
-    "K",
-    "h"
-  ],
-  "KE": [
-    "hB",
-    "hb",
-    "H",
-    "h"
-  ],
-  "KG": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "KH": [
-    "hB",
-    "h",
-    "H",
-    "hb"
-  ],
-  "KI": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "KM": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "KN": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "KP": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "KR": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "KW": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "KY": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "KZ": ["H", "hB"],
-  "LA": [
-    "H",
-    "hb",
-    "hB",
-    "h"
-  ],
-  "LB": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "LC": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "LI": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "LK": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "LR": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "LS": ["h", "H"],
-  "LT": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "LU": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "LV": [
-    "H",
-    "hB",
-    "hb",
-    "h"
-  ],
-  "LY": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "MA": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "MC": ["H", "hB"],
-  "MD": ["H", "hB"],
-  "ME": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "MF": ["H", "hB"],
-  "MG": ["H", "h"],
-  "MH": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "MK": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "ML": ["H"],
-  "MM": [
-    "hB",
-    "hb",
-    "H",
-    "h"
-  ],
-  "MN": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "MO": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "MP": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "MQ": ["H", "hB"],
-  "MR": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "MS": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "MT": ["H", "h"],
-  "MU": ["H", "h"],
-  "MV": ["H", "h"],
-  "MW": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "MX": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "MY": [
-    "hb",
-    "hB",
-    "h",
-    "H"
-  ],
-  "MZ": ["H", "hB"],
-  "NA": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "NC": ["H", "hB"],
-  "NE": ["H"],
-  "NF": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "NG": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "NI": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "NL": ["H", "hB"],
-  "NO": ["H", "h"],
-  "NP": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "NR": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "NU": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "NZ": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "OM": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "PA": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "PE": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "PF": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "PG": ["h", "H"],
-  "PH": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "PK": [
-    "h",
-    "hB",
-    "H"
-  ],
-  "PL": ["H", "h"],
-  "PM": ["H", "hB"],
-  "PN": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "PR": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "PS": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "PT": ["H", "hB"],
-  "PW": ["h", "H"],
-  "PY": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "QA": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "RE": ["H", "hB"],
-  "RO": ["H", "hB"],
-  "RS": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "RU": ["H"],
-  "RW": ["H", "h"],
-  "SA": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "SB": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "SC": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "SD": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "SE": ["H"],
-  "SG": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "SH": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "SI": ["H", "hB"],
-  "SJ": ["H"],
-  "SK": ["H"],
-  "SL": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "SM": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "SN": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "SO": ["h", "H"],
-  "SR": ["H", "hB"],
-  "SS": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "ST": ["H", "hB"],
-  "SV": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "SX": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "SY": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "SZ": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "TA": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "TC": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "TD": [
-    "h",
-    "H",
-    "hB"
-  ],
-  "TF": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "TG": ["H", "hB"],
-  "TH": ["H", "h"],
-  "TJ": ["H", "h"],
-  "TL": [
-    "H",
-    "hB",
-    "hb",
-    "h"
-  ],
-  "TM": ["H", "h"],
-  "TN": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "TO": ["h", "H"],
-  "TR": ["H", "hB"],
-  "TT": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "TW": [
-    "hB",
-    "hb",
-    "h",
-    "H"
-  ],
-  "TZ": [
-    "hB",
-    "hb",
-    "H",
-    "h"
-  ],
-  "UA": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "UG": [
-    "hB",
-    "hb",
-    "H",
-    "h"
-  ],
-  "UM": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "US": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "UY": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "UZ": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "VA": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "VC": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "VE": [
-    "h",
-    "H",
-    "hB",
-    "hb"
-  ],
-  "VG": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "VI": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "VN": ["H", "h"],
-  "VU": ["h", "H"],
-  "WF": ["H", "hB"],
-  "WS": ["h", "H"],
-  "XK": [
-    "H",
-    "hB",
-    "h"
-  ],
-  "YE": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "YT": ["H", "hB"],
-  "ZA": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "ZM": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "ZW": ["H", "h"],
-  "af-ZA": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "ar-001": [
-    "h",
-    "hB",
-    "hb",
-    "H"
-  ],
-  "ca-ES": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "en-001": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "en-HK": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "en-IL": [
-    "H",
-    "h",
-    "hb",
-    "hB"
-  ],
-  "en-MY": [
-    "h",
-    "hb",
-    "H",
-    "hB"
-  ],
-  "es-BR": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "es-ES": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "es-GQ": [
-    "H",
-    "h",
-    "hB",
-    "hb"
-  ],
-  "fr-CA": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "gl-ES": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "gu-IN": [
-    "hB",
-    "hb",
-    "h",
-    "H"
-  ],
-  "hi-IN": [
-    "hB",
-    "h",
-    "H"
-  ],
-  "it-CH": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "it-IT": [
-    "H",
-    "h",
-    "hB"
-  ],
-  "kn-IN": [
-    "hB",
-    "h",
-    "H"
-  ],
-  "ku-SY": ["H", "hB"],
-  "ml-IN": [
-    "hB",
-    "h",
-    "H"
-  ],
-  "mr-IN": [
-    "hB",
-    "hb",
-    "h",
-    "H"
-  ],
-  "pa-IN": [
-    "hB",
-    "hb",
-    "h",
-    "H"
-  ],
-  "ta-IN": [
-    "hB",
-    "h",
-    "hb",
-    "H"
-  ],
-  "te-IN": [
-    "hB",
-    "h",
-    "H"
-  ],
-  "zu-ZA": [
-    "H",
-    "hB",
-    "hb",
-    "h"
-  ]
-};
-function getBestPattern(skeleton, locale) {
-  let skeletonCopy = "";
-  for (let patternPos = 0; patternPos < skeleton.length; patternPos++) {
-    const patternChar = skeleton.charAt(patternPos);
-    if (patternChar === "j") {
-      let extraLength = 0;
-      while (patternPos + 1 < skeleton.length && skeleton.charAt(patternPos + 1) === patternChar) {
-        extraLength++;
-        patternPos++;
-      }
-      let hourLen = 1 + (extraLength & 1);
-      let dayPeriodLen = extraLength < 2 ? 1 : 3 + (extraLength >> 1);
-      let dayPeriodChar = "a";
-      let hourChar = getDefaultHourSymbolFromLocale(locale);
-      if (hourChar == "H" || hourChar == "k") dayPeriodLen = 0;
-      while (dayPeriodLen-- > 0) skeletonCopy += dayPeriodChar;
-      while (hourLen-- > 0) skeletonCopy = hourChar + skeletonCopy;
-    } else if (patternChar === "J") skeletonCopy += "H";
-    else skeletonCopy += patternChar;
-  }
-  return skeletonCopy;
-}
-function getDefaultHourSymbolFromLocale(locale) {
-  let hourCycle = locale.hourCycle;
-  if (hourCycle === void 0) {
-    const localeWithHourCycles = locale;
-    hourCycle = localeWithHourCycles.getHourCycles?.()[0] ?? localeWithHourCycles.hourCycles?.[0];
-  }
-  if (hourCycle) switch (hourCycle) {
-    case "h24":
-      return "k";
-    case "h23":
-      return "H";
-    case "h12":
-      return "h";
-    case "h11":
-      return "K";
-    default:
-      throw new Error("Invalid hourCycle");
-  }
-  const languageTag = locale.language;
-  let regionTag;
-  if (languageTag !== "root") regionTag = locale.maximize().region;
-  return (timeData[`${languageTag}-${regionTag}`] || timeData[regionTag || ""] || timeData[languageTag || ""] || timeData[`${languageTag}-001`] || timeData["001"])[0].charAt(0);
-}
-var SPACE_SEPARATOR_START_REGEX = new RegExp(`^${SPACE_SEPARATOR_REGEX.source}*`);
-var SPACE_SEPARATOR_END_REGEX = new RegExp(`${SPACE_SEPARATOR_REGEX.source}*$`);
-function createLocation(start, end) {
-  return {
-    start,
-    end
-  };
-}
-var hasNativeFromEntries = !!Object.fromEntries;
-var hasTrimStart = !!String.prototype.trimStart;
-var hasTrimEnd = !!String.prototype.trimEnd;
-var fromEntries = hasNativeFromEntries ? Object.fromEntries : function fromEntries2(entries) {
-  const obj = {};
-  for (const [k2, v3] of entries) obj[k2] = v3;
-  return obj;
-};
-var trimStart = hasTrimStart ? function trimStart2(s) {
-  return s.trimStart();
-} : function trimStart3(s) {
-  return s.replace(SPACE_SEPARATOR_START_REGEX, "");
-};
-var trimEnd = hasTrimEnd ? function trimEnd2(s) {
-  return s.trimEnd();
-} : function trimEnd3(s) {
-  return s.replace(SPACE_SEPARATOR_END_REGEX, "");
-};
-var IDENTIFIER_PREFIX_RE = createIdentifierPrefixRegex();
-function createIdentifierPrefixRegex() {
-  try {
-    const regex = new RegExp("([^\\p{White_Space}\\p{Pattern_Syntax}]*)", "yu");
-    if (regex.exec("a ")?.[1] === "a") return regex;
-  } catch {
-  }
-  return IDENTIFIER_PREFIX_REGEX;
-}
-function matchIdentifierAtIndex(s, index) {
-  IDENTIFIER_PREFIX_RE.lastIndex = index;
-  return IDENTIFIER_PREFIX_RE.exec(s)[1] ?? "";
-}
-function plainTopLevelEndPosition(message) {
-  if (message.length === 0) return null;
-  let line = 1;
-  let column = 1;
-  for (let offset = 0; offset < message.length; ) {
-    const code = message.charCodeAt(offset);
-    switch (code) {
-      case 35:
-      case 39:
-      case 60:
-      case 123:
-      case 125:
-        return null;
-    }
-    if (code === 10) {
-      line++;
-      column = 1;
-      offset++;
-    } else {
-      column++;
-      if (code >= 55296 && code <= 56319 && offset + 1 < message.length) {
-        const next = message.charCodeAt(offset + 1);
-        offset += next >= 56320 && next <= 57343 ? 2 : 1;
-      } else offset++;
-    }
-  }
-  return {
-    offset: message.length,
-    line,
-    column
-  };
-}
-var Parser = class {
-  constructor(message, options = {}) {
-    this.message = message;
-    this.position = {
-      offset: 0,
-      line: 1,
-      column: 1
-    };
-    this.ignoreTag = !!options.ignoreTag;
-    this.locale = options.locale;
-    this.requiresOtherClause = !!options.requiresOtherClause;
-    this.shouldParseSkeletons = !!options.shouldParseSkeletons;
-  }
-  parse() {
-    if (this.offset() !== 0) throw Error("parser can only be used once");
-    if (this.message.length > 0) {
-      const firstCode = this.message.charCodeAt(0);
-      if (firstCode !== 35 && firstCode !== 39 && firstCode !== 60 && firstCode !== 123 && firstCode !== 125) {
-        const plainEndPosition = plainTopLevelEndPosition(this.message);
-        if (plainEndPosition) {
-          const start = this.clonePosition();
-          this.position = plainEndPosition;
-          return {
-            val: [{
-              type: 0,
-              value: this.message,
-              location: createLocation(start, this.clonePosition())
-            }],
-            err: null
-          };
-        }
-      }
-    }
-    return this.parseMessage(0, "", false);
-  }
-  parseMessage(nestingLevel, parentArgType, expectingCloseTag) {
-    let elements = [];
-    while (!this.isEOF()) {
-      const char = this.char();
-      if (char === 123) {
-        const result = this.parseArgument(nestingLevel, expectingCloseTag);
-        if (result.err) return result;
-        elements.push(result.val);
-      } else if (char === 125 && nestingLevel > 0) break;
-      else if (char === 35 && (parentArgType === "plural" || parentArgType === "selectordinal")) {
-        const position = this.clonePosition();
-        this.bump();
-        elements.push({
-          type: 7,
-          location: createLocation(position, this.clonePosition())
-        });
-      } else if (char === 60 && !this.ignoreTag && this.peek() === 47) {
-        if (expectingCloseTag) break;
-        else return this.error(26, createLocation(this.clonePosition(), this.clonePosition()));
-      } else if (char === 60 && !this.ignoreTag && _isAlpha(this.peek() || 0)) {
-        const result = this.parseTag(nestingLevel, parentArgType);
-        if (result.err) return result;
-        elements.push(result.val);
-      } else {
-        const result = this.parseLiteral(nestingLevel, parentArgType);
-        if (result.err) return result;
-        elements.push(result.val);
-      }
-    }
-    return {
-      val: elements,
-      err: null
-    };
-  }
-  /**
-  * A tag name must start with an ASCII lower/upper case letter. The grammar is based on the
-  * [custom element name][] except that a dash is NOT always mandatory and uppercase letters
-  * are accepted:
-  *
-  * ```
-  * tag ::= "<" tagName (whitespace)* "/>" | "<" tagName (whitespace)* ">" message "</" tagName (whitespace)* ">"
-  * tagName ::= [a-z] (PENChar)*
-  * PENChar ::=
-  *     "-" | "." | [0-9] | "_" | [a-z] | [A-Z] | #xB7 | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x37D] |
-  *     [#x37F-#x1FFF] | [#x200C-#x200D] | [#x203F-#x2040] | [#x2070-#x218F] | [#x2C00-#x2FEF] |
-  *     [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
-  * ```
-  *
-  * [custom element name]: https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
-  * NOTE: We're a bit more lax here since HTML technically does not allow uppercase HTML element but we do
-  * since other tag-based engines like React allow it
-  */
-  parseTag(nestingLevel, parentArgType) {
-    const startPosition = this.clonePosition();
-    this.bump();
-    const tagName = this.parseTagName();
-    this.bumpSpace();
-    if (this.bumpIf("/>")) return {
-      val: {
-        type: 0,
-        value: `<${tagName}/>`,
-        location: createLocation(startPosition, this.clonePosition())
-      },
-      err: null
-    };
-    else if (this.bumpIf(">")) {
-      const childrenResult = this.parseMessage(nestingLevel + 1, parentArgType, true);
-      if (childrenResult.err) return childrenResult;
-      const children = childrenResult.val;
-      const endTagStartPosition = this.clonePosition();
-      if (this.bumpIf("</")) {
-        if (this.isEOF() || !_isAlpha(this.char())) return this.error(23, createLocation(endTagStartPosition, this.clonePosition()));
-        const closingTagNameStartPosition = this.clonePosition();
-        if (tagName !== this.parseTagName()) return this.error(26, createLocation(closingTagNameStartPosition, this.clonePosition()));
-        this.bumpSpace();
-        if (!this.bumpIf(">")) return this.error(23, createLocation(endTagStartPosition, this.clonePosition()));
-        return {
-          val: {
-            type: 8,
-            value: tagName,
-            children,
-            location: createLocation(startPosition, this.clonePosition())
-          },
-          err: null
-        };
-      } else return this.error(27, createLocation(startPosition, this.clonePosition()));
-    } else return this.error(23, createLocation(startPosition, this.clonePosition()));
-  }
-  /**
-  * This method assumes that the caller has peeked ahead for the first tag character.
-  */
-  parseTagName() {
-    const startOffset = this.offset();
-    this.bump();
-    while (!this.isEOF() && _isPotentialElementNameChar(this.char())) this.bump();
-    return this.message.slice(startOffset, this.offset());
-  }
-  parseLiteral(nestingLevel, parentArgType) {
-    const start = this.clonePosition();
-    let value = "";
-    while (true) {
-      const parseQuoteResult = this.tryParseQuote(parentArgType);
-      if (parseQuoteResult) {
-        value += parseQuoteResult;
-        continue;
-      }
-      const parseUnquotedResult = this.tryParseUnquoted(nestingLevel, parentArgType);
-      if (parseUnquotedResult) {
-        value += parseUnquotedResult;
-        continue;
-      }
-      const parseLeftAngleResult = this.tryParseLeftAngleBracket();
-      if (parseLeftAngleResult) {
-        value += parseLeftAngleResult;
-        continue;
-      }
-      break;
-    }
-    const location = createLocation(start, this.clonePosition());
-    return {
-      val: {
-        type: 0,
-        value,
-        location
-      },
-      err: null
-    };
-  }
-  tryParseLeftAngleBracket() {
-    if (!this.isEOF() && this.char() === 60 && (this.ignoreTag || !_isAlphaOrSlash(this.peek() || 0))) {
-      this.bump();
-      return "<";
-    }
-    return null;
-  }
-  /**
-  * Starting with ICU 4.8, an ASCII apostrophe only starts quoted text if it immediately precedes
-  * a character that requires quoting (that is, "only where needed"), and works the same in
-  * nested messages as on the top level of the pattern. The new behavior is otherwise compatible.
-  */
-  tryParseQuote(parentArgType) {
-    if (this.isEOF() || this.char() !== 39) return null;
-    switch (this.peek()) {
-      case 39:
-        this.bump();
-        this.bump();
-        return "'";
-      case 123:
-      case 60:
-      case 62:
-      case 125:
-        break;
-      case 35:
-        if (parentArgType === "plural" || parentArgType === "selectordinal") break;
-        return null;
-      default:
-        return null;
-    }
-    this.bump();
-    const codePoints = [this.char()];
-    this.bump();
-    while (!this.isEOF()) {
-      const ch = this.char();
-      if (ch === 39) {
-        if (this.peek() === 39) {
-          codePoints.push(39);
-          this.bump();
-        } else {
-          this.bump();
-          break;
-        }
-      } else codePoints.push(ch);
-      this.bump();
-    }
-    return String.fromCodePoint(...codePoints);
-  }
-  tryParseUnquoted(nestingLevel, parentArgType) {
-    if (this.isEOF()) return null;
-    const ch = this.char();
-    if (ch === 60 || ch === 123 || ch === 35 && (parentArgType === "plural" || parentArgType === "selectordinal") || ch === 125 && nestingLevel > 0) return null;
-    else {
-      this.bump();
-      return String.fromCodePoint(ch);
-    }
-  }
-  parseArgument(nestingLevel, expectingCloseTag) {
-    const openingBracePosition = this.clonePosition();
-    this.bump();
-    this.bumpSpace();
-    if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
-    if (this.char() === 125) {
-      this.bump();
-      return this.error(2, createLocation(openingBracePosition, this.clonePosition()));
-    }
-    let value = this.parseIdentifierIfPossible().value;
-    if (!value) return this.error(3, createLocation(openingBracePosition, this.clonePosition()));
-    this.bumpSpace();
-    if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
-    switch (this.char()) {
-      case 125:
-        this.bump();
-        return {
-          val: {
-            type: 1,
-            value,
-            location: createLocation(openingBracePosition, this.clonePosition())
-          },
-          err: null
-        };
-      case 44:
-        this.bump();
-        this.bumpSpace();
-        if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
-        return this.parseArgumentOptions(nestingLevel, expectingCloseTag, value, openingBracePosition);
-      default:
-        return this.error(3, createLocation(openingBracePosition, this.clonePosition()));
-    }
-  }
-  /**
-  * Advance the parser until the end of the identifier, if it is currently on
-  * an identifier character. Return an empty string otherwise.
-  */
-  parseIdentifierIfPossible() {
-    const startingPosition = this.clonePosition();
-    const startOffset = this.offset();
-    const value = matchIdentifierAtIndex(this.message, startOffset);
-    const endOffset = startOffset + value.length;
-    this.bumpTo(endOffset);
-    return {
-      value,
-      location: createLocation(startingPosition, this.clonePosition())
-    };
-  }
-  parseArgumentOptions(nestingLevel, expectingCloseTag, value, openingBracePosition) {
-    let typeStartPosition = this.clonePosition();
-    let argType = this.parseIdentifierIfPossible().value;
-    let typeEndPosition = this.clonePosition();
-    switch (argType) {
-      case "":
-        return this.error(4, createLocation(typeStartPosition, typeEndPosition));
-      case "number":
-      case "date":
-      case "time": {
-        this.bumpSpace();
-        let styleAndLocation = null;
-        if (this.bumpIf(",")) {
-          this.bumpSpace();
-          const styleStartPosition = this.clonePosition();
-          const result = this.parseSimpleArgStyleIfPossible();
-          if (result.err) return result;
-          const style = trimEnd(result.val);
-          if (style.length === 0) return this.error(6, createLocation(this.clonePosition(), this.clonePosition()));
-          styleAndLocation = {
-            style,
-            styleLocation: createLocation(styleStartPosition, this.clonePosition())
-          };
-        }
-        const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
-        if (argCloseResult.err) return argCloseResult;
-        const location = createLocation(openingBracePosition, this.clonePosition());
-        if (styleAndLocation && styleAndLocation.style.startsWith("::")) {
-          let skeleton = trimStart(styleAndLocation.style.slice(2));
-          if (argType === "number") {
-            const result = this.parseNumberSkeletonFromString(skeleton, styleAndLocation.styleLocation);
-            if (result.err) return result;
-            return {
-              val: {
-                type: 2,
-                value,
-                location,
-                style: result.val
-              },
-              err: null
-            };
-          } else {
-            if (skeleton.length === 0) return this.error(10, location);
-            let dateTimePattern = skeleton;
-            if (this.locale) dateTimePattern = getBestPattern(skeleton, this.locale);
-            const style = {
-              type: 1,
-              pattern: dateTimePattern,
-              location: styleAndLocation.styleLocation,
-              parsedOptions: this.shouldParseSkeletons ? parseDateTimeSkeleton(dateTimePattern) : {}
-            };
-            return {
-              val: {
-                type: argType === "date" ? 3 : 4,
-                value,
-                location,
-                style
-              },
-              err: null
-            };
-          }
-        }
-        return {
-          val: {
-            type: argType === "number" ? 2 : argType === "date" ? 3 : 4,
-            value,
-            location,
-            style: styleAndLocation?.style ?? null
-          },
-          err: null
-        };
-      }
-      case "plural":
-      case "selectordinal":
-      case "select": {
-        const typeEndPosition2 = this.clonePosition();
-        this.bumpSpace();
-        if (!this.bumpIf(",")) return this.error(12, createLocation(typeEndPosition2, { ...typeEndPosition2 }));
-        this.bumpSpace();
-        let identifierAndLocation = this.parseIdentifierIfPossible();
-        let pluralOffset = 0;
-        if (argType !== "select" && identifierAndLocation.value === "offset") {
-          if (!this.bumpIf(":")) return this.error(13, createLocation(this.clonePosition(), this.clonePosition()));
-          this.bumpSpace();
-          const result = this.tryParseDecimalInteger(13, 14);
-          if (result.err) return result;
-          this.bumpSpace();
-          identifierAndLocation = this.parseIdentifierIfPossible();
-          pluralOffset = result.val;
-        }
-        const optionsResult = this.tryParsePluralOrSelectOptions(nestingLevel, argType, expectingCloseTag, identifierAndLocation);
-        if (optionsResult.err) return optionsResult;
-        const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
-        if (argCloseResult.err) return argCloseResult;
-        const location = createLocation(openingBracePosition, this.clonePosition());
-        if (argType === "select") return {
-          val: {
-            type: 5,
-            value,
-            options: fromEntries(optionsResult.val),
-            location
-          },
-          err: null
-        };
-        else return {
-          val: {
-            type: 6,
-            value,
-            options: fromEntries(optionsResult.val),
-            offset: pluralOffset,
-            pluralType: argType === "plural" ? "cardinal" : "ordinal",
-            location
-          },
-          err: null
-        };
-      }
-      default:
-        return this.error(5, createLocation(typeStartPosition, typeEndPosition));
-    }
-  }
-  tryParseArgumentClose(openingBracePosition) {
-    if (this.isEOF() || this.char() !== 125) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
-    this.bump();
-    return {
-      val: true,
-      err: null
-    };
-  }
-  /**
-  * See: https://github.com/unicode-org/icu/blob/af7ed1f6d2298013dc303628438ec4abe1f16479/icu4c/source/common/messagepattern.cpp#L659
-  */
-  parseSimpleArgStyleIfPossible() {
-    let nestedBraces = 0;
-    const startPosition = this.clonePosition();
-    while (!this.isEOF()) switch (this.char()) {
-      case 39: {
-        this.bump();
-        let apostrophePosition = this.clonePosition();
-        if (!this.bumpUntil("'")) return this.error(11, createLocation(apostrophePosition, this.clonePosition()));
-        this.bump();
-        break;
-      }
-      case 123:
-        nestedBraces += 1;
-        this.bump();
-        break;
-      case 125:
-        if (nestedBraces > 0) nestedBraces -= 1;
-        else return {
-          val: this.message.slice(startPosition.offset, this.offset()),
-          err: null
-        };
-        break;
-      default:
-        this.bump();
-    }
-    return {
-      val: this.message.slice(startPosition.offset, this.offset()),
-      err: null
-    };
-  }
-  parseNumberSkeletonFromString(skeleton, location) {
-    let tokens = [];
-    try {
-      tokens = parseNumberSkeletonFromString(skeleton);
-    } catch {
-      return this.error(7, location);
-    }
-    return {
-      val: {
-        type: 0,
-        tokens,
-        location,
-        parsedOptions: this.shouldParseSkeletons ? parseNumberSkeleton(tokens) : {}
-      },
-      err: null
-    };
-  }
-  /**
-  * @param nesting_level The current nesting level of messages.
-  *     This can be positive when parsing message fragment in select or plural argument options.
-  * @param parent_arg_type The parent argument's type.
-  * @param parsed_first_identifier If provided, this is the first identifier-like selector of
-  *     the argument. It is a by-product of a previous parsing attempt.
-  * @param expecting_close_tag If true, this message is directly or indirectly nested inside
-  *     between a pair of opening and closing tags. The nested message will not parse beyond
-  *     the closing tag boundary.
-  */
-  tryParsePluralOrSelectOptions(nestingLevel, parentArgType, expectCloseTag, parsedFirstIdentifier) {
-    let hasOtherClause = false;
-    const options = [];
-    const parsedSelectors = /* @__PURE__ */ new Set();
-    let { value: selector, location: selectorLocation } = parsedFirstIdentifier;
-    while (true) {
-      if (selector.length === 0) {
-        const startPosition = this.clonePosition();
-        if (parentArgType !== "select" && this.bumpIf("=")) {
-          const result = this.tryParseDecimalInteger(16, 19);
-          if (result.err) return result;
-          selectorLocation = createLocation(startPosition, this.clonePosition());
-          selector = this.message.slice(startPosition.offset, this.offset());
-        } else break;
-      }
-      if (parsedSelectors.has(selector)) return this.error(parentArgType === "select" ? 21 : 20, selectorLocation);
-      if (selector === "other") hasOtherClause = true;
-      this.bumpSpace();
-      const openingBracePosition = this.clonePosition();
-      if (!this.bumpIf("{")) return this.error(parentArgType === "select" ? 17 : 18, createLocation(this.clonePosition(), this.clonePosition()));
-      const fragmentResult = this.parseMessage(nestingLevel + 1, parentArgType, expectCloseTag);
-      if (fragmentResult.err) return fragmentResult;
-      const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
-      if (argCloseResult.err) return argCloseResult;
-      options.push([selector, {
-        value: fragmentResult.val,
-        location: createLocation(openingBracePosition, this.clonePosition())
-      }]);
-      parsedSelectors.add(selector);
-      this.bumpSpace();
-      ({ value: selector, location: selectorLocation } = this.parseIdentifierIfPossible());
-    }
-    if (options.length === 0) return this.error(parentArgType === "select" ? 15 : 16, createLocation(this.clonePosition(), this.clonePosition()));
-    if (this.requiresOtherClause && !hasOtherClause) return this.error(22, createLocation(this.clonePosition(), this.clonePosition()));
-    return {
-      val: options,
-      err: null
-    };
-  }
-  tryParseDecimalInteger(expectNumberError, invalidNumberError) {
-    let sign = 1;
-    const startingPosition = this.clonePosition();
-    if (this.bumpIf("+")) {
-    } else if (this.bumpIf("-")) sign = -1;
-    let hasDigits = false;
-    let decimal = 0;
-    while (!this.isEOF()) {
-      const ch = this.char();
-      if (ch >= 48 && ch <= 57) {
-        hasDigits = true;
-        decimal = decimal * 10 + (ch - 48);
-        this.bump();
-      } else break;
-    }
-    const location = createLocation(startingPosition, this.clonePosition());
-    if (!hasDigits) return this.error(expectNumberError, location);
-    decimal *= sign;
-    if (!Number.isSafeInteger(decimal)) return this.error(invalidNumberError, location);
-    return {
-      val: decimal,
-      err: null
-    };
-  }
-  offset() {
-    return this.position.offset;
-  }
-  isEOF() {
-    return this.offset() === this.message.length;
-  }
-  clonePosition() {
-    return {
-      offset: this.position.offset,
-      line: this.position.line,
-      column: this.position.column
-    };
-  }
-  /**
-  * Return the code point at the current position of the parser.
-  * Throws if the index is out of bound.
-  */
-  char() {
-    const offset = this.position.offset;
-    if (offset >= this.message.length) throw Error("out of bound");
-    const code = this.message.codePointAt(offset);
-    if (code === void 0) throw Error(`Offset ${offset} is at invalid UTF-16 code unit boundary`);
-    return code;
-  }
-  error(kind, location) {
-    return {
-      val: null,
-      err: {
-        kind,
-        message: this.message,
-        location
-      }
-    };
-  }
-  /** Bump the parser to the next UTF-16 code unit. */
-  bump() {
-    if (this.isEOF()) return;
-    const code = this.char();
-    if (code === 10) {
-      this.position.line += 1;
-      this.position.column = 1;
-      this.position.offset += 1;
-    } else {
-      this.position.column += 1;
-      this.position.offset += code < 65536 ? 1 : 2;
-    }
-  }
-  /**
-  * If the substring starting at the current position of the parser has
-  * the given prefix, then bump the parser to the character immediately
-  * following the prefix and return true. Otherwise, don't bump the parser
-  * and return false.
-  */
-  bumpIf(prefix) {
-    const offset = this.offset();
-    if (this.message.slice(offset, offset + prefix.length) === prefix) {
-      for (let i = 0; i < prefix.length; i++) this.bump();
-      return true;
-    }
-    return false;
-  }
-  /**
-  * Bump the parser until the pattern character is found and return `true`.
-  * Otherwise bump to the end of the file and return `false`.
-  */
-  bumpUntil(pattern) {
-    const currentOffset = this.offset();
-    const index = this.message.indexOf(pattern, currentOffset);
-    if (index >= 0) {
-      this.bumpTo(index);
-      return true;
-    } else {
-      this.bumpTo(this.message.length);
-      return false;
-    }
-  }
-  /**
-  * Bump the parser to the target offset.
-  * If target offset is beyond the end of the input, bump the parser to the end of the input.
-  */
-  bumpTo(targetOffset) {
-    if (this.offset() > targetOffset) throw Error(`targetOffset ${targetOffset} must be greater than or equal to the current offset ${this.offset()}`);
-    targetOffset = Math.min(targetOffset, this.message.length);
-    while (true) {
-      const offset = this.offset();
-      if (offset === targetOffset) break;
-      if (offset > targetOffset) throw Error(`targetOffset ${targetOffset} is at invalid UTF-16 code unit boundary`);
-      this.bump();
-      if (this.isEOF()) break;
-    }
-  }
-  /** advance the parser through all whitespace to the next non-whitespace code unit. */
-  bumpSpace() {
-    while (!this.isEOF() && _isWhiteSpace(this.char())) this.bump();
-  }
-  /**
-  * Peek at the *next* Unicode codepoint in the input without advancing the parser.
-  * If the input has been exhausted, then this returns null.
-  */
-  peek() {
-    if (this.isEOF()) return null;
-    const code = this.char();
-    const offset = this.offset();
-    return this.message.charCodeAt(offset + (code >= 65536 ? 2 : 1)) ?? null;
-  }
-};
-function _isAlpha(codepoint) {
-  return codepoint >= 97 && codepoint <= 122 || codepoint >= 65 && codepoint <= 90;
-}
-function _isAlphaOrSlash(codepoint) {
-  return _isAlpha(codepoint) || codepoint === 47;
-}
-function _isPotentialElementNameChar(c) {
-  return c === 45 || c === 46 || c >= 48 && c <= 57 || c === 95 || c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 183 || c >= 192 && c <= 214 || c >= 216 && c <= 246 || c >= 248 && c <= 893 || c >= 895 && c <= 8191 || c >= 8204 && c <= 8205 || c >= 8255 && c <= 8256 || c >= 8304 && c <= 8591 || c >= 11264 && c <= 12271 || c >= 12289 && c <= 55295 || c >= 63744 && c <= 64975 || c >= 65008 && c <= 65533 || c >= 65536 && c <= 983039;
-}
-function _isWhiteSpace(c) {
-  return c >= 9 && c <= 13 || c === 32 || c === 133 || c >= 8206 && c <= 8207 || c === 8232 || c === 8233;
-}
-function pruneLocation(els) {
-  els.forEach((el2) => {
-    delete el2.location;
-    if (isSelectElement(el2) || isPluralElement(el2)) for (const k2 in el2.options) {
-      delete el2.options[k2].location;
-      pruneLocation(el2.options[k2].value);
-    }
-    else if (isNumberElement(el2) && isNumberSkeleton(el2.style)) delete el2.style.location;
-    else if ((isDateElement(el2) || isTimeElement(el2)) && isDateTimeSkeleton(el2.style)) delete el2.style.location;
-    else if (isTagElement(el2)) pruneLocation(el2.children);
-  });
-}
-function parse3(message, opts = {}) {
-  opts = {
-    shouldParseSkeletons: true,
-    requiresOtherClause: true,
-    ...opts
-  };
-  const result = new Parser(message, opts).parse();
-  if (result.err) {
-    const error2 = SyntaxError(ErrorKind[result.err.kind]);
-    error2.location = result.err.location;
-    error2.originalMessage = result.err.message;
-    throw error2;
-  }
-  if (!opts?.captureLocation) pruneLocation(result.val);
-  return result.val;
-}
-
-// node_modules/.pnpm/intl-messageformat@12.1.3/node_modules/intl-messageformat/index.js
-var ErrorCode = /* @__PURE__ */ (function(ErrorCode2) {
-  ErrorCode2["MISSING_VALUE"] = "MISSING_VALUE";
-  ErrorCode2["INVALID_VALUE"] = "INVALID_VALUE";
-  ErrorCode2["MISSING_INTL_API"] = "MISSING_INTL_API";
-  return ErrorCode2;
-})({});
-var FormatError = class extends Error {
-  constructor(msg, code, originalMessage) {
-    super(msg);
-    this.code = code;
-    this.originalMessage = originalMessage;
-  }
-  toString() {
-    return `[formatjs Error: ${this.code}] ${this.message}`;
-  }
-};
-var InvalidValueError = class extends FormatError {
-  constructor(variableId, value, options, originalMessage) {
-    super(`Invalid values for "${variableId}": "${value}". Options are "${Object.keys(options).join('", "')}"`, "INVALID_VALUE", originalMessage);
-  }
-};
-var InvalidValueTypeError = class extends FormatError {
-  constructor(value, type, originalMessage) {
-    super(`Value for "${value}" must be of type ${type}`, "INVALID_VALUE", originalMessage);
-  }
-};
-var MissingValueError = class extends FormatError {
-  constructor(variableId, originalMessage) {
-    super(`The intl string context variable "${variableId}" was not provided to the string "${originalMessage}"`, "MISSING_VALUE", originalMessage);
-  }
-};
-function mergeLiteral(parts) {
-  if (parts.length < 2) return parts;
-  return parts.reduce((all, part) => {
-    const lastPart = all[all.length - 1];
-    if (!lastPart || lastPart.type !== 0 || part.type !== 0) all.push(part);
-    else lastPart.value += part.value;
-    return all;
-  }, []);
-}
-function isFormatXMLElementFn(el2) {
-  return typeof el2 === "function";
-}
-function formatToParts(els, locales, formatters, formats, values, currentPluralValue, originalMessage) {
-  if (els.length === 1 && isLiteralElement(els[0])) return [{
-    type: 0,
-    value: els[0].value
-  }];
-  const result = [];
-  for (const el2 of els) {
-    if (isLiteralElement(el2)) {
-      result.push({
-        type: 0,
-        value: el2.value
-      });
-      continue;
-    }
-    if (isPoundElement(el2)) {
-      if (typeof currentPluralValue === "number") result.push({
-        type: 0,
-        value: formatters.getNumberFormat(locales).format(currentPluralValue)
-      });
-      continue;
-    }
-    const { value: varName } = el2;
-    if (!(values && varName in values)) throw new MissingValueError(varName, originalMessage);
-    let value = values[varName];
-    if (isArgumentElement(el2)) {
-      if (!value || typeof value === "string" || typeof value === "number" || typeof value === "bigint") value = typeof value === "string" || typeof value === "number" || typeof value === "bigint" ? String(value) : "";
-      result.push({
-        type: typeof value === "string" ? 0 : 1,
-        value
-      });
-      continue;
-    }
-    if (isDateElement(el2)) {
-      const style = typeof el2.style === "string" ? formats.date[el2.style] : isDateTimeSkeleton(el2.style) ? el2.style.parsedOptions : void 0;
-      result.push({
-        type: 0,
-        value: formatters.getDateTimeFormat(locales, style).format(value)
-      });
-      continue;
-    }
-    if (isTimeElement(el2)) {
-      const style = typeof el2.style === "string" ? formats.time[el2.style] : isDateTimeSkeleton(el2.style) ? el2.style.parsedOptions : formats.time.medium;
-      result.push({
-        type: 0,
-        value: formatters.getDateTimeFormat(locales, style).format(value)
-      });
-      continue;
-    }
-    if (isNumberElement(el2)) {
-      const style = typeof el2.style === "string" ? formats.number[el2.style] : isNumberSkeleton(el2.style) ? el2.style.parsedOptions : void 0;
-      if (style && style.scale) {
-        const scale = style.scale || 1;
-        if (typeof value === "bigint") {
-          if (!Number.isInteger(scale)) throw new TypeError(`Cannot apply fractional scale ${scale} to bigint value. Scale must be an integer when formatting bigint.`);
-          value = value * BigInt(scale);
-        } else value = value * scale;
-      }
-      result.push({
-        type: 0,
-        value: formatters.getNumberFormat(locales, style).format(value)
-      });
-      continue;
-    }
-    if (isTagElement(el2)) {
-      const { children, value: value2 } = el2;
-      const formatFn = values[value2];
-      if (!isFormatXMLElementFn(formatFn)) throw new InvalidValueTypeError(value2, "function", originalMessage);
-      let chunks = formatFn(formatToParts(children, locales, formatters, formats, values, currentPluralValue).map((p) => p.value));
-      if (!Array.isArray(chunks)) chunks = [chunks];
-      result.push(...chunks.map((c) => {
-        return {
-          type: typeof c === "string" ? 0 : 1,
-          value: c
-        };
-      }));
-    }
-    if (isSelectElement(el2)) {
-      const key = value;
-      const opt = (Object.prototype.hasOwnProperty.call(el2.options, key) ? el2.options[key] : void 0) || el2.options.other;
-      if (!opt) throw new InvalidValueError(el2.value, value, Object.keys(el2.options), originalMessage);
-      result.push(...formatToParts(opt.value, locales, formatters, formats, values));
-      continue;
-    }
-    if (isPluralElement(el2)) {
-      const exactKey = `=${value}`;
-      let opt = Object.prototype.hasOwnProperty.call(el2.options, exactKey) ? el2.options[exactKey] : void 0;
-      if (!opt) {
-        if (!Intl.PluralRules) throw new FormatError(`Intl.PluralRules is not available in this environment.
-Try polyfilling it using "@formatjs/intl-pluralrules"
-`, "MISSING_INTL_API", originalMessage);
-        const numericValue2 = typeof value === "bigint" ? Number(value) : value;
-        const rule = formatters.getPluralRules(locales, { type: el2.pluralType }).select(numericValue2 - (el2.offset || 0));
-        opt = (Object.prototype.hasOwnProperty.call(el2.options, rule) ? el2.options[rule] : void 0) || el2.options.other;
-      }
-      if (!opt) throw new InvalidValueError(el2.value, value, Object.keys(el2.options), originalMessage);
-      const numericValue = typeof value === "bigint" ? Number(value) : value;
-      result.push(...formatToParts(opt.value, locales, formatters, formats, values, numericValue - (el2.offset || 0)));
-      continue;
-    }
-  }
-  return mergeLiteral(result);
-}
-function mergeConfig(c1, c2) {
-  if (!c2) return c1;
-  return {
-    ...c1,
-    ...c2,
-    ...Object.keys(c1).reduce((all, k2) => {
-      all[k2] = {
-        ...c1[k2],
-        ...c2[k2]
-      };
-      return all;
-    }, {})
-  };
-}
-function mergeConfigs(defaultConfig, configs) {
-  if (!configs) return defaultConfig;
-  return Object.keys(defaultConfig).reduce((all, k2) => {
-    all[k2] = mergeConfig(defaultConfig[k2], configs[k2]);
-    return all;
-  }, { ...defaultConfig });
-}
-function createFastMemoizeCache(store) {
-  return { create() {
-    return {
-      get(key) {
-        return store[key];
-      },
-      set(key, value) {
-        store[key] = value;
-      }
-    };
-  } };
-}
-function createDefaultFormatters(cache = {
-  number: {},
-  dateTime: {},
-  pluralRules: {}
-}) {
-  return {
-    getNumberFormat: memoize((...args) => new Intl.NumberFormat(...args), {
-      cache: createFastMemoizeCache(cache.number),
-      strategy: strategies.variadic
-    }),
-    getDateTimeFormat: memoize((...args) => new Intl.DateTimeFormat(...args), {
-      cache: createFastMemoizeCache(cache.dateTime),
-      strategy: strategies.variadic
-    }),
-    getPluralRules: memoize((...args) => new Intl.PluralRules(...args), {
-      cache: createFastMemoizeCache(cache.pluralRules),
-      strategy: strategies.variadic
-    })
-  };
-}
-var IntlMessageFormat = class IntlMessageFormat2 {
-  constructor(message, locales = IntlMessageFormat2.defaultLocale, overrideFormats, opts) {
-    this.formatterCache = {
-      number: {},
-      dateTime: {},
-      pluralRules: {}
-    };
-    this.format = ((values) => {
-      const parts = this.formatToParts(values);
-      if (parts.length === 1) return parts[0].value;
-      const result = parts.reduce((all, part) => {
-        if (!all.length || part.type !== 0 || typeof all[all.length - 1] !== "string") all.push(part.value);
-        else all[all.length - 1] += part.value;
-        return all;
-      }, []);
-      if (result.length <= 1) return result[0] || "";
-      return result;
-    });
-    this.formatToParts = ((values) => formatToParts(this.ast, this.locales, this.formatters, this.formats, values, void 0, this.message));
-    this.resolvedOptions = () => ({ locale: this.resolvedLocale?.toString() || Intl.NumberFormat.supportedLocalesOf(this.locales)[0] });
-    this.getAst = () => this.ast;
-    this.locales = locales;
-    this.resolvedLocale = IntlMessageFormat2.resolveLocale(locales);
-    if (typeof message === "string") {
-      this.message = message;
-      if (!IntlMessageFormat2.__parse) throw new TypeError("IntlMessageFormat.__parse must be set to process `message` of type `string`");
-      const { ...parseOpts } = opts || {};
-      this.ast = IntlMessageFormat2.__parse(message, {
-        ...parseOpts,
-        locale: this.resolvedLocale
-      });
-    } else this.ast = message;
-    if (!Array.isArray(this.ast)) throw new TypeError("A message must be provided as a String or AST.");
-    this.formats = mergeConfigs(IntlMessageFormat2.formats, overrideFormats);
-    this.formatters = opts && opts.formatters || createDefaultFormatters(this.formatterCache);
-  }
-  static {
-    this.memoizedDefaultLocale = null;
-  }
-  static get defaultLocale() {
-    if (!IntlMessageFormat2.memoizedDefaultLocale) IntlMessageFormat2.memoizedDefaultLocale = new Intl.NumberFormat().resolvedOptions().locale;
-    return IntlMessageFormat2.memoizedDefaultLocale;
-  }
-  static {
-    this.resolveLocale = (locales) => {
-      if (typeof Intl.Locale === "undefined") return;
-      const supportedLocales = Intl.NumberFormat.supportedLocalesOf(locales);
-      if (supportedLocales.length > 0) return new Intl.Locale(supportedLocales[0]);
-      return new Intl.Locale(typeof locales === "string" ? locales : locales[0]);
-    };
-  }
-  static {
-    this.__parse = parse3;
-  }
-  static {
-    this.formats = {
-      number: {
-        integer: { maximumFractionDigits: 0 },
-        currency: { style: "currency" },
-        percent: { style: "percent" }
-      },
-      date: {
-        short: {
-          month: "numeric",
-          day: "numeric",
-          year: "2-digit"
-        },
-        medium: {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        },
-        long: {
-          month: "long",
-          day: "numeric",
-          year: "numeric"
-        },
-        full: {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          year: "numeric"
-        }
-      },
-      time: {
-        short: {
-          hour: "numeric",
-          minute: "numeric"
-        },
-        medium: {
-          hour: "numeric",
-          minute: "numeric",
-          second: "numeric"
-        },
-        long: {
-          hour: "numeric",
-          minute: "numeric",
-          second: "numeric",
-          timeZoneName: "short"
-        },
-        full: {
-          hour: "numeric",
-          minute: "numeric",
-          second: "numeric",
-          timeZoneName: "short"
-        }
-      }
-    };
-  }
-};
-
-// node_modules/.pnpm/@formatjs+intl@6.1.3/node_modules/@formatjs/intl/index.js
-var IntlError = class IntlError2 extends Error {
-  constructor(code, message, exception) {
-    const err = exception ? exception instanceof Error ? exception : new Error(String(exception)) : void 0;
-    super(`[@formatjs/intl Error ${code}] ${message}
-${err ? `
-${err.message}
-${err.stack}` : ""}`);
-    this.code = code;
-    if (typeof Error.captureStackTrace === "function") Error.captureStackTrace(this, IntlError2);
-  }
-};
-var UnsupportedFormatterError = class extends IntlError {
-  constructor(message, exception) {
-    super("UNSUPPORTED_FORMATTER", message, exception);
-  }
-};
-var InvalidConfigError = class extends IntlError {
-  constructor(message, exception) {
-    super("INVALID_CONFIG", message, exception);
-  }
-};
-var MissingDataError = class extends IntlError {
-  constructor(message, exception) {
-    super("MISSING_DATA", message, exception);
-  }
-};
-var IntlFormatError = class extends IntlError {
-  constructor(message, locale, exception) {
-    super("FORMAT_ERROR", `${message}
-Locale: ${locale}
-`, exception);
-    this.locale = locale;
-  }
-};
-var MessageFormatError = class extends IntlFormatError {
-  constructor(message, locale, descriptor, exception) {
-    super(`${message}
-MessageID: ${descriptor?.id}
-Default Message: ${descriptor?.defaultMessage}
-Description: ${descriptor?.description}
-`, locale, exception);
-    this.descriptor = descriptor;
-    this.locale = locale;
-  }
-};
-var MissingTranslationError = class extends IntlError {
-  constructor(descriptor, locale) {
-    super("MISSING_TRANSLATION", `Missing message: "${descriptor.id}" for locale "${locale}", using ${descriptor.defaultMessage ? `default message (${typeof descriptor.defaultMessage === "string" ? descriptor.defaultMessage : descriptor.defaultMessage.map((e) => e.value ?? JSON.stringify(e)).join()})` : "id"} as fallback.`);
-    this.descriptor = descriptor;
-  }
-};
-function invariant(condition, message, Err = Error) {
-  if (!condition) throw new Err(message);
-}
-function filterProps(props, allowlist, defaults2 = {}) {
-  return allowlist.reduce((filtered, name) => {
-    if (name in props) filtered[name] = props[name];
-    else if (name in defaults2) filtered[name] = defaults2[name];
-    return filtered;
-  }, {});
-}
-var defaultErrorHandler = (error2) => {
-  if (process.env.NODE_ENV !== "production") console.error(error2);
-};
-var defaultWarnHandler = (warning2) => {
-  if (process.env.NODE_ENV !== "production") console.warn(warning2);
-};
-var DEFAULT_INTL_CONFIG = {
-  formats: {},
-  messages: {},
-  timeZone: void 0,
-  defaultLocale: "en",
-  defaultFormats: {},
-  fallbackOnEmptyString: true,
-  onError: defaultErrorHandler,
-  onWarn: defaultWarnHandler
-};
-function createIntlCache() {
-  return {
-    dateTime: {},
-    number: {},
-    message: {},
-    duration: {},
-    relativeTime: {},
-    pluralRules: {},
-    list: {},
-    displayNames: {}
-  };
-}
-function createFastMemoizeCache2(store) {
-  return { create() {
-    return {
-      get(key) {
-        return store[key];
-      },
-      set(key, value) {
-        store[key] = value;
-      }
-    };
-  } };
-}
-function createFormatters(cache = createIntlCache()) {
-  const RelativeTimeFormat = Intl.RelativeTimeFormat;
-  const ListFormat = Intl.ListFormat;
-  const DisplayNames = Intl.DisplayNames;
-  const getDateTimeFormat = memoize((...args) => new Intl.DateTimeFormat(...args), {
-    cache: createFastMemoizeCache2(cache.dateTime),
-    strategy: strategies.variadic
-  });
-  const getNumberFormat = memoize((...args) => new Intl.NumberFormat(...args), {
-    cache: createFastMemoizeCache2(cache.number),
-    strategy: strategies.variadic
-  });
-  const getPluralRules = memoize((...args) => new Intl.PluralRules(...args), {
-    cache: createFastMemoizeCache2(cache.pluralRules),
-    strategy: strategies.variadic
-  });
-  return {
-    getDateTimeFormat,
-    getNumberFormat,
-    getMessageFormat: memoize((message, locales, overrideFormats, opts) => new IntlMessageFormat(message, locales, overrideFormats, {
-      formatters: {
-        getNumberFormat,
-        getDateTimeFormat,
-        getPluralRules
-      },
-      ...opts
-    }), {
-      cache: createFastMemoizeCache2(cache.message),
-      strategy: strategies.variadic
-    }),
-    getDurationFormat: memoize((...args) => new Intl.DurationFormat(...args), {
-      cache: createFastMemoizeCache2(cache.duration),
-      strategy: strategies.variadic
-    }),
-    getRelativeTimeFormat: memoize((...args) => new RelativeTimeFormat(...args), {
-      cache: createFastMemoizeCache2(cache.relativeTime),
-      strategy: strategies.variadic
-    }),
-    getPluralRules,
-    getListFormat: memoize((...args) => new ListFormat(...args), {
-      cache: createFastMemoizeCache2(cache.list),
-      strategy: strategies.variadic
-    }),
-    getDisplayNames: memoize((...args) => new DisplayNames(...args), {
-      cache: createFastMemoizeCache2(cache.displayNames),
-      strategy: strategies.variadic
-    })
-  };
-}
-function getNamedFormat(formats, type, name, onError) {
-  const formatType = formats && formats[type];
-  let format;
-  if (formatType) format = formatType[name];
-  if (format) return format;
-  onError(new UnsupportedFormatterError(`No ${type} format named: ${name}`));
-}
-function setTimeZoneInOptions(opts, timeZone) {
-  return Object.keys(opts).reduce((all, k2) => {
-    all[k2] = {
-      timeZone,
-      ...opts[k2]
-    };
-    return all;
-  }, {});
-}
-function deepMergeOptions(opts1, opts2) {
-  return Object.keys({
-    ...opts1,
-    ...opts2
-  }).reduce((all, k2) => {
-    all[k2] = {
-      ...opts1[k2],
-      ...opts2[k2]
-    };
-    return all;
-  }, {});
-}
-function deepMergeFormatsAndSetTimeZone(f1, timeZone) {
-  if (!timeZone) return f1;
-  const mfFormats = IntlMessageFormat.formats;
-  return {
-    ...mfFormats,
-    ...f1,
-    date: deepMergeOptions(setTimeZoneInOptions(mfFormats.date, timeZone), setTimeZoneInOptions(f1.date || {}, timeZone)),
-    time: deepMergeOptions(setTimeZoneInOptions(mfFormats.time, timeZone), setTimeZoneInOptions(f1.time || {}, timeZone))
-  };
-}
-function getMessageDescriptorContext(messageDescriptor) {
-  const { defaultMessage } = messageDescriptor;
-  try {
-    return defaultMessage !== void 0 ? `
-Default Message: ${typeof defaultMessage === "string" ? defaultMessage : JSON.stringify(defaultMessage)}` : `
-Message Descriptor: ${JSON.stringify(messageDescriptor)}`;
-  } catch {
-    return "";
-  }
-}
-var formatMessage = ({ locale, formats, messages: messages5, defaultLocale, defaultFormats, fallbackOnEmptyString, onError, timeZone, defaultRichTextElements }, state, messageDescriptor = { id: "" }, values, opts) => {
-  const { id: msgId, defaultMessage } = messageDescriptor;
-  if (!msgId) invariant(false, `[@formatjs/intl] An \`id\` must be provided to format a message. You can either:
-1. Configure your build toolchain with [babel-plugin-formatjs](https://formatjs.github.io/docs/tooling/babel-plugin)
-or [@formatjs/ts-transformer](https://formatjs.github.io/docs/tooling/ts-transformer) OR
-2. Configure your \`eslint\` config to include [eslint-plugin-formatjs](https://formatjs.github.io/docs/tooling/linter#enforce-id)
-to autofix this issue${getMessageDescriptorContext(messageDescriptor)}`);
-  const id = String(msgId);
-  const message = messages5 && Object.prototype.hasOwnProperty.call(messages5, id) && messages5[id];
-  if (Array.isArray(message) && message.length === 1 && message[0].type === TYPE.literal) return message[0].value;
-  values = {
-    ...defaultRichTextElements,
-    ...values
-  };
-  formats = deepMergeFormatsAndSetTimeZone(formats, timeZone);
-  defaultFormats = deepMergeFormatsAndSetTimeZone(defaultFormats, timeZone);
-  if (!message) {
-    if (fallbackOnEmptyString === false && message === "") return message;
-    if (!defaultMessage || locale && locale.toLowerCase() !== defaultLocale.toLowerCase()) onError(new MissingTranslationError(messageDescriptor, locale));
-    if (defaultMessage) try {
-      return state.getMessageFormat(defaultMessage, defaultLocale, defaultFormats, opts).format(values);
-    } catch (e) {
-      onError(new MessageFormatError(`Error formatting default message for: "${id}", rendering default message verbatim`, locale, messageDescriptor, e));
-      return typeof defaultMessage === "string" ? defaultMessage : id;
-    }
-    return id;
-  }
-  try {
-    return state.getMessageFormat(message, locale, formats, {
-      formatters: state,
-      ...opts
-    }).format(values);
-  } catch (e) {
-    onError(new MessageFormatError(`Error formatting message: "${id}", using ${defaultMessage ? "default message" : "id"} as fallback.`, locale, messageDescriptor, e));
-  }
-  if (defaultMessage) try {
-    return state.getMessageFormat(defaultMessage, defaultLocale, defaultFormats, opts).format(values);
-  } catch (e) {
-    onError(new MessageFormatError(`Error formatting the default message for: "${id}", rendering message verbatim`, locale, messageDescriptor, e));
-  }
-  if (typeof message === "string") return message;
-  if (typeof defaultMessage === "string") return defaultMessage;
-  return id;
-};
-var DATE_TIME_FORMAT_OPTIONS = [
-  "formatMatcher",
-  "timeZone",
-  "hour12",
-  "weekday",
-  "era",
-  "year",
-  "month",
-  "day",
-  "hour",
-  "minute",
-  "second",
-  "timeZoneName",
-  "hourCycle",
-  "dateStyle",
-  "timeStyle",
-  "calendar",
-  "numberingSystem",
-  "fractionalSecondDigits"
-];
-function getFormatter$3({ locale, formats, onError, timeZone }, type, getDateTimeFormat, options = {}) {
-  const { format } = options;
-  const defaults2 = {
-    ...timeZone && { timeZone },
-    ...format && getNamedFormat(formats, type, format, onError)
-  };
-  let filteredOptions = filterProps(options, DATE_TIME_FORMAT_OPTIONS, defaults2);
-  if (type === "time" && !filteredOptions.hour && !filteredOptions.minute && !filteredOptions.second && !filteredOptions.timeStyle && !filteredOptions.dateStyle) filteredOptions = {
-    ...filteredOptions,
-    hour: "numeric",
-    minute: "numeric"
-  };
-  return getDateTimeFormat(locale, filteredOptions);
-}
-function formatDate(config, getDateTimeFormat, value, options = {}) {
-  const date = typeof value === "string" ? new Date(value || 0) : value;
-  try {
-    return getFormatter$3(config, "date", getDateTimeFormat, options).format(date);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting date.", config.locale, e));
-  }
-  return String(date);
-}
-function formatTime(config, getDateTimeFormat, value, options = {}) {
-  const date = typeof value === "string" ? new Date(value || 0) : value;
-  try {
-    return getFormatter$3(config, "time", getDateTimeFormat, options).format(date);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting time.", config.locale, e));
-  }
-  return String(date);
-}
-function formatDateTimeRange(config, getDateTimeFormat, from, to3, options = {}) {
-  const fromDate = typeof from === "string" ? new Date(from || 0) : from;
-  const toDate = typeof to3 === "string" ? new Date(to3 || 0) : to3;
-  try {
-    return getFormatter$3(config, "dateTimeRange", getDateTimeFormat, options).formatRange(fromDate, toDate);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting date time range.", config.locale, e));
-  }
-  return String(fromDate);
-}
-function formatDateToParts(config, getDateTimeFormat, value, options = {}) {
-  const date = typeof value === "string" ? new Date(value || 0) : value;
-  try {
-    return getFormatter$3(config, "date", getDateTimeFormat, options).formatToParts(date);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting date.", config.locale, e));
-  }
-  return [];
-}
-function formatTimeToParts(config, getDateTimeFormat, value, options = {}) {
-  const date = typeof value === "string" ? new Date(value || 0) : value;
-  try {
-    return getFormatter$3(config, "time", getDateTimeFormat, options).formatToParts(date);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting time.", config.locale, e));
-  }
-  return [];
-}
-var DURATION_FORMAT_OPTIONS = [
-  "style",
-  "numberingSystem",
-  "years",
-  "yearsDisplay",
-  "months",
-  "monthsDisplay",
-  "weeks",
-  "weeksDisplay",
-  "days",
-  "daysDisplay",
-  "hours",
-  "hoursDisplay",
-  "minutes",
-  "minutesDisplay",
-  "seconds",
-  "secondsDisplay",
-  "milliseconds",
-  "millisecondsDisplay",
-  "microseconds",
-  "microsecondsDisplay",
-  "nanoseconds",
-  "nanosecondsDisplay",
-  "fractionalDigits"
-];
-function getFormatter$2({ locale, formats, onError }, getDurationFormat, options) {
-  if (!Intl.DurationFormat) {
-    onError(new FormatError('Intl.DurationFormat is not available in this environment.\nTry polyfilling it using "@formatjs/intl-durationformat"', ErrorCode.MISSING_INTL_API));
-    return;
-  }
-  const { format } = options;
-  const defaults2 = format && getNamedFormat(formats, "duration", format, onError) || {};
-  return getDurationFormat(locale, filterProps(options, DURATION_FORMAT_OPTIONS, defaults2));
-}
-function formatDuration(config, getDurationFormat, value, options = {}) {
-  try {
-    return getFormatter$2(config, getDurationFormat, options)?.format(value) ?? "";
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting duration.", config.locale, e));
-  }
-  return "";
-}
-function formatDurationToParts(config, getDurationFormat, value, options = {}) {
-  try {
-    return getFormatter$2(config, getDurationFormat, options)?.formatToParts(value) ?? [];
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting duration.", config.locale, e));
-  }
-  return [];
-}
-var DISPLAY_NAMES_OPTONS = [
-  "style",
-  "type",
-  "fallback",
-  "languageDisplay"
-];
-function formatDisplayName({ locale, onError }, getDisplayNames, value, options) {
-  if (!Intl.DisplayNames) onError(new FormatError(`Intl.DisplayNames is not available in this environment.
-Try polyfilling it using "@formatjs/intl-displaynames"
-`, ErrorCode.MISSING_INTL_API));
-  const filteredOptions = filterProps(options, DISPLAY_NAMES_OPTONS);
-  try {
-    return getDisplayNames(locale, filteredOptions).of(value);
-  } catch (e) {
-    onError(new IntlFormatError("Error formatting display name.", locale, e));
-  }
-}
-var LIST_FORMAT_OPTIONS = ["type", "style"];
-var now = Date.now();
-function generateToken(i) {
-  return `${now}_${i}_${now}`;
-}
-function formatList(opts, getListFormat, values, options = {}) {
-  const results = formatListToParts(opts, getListFormat, values, options).reduce((all, el2) => {
-    const val = el2.value;
-    if (typeof val !== "string") all.push(val);
-    else if (typeof all[all.length - 1] === "string") all[all.length - 1] += val;
-    else all.push(val);
-    return all;
-  }, []);
-  return results.length === 1 ? results[0] : results.length === 0 ? "" : results;
-}
-function formatListToParts({ locale, onError }, getListFormat, values, options = {}) {
-  if (!Intl.ListFormat) onError(new FormatError(`Intl.ListFormat is not available in this environment.
-Try polyfilling it using "@formatjs/intl-listformat"
-`, ErrorCode.MISSING_INTL_API));
-  const filteredOptions = filterProps(options, LIST_FORMAT_OPTIONS);
-  try {
-    const richValues = {};
-    const serializedValues = Array.from(values).map((v3, i) => {
-      if (typeof v3 === "object" && v3 !== null) {
-        const id = generateToken(i);
-        richValues[id] = v3;
-        return id;
-      }
-      return String(v3);
-    });
-    return getListFormat(locale, filteredOptions).formatToParts(serializedValues).map((part) => part.type === "literal" ? part : {
-      ...part,
-      value: richValues[part.value] || part.value
-    });
-  } catch (e) {
-    onError(new IntlFormatError("Error formatting list.", locale, e));
-  }
-  return values;
-}
-var PLURAL_FORMAT_OPTIONS = ["type"];
-function formatPlural({ locale, onError }, getPluralRules, value, options = {}) {
-  if (!Intl.PluralRules) onError(new FormatError(`Intl.PluralRules is not available in this environment.
-Try polyfilling it using "@formatjs/intl-pluralrules"
-`, ErrorCode.MISSING_INTL_API));
-  const filteredOptions = filterProps(options, PLURAL_FORMAT_OPTIONS);
-  try {
-    return getPluralRules(locale, filteredOptions).select(value);
-  } catch (e) {
-    onError(new IntlFormatError("Error formatting plural.", locale, e));
-  }
-  return "other";
-}
-var RELATIVE_TIME_FORMAT_OPTIONS = ["numeric", "style"];
-function getFormatter$1({ locale, formats, onError }, getRelativeTimeFormat, options = {}) {
-  const { format } = options;
-  const defaults2 = !!format && getNamedFormat(formats, "relative", format, onError) || {};
-  return getRelativeTimeFormat(locale, filterProps(options, RELATIVE_TIME_FORMAT_OPTIONS, defaults2));
-}
-function formatRelativeTime(config, getRelativeTimeFormat, value, unit, options = {}) {
-  if (!unit) unit = "second";
-  if (!Intl.RelativeTimeFormat) config.onError(new FormatError(`Intl.RelativeTimeFormat is not available in this environment.
-Try polyfilling it using "@formatjs/intl-relativetimeformat"
-`, ErrorCode.MISSING_INTL_API));
-  try {
-    return getFormatter$1(config, getRelativeTimeFormat, options).format(value, unit);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting relative time.", config.locale, e));
-  }
-  return String(value);
-}
-var NUMBER_FORMAT_OPTIONS = [
-  "style",
-  "currency",
-  "unit",
-  "unitDisplay",
-  "useGrouping",
-  "minimumIntegerDigits",
-  "minimumFractionDigits",
-  "maximumFractionDigits",
-  "minimumSignificantDigits",
-  "maximumSignificantDigits",
-  "compactDisplay",
-  "currencyDisplay",
-  "currencySign",
-  "notation",
-  "signDisplay",
-  "unit",
-  "unitDisplay",
-  "numberingSystem",
-  "trailingZeroDisplay",
-  "roundingPriority",
-  "roundingIncrement",
-  "roundingMode"
-];
-function getFormatter({ locale, formats, onError }, getNumberFormat, options = {}) {
-  const { format } = options;
-  const defaults2 = format && getNamedFormat(formats, "number", format, onError) || {};
-  return getNumberFormat(locale, filterProps(options, NUMBER_FORMAT_OPTIONS, defaults2));
-}
-function formatNumber(config, getNumberFormat, value, options = {}) {
-  try {
-    return getFormatter(config, getNumberFormat, options).format(value);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting number.", config.locale, e));
-  }
-  return String(value);
-}
-function formatNumberToParts(config, getNumberFormat, value, options = {}) {
-  try {
-    return getFormatter(config, getNumberFormat, options).formatToParts(value);
-  } catch (e) {
-    config.onError(new IntlFormatError("Error formatting number.", config.locale, e));
-  }
-  return [];
-}
-function messagesContainString(messages5) {
-  return typeof (messages5 ? messages5[Object.keys(messages5)[0]] : void 0) === "string";
-}
-function verifyConfigMessages(config) {
-  if (config.onWarn && config.defaultRichTextElements && messagesContainString(config.messages || {})) config.onWarn(`[@formatjs/intl] "defaultRichTextElements" was specified but "message" was not pre-compiled. 
-Please consider using "@formatjs/cli" to pre-compile your messages for performance.
-For more details see https://formatjs.github.io/docs/getting-started/message-distribution`);
-}
-function createIntl(config, cache) {
-  const formatters = createFormatters(cache);
-  const resolvedConfig = {
-    ...DEFAULT_INTL_CONFIG,
-    ...config
-  };
-  const { locale, defaultLocale, onError } = resolvedConfig;
-  if (!locale) {
-    if (onError) onError(new InvalidConfigError(`"locale" was not configured, using "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl/api#intlshape for more details`));
-    resolvedConfig.locale = resolvedConfig.defaultLocale || "en";
-  } else if (!Intl.NumberFormat.supportedLocalesOf(locale).length && onError) onError(new MissingDataError(`Missing locale data for locale: "${locale}" in Intl.NumberFormat. Using default locale: "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl#runtime-requirements for more details`));
-  else if (!Intl.DateTimeFormat.supportedLocalesOf(locale).length && onError) onError(new MissingDataError(`Missing locale data for locale: "${locale}" in Intl.DateTimeFormat. Using default locale: "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl#runtime-requirements for more details`));
-  verifyConfigMessages(resolvedConfig);
-  return {
-    ...resolvedConfig,
-    formatters,
-    formatNumber: formatNumber.bind(null, resolvedConfig, formatters.getNumberFormat),
-    formatNumberToParts: formatNumberToParts.bind(null, resolvedConfig, formatters.getNumberFormat),
-    formatDuration: formatDuration.bind(null, resolvedConfig, formatters.getDurationFormat),
-    formatDurationToParts: formatDurationToParts.bind(null, resolvedConfig, formatters.getDurationFormat),
-    formatRelativeTime: formatRelativeTime.bind(null, resolvedConfig, formatters.getRelativeTimeFormat),
-    formatDate: formatDate.bind(null, resolvedConfig, formatters.getDateTimeFormat),
-    formatDateToParts: formatDateToParts.bind(null, resolvedConfig, formatters.getDateTimeFormat),
-    formatTime: formatTime.bind(null, resolvedConfig, formatters.getDateTimeFormat),
-    formatDateTimeRange: formatDateTimeRange.bind(null, resolvedConfig, formatters.getDateTimeFormat),
-    formatTimeToParts: formatTimeToParts.bind(null, resolvedConfig, formatters.getDateTimeFormat),
-    formatPlural: formatPlural.bind(null, resolvedConfig, formatters.getPluralRules),
-    formatMessage: formatMessage.bind(null, resolvedConfig, formatters),
-    $t: formatMessage.bind(null, resolvedConfig, formatters),
-    formatList: formatList.bind(null, resolvedConfig, formatters.getListFormat),
-    formatListToParts: formatListToParts.bind(null, resolvedConfig, formatters.getListFormat),
-    formatDisplayName: formatDisplayName.bind(null, resolvedConfig, formatters.getDisplayNames)
-  };
-}
-
-// packages/presentation/localization/src/message-localizer.ts
-var MessageLocalizer = class {
-  constructor(collaborators, catalogs, locale = "en") {
-    this.collaborators = collaborators;
-    this.catalogs = catalogs;
-    this.locale = this.collaborators.localeResolver.resolveLocale(locale);
-    this.intl = createIntl(
-      {
-        locale: this.locale,
-        defaultLocale: "en",
-        messages: catalogs[this.locale],
-        onError: this.keepFormattingErrorsPrivate.bind(this),
-        onWarn: this.keepFormattingErrorsPrivate.bind(this)
-      },
-      createIntlCache()
-    );
-  }
-  collaborators;
-  catalogs;
-  locale;
-  intl;
-  t(key, ...args) {
-    return this.intl.formatMessage(
-      { id: key, defaultMessage: this.catalogs.en[key] },
-      args[0],
-      { ignoreTag: true }
-    );
-  }
-  keepFormattingErrorsPrivate() {
   }
 };
 
@@ -45004,7 +50125,7 @@ var GithubDeliveryLedger = class {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/messages.en.ts
-var EN_MESSAGES = {
+var EN_MESSAGES4 = {
   "ledger.title": "### Delivery status",
   "ledger.empty": "No deliveries recorded.",
   "ledger.row": "- {kind}: {status} ({count, number})",
@@ -45015,7 +50136,7 @@ var EN_MESSAGES = {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/messages.fr.ts
-var FR_MESSAGES = {
+var FR_MESSAGES4 = {
   "ledger.title": "### Suivi des envois",
   "ledger.empty": "Aucun envoi enregistr\xE9.",
   "ledger.row": "- {kind} : {status} ({count, number})",
@@ -45026,12 +50147,12 @@ var FR_MESSAGES = {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/catalog.ts
-var CATALOGS = { en: EN_MESSAGES, fr: FR_MESSAGES };
+var CATALOGS5 = { en: EN_MESSAGES4, fr: FR_MESSAGES4 };
 
 // packages/adapter/communication/github-delivery-ledger/src/i18n/ledger-messages.ts
 var LedgerMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS, locale);
+    super(collaborators, CATALOGS5, locale);
   }
 };
 
@@ -45125,7 +50246,7 @@ var LedgerCommentPresenter = class {
 };
 
 // packages/adapter/communication/github-delivery-ledger/src/ledger-entry-mapping.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash4 } from "node:crypto";
 var LedgerEntryMapping = class {
   publicEntry(entry) {
     return {
@@ -45154,7 +50275,7 @@ var LedgerEntryMapping = class {
   }
   protectIdentifier(value) {
     if (/^sha256:[0-9a-f]{64}$/.test(value)) return value;
-    return `sha256:${createHash3("sha256").update(value).digest("hex")}`;
+    return `sha256:${createHash4("sha256").update(value).digest("hex")}`;
   }
 };
 
@@ -45264,3086 +50385,6 @@ var GithubDeliveryLedgerComposition = class {
   }
   scopedGithubLedgerCommentClient(...args) {
     return new ScopedGithubLedgerCommentClient(...args);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
-var ApprovalDecisionParser = class {
-  constructor(textPreview, emailDecisions, policy, comments) {
-    this.textPreview = textPreview;
-    this.emailDecisions = emailDecisions;
-    this.policy = policy;
-    this.comments = comments;
-  }
-  textPreview;
-  emailDecisions;
-  policy;
-  comments;
-  parse(record, body) {
-    if (this.policy.reviewPhase({
-      recipientCount: record.recipientCount,
-      followUpActive: record.followUp?.active,
-      decided: record.decision !== void 0
-    }) !== "pending")
-      return { status: "pending" };
-    const normalized = body.replace(/\r\n/g, "\n");
-    if (record.kind === "content-review")
-      return this.content(record, normalized);
-    if (record.details?.parameters)
-      return this.emailDecisions.parse(record, normalized, this.comments);
-    for (const comment of this.comments) {
-      for (const status of ["approved", "rejected"]) {
-        if (normalized.replace(/- \[X\]/g, "- [x]") === comment.issue(record, { status }))
-          return { status };
-      }
-    }
-    return { status: "pending" };
-  }
-  content(record, body) {
-    if (record.content.target !== "cover") return this.text(record, body);
-    const approvals = record.content.draft.media.map(
-      (media) => ({
-        status: "approved",
-        selectedImage: media.id
-      })
-    );
-    for (const decision of [
-      ...approvals,
-      { status: "rejected" },
-      { status: "iteration-requested" }
-    ])
-      if (this.comments.some(
-        (comment) => comment.issue(record, decision) === body.replace(/- \[X\]/g, "- [x]")
-      ))
-        return decision;
-    return { status: "pending" };
-  }
-  text(record, body) {
-    const edited = this.textPreview.read(body);
-    if (!edited) return { status: "pending" };
-    const original = this.textPreview.replace(
-      body.replace(/- \[X\]/g, "- [x]"),
-      record.content.draft.text
-    );
-    for (const status of [
-      "approved",
-      "pending",
-      "rejected",
-      "iteration-requested"
-    ]) {
-      if (!this.comments.some(
-        (comment) => comment.issue(record, { status }) === original
-      ))
-        continue;
-      if ((status === "approved" || status === "pending") && edited.text !== record.content.draft.text)
-        return { status, editedText: edited.text };
-      return { status };
-    }
-    return { status: "pending" };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-notifications.ts
-var ApprovalNotifications = class {
-  constructor(policy, client, presenter, notifications, channelId) {
-    this.policy = policy;
-    this.client = client;
-    this.presenter = presenter;
-    this.notifications = notifications;
-    this.channelId = channelId;
-  }
-  policy;
-  client;
-  presenter;
-  notifications;
-  channelId;
-  async send(record, commentId) {
-    const facts = this.policy.notificationFor(record);
-    if (!facts) return false;
-    if (record.notification !== "new" && record.notification !== "retry")
-      return record.notification === "reserved";
-    const before = this.presenter.issue(record, { status: "pending" });
-    record.notification = "reserved";
-    const reserved = this.presenter.issue(record, { status: "pending" });
-    await this.client.replace(commentId, before, reserved);
-    try {
-      const result = await this.notifications.send({
-        ...facts,
-        destination: this.channelId,
-        approvalUrl: this.client.url(commentId)
-      });
-      record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
-      if (result.outcome === "accepted" && result.message)
-        record.notificationMessage = result.message;
-    } catch {
-    }
-    await this.client.replace(
-      commentId,
-      reserved,
-      this.presenter.issue(record, { status: "pending" })
-    );
-    return record.notification !== "sent";
-  }
-  async react(record, commentId) {
-    if (!this.policy.notificationFor(record)) return false;
-    if (!record.decision || record.reactionSent) return false;
-    if (!record.notificationMessage) return record.notification !== "sent";
-    const before = this.presenter.issue(record, record.decision);
-    try {
-      const accepted = await this.notifications.react(
-        record.notificationMessage,
-        record.decision.status
-      );
-      if (!accepted) return true;
-      record.reactionSent = true;
-      await this.client.replace(
-        commentId,
-        before,
-        this.presenter.issue(record, record.decision)
-      );
-      return false;
-    } catch {
-      return true;
-    }
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-presenter.ts
-var ApprovalPresenter = class {
-  constructor(codec, renderers) {
-    this.codec = codec;
-    this.renderers = renderers;
-  }
-  codec;
-  renderers;
-  issue(record, decision) {
-    return [
-      this.codec.marker(record),
-      this.renderers[record.kind].issue(record, decision)
-    ].filter(Boolean).join("\n\n");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES2 = {
-  "approval.delivery.status": "- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {\u2705 Send accepted ({count})} pending {\u23F3 Sending ({count})} uncertain {\u26A0\uFE0F Uncertain result ({count}) \u2014 check the mail service before recovery} rejected {\u274C Send rejected ({count})} other {Awaiting dispatch}}.",
-  "approval.delivery.notice": "Accepted means the mail service accepted the request, not that the email reached the inbox.",
-  "approval.content.image-label": "#### Image {index, number}",
-  "approval.social.after-approval": "after approval",
-  "approval.social.details": "### Publish on {target}\n\n{destination} \xB7 {identity}\n\nScheduled for: {plannedAt}; expires: {expiresAt}.\n\nReview the post below.",
-  "approval.social.request": "Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
-  "approval.social.evidence": "Evidence: {reference}\n\nResult: {outcome, select, published {published} not_published {not published} other {unknown}}.",
-  "approval.social.recovery": "Check the evidence above before selecting a choice.\n\n- [{approveMark}] {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] Keep publication blocked",
-  "approval.social.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSee the delivery status for the result.",
-  "approval.community.details": "### Publish on CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing may notify group members and speakers.",
-  "approval.community.request": "Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
-  "approval.community.final": "{status, select, approved {\u2705 CNCF publication approved} rejected {\u274C CNCF publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nCNCF Link is added after publication is verified.",
-  "approval.content.planned": "Scheduled for: {time}.",
-  "approval.content.slot": "Image {index}: {status, select, complete {ready} reserved {result unknown; check before retrying} failed {generation failed} other {not generated}}.",
-  "approval.content.title": "### {target, select, title {Meetup title} description {Meetup description} cover {Meetup covers} other {Text for {target}}}",
-  "approval.content.request": "{target, select, cover {Choose one image.} other {Edit the text in this comment if needed, then select one choice.}} Publishing requires a separate approval.\n\n{approve}\n- [{rejectMark}] \u274C Reject\n- [{iterateMark}] \u{1F504} Generate another proposal",
-  "approval.content.text-choice": "- [{mark}] \u2705 Approve",
-  "approval.content.image-choice": "- [{mark}] \u2705 Choose image {index, number}",
-  "approval.content.final": "{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} iteration_requested {\u{1F504} New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
-  "approval.meetup.details": "### Publish on Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
-  "approval.meetup.request": "Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
-  "approval.meetup.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
-  "follow-up.title": "## Post-event follow-up \xB7 {date}",
-  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
-  "follow-up.stopped": "Follow-up paused.",
-  "follow-up.waiting": "Thank-you emails are not ready yet.",
-  "follow-up.emails-complete": "No thank-you emails pending.",
-  "approval.parameters.instructions": "Edit the values between backticks, then approve sending. Private contact details stay in the catalog.",
-  "approval.details.summary": "Email details",
-  "approval.details.email": "{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thank-you} speaker_thanks {Speaker thank-you} other {Email}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Event links, slides, and logistics.} speaker_introduction {Event links, arrival details, and talk instructions.} host_thanks {Thanks and an invitation to host again.} speaker_thanks {Thanks, talk feedback, and a request for suggestions.} other {Planned email.}}",
-  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
-  "approval.details.feedback": "Feedback results: {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# more email.} other {# more emails.}}",
-  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
-  "approval.final": "### {kind, select, introduction {Introduction emails} host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\n{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Previously sent emails will not be sent again.} rejected {These emails will not be sent.} other {}}",
-  "approval.request": "### {kind, select, introduction {Introduction emails} host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} thanks {Thank-you emails} other {Action}}\n\n{date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\n\nSelect one choice. Previously sent emails are skipped. Changes require another approval.\n\n- [{approveMark}] \u2705 Approve sending\n- [{rejectMark}] \u274C Reject sending"
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES2 = {
-  "approval.delivery.status": "- {kind, select, host_introduction {H\xF4te} speaker_introduction {Intervenants} host_thanks {Remerciements h\xF4te} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {\u2705 Envoi accept\xE9 ({count})} pending {\u23F3 Envoi en cours ({count})} uncertain {\u26A0\uFE0F R\xE9sultat incertain ({count}) \u2014 v\xE9rifier le service d'envoi avant toute reprise} rejected {\u274C Envoi refus\xE9 ({count})} other {En attente d'envoi}}.",
-  "approval.delivery.notice": "Accept\xE9 signifie que le service d'envoi a pris la demande en charge, pas que l'email a \xE9t\xE9 re\xE7u.",
-  "approval.content.image-label": "#### Visuel {index, number}",
-  "approval.social.after-approval": "apr\xE8s approbation",
-  "approval.social.details": "### Publier sur {target}\n\n{destination} \xB7 {identity}\n\nPublication : {plannedAt} ; expiration : {expiresAt}.\n\nV\xE9rifiez le message ci-dessous.",
-  "approval.social.request": "Cochez un choix pour publier ce message \xE0 la destination indiqu\xE9e. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
-  "approval.social.evidence": "Preuve : {reference}\n\nR\xE9sultat : {outcome, select, published {publi\xE9} not_published {non publi\xE9} other {inconnu}}.",
-  "approval.social.recovery": "V\xE9rifiez la preuve ci-dessus avant de choisir.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identifiant} not_published {Confirmer qu'aucun message n'a \xE9t\xE9 publi\xE9 et autoriser un nouvel essai apr\xE8s validation} other {Confirmer la reprise}}\n- [{rejectMark}] Garder la publication bloqu\xE9e",
-  "approval.social.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nConsultez le suivi des envois pour le r\xE9sultat.",
-  "approval.community.details": "### Publier sur CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut notifier les membres du groupe et les intervenants.",
-  "approval.community.request": "Cochez un choix. La validation inclut les notifications OCGroups.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
-  "approval.community.final": "{status, select, approved {\u2705 Publication CNCF approuv\xE9e} rejected {\u274C Publication CNCF refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCNCF Link sera ajout\xE9 apr\xE8s v\xE9rification de la publication.",
-  "approval.content.planned": "Publication pr\xE9vue : {time}.",
-  "approval.content.slot": "Visuel {index} : {status, select, complete {pr\xEAt} reserved {r\xE9sultat inconnu ; v\xE9rifiez avant de relancer} failed {g\xE9n\xE9ration en \xE9chec} other {non g\xE9n\xE9r\xE9}}.",
-  "approval.content.title": "### {target, select, title {Titre du meetup} description {Description du meetup} cover {Visuels du meetup} other {Texte pour {target}}}",
-  "approval.content.request": "{target, select, cover {Choisissez un visuel.} other {Modifiez le texte de ce commentaire si besoin, puis cochez un choix.}} La publication se valide s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] \u274C Refuser\n- [{iterateMark}] \u{1F504} G\xE9n\xE9rer une autre proposition",
-  "approval.content.text-choice": "- [{mark}] \u2705 Approuver",
-  "approval.content.image-choice": "- [{mark}] \u2705 Choisir le visuel {index, number}",
-  "approval.content.final": "{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.{image, plural, =0 {} other {\n\nVisuel choisi : #}}",
-  "approval.meetup.details": "### Publier sur Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon Meetup]({url}).",
-  "approval.meetup.request": "Cochez un choix. L'automatisation publiera le brouillon approuv\xE9.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
-  "approval.meetup.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'\xE9v\xE9nement reste en brouillon.} other {}}",
-  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
-  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
-  "follow-up.stopped": "Suivi suspendu.",
-  "follow-up.waiting": "Les emails de remerciement ne sont pas encore pr\xEAts.",
-  "follow-up.emails-complete": "Aucun email de remerciement en attente.",
-  "approval.parameters.instructions": "Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonn\xE9es priv\xE9es restent dans le r\xE9f\xE9rentiel.",
-  "approval.details.summary": "D\xE9tail des emails",
-  "approval.details.email": "{kind, select, host_introduction {Informations pour l'h\xF4te} speaker_introduction {Informations pour l'intervenant} host_thanks {Remerciement \xE0 l'h\xF4te} speaker_thanks {Remerciement \xE0 l'intervenant} other {Email}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Liens du meetup, slides et logistique.} speaker_introduction {Liens du meetup, acc\xE8s au lieu et consignes pour le talk.} host_thanks {Remerciements et proposition d'accueillir un prochain meetup.} speaker_thanks {Remerciements, retours sur le talk et demande de suggestions.} other {Email pr\xE9vu.}}",
-  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
-  "approval.details.feedback": "R\xE9sultats des retours : {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# autre email.} other {# autres emails.}}",
-  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
-  "approval.final": "### {kind, select, introduction {Emails de pr\xE9paration} host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\n{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Les emails d\xE9j\xE0 envoy\xE9s ne seront pas renvoy\xE9s.} rejected {Ces emails ne seront pas envoy\xE9s.} other {}}",
-  "approval.request": "### {kind, select, introduction {Emails de pr\xE9paration} host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\n\nCochez un choix. Les emails d\xE9j\xE0 envoy\xE9s sont ignor\xE9s. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] \u2705 Approuver l'envoi\n- [{rejectMark}] \u274C Refuser l'envoi"
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
-
-// packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
-var ApprovalPresenterFactory = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  supportedLocales() {
-    return Object.keys(CATALOGS2).map(
-      (locale) => this.collaborators.createApprovalPresenter(
-        this.collaborators.createApprovalMessages(locale)
-      )
-    );
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-record-factory.ts
-var ApprovalRecordFactory = class {
-  constructor(collaborators, nextIdentity) {
-    this.collaborators = collaborators;
-    this.nextIdentity = nextIdentity;
-  }
-  collaborators;
-  nextIdentity;
-  create(request2) {
-    this.collaborators.approvalRequestSchema.validate(request2);
-    this.collaborators.approvalRequestPolicy.validate(request2);
-    return this.allocate(request2);
-  }
-  placeholder(input) {
-    return this.allocate({
-      ...this.collaborators.followUpApprovalPolicy.placeholder(input),
-      followUp: {
-        active: input.active,
-        pendingTasks: input.pendingTasks
-      }
-    });
-  }
-  allocate(request2) {
-    const record = {
-      ...request2,
-      requestId: `approval-${this.nextIdentity()}`,
-      notification: "new"
-    };
-    this.collaborators.storedApprovalSchema.validate(record);
-    return record;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-value-schema.ts
-var ContentValueSchema = class {
-  constructor(urls) {
-    this.urls = urls;
-  }
-  urls;
-  object(value, keys) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
-      throw new Error("Invalid content object");
-    return value;
-  }
-  text(value, max) {
-    if (typeof value !== "string" || value.length > max)
-      throw new Error("Invalid content text");
-    return value;
-  }
-  list(value, max) {
-    if (!Array.isArray(value) || value.length > max)
-      throw new Error("Invalid content list");
-    return value;
-  }
-  media(value) {
-    const item = this.object(value, [
-      "source",
-      "id",
-      "url",
-      "fingerprint",
-      "description",
-      "mimeType",
-      "width",
-      "height",
-      "sourceRevision"
-    ]);
-    const id = this.text(item.id, 200), url = this.text(item.url, 2e3);
-    const description = this.text(item.description, 1e3), sourceRevision = this.text(item.sourceRevision, 200);
-    const fingerprint = this.text(item.fingerprint, 64);
-    if (!id || !description.trim() || !sourceRevision || !this.urls.valid(url) || /[<>\r\n]/.test(url) || !/^[a-f0-9]{64}$/.test(fingerprint))
-      throw new Error("Invalid content media identity");
-    if (item.mimeType !== "image/png" && item.mimeType !== "image/jpeg")
-      throw new Error("Invalid content media format");
-    if (!Number.isSafeInteger(item.width) || !Number.isSafeInteger(item.height) || Number(item.width) <= 0 || Number(item.height) <= 0 || Number(item.width) * Number(item.height) > 25e6)
-      throw new Error("Invalid content dimensions");
-    const source = item.source === void 0 ? void 0 : this.object(item.source, ["id", "revision"]);
-    return {
-      ...source ? {
-        source: {
-          id: this.text(source.id, 200),
-          revision: this.text(source.revision, 200)
-        }
-      } : {},
-      id,
-      url,
-      description,
-      sourceRevision,
-      fingerprint,
-      mimeType: item.mimeType,
-      width: Number(item.width),
-      height: Number(item.height)
-    };
-  }
-  destination(value) {
-    const item = this.object(value, [
-      "key",
-      "provider",
-      "label",
-      "workspaceId",
-      "channelId",
-      "organizationUrn"
-    ]);
-    const key = this.text(item.key, 64);
-    const label = this.text(item.label, 100);
-    if (!/^[a-z][a-z0-9-]{0,63}$/.test(key) || !label.trim() || /[<>\r\n]/.test(label))
-      throw new Error("Invalid content destination identity");
-    if (item.provider === "slack") {
-      this.object(value, [
-        "key",
-        "provider",
-        "label",
-        "workspaceId",
-        "channelId"
-      ]);
-      const workspaceId = this.text(item.workspaceId, 100);
-      const channelId = this.text(item.channelId, 100);
-      if (!/^T[A-Z0-9]{2,}$/.test(workspaceId) || !/^[CG][A-Z0-9]{2,}$/.test(channelId))
-        throw new Error("Invalid content Slack destination");
-      return { key, label, provider: "slack", workspaceId, channelId };
-    }
-    this.object(value, ["key", "provider", "label", "organizationUrn"]);
-    const organizationUrn = this.text(item.organizationUrn, 100);
-    if (item.provider !== "linkedin" || !/^urn:li:organization:[1-9]\d*$/.test(organizationUrn))
-      throw new Error("Invalid content LinkedIn destination");
-    return { key, label, provider: "linkedin", organizationUrn };
-  }
-  draft(value) {
-    const item = this.object(value, ["text", "media"]);
-    return {
-      text: this.text(item.text, 12e3),
-      media: this.list(item.media, 4).map((image) => this.media(image))
-    };
-  }
-  facts(value) {
-    const item = this.object(value, [
-      "date",
-      "startTime",
-      "endTime",
-      "timeZone",
-      "month",
-      "eventDescription",
-      "host",
-      "talks",
-      "registrationUrl",
-      "aperitif",
-      "mentions",
-      "announcement"
-    ]);
-    const host = this.object(item.host, ["name", "city"]);
-    const registrationUrl = this.text(item.registrationUrl, 2e3);
-    if (registrationUrl && !this.urls.valid(registrationUrl))
-      throw new Error("Invalid registration URL");
-    if (typeof item.aperitif !== "boolean")
-      throw new Error("Invalid content logistics");
-    return {
-      date: this.text(item.date, 10),
-      startTime: this.text(item.startTime, 5),
-      endTime: this.text(item.endTime, 5),
-      timeZone: this.text(item.timeZone, 100),
-      month: this.text(item.month, 40),
-      ...item.eventDescription === void 0 ? {} : { eventDescription: this.text(item.eventDescription, 49e3) },
-      host: {
-        name: this.text(host.name, 200),
-        city: this.text(host.city, 200)
-      },
-      talks: this.list(item.talks, 10).map((talk) => this.talk(talk)),
-      registrationUrl,
-      aperitif: item.aperitif,
-      mentions: this.list(item.mentions, 20).map(
-        (name) => this.text(name, 100)
-      ),
-      announcement: item.announcement === null ? null : this.media(item.announcement)
-    };
-  }
-  talk(value) {
-    const item = this.object(value, ["id", "title", "abstract", "speakers"]);
-    return {
-      id: this.text(item.id, 200),
-      title: this.text(item.title, 500),
-      abstract: this.text(item.abstract, 3e3),
-      speakers: this.list(item.speakers, 10).map((speaker) => {
-        const person = this.object(speaker, ["id", "name"]);
-        return {
-          id: this.text(person.id, 200),
-          name: this.text(person.name, 200)
-        };
-      })
-    };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-comment-codec.ts
-var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
-var ApprovalCommentCodec = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  read(body) {
-    const line = body.split("\n", 1)[0];
-    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
-      throw new Error("Invalid approval record");
-    const record = JSON.parse(line.slice(APPROVAL_MARKER.length, -4));
-    this.collaborators.storedApprovalSchema.validate(record);
-    return record;
-  }
-  marker(record) {
-    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
-    return `${APPROVAL_MARKER}${json} -->`;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-details-presenter.ts
-var ApprovalDetailsPresenter = class {
-  constructor(parameters, messages5) {
-    this.parameters = parameters;
-    this.messages = messages5;
-  }
-  parameters;
-  messages;
-  render(details) {
-    const lines = [
-      "<details>",
-      `<summary>${this.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
-      "",
-      ...details.parameters ? [
-        this.messages.t("approval.parameters.instructions", {}),
-        "",
-        this.parameters.render(details.parameters),
-        ""
-      ] : [],
-      ...details.emails.map(
-        (email) => this.email(details.parameters ? { ...email, links: [] } : email)
-      )
-    ];
-    if (details.omittedEmails > 0)
-      lines.push(
-        `<p>${this.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
-      );
-    return [...lines, "", "</details>"].join("\n");
-  }
-  email(email) {
-    const heading = this.messages.t("approval.details.email", {
-      kind: email.kind.replaceAll("-", "_")
-    });
-    const name = email.recipientName ? `: ${this.escape(email.recipientName)}` : "";
-    const lines = [
-      `<p><strong>${this.escape(heading)}${name}</strong></p>`,
-      `<p>${this.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
-    ];
-    if (email.links.length)
-      lines.push(
-        "<ul>",
-        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
-        "</ul>"
-      );
-    if (email.omittedLinks > 0)
-      lines.push(
-        `<p>${this.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
-      );
-    return lines.join("\n");
-  }
-  link(link) {
-    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
-      title: link.title ?? ""
-    }) : this.messages.t("approval.details.link", { kind: link.kind });
-    return `<a href="${this.escape(link.url)}">${this.escape(label)}</a>`;
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-details-preview.ts
-var ApprovalDetailsPreview = class {
-  create(details) {
-    const emails = details.emails.slice(0, 20).map((email) => ({
-      ...email,
-      recipientName: this.text(email.recipientName),
-      links: email.links.slice(0, 8).map((link) => ({
-        ...link,
-        ...link.title === void 0 ? {} : { title: this.text(link.title) }
-      })),
-      omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0)
-    }));
-    while (JSON.stringify(emails).length > 4e3) {
-      const largest = [...emails].sort(
-        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
-      )[0];
-      if (largest?.links.length) {
-        largest.links.pop();
-        largest.omittedLinks++;
-      } else {
-        emails.pop();
-      }
-    }
-    return {
-      ...details.mailKind ? { mailKind: details.mailKind } : {},
-      ...details.parameters ? { parameters: details.parameters } : {},
-      emails,
-      omittedEmails: details.omittedEmails + details.emails.length - emails.length
-    };
-  }
-  text(value) {
-    const normalized = value.trim().replace(/\s+/g, " ");
-    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-request-schema.ts
-var ApprovalRequestSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
-      throw new Error("Invalid approval request");
-    if (value.kind === "social-publication") {
-      this.social(value);
-      return;
-    }
-    if (value.social !== void 0)
-      throw new Error("Invalid social publication approval kind");
-    if (value.kind === "content-review") {
-      if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
-        throw new Error("Invalid content approval fields");
-      this.collaborators.contentApprovalSchema.validate(value.content);
-      return;
-    }
-    if (value.content !== void 0)
-      throw new Error("Invalid content approval kind");
-    if (value.kind === "community-publication" || value.kind === "meetup-publication") {
-      this.publication(value);
-      return;
-    }
-    if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !this.collaborators.approvalSchema.count(value.recipientCount))
-      throw new Error("Invalid approval request");
-    this.collaborators.emailApprovalDetailsSchema.validate(value.details);
-  }
-  social(value) {
-    if (value.content !== void 0 || value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
-      throw new Error("Invalid social publication approval fields");
-    this.collaborators.socialPublicationApprovalSchema.validate(value.social);
-  }
-  publication(value) {
-    if (value.recipientCount !== void 0 || value.details !== void 0)
-      throw new Error("Invalid publication approval fields");
-    if (value.kind === "community-publication")
-      this.collaborators.communityApprovalDetailsSchema.validate(
-        value.publication
-      );
-    else
-      this.collaborators.meetupApprovalDetailsSchema.validate(
-        value.publication
-      );
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
-var ApprovalSchema = class {
-  object(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  count(value) {
-    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
-  }
-  text(value, maximum) {
-    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/community-approval-details-schema.ts
-var CommunityApprovalDetailsSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || !this.reviewUrl(value.url) || !this.text(value.title, 120) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
-      throw new Error("Invalid community approval details");
-  }
-  reviewUrl(value) {
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password && value === `${url.origin}${url.pathname}` && /^\/dashboard\/group\/events\/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\/update$/.test(
-        url.pathname
-      );
-    } catch {
-      return false;
-    }
-  }
-  text(value, maximum) {
-    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-approval-schema.ts
-var ContentApprovalSchema = class {
-  constructor(schema, policy, values) {
-    this.schema = schema;
-    this.policy = policy;
-    this.values = values;
-  }
-  schema;
-  policy;
-  values;
-  validate(value) {
-    if (!this.schema.object(value) || typeof value.key !== "string" || !/^content-[a-f0-9-]{36}$/.test(value.key) || !this.policy.target(value.target) || !["en", "fr"].includes(String(value.language)) || typeof value.origin !== "string" || !value.origin || value.origin.length > 200)
-      throw new Error("Invalid content approval");
-    this.values.object(value, [
-      "key",
-      "target",
-      "language",
-      "origin",
-      "draft",
-      "plannedAt",
-      "attempts"
-    ]);
-    const draft = this.values.draft(value.draft);
-    if (value.target === "cover" && (!draft.media.length || draft.text))
-      throw new Error("Invalid cover preview");
-    if (value.target !== "cover" && !draft.text.trim())
-      throw new Error("Missing content preview");
-    this.schedule(value);
-  }
-  schedule(value) {
-    if (value.plannedAt !== void 0 && (typeof value.plannedAt !== "string" || !Number.isFinite(Date.parse(value.plannedAt))))
-      throw new Error("Invalid planned publication time");
-    if (value.attempts !== void 0 && (!Array.isArray(value.attempts) || value.attempts.length !== 4 || value.attempts.some(
-      (phase) => !["not-started", "reserved", "complete", "failed"].includes(phase)
-    )))
-      throw new Error("Invalid cover attempt summary");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/email-approval-details-schema.ts
-var EmailApprovalDetailsSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(details) {
-    if (details === void 0) return;
-    if (!this.collaborators.approvalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !this.collaborators.approvalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(this.email.bind(this)))
-      throw new Error("Invalid approval details");
-    if (details.mailKind !== void 0 && (!["host-introduction", "speaker-introduction"].includes(
-      String(details.mailKind)
-    ) || !details.emails.every((email) => email.kind === details.mailKind)))
-      throw new Error("Invalid email approval scope");
-    if (details.parameters !== void 0)
-      this.collaborators.parameterPolicy.validate(details.parameters);
-  }
-  email(email) {
-    return this.collaborators.approvalSchema.object(email) && typeof email.kind === "string" && [
-      "host-introduction",
-      "speaker-introduction",
-      "host-thanks",
-      "speaker-thanks"
-    ].includes(email.kind) && this.collaborators.approvalSchema.text(email.recipientName, 200) && this.collaborators.approvalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(this.link.bind(this));
-  }
-  link(link) {
-    return this.collaborators.approvalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || this.collaborators.approvalSchema.text(link.title, 200)) && this.url(link.url);
-  }
-  url(value) {
-    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
-      return false;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password;
-    } catch {
-      return false;
-    }
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/social-publication-approval-schema.ts
-var SocialPublicationApprovalSchema = class {
-  constructor(values) {
-    this.values = values;
-  }
-  values;
-  validate(value) {
-    const item = this.values.object(value, [
-      "intentId",
-      "target",
-      "destinationLabel",
-      "destinationIdentity",
-      "text",
-      "media",
-      "plannedAt",
-      "expiresAt",
-      "recovery"
-    ]);
-    for (const field of [
-      "intentId",
-      "target",
-      "destinationLabel",
-      "destinationIdentity"
-    ])
-      if (!this.values.text(item[field], 200).trim() || /[\r\n]/.test(String(item[field])))
-        throw new Error("Invalid social publication identity");
-    if (!this.values.text(item.text, 2800).trim())
-      throw new Error("Missing social publication text");
-    for (const media of this.values.list(item.media, 1))
-      this.values.media(media);
-    const plannedAt = this.values.text(item.plannedAt, 40);
-    const expiresAt = this.values.text(item.expiresAt, 40);
-    if (plannedAt !== "after-approval" && !Number.isFinite(Date.parse(plannedAt)) || !Number.isFinite(Date.parse(expiresAt)) || plannedAt !== "after-approval" && Date.parse(plannedAt) >= Date.parse(expiresAt))
-      throw new Error("Invalid social publication window");
-    if (item.recovery !== void 0) this.recovery(item.recovery);
-  }
-  recovery(value) {
-    const item = this.values.object(value, ["outcome", "reference"]);
-    if (item.outcome !== "published" && item.outcome !== "not-published")
-      throw new Error("Invalid social publication recovery outcome");
-    if (!this.values.text(item.reference, 2e3).trim())
-      throw new Error("Missing social publication recovery evidence");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
-var StoredApprovalSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value))
-      throw new Error("Invalid approval state");
-    const state = value;
-    this.collaborators.approvalRequestSchema.validate(value);
-    this.collaborators.followUpSchema.validate(state.followUp);
-    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
-      hasFollowUp: state.followUp !== void 0,
-      decided: state.decision !== void 0
-    });
-    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
-      (status) => status === state.notification
-    ))
-      throw new Error("Invalid approval state");
-    if (state.decision !== void 0) {
-      this.decision(state.decision);
-      const decision = state.decision;
-      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0 || decision.editedText !== void 0))
-        throw new Error("Invalid content decision kind");
-      this.emailDecision(value, decision);
-      if (value.kind === "content-review")
-        this.contentDecision(value, decision);
-    }
-    if (state.delivery !== void 0)
-      this.delivery(state.delivery, value.details, state.decision);
-    if (state.notificationMessage !== void 0)
-      this.notificationMessage(state.notificationMessage);
-    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
-      throw new Error("Invalid approval reaction state");
-  }
-  emailDecision(value, decision) {
-    if (decision.emailParameters !== void 0) {
-      if (decision.status !== "approved" || !value.details?.parameters)
-        throw new Error("Invalid email parameter decision");
-      this.collaborators.parameterPolicy.validateEdit(
-        value.details.parameters,
-        decision.emailParameters
-      );
-    }
-  }
-  delivery(value, details, decision) {
-    if (!details || !this.collaborators.approvalSchema.object(decision) || decision.status !== "approved" || !Array.isArray(value) || value.length > 20)
-      throw new Error("Invalid email delivery report");
-    for (const item of value)
-      if (!this.collaborators.approvalSchema.object(item) || !details.emails.some((email) => email.kind === item.kind) || !["not-sent", "accepted", "pending", "uncertain", "rejected"].includes(
-        String(item.status)
-      ) || typeof item.count !== "number" || !Number.isSafeInteger(item.count) || item.count < 0)
-        throw new Error("Invalid email delivery status");
-  }
-  decision(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
-      String(value.status)
-    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
-      throw new Error("Invalid final approval decision");
-  }
-  contentDecision(value, decision) {
-    const selected = decision.selectedImage;
-    if (decision.editedText !== void 0 && (decision.status !== "approved" || value.content.target === "cover" || typeof decision.editedText !== "string" || !decision.editedText.trim() || decision.editedText.length > 12e3))
-      throw new Error("Invalid approved text edit");
-    if (value.content.target === "cover" && decision.status === "approved") {
-      if (!value.content.draft.media.some((media) => media.id === selected))
-        throw new Error("Missing approved cover identity");
-    } else if (selected !== void 0)
-      throw new Error("Unexpected cover identity");
-  }
-  notificationMessage(value) {
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
-      throw new Error("Invalid approval notification reference");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/approval-request-schema-composition.ts
-var ApprovalRequestSchemaComposition = class {
-  email(approvalSchema) {
-    return new EmailApprovalDetailsSchema({
-      approvalSchema,
-      parameterPolicy: new EmailReviewParameterPolicy()
-    });
-  }
-  stored(approvalRequestSchema, followUpSchema) {
-    return new StoredApprovalSchema({
-      approvalRequestSchema,
-      followUpSchema,
-      approvalSchema: new ApprovalSchema(),
-      parameterPolicy: new EmailReviewParameterPolicy(),
-      approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
-    });
-  }
-  create(approvalSchema, meetupApprovalDetailsSchema, emailApprovalDetailsSchema) {
-    const values = new ContentValueSchema(new PublicAssetUrl());
-    return new ApprovalRequestSchema({
-      approvalSchema,
-      meetupApprovalDetailsSchema,
-      emailApprovalDetailsSchema,
-      socialPublicationApprovalSchema: new SocialPublicationApprovalSchema(
-        values
-      ),
-      contentApprovalSchema: new ContentApprovalSchema(
-        approvalSchema,
-        new DraftProposalComposition().policy(),
-        values
-      ),
-      communityApprovalDetailsSchema: new CommunityApprovalDetailsSchema({
-        approvalSchema,
-        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
-      })
-    });
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/community-approval-presenter.ts
-var CommunityApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  issue(record, decision) {
-    const details = record.publication;
-    const content = this.messages.t("approval.community.details", {
-      title: this.escape(details.title),
-      date: record.eventDate,
-      startTime: details.startTime,
-      endTime: details.endTime,
-      timeZone: this.escape(details.timeZone),
-      venue: this.escape(details.venue.name),
-      city: this.escape(details.venue.city),
-      url: details.url
-    });
-    const controls = record.decision ? this.messages.t("approval.community.final", {
-      status: record.decision.status,
-      actor: record.decision.actor,
-      decidedAt: record.decision.decidedAt
-    }) : this.messages.t("approval.community.request", {
-      approveMark: decision.status === "approved" ? "x" : " ",
-      rejectMark: decision.status === "rejected" ? "x" : " "
-    });
-    return [content, controls].join("\n\n");
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-approval-presenter.ts
-var ContentApprovalPresenter = class {
-  constructor(messages5, textPreview) {
-    this.messages = messages5;
-    this.textPreview = textPreview;
-  }
-  messages;
-  textPreview;
-  issue(record, decision) {
-    const content = record.content;
-    return [
-      this.messages.t("approval.content.title", {
-        target: content.target
-      }),
-      content.plannedAt ? this.messages.t("approval.content.planned", {
-        time: content.plannedAt
-      }) : "",
-      ...(content.attempts ?? []).map(
-        (status, index) => status === "complete" ? "" : this.messages.t("approval.content.slot", {
-          index: index + 1,
-          status: status.replaceAll("-", "_")
-        })
-      ),
-      content.draft.text ? this.textPreview.render(
-        record.decision?.editedText ?? content.draft.text
-      ) : "",
-      ...content.draft.media.map(
-        (media, index) => [
-          this.messages.t("approval.content.image-label", { index: index + 1 }),
-          `![${this.escape(media.description)}](<${media.url}>)`
-        ].join("\n\n")
-      ),
-      record.decision ? this.messages.t("approval.content.final", {
-        status: record.decision.status.replaceAll("-", "_"),
-        actor: record.decision.actor,
-        decidedAt: record.decision.decidedAt,
-        image: content.draft.media.findIndex(
-          (media) => media.id === record.decision?.selectedImage
-        ) + 1
-      }) : this.controls(record, decision)
-    ].filter(Boolean).join("\n\n");
-  }
-  controls(record, decision) {
-    const images = record.content.target === "cover" ? record.content.draft.media : [];
-    const approve = images.length ? images.map(
-      (image, index) => this.messages.t("approval.content.image-choice", {
-        mark: decision.status === "approved" && decision.selectedImage === image.id ? "x" : " ",
-        index: index + 1
-      })
-    ).join("\n") : this.messages.t("approval.content.text-choice", {
-      mark: decision.status === "approved" ? "x" : " "
-    });
-    return this.messages.t("approval.content.request", {
-      target: record.content.target,
-      approve,
-      rejectMark: decision.status === "rejected" ? "x" : " ",
-      iterateMark: decision.status === "iteration-requested" ? "x" : " "
-    });
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/content-text-preview.ts
-var ContentTextPreview = class {
-  start = "<!-- meetup-content:text -->";
-  end = "<!-- /meetup-content:text -->";
-  render(text) {
-    const fence = "`".repeat(
-      Math.max(3, ...(text.match(/`+/g) ?? []).map((run) => run.length + 1))
-    );
-    return `${this.start}
-${fence}
-${text}
-${fence}
-${this.end}`;
-  }
-  read(body) {
-    const start = body.indexOf(this.start);
-    const end = body.indexOf(this.end);
-    if (start < 0 || end < start || body.indexOf(this.start, start + 1) !== -1 || body.indexOf(this.end, end + 1) !== -1)
-      return void 0;
-    const block = body.slice(start + this.start.length, end).trim();
-    const match = /^(`{3,})\n([\s\S]*)\n\1$/.exec(block);
-    if (!match || new RegExp(`^ {0,3}\`{${match[1].length},}[ \\t]*$`, "m").test(
-      match[2]
-    ))
-      return void 0;
-    return { text: match[2], start, end: end + this.end.length };
-  }
-  replace(body, text) {
-    const current = this.read(body);
-    return current ? body.slice(0, current.start) + this.render(text) + body.slice(current.end) : void 0;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/email-approval-decision-parser.ts
-var EmailApprovalDecisionParser = class {
-  constructor(parameters) {
-    this.parameters = parameters;
-  }
-  parameters;
-  parse(record, body, presenters) {
-    const original = record.details?.parameters;
-    if (!original) return { status: "pending" };
-    try {
-      const edited = this.parameters.read(body, original);
-      const restored = this.parameters.restore(
-        body.replace(/- \[X\]/g, "- [x]"),
-        original
-      );
-      for (const status of ["pending", "approved", "rejected"]) {
-        if (presenters.some(
-          (presenter) => presenter.issue(record, { status }) === restored
-        ))
-          return {
-            status,
-            ...status === "approved" || status === "pending" && Object.entries(original).some(
-              ([key, value]) => edited[key] !== value
-            ) ? { emailParameters: edited } : {}
-          };
-      }
-    } catch {
-      return { status: "pending", invalidEmailParameters: true };
-    }
-    return { status: "pending", invalidEmailParameters: true };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/email-approval-presenter.ts
-var EmailApprovalPresenter = class {
-  constructor(collaborators, messages5) {
-    this.collaborators = collaborators;
-    this.messages = messages5;
-  }
-  collaborators;
-  messages;
-  issue(record, decision) {
-    const heading = [...this.collaborators.followUpPresenter.render(record)];
-    const phase = this.collaborators.approvalRequestPolicy.reviewPhase({
-      recipientCount: record.recipientCount,
-      followUpActive: record.followUp?.active,
-      decided: record.decision !== void 0
-    });
-    if (phase === "inactive")
-      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
-    const details = record.details ? [
-      this.collaborators.approvalDetailsPresenter.render({
-        ...record.details,
-        ...record.decision?.emailParameters ? { parameters: record.decision.emailParameters } : {}
-      })
-    ] : [];
-    if (record.delivery)
-      details.unshift(
-        this.collaborators.deliveryPresenter.render(record.delivery)
-      );
-    if (record.followUp?.attentionDetails)
-      details.push(record.followUp.attentionDetails);
-    if (record.decision)
-      return [
-        ...heading,
-        this.messages.t("approval.final", {
-          kind: record.details?.mailKind?.replaceAll("-", "_") ?? record.kind.replace("email-", ""),
-          date: record.eventDate,
-          count: record.recipientCount,
-          status: record.decision.status,
-          actor: record.decision.actor,
-          decidedAt: record.decision.decidedAt
-        }),
-        ...details
-      ].join("\n\n");
-    return [
-      ...heading,
-      this.messages.t("approval.request", {
-        kind: record.details?.mailKind?.replaceAll("-", "_") ?? record.kind.replace("email-", ""),
-        date: record.eventDate,
-        count: record.recipientCount,
-        approveMark: decision.status === "approved" ? "x" : " ",
-        rejectMark: decision.status === "rejected" ? "x" : " "
-      }),
-      ...details
-    ].join("\n\n");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/email-delivery-presenter.ts
-var EmailDeliveryPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(delivery) {
-    return [
-      ...delivery.map(
-        (item) => this.messages.t("approval.delivery.status", {
-          kind: item.kind.replaceAll("-", "_"),
-          status: item.status.replaceAll("-", "_"),
-          count: item.count
-        })
-      ),
-      this.messages.t("approval.delivery.notice", {})
-    ].join("\n\n");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/email-parameters-preview.ts
-var START = "<!-- meetup-email:parameters -->";
-var END = "<!-- /meetup-email:parameters -->";
-var EmailParametersPreview = class {
-  constructor(policy) {
-    this.policy = policy;
-  }
-  policy;
-  render(parameters) {
-    return [
-      START,
-      ...Object.entries(parameters).map(
-        ([key, value]) => `- \`${key}\` : \`${value}\``
-      ),
-      END
-    ].join("\n");
-  }
-  read(body, original) {
-    const section = this.section(body);
-    const values = {};
-    for (const line of section.split("\n").slice(1, -1)) {
-      const match = /^- `([A-Za-z]+)` : `([^`\r\n]*)`$/.exec(line);
-      if (!match?.[1] || match[2] === void 0 || Object.hasOwn(values, match[1]))
-        throw new Error("Invalid email parameter list");
-      values[match[1]] = match[2];
-    }
-    this.policy.validateEdit(original, values);
-    return values;
-  }
-  restore(body, parameters) {
-    return body.replace(this.section(body), this.render(parameters));
-  }
-  section(body) {
-    if (body.split(START).length !== 2 || body.split(END).length !== 2)
-      throw new Error("Missing or duplicate email parameter list");
-    const start = body.indexOf(START);
-    const end = body.indexOf(END);
-    if (end < start) throw new Error("Invalid email parameter list");
-    return body.slice(start, end + END.length);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/finalize-approval-decision.ts
-var FinalizeApprovalDecision = class {
-  constructor(collaborators, decisions, repository, notifications, visibility, attentionCodec) {
-    this.collaborators = collaborators;
-    this.decisions = decisions;
-    this.repository = repository;
-    this.notifications = notifications;
-    this.visibility = visibility;
-    this.attentionCodec = attentionCodec;
-  }
-  collaborators;
-  decisions;
-  repository;
-  notifications;
-  visibility;
-  attentionCodec;
-  async execute(state, validateText) {
-    const { record, comment } = state;
-    const decision = await this.decisions.execute(record, comment);
-    if (this.pendingEmailEdit(record, decision))
-      return { ...decision, notificationFailed: false };
-    const textValid = decision.editedText === void 0 || validateText?.(decision.editedText);
-    if (!record.decision && decision.editedText !== void 0 && (decision.status === "pending" || !textValid))
-      return {
-        status: "pending",
-        notificationFailed: false,
-        editedText: decision.editedText,
-        invalidText: textValid === false
-      };
-    this.recordDecision(record, decision);
-    const persisted = await this.repository.save(record, state);
-    await this.refreshVisibility(persisted);
-    return {
-      status: decision.status,
-      ...record.kind === "content-review" || record.details?.parameters ? decision : {},
-      notificationFailed: await this.notifications.react(record, comment.id)
-    };
-  }
-  recordDecision(record, decision) {
-    if (decision.status !== "pending" && !record.decision) {
-      if (!decision.actor || !decision.decidedAt)
-        throw new Error("Missing verified approval identity");
-      record.decision = {
-        status: decision.status,
-        actor: decision.actor,
-        decidedAt: decision.decidedAt,
-        ...decision.emailParameters ? { emailParameters: decision.emailParameters } : {},
-        ...decision.editedText === void 0 ? {} : { editedText: decision.editedText },
-        ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
-      };
-    }
-  }
-  pendingEmailEdit(record, decision) {
-    return !record.decision && decision.status === "pending" && Boolean(decision.emailParameters || decision.invalidEmailParameters);
-  }
-  async refreshVisibility(state) {
-    const { record, comment } = state;
-    const attention = record.followUp?.attention;
-    const resolved = this.collaborators.approvalRequestPolicy.resolved({
-      decided: record.decision !== void 0,
-      deliveryRequired: record.decision?.status === "approved" && Boolean(record.details?.parameters || record.delivery),
-      delivery: record.delivery,
-      recipientCount: record.recipientCount,
-      followUp: record.followUp,
-      attentionPending: attention !== void 0 && !this.collaborators.attentionPolicy.resolved(
-        this.attentionCodec.read(attention)
-      )
-    });
-    await this.visibility.synchronize(comment.id, comment.body ?? "", resolved);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/follow-up-presenter.ts
-var FollowUpPresenter = class {
-  constructor(policy, messages5) {
-    this.policy = policy;
-    this.messages = messages5;
-  }
-  policy;
-  messages;
-  render(record) {
-    if (!record.followUp) return [];
-    const lines = [
-      this.messages.t("follow-up.title", { date: record.eventDate }),
-      this.messages.t("follow-up.instructions", {})
-    ];
-    for (const task of FOLLOW_UP_TASKS) {
-      const pending = record.followUp.pendingTasks.includes(task);
-      lines.push(
-        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
-      );
-    }
-    const progress = this.policy.progressState(
-      record.followUp,
-      record.recipientCount ?? 0
-    );
-    if (progress !== "review")
-      lines.push(this.messages.t(`follow-up.${progress}`, {}));
-    return lines;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/follow-up-schema.ts
-var FollowUpSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (value === void 0) return;
-    if (!this.collaborators.approvalSchema.object(value) || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
-      throw new Error("Invalid post-event follow-up state");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-attention-source.ts
-var GithubApprovalAttentionSource = class {
-  constructor(repository, finalizer) {
-    this.repository = repository;
-    this.finalizer = finalizer;
-  }
-  repository;
-  finalizer;
-  async synchronizeApprovals() {
-    const result = [];
-    for (const state of await this.repository.states()) {
-      if (!state.record.decision) continue;
-      const persisted = await this.repository.save(state.record, state);
-      await this.finalizer.refreshVisibility(persisted);
-    }
-    for (const state of await this.repository.activeStates()) {
-      if (state.record.recipientCount === 0) continue;
-      const decision = await this.finalizer.execute(state);
-      result.push({
-        revision: state.record.revision,
-        requestedAt: state.record.requestedAt,
-        commentId: state.comment.id,
-        eventDate: state.record.eventDate,
-        kind: state.record.kind,
-        status: decision.status
-      });
-    }
-    return result;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-client.ts
-var GithubApprovalClient = class {
-  constructor(collaborators, api, owner, repo, issue2) {
-    this.collaborators = collaborators;
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.issue = issue2;
-  }
-  collaborators;
-  api;
-  owner;
-  repo;
-  issue;
-  async list() {
-    const comments = [];
-    let page = 1;
-    while (true) {
-      const raw = await this.api.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: this.issue,
-        page,
-        per_page: 100
-      });
-      const response = this.collaborators.githubApprovalResponse.comments(raw);
-      comments.push(...response.data);
-      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!next) return comments;
-      page += 1;
-    }
-  }
-  async create(body) {
-    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
-    const response = await this.api.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: this.issue,
-      body
-    });
-    return this.collaborators.githubApprovalResponse.identity(response);
-  }
-  async update(commentId, body) {
-    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
-    await this.api.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
-  }
-  async canApprove(username) {
-    const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
-      owner: this.owner,
-      repo: this.repo,
-      username
-    });
-    const permission = this.collaborators.githubApprovalResponse.permission(response);
-    return ["write", "maintain", "admin"].includes(permission);
-  }
-  async replace(commentId, before, after) {
-    if (before === after) return;
-    const current = (await this.list()).find(
-      (comment) => comment.id === commentId
-    );
-    if (current?.body !== before)
-      throw new Error("Approval comment changed before persistence");
-    await this.update(commentId, after);
-  }
-  async edit(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing approval comment node identity");
-    const result = await this.api.graphql(
-      `query ApprovalCommentEditor($id: ID!) {
-				node(id: $id) {
-					... on IssueComment {
-						id body lastEditedAt editor { login __typename }
-					}
-				}
-			}`,
-      { id: comment.node_id }
-    );
-    return this.collaborators.githubApprovalResponse.edit(result, comment);
-  }
-  url(commentId) {
-    return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
-  }
-  async history(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing approval comment node identity");
-    const edits = [];
-    let after;
-    do {
-      const response = await this.api.graphql(
-        `query ApprovalCommentHistory($id: ID!, $after: String) {
-				node(id: $id) { ... on IssueComment {
-					id body userContentEdits(first: 100, after: $after) {
-						nodes { diff deletedAt editor { login __typename } }
-						pageInfo { hasNextPage endCursor }
-					}
-				} }
-			}`,
-        { id: comment.node_id, ...after ? { after } : {} }
-      );
-      const history = this.collaborators.githubApprovalResponse.history(
-        response,
-        comment
-      );
-      edits.push(...history.nodes);
-      if (!history.pageInfo.hasNextPage) return edits;
-      const next = history.pageInfo.endCursor;
-      if (!next || next === after)
-        throw new Error("Invalid approval history cursor");
-      after = next;
-    } while (after);
-    return edits;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-repository.ts
-var GithubApprovalRepository = class {
-  constructor(collaborators, client, trusted, authorLogin, presenter) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.trusted = trusted;
-    this.authorLogin = authorLogin;
-    this.presenter = presenter;
-  }
-  collaborators;
-  client;
-  trusted;
-  authorLogin;
-  presenter;
-  async states() {
-    const states = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
-        continue;
-      const record = await this.trusted.read(comment);
-      if (!record) continue;
-      if (states.some(
-        (state) => this.collaborators.approvalRequestPolicy.scope(state.record) === this.collaborators.approvalRequestPolicy.scope(record)
-      ))
-        throw new Error("Ambiguous approval state");
-      states.push({ record, comment });
-    }
-    return states;
-  }
-  async activeStates() {
-    const active = /* @__PURE__ */ new Map();
-    for (const state of await this.states()) {
-      const record = state.record;
-      const key = record.kind === "content-review" ? `content:${record.content.target}` : this.collaborators.approvalRequestPolicy.scope(record);
-      active.set(key, state);
-    }
-    return [...active.values()];
-  }
-  async save(record, existing) {
-    this.collaborators.storedApprovalSchema.validate(record);
-    const body = this.presenter.issue(
-      record,
-      record.decision ?? { status: "pending" }
-    );
-    if (!existing) {
-      const id = await this.client.create(body);
-      return { record, comment: { id, body } };
-    }
-    await this.client.replace(
-      existing.comment.id,
-      existing.comment.body ?? "",
-      body
-    );
-    existing.comment = { ...existing.comment, body };
-    return { record, comment: existing.comment };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-approval-response.ts
-var GithubApprovalResponse = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  comments(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.data) || !value.data.every(this.comment.bind(this)) || !this.collaborators.approvalSchema.object(value.headers) || value.headers.link !== void 0 && typeof value.headers.link !== "string")
-      throw new Error("Invalid approval comment response");
-    return { data: value.data, headers: { link: value.headers.link } };
-  }
-  identity(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || !this.collaborators.approvalSchema.count(value.data.id) || value.data.id === 0)
-      throw new Error("Invalid approval comment identity");
-    return value.data.id;
-  }
-  permission(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || typeof value.data.permission !== "string")
-      throw new Error("Invalid approval permission response");
-    return value.data.permission;
-  }
-  edit(value, comment) {
-    const node = this.snapshot(value, comment);
-    if (!this.nullableText(node.lastEditedAt) || !this.actor(node.editor))
-      throw new Error("Invalid approval editor response");
-    return {
-      id: node.id,
-      body: node.body,
-      lastEditedAt: node.lastEditedAt,
-      editor: node.editor
-    };
-  }
-  history(value, comment) {
-    const node = this.snapshot(value, comment);
-    const history = node.userContentEdits;
-    if (!this.collaborators.approvalSchema.object(history) || !Array.isArray(history.nodes) || !history.nodes.every(this.historyEdit.bind(this)) || !this.collaborators.approvalSchema.object(history.pageInfo) || typeof history.pageInfo.hasNextPage !== "boolean" || !this.nullableText(history.pageInfo.endCursor))
-      throw new Error("Approval history is unavailable");
-    return {
-      nodes: history.nodes,
-      pageInfo: {
-        hasNextPage: history.pageInfo.hasNextPage,
-        endCursor: history.pageInfo.endCursor
-      }
-    };
-  }
-  snapshot(value, comment) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
-      throw new Error("Approval comment changed during verification");
-    return { ...value.node, id: value.node.id, body: value.node.body };
-  }
-  comment(value) {
-    return this.collaborators.approvalSchema.object(value) && this.collaborators.approvalSchema.count(value.id) && value.id > 0 && (value.node_id === void 0 || typeof value.node_id === "string") && (value.body === void 0 || this.nullableText(value.body)) && (value.user === void 0 || value.user === null || this.collaborators.approvalSchema.object(value.user) && typeof value.user.login === "string");
-  }
-  historyEdit(value) {
-    return this.collaborators.approvalSchema.object(value) && this.nullableText(value.diff) && this.nullableText(value.deletedAt) && this.actor(value.editor);
-  }
-  actor(value) {
-    return value === null || this.collaborators.approvalSchema.object(value) && typeof value.login === "string" && typeof value.__typename === "string";
-  }
-  nullableText(value) {
-    return value === null || typeof value === "string";
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-follow-up-attention-repository.ts
-var GithubFollowUpAttentionRepository = class {
-  constructor(approvals, previous, codec, presentation) {
-    this.approvals = approvals;
-    this.previous = previous;
-    this.codec = codec;
-    this.presentation = presentation;
-  }
-  approvals;
-  previous;
-  codec;
-  presentation;
-  sharedCommentId;
-  async load() {
-    const shared = await this.approvals.followUpAttention();
-    this.sharedCommentId = shared?.commentId;
-    const previous = await this.previous.load();
-    return shared?.body ? this.codec.read(shared.body) : previous;
-  }
-  async save(state) {
-    if (!this.sharedCommentId) return this.previous.save(state);
-    await this.approvals.saveFollowUpAttention(
-      this.codec.marker(state),
-      this.presentation.details(state)
-    );
-    await this.previous.retire(this.sharedCommentId);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-organizer-approval.ts
-var GithubOrganizerApproval = class {
-  constructor(collaborators, repository, records, finalizer, notifications, permissions) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.records = records;
-    this.finalizer = finalizer;
-    this.notifications = notifications;
-    this.permissions = permissions;
-  }
-  collaborators;
-  repository;
-  records;
-  finalizer;
-  notifications;
-  permissions;
-  async request(input, validateText) {
-    input = this.reviewedRequest(input);
-    this.collaborators.approvalRequestSchema.validate(input);
-    this.collaborators.approvalRequestPolicy.validate(input);
-    const existing = await this.existingRequest(input);
-    if (existing && this.collaborators.approvalRequestPolicy.matches(
-      existing.record,
-      input,
-      existing.record.decision?.status ?? "pending"
-    )) {
-      const result = await this.finalizer.execute(existing, validateText);
-      if ((result.status === "approved" || result.status === "iteration-requested") && !await this.permissions.canApprove(
-        existing.record.decision?.actor ?? ""
-      ))
-        throw new Error(
-          "The recorded organizer no longer has approval permission"
-        );
-      if (result.status !== "pending" || result.editedText !== void 0 || result.emailParameters || result.invalidEmailParameters)
-        return result;
-      return {
-        status: "pending",
-        notificationFailed: await this.notifications.send(
-          existing.record,
-          existing.comment.id
-        )
-      };
-    }
-    const record = this.records.create(input);
-    const followUp = this.collaborators.followUpApprovalPolicy.initialFor(
-      input,
-      existing?.record.followUp
-    );
-    if (followUp)
-      record.followUp = { ...existing?.record.followUp, ...followUp };
-    const state = await this.repository.save(record, existing);
-    await this.finalizer.refreshVisibility(state);
-    return {
-      status: "pending",
-      notificationFailed: await this.notifications.send(
-        record,
-        state.comment.id
-      )
-    };
-  }
-  async existingRequest(input) {
-    const states = await this.repository.states();
-    return states.find(
-      ({ record }) => this.collaborators.approvalRequestPolicy.scope(record) === this.collaborators.approvalRequestPolicy.scope(input)
-    ) ?? states.find(
-      ({ record }) => this.collaborators.approvalRequestPolicy.canReplaceCombinedEmail(
-        record,
-        input,
-        record.decision !== void 0
-      )
-    );
-  }
-  async synchronize() {
-    let notificationFailed = false;
-    for (const state of await this.repository.activeStates()) {
-      const result = await this.finalizer.execute(state);
-      notificationFailed = result.notificationFailed || notificationFailed;
-    }
-    return { notificationFailed };
-  }
-  reviewedRequest(input) {
-    if (input.kind === "meetup-publication" || !input.details) return input;
-    return {
-      ...input,
-      details: this.collaborators.approvalDetailsPreview.create(input.details)
-    };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-organizer-follow-up.ts
-var GithubOrganizerFollowUp = class {
-  constructor(policy, repository, records, finalizer) {
-    this.policy = policy;
-    this.repository = repository;
-    this.records = records;
-    this.finalizer = finalizer;
-  }
-  policy;
-  repository;
-  records;
-  finalizer;
-  async synchronizeFollowUp(input) {
-    const existing = (await this.repository.states()).find(
-      ({ record: record2 }) => record2.kind === "email-thanks"
-    );
-    if (!existing && !input.active) return void 0;
-    if (existing) await this.finalizer.execute(existing);
-    const attention = existing?.record.followUp?.attention;
-    const attentionDetails = existing?.record.followUp?.attentionDetails;
-    const record = existing && this.policy.retainRequest(input, existing.record.eventDate) ? existing.record : this.records.placeholder(input);
-    record.followUp = {
-      active: input.active,
-      pendingTasks: input.pendingTasks,
-      attention,
-      attentionDetails
-    };
-    const state = await this.repository.save(record, existing);
-    await this.finalizer.refreshVisibility(state);
-    return state.comment.id;
-  }
-  async followUpAttention() {
-    const state = (await this.repository.states()).find(
-      ({ record }) => record.followUp
-    );
-    return state ? { commentId: state.comment.id, body: state.record.followUp?.attention } : void 0;
-  }
-  async saveFollowUpAttention(body, details) {
-    const state = (await this.repository.states()).find(
-      ({ record }) => record.followUp
-    );
-    if (!state?.record.followUp)
-      throw new Error("Missing post-event follow-up comment");
-    await this.finalizer.execute(state);
-    state.record.followUp = {
-      ...state.record.followUp,
-      attention: body,
-      attentionDetails: details
-    };
-    const persisted = await this.repository.save(state.record, state);
-    await this.finalizer.refreshVisibility(persisted);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
-var ApprovalMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS2, locale);
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/meetup-approval-details-schema.ts
-var MeetupApprovalDetailsSchema = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validate(value) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !this.text(value.title, 80) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
-      throw new Error("Invalid Meetup approval details");
-  }
-  text(value, maximum) {
-    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/meetup-approval-presenter.ts
-var MeetupApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  issue(record, decision) {
-    const details = record.publication;
-    const content = this.messages.t("approval.meetup.details", {
-      title: this.escape(details.title),
-      date: record.eventDate,
-      startTime: details.startTime,
-      endTime: details.endTime,
-      timeZone: this.escape(details.timeZone),
-      venue: this.escape(details.venue.name),
-      city: this.escape(details.venue.city),
-      url: details.url
-    });
-    const controls = record.decision ? this.messages.t("approval.meetup.final", {
-      status: record.decision.status,
-      actor: record.decision.actor,
-      decidedAt: record.decision.decidedAt
-    }) : this.messages.t("approval.meetup.request", {
-      approveMark: decision.status === "approved" ? "x" : " ",
-      rejectMark: decision.status === "rejected" ? "x" : " "
-    });
-    return [content, controls].join("\n\n");
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/resolve-approval-decision.ts
-var ResolveApprovalDecision = class {
-  constructor(client, parser) {
-    this.client = client;
-    this.parser = parser;
-  }
-  client;
-  parser;
-  async execute(record, comment) {
-    if (record.decision) return record.decision;
-    const decision = this.parser.parse(record, comment.body ?? "");
-    if (decision.status === "pending") return decision;
-    const edit = await this.client.edit(comment);
-    const editedAt = Date.parse(edit.lastEditedAt ?? "");
-    if (edit.editor?.__typename !== "User" || !edit.editor.login || edit.editor.login === "ghost" || !Number.isFinite(editedAt) || editedAt < Math.floor(Date.parse(record.requestedAt) / 1e3) * 1e3)
-      return { status: "pending" };
-    return await this.client.canApprove(edit.editor.login) ? {
-      ...decision,
-      actor: edit.editor.login,
-      decidedAt: edit.lastEditedAt ?? void 0
-    } : { status: "pending" };
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/social-publication-approval-presenter.ts
-var SocialPublicationApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  issue(record, decision) {
-    const details = record.social;
-    return [
-      this.messages.t("approval.social.details", {
-        target: this.escape(details.target),
-        destination: this.escape(details.destinationLabel),
-        identity: this.escape(details.destinationIdentity),
-        plannedAt: details.plannedAt === "after-approval" ? this.messages.t("approval.social.after-approval", {}) : details.plannedAt,
-        expiresAt: details.expiresAt
-      }),
-      `<pre>${this.escape(details.text)}</pre>`,
-      ...details.media.map(
-        (media) => [
-          `![${this.escape(media.description)}](<${media.url}>)`,
-          `${this.escape(media.id)} \xB7 ${media.width}\xD7${media.height} \xB7 ${media.mimeType} \xB7 ${media.fingerprint}`
-        ].join("\n\n")
-      ),
-      details.recovery ? this.messages.t("approval.social.evidence", {
-        outcome: details.recovery.outcome.replaceAll("-", "_"),
-        reference: this.escape(details.recovery.reference)
-      }) : "",
-      this.controls(record, decision)
-    ].filter(Boolean).join("\n\n");
-  }
-  controls(record, decision) {
-    if (record.decision)
-      return this.messages.t("approval.social.final", {
-        status: record.decision.status,
-        actor: record.decision.actor,
-        decidedAt: record.decision.decidedAt
-      });
-    const marks = {
-      approveMark: decision.status === "approved" ? "x" : " ",
-      rejectMark: decision.status === "rejected" ? "x" : " "
-    };
-    return record.social.recovery ? this.messages.t("approval.social.recovery", {
-      ...marks,
-      outcome: record.social.recovery.outcome.replaceAll("-", "_")
-    }) : this.messages.t("approval.social.request", marks);
-  }
-  escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;").replaceAll("@", "&#64;");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
-var TrustedApprovalState = class {
-  constructor(collaborators, client, authorLogin) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.authorLogin = authorLogin;
-  }
-  collaborators;
-  client;
-  authorLogin;
-  async read(comment) {
-    const current = await this.client.edit(comment);
-    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
-      return this.record(current.body);
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Approval history was deleted");
-      if (this.isAuthor(edit.editor)) {
-        if (edit.diff === null)
-          throw new Error("Approval history is unavailable");
-        return this.record(edit.diff);
-      }
-    }
-    throw new Error("A trusted approval revision could not be verified");
-  }
-  record(body) {
-    if (!body?.startsWith(APPROVAL_MARKER)) return void 0;
-    return this.collaborators.approvalCommentCodec.read(body);
-  }
-  isAuthor(editor) {
-    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.authorLogin.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/dependency-composition.ts
-var GithubOrganizerApprovalComposition = class {
-  approvalCommentCodec() {
-    return new ApprovalCommentCodec({
-      storedApprovalSchema: this.storedApprovalSchema()
-    });
-  }
-  approvalDecisionParser(...args) {
-    return new ApprovalDecisionParser(
-      new ContentTextPreview(),
-      new EmailApprovalDecisionParser(
-        new EmailParametersPreview(new EmailReviewParameterPolicy())
-      ),
-      new JourneyPolicyComposition().approvalRequestPolicy(),
-      ...args
-    );
-  }
-  approvalDetailsPresenter(...args) {
-    return new ApprovalDetailsPresenter(
-      new EmailParametersPreview(new EmailReviewParameterPolicy()),
-      ...args
-    );
-  }
-  approvalDetailsPreview() {
-    return new ApprovalDetailsPreview();
-  }
-  approvalMessages(...args) {
-    return new ApprovalMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  approvalNotifications(...args) {
-    return new ApprovalNotifications(...args);
-  }
-  approvalPresenter(messages5) {
-    const email = this.emailApprovalPresenter(messages5);
-    return new ApprovalPresenter(this.approvalCommentCodec(), {
-      "email-introduction": email,
-      "email-thanks": email,
-      "meetup-publication": this.meetupApprovalPresenter(messages5),
-      "community-publication": new CommunityApprovalPresenter(messages5),
-      "content-review": this.contentApprovalPresenter(messages5),
-      "social-publication": new SocialPublicationApprovalPresenter(messages5)
-    });
-  }
-  contentApprovalPresenter(messages5) {
-    return new ContentApprovalPresenter(messages5, new ContentTextPreview());
-  }
-  approvalPresenterFactory() {
-    return new ApprovalPresenterFactory({
-      createApprovalPresenter: (...args) => this.approvalPresenter(...args),
-      createApprovalMessages: (...args) => this.approvalMessages(...args)
-    });
-  }
-  approvalRecordFactory(...args) {
-    return new ApprovalRecordFactory(
-      {
-        approvalRequestSchema: this.approvalRequestSchema(),
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
-        storedApprovalSchema: this.storedApprovalSchema(),
-        followUpApprovalPolicy: new FollowUpApprovalPolicy()
-      },
-      ...args
-    );
-  }
-  approvalRequestSchema() {
-    return new ApprovalRequestSchemaComposition().create(
-      this.approvalSchema(),
-      this.meetupApprovalDetailsSchema(),
-      new ApprovalRequestSchemaComposition().email(this.approvalSchema())
-    );
-  }
-  approvalSchema() {
-    return new ApprovalSchema();
-  }
-  emailApprovalPresenter(...args) {
-    return new EmailApprovalPresenter(
-      {
-        deliveryPresenter: new EmailDeliveryPresenter(args[0]),
-        followUpPresenter: this.followUpPresenter(args[0]),
-        approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
-      },
-      ...args
-    );
-  }
-  finalizeApprovalDecision(...args) {
-    return new FinalizeApprovalDecision(
-      {
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
-        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
-      },
-      ...args
-    );
-  }
-  followUpPresenter(...args) {
-    return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
-  }
-  followUpSchema() {
-    return new FollowUpSchema({ approvalSchema: this.approvalSchema() });
-  }
-  githubApprovalAttentionSource(...args) {
-    return new GithubApprovalAttentionSource(...args);
-  }
-  githubApprovalClient(...args) {
-    return new GithubApprovalClient(
-      { githubApprovalResponse: this.githubApprovalResponse() },
-      ...args
-    );
-  }
-  githubApprovalRepository(...args) {
-    return new GithubApprovalRepository(
-      {
-        storedApprovalSchema: this.storedApprovalSchema(),
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
-      },
-      ...args
-    );
-  }
-  githubApprovalResponse() {
-    return new GithubApprovalResponse({
-      approvalSchema: this.approvalSchema()
-    });
-  }
-  githubFollowUpAttentionRepository(...args) {
-    return new GithubFollowUpAttentionRepository(...args);
-  }
-  githubOrganizerApproval(...args) {
-    return new GithubOrganizerApproval(
-      {
-        approvalRequestSchema: this.approvalRequestSchema(),
-        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
-        approvalDetailsPreview: this.approvalDetailsPreview(),
-        followUpApprovalPolicy: new FollowUpApprovalPolicy()
-      },
-      ...args
-    );
-  }
-  githubOrganizerFollowUp(...args) {
-    return new GithubOrganizerFollowUp(new FollowUpApprovalPolicy(), ...args);
-  }
-  meetupApprovalDetailsSchema() {
-    return new MeetupApprovalDetailsSchema({
-      approvalSchema: this.approvalSchema(),
-      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
-    });
-  }
-  meetupApprovalPresenter(...args) {
-    return new MeetupApprovalPresenter(...args);
-  }
-  resolveApprovalDecision(...args) {
-    return new ResolveApprovalDecision(...args);
-  }
-  storedApprovalSchema() {
-    return new ApprovalRequestSchemaComposition().stored(
-      this.approvalRequestSchema(),
-      this.followUpSchema()
-    );
-  }
-  trustedApprovalState(...args) {
-    return new TrustedApprovalState(
-      { approvalCommentCodec: this.approvalCommentCodec() },
-      ...args
-    );
-  }
-};
-
-// packages/adapter/journey/github-organizer-approval/src/github-email-delivery-report.ts
-var GithubEmailDeliveryReport = class {
-  constructor(approvals, source, finalizer, visibility) {
-    this.approvals = approvals;
-    this.source = source;
-    this.finalizer = finalizer;
-    this.visibility = visibility;
-  }
-  approvals;
-  source;
-  finalizer;
-  visibility;
-  async synchronize() {
-    const snapshot = await this.source.readEmailReport();
-    const covered = /* @__PURE__ */ new Set();
-    for (const state of await this.approvals.states()) {
-      const record = state.record;
-      if (!record.details || record.decision?.status !== "approved") continue;
-      const kinds = new Set(record.details.emails.map((email) => email.kind));
-      const delivery = [...kinds].flatMap(
-        (kind) => this.summary(
-          kind,
-          snapshot.entries,
-          record.details?.mailKind ? record.recipientCount : record.details?.emails.filter((email) => email.kind === kind).length ?? 0
-        )
-      );
-      for (const kind of kinds) covered.add(kind);
-      const persisted = await this.approvals.save(
-        { ...record, delivery },
-        state
-      );
-      await this.finalizer.refreshVisibility(persisted);
-    }
-    if (snapshot.commentId && snapshot.body)
-      await this.visibility.synchronize(
-        snapshot.commentId,
-        snapshot.body,
-        snapshot.entries.length > 0 && !snapshot.hasOtherDeliveries && snapshot.entries.every(({ kind }) => covered.has(kind))
-      );
-  }
-  summary(kind, entries, expected) {
-    const matching = entries.filter((entry) => entry.kind === kind);
-    if (!matching.length)
-      return [{ kind, status: "not-sent", count: expected }];
-    const counts = /* @__PURE__ */ new Map();
-    for (const entry of matching)
-      counts.set(entry.status, (counts.get(entry.status) ?? 0) + 1);
-    const summary2 = [...counts].map(
-      ([status, count]) => ({ kind, status, count })
-    );
-    if (matching.length < expected)
-      summary2.push({
-        kind,
-        status: "not-sent",
-        count: expected - matching.length
-      });
-    return summary2;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-record.ts
-var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
-var AttentionRecord = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  read(body) {
-    const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
-    const line = lines[0];
-    if (lines.length !== 1 || !line?.endsWith(" -->"))
-      throw new Error("Invalid attention record");
-    const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
-    return this.decode(input);
-  }
-  marker(state) {
-    const safe = this.decode({ ...state, version: 1 });
-    return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
-  }
-  decode(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    if (!Array.isArray(data.episodes) || data.episodes.length > 300)
-      throw new Error("Invalid attention episodes");
-    this.collaborators.attentionRecordFields.choice(data.version, [1]);
-    const state = {
-      eventDate: this.collaborators.attentionRecordFields.text(
-        data.eventDate,
-        /^(?:\d{4}-\d{2}-\d{2})?$/
-      ),
-      stopped: this.collaborators.attentionRecordFields.choice(data.stopped, [
-        true,
-        false
-      ]),
-      episodes: data.episodes.map(this.episode.bind(this)),
-      post: data.post === void 0 ? void 0 : this.post(data.post),
-      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
-      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
-        data.commentId,
-        true
-      )
-    };
-    this.collaborators.attentionStateRules.validate(state);
-    return state;
-  }
-  episode(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      condition: this.condition(data.condition),
-      episode: this.collaborators.attentionRecordFields.integer(
-        data.episode,
-        true
-      ),
-      openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
-      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
-      status: this.collaborators.attentionRecordFields.choice(data.status, [
-        "active",
-        "unknown",
-        "resolved",
-        "stopped"
-      ]),
-      lastWindow: data.lastWindow === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
-        data.lastWindow,
-        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
-      )
-    };
-  }
-  condition(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      key: this.collaborators.attentionRecordFields.text(
-        data.key,
-        /^[a-z0-9:-]{1,180}$/
-      ),
-      code: this.collaborators.attentionRecordFields.choice(
-        data.code,
-        ATTENTION_CODES
-      ),
-      owner: this.collaborators.attentionRecordFields.choice(data.owner, [
-        "event",
-        "assets",
-        "feedback",
-        "communications",
-        "social",
-        "content",
-        "approvals",
-        "delivery"
-      ]),
-      resource: this.collaborators.attentionRecordFields.text(
-        data.resource,
-        /^[a-z0-9:-]{1,128}$/
-      ),
-      severity: this.collaborators.attentionRecordFields.choice(data.severity, [
-        "warning",
-        "error"
-      ]),
-      policy: this.collaborators.attentionRecordFields.choice(data.policy, [
-        "preparation",
-        "daily",
-        "weekly",
-        "approval",
-        "occurrence",
-        "follow-up",
-        "none"
-      ]),
-      since: data.since === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.since),
-      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
-        data.commentId,
-        true
-      ),
-      recovery: data.recovery === void 0 ? void 0 : this.collaborators.attentionRecordFields.choice(data.recovery, [
-        true
-      ])
-    };
-  }
-  post(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      reservationId: this.collaborators.attentionRecordFields.text(
-        data.reservationId,
-        /^attention:\d+:\d+$/
-      ),
-      day: this.collaborators.attentionRecordFields.integer(data.day),
-      reservedAt: this.collaborators.attentionRecordFields.instant(
-        data.reservedAt
-      ),
-      status: this.collaborators.attentionRecordFields.choice(data.status, [
-        "pending",
-        "accepted",
-        "retry"
-      ]),
-      retryAt: data.retryAt === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.retryAt),
-      fingerprint: data.fingerprint === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
-        data.fingerprint,
-        /^[a-f0-9]{64}$/
-      ),
-      message: data.message === void 0 ? void 0 : this.message(data.message)
-    };
-  }
-  message(input) {
-    const data = this.collaborators.attentionRecordFields.record(input);
-    return {
-      destination: this.collaborators.attentionRecordFields.text(
-        data.destination,
-        /^[a-zA-Z0-9._:-]{1,128}$/
-      ),
-      messageId: this.collaborators.attentionRecordFields.text(
-        data.messageId,
-        /^[a-zA-Z0-9._:-]{1,128}$/
-      )
-    };
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-comment-retention.ts
-var AttentionCommentRetention = class {
-  constructor(collaborators, api, owner, repo, author) {
-    this.collaborators = collaborators;
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.author = author;
-  }
-  collaborators;
-  api;
-  owner;
-  repo;
-  author;
-  async load(issueNumber, commentId, before) {
-    const client = this.collaborators.createGithubAttentionClient(
-      this.api,
-      this.owner,
-      this.repo,
-      issueNumber
-    );
-    const comment = (await client.list()).find((item) => item.id === commentId);
-    if (!comment || comment.body !== before)
-      throw new Error("Diagnostic comment changed before persistence");
-    const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
-    const offset = body.indexOf(ATTENTION_MARKER);
-    if (offset < 0) return { body, retained: "" };
-    this.collaborators.attentionRecord.read(body);
-    return {
-      body: body.slice(0, offset).trimEnd(),
-      retained: body.slice(offset)
-    };
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-diagnostic-checklist.ts
-var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  body = "";
-  commentId;
-  set(commentId, body) {
-    if (!body.startsWith(DIAGNOSTIC_MARKER) || !Number.isSafeInteger(commentId) || commentId < 1)
-      throw new Error("Invalid diagnostic checklist");
-    this.commentId = commentId;
-    this.body = body.split(ATTENTION_MARKER, 1)[0].trim();
-  }
-  prefix() {
-    return this.body;
-  }
-  read() {
-    const entries = [...new Set(this.body.split("\n"))].flatMap((line) => {
-      const match = /^- \[ \] \*\*(.+?)\*\*: (.+)$/.exec(line);
-      if (!match) return [];
-      const [, label, description] = match;
-      return [
-        {
-          label,
-          description,
-          field: _AttentionDiagnosticChecklist.FIELDS.get(label) ?? "other",
-          action: this.action(description)
-        }
-      ];
-    });
-    return { commentId: this.commentId, entries };
-  }
-  action(description) {
-    for (const locale of ["en", "fr"]) {
-      const messages5 = this.collaborators.createAttentionMessages(locale);
-      if (description === messages5.t("action.content-approval-pending"))
-        return "content-approval";
-      if (description === messages5.t("action.social-approval-pending"))
-        return "social-approval";
-      if (description === messages5.t("action.approval-pending"))
-        return "email-approval";
-      if (description === messages5.t("action.community-approval-pending"))
-        return "community-approval";
-      if (description === messages5.t("action.meetup-approval-pending"))
-        return "meetup-approval";
-      if (description === messages5.t("action.delivery-recovery"))
-        return "delivery-recovery";
-    }
-    return void 0;
-  }
-  static FIELDS = /* @__PURE__ */ new Map([
-    ["Event Title", "title"],
-    ["Event Description", "description"],
-    ["Drive Link", "assets"],
-    ["Event materials", "assets"],
-    ["OpenFeedback Link", "feedback"],
-    ["Event Date", "date"],
-    ["Hoster", "host"],
-    ["Host confirmation", "host-confirmation"],
-    ["Speaker confirmation", "speaker-confirmation"],
-    ["Meetup Link", "meetup"],
-    ["CNCF Link", "community"],
-    ["Agenda", "agenda"]
-  ]);
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-presenter.ts
-var AttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, diagnostics, messages5) {
-    this.collaborators = collaborators;
-    this.repository = repository;
-    this.diagnostics = diagnostics;
-    this.messages = messages5;
-    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
-      throw new Error("Invalid attention issue identity");
-    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
-  }
-  collaborators;
-  repository;
-  diagnostics;
-  messages;
-  issueUrl;
-  retired(commentId) {
-    return [this.diagnostics.prefix(), this.redirect(commentId)].filter(Boolean).join("\n\n");
-  }
-  redirect(commentId) {
-    return this.messages.t("attention.redirect", {
-      url: `${this.issueUrl}#issuecomment-${commentId}`
-    });
-  }
-  issue(state, metadata) {
-    return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
-  }
-  resolved(state) {
-    return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
-  }
-  details(state) {
-    const view = this.collaborators.attentionPolicy.view(state);
-    const lines = this.status(state);
-    for (const episode of this.collaborators.attentionTaskSelection.select(
-      view,
-      this.diagnostics.read()
-    ).details) {
-      const url = this.url(episode, state);
-      const link = url === this.overviewUrl(state) ? "" : ` ([${this.messages.t("attention.review")}](${url}))`;
-      lines.push(`- [ ] ${this.text(episode)}${link}`);
-    }
-    if (!view.conditions.length && !this.diagnostics.prefix() && !lines.length)
-      lines.push(this.messages.t("attention.clear"));
-    return [...new Set(lines)].join("\n");
-  }
-  status(state) {
-    return state.post?.status === "pending" ? [`- [ ] ${this.messages.t("attention.pending")}`] : [];
-  }
-  text(episode) {
-    const text = this.action(episode);
-    return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
-  }
-  action(episode) {
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
-      return this.messages.t("action.content-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
-      return this.messages.t("action.social-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "community-approval")
-      return this.messages.t("action.community-approval-pending");
-    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
-      return this.messages.t("action.meetup-approval-pending");
-    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
-      task: this.messages.task(episode.condition.resource)
-    });
-  }
-  url(episode, state) {
-    const runId = episode.runId ?? state.runId;
-    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
-      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
-    if (["integration-failure", "stage-unknown"].includes(
-      episode.condition.code
-    ) && runId && /^\d+$/.test(runId))
-      return `https://github.com/${this.repository}/actions/runs/${runId}`;
-    return this.overviewUrl(state);
-  }
-  overviewUrl(state) {
-    const commentId = state.commentId ?? this.diagnostics.read().commentId;
-    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/attention-record-fields.ts
-var AttentionRecordFields = class {
-  record(value) {
-    if (typeof value !== "object" || value === null || Array.isArray(value))
-      throw new Error("Invalid attention record object");
-    return value;
-  }
-  text(value, pattern) {
-    if (typeof value !== "string" || !pattern.test(value))
-      throw new Error("Invalid attention record text");
-    return value;
-  }
-  integer(value, positive = false) {
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
-      throw new Error("Invalid attention record integer");
-    return value;
-  }
-  choice(value, values) {
-    const found = values.find((candidate) => candidate === value);
-    if (found === void 0)
-      throw new Error("Invalid attention record variant");
-    return found;
-  }
-  instant(value) {
-    const text = this.text(value, /^\d{4}-\d{2}-\d{2}T/);
-    if (!Number.isFinite(Date.parse(text)))
-      throw new Error("Invalid attention record timestamp");
-    return text;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/github-attention-client.ts
-var GithubAttentionClient = class {
-  constructor(collaborators, api, owner, repo, issue2) {
-    this.collaborators = collaborators;
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.issue = issue2;
-  }
-  collaborators;
-  api;
-  owner;
-  repo;
-  issue;
-  async list() {
-    const comments = [];
-    let page = 1;
-    while (page <= 20) {
-      const response = await this.api.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: this.issue,
-        page,
-        per_page: 100
-      });
-      if (!Array.isArray(response.data))
-        throw new Error("Invalid attention comment response");
-      comments.push(
-        ...response.data.map(
-          this.collaborators.githubAttentionResponse.comment.bind(
-            this.collaborators.githubAttentionResponse
-          )
-        )
-      );
-      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!next) return comments;
-      page += 1;
-    }
-    throw new Error("Attention comment limit exceeded");
-  }
-  async create(body) {
-    const response = await this.api.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: this.issue,
-      body
-    });
-    if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
-      throw new Error("Invalid attention comment identity");
-    return response.data.id;
-  }
-  async update(commentId, body) {
-    await this.api.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
-  }
-  async replace(commentId, before, after) {
-    const current = (await this.list()).find(
-      (comment) => comment.id === commentId
-    );
-    if (current?.body !== before)
-      throw new Error("Attention comment changed before persistence");
-    await this.update(commentId, after);
-  }
-  async remove(commentId, before) {
-    const current = (await this.list()).find(
-      (comment) => comment.id === commentId
-    );
-    if (current?.body !== before)
-      throw new Error("Attention comment changed before removal");
-    await this.api.rest.issues.deleteComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId
-    });
-  }
-  async edit(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing attention comment node identity");
-    const result = await this.api.graphql(
-      `query AttentionCommentEditor($id: ID!) {
-				node(id: $id) {
-					... on IssueComment {
-						id body lastEditedAt editor { login __typename }
-					}
-				}
-			}`,
-      { id: comment.node_id }
-    );
-    return this.collaborators.githubAttentionResponse.current(result, comment);
-  }
-  checkHistoryLimit(count) {
-    if (count > 2e3) throw new Error("Attention history limit exceeded");
-  }
-  async history(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing attention comment node identity");
-    const edits = [];
-    let after;
-    do {
-      const response = await this.api.graphql(
-        `query AttentionCommentHistory($id: ID!, $after: String) {
-				node(id: $id) { ... on IssueComment {
-					id body userContentEdits(first: 100, after: $after) {
-						nodes { diff deletedAt editor { login __typename } }
-						pageInfo { hasNextPage endCursor }
-					}
-				} }
-			}`,
-        { id: comment.node_id, ...after ? { after } : {} }
-      );
-      const history = this.collaborators.githubAttentionResponse.history(
-        response,
-        comment
-      );
-      edits.push(...history.nodes);
-      this.checkHistoryLimit(edits.length);
-      if (!history.hasNextPage) return edits;
-      const next = history.endCursor;
-      if (!next || next === after)
-        throw new Error("Invalid attention history cursor");
-      after = next;
-    } while (after);
-    return edits;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
-var GithubAttentionRepository = class {
-  constructor(collaborators, client, author, presenter, checklist, visibility) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.author = author;
-    this.presenter = presenter;
-    this.checklist = checklist;
-    this.visibility = visibility;
-  }
-  collaborators;
-  client;
-  author;
-  presenter;
-  checklist;
-  visibility;
-  snapshot;
-  obsolete;
-  previous;
-  loaded = false;
-  async load() {
-    const trusted = this.collaborators.createTrustedAttentionState(
-      this.client,
-      this.author
-    );
-    const records = [];
-    let diagnostic;
-    for (const comment of await this.client.list()) {
-      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-        continue;
-      const body = await trusted.body(comment);
-      const snapshot = { id: comment.id, body: comment.body ?? "" };
-      if (body.startsWith(DIAGNOSTIC_MARKER) && !diagnostic) {
-        diagnostic = snapshot;
-        this.checklist.set(comment.id, body);
-      }
-      if (body.includes(ATTENTION_MARKER))
-        records.push({
-          snapshot,
-          state: this.collaborators.attentionRecord.read(body),
-          diagnostic: body.startsWith(DIAGNOSTIC_MARKER)
-        });
-    }
-    this.select(records, diagnostic);
-    this.loaded = true;
-    return this.previous;
-  }
-  select(records, diagnostic) {
-    const canonical = records.find((item) => item.diagnostic) ?? records[0];
-    if (records.length > 1 && (records.length !== 2 || !canonical?.diagnostic || records.every((item) => item.diagnostic) || records.some(
-      (item) => !this.collaborators.attentionStateEquality.equal(
-        item.state,
-        canonical.state
-      )
-    )))
-      throw new Error("Multiple attention records");
-    this.snapshot = diagnostic ?? canonical?.snapshot;
-    this.previous = canonical?.state;
-    this.obsolete = records.find(
-      (item) => item.snapshot.id !== this.snapshot?.id
-    )?.snapshot;
-  }
-  async save(state) {
-    if (!this.loaded)
-      throw new Error("Attention state must be loaded before writing");
-    await this.consolidate();
-    const body = this.presenter.issue(
-      state,
-      this.collaborators.attentionRecord.marker(state)
-    );
-    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
-    if (this.snapshot) {
-      if (this.snapshot.body !== body)
-        await this.client.replace(this.snapshot.id, this.snapshot.body, body);
-    } else {
-      if ((await this.client.list()).some(
-        (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
-      ))
-        throw new Error("Attention state changed before creation");
-      const id = await this.client.create(body);
-      this.snapshot = { id, body };
-    }
-    this.snapshot.body = body;
-    await this.visibility.synchronize(
-      this.snapshot.id,
-      body,
-      this.presenter.resolved(state)
-    );
-  }
-  async consolidate() {
-    if (!this.obsolete || !this.snapshot || !this.previous) return;
-    const body = this.presenter.issue(
-      this.previous,
-      this.collaborators.attentionRecord.marker(this.previous)
-    );
-    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
-    await this.client.replace(this.snapshot.id, this.snapshot.body, body);
-    this.snapshot.body = body;
-    await this.client.remove(this.obsolete.id, this.obsolete.body);
-    this.obsolete = void 0;
-  }
-  async retire(commentId) {
-    if (!this.loaded)
-      throw new Error("Attention state must be loaded before retiring");
-    if (!this.snapshot) return;
-    await this.consolidate();
-    await this.client.replace(
-      this.snapshot.id,
-      this.snapshot.body,
-      this.presenter.retired(commentId)
-    );
-    this.snapshot = void 0;
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/github-attention-response.ts
-var GithubAttentionResponse = class {
-  record(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value))
-      throw new Error("Invalid attention API object");
-    return value;
-  }
-  comment(value) {
-    const data = this.record(value);
-    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
-      throw new Error("Invalid attention comment identity");
-    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
-      throw new Error("Invalid attention comment body");
-    if (data.node_id !== void 0 && typeof data.node_id !== "string")
-      throw new Error("Invalid attention comment node");
-    let user;
-    if (data.user !== null && data.user !== void 0) {
-      const actor = this.record(data.user);
-      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
-        throw new Error("Invalid attention comment author");
-      user = { login: actor.login, type: actor.type };
-    }
-    return { id: data.id, body: data.body, node_id: data.node_id, user };
-  }
-  current(value, comment) {
-    const node = this.node(value, comment);
-    return {
-      id: node.id,
-      body: node.body,
-      lastEditedAt: this.nullableText(node.lastEditedAt),
-      editor: this.editor(node.editor)
-    };
-  }
-  history(value, comment) {
-    const node = this.node(value, comment);
-    const edits = this.record(node.userContentEdits);
-    const page = this.record(edits.pageInfo);
-    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
-      throw new Error("Attention history is unavailable");
-    return {
-      nodes: edits.nodes.map(this.edit.bind(this)),
-      hasNextPage: page.hasNextPage,
-      endCursor: this.nullableText(page.endCursor)
-    };
-  }
-  node(value, comment) {
-    const result = this.record(value);
-    const node = this.record(result.node);
-    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
-      throw new Error("Attention comment changed during verification");
-    return { ...node, id: node.id, body: node.body };
-  }
-  edit(value) {
-    const data = this.record(value);
-    return {
-      diff: this.nullableText(data.diff),
-      deletedAt: this.nullableText(data.deletedAt),
-      editor: this.editor(data.editor)
-    };
-  }
-  nullableText(value) {
-    if (value !== null && typeof value !== "string")
-      throw new Error("Invalid attention API text");
-    return value;
-  }
-  editor(value) {
-    if (value === null) return null;
-    const actor = this.record(value);
-    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
-      throw new Error("Invalid attention editor");
-    return { login: actor.login, __typename: actor.__typename };
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
-var messages = {
-  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
-  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
-  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
-  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
-  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
-  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
-  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
-  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
-  "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
-  "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
-  "failure.social": "Posting failed.",
-  "task.social": "social posts",
-  "action.community-approval-pending": "Approve or reject OCGroups publication.",
-  "failure.communications": "Email preparation or sending failed.",
-  "failure.feedback": "OpenFeedback synchronization failed.",
-  "failure.assets": "Drive file preparation failed.",
-  "failure.event": "Meetup issue update failed.",
-  "task.event-data": "meetup details",
-  "attention.redirect": "[Post-event tasks and approvals]({url})",
-  "attention.review": "Review details",
-  "attention.unknown": "status unverified",
-  "action.missing-date": "Set the event date.",
-  "action.required-data": "Complete or correct: {task}.",
-  "action.host-confirmation": "Select a host in the meetup form.",
-  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
-  "action.approval-pending": "Approve or reject the emails.",
-  "action.integration-failure": "Automation failed: {task}.",
-  "action.delivery-recovery": "Verify delivery before retrying.",
-  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "Unverified stage result: {task}.",
-  "task.approvals": "email approval",
-  "task.delivery": "delivery recovery",
-  "attention.clear": "No pending tasks.",
-  "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
-  "task.publish-community-event": 'Publish on the CNCF platform and fill in "CNCF Link"',
-  "task.date": "event date",
-  "task.title": "event title",
-  "task.description": "event description",
-  "task.agenda": "talk agenda",
-  "task.agenda-speakers": "talk speakers",
-  "task.agenda-descriptions": "talk descriptions",
-  "task.host": "event host",
-  "task.event-status": "event status",
-  "task.publication-links": "publication links",
-  "task.meetup-link": "Meetup Link",
-  "task.community-link": "CNCF Link",
-  "task.assets-link": "resources folder link",
-  "task.feedback-link": "OpenFeedback Link",
-  "task.confirmations": "speaker confirmation",
-  "task.event-form": "event form",
-  "task.create-asset-folder": "Prepare the asset folder",
-  "task.thank-host": "Thank the host",
-  "task.thank-speakers": "Thank the speakers",
-  "task.share-slides": "Share slides",
-  "task.import-attendance": "Import attendance",
-  "task.share-social": "Post a meetup recap on LinkedIn",
-  "task.event": "event validation",
-  "task.assets": "assets",
-  "task.feedback": "feedback",
-  "task.content": "content",
-  "task.communications": "communications",
-  "task.unknown": "review the issue"
-};
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
-var messages2 = {
-  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
-  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
-  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
-  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
-  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
-  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
-  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
-  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
-  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
-  "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "failure.social": "La publication a \xE9chou\xE9.",
-  "task.social": "publications sur les r\xE9seaux",
-  "action.community-approval-pending": "Approuvez ou refusez la publication OCGroups.",
-  "failure.communications": "La pr\xE9paration ou l'envoi des emails a \xE9chou\xE9.",
-  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
-  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
-  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
-  "task.event-data": "informations du meetup",
-  "attention.redirect": "[T\xE2ches et approbations apr\xE8s le meetup]({url})",
-  "attention.review": "Voir les d\xE9tails",
-  "attention.unknown": "statut non v\xE9rifi\xE9",
-  "action.missing-date": "Renseignez la date du meetup.",
-  "action.required-data": "Compl\xE9tez ou corrigez : {task}.",
-  "action.host-confirmation": "S\xE9lectionnez un h\xF4te dans le formulaire du meetup.",
-  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
-  "action.manual-publication": "{task}.",
-  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
-  "action.approval-pending": "Approuvez ou refusez les emails.",
-  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
-  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
-  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
-  "action.follow-up": "{task}.",
-  "action.stage-unknown": "R\xE9sultat non v\xE9rifi\xE9 : {task}.",
-  "task.approvals": "validation des emails",
-  "task.delivery": "reprise des envois",
-  "attention.clear": "Aucune t\xE2che en attente.",
-  "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
-  "task.publish-community-event": 'Publiez sur la plateforme CNCF et renseignez le champ "CNCF Link"',
-  "task.date": "date du meetup",
-  "task.title": "titre du meetup",
-  "task.description": "description du meetup",
-  "task.agenda": "programme des talks",
-  "task.agenda-speakers": "intervenants des talks",
-  "task.agenda-descriptions": "descriptions des talks",
-  "task.host": "h\xF4te du meetup",
-  "task.event-status": "statut du meetup",
-  "task.publication-links": "liens de publication",
-  "task.meetup-link": "Meetup Link",
-  "task.community-link": "CNCF Link",
-  "task.assets-link": "lien du dossier des ressources",
-  "task.feedback-link": "OpenFeedback Link",
-  "task.confirmations": "confirmation des intervenants",
-  "task.event-form": "formulaire du meetup",
-  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
-  "task.thank-host": "Remerciez l'h\xF4te",
-  "task.thank-speakers": "Remerciez les intervenants",
-  "task.share-slides": "Partagez les pr\xE9sentations",
-  "task.import-attendance": "Importez les pr\xE9sences",
-  "task.share-social": "Publiez un r\xE9capitulatif sur LinkedIn",
-  "task.event": "validation du meetup",
-  "task.assets": "ressources",
-  "task.feedback": "\xE9valuations",
-  "task.content": "contenu",
-  "task.communications": "communications",
-  "task.unknown": "consulter le ticket"
-};
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
-var CATALOGS3 = { en: messages, fr: messages2 };
-
-// packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
-var AttentionMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS3, locale);
-  }
-  failure(resource) {
-    const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS3.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
-  }
-  task(resource) {
-    const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS3.en, key) ? key : "task.unknown");
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/trusted-attention-state.ts
-var TrustedAttentionState = class {
-  constructor(client, author) {
-    this.client = client;
-    this.author = author;
-  }
-  client;
-  author;
-  async body(comment) {
-    if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-      throw new Error("Untrusted attention author");
-    const current = await this.client.edit(comment);
-    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
-      return current.body;
-    for (const edit of await this.client.history(comment)) {
-      if (edit.deletedAt) throw new Error("Attention history was deleted");
-      if (this.isAuthor(edit.editor)) {
-        if (edit.diff === null)
-          throw new Error("Attention history is unavailable");
-        return edit.diff;
-      }
-    }
-    throw new Error("Trusted attention history is unavailable");
-  }
-  isAuthor(editor) {
-    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.author.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
-// packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
-var GithubOrganizerAttentionComposition = class {
-  attentionRecordFields() {
-    return new AttentionRecordFields();
-  }
-  attentionCommentRetention(...args) {
-    return new AttentionCommentRetention(
-      {
-        attentionRecord: this.attentionRecord(),
-        createGithubAttentionClient: (...args2) => this.githubAttentionClient(...args2),
-        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
-      },
-      ...args
-    );
-  }
-  attentionDiagnosticChecklist() {
-    return new AttentionDiagnosticChecklist({
-      createAttentionMessages: (...args) => this.attentionMessages(...args)
-    });
-  }
-  attentionMessages(...args) {
-    return new AttentionMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  attentionPresenter(...args) {
-    return new AttentionPresenter(
-      {
-        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
-        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection()
-      },
-      ...args
-    );
-  }
-  attentionRecord() {
-    return new AttentionRecord({
-      attentionRecordFields: this.attentionRecordFields(),
-      attentionStateRules: new CommunicationDomainComposition().attentionStateRules()
-    });
-  }
-  githubAttentionClient(...args) {
-    return new GithubAttentionClient(
-      { githubAttentionResponse: this.githubAttentionResponse() },
-      ...args
-    );
-  }
-  githubAttentionRepository(...args) {
-    return new GithubAttentionRepository(
-      {
-        attentionRecord: this.attentionRecord(),
-        attentionStateEquality: new CommunicationDomainComposition().attentionStateEquality(),
-        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
-      },
-      ...args
-    );
-  }
-  githubAttentionResponse() {
-    return new GithubAttentionResponse();
-  }
-  trustedAttentionState(...args) {
-    return new TrustedAttentionState(...args);
   }
 };
 
@@ -48502,25 +50543,25 @@ var messages4 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
-var CATALOGS4 = { en: messages3, fr: messages4 };
+var CATALOGS6 = { en: messages3, fr: messages4 };
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
 var SlackAttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS4, locale);
+    super(collaborators, CATALOGS6, locale);
   }
   failure(resource) {
     const key = `failure.${resource}`;
-    return Object.hasOwn(CATALOGS4.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+    return Object.hasOwn(CATALOGS6.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
   }
   task(resource) {
     const key = `task.${resource}`;
-    return this.t(Object.hasOwn(CATALOGS4.en, key) ? key : "task.unknown");
+    return this.t(Object.hasOwn(CATALOGS6.en, key) ? key : "task.unknown");
   }
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
+var EN_MESSAGES5 = {
   "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
   "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
   "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
@@ -48529,7 +50570,7 @@ var EN_MESSAGES3 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
+var FR_MESSAGES5 = {
   "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
   "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
   "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
@@ -48538,12 +50579,12 @@ var FR_MESSAGES3 = {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
-var CATALOGS5 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+var CATALOGS7 = { en: EN_MESSAGES5, fr: FR_MESSAGES5 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
 var SlackApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale) {
-    super(collaborators, CATALOGS5, locale);
+    super(collaborators, CATALOGS7, locale);
   }
 };
 
@@ -48702,7 +50743,7 @@ var SlackApprovalPresenter = class {
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 var SlackAttentionNotification = class {
   constructor(collaborators, client, channel, presenter) {
     this.collaborators = collaborators;
@@ -48717,7 +50758,7 @@ var SlackAttentionNotification = class {
   channel;
   presenter;
   fingerprint(view) {
-    return createHash4("sha256").update(this.presenter.render(view)).digest("hex");
+    return createHash5("sha256").update(this.presenter.render(view)).digest("hex");
   }
   async post(view) {
     const response = await this.client.post(
@@ -49355,7 +51396,7 @@ var CsvReferentialRepository = class {
 };
 
 // packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
-import { createHash as createHash5 } from "node:crypto";
+import { createHash as createHash6 } from "node:crypto";
 import { readFile as readFile2, writeFile as writeFile2 } from "node:fs/promises";
 import { join } from "node:path";
 var CsvSpeakerCatalogStore = class {
@@ -49439,7 +51480,7 @@ var CsvSpeakerCatalogStore = class {
     return { csv, state, historicalIds };
   }
   revision(csv, state, historicalIds) {
-    return createHash5("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+    return createHash6("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
 
@@ -51437,1639 +53478,6 @@ var CsvReferentialRepositoryComposition = class {
   }
 };
 
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
-var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-presenter.ts
-var DiagnosticCommentPresenter = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  render(diagnostics, messages5, links) {
-    const actionable = /* @__PURE__ */ new Map();
-    for (const item of diagnostics) {
-      if (this.collaborators.organizerDiagnosticPolicy.suppressed(
-        item,
-        diagnostics
-      )) {
-        continue;
-      }
-      const presentation = this.collaborators.diagnosticPresenter.presentDiagnostic(
-        item,
-        messages5,
-        links
-      );
-      actionable.set(
-        `${presentation.field}:${presentation.message}`,
-        presentation
-      );
-    }
-    if (actionable.size === 0) {
-      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
-
-${messages5.t("comment.resolved")}`;
-    }
-    const lines = [...actionable.values()].sort(
-      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
-        numeric: true
-      }) || left.message.localeCompare(right.message, messages5.locale)
-    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
-    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-sections.ts
-var SOCIAL_DIAGNOSTIC_START = "<!-- meetup-automation:social-diagnostics:v1 -->";
-var SOCIAL_DIAGNOSTIC_END = "<!-- /meetup-automation:social-diagnostics:v1 -->";
-var DiagnosticCommentSections = class {
-  merge(previous, rendered, scope) {
-    const current = this.read(previous);
-    if (!scope && !current.social) return rendered;
-    const base = this.tasks(scope === "social" ? current.base : rendered);
-    const social = this.tasks(
-      scope === "social" ? rendered : current.social
-    ).filter((line) => !base.includes(line));
-    if (!base.length && !social.length) return rendered;
-    return [
-      EVENT_DIAGNOSTIC_COMMENT_MARKER,
-      "",
-      ...base,
-      ...social.length ? [SOCIAL_DIAGNOSTIC_START, ...social, SOCIAL_DIAGNOSTIC_END] : []
-    ].join("\n");
-  }
-  hasSocial(body) {
-    return Boolean(this.read(body).social);
-  }
-  read(body) {
-    if (!body.includes("meetup-automation:social-diagnostics:"))
-      return { base: body, social: "" };
-    const start = body.indexOf(SOCIAL_DIAGNOSTIC_START);
-    const end = body.indexOf(SOCIAL_DIAGNOSTIC_END);
-    if (start < 0 || end < start || body.split(SOCIAL_DIAGNOSTIC_START).length !== 2 || body.split(SOCIAL_DIAGNOSTIC_END).length !== 2)
-      throw new Error("Invalid social diagnostic section");
-    return {
-      base: body.slice(0, start) + body.slice(end + SOCIAL_DIAGNOSTIC_END.length),
-      social: body.slice(start + SOCIAL_DIAGNOSTIC_START.length, end)
-    };
-  }
-  tasks(body) {
-    return [
-      ...new Set(
-        body.split("\n").filter((line) => /^- \[[ x]\] \*\*.+?\*\*: .+$/.test(line))
-      )
-    ];
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/authentication-diagnostic-guidance.ts
-var AUTHENTICATION_GUIDANCE = [
-  [
-    "publication.meetup.authentication",
-    ["Meetup Link", "comment.guidance.meetup.authentication"]
-  ],
-  [
-    "publication.meetup.authentication-configuration",
-    ["Meetup Link", "comment.guidance.meetup.authentication-configuration"]
-  ],
-  [
-    "publication.meetup.authentication-captcha-required",
-    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-required"]
-  ],
-  [
-    "publication.meetup.authentication-captcha-rejected",
-    ["Meetup Link", "comment.guidance.meetup.authentication-captcha-rejected"]
-  ],
-  [
-    "publication.meetup.authentication-captcha-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-captcha-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-one-time-code",
-    ["Meetup Link", "comment.guidance.meetup.authentication-one-time-code"]
-  ],
-  [
-    "publication.meetup.authentication-credentials-rejected",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-credentials-rejected"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-session-not-reusable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-session-not-reusable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-login-page-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-login-page-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-login-form-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-login-form-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-submit-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-submit-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-redirect-timeout",
-    ["Meetup Link", "comment.guidance.meetup.authentication-redirect-timeout"]
-  ],
-  [
-    "publication.meetup.authentication-account-unavailable",
-    [
-      "Meetup Link",
-      "comment.guidance.meetup.authentication-account-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.authentication-account-mismatch",
-    ["Meetup Link", "comment.guidance.meetup.authentication-account-mismatch"]
-  ],
-  [
-    "publication.meetup.authentication-unexpected-page",
-    ["Meetup Link", "comment.guidance.meetup.authentication-unexpected-page"]
-  ],
-  [
-    "publication.meetup.authentication-rate-limited",
-    ["Meetup Link", "comment.guidance.meetup.authentication-rate-limited"]
-  ],
-  [
-    "publication.meetup.authentication-browser",
-    ["Meetup Link", "comment.guidance.meetup.authentication-browser"]
-  ]
-];
-
-// packages/adapter/event/github-event-comment-repository/src/email-diagnostic-guidance.ts
-var EMAIL_GUIDANCE = [
-  [
-    "communication.email-parameters-invalid",
-    [
-      "Communication",
-      "comment.guidance.communication.email-parameters-invalid"
-    ]
-  ],
-  [
-    "communication.approval-pending",
-    ["Communication", "comment.guidance.communication.approval"]
-  ],
-  [
-    "communication.approval-rejected",
-    ["Communication", "comment.guidance.communication.rejected"]
-  ],
-  [
-    "communication.approval-unavailable",
-    ["Communication", "comment.guidance.communication.approval-unavailable"]
-  ],
-  [
-    "communication.approval-notification-failed",
-    ["Communication", "comment.guidance.communication.approval-notification"]
-  ],
-  [
-    "communication.gateway-delivery-uncertain",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-threw-ambiguous-error",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.ledger-status-write-failed",
-    ["Communication", "comment.guidance.communication.delivery-uncertain"]
-  ],
-  [
-    "communication.gateway-delivery-rejected",
-    ["Communication", "comment.guidance.communication.delivery-rejected"]
-  ],
-  [
-    "communication.gateway-delivery-deferred",
-    ["Communication", "comment.guidance.communication.delivery-deferred"]
-  ],
-  [
-    "communication.invalid-clock",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-identifier",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.invalid-time-zone",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.ledger-read-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.ledger-reservation-failed",
-    ["Communication", "comment.guidance.communication.ledger"]
-  ],
-  [
-    "communication.missing-mail-destination",
-    ["Communication", "comment.guidance.communication.destination"]
-  ],
-  [
-    "communication.checklist-update-failed",
-    ["Communication", "comment.guidance.communication.checklist"]
-  ],
-  [
-    "communication.event-concurrently-modified",
-    ["Communication", "comment.guidance.communication.concurrent"]
-  ],
-  [
-    "communication.event-references-unresolved",
-    ["Agenda", "comment.guidance.communication.references"]
-  ],
-  [
-    "communication.referential-catalog-invalid",
-    ["Referentials", "comment.guidance.communication.catalog"]
-  ]
-];
-
-// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
-var STAGE_GUIDANCE = [
-  ...AUTHENTICATION_GUIDANCE,
-  [
-    "publication.website.access",
-    ["Website", "comment.guidance.website.access"]
-  ],
-  [
-    "publication.website.conflict",
-    ["Website", "comment.guidance.website.conflict"]
-  ],
-  [
-    "publication.website.format",
-    ["Website", "comment.guidance.website.format"]
-  ],
-  [
-    "publication.website.unavailable",
-    ["Website", "comment.guidance.website.unavailable"]
-  ],
-  [
-    "publication.content.invalid",
-    ["Event materials", "comment.guidance.content.invalid"]
-  ],
-  [
-    "communication.social.evaluation-failed",
-    ["Communication", "comment.guidance.social.evaluation-failed"]
-  ],
-  [
-    "communication.social.pending",
-    ["Communication", "comment.guidance.social.pending"]
-  ],
-  [
-    "communication.social.missing",
-    ["Communication", "comment.guidance.social.missing"]
-  ],
-  [
-    "communication.social.content-pending",
-    ["Communication", "comment.guidance.social.content-pending"]
-  ],
-  [
-    "communication.social.generation-recovery",
-    ["Communication", "comment.guidance.social.generation-recovery"]
-  ],
-  [
-    "communication.social.preparation-failed",
-    ["Communication", "comment.guidance.social.preparation-failed"]
-  ],
-  [
-    "communication.social.blocked",
-    ["Communication", "comment.guidance.social.blocked"]
-  ],
-  [
-    "communication.social.uncertain",
-    ["Communication", "comment.guidance.social.uncertain"]
-  ],
-  [
-    "communication.social.expired",
-    ["Communication", "comment.guidance.social.expired"]
-  ],
-  [
-    "publication.meetup.slides-source",
-    ["Automated slide sharing", "comment.guidance.meetup.slides-source"]
-  ],
-  [
-    "publication.meetup.slides-link",
-    ["Automated slide sharing", "comment.guidance.meetup.slides-link"]
-  ],
-  [
-    "publication.meetup.slides-pdf-pending",
-    ["Automated slide sharing", "comment.guidance.meetup.slides-pdf-pending"]
-  ],
-  [
-    "publication.meetup.slides-delivery-recovery",
-    [
-      "Automated slide sharing",
-      "comment.guidance.meetup.slides-delivery-recovery"
-    ]
-  ],
-  [
-    "publication.meetup.slides-form-unavailable",
-    [
-      "Automated slide sharing",
-      "comment.guidance.meetup.slides-form-unavailable"
-    ]
-  ],
-  [
-    "publication.meetup.slides-source-changed",
-    [
-      "Automated slide sharing",
-      "comment.guidance.meetup.slides-source-changed"
-    ]
-  ],
-  [
-    "publication.content.prerequisites",
-    ["Event materials", "comment.guidance.content.prerequisites"]
-  ],
-  [
-    "publication.content.pending",
-    ["Event materials", "comment.guidance.content.pending"]
-  ],
-  [
-    "publication.content.rejected",
-    ["Event materials", "comment.guidance.content.rejected"]
-  ],
-  [
-    "publication.content.iteration-requested",
-    ["Event materials", "comment.guidance.content.iteration-requested"]
-  ],
-  [
-    "publication.content.recovery",
-    ["Event materials", "comment.guidance.content.recovery"]
-  ],
-  [
-    "publication.content.stale",
-    ["Event materials", "comment.guidance.content.stale"]
-  ],
-  [
-    "publication.content.title-review",
-    ["Event materials", "comment.guidance.content.title-review"]
-  ],
-  [
-    "publication.content.description-review",
-    ["Event materials", "comment.guidance.content.description-review"]
-  ],
-  [
-    "publication.meetup.content-review",
-    ["Event materials", "comment.guidance.content.review"]
-  ],
-  [
-    "communication.content-review",
-    ["Event materials", "comment.guidance.content.review"]
-  ],
-  [
-    "publication.assets.pdf.source",
-    ["Event materials", "comment.guidance.pdf.source"]
-  ],
-  [
-    "publication.assets.pdf.source-pending",
-    ["Event materials", "comment.guidance.pdf.source-pending"]
-  ],
-  [
-    "publication.assets.pdf.revision",
-    ["Event materials", "comment.guidance.pdf.revision"]
-  ],
-  [
-    "publication.assets.pdf.conflict",
-    ["Event materials", "comment.guidance.pdf.recovery"]
-  ],
-  [
-    "publication.assets.pdf.recovery",
-    ["Event materials", "comment.guidance.pdf.recovery"]
-  ],
-  [
-    "publication.assets.pdf.limit",
-    ["Event materials", "comment.guidance.pdf.limit"]
-  ],
-  [
-    "publication.assets.pdf.sharing",
-    ["Event materials", "comment.guidance.pdf.sharing"]
-  ],
-  [
-    "publication.assets.pdf.invalid",
-    ["Event materials", "comment.guidance.pdf.invalid"]
-  ],
-  [
-    "communication.checklist-concurrently-modified",
-    ["Communication", "comment.guidance.communication.concurrent-checklist"]
-  ],
-  [
-    "publication.feedback.conflict",
-    ["OpenFeedback Link", "comment.guidance.feedback.conflict"]
-  ],
-  [
-    "communication.feedback-unavailable",
-    ["OpenFeedback Link", "comment.guidance.feedback.results"]
-  ],
-  [
-    "communication.feedback-fetch-failed",
-    ["OpenFeedback Link", "comment.guidance.feedback.access"]
-  ],
-  [
-    "communication.slides-unavailable",
-    ["Event materials", "comment.guidance.assets.slides"]
-  ],
-  ...EMAIL_GUIDANCE,
-  [
-    "publication.feedback.agenda",
-    ["Agenda", "comment.guidance.feedback.agenda"]
-  ],
-  [
-    "publication.feedback.prerequisites",
-    ["OpenFeedback Link", "comment.guidance.feedback.prerequisites"]
-  ],
-  [
-    "publication.feedback-link.prerequisites",
-    ["Meetup issue", "comment.guidance.feedback-link.prerequisites"]
-  ],
-  [
-    "publication.feedback-link.ambiguous-date",
-    ["Meetup issue", "comment.guidance.feedback-link.ambiguous-date"]
-  ],
-  [
-    "publication.assets.prerequisites",
-    ["Drive Link", "comment.guidance.assets.prerequisites"]
-  ],
-  [
-    "publication.assets.file.drift",
-    ["Event materials", "comment.guidance.assets.drift"]
-  ],
-  [
-    "publication.assets.content.contract",
-    ["Event materials", "comment.guidance.assets.template"]
-  ],
-  [
-    "publication.assets.content.location",
-    ["Event materials", "comment.guidance.assets.template"]
-  ],
-  [
-    "publication.assets.content.missing",
-    ["Event materials", "comment.guidance.assets.missing"]
-  ],
-  [
-    "publication.assets.content.conflict",
-    ["Event materials", "comment.guidance.assets.recovery"]
-  ],
-  [
-    "publication.assets.content.recovery",
-    ["Event materials", "comment.guidance.assets.recovery"]
-  ],
-  [
-    "publication.assets.content.revision",
-    ["Event materials", "comment.guidance.assets.revision"]
-  ],
-  [
-    "publication.assets.content.image",
-    ["Event materials", "comment.guidance.assets.image"]
-  ],
-  [
-    "publication.assets.content.image-source",
-    ["Event materials", "comment.guidance.assets.image-source"]
-  ],
-  [
-    "publication.assets.content.image-format",
-    ["Event materials", "comment.guidance.assets.image-format"]
-  ],
-  [
-    "publication.assets.content.image-size",
-    ["Event materials", "comment.guidance.assets.image-size"]
-  ],
-  [
-    "publication.assets.content.image-dimensions",
-    ["Event materials", "comment.guidance.assets.image-dimensions"]
-  ],
-  [
-    "publication.assets.content.image-download",
-    ["Event materials", "comment.guidance.assets.image-download"]
-  ],
-  [
-    "publication.assets.content.image-changed",
-    ["Event materials", "comment.guidance.assets.image-changed"]
-  ],
-  [
-    "publication.assets.content.fallback",
-    ["Event materials", "comment.guidance.assets.fallback"]
-  ],
-  [
-    "communication.invalid-event-date",
-    ["Event Date", "comment.guidance.event.date.invalid"]
-  ],
-  [
-    "communication.occurrence-status-unknown",
-    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
-  ]
-];
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.ts
-var FIELD_ORDER = [
-  "Event Title",
-  "Event Date",
-  "Hoster",
-  "Event Description",
-  "Agenda",
-  "Meetup Link",
-  "CNCF Link",
-  "Drive Link",
-  "OpenFeedback Link",
-  "Event materials",
-  "Communication",
-  "Automated introduction emails",
-  "Aperitif",
-  "Restaurant / Bar",
-  "Post event",
-  "Automated thank-you emails",
-  "Speaker confirmation",
-  "Event Status",
-  "Issue format",
-  "Referentials",
-  "Meetup issue"
-];
-var GUIDANCE = new Map([
-  ...STAGE_GUIDANCE,
-  [
-    "event.proposals.invalid-selection",
-    ["Agenda", "comment.guidance.proposals.invalid-selection"]
-  ],
-  [
-    "event.proposals.not-found",
-    ["Agenda", "comment.guidance.proposals.not-found"]
-  ],
-  [
-    "event.proposals.not-accepted",
-    ["Agenda", "comment.guidance.proposals.not-accepted"]
-  ],
-  [
-    "referential.source.unavailable",
-    ["Agenda", "comment.guidance.proposals.unavailable"]
-  ],
-  [
-    "referential.source.invalid",
-    ["Agenda", "comment.guidance.proposals.invalid"]
-  ],
-  [
-    "referential.source.rate-limited",
-    ["Agenda", "comment.guidance.proposals.rate-limited"]
-  ],
-  [
-    "referential.source.mapping-required",
-    ["Agenda", "comment.guidance.proposals.mapping-required"]
-  ],
-  [
-    "referential.source.conflict",
-    ["Agenda", "comment.guidance.proposals.conflict"]
-  ],
-  [
-    "event.proposals.unavailable",
-    ["Agenda", "comment.guidance.proposals.unavailable"]
-  ],
-  ["event.proposals.invalid", ["Agenda", "comment.guidance.proposals.invalid"]],
-  [
-    "event.proposals.rate-limited",
-    ["Agenda", "comment.guidance.proposals.rate-limited"]
-  ],
-  [
-    "event.proposals.mapping-required",
-    ["Agenda", "comment.guidance.proposals.mapping-required"]
-  ],
-  [
-    "event.proposals.conflict",
-    ["Agenda", "comment.guidance.proposals.conflict"]
-  ],
-  [
-    "event.title.missing",
-    ["Event Title", "comment.guidance.event.title.missing"]
-  ],
-  ["event.date.missing", ["Event Date", "comment.guidance.event.date.missing"]],
-  ["event.date.invalid", ["Event Date", "comment.guidance.event.date.invalid"]],
-  [
-    "event.description.missing",
-    ["Event Description", "comment.guidance.event.description.missing"]
-  ],
-  ["event.hoster.missing", ["Hoster", "comment.guidance.event.hoster.missing"]],
-  ["event.hoster.invalid", ["Hoster", "comment.guidance.event.hoster.invalid"]],
-  [
-    "event.hoster.multiple",
-    ["Hoster", "comment.guidance.event.hoster.multiple"]
-  ],
-  ["event.agenda.missing", ["Agenda", "comment.guidance.event.agenda.missing"]],
-  [
-    "event.agenda.legacy-line-invalid",
-    ["Agenda", "comment.guidance.event.agenda.legacy-line-invalid"]
-  ],
-  [
-    "event.agenda.speaker.missing",
-    ["Agenda", "comment.guidance.event.agenda.speaker.missing"]
-  ],
-  [
-    "event.agenda.speaker.invalid",
-    ["Agenda", "comment.guidance.event.agenda.speaker.invalid"]
-  ],
-  [
-    "event.agenda.description.missing",
-    ["Agenda", "comment.guidance.event.agenda.description.missing"]
-  ],
-  [
-    "publication.meetup.unpublished",
-    ["Meetup Link", "comment.guidance.publication.meetup.unpublished"]
-  ],
-  [
-    "publication.meetup.missing",
-    ["Meetup Link", "comment.guidance.publication.meetup.missing"]
-  ],
-  [
-    "publication.community.missing",
-    ["CNCF Link", "comment.guidance.publication.community.missing"]
-  ],
-  [
-    "publication.assets.missing",
-    ["Drive Link", "comment.guidance.publication.assets.missing"]
-  ],
-  [
-    "event.link.meetup.invalid",
-    ["Meetup Link", "comment.guidance.event.link.meetup.invalid"]
-  ],
-  [
-    "event.link.community.invalid",
-    ["CNCF Link", "comment.guidance.event.link.community.invalid"]
-  ],
-  [
-    "event.link.feedback.invalid",
-    ["OpenFeedback Link", "comment.guidance.event.link.feedback.invalid"]
-  ],
-  [
-    "event.link.assets.invalid",
-    ["Drive Link", "comment.guidance.event.link.assets.invalid"]
-  ],
-  [
-    "publication.meetup-url.invalid",
-    ["Meetup Link", "comment.guidance.publication.meetup-url.invalid"]
-  ],
-  [
-    "publication.community-url.invalid",
-    ["CNCF Link", "comment.guidance.publication.community-url.invalid"]
-  ],
-  [
-    "publication.asset-url.invalid",
-    ["Drive Link", "comment.guidance.publication.asset-url.invalid"]
-  ],
-  [
-    "event.confirmation.speakers.missing",
-    [
-      "Speaker confirmation",
-      "comment.guidance.event.confirmation.speakers.missing"
-    ]
-  ],
-  [
-    "event.logistics.intent.invalid",
-    ["Logistics", "comment.guidance.event.logistics.intent.invalid"]
-  ],
-  [
-    "event.occurrence-status.invalid",
-    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
-  ],
-  [
-    "event.occurrence-status.label-conflict",
-    ["Event Status", "comment.guidance.event.occurrence-status.label-conflict"]
-  ],
-  [
-    "event.document.heading.missing",
-    ["Issue format", "comment.guidance.event.document.heading.missing"]
-  ],
-  [
-    "event.document.heading.duplicate",
-    ["Issue format", "comment.guidance.event.document.heading.duplicate"]
-  ],
-  [
-    "event.document.checkbox.invalid",
-    ["Issue format", "comment.guidance.event.document.checkbox.invalid"]
-  ],
-  [
-    "event.document.invalid-field-type",
-    ["Issue format", "comment.guidance.event.document.invalid-field-type"]
-  ],
-  [
-    "event.document.invalid-hoster-type",
-    ["Hoster", "comment.guidance.event.document.invalid-hoster-type"]
-  ],
-  [
-    "event.document.invalid-hoster-entry",
-    ["Hoster", "comment.guidance.event.document.invalid-hoster-entry"]
-  ],
-  [
-    "event.document.invalid-agenda-type",
-    ["Agenda", "comment.guidance.event.document.invalid-agenda-type"]
-  ],
-  [
-    "event.document.schema-marker.duplicate",
-    ["Issue format", "comment.guidance.event.document.schema-marker.duplicate"]
-  ],
-  [
-    "event.document.schema-version.unsupported",
-    [
-      "Issue format",
-      "comment.guidance.event.document.schema-version.unsupported"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.missing",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.missing"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.duplicate",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.duplicate"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.invalid",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.invalid"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.legacy",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.legacy"
-    ]
-  ],
-  [
-    "event.document.reference-metadata.stale",
-    [
-      "Issue format",
-      "comment.guidance.event.document.reference-metadata.stale"
-    ]
-  ],
-  [
-    "referential.reference.host.unknown",
-    ["Hoster", "comment.guidance.referential.reference.host.unknown"]
-  ],
-  [
-    "referential.reference.host.ambiguous",
-    ["Hoster", "comment.guidance.referential.reference.host.ambiguous"]
-  ],
-  [
-    "referential.reference.host.display-name-mismatch",
-    [
-      "Hoster",
-      "comment.guidance.referential.reference.host.display-name-mismatch"
-    ]
-  ],
-  [
-    "referential.reference.host.invalid",
-    ["Hoster", "comment.guidance.referential.reference.host.invalid"]
-  ],
-  [
-    "referential.reference.speaker.unknown",
-    ["Agenda", "comment.guidance.referential.reference.speaker.unknown"]
-  ],
-  [
-    "referential.reference.speaker.ambiguous",
-    ["Agenda", "comment.guidance.referential.reference.speaker.ambiguous"]
-  ],
-  [
-    "referential.reference.speaker.display-name-mismatch",
-    [
-      "Agenda",
-      "comment.guidance.referential.reference.speaker.display-name-mismatch"
-    ]
-  ],
-  [
-    "referential.reference.speaker.invalid",
-    ["Agenda", "comment.guidance.referential.reference.speaker.invalid"]
-  ]
-]);
-
-// packages/adapter/event/github-event-comment-repository/src/diagnostic-presentation.ts
-var DiagnosticPresenter = class {
-  FIELD_ALIASES = new Map([
-    ...FIELD_ORDER.map((field) => [field, field]),
-    ["Slides & Content", "Event materials"],
-    ["eventTitle", "Event Title"],
-    ["event_title", "Event Title"],
-    ["date", "Event Date"],
-    ["event_date", "Event Date"],
-    ["host", "Hoster"],
-    ["hoster", "Hoster"],
-    ["hostReference", "Hoster"],
-    ["description", "Event Description"],
-    ["event_description", "Event Description"],
-    ["agenda", "Agenda"],
-    ["publicationLinks.meetup", "Meetup Link"],
-    ["meetup_link", "Meetup Link"],
-    ["publicationLinks.community", "CNCF Link"],
-    ["cncf_link", "CNCF Link"],
-    ["publicationLinks.assets", "Drive Link"],
-    ["drive_link", "Drive Link"],
-    ["publicationLinks.feedback", "OpenFeedback Link"],
-    ["openfeedback_link", "OpenFeedback Link"],
-    ["confirmations.speakers", "Speaker confirmation"],
-    ["occurrenceStatus", "Event Status"],
-    ["event_status", "Event Status"]
-  ]);
-  presentDiagnostic(item, messages5, links) {
-    if (item.code.startsWith("publication.assets.content.image"))
-      return this.imageDiagnostic(item, messages5);
-    if (item.code === "publication.meetup.uncertain")
-      return {
-        field: "Meetup Link",
-        message: this.meetupRecovery(messages5, links),
-        order: FIELD_ORDER.indexOf("Meetup Link")
-      };
-    const guidance = GUIDANCE.get(item.code);
-    const referential = /^referential\.(host|contact|speaker)\./.test(
-      item.code
-    );
-    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
-    const [field, section] = this.publicField(item.field, fallback, messages5);
-    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
-    const order = FIELD_ORDER.indexOf(section);
-    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
-  }
-  imageDiagnostic(item, messages5) {
-    const location = item.field?.match(
-      /^assets\.image\/([a-zA-Z0-9_-]{1,100})\/(cover|host-logo|speaker-picture|fallback|embedded)\/([a-zA-Z0-9_.:-]{1,100})$/
-    );
-    const guidance = GUIDANCE.get(item.code);
-    const context3 = location ? messages5.t("comment.assets.image-context", {
-      kind: location[2].replaceAll("-", "_"),
-      slot: location[3],
-      documentUrl: `https://drive.google.com/file/d/${location[1]}/view`
-    }) : "";
-    const recovery = location?.[2] === "cover" ? messages5.t("comment.assets.cover-recovery") : "";
-    return {
-      field: "Event materials",
-      message: [
-        context3,
-        messages5.t(guidance?.[1] ?? "comment.guidance.assets.image"),
-        recovery
-      ].filter(Boolean).join(" "),
-      order: FIELD_ORDER.indexOf("Event materials")
-    };
-  }
-  meetupRecovery(messages5, links) {
-    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
-    return links.meetup ? messages5.t("comment.guidance.meetup.uncertain", {
-      eventUrl: links.meetup.replace(
-        /[()<>\s]/g,
-        (character) => character === "(" ? "%28" : character === ")" ? "%29" : encodeURIComponent(character)
-      ),
-      workflowUrl
-    }) : messages5.t("comment.guidance.meetup.uncertain-missing-link", {
-      workflowUrl
-    });
-  }
-  /** Only known issue headings and numeric agenda positions can reach Markdown. */
-  publicField(field, fallback, messages5) {
-    const social = field?.match(
-      /^social\.([a-z0-9][a-z0-9-]{0,63})\.(announcement|d7|d0)$/
-    );
-    if (social)
-      return [
-        messages5.t("comment.social.target", {
-          destination: social[1],
-          purpose: social[2]
-        }),
-        "Communication"
-      ];
-    const known = this.FIELD_ALIASES.get(field ?? "");
-    if (known) return [known, known];
-    const agenda = field?.match(
-      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
-    );
-    if (agenda) {
-      const entry = Number(agenda[1]) + 1;
-      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
-        speaker: Number(agenda[3]) + 1
-      });
-      return [
-        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
-        "Agenda"
-      ];
-    }
-    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
-    if (speaker)
-      return [
-        messages5.t("comment.agenda.speaker", {
-          speaker: Number(speaker[1]) + 1
-        }),
-        "Agenda"
-      ];
-    return [fallback, fallback];
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-comment-visibility.ts
-var GitHubCommentVisibility = class {
-  constructor(api, owner, repo) {
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-  }
-  api;
-  owner;
-  repo;
-  async synchronize(commentId, expectedBody, resolved) {
-    const { data } = await this.api.rest.issues.getComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId
-    });
-    if (!data.node_id || data.body !== expectedBody)
-      throw new Error("Comment changed before visibility update");
-    const response = await this.api.graphql(
-      `query CommentVisibility($id: ID!) {
-				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
-			}`,
-      { id: data.node_id }
-    );
-    if (!this.object(response) || !this.object(response.node))
-      throw new Error("Invalid comment visibility response");
-    const comment = response.node;
-    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
-      throw new Error("Comment changed before visibility update");
-    if (resolved === comment.isMinimized) return;
-    if (!resolved && comment.minimizedReason !== "resolved") return;
-    await this.change(data.node_id, resolved);
-  }
-  async change(id, resolved) {
-    const mutation = resolved ? `mutation ResolveComment($id: ID!) {
-				minimizeComment(input: { subjectId: $id, classifier: RESOLVED }) {
-					minimizedComment { isMinimized }
-				}
-			}` : `mutation ReopenComment($id: ID!) {
-				unminimizeComment(input: { subjectId: $id }) {
-					unminimizedComment { isMinimized }
-				}
-			}`;
-    const response = await this.api.graphql(mutation, { id });
-    const result = this.object(response) ? response[resolved ? "minimizeComment" : "unminimizeComment"] : void 0;
-    const comment = this.object(result) ? result[resolved ? "minimizedComment" : "unminimizedComment"] : void 0;
-    if (!this.object(comment) || comment.isMinimized !== resolved)
-      throw new Error("Comment visibility update was not confirmed");
-  }
-  object(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
-var GitHubEventCommentRepositoryConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventCommentRepositoryConfigurationError";
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
-var GitHubEventCommentRepositoryResponseError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventCommentRepositoryResponseError";
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
-var GitHubEventCommentRepositoryScopeError = class extends Error {
-  constructor(expected, received) {
-    super(
-      `GitHub event comment repository is scoped to ${expected}, not ${received}`
-    );
-    this.name = "GitHubEventCommentRepositoryScopeError";
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository.ts
-var GitHubEventCommentRepository = class {
-  constructor(collaborators, client, options) {
-    this.collaborators = collaborators;
-    this.client = client;
-    this.options = options;
-    this.messages = this.collaborators.createEventCommentMessages(
-      options.locale
-    );
-    this.owner = this.requireRepositoryPart(options.owner, "owner");
-    this.repo = this.requireRepositoryPart(options.repo, "repo");
-    this.repositoryName = `${this.owner}/${this.repo}`;
-    this.authorLogin = options.authorLogin.trim();
-    if (!this.authorLogin)
-      throw new GitHubEventCommentRepositoryConfigurationError(
-        "Managed comment author is required"
-      );
-  }
-  collaborators;
-  client;
-  options;
-  messages;
-  owner;
-  repo;
-  repositoryName;
-  authorLogin;
-  async reconcileDiagnostics(identity, diagnostics, links, scope) {
-    this.assertScope(identity.repository);
-    const managedComments = await this.listManagedComments(
-      identity.issueNumber
-    );
-    const retired = managedComments.filter(
-      (comment) => comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
-    );
-    const [canonical, ...duplicates] = managedComments.filter(
-      (comment) => !retired.includes(comment)
-    );
-    let changed = await this.retireComments(identity.issueNumber, duplicates);
-    const body = await this.body(
-      identity.issueNumber,
-      canonical,
-      diagnostics,
-      links,
-      scope
-    );
-    if (!canonical) {
-      if ((!retired.length || scope === "social") && !diagnostics.some((item) => item.severity !== "info")) {
-        return { changed };
-      }
-      await this.client.rest.issues.createComment({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: identity.issueNumber,
-        body
-      });
-      if (!scope)
-        await this.retireComments(identity.issueNumber, retired, true);
-      return { changed: true };
-    }
-    if (canonical.body !== body) {
-      await this.updateComment(canonical.id, body);
-      changed = true;
-    }
-    if (scope) return { changed };
-    const retiredChanged = await this.retireComments(
-      identity.issueNumber,
-      retired,
-      true
-    );
-    return { changed: changed || retiredChanged };
-  }
-  async body(issueNumber, canonical, diagnostics, links, scope) {
-    const previous = canonical && this.options.retainedContent ? await this.options.retainedContent.load(
-      issueNumber,
-      canonical.id,
-      canonical.body
-    ) : { body: canonical?.body ?? "", retained: "" };
-    const rendered = this.collaborators.diagnosticCommentPresenter.render(
-      diagnostics,
-      this.messages,
-      { repository: this.repositoryName, meetup: links.meetup }
-    );
-    const body = this.collaborators.diagnosticCommentSections.merge(
-      previous.body,
-      rendered,
-      scope
-    );
-    return previous.retained ? `${body}
-
-${previous.retained}` : body;
-  }
-  async listManagedComments(issueNumber) {
-    const comments = [];
-    let page = 1;
-    let hasNextPage = true;
-    while (hasNextPage) {
-      const response = await this.client.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: issueNumber,
-        page,
-        per_page: 100
-      });
-      if (!Array.isArray(response.data)) {
-        throw new GitHubEventCommentRepositoryResponseError(
-          "GitHub comment list response must contain an array"
-        );
-      }
-      for (const rawComment of response.data) {
-        const comment = this.mapComment(rawComment);
-        if (comment && this.isManagedComment(comment)) {
-          comments.push(comment);
-        }
-      }
-      const linkHeader = this.readHeader(response.headers, "link");
-      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
-      page += 1;
-    }
-    return comments.sort((left, right) => left.id - right.id);
-  }
-  isManagedComment(comment) {
-    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
-      return false;
-    }
-    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
-  }
-  async retireComments(issueNumber, duplicates, deleteReports = false) {
-    for (const duplicate of duplicates) {
-      const previous = this.options.retainedContent ? await this.options.retainedContent.load(
-        issueNumber,
-        duplicate.id,
-        duplicate.body
-      ) : void 0;
-      if (previous?.retained || this.collaborators.diagnosticCommentSections.hasSocial(
-        previous?.body ?? duplicate.body
-      ))
-        throw new Error("Duplicate diagnostic comment contains managed state");
-      if (deleteReports && this.client.rest.issues.deleteComment) {
-        await this.client.rest.issues.deleteComment({
-          owner: this.owner,
-          repo: this.repo,
-          comment_id: duplicate.id
-        });
-        continue;
-      }
-      await this.updateComment(
-        duplicate.id,
-        `${DUPLICATE_COMMENT_MARKER}
-
-${this.messages.t("comment.duplicate")}`
-      );
-      if (this.client.minimizeComment) {
-        await this.client.minimizeComment({
-          commentId: duplicate.id,
-          classifier: "OUTDATED"
-        });
-      }
-    }
-    return duplicates.length > 0;
-  }
-  async updateComment(commentId, body) {
-    await this.client.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
-  }
-  assertScope(repository) {
-    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
-      throw new GitHubEventCommentRepositoryScopeError(
-        this.repositoryName,
-        repository
-      );
-    }
-  }
-  mapComment(data) {
-    if (!this.isRecord(data)) {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment must be an object"
-      );
-    }
-    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment identifier must be a positive integer"
-      );
-    }
-    if (data.body === null) {
-      return null;
-    }
-    if (typeof data.body !== "string") {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment body must be a string or null"
-      );
-    }
-    const user = this.isRecord(data.user) ? data.user : void 0;
-    return {
-      id: Number(data.id),
-      body: data.body,
-      authorLogin: typeof user?.login === "string" ? user.login : void 0,
-      authorType: typeof user?.type === "string" ? user.type : void 0
-    };
-  }
-  requireRepositoryPart(value, name) {
-    const normalized = value.trim();
-    if (normalized === "" || normalized.includes("/")) {
-      throw new GitHubEventCommentRepositoryConfigurationError(
-        `GitHub ${name} must be a non-empty repository name segment`
-      );
-    }
-    return normalized;
-  }
-  readHeader(headers, name) {
-    const value = headers?.[name];
-    return typeof value === "string" ? value : void 0;
-  }
-  isRecord(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES4 = {
-  "comment.guidance.website.access": "Meetup is published, but the website update was denied. Ask a maintainer to check the configured repository and file, the GitHub App installation, and its Contents write permission.",
-  "comment.guidance.website.conflict": "Meetup is published, but the calendar contains conflicting rows or concurrent edits. Ask a maintainer to check the calendar, then rerun synchronization.",
-  "comment.guidance.website.format": "Meetup is published, but the calendar format is unsupported. Ask a maintainer to check the year headings and three-column month, date, and venue table.",
-  "comment.guidance.website.unavailable": "Meetup is published, but GitHub could not confirm the website update. Rerun synchronization; it will reuse the same calendar entry.",
-  "comment.guidance.content.description-review": "Edit and approve the description in its proposal comment.",
-  "comment.guidance.content.title-review": "Edit and approve the title in its proposal comment.",
-  "comment.guidance.content.invalid": "Correct the text in the comment: title up to 80 characters on one line, description up to 12000, social post up to 2800 with its registration link. Do not edit the comment controls.",
-  "comment.guidance.content.stale": "The event changed. Generate and review a new proposal.",
-  "comment.guidance.content.recovery": "Generation was interrupted. Check the saved result before retrying.",
-  "comment.guidance.content.iteration-requested": "A new proposal was requested. Run generation again.",
-  "comment.guidance.content.rejected": "Content rejected. Submit a replacement for review.",
-  "comment.guidance.content.pending": "Edit the proposed text if needed, then approve it in the comment.",
-  "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
-  "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
-  "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
-  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
-  "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
-  "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
-  "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
-  "comment.guidance.content.review": "Review the title, description, and cover in their proposal comments.",
-  "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
-  "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
-  "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
-  "comment.guidance.proposals.rate-limited": "Conference Hall rate limit reached. Wait before retrying.",
-  "comment.guidance.proposals.mapping-required": "Synchronize Conference Hall speakers and merge their identity mappings, then retry.",
-  "comment.guidance.proposals.conflict": "Conflicting Conference Hall identifiers. Check the proposal and speaker mappings.",
-  "comment.guidance.proposals.not-found": "Proposal number not found in this CFP. Check its Conference Hall URL.",
-  "comment.guidance.proposals.not-accepted": "Accept the selected proposal in Conference Hall and check that the speaker has not declined.",
-  "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
-  "comment.resolved": "\u2705 Event details complete.",
-  "comment.duplicate": "Superseded duplicate automation comment.",
-  "comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
-  "comment.referential": "Ask a maintainer to correct the host or speaker catalog.",
-  "comment.agenda.item": "Agenda (item {item}{speaker})",
-  "comment.agenda.speaker-suffix": ", speaker {speaker}",
-  "comment.agenda.speaker": "Agenda (speaker {speaker})",
-  "comment.guidance.event.title.missing": "Edit and approve the proposed title.",
-  "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
-  "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
-  "comment.guidance.event.description.missing": "Edit and approve the proposed description.",
-  "comment.guidance.event.hoster.missing": "Select a host from the host list.",
-  "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
-  "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
-  "comment.guidance.event.agenda.missing": "Add at least one talk using `- Speaker: Talk description`.",
-  "comment.guidance.event.agenda.legacy-line-invalid": "Use `- Speaker: Talk description` for each agenda line.",
-  "comment.guidance.event.agenda.speaker.missing": "Add at least one speaker for this talk.",
-  "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
-  "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
-  "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
-  "comment.guidance.publication.meetup.missing": "Run event publication synchronization to populate the verified Meetup link.",
-  "comment.guidance.publication.community.missing": "Publish the CNCF event and fill in its public link.",
-  "comment.guidance.publication.assets.missing": "Sync assets to create the event Drive folder.",
-  "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
-  "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
-  "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
-  "comment.guidance.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
-  "comment.guidance.publication.community-url.invalid": "Use this group's CNCF / OCGroups event URL.",
-  "comment.guidance.publication.asset-url.invalid": "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
-  "comment.guidance.event.confirmation.speakers.missing": "Confirm the speakers, then add the `speakers:confirmed` label.",
-  "comment.guidance.event.logistics.intent.invalid": "Choose `Yes` or `No`, or leave the response empty if undecided.",
-  "comment.guidance.event.occurrence-status.invalid": "Use `scheduled`, `postponed`, `held`, or `cancelled`.",
-  "comment.guidance.event.occurrence-status.label-conflict": "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`.",
-  "comment.guidance.event.document.heading.missing": "Restore this section heading from the meetup issue template.",
-  "comment.guidance.event.document.heading.duplicate": "Keep a single section with this heading and merge its content.",
-  "comment.guidance.event.document.checkbox.invalid": "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks.",
-  "comment.guidance.event.document.invalid-field-type": "Enter a text response in this field.",
-  "comment.guidance.event.document.invalid-hoster-type": "Select one host from the host list.",
-  "comment.guidance.event.document.invalid-hoster-entry": "Use a host name or stable ID from the host list.",
-  "comment.guidance.event.document.invalid-agenda-type": "Write the agenda as a list of `- Speaker: Talk description` lines.",
-  "comment.guidance.event.document.schema-marker.duplicate": "Ask a maintainer to repair the duplicate automation metadata in the issue description.",
-  "comment.guidance.event.document.schema-version.unsupported": "Ask a maintainer to update the automation to support this issue format.",
-  "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
-  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and speakers, then sync the issue to update their references.",
-  "comment.guidance.event.document.reference-metadata.stale": "Check the host and speakers, then sync the issue to update their references.",
-  "comment.guidance.referential.reference.host.unknown": "Host not found. Copy its exact name or reference: `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
-  "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "Speaker not found. Copy their exact name or reference: `Speaker name [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
-  "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES4 = {
-  "comment.guidance.website.access": "Le meetup est publi\xE9, mais la mise \xE0 jour du site a \xE9t\xE9 refus\xE9e. Demandez \xE0 un mainteneur de v\xE9rifier le d\xE9p\xF4t et le fichier configur\xE9s, l'installation de la GitHub App et son droit Contents en \xE9criture.",
-  "comment.guidance.website.conflict": "Le meetup est publi\xE9, mais plusieurs lignes ou des modifications simultan\xE9es emp\xEAchent la mise \xE0 jour du calendrier. Demandez \xE0 un mainteneur de v\xE9rifier le calendrier, puis relancez la synchronisation.",
-  "comment.guidance.website.format": "Le meetup est publi\xE9, mais le format du calendrier n'est pas reconnu. Demandez \xE0 un mainteneur de v\xE9rifier les titres des ann\xE9es et le tableau \xE0 trois colonnes : mois, date et lieu.",
-  "comment.guidance.website.unavailable": "Le meetup est publi\xE9, mais GitHub n'a pas confirm\xE9 la mise \xE0 jour du site. Relancez la synchronisation ; elle r\xE9utilisera la m\xEAme ligne du calendrier.",
-  "comment.guidance.content.description-review": "Modifiez et validez la description dans son commentaire.",
-  "comment.guidance.content.title-review": "Modifiez et validez le titre dans son commentaire.",
-  "comment.guidance.content.invalid": "Corrigez le texte du commentaire : titre sur une ligne de 80 caract\xE8res maximum, description de 12000 maximum, message de 2800 maximum avec le lien d'inscription. Gardez les cases de validation intactes.",
-  "comment.guidance.content.stale": "Le meetup a chang\xE9. G\xE9n\xE9rez et validez une nouvelle proposition.",
-  "comment.guidance.content.recovery": "La g\xE9n\xE9ration a \xE9t\xE9 interrompue. V\xE9rifiez le r\xE9sultat enregistr\xE9 avant de relancer.",
-  "comment.guidance.content.iteration-requested": "Une autre proposition a \xE9t\xE9 demand\xE9e. Relancez la g\xE9n\xE9ration.",
-  "comment.guidance.content.rejected": "Contenu refus\xE9. Proposez un remplacement \xE0 valider.",
-  "comment.guidance.content.pending": "Modifiez le texte propos\xE9 si besoin, puis validez-le dans le commentaire.",
-  "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
-  "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
-  "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
-  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
-  "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
-  "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
-  "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
-  "comment.guidance.content.review": "Validez le titre, la description et le visuel dans leurs commentaires.",
-  "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
-  "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
-  "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
-  "comment.guidance.proposals.rate-limited": "Limite API Conference Hall atteinte. Patientez avant de r\xE9essayer.",
-  "comment.guidance.proposals.mapping-required": "Synchronisez les intervenants Conference Hall et fusionnez leurs identit\xE9s, puis r\xE9essayez.",
-  "comment.guidance.proposals.conflict": "Identifiants Conference Hall en conflit. V\xE9rifiez les propositions et les identit\xE9s des intervenants.",
-  "comment.guidance.proposals.not-found": "Num\xE9ro de proposition introuvable dans ce CFP. V\xE9rifiez son URL Conference Hall.",
-  "comment.guidance.proposals.not-accepted": "Acceptez la proposition dans Conference Hall et v\xE9rifiez que l'intervenant ne l'a pas refus\xE9e.",
-  "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
-  "comment.resolved": "\u2705 Informations compl\xE8tes.",
-  "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
-  "comment.unknown": "Demandez \xE0 un responsable de consulter les diagnostics du workflow.",
-  "comment.referential": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
-  "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
-  "comment.agenda.speaker-suffix": ", intervenant {speaker}",
-  "comment.agenda.speaker": "Programme (intervenant {speaker})",
-  "comment.guidance.event.title.missing": "Modifiez et validez le titre propos\xE9.",
-  "comment.guidance.event.date.missing": "Ajoutez la date de l'\xE9v\xE9nement au format AAAA-MM-JJ.",
-  "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
-  "comment.guidance.event.description.missing": "Modifiez et validez la description propos\xE9e.",
-  "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
-  "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
-  "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l'\xE9v\xE9nement.",
-  "comment.guidance.event.agenda.missing": "Ajoutez au moins une conf\xE9rence au format `- Intervenant: Description`.",
-  "comment.guidance.event.agenda.legacy-line-invalid": "Utilisez `- Intervenant: Description` pour chaque ligne du programme.",
-  "comment.guidance.event.agenda.speaker.missing": "Ajoutez au moins un intervenant pour cette conf\xE9rence.",
-  "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
-  "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
-  "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
-  "comment.guidance.publication.meetup.missing": "Lancez la synchronisation des publications pour renseigner le lien Meetup v\xE9rifi\xE9.",
-  "comment.guidance.publication.community.missing": "Publiez l'\xE9v\xE9nement CNCF et renseignez son lien public.",
-  "comment.guidance.publication.assets.missing": "Synchronisez les fichiers pour cr\xE9er le dossier Drive du meetup.",
-  "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l'\xE9v\xE9nement.",
-  "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
-  "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.meetup-url.invalid": "Utilisez l'URL Meetup de ce groupe, termin\xE9e par l'identifiant num\xE9rique de l'\xE9v\xE9nement.",
-  "comment.guidance.publication.community-url.invalid": "Utilisez l'URL CNCF / OCGroups de ce groupe.",
-  "comment.guidance.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
-  "comment.guidance.event.confirmation.speakers.missing": "Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
-  "comment.guidance.event.logistics.intent.invalid": "Choisissez `Yes` ou `No`, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
-  "comment.guidance.event.occurrence-status.invalid": "Utilisez `scheduled`, `postponed`, `held` ou `cancelled`.",
-  "comment.guidance.event.occurrence-status.label-conflict": "Conservez un seul label de statut : `event:postponed`, `event:held` ou `event:cancelled`.",
-  "comment.guidance.event.document.heading.missing": "R\xE9tablissez cet en-t\xEAte de section \xE0 partir du mod\xE8le d'issue.",
-  "comment.guidance.event.document.heading.duplicate": "Conservez une seule section avec cet en-t\xEAte et fusionnez son contenu.",
-  "comment.guidance.event.document.checkbox.invalid": "Utilisez `- [ ] T\xE2che` pour les t\xE2ches \xE0 faire et `- [x] T\xE2che` pour les t\xE2ches termin\xE9es.",
-  "comment.guidance.event.document.invalid-field-type": "Saisissez une r\xE9ponse textuelle dans ce champ.",
-  "comment.guidance.event.document.invalid-hoster-type": "S\xE9lectionnez un h\xF4te dans la liste.",
-  "comment.guidance.event.document.invalid-hoster-entry": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
-  "comment.guidance.event.document.invalid-agenda-type": "R\xE9digez le programme sous forme de lignes `- Intervenant: Description`.",
-  "comment.guidance.event.document.schema-marker.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es d'automatisation en double dans la description.",
-  "comment.guidance.event.document.schema-version.unsupported": "Demandez \xE0 un responsable de mettre \xE0 jour l'automatisation pour prendre en charge ce format d'issue.",
-  "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d'h\xF4te et d'intervenants.",
-  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
-  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez l'h\xF4te et les intervenants, puis synchronisez l'issue pour actualiser leurs r\xE9f\xE9rences.",
-  "comment.guidance.referential.reference.host.unknown": "H\xF4te introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [host-0001]`.",
-  "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'h\xF4te [host-0001]`.",
-  "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
-  "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l'h\xF4te [host-0001]`.",
-  "comment.guidance.referential.reference.speaker.unknown": "Intervenant introuvable. Copiez son nom exact ou sa r\xE9f\xE9rence : `Nom [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l'intervenant [speaker-0001]`.",
-  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
-  "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
-var STAGE_MESSAGES_EN = {
-  "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
-  "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
-  "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
-  "comment.guidance.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
-  "comment.guidance.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
-  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
-  "comment.guidance.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
-  "comment.guidance.meetup.authentication-one-time-code": "Meetup requests a one-time code. Automatic login stopped without further submissions.",
-  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup explicitly rejected the submitted login credentials. Check PUBLICATION_CREDENTIALS before retrying.",
-  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
-  "comment.guidance.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
-  "comment.guidance.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
-  "comment.guidance.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
-  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
-  "comment.guidance.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
-  "comment.guidance.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
-  "comment.guidance.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
-  "comment.guidance.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
-  "comment.guidance.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
-  "comment.guidance.meetup.authentication": "Automatic Meetup login stopped without a precise stage in this report. Retry synchronization for a detailed diagnostic.",
-  "comment.social.target": "Post ({destination}, {purpose})",
-  "comment.guidance.social.content-pending": "Review this post's draft in the issue. Once its content is approved, a separate publication request will be shown.",
-  "comment.guidance.social.missing": "This reminder has no draft. Run promotion reconciliation to prepare it, then review the content and publication requests.",
-  "comment.guidance.social.generation-recovery": "Reminder generation needs recovery. Inspect its content proposal and use the content recovery procedure before retrying.",
-  "comment.guidance.social.preparation-failed": "Reminder preparation failed. Check the workflow run and retry after correcting the technical error.",
-  "comment.guidance.social.pending": "Review the announcement and approve publication for this destination.",
-  "comment.guidance.social.blocked": "Check the publication review, current event details and destination access before retrying.",
-  "comment.guidance.social.uncertain": "Verify the remote post and record recovery before attempting publication again.",
-  "comment.guidance.social.expired": "The approved publication window has expired. Review the event schedule and plan a new publication if needed.",
-  "comment.guidance.social.evaluation-failed": "Could not check publication. Check source access and delivery records before retrying.",
-  "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
-  "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
-  "comment.guidance.feedback.results": "Synchronize every talk in OpenFeedback before sending speaker thanks.",
-  "comment.guidance.feedback.access": "Check OpenFeedback access, then retry.",
-  "comment.guidance.assets.slides": "Complete the presentation and its public link before sending emails.",
-  "comment.guidance.communication.approval": "Approve or reject the emails.",
-  "comment.guidance.communication.rejected": "Emails rejected. Change their content to request a new approval.",
-  "comment.guidance.communication.approval-unavailable": "Approval could not be verified. Check the approval request, then retry.",
-  "comment.guidance.communication.approval-notification": "Slack notification failed. Review the email approval comment in this issue.",
-  "comment.guidance.communication.delivery-uncertain": "Verify delivery before retrying.",
-  "comment.guidance.communication.delivery-rejected": "Delivery rejected. Check the mail gateway before retrying.",
-  "comment.guidance.communication.delivery-deferred": "Delivery deferred; the next run will retry.",
-  "comment.guidance.communication.configuration": "Ask a maintainer to check the communication workflow configuration.",
-  "comment.guidance.communication.ledger": "Check the delivery ledger before retrying.",
-  "comment.guidance.communication.destination": "Add an email address for each recipient.",
-  "comment.guidance.communication.content": "Complete the notification content before retrying.",
-  "comment.guidance.communication.checklist": "Sync again to mark completed email tasks.",
-  "comment.guidance.communication.concurrent": "The issue changed during processing. Retry after editing.",
-  "comment.guidance.communication.references": "Select known hosts and speakers before sending emails.",
-  "comment.guidance.communication.catalog": "Ask a maintainer to correct the host or speaker catalog.",
-  "comment.guidance.feedback.agenda": "Complete talk subjects and speakers before synchronizing OpenFeedback.",
-  "comment.guidance.feedback.prerequisites": "Complete the title, date and OpenFeedback link.",
-  "comment.guidance.feedback-link.prerequisites": "Check the active meetup selected for the shared link and complete its OpenFeedback URL.",
-  "comment.guidance.feedback-link.ambiguous-date": "Several active meetups share the selected date. Select the shared feedback target manually.",
-  "comment.guidance.assets.prerequisites": "Select the host and date before preparing Drive files.",
-  "comment.guidance.assets.drift": "Restore the missing Drive file or its expected template metadata.",
-  "comment.guidance.assets.template": "Fix the template tokens, image slots or supported document structure.",
-  "comment.guidance.assets.missing": "Complete the required text and links for the presentation.",
-  "comment.guidance.assets.recovery": "Review manual edits and restore the managed content bindings before retrying.",
-  "comment.guidance.assets.revision": "The document changed. Retry after editing.",
-  "comment.guidance.assets.image": "Automation could not validate a document image. Rerun synchronization to identify the image and failure reason.",
-  "comment.assets.image-context": "{kind, select, cover {Approved generated cover} host_logo {Host logo} speaker_picture {Speaker photo} fallback {Template fallback image} other {Embedded document image}} (slot `{slot}`) in [this document]({documentUrl}).",
-  "comment.assets.cover-recovery": "Ask a maintainer to repair the automated cover handling; the approved image should remain usable.",
-  "comment.guidance.assets.image-source": "The image source is invalid: a public HTTPS URL and an image description are required.",
-  "comment.guidance.assets.image-format": "The image data or content type is invalid. Supported formats: PNG, JPEG and GIF.",
-  "comment.guidance.assets.image-size": "The image download reaches the 50 MB limit.",
-  "comment.guidance.assets.image-dimensions": "The image dimensions are invalid or exceed 25 megapixels.",
-  "comment.guidance.assets.image-download": "Automation could not download the image. Rerun synchronization; if this persists, ask a maintainer to investigate the run.",
-  "comment.guidance.assets.image-changed": "The image bytes differ from the approved cover.",
-  "comment.guidance.assets.fallback": "A generic image is in use. Check the speaker photo or host logo.",
-  "comment.guidance.pdf.source": "Use a managed Google Slides presentation as the PDF source.",
-  "comment.guidance.pdf.source-pending": "Resolve the presentation content before exporting its PDF.",
-  "comment.guidance.pdf.revision": "The presentation changed during export. Retry after editing.",
-  "comment.guidance.pdf.recovery": "Check the shared public folder and managed PDF, and inspect export state in the event folder. Restore verified state before retrying.",
-  "comment.guidance.pdf.limit": "Reduce the presentation size so its exported PDF fits within the 50 MB limit.",
-  "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying.",
-  "comment.guidance.pdf.sharing": "Allow the service account to share the managed PDF. Verify viewer access for anyone with the link, without search discovery. Keep the folder restricted and retry after correcting file access."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
-var STAGE_MESSAGES_FR = {
-  "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
-  "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
-  "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
-  "comment.guidance.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
-  "comment.guidance.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
-  "comment.guidance.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
-  "comment.guidance.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
-  "comment.guidance.meetup.authentication-one-time-code": "Meetup demande un code \xE0 usage unique. La connexion automatique s'est arr\xEAt\xE9e sans nouvel envoi des identifiants.",
-  "comment.guidance.meetup.authentication-credentials-rejected": "Meetup a explicitement refus\xE9 les identifiants envoy\xE9s. V\xE9rifiez PUBLICATION_CREDENTIALS avant de relancer.",
-  "comment.guidance.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
-  "comment.guidance.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
-  "comment.guidance.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
-  "comment.guidance.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
-  "comment.guidance.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
-  "comment.guidance.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
-  "comment.guidance.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
-  "comment.guidance.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
-  "comment.guidance.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
-  "comment.guidance.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
-  "comment.guidance.meetup.authentication": "Connexion automatique Meetup interrompue sans \xE9tape pr\xE9cise dans ce rapport. Relancez la synchronisation pour obtenir le diagnostic d\xE9taill\xE9.",
-  "comment.social.target": "Publication ({destination}, {purpose})",
-  "comment.guidance.social.content-pending": "Examinez le brouillon de cette publication dans l'issue. Apr\xE8s validation du contenu, une demande distincte permettra d'autoriser sa publication.",
-  "comment.guidance.social.missing": "Ce rappel n'a pas de brouillon. Relancez la r\xE9conciliation des publications pour le pr\xE9parer, puis examinez les demandes de validation du contenu et de publication.",
-  "comment.guidance.social.generation-recovery": "La g\xE9n\xE9ration de ce rappel n\xE9cessite une reprise. Examinez sa proposition et suivez la proc\xE9dure de reprise du contenu avant de r\xE9essayer.",
-  "comment.guidance.social.preparation-failed": "La pr\xE9paration de ce rappel a \xE9chou\xE9. Consultez le workflow et relancez-le apr\xE8s correction de l'erreur technique.",
-  "comment.guidance.social.pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
-  "comment.guidance.social.blocked": "V\xE9rifiez la revue, les informations du meetup et les acc\xE8s \xE0 la destination avant de r\xE9essayer.",
-  "comment.guidance.social.uncertain": "V\xE9rifiez la publication distante et consignez la reprise avant de publier \xE0 nouveau.",
-  "comment.guidance.social.expired": "Le cr\xE9neau de publication approuv\xE9 a expir\xE9. V\xE9rifiez la date du meetup et pr\xE9parez une nouvelle publication si n\xE9cessaire.",
-  "comment.guidance.social.evaluation-failed": "Publication non v\xE9rifiable. V\xE9rifiez les acc\xE8s aux sources et le registre des envois avant de relancer.",
-  "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
-  "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
-  "comment.guidance.feedback.results": "Synchronisez chaque conf\xE9rence dans OpenFeedback avant les remerciements aux intervenants.",
-  "comment.guidance.feedback.access": "V\xE9rifiez les acc\xE8s OpenFeedback, puis r\xE9essayez.",
-  "comment.guidance.assets.slides": "Compl\xE9tez la pr\xE9sentation et son lien public avant les envois.",
-  "comment.guidance.communication.approval": "Approuvez ou refusez les emails.",
-  "comment.guidance.communication.rejected": "Emails refus\xE9s. Modifiez leur contenu pour demander une nouvelle validation.",
-  "comment.guidance.communication.approval-unavailable": "Approbation non v\xE9rifiable. V\xE9rifiez la demande d'approbation, puis r\xE9essayez.",
-  "comment.guidance.communication.approval-notification": "La notification Slack a \xE9chou\xE9. Validez les emails dans le commentaire de cette issue.",
-  "comment.guidance.communication.delivery-uncertain": "V\xE9rifiez l'envoi avant toute reprise.",
-  "comment.guidance.communication.delivery-rejected": "Envoi refus\xE9. V\xE9rifiez la passerelle d'envoi avant de r\xE9essayer.",
-  "comment.guidance.communication.delivery-deferred": "Envoi diff\xE9r\xE9 ; la prochaine ex\xE9cution r\xE9essaiera.",
-  "comment.guidance.communication.configuration": "Demandez \xE0 un responsable de v\xE9rifier la configuration des communications.",
-  "comment.guidance.communication.ledger": "V\xE9rifiez le registre des envois avant de r\xE9essayer.",
-  "comment.guidance.communication.destination": "Ajoutez une adresse email pour chaque destinataire.",
-  "comment.guidance.communication.content": "Compl\xE9tez le contenu de la notification avant de r\xE9essayer.",
-  "comment.guidance.communication.checklist": "Relancez pour cocher les t\xE2ches d'email termin\xE9es.",
-  "comment.guidance.communication.concurrent": "Le ticket a chang\xE9 pendant le traitement. R\xE9essayez apr\xE8s les modifications.",
-  "comment.guidance.communication.references": "S\xE9lectionnez des h\xF4tes et intervenants connus avant les envois.",
-  "comment.guidance.communication.catalog": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
-  "comment.guidance.feedback.agenda": "Compl\xE9tez les sujets et intervenants avant de synchroniser OpenFeedback.",
-  "comment.guidance.feedback.prerequisites": "Compl\xE9tez le titre, la date et le lien OpenFeedback.",
-  "comment.guidance.feedback-link.prerequisites": "V\xE9rifiez le meetup actif s\xE9lectionn\xE9 pour le lien partag\xE9 et compl\xE9tez son URL OpenFeedback.",
-  "comment.guidance.feedback-link.ambiguous-date": "Plusieurs meetups actifs ont la date s\xE9lectionn\xE9e. Choisissez manuellement la cible du lien partag\xE9.",
-  "comment.guidance.assets.prerequisites": "S\xE9lectionnez l'h\xF4te et la date avant de pr\xE9parer les fichiers Drive.",
-  "comment.guidance.assets.drift": "Restaurez le fichier Drive manquant ou ses m\xE9tadonn\xE9es de mod\xE8le.",
-  "comment.guidance.assets.template": "Corrigez les variables, emplacements d'images ou la structure du mod\xE8le.",
-  "comment.guidance.assets.missing": "Compl\xE9tez les textes et liens requis pour la pr\xE9sentation.",
-  "comment.guidance.assets.recovery": "V\xE9rifiez les modifications manuelles et restaurez les liens du contenu g\xE9r\xE9 avant de r\xE9essayer.",
-  "comment.guidance.assets.revision": "Le document a chang\xE9. R\xE9essayez apr\xE8s les modifications.",
-  "comment.guidance.assets.image": "La synchronisation n'a pas pu v\xE9rifier une image du document. Relancez-la pour identifier l'image et la cause de l'\xE9chec.",
-  "comment.assets.image-context": "{kind, select, cover {Visuel de couverture g\xE9n\xE9r\xE9 et approuv\xE9} host_logo {Logo de l'h\xF4te} speaker_picture {Photo de l'intervenant} fallback {Image de secours du mod\xE8le} other {Image int\xE9gr\xE9e au document}} (emplacement `{slot}`) dans [ce document]({documentUrl}).",
-  "comment.assets.cover-recovery": "Demandez \xE0 un mainteneur de corriger le traitement automatique du visuel ; l'image approuv\xE9e doit rester utilisable.",
-  "comment.guidance.assets.image-source": "La source de l'image est invalide : une URL HTTPS publique et une description sont n\xE9cessaires.",
-  "comment.guidance.assets.image-format": "Les donn\xE9es ou le type de contenu de l'image sont invalides. Formats pris en charge : PNG, JPEG et GIF.",
-  "comment.guidance.assets.image-size": "Le t\xE9l\xE9chargement de l'image atteint la limite de 50 Mo.",
-  "comment.guidance.assets.image-dimensions": "Les dimensions de l'image sont invalides ou d\xE9passent 25 m\xE9gapixels.",
-  "comment.guidance.assets.image-download": "La synchronisation n'a pas pu t\xE9l\xE9charger l'image. Relancez-la ; si l'\xE9chec persiste, demandez \xE0 un mainteneur d'examiner le run.",
-  "comment.guidance.assets.image-changed": "Le contenu de l'image diff\xE8re du visuel de couverture approuv\xE9.",
-  "comment.guidance.assets.fallback": "Une image g\xE9n\xE9rique est utilis\xE9e. V\xE9rifiez la photo de l'intervenant ou le logo de l'h\xF4te.",
-  "comment.guidance.pdf.source": "Utilisez une pr\xE9sentation Google Slides g\xE9r\xE9e comme source du PDF.",
-  "comment.guidance.pdf.source-pending": "Corrigez le contenu de la pr\xE9sentation avant son export en PDF.",
-  "comment.guidance.pdf.revision": "La pr\xE9sentation a chang\xE9 pendant l'export. R\xE9essayez apr\xE8s les modifications.",
-  "comment.guidance.pdf.recovery": "V\xE9rifiez le dossier public partag\xE9 et le PDF g\xE9r\xE9, puis l'\xE9tat d'export dans le dossier du meetup. Restaurez un \xE9tat v\xE9rifi\xE9 avant de r\xE9essayer.",
-  "comment.guidance.pdf.limit": "R\xE9duisez la pr\xE9sentation pour que le PDF export\xE9 respecte la limite de 50 Mo.",
-  "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer.",
-  "comment.guidance.pdf.sharing": "Autorisez le compte de service \xE0 partager le PDF g\xE9r\xE9. V\xE9rifiez l'acc\xE8s en lecture pour toute personne disposant du lien, sans r\xE9f\xE9rencement dans les recherches. Gardez le dossier restreint et r\xE9essayez apr\xE8s avoir corrig\xE9 l'acc\xE8s au fichier."
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS6 = {
-  en: { ...EN_MESSAGES4, ...STAGE_MESSAGES_EN },
-  fr: { ...FR_MESSAGES4, ...STAGE_MESSAGES_FR }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
-var EventCommentMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS6, locale);
-  }
-};
-
-// packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
-var GithubEventCommentRepositoryComposition = class {
-  githubCommentVisibility(...args) {
-    return new GitHubCommentVisibility(...args);
-  }
-  diagnosticCommentSections() {
-    return new DiagnosticCommentSections();
-  }
-  diagnosticCommentPresenter() {
-    return new DiagnosticCommentPresenter({
-      organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
-      diagnosticPresenter: this.diagnosticPresenter()
-    });
-  }
-  diagnosticPresenter() {
-    return new DiagnosticPresenter();
-  }
-  eventCommentMessages(...args) {
-    return new EventCommentMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  gitHubEventCommentRepository(...args) {
-    return new GitHubEventCommentRepository(
-      {
-        diagnosticCommentSections: this.diagnosticCommentSections(),
-        diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
-        createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
-      },
-      ...args
-    );
-  }
-};
-
 // packages/adapter/event/github-event-repository/src/github-event-repository-configuration-error.ts
 var GitHubEventRepositoryConfigurationError = class extends Error {
   constructor(message) {
@@ -55007,27 +55415,27 @@ var GithubIssueFormEventDocumentCodecComposition = class {
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES5 = {
+var EN_MESSAGES6 = {
   "form.speakers.guidance": "Copy the speaker references into the agenda.",
   "form.speakers.show": "Available speakers"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES5 = {
+var FR_MESSAGES6 = {
   "form.speakers.guidance": "Copiez les r\xE9f\xE9rences des intervenants dans le programme.",
   "form.speakers.show": "Intervenants disponibles"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS7 = {
-  en: { ...EN_MESSAGES5 },
-  fr: { ...FR_MESSAGES5 }
+var CATALOGS8 = {
+  en: { ...EN_MESSAGES6 },
+  fr: { ...FR_MESSAGES6 }
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS7, locale);
+    super(collaborators, CATALOGS8, locale);
   }
 };
 
@@ -69124,7 +69532,7 @@ var AssetDateFormatter = class {
 };
 
 // packages/runtime/github-actions/src/assets/messages.en.ts
-var EN_MESSAGES6 = {
+var EN_MESSAGES7 = {
   "asset.agenda.talk": "{title} - {speakers}",
   "asset.next-event.missing": "To be announced",
   "asset.abstract.missing": "Abstract to be announced",
@@ -69133,7 +69541,7 @@ var EN_MESSAGES6 = {
 };
 
 // packages/runtime/github-actions/src/assets/messages.fr.ts
-var FR_MESSAGES6 = {
+var FR_MESSAGES7 = {
   "asset.agenda.talk": "{title} - {speakers}",
   "asset.next-event.missing": "\xC0 annoncer",
   "asset.abstract.missing": "R\xE9sum\xE9 \xE0 annoncer",
@@ -69142,12 +69550,12 @@ var FR_MESSAGES6 = {
 };
 
 // packages/runtime/github-actions/src/assets/catalog.ts
-var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
+var CATALOGS9 = { en: EN_MESSAGES7, fr: FR_MESSAGES7 };
 
 // packages/runtime/github-actions/src/assets/asset-messages.ts
 var AssetMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS8, locale);
+    super(collaborators, CATALOGS9, locale);
   }
 };
 
@@ -69300,7 +69708,7 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 };
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
-var EN_MESSAGES7 = {
+var EN_MESSAGES8 = {
   "diagnostic.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "diagnostic.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "diagnostic.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -69475,7 +69883,7 @@ var EN_MESSAGES7 = {
 };
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
-var FR_MESSAGES7 = {
+var FR_MESSAGES8 = {
   "diagnostic.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "diagnostic.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "diagnostic.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
@@ -69650,13 +70058,13 @@ var FR_MESSAGES7 = {
 };
 
 // packages/runtime/github-actions/src/i18n/catalog.ts
-var CATALOGS9 = {
+var CATALOGS10 = {
   en: {
-    ...EN_MESSAGES7,
+    ...EN_MESSAGES8,
     ...DIAGNOSTICS_REFERENTIAL_EN
   },
   fr: {
-    ...FR_MESSAGES7,
+    ...FR_MESSAGES8,
     ...DIAGNOSTICS_REFERENTIAL_FR
   }
 };
@@ -69664,16 +70072,16 @@ var CATALOGS9 = {
 // packages/runtime/github-actions/src/i18n/action-messages.ts
 var ActionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS9, locale);
+    super(collaborators, CATALOGS10, locale);
   }
   /** Private speaker-sync PR guidance; the fallback must already be redacted. */
   diagnostic(code, fallback) {
     const key = `diagnostic.${code}`;
-    return this.locale === "en" || !Object.hasOwn(CATALOGS9.en, key) ? fallback : this.t(key);
+    return this.locale === "en" || !Object.hasOwn(CATALOGS10.en, key) ? fallback : this.t(key);
   }
   error(name, publicFallback) {
     const key = `error.${name}`;
-    const known = Object.hasOwn(CATALOGS9.en, key);
+    const known = Object.hasOwn(CATALOGS10.en, key);
     if (this.locale === "en" && known) return publicFallback;
     return this.t("report.error.details", {
       summary: known ? this.t(key) : this.t("report.error.unexpected"),
@@ -70118,85 +70526,6 @@ var EventComposition = class _EventComposition {
   }
 };
 
-// packages/runtime/github-actions/src/organizer-approval-composition.ts
-import { randomUUID as randomUUID2 } from "node:crypto";
-var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
-  static visibility(input) {
-    return new GithubEventCommentRepositoryComposition().githubCommentVisibility(
-      input.client,
-      input.owner,
-      input.repo
-    );
-  }
-  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
-    const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
-      randomUUID2
-    );
-    const notifications = _OrganizerApprovalComposition.notifications(
-      client,
-      presenter,
-      notificationPort,
-      organizerChannelId
-    );
-    const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
-      client,
-      new GithubOrganizerApprovalComposition().trustedApprovalState(
-        client,
-        authorLogin
-      ),
-      authorLogin,
-      presenter
-    );
-    const finalizer = new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
-      new GithubOrganizerApprovalComposition().resolveApprovalDecision(
-        client,
-        new GithubOrganizerApprovalComposition().approvalDecisionParser(
-          new GithubOrganizerApprovalComposition().approvalPresenterFactory().supportedLocales()
-        )
-      ),
-      repository,
-      notifications,
-      visibility,
-      new GithubOrganizerAttentionComposition().attentionRecord()
-    );
-    return {
-      emailDeliveryReport: _OrganizerApprovalComposition.deliveryReport(
-        repository,
-        finalizer,
-        visibility
-      ),
-      approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
-        repository,
-        records,
-        finalizer,
-        notifications,
-        client
-      ),
-      followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
-        repository,
-        records,
-        finalizer
-      ),
-      attention: new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
-        repository,
-        finalizer
-      )
-    };
-  }
-  static notifications(client, presenter, port, channel) {
-    return new GithubOrganizerApprovalComposition().approvalNotifications(
-      new ApprovalNotificationPolicy(),
-      client,
-      presenter,
-      port,
-      channel
-    );
-  }
-  static deliveryReport(repository, finalizer, visibility) {
-    return (source) => new GithubEmailDeliveryReport(repository, source, finalizer, visibility);
-  }
-};
-
 // packages/runtime/github-actions/src/attention-composition.ts
 var ATTENTION_SERVICES = {
   approvals: /* @__PURE__ */ Symbol("OrganizerApprovalCapabilities"),
@@ -70338,6 +70667,7 @@ var AttentionActionComposition = class {
   runtime = new GithubActionsComposition();
   attentionAction() {
     return new AttentionAction({
+      reconcileState: (input) => new AutomationStateComposition().create(input).reconcile(),
       publicationUrlInput: this.runtime.publicationUrlInput(),
       createAttention: (input) => {
         const container = AttentionComposition.create(input);

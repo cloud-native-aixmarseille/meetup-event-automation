@@ -4,20 +4,12 @@ import type {
 	SocialDeliveryRecord,
 } from "@meetup-automation/communication";
 import type { SocialJournalCodec } from "./social-journal-codec.js";
-import type {
-	SocialJournalComment,
-	SocialJournalCommentClient,
-} from "./social-journal-comment-client.js";
+import type { AutomationStateRepository } from "@meetup-automation/journey";
 import type { SocialJournalTransition } from "./social-journal-transition.js";
-import type { TrustedSocialJournalComments } from "./trusted-social-journal-comments.js";
 
 export class GithubSocialDeliveryJournal implements SocialDeliveryJournal {
 	constructor(
-		private readonly client: Pick<
-			SocialJournalCommentClient,
-			"create" | "replace"
-		>,
-		private readonly comments: Pick<TrustedSocialJournalComments, "list">,
+		private readonly state: Pick<AutomationStateRepository, "read" | "write">,
 		private readonly codec: Pick<SocialJournalCodec, "read" | "write">,
 		private readonly transitions: Pick<SocialJournalTransition, "validate">,
 	) {}
@@ -37,36 +29,39 @@ export class GithubSocialDeliveryJournal implements SocialDeliveryJournal {
 		const prior = previous
 			? this.codec.read(this.codec.write(previous))
 			: undefined;
-		const existing = (await this.records()).find(
+		const records = await this.records();
+		const existing = records.find(
 			(entry) => entry.record.intentId === next.intentId,
 		);
 		if (!isDeepStrictEqual(existing?.record, prior))
 			throw new Error("Social delivery history changed before persistence");
 		this.transitions.validate(prior, canonical);
-		if (existing) {
-			await this.client.replace(
-				existing.comment.id,
-				existing.comment.body ?? "",
-				body,
-			);
-		} else await this.client.create(body);
+		const nextRecords = records.map((entry) =>
+			entry.record.intentId === next.intentId ? body : entry.body,
+		);
+		if (!existing) nextRecords.push(body);
+		await this.state.write(
+			"social",
+			records.map((entry) => entry.body),
+			nextRecords,
+		);
 		const saved = await this.load(next.intentId);
 		if (!isDeepStrictEqual(saved, canonical))
 			throw new Error("Social delivery persistence readback is uncertain");
 	}
 
 	private async records(): Promise<
-		readonly { comment: SocialJournalComment; record: SocialDeliveryRecord }[]
+		readonly { body: string; record: SocialDeliveryRecord }[]
 	> {
 		const records: {
-			comment: SocialJournalComment;
+			body: string;
 			record: SocialDeliveryRecord;
 		}[] = [];
-		for (const comment of await this.comments.list()) {
-			const record = this.codec.read(comment.body ?? "");
+		for (const body of await this.state.read("social")) {
+			const record = this.codec.read(body);
 			if (records.some((entry) => entry.record.intentId === record.intentId))
 				throw new Error("Duplicate social delivery journal identity");
-			records.push({ comment, record });
+			records.push({ body, record });
 		}
 		return records;
 	}

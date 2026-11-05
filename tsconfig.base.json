@@ -121,6 +121,9 @@
 			],
 			"@meetup-automation/github-social-delivery-journal": [
 				"./packages/adapter/communication/github-social-delivery-journal/src/index.ts"
+			],
+			"@meetup-automation/github-automation-state": [
+				"./packages/adapter/journey/github-automation-state/src/index.ts"
 			]
 		}
 	}

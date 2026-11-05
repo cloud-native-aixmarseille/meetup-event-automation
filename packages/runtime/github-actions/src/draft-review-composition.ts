@@ -1,3 +1,4 @@
+import { AutomationStateComposition } from "./automation-state-composition.js";
 import {
 	GithubContentStoreComposition,
 	GithubOrganizerApprovalComposition,
@@ -31,7 +32,7 @@ export class DraftReviewComposition {
 			);
 		const storage = new GithubContentStoreComposition();
 		return new ContentReviewWork(
-			storage.store(client, input.commentAuthorLogin),
+			storage.store(new AutomationStateComposition().create(input)),
 			storage.submissions(client),
 		);
 	}

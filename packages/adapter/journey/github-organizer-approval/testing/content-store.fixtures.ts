@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+import { GithubAutomationStateComposition } from "../../github-automation-state/src/dependency-composition.js";
 import {
 	ContentProposalTransition,
 	DraftProposalComposition,
@@ -16,12 +18,17 @@ export function contentStoreFixture() {
 		new DraftProposalComposition().policy(),
 		fingerprints,
 	);
-	const store = new GithubContentProposalStore(
+	const state = new GithubAutomationStateComposition().create(
 		f.client,
 		"automation[bot]",
+		"en",
+		{ synchronize: vi.fn() },
+	);
+	const store = new GithubContentProposalStore(
+		state,
 		codec,
 		fingerprints,
 		new ContentProposalTransition(fingerprints),
 	);
-	return { ...f, store, codec, values, fingerprints };
+	return { ...f, state, store, codec, values, fingerprints };
 }

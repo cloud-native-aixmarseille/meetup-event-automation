@@ -1,3 +1,4 @@
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import {
 	type ActionManifest,
@@ -127,7 +128,7 @@ describe("social publication workflow boundaries", () => {
 			workflowExpression("secrets.social-credentials"),
 		);
 	});
-	it("limits comment-triggered publication to human edits of trusted social approval comments", async () => {
+	it("limits comment-triggered reconciliation to human edits of managed approval comments", async () => {
 		// Arrange
 		const workflow = await readWorkflow("event-promotion-reconcile");
 		// Act
@@ -141,8 +142,57 @@ describe("social publication workflow boundaries", () => {
 			"github.event.sender.type == 'User'",
 			"github.event.comment.user.type == 'Bot'",
 			"startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ')",
-			`'"kind":"social-publication"'`,
 		])
 			expect(guard).toContain(condition);
+	});
+	it.each([
+		{ name: "content review", kind: "content-review", allowed: true },
+		{ name: "publication approval", kind: "social-publication", allowed: true },
+		{ name: "event publication", kind: "meetup-publication", allowed: true },
+		{ name: "bot edit", sender: "Bot", allowed: false },
+		{ name: "human-authored comment", author: "User", allowed: false },
+		{ name: "unmanaged comment", managed: false, allowed: false },
+		{ name: "new comment", action: "created", allowed: false },
+		{ name: "closed issue", state: "closed", allowed: false },
+		{ name: "pull request", pullRequest: {}, allowed: false },
+		{ name: "scheduled audit", event: "schedule", allowed: true },
+		{
+			name: "manual reconciliation",
+			event: "workflow_dispatch",
+			allowed: true,
+		},
+	])("evaluates $name: $allowed", async (scenario) => {
+		// Arrange
+		const workflow = await readWorkflow("event-promotion-reconcile");
+		const expression = (workflow.jobs?.publish?.if ?? "").trim().slice(3, -2);
+		const github = {
+			event_name: scenario.event ?? "issue_comment",
+			event: {
+				action: scenario.action ?? "edited",
+				sender: { type: scenario.sender ?? "User" },
+				issue: {
+					state: scenario.state ?? "open",
+					pull_request: scenario.pullRequest,
+				},
+				comment: {
+					user: { type: scenario.author ?? "Bot" },
+					body:
+						scenario.managed === false
+							? "An ordinary discussion comment"
+							: `<!-- meetup-organizer-approval:v1 ${JSON.stringify({ kind: scenario.kind ?? "content-review" })} -->`,
+				},
+			},
+		};
+
+		// Act
+		// The guard uses the JS-compatible boolean subset of Actions expressions.
+		const allowed = runInNewContext(expression, {
+			github,
+			startsWith: (value: string, prefix: string) => value.startsWith(prefix),
+			contains: (value: string, part: string) => value.includes(part),
+		});
+
+		// Assert
+		expect(allowed).toBe(scenario.allowed);
 	});
 });

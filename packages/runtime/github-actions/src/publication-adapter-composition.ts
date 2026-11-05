@@ -1,3 +1,4 @@
+import { AutomationStateComposition } from "./automation-state-composition.js";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -160,9 +161,7 @@ export class PublicationAdapterComposition {
 	}
 	private journal(input: PublicationAdapterInput) {
 		return new GithubPublicationJournalComposition().githubPublicationJournal(
-			input.client,
-			{ owner: input.owner, repo: input.repo, issue_number: input.issueNumber },
-			input.commentAuthorLogin,
+			new AutomationStateComposition().create(input),
 		);
 	}
 
@@ -192,13 +191,7 @@ export class PublicationAdapterComposition {
 				journal: new GithubPublicationJournalComposition().communityJournal(
 					group,
 					target,
-					input.client,
-					{
-						owner: input.owner,
-						repo: input.repo,
-						issue_number: input.issueNumber,
-					},
-					input.commentAuthorLogin,
+					new AutomationStateComposition().create(input),
 				),
 				gateway: new OcgroupsEventGatewayComposition(
 					new HttpsAssetImageRepositoryComposition().contentImageLoader(),

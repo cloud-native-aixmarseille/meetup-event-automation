@@ -77,8 +77,7 @@ jobs:
           (!github.event.issue.pull_request && github.event.issue.state == 'open' &&
            github.event.action == 'edited' && github.event.sender.type == 'User' &&
            github.event.comment.user.type == 'Bot' &&
-           startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ') &&
-           contains(github.event.comment.body, '"kind":"social-publication"')) }}
+           startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

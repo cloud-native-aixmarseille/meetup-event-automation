@@ -5,7 +5,7 @@ import type {
 } from "@meetup-automation/communication";
 import type { SocialJournalAttemptCodec } from "./social-journal-attempt-codec.js";
 import type { SocialJournalValueSchema } from "./social-journal-value-schema.js";
-import { SOCIAL_JOURNAL_MARKER } from "./trusted-social-journal-comments.js";
+export const SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
 
 export class SocialJournalCodec {
 	constructor(

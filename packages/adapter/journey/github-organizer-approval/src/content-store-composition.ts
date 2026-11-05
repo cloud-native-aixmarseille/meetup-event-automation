@@ -1,4 +1,5 @@
 import {
+	type AutomationStateRepository,
 	ContentProposalTransition,
 	DraftProposalComposition,
 } from "@meetup-automation/journey";
@@ -39,13 +40,11 @@ export class GithubContentStoreComposition {
 	}
 
 	store(
-		client: GithubApprovalClient,
-		author: string,
+		state: Pick<AutomationStateRepository, "read" | "write">,
 	): GithubContentProposalStore {
 		const fingerprints = new DraftProposalComposition().fingerprints();
 		return new GithubContentProposalStore(
-			client,
-			author,
+			state,
 			new ContentProposalCodec(
 				new ContentValueSchema(new PublicAssetUrl()),
 				new DraftProposalComposition().policy(),
