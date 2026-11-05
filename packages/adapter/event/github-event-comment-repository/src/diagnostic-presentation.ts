@@ -45,6 +45,8 @@ export class DiagnosticPresenter {
 		messages: EventCommentMessages,
 		links: DiagnosticLinks,
 	): DiagnosticPresentation {
+		if (item.code.startsWith("publication.assets.content.image"))
+			return this.imageDiagnostic(item, messages);
 		if (item.code === "publication.meetup.uncertain")
 			return {
 				field: "Meetup Link",
@@ -63,6 +65,38 @@ export class DiagnosticPresenter {
 			: messages.t(referential ? "comment.referential" : "comment.unknown");
 		const order = FIELD_ORDER.indexOf(section);
 		return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+	}
+
+	private imageDiagnostic(
+		item: EventDiagnostic,
+		messages: EventCommentMessages,
+	): DiagnosticPresentation {
+		const location = item.field?.match(
+			/^assets\.image\/([a-zA-Z0-9_-]{1,100})\/(cover|host-logo|speaker-picture|fallback|embedded)\/([a-zA-Z0-9_.:-]{1,100})$/,
+		);
+		const guidance = GUIDANCE.get(item.code);
+		const context = location
+			? messages.t("comment.assets.image-context", {
+					kind: location[2].replaceAll("-", "_"),
+					slot: location[3],
+					documentUrl: `https://drive.google.com/file/d/${location[1]}/view`,
+				})
+			: "";
+		const recovery =
+			location?.[2] === "cover"
+				? messages.t("comment.assets.cover-recovery")
+				: "";
+		return {
+			field: "Event materials",
+			message: [
+				context,
+				messages.t(guidance?.[1] ?? "comment.guidance.assets.image"),
+				recovery,
+			]
+				.filter(Boolean)
+				.join(" "),
+			order: FIELD_ORDER.indexOf("Event materials"),
+		};
 	}
 
 	private meetupRecovery(

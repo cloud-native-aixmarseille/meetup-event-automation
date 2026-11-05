@@ -1,6 +1,6 @@
 import type { slides_v1 } from "@googleapis/slides";
 import {
-	ContentError,
+	ContentImageError,
 	type AssetImageRepository,
 	type CollectionField,
 	type ContentBinding,
@@ -29,20 +29,37 @@ export class SlideCollectionLocations {
 			fingerprint: this.fingerprints.of(JSON.stringify(observed)),
 		};
 	}
-	private async canonical(value: unknown): Promise<unknown> {
+	private async canonical(
+		value: unknown,
+		objectId = "unknown",
+	): Promise<unknown> {
 		if (Array.isArray(value))
-			return Promise.all(value.map((item) => this.canonical(item)));
+			return Promise.all(value.map((item) => this.canonical(item, objectId)));
 		if (!value || typeof value !== "object") return value;
+		if ("objectId" in value && typeof value.objectId === "string")
+			objectId = value.objectId;
 		const result: Record<string, unknown> = {};
 		for (const [key, item] of Object.entries(value).sort(([a], [b]) =>
 			a.localeCompare(b),
 		)) {
 			if (key === "sourceUrl") continue;
 			if (key === "contentUrl") {
-				if (typeof item !== "string") throw new ContentError("image");
-				result.embeddedBytes = await this.images.observe(item);
-			} else result[key] = await this.canonical(item);
+				if (typeof item !== "string")
+					throw new ContentImageError("download", {
+						kind: "embedded",
+						slot: objectId,
+					});
+				result.embeddedBytes = await this.observe(item, objectId);
+			} else result[key] = await this.canonical(item, objectId);
 		}
 		return result;
+	}
+	private async observe(url: string, slot: string): Promise<string> {
+		try {
+			return await this.images.observe(url);
+		} catch (error) {
+			if (!(error instanceof ContentImageError)) throw error;
+			throw error.at({ kind: "embedded", slot });
+		}
 	}
 }

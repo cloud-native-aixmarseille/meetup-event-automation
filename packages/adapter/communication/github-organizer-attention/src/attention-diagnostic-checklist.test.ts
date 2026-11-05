@@ -10,6 +10,7 @@ describe("diagnostic checklist decoding", () => {
 		["Event Title", "title"],
 		["Event Description", "description"],
 		["Drive Link", "assets"],
+		["Event materials", "assets"],
 		["OpenFeedback Link", "feedback"],
 	])(
 		"identifies the public %s field for task deduplication",

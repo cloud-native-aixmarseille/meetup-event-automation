@@ -22,6 +22,24 @@ import { ManageMeetupEvent } from "./manage-meetup-event.js";
 import { ReconcileMeetupDocuments } from "./reconcile-meetup-documents.js";
 
 describe("ReconcileMeetupDocuments", () => {
+	it("preserves image context from document reconciliation", async () => {
+		// Arrange
+		const diagnostic = {
+			code: "publication.assets.content.image-format",
+			severity: "warning",
+			field: "assets.image/document/host-logo/logo",
+			message: "Invalid image format",
+		};
+		const f = assetJourney({
+			execute: vi
+				.fn()
+				.mockResolvedValue({ files: {}, diagnostics: [diagnostic] }),
+		});
+		// Act
+		const result = await f.useCase.execute({ identity });
+		// Assert
+		expect(result.diagnostics).toContainEqual(diagnostic);
+	});
 	it.each([
 		["image/png", "png"],
 		["image/jpeg", "jpg"],

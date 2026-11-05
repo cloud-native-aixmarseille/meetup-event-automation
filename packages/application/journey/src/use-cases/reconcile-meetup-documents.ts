@@ -167,13 +167,7 @@ export class ReconcileMeetupDocuments {
 			assetUrl: assets.container?.url,
 			files: assets.files,
 			content: assets.content,
-			diagnostics: [
-				...contentDiagnostics,
-				...assets.diagnostics.map((item) => ({
-					...item,
-					field: "publicationLinks.assets",
-				})),
-			],
+			diagnostics: [...contentDiagnostics, ...assets.diagnostics],
 		};
 	}
 

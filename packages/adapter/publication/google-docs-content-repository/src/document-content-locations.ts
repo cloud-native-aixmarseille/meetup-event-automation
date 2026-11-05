@@ -3,6 +3,7 @@ import {
 	type AssetImageRepository,
 	type ContentBinding,
 	ContentError,
+	ContentImageError,
 	type ContentFingerprint,
 	type ObservedLocation,
 } from "@meetup-automation/publication";
@@ -111,7 +112,10 @@ export class DocumentContentLocations {
 			throw new ContentError("conflict");
 		this.collaborators.documentTabs.rejectSuggestions(object);
 		this.collaborators.documentTabs.rejectSuggestions(references[0]);
-		const bytes = await this.images.observe(object.imageProperties.contentUri);
+		const bytes = await this.observe(
+			object.imageProperties.contentUri,
+			binding.anchor.objectId ?? binding.key,
+		);
 		const {
 			contentUri: _content,
 			sourceUri: _source,
@@ -129,6 +133,14 @@ export class DocumentContentLocations {
 				JSON.stringify([bytes, properties, object.title, object.description]),
 			),
 		};
+	}
+	private async observe(url: string, slot: string): Promise<string> {
+		try {
+			return await this.images.observe(url);
+		} catch (error) {
+			if (!(error instanceof ContentImageError)) throw error;
+			throw error.at({ kind: "embedded", slot });
+		}
 	}
 }
 export type DocumentContentLocationsArguments =

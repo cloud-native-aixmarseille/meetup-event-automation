@@ -2,8 +2,111 @@ import { describe, expect, it, vi } from "vitest";
 import { contentFixture, contract } from "../../testing/content.fixtures.js";
 import { PublicationDomainComposition } from "../dependency-composition.js";
 import { ResolveContentValues } from "./resolve-content-values.js";
+import { ContentImageError } from "../domain/content-image-error.js";
 
 describe("slotted content values", () => {
+	it("identifies a changed approved cover without substituting another image", async () => {
+		// Arrange
+		const f = contentFixture();
+		vi.mocked(f.images.validate).mockResolvedValue({
+			source: {
+				url: "https://images.example.org/cover.jpg",
+				description: "Cover",
+			},
+			fingerprint: "different-bytes",
+		});
+		const resolver = new PublicationDomainComposition().resolveContentValues(
+			{ value: (value) => value.value },
+			f.images,
+		);
+		const field = {
+			type: "image" as const,
+			token: "event.cover" as const,
+			slot: "cover",
+			objectId: "cover",
+			pageId: "page",
+			required: true,
+			fit: "CENTER_CROP" as const,
+		};
+		const cover = {
+			id: "approved-cover",
+			url: "https://images.example.org/cover.jpg",
+			description: "Cover",
+			fingerprint: "approved-bytes",
+			sourceRevision: "1",
+			mimeType: "image/jpeg" as const,
+			width: 1600,
+			height: 900,
+		};
+		// Act
+		const result = resolver.execute(
+			{ ...contract, fields: [field] },
+			{ text: {}, pictures: {}, cover },
+		);
+		// Assert
+		await expect(result).rejects.toMatchObject({
+			reason: "changed",
+			location: { kind: "cover", slot: "cover" },
+		});
+		expect(f.images.validate).toHaveBeenCalledExactlyOnceWith(cover);
+	});
+	it("does not fetch an unused fallback when the source image is valid", async () => {
+		// Arrange
+		const f = contentFixture(true, undefined, "host.logo");
+		const source = {
+			hostId: "host-one",
+			url: "https://images.example.org/logo.png",
+			description: "Host",
+		};
+		vi.mocked(f.images.validate).mockImplementation(async (image) => {
+			if (image.url !== source.url) throw new ContentImageError("download");
+			return { source: image, fingerprint: "valid-logo" };
+		});
+		const resolver = new PublicationDomainComposition().resolveContentValues(
+			{ value: (value) => value.value },
+			f.images,
+		);
+		// Act
+		const values = await resolver.execute(f.input.contract, {
+			...f.input.model,
+			hostLogo: source,
+		});
+		// Assert
+		expect(values.find((value) => value.type === "image")).toMatchObject({
+			image: source,
+			fallback: false,
+		});
+		expect(f.images.validate).toHaveBeenCalledExactlyOnceWith(source);
+	});
+	it("preserves download failures and the affected portrait instead of silently using a fallback", async () => {
+		// Arrange
+		const f = contentFixture(true);
+		vi.mocked(f.images.validate).mockRejectedValue(
+			new ContentImageError("download"),
+		);
+		const resolver = new PublicationDomainComposition().resolveContentValues(
+			{ value: (value) => value.value },
+			f.images,
+		);
+		const model = {
+			...f.input.model,
+			pictures: {
+				portrait: {
+					speakerId: "speaker-one",
+					url: "https://images.example.org/speaker.png",
+					description: "Speaker",
+				},
+			},
+		};
+		// Act
+		const result = resolver.execute(f.input.contract, model);
+		// Assert
+		await expect(result).rejects.toMatchObject({
+			reason: "download",
+			location: { kind: "speaker-picture", slot: "portrait" },
+		});
+		expect(f.images.validate).toHaveBeenCalledTimes(1);
+	});
 	it.each(["missing", "invalid", "bad-identity"])(
 		"uses a logo-specific fallback for an optional %s host logo",
 		async (reason) => {
@@ -27,7 +130,7 @@ describe("slotted content values", () => {
 			);
 			if (reason === "invalid")
 				vi.mocked(f.images.validate).mockImplementation(async (image) => {
-					if (image.url === source.url) throw new Error("invalid media");
+					if (image.url === source.url) throw new ContentImageError("format");
 					return { source: image, fingerprint: "fallback" };
 				});
 

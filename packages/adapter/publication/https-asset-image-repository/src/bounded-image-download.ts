@@ -2,7 +2,7 @@ import type { LookupAddress } from "node:dns";
 import type { lookup } from "node:dns/promises";
 import type { IncomingMessage } from "node:http";
 import type { request } from "node:https";
-import { ContentError } from "@meetup-automation/publication";
+import { ContentImageError } from "@meetup-automation/publication";
 import type { PublicImageUrl } from "./public-image-url.js";
 
 export interface BoundedImageDownloadCollaborators {
@@ -31,7 +31,7 @@ export class BoundedImageDownload {
 						!this.collaborators.publicImageUrl.publicAddress(item.address),
 				)
 			)
-				throw new ContentError("image");
+				throw new ContentImageError("source");
 			const response = await new Promise<IncomingMessage>((resolve, reject) => {
 				// Pin the checked address: no second DNS lookup, ambient proxy, cookies or credentials.
 				const req = this.send(
@@ -51,7 +51,7 @@ export class BoundedImageDownload {
 			});
 			if ([301, 302, 303, 307, 308].includes(response.statusCode ?? 0)) {
 				response.destroy();
-				if (!response.headers.location) throw new ContentError("image");
+				if (!response.headers.location) throw new ContentImageError("download");
 				url = this.collaborators.publicImageUrl.parse(
 					new URL(response.headers.location, url).href,
 					temporary,
@@ -60,7 +60,7 @@ export class BoundedImageDownload {
 			}
 			if (response.statusCode !== 200 || response.headers["content-encoding"]) {
 				response.destroy();
-				throw new ContentError("image");
+				throw new ContentImageError("download");
 			}
 			return {
 				bytes: await this.body(response),
@@ -70,7 +70,7 @@ export class BoundedImageDownload {
 				url: url.href,
 			};
 		}
-		throw new ContentError("image");
+		throw new ContentImageError("download");
 	}
 
 	private async body(response: IncomingMessage): Promise<Buffer> {
@@ -80,7 +80,7 @@ export class BoundedImageDownload {
 			size += chunk.length;
 			if (size >= 50_000_000) {
 				response.destroy();
-				throw new ContentError("image");
+				throw new ContentImageError("size");
 			}
 			chunks.push(chunk);
 		}
@@ -97,7 +97,7 @@ export class BoundedImageDownload {
 			return await Promise.race([
 				this.resolve(hostname.replace(/^\[|\]$/g, ""), { all: true }),
 				new Promise<never>((_resolve, reject) => {
-					cancel = () => reject(new ContentError("image"));
+					cancel = () => reject(new ContentImageError("download"));
 					signal.addEventListener("abort", cancel, { once: true });
 				}),
 			]);

@@ -21,6 +21,37 @@ const source = {
 };
 
 describe("image preflight", () => {
+	it.each([
+		["transport", "download"],
+		["encoding", "format"],
+		["content-type", "format"],
+	] as const)(
+		"retains a safe reason for %s failures",
+		async (failure, reason) => {
+			// Arrange
+			const get =
+				failure === "transport"
+					? vi.fn().mockRejectedValue(new Error("secret provider response"))
+					: vi.fn().mockResolvedValue({
+							bytes: failure === "encoding" ? Buffer.from("not an image") : png,
+							mediaType: "text/html",
+							url: source.url,
+						});
+			const repository = new HttpsAssetImageRepository(
+				{
+					contentFingerprint:
+						new PublicationDomainComposition().contentFingerprint(),
+					wixImageUrl: new WixImageUrl(),
+				},
+				{ get },
+			);
+			// Act
+			const result = repository.validate(source);
+			// Assert
+			await expect(result).rejects.toMatchObject({ code: "image", reason });
+			await expect(result).rejects.not.toHaveProperty("cause");
+		},
+	);
 	it("uses the validated PNG representation of a Wix WebP portrait", async () => {
 		// Arrange
 		const url =

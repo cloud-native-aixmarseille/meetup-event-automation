@@ -110,7 +110,23 @@ export const STAGE_MESSAGES_FR = {
 	"comment.guidance.assets.revision":
 		"Le document a changé. Réessayez après les modifications.",
 	"comment.guidance.assets.image":
-		"Utilisez une image PNG, JPEG ou GIF publique en HTTPS, de moins de 50 Mo et 25 mégapixels.",
+		"La synchronisation n'a pas pu vérifier une image du document. Relancez-la pour identifier l'image et la cause de l'échec.",
+	"comment.assets.image-context":
+		"{kind, select, cover {Visuel de couverture généré et approuvé} host_logo {Logo de l'hôte} speaker_picture {Photo de l'intervenant} fallback {Image de secours du modèle} other {Image intégrée au document}} (emplacement `{slot}`) dans [ce document]({documentUrl}).",
+	"comment.assets.cover-recovery":
+		"Demandez à un mainteneur de corriger le traitement automatique du visuel ; l'image approuvée doit rester utilisable.",
+	"comment.guidance.assets.image-source":
+		"La source de l'image est invalide : une URL HTTPS publique et une description sont nécessaires.",
+	"comment.guidance.assets.image-format":
+		"Les données ou le type de contenu de l'image sont invalides. Formats pris en charge : PNG, JPEG et GIF.",
+	"comment.guidance.assets.image-size":
+		"Le téléchargement de l'image atteint la limite de 50 Mo.",
+	"comment.guidance.assets.image-dimensions":
+		"Les dimensions de l'image sont invalides ou dépassent 25 mégapixels.",
+	"comment.guidance.assets.image-download":
+		"La synchronisation n'a pas pu télécharger l'image. Relancez-la ; si l'échec persiste, demandez à un mainteneur d'examiner le run.",
+	"comment.guidance.assets.image-changed":
+		"Le contenu de l'image diffère du visuel de couverture approuvé.",
 	"comment.guidance.assets.fallback":
 		"Une image générique est utilisée. Vérifiez la photo de l'intervenant ou le logo de l'hôte.",
 	"comment.guidance.pdf.source":

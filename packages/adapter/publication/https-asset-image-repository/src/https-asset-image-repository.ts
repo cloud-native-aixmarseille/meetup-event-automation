@@ -1,6 +1,6 @@
 import {
 	type AssetImageRepository,
-	ContentError,
+	ContentImageError,
 	type ContentFingerprint,
 	type ImageSource,
 } from "@meetup-automation/publication";
@@ -23,28 +23,33 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 		source: ImageSource,
 	): Promise<{ fingerprint: string; source: ImageSource }> {
 		try {
-			if (!source.description?.trim()) throw new ContentError("image");
+			if (!source.description?.trim()) throw new ContentImageError("source");
 			const result = await this.compatibleImage(source.url);
-			const size = imageSize(result.bytes);
+			const size = this.dimensions(result.bytes);
 			const mimeTypes: Record<string, string> = {
 				png: "image/png",
 				jpg: "image/jpeg",
 				gif: "image/gif",
 			};
-			if (
-				!size.type ||
-				mimeTypes[size.type] !== result.mediaType ||
-				!size.width ||
-				!size.height ||
-				size.width * size.height > 25_000_000
-			)
-				throw new ContentError("image");
+			if (!size.type || mimeTypes[size.type] !== result.mediaType)
+				throw new ContentImageError("format");
+			if (!size.width || !size.height || size.width * size.height > 25_000_000)
+				throw new ContentImageError("dimensions");
 			return {
 				fingerprint: this.collaborators.contentFingerprint.of(result.bytes),
 				source: { url: result.url, description: source.description },
 			};
+		} catch (error) {
+			if (error instanceof ContentImageError) throw error;
+			throw new ContentImageError("download");
+		}
+	}
+
+	private dimensions(bytes: Buffer) {
+		try {
+			return imageSize(bytes);
 		} catch {
-			throw new ContentError("image");
+			throw new ContentImageError("format");
 		}
 	}
 
@@ -52,7 +57,7 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 		const result = await this.download.get(url);
 		if (
 			result.mediaType !== "image/webp" ||
-			imageSize(result.bytes).type !== "webp"
+			this.dimensions(result.bytes).type !== "webp"
 		)
 			return result;
 		const compatibleUrl = this.collaborators.wixImageUrl.png(result.url);
@@ -64,7 +69,7 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 			const { bytes } = await this.download.get(url, true);
 			return this.collaborators.contentFingerprint.of(bytes);
 		} catch {
-			throw new ContentError("image");
+			throw new ContentImageError("download");
 		}
 	}
 }

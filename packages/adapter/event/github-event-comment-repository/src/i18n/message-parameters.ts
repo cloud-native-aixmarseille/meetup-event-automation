@@ -1,4 +1,9 @@
 export interface MessageParameters {
+	"comment.assets.image-context": {
+		kind: string;
+		slot: string;
+		documentUrl: string;
+	};
 	"comment.guidance.meetup.uncertain": {
 		eventUrl: string;
 		workflowUrl: string;
