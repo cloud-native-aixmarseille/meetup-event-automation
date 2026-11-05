@@ -8,17 +8,17 @@ export const EN_MESSAGES = {
 	"approval.social.details":
 		"### Publish on {target}\n\n{destination} · {identity}\n\nScheduled for: {plannedAt}; expires: {expiresAt}.\n\nReview the post below.",
 	"approval.social.request":
-		"Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+		"Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] ✅ Approve publication\n- [{rejectMark}] ❌ Reject publication",
 	"approval.social.evidence":
 		"Evidence: {reference}\n\nResult: {outcome, select, published {published} not_published {not published} other {unknown}}.",
 	"approval.social.recovery":
-		"Check the evidence above before selecting a choice.\n\n- [{approveMark}] {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] Keep publication blocked",
+		"Check the evidence above before selecting a choice.\n\n- [{approveMark}] ✅ {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] ❌ Keep publication blocked",
 	"approval.social.final":
 		"{status, select, approved {✅ Publication approved} rejected {❌ Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSee the delivery status for the result.",
 	"approval.community.details":
 		"### Publish on CNCF\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing may notify group members and speakers.",
 	"approval.community.request":
-		"Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+		"Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] ✅ Approve publication\n- [{rejectMark}] ❌ Reject publication",
 	"approval.community.final":
 		"{status, select, approved {✅ CNCF publication approved} rejected {❌ CNCF publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nCNCF Link is added after publication is verified.",
 	"approval.content.planned": "Scheduled for: {time}.",
@@ -36,7 +36,7 @@ export const EN_MESSAGES = {
 	"approval.meetup.details":
 		"### Publish on Meetup\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
 	"approval.meetup.request":
-		"Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+		"Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] ✅ Approve publication\n- [{rejectMark}] ❌ Reject publication",
 	"approval.meetup.final":
 		"{status, select, approved {✅ Publication approved} rejected {❌ Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
 

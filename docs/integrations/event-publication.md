@@ -216,8 +216,8 @@ operations remain durable even when another provider fails. The summary reports
 status and review URL per destination, with localized diagnostics.
 
 Review each linked draft from its bot-authored approval comment or organizer
-Slack notification. Select exactly one approval choice using a repository
-account with write permission. An unchanged request retains its decision;
+Slack notification. Select either **✅ Approve publication** or **❌ Reject
+publication** using a repository account with write permission. An unchanged request retains its decision;
 changed managed content or identity requires fresh approval. Rejection leaves
 the draft unpublished. Unauthorized edits, modified request metadata, both
 checkboxes checked, and unavailable verification do not authorize publication.

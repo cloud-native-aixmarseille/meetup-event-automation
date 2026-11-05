@@ -8,17 +8,17 @@ export const FR_MESSAGES = {
 	"approval.social.details":
 		"### Publier sur {target}\n\n{destination} · {identity}\n\nPublication : {plannedAt} ; expiration : {expiresAt}.\n\nVérifiez le message ci-dessous.",
 	"approval.social.request":
-		"Cochez un choix pour publier ce message à la destination indiquée. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+		"Cochez un choix pour publier ce message à la destination indiquée. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] ✅ Approuver la publication\n- [{rejectMark}] ❌ Refuser la publication",
 	"approval.social.evidence":
 		"Preuve : {reference}\n\nRésultat : {outcome, select, published {publié} not_published {non publié} other {inconnu}}.",
 	"approval.social.recovery":
-		"Vérifiez la preuve ci-dessus avant de choisir.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identifiant} not_published {Confirmer qu'aucun message n'a été publié et autoriser un nouvel essai après validation} other {Confirmer la reprise}}\n- [{rejectMark}] Garder la publication bloquée",
+		"Vérifiez la preuve ci-dessus avant de choisir.\n\n- [{approveMark}] ✅ {outcome, select, published {Confirmer la publication et enregistrer son identifiant} not_published {Confirmer qu'aucun message n'a été publié et autoriser un nouvel essai après validation} other {Confirmer la reprise}}\n- [{rejectMark}] ❌ Garder la publication bloquée",
 	"approval.social.final":
 		"{status, select, approved {✅ Publication approuvée} rejected {❌ Publication refusée} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\nConsultez le suivi des envois pour le résultat.",
 	"approval.community.details":
 		"### Publier sur CNCF\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Vérifier le brouillon OCGroups]({url}). La publication peut notifier les membres du groupe et les intervenants.",
 	"approval.community.request":
-		"Cochez un choix. La validation inclut les notifications OCGroups.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+		"Cochez un choix. La validation inclut les notifications OCGroups.\n\n- [{approveMark}] ✅ Approuver la publication\n- [{rejectMark}] ❌ Refuser la publication",
 	"approval.community.final":
 		"{status, select, approved {✅ Publication CNCF approuvée} rejected {❌ Publication CNCF refusée} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\nCNCF Link sera ajouté après vérification de la publication.",
 	"approval.content.planned": "Publication prévue : {time}.",
@@ -37,7 +37,7 @@ export const FR_MESSAGES = {
 	"approval.meetup.details":
 		"### Publier sur Meetup\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Vérifier le brouillon Meetup]({url}).",
 	"approval.meetup.request":
-		"Cochez un choix. L'automatisation publiera le brouillon approuvé.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+		"Cochez un choix. L'automatisation publiera le brouillon approuvé.\n\n- [{approveMark}] ✅ Approuver la publication\n- [{rejectMark}] ❌ Refuser la publication",
 	"approval.meetup.final":
 		"{status, select, approved {✅ Publication approuvée} rejected {❌ Publication refusée} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'événement reste en brouillon.} other {}}",
 

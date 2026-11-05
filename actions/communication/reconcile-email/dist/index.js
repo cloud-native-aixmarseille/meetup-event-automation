@@ -46181,11 +46181,23 @@ var ApprovalDecisionParser = class {
       return this.emailDecisions.parse(record, normalized, this.comments);
     for (const comment of this.comments) {
       for (const status of ["approved", "rejected"]) {
-        if (normalized.replace(/- \[X\]/g, "- [x]") === comment.issue(record, { status }))
+        if (this.matches(
+          record,
+          normalized.replace(/- \[X\]/g, "- [x]"),
+          comment.issue(record, { status })
+        ))
           return { status };
       }
     }
     return { status: "pending" };
+  }
+  matches(record, body, expected) {
+    if (body === expected) return true;
+    if (record.kind !== "meetup-publication" && record.kind !== "community-publication" && record.kind !== "social-publication")
+      return false;
+    const controlsStart = expected.lastIndexOf("\n\n");
+    const controls = expected.slice(controlsStart).replace(/(- \[[ x]\]) [✅❌] /g, "$1 ");
+    return body === expected.slice(0, controlsStart) + controls;
   }
   content(record, body) {
     if (record.content.target !== "cover") return this.text(record, body);
@@ -46319,12 +46331,12 @@ var EN_MESSAGES2 = {
   "approval.content.image-label": "#### Image {index, number}",
   "approval.social.after-approval": "after approval",
   "approval.social.details": "### Publish on {target}\n\n{destination} \xB7 {identity}\n\nScheduled for: {plannedAt}; expires: {expiresAt}.\n\nReview the post below.",
-  "approval.social.request": "Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.social.request": "Select one choice to publish this post to the destination above. Changes require another approval.\n\n- [{approveMark}] \u2705 Approve publication\n- [{rejectMark}] \u274C Reject publication",
   "approval.social.evidence": "Evidence: {reference}\n\nResult: {outcome, select, published {published} not_published {not published} other {unknown}}.",
-  "approval.social.recovery": "Check the evidence above before selecting a choice.\n\n- [{approveMark}] {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] Keep publication blocked",
+  "approval.social.recovery": "Check the evidence above before selecting a choice.\n\n- [{approveMark}] \u2705 {outcome, select, published {Confirm publication and save the post ID} not_published {Confirm no post was published and allow a retry with valid approval} other {Confirm recovery}}\n- [{rejectMark}] \u274C Keep publication blocked",
   "approval.social.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSee the delivery status for the result.",
   "approval.community.details": "### Publish on CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the OCGroups draft]({url}). Publishing may notify group members and speakers.",
-  "approval.community.request": "Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.community.request": "Select one choice. Approval includes OCGroups notifications.\n\n- [{approveMark}] \u2705 Approve publication\n- [{rejectMark}] \u274C Reject publication",
   "approval.community.final": "{status, select, approved {\u2705 CNCF publication approved} rejected {\u274C CNCF publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nCNCF Link is added after publication is verified.",
   "approval.content.planned": "Scheduled for: {time}.",
   "approval.content.slot": "Image {index}: {status, select, complete {ready} reserved {result unknown; check before retrying} failed {generation failed} other {not generated}}.",
@@ -46334,7 +46346,7 @@ var EN_MESSAGES2 = {
   "approval.content.image-choice": "- [{mark}] \u2705 Choose image {index, number}",
   "approval.content.final": "{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} iteration_requested {\u{1F504} New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
   "approval.meetup.details": "### Publish on Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
-  "approval.meetup.request": "Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] Approve publication\n- [{rejectMark}] Reject publication",
+  "approval.meetup.request": "Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] \u2705 Approve publication\n- [{rejectMark}] \u274C Reject publication",
   "approval.meetup.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
   "follow-up.title": "## Post-event follow-up \xB7 {date}",
   "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
@@ -46361,12 +46373,12 @@ var FR_MESSAGES2 = {
   "approval.content.image-label": "#### Visuel {index, number}",
   "approval.social.after-approval": "apr\xE8s approbation",
   "approval.social.details": "### Publier sur {target}\n\n{destination} \xB7 {identity}\n\nPublication : {plannedAt} ; expiration : {expiresAt}.\n\nV\xE9rifiez le message ci-dessous.",
-  "approval.social.request": "Cochez un choix pour publier ce message \xE0 la destination indiqu\xE9e. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.social.request": "Cochez un choix pour publier ce message \xE0 la destination indiqu\xE9e. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] \u2705 Approuver la publication\n- [{rejectMark}] \u274C Refuser la publication",
   "approval.social.evidence": "Preuve : {reference}\n\nR\xE9sultat : {outcome, select, published {publi\xE9} not_published {non publi\xE9} other {inconnu}}.",
-  "approval.social.recovery": "V\xE9rifiez la preuve ci-dessus avant de choisir.\n\n- [{approveMark}] {outcome, select, published {Confirmer la publication et enregistrer son identifiant} not_published {Confirmer qu'aucun message n'a \xE9t\xE9 publi\xE9 et autoriser un nouvel essai apr\xE8s validation} other {Confirmer la reprise}}\n- [{rejectMark}] Garder la publication bloqu\xE9e",
+  "approval.social.recovery": "V\xE9rifiez la preuve ci-dessus avant de choisir.\n\n- [{approveMark}] \u2705 {outcome, select, published {Confirmer la publication et enregistrer son identifiant} not_published {Confirmer qu'aucun message n'a \xE9t\xE9 publi\xE9 et autoriser un nouvel essai apr\xE8s validation} other {Confirmer la reprise}}\n- [{rejectMark}] \u274C Garder la publication bloqu\xE9e",
   "approval.social.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nConsultez le suivi des envois pour le r\xE9sultat.",
   "approval.community.details": "### Publier sur CNCF\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon OCGroups]({url}). La publication peut notifier les membres du groupe et les intervenants.",
-  "approval.community.request": "Cochez un choix. La validation inclut les notifications OCGroups.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.community.request": "Cochez un choix. La validation inclut les notifications OCGroups.\n\n- [{approveMark}] \u2705 Approuver la publication\n- [{rejectMark}] \u274C Refuser la publication",
   "approval.community.final": "{status, select, approved {\u2705 Publication CNCF approuv\xE9e} rejected {\u274C Publication CNCF refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCNCF Link sera ajout\xE9 apr\xE8s v\xE9rification de la publication.",
   "approval.content.planned": "Publication pr\xE9vue : {time}.",
   "approval.content.slot": "Visuel {index} : {status, select, complete {pr\xEAt} reserved {r\xE9sultat inconnu ; v\xE9rifiez avant de relancer} failed {g\xE9n\xE9ration en \xE9chec} other {non g\xE9n\xE9r\xE9}}.",
@@ -46376,7 +46388,7 @@ var FR_MESSAGES2 = {
   "approval.content.image-choice": "- [{mark}] \u2705 Choisir le visuel {index, number}",
   "approval.content.final": "{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.{image, plural, =0 {} other {\n\nVisuel choisi : #}}",
   "approval.meetup.details": "### Publier sur Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon Meetup]({url}).",
-  "approval.meetup.request": "Cochez un choix. L'automatisation publiera le brouillon approuv\xE9.\n\n- [{approveMark}] Approuver la publication\n- [{rejectMark}] Refuser la publication",
+  "approval.meetup.request": "Cochez un choix. L'automatisation publiera le brouillon approuv\xE9.\n\n- [{approveMark}] \u2705 Approuver la publication\n- [{rejectMark}] \u274C Refuser la publication",
   "approval.meetup.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'\xE9v\xE9nement reste en brouillon.} other {}}",
   "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
   "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",

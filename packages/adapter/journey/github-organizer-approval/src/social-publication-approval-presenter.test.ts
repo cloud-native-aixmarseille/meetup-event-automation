@@ -57,6 +57,16 @@ describe("social publication approval preview", () => {
 			expect(body).toContain(
 				"<pre>&lt;img&gt;\n&#64;everyone\nhttps://www.meetup.com/example/events/12345/</pre>",
 			);
+			expect(body).toContain(
+				locale === "en"
+					? "- [x] ✅ Approve publication"
+					: "- [x] ✅ Approuver la publication",
+			);
+			expect(body).toContain(
+				locale === "en"
+					? "- [ ] ❌ Reject publication"
+					: "- [ ] ❌ Refuser la publication",
+			);
 			expect(body.match(/- \[x\]/g)).toHaveLength(1);
 			expect(body.match(/- \[ \]/g)).toHaveLength(1);
 		},
@@ -88,7 +98,8 @@ describe("social publication approval preview", () => {
 			expect(body).toContain(
 				"Verified provider history for this exact channel",
 			);
-			expect(body).toContain("Keep publication blocked");
+			expect(body).toContain("- [ ] ❌ Keep publication blocked");
+			expect(body).toContain("- [ ] ✅ Confirm");
 			expect(body).toContain(
 				outcome === "published"
 					? "save the post ID"

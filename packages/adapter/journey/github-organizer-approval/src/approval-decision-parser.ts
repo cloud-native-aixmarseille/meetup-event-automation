@@ -29,13 +29,35 @@ export class ApprovalDecisionParser {
 		for (const comment of this.comments) {
 			for (const status of ["approved", "rejected"] as const) {
 				if (
-					normalized.replace(/- \[X\]/g, "- [x]") ===
-					comment.issue(record, { status })
+					this.matches(
+						record,
+						normalized.replace(/- \[X\]/g, "- [x]"),
+						comment.issue(record, { status }),
+					)
 				)
 					return { status };
 			}
 		}
 		return { status: "pending" };
+	}
+	private matches(
+		record: StoredApproval,
+		body: string,
+		expected: string,
+	): boolean {
+		if (body === expected) return true;
+		if (
+			record.kind !== "meetup-publication" &&
+			record.kind !== "community-publication" &&
+			record.kind !== "social-publication"
+		)
+			return false;
+		// Persisted requests may omit icons in the final pair of controls only.
+		const controlsStart = expected.lastIndexOf("\n\n");
+		const controls = expected
+			.slice(controlsStart)
+			.replace(/(- \[[ x]\]) [✅❌] /g, "$1 ");
+		return body === expected.slice(0, controlsStart) + controls;
 	}
 	private content(
 		record: StoredApproval<"content-review">,
