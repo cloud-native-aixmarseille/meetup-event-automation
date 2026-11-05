@@ -30,7 +30,7 @@ Reconcile managed Drive folders, template copies, approved cover placement, docu
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-documents@9c148434dd42713fc980eb66bc21a84a2353ea34 # 10.0.1
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/assets/reconcile-documents@611f9cf35a34f3172552adac4c5bee84beda2f7d # 10.0.2
   with:
     # GitHub App bot owning content approval state.
     # This input is required.
