@@ -89,7 +89,10 @@ and link them from the documentation index.
 Change inputs, outputs, secrets, descriptions, and permissions in the owning
 YAML. The release job in
 [`__main-ci.yml`](../../.github/workflows/__main-ci.yml) calls the pinned reusable
-release workflow to regenerate references. Preserve CI Dokumentor's paired
+release workflow to regenerate references independently of shared CI, so stale
+generated references can be repaired when they fail lint. Publishing a GitHub
+release still requires shared CI to pass in `__release.yml`.
+Preserve CI Dokumentor's paired
 section comments and review its diff against the source manifests. There is no
 local generation command; report regeneration as pending until that job runs.
 Do not hand-patch its output to simulate a successful generation.
