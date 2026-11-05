@@ -22,8 +22,9 @@
 ## Overview
 
 Goal: Prepare missing reminders and publish approved social posts.
-Behavior: Prepare and review drafts, then recheck publication authority, due
-times and durable delivery records under the event lock.
+Behavior: Publication decisions go directly to guarded delivery. Other triggers
+prepare and review drafts first. Recheck authority, due times and durable
+delivery records under the event lock.
 
 ### Permissions
 
