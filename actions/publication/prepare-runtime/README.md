@@ -30,7 +30,7 @@ Validate the destination collection and locate its required browser authenticati
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/prepare-runtime@c01e7b3926a25edf6bfe0eed3c2d2488ccbd8bfd # 10.0.3
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/prepare-runtime@b57d81e986cedb0dde9ef5da90a756c3db653483 # 10.0.4
   with:
     # Language for the preparation report (en or fr).
     # This input is required.
