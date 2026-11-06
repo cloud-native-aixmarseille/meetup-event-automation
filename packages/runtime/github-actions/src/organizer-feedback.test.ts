@@ -56,6 +56,37 @@ function stage(code: string, severity = "error", fixApplied = false) {
 }
 
 describe("OrganizerFeedback", () => {
+	it("preserves the conflicting file and kind from workflow output to the checklist", async () => {
+		// Arrange
+		const { feedback, comments } = fixture();
+		const diagnostic = {
+			code: "publication.assets.content.conflict",
+			severity: "warning",
+			field: "assets.content/slides_123/slides",
+			message: "private provider response",
+		};
+		const input = reports({
+			assets: { outcome: "success", diagnostics: JSON.stringify([diagnostic]) },
+			communications: stage("communication.slides-unavailable"),
+		});
+
+		// Act
+		await feedback.execute(identity, input);
+
+		// Assert
+		expect(comments.reconcileDiagnostics).toHaveBeenCalledWith(
+			identity,
+			[
+				expect.objectContaining({
+					code: diagnostic.code,
+					field: diagnostic.field,
+					message: diagnostic.code,
+				}),
+			],
+			{ meetup: undefined },
+			undefined,
+		);
+	});
 	it("merges actionable stage diagnostics, removes fixed tasks and repeated prerequisites", async () => {
 		// Arrange
 		const { feedback, comments } = fixture();
