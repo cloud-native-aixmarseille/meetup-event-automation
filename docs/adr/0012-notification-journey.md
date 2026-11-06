@@ -16,7 +16,7 @@ accepted and implemented, its decisions consolidate into ADR 0004.
 ## Context
 
 Organizer feedback on 2026-11-06: "Je trouve que le bot il spam un peu trop, de
-plus c'est couplé avec slack ça fait double emploi si tu suis tes notifs GH"
+plus c'est couplé avec Slack ça fait double emploi si tu suis tes notifs GH"
 ("The bot spams a bit too much, and it is coupled with Slack, which is redundant
 if you follow your GitHub notifications").
 
