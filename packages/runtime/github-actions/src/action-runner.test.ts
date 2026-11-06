@@ -1,6 +1,9 @@
 import * as core from "@actions/core";
 import { EventConcurrentModificationError } from "@meetup-automation/event";
-import { JourneyPolicyComposition } from "@meetup-automation/journey";
+import {
+	OrganizerCommentChangedError,
+	JourneyPolicyComposition,
+} from "@meetup-automation/journey";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionRunner } from "./action-runner.js";
 import { AttentionStageInput } from "./attention-stage-input.js";
@@ -509,4 +512,51 @@ describe("action runner reporting contract", () => {
 			]),
 		).not.toContain("private@example.test");
 	});
+
+	it.each(["en", "fr"])(
+		"defers concurrent comment edits with clear feedback in %s",
+		async (locale) => {
+			// Arrange
+			vi.mocked(core.getInput).mockReturnValue(locale);
+			const operation = vi
+				.fn()
+				.mockRejectedValue(new OrganizerCommentChangedError());
+			const composition = new GithubActionsComposition();
+			const runner = new ActionRunner({
+				diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+				actionFailurePresenter: composition.actionFailurePresenter(),
+				actionReport: composition.actionReport(),
+				actionOutput: composition.actionOutput(),
+				createActionMessages: (...args) => composition.actionMessages(...args),
+			});
+
+			// Act
+			await runner.run("action.event.reconcile", operation, true);
+			const diagnostics = vi
+				.mocked(core.setOutput)
+				.mock.calls.find(([name]) => name === "diagnostics")?.[1];
+			const stages = new AttentionStageInput().parse(
+				JSON.stringify({ social: { outcome: "success", diagnostics } }),
+			);
+			const complete = new JourneyPolicyComposition()
+				.attentionStageEvaluation()
+				.socialComplete(stages);
+
+			// Assert
+			expect(complete).toBe(false);
+			expect(operation).toHaveBeenCalledOnce();
+			expect(core.setFailed).not.toHaveBeenCalled();
+			expect(core.setOutput).toHaveBeenCalledWith(
+				"diagnostics",
+				expect.stringContaining("action.comment-concurrently-modified"),
+			);
+			expect(core.info).toHaveBeenCalledWith(
+				expect.stringContaining(
+					locale === "fr"
+						? "reprendra au prochain passage"
+						: "deferred until the next run",
+				),
+			);
+		},
+	);
 });

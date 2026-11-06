@@ -63782,171 +63782,11 @@ var EventCopyTitleDraft = class {
   }
 };
 
-// packages/runtime/github-actions/src/action-runner.ts
-var ActionRunner = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  async run(title, operation, diagnosticsOutput) {
-    let messages3 = this.collaborators.createActionMessages("en");
-    let report;
-    try {
-      messages3 = this.collaborators.createActionMessages(
-        getInput("locale", { required: true })
-      );
-      report = await operation(messages3);
-      const failures = report.diagnostics.filter(
-        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
-      ).map((item) => item.code);
-      if (!report.failure && failures.length > 0) {
-        report = {
-          ...report,
-          failure: messages3.t("report.technical-failure", {
-            codes: [...new Set(failures)].join(", ")
-          })
-        };
-      }
-    } catch (error2) {
-      if (error2 instanceof EventConcurrentModificationError) {
-        report = {
-          details: [],
-          diagnostics: [
-            {
-              code: "event.concurrently-modified",
-              severity: "info",
-              message: "event.concurrently-modified"
-            }
-          ]
-        };
-      } else {
-        const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
-        report = {
-          details: [],
-          diagnostics: [
-            { code: "action.execution.failed", severity: "error", message }
-          ],
-          failure: messages3.error(
-            error2 instanceof Error ? error2.name : "",
-            message
-          )
-        };
-      }
-    }
-    await this.collaborators.actionReport.write(
-      messages3.t(title),
-      report,
-      messages3
-    );
-    if (report.failure) setFailed(report.failure);
-    if (diagnosticsOutput)
-      this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
-  }
-};
-
-// packages/runtime/github-actions/src/ai-input.ts
-var AiInput = class {
-  constructor(runtimeInput) {
-    this.runtimeInput = runtimeInput;
-  }
-  runtimeInput;
-  read() {
-    const apiKey = getInput("ai-api-key", {
-      required: true,
-      trimWhitespace: false
-    });
-    setSecret(apiKey);
-    const normalizedApiKey = apiKey.trim();
-    if (normalizedApiKey && normalizedApiKey !== apiKey)
-      setSecret(normalizedApiKey);
-    return this.validate({
-      provider: getInput("ai-provider", {
-        required: true,
-        trimWhitespace: false
-      }),
-      model: getInput("ai-model", {
-        required: true,
-        trimWhitespace: false
-      }),
-      apiKey
-    });
-  }
-  validate(input) {
-    if (!this.runtimeInput.isObject(input))
-      throw new Error("Invalid AI configuration");
-    const provider = this.requiredString(input.provider, "ai-provider");
-    if (provider !== "gemini")
-      throw new Error("Invalid input: ai-provider. Supported provider: gemini");
-    return {
-      provider,
-      model: this.requiredString(input.model, "ai-model"),
-      apiKey: this.requiredString(input.apiKey, "ai-api-key")
-    };
-  }
-  requiredString(value, name) {
-    if (typeof value !== "string") throw new Error(`Invalid input: ${name}`);
-    const normalized = value.trim();
-    if (!normalized)
-      throw new Error(`Input required and not supplied: ${name}`);
-    return normalized;
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-recovery-input.ts
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-var AssetRecoveryInput = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  async load(root, eventId) {
-    let text;
-    try {
-      text = await readFile(
-        join(root, ".github/meetup-asset-recovery.json"),
-        "utf8"
-      );
-    } catch (error2) {
-      if (this.collaborators.runtimeInput.isObject(error2) && error2.code === "ENOENT")
-        return {};
-      throw error2;
-    }
-    if (Buffer.byteLength(text) > 1e6)
-      throw new Error("Asset recovery input is too large");
-    return this.parse(JSON.parse(text), eventId);
-  }
-  parse(root, eventId) {
-    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.events) || !this.collaborators.contentContractPolicy.keys(root, [
-      "version",
-      "events"
-    ]))
-      throw new Error("Invalid asset recovery input");
-    return this.recovery(root.events[eventId]);
-  }
-  recovery(input) {
-    const value = input === void 0 ? {} : input;
-    if (!this.collaborators.runtimeInput.isObject(value))
-      throw new Error("Invalid asset recovery operations");
-    const result = {};
-    for (const [id, operation] of Object.entries(value)) {
-      if (!this.collaborators.contentContractPolicy.name(id) || !this.collaborators.runtimeInput.isObject(operation) || operation.operation !== "enroll" && operation.operation !== "restore" && operation.operation !== "remove" || !this.collaborators.contentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !this.collaborators.contentContractPolicy.name(
-        operation.bindingId
-      ) || operation.bindingId !== void 0 && !this.collaborators.contentContractPolicy.name(
-        operation.bindingId
-      ) || !this.collaborators.contentContractPolicy.keys(operation, [
-        "operation",
-        "revision",
-        "bindingId"
-      ]))
-        throw new Error("Invalid asset recovery operation");
-      result[id] = {
-        operation: operation.operation,
-        revision: operation.revision,
-        ...typeof operation.bindingId === "string" ? { bindingId: operation.bindingId } : {}
-      };
-    }
-    return result;
+// packages/application/journey/src/approval/organizer-comment-changed-error.ts
+var OrganizerCommentChangedError = class extends Error {
+  constructor() {
+    super("Organizer comment changed during verification");
+    this.name = "OrganizerCommentChangedError";
   }
 };
 
@@ -69252,9 +69092,11 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
         );
     const merged = [...diagnostics.values()];
     return merged.filter(
-      (item) => !["action.execution.failed", "event.concurrently-modified"].includes(
-        item.code
-      ) && !this.collaborators.organizerDiagnosticPolicy.derivative(item, merged)
+      (item) => ![
+        "action.execution.failed",
+        "event.concurrently-modified",
+        "action.comment-concurrently-modified"
+      ].includes(item.code) && !this.collaborators.organizerDiagnosticPolicy.derivative(item, merged)
     );
   }
   complete(input) {
@@ -69267,7 +69109,10 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
   }
   stageComplete(stage) {
     return stage !== void 0 && stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
-      (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
+      (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || [
+        "event.concurrently-modified",
+        "action.comment-concurrently-modified"
+      ].includes(item.code)
     );
   }
   owners(input) {
@@ -69275,7 +69120,11 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
     return owners.filter((owner) => input[owner] !== void 0);
   }
   organizerPrerequisite(item) {
-    if (item.code === "event.concurrently-modified") return true;
+    if ([
+      "event.concurrently-modified",
+      "action.comment-concurrently-modified"
+    ].includes(item.code))
+      return true;
     return this.collaborators.diagnosticPolicy.classify(item) === "organizer" && ![
       "communication.approval-pending",
       "communication.approval-rejected",
@@ -69481,6 +69330,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
 ]);
 var INFORMATIONAL_CODES = /* @__PURE__ */ new Set([
   "event.concurrently-modified",
+  "action.comment-concurrently-modified",
   "communication.delivery-already-recorded",
   "communication.dispatch-disabled-by-config",
   "communication.duplicate-intent",
@@ -71596,6 +71446,171 @@ var ContentFactsProjection = class {
     if (target === "title") return event.eventTitle;
     if (target === "description") return event.description;
     return null;
+  }
+};
+
+// packages/runtime/github-actions/src/action-runner.ts
+var ActionRunner = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async run(title, operation, diagnosticsOutput) {
+    let messages3 = this.collaborators.createActionMessages("en");
+    let report;
+    try {
+      messages3 = this.collaborators.createActionMessages(
+        getInput("locale", { required: true })
+      );
+      report = await operation(messages3);
+      const failures = report.diagnostics.filter(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
+      ).map((item) => item.code);
+      if (!report.failure && failures.length > 0) {
+        report = {
+          ...report,
+          failure: messages3.t("report.technical-failure", {
+            codes: [...new Set(failures)].join(", ")
+          })
+        };
+      }
+    } catch (error2) {
+      report = this.exceptionReport(error2, messages3);
+    }
+    await this.collaborators.actionReport.write(
+      messages3.t(title),
+      report,
+      messages3
+    );
+    if (report.failure) setFailed(report.failure);
+    if (diagnosticsOutput)
+      this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
+  }
+  exceptionReport(error2, messages3) {
+    if (error2 instanceof OrganizerCommentChangedError || error2 instanceof EventConcurrentModificationError) {
+      const code = error2 instanceof OrganizerCommentChangedError ? "action.comment-concurrently-modified" : "event.concurrently-modified";
+      return {
+        details: error2 instanceof OrganizerCommentChangedError ? [messages3.t("report.comment-changed")] : [],
+        diagnostics: [{ code, severity: "info", message: code }]
+      };
+    }
+    const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
+    return {
+      details: [],
+      diagnostics: [
+        { code: "action.execution.failed", severity: "error", message }
+      ],
+      failure: messages3.error(
+        error2 instanceof Error ? error2.name : "",
+        message
+      )
+    };
+  }
+};
+
+// packages/runtime/github-actions/src/ai-input.ts
+var AiInput = class {
+  constructor(runtimeInput) {
+    this.runtimeInput = runtimeInput;
+  }
+  runtimeInput;
+  read() {
+    const apiKey = getInput("ai-api-key", {
+      required: true,
+      trimWhitespace: false
+    });
+    setSecret(apiKey);
+    const normalizedApiKey = apiKey.trim();
+    if (normalizedApiKey && normalizedApiKey !== apiKey)
+      setSecret(normalizedApiKey);
+    return this.validate({
+      provider: getInput("ai-provider", {
+        required: true,
+        trimWhitespace: false
+      }),
+      model: getInput("ai-model", {
+        required: true,
+        trimWhitespace: false
+      }),
+      apiKey
+    });
+  }
+  validate(input) {
+    if (!this.runtimeInput.isObject(input))
+      throw new Error("Invalid AI configuration");
+    const provider = this.requiredString(input.provider, "ai-provider");
+    if (provider !== "gemini")
+      throw new Error("Invalid input: ai-provider. Supported provider: gemini");
+    return {
+      provider,
+      model: this.requiredString(input.model, "ai-model"),
+      apiKey: this.requiredString(input.apiKey, "ai-api-key")
+    };
+  }
+  requiredString(value, name) {
+    if (typeof value !== "string") throw new Error(`Invalid input: ${name}`);
+    const normalized = value.trim();
+    if (!normalized)
+      throw new Error(`Input required and not supplied: ${name}`);
+    return normalized;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-recovery-input.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+var AssetRecoveryInput = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async load(root, eventId) {
+    let text;
+    try {
+      text = await readFile(
+        join(root, ".github/meetup-asset-recovery.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (this.collaborators.runtimeInput.isObject(error2) && error2.code === "ENOENT")
+        return {};
+      throw error2;
+    }
+    if (Buffer.byteLength(text) > 1e6)
+      throw new Error("Asset recovery input is too large");
+    return this.parse(JSON.parse(text), eventId);
+  }
+  parse(root, eventId) {
+    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.events) || !this.collaborators.contentContractPolicy.keys(root, [
+      "version",
+      "events"
+    ]))
+      throw new Error("Invalid asset recovery input");
+    return this.recovery(root.events[eventId]);
+  }
+  recovery(input) {
+    const value = input === void 0 ? {} : input;
+    if (!this.collaborators.runtimeInput.isObject(value))
+      throw new Error("Invalid asset recovery operations");
+    const result = {};
+    for (const [id, operation] of Object.entries(value)) {
+      if (!this.collaborators.contentContractPolicy.name(id) || !this.collaborators.runtimeInput.isObject(operation) || operation.operation !== "enroll" && operation.operation !== "restore" && operation.operation !== "remove" || !this.collaborators.contentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || operation.bindingId !== void 0 && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || !this.collaborators.contentContractPolicy.keys(operation, [
+        "operation",
+        "revision",
+        "bindingId"
+      ]))
+        throw new Error("Invalid asset recovery operation");
+      result[id] = {
+        operation: operation.operation,
+        revision: operation.revision,
+        ...typeof operation.bindingId === "string" ? { bindingId: operation.bindingId } : {}
+      };
+    }
+    return result;
   }
 };
 
@@ -76077,6 +76092,7 @@ var EN_MESSAGES2 = {
   "action.communication.reconcile-email": "Send meetup emails",
   "action.assets.reconcile-documents": "Update meetup files",
   "report.failed": "failure={reason}",
+  "report.comment-changed": "A comment changed during verification. Processing is deferred until the next run; the organizer response is preserved.",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
   "report.error.unexpected": "Unexpected technical failure.",
@@ -76255,6 +76271,7 @@ var FR_MESSAGES2 = {
   "action.communication.reconcile-email": "Envoyer les emails du meetup",
   "action.assets.reconcile-documents": "Mettre \xE0 jour les fichiers du meetup",
   "report.failed": "failure={reason}",
+  "report.comment-changed": "Un commentaire a chang\xE9 pendant sa v\xE9rification. Le traitement reprendra au prochain passage ; la r\xE9ponse de l'organisateur est conserv\xE9e.",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
   "report.error.unexpected": "Erreur technique inattendue.",
@@ -88605,8 +88622,9 @@ var GitHubCommentVisibility = class {
       repo: this.repo,
       comment_id: commentId
     });
-    if (!data.node_id || data.body !== expectedBody)
-      throw new Error("Comment changed before visibility update");
+    if (!data.node_id || typeof data.body !== "string")
+      throw new Error("Invalid comment visibility response");
+    if (data.body !== expectedBody) throw new OrganizerCommentChangedError();
     const response = await this.api.graphql(
       `query CommentVisibility($id: ID!) {
 				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
@@ -88616,8 +88634,9 @@ var GitHubCommentVisibility = class {
     if (!this.object(response) || !this.object(response.node))
       throw new Error("Invalid comment visibility response");
     const comment = response.node;
-    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
-      throw new Error("Comment changed before visibility update");
+    if (comment.id !== data.node_id || typeof comment.body !== "string" || typeof comment.isMinimized !== "boolean")
+      throw new Error("Invalid comment visibility response");
+    if (comment.body !== expectedBody) throw new OrganizerCommentChangedError();
     if (resolved === comment.isMinimized) return;
     if (!resolved && comment.minimizedReason !== "resolved") return;
     await this.change(data.node_id, resolved);
@@ -101949,8 +101968,9 @@ var GithubApprovalClient = class {
     const current = (await this.list()).find(
       (comment) => comment.id === commentId
     );
-    if (current?.body !== before)
-      throw new Error("Approval comment changed before persistence");
+    if (!current || typeof current.body !== "string")
+      throw new Error("Approval comment is unavailable before persistence");
+    if (current.body !== before) throw new OrganizerCommentChangedError();
     await this.update(commentId, after);
   }
   async edits(comments) {
@@ -102085,6 +102105,16 @@ var GithubApprovalRepository = class {
   authorLogin;
   presenter;
   async states() {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await this.readStates();
+      } catch (error2) {
+        if (!(error2 instanceof OrganizerCommentChangedError) || attempt >= 3)
+          throw error2;
+      }
+    }
+  }
+  async readStates() {
     const states = [];
     const comments = (await this.client.list()).filter(
       (comment) => comment.user?.login.toLowerCase() === this.authorLogin.toLowerCase()
@@ -102195,8 +102225,10 @@ var GithubApprovalResponse = class {
     };
   }
   snapshot(value, comment) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
-      throw new Error("Approval comment changed during verification");
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || typeof comment.body !== "string")
+      throw new Error("Invalid approval comment snapshot");
+    if (value.node.body !== comment.body)
+      throw new OrganizerCommentChangedError();
     return { ...value.node, id: value.node.id, body: value.node.body };
   }
   comment(value) {

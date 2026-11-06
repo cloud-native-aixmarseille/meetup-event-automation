@@ -66,6 +66,21 @@ publish changes only when its completion evidence is present. Speaker catalog
 publication requires the speaker action's `pr-title` and the form action's `completed` output.
 Mailing token creation and communications skip when completed asset outputs are absent.
 
+## Concurrent organizer comments
+
+The GitHub approval repository retries a changed comment snapshot at most twice
+(three complete reads). Each attempt reloads the comments, editors and required
+trusted history; partial evidence is discarded. Missing identities, malformed
+responses, permission failures and provider errors are not concurrency retries.
+
+`OrganizerCommentChangedError` identifies a body mismatch against a verified
+snapshot, including the checks before replacing or minimizing a comment. The
+shared runner reports `action.comment-concurrently-modified` without failing
+the job and explains that processing resumes on the next run. This diagnostic
+keeps the affected stage incomplete and preserves unresolved organizer tasks.
+No approval is inferred from stale evidence. Writes and sends are never replayed
+by this retry loop; delivery reservations still protect uncertain effects.
+
 ## Organizer feedback
 
 The `organizer/reconcile-checklist` action is the sole diagnostic checklist writer. It merges

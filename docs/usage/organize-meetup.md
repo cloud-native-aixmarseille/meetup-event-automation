@@ -60,6 +60,12 @@ checklist covering event details, assets, feedback and communications. Fix the
 listed values or complete the requested tasks. Expected corrections and pending
 approvals block the affected operation without failing CI.
 
+You can respond while automation is running. If a comment changes during its
+verification, automation rereads it and checks the current response and organizer
+permissions. If it keeps changing, the run reports that processing is deferred
+until the next run. Keep your response in the comment; you do not need to approve
+again. Pending tasks stay visible until their evaluation completes.
+
 The [active-issue audit](../../.github/workflows/event-reconcile-active.yml)
 uses the same policy. Unexpected execution, source or persistence failures fail
 the workflow; open its Actions run for technical codes and counts. An incomplete

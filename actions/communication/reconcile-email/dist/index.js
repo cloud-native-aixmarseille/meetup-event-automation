@@ -27983,6 +27983,14 @@ var require_ReflectLite = __commonJS({
   }
 });
 
+// packages/application/journey/src/approval/organizer-comment-changed-error.ts
+var OrganizerCommentChangedError = class extends Error {
+  constructor() {
+    super("Organizer comment changed during verification");
+    this.name = "OrganizerCommentChangedError";
+  }
+};
+
 // packages/application/journey/src/approval/approval-notification-policy.ts
 var ApprovalNotificationPolicy = class {
   notificationFor(request2) {
@@ -34729,9 +34737,11 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
         );
     const merged = [...diagnostics.values()];
     return merged.filter(
-      (item) => !["action.execution.failed", "event.concurrently-modified"].includes(
-        item.code
-      ) && !this.collaborators.organizerDiagnosticPolicy.derivative(item, merged)
+      (item) => ![
+        "action.execution.failed",
+        "event.concurrently-modified",
+        "action.comment-concurrently-modified"
+      ].includes(item.code) && !this.collaborators.organizerDiagnosticPolicy.derivative(item, merged)
     );
   }
   complete(input) {
@@ -34744,7 +34754,10 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
   }
   stageComplete(stage) {
     return stage !== void 0 && stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
-      (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
+      (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || [
+        "event.concurrently-modified",
+        "action.comment-concurrently-modified"
+      ].includes(item.code)
     );
   }
   owners(input) {
@@ -34752,7 +34765,11 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
     return owners.filter((owner) => input[owner] !== void 0);
   }
   organizerPrerequisite(item) {
-    if (item.code === "event.concurrently-modified") return true;
+    if ([
+      "event.concurrently-modified",
+      "action.comment-concurrently-modified"
+    ].includes(item.code))
+      return true;
     return this.collaborators.diagnosticPolicy.classify(item) === "organizer" && ![
       "communication.approval-pending",
       "communication.approval-rejected",
@@ -34958,6 +34975,7 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
 ]);
 var INFORMATIONAL_CODES = /* @__PURE__ */ new Set([
   "event.concurrently-modified",
+  "action.comment-concurrently-modified",
   "communication.delivery-already-recorded",
   "communication.dispatch-disabled-by-config",
   "communication.duplicate-intent",
@@ -35841,7 +35859,8 @@ var ApproveCommunicationBatch = class {
           ...result.emailParameters
         }
       };
-    } catch {
+    } catch (error2) {
+      if (error2 instanceof OrganizerCommentChangedError) throw error2;
       diagnostics.push({
         code: "communication.approval-unavailable",
         severity: "error"
@@ -36108,7 +36127,8 @@ var ManageMeetupCommunications = class {
         code: "communication.content-review",
         severity: "error"
       });
-    } catch {
+    } catch (error2) {
+      if (error2 instanceof OrganizerCommentChangedError) throw error2;
       diagnostics.push({
         code: "communication.approval-unavailable",
         severity: "error"
@@ -36125,7 +36145,8 @@ var ManageMeetupCommunications = class {
           severity: "warning"
         });
       return true;
-    } catch {
+    } catch (error2) {
+      if (error2 instanceof OrganizerCommentChangedError) throw error2;
       diagnostics.push({
         code: "communication.approval-unavailable",
         severity: "error"
@@ -47894,8 +47915,9 @@ var GithubApprovalClient = class {
     const current = (await this.list()).find(
       (comment) => comment.id === commentId
     );
-    if (current?.body !== before)
-      throw new Error("Approval comment changed before persistence");
+    if (!current || typeof current.body !== "string")
+      throw new Error("Approval comment is unavailable before persistence");
+    if (current.body !== before) throw new OrganizerCommentChangedError();
     await this.update(commentId, after);
   }
   async edits(comments) {
@@ -48030,6 +48052,16 @@ var GithubApprovalRepository = class {
   authorLogin;
   presenter;
   async states() {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        return await this.readStates();
+      } catch (error2) {
+        if (!(error2 instanceof OrganizerCommentChangedError) || attempt >= 3)
+          throw error2;
+      }
+    }
+  }
+  async readStates() {
     const states = [];
     const comments = (await this.client.list()).filter(
       (comment) => comment.user?.login.toLowerCase() === this.authorLogin.toLowerCase()
@@ -48140,8 +48172,10 @@ var GithubApprovalResponse = class {
     };
   }
   snapshot(value, comment) {
-    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
-      throw new Error("Approval comment changed during verification");
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || typeof comment.body !== "string")
+      throw new Error("Invalid approval comment snapshot");
+    if (value.node.body !== comment.body)
+      throw new OrganizerCommentChangedError();
     return { ...value.node, id: value.node.id, body: value.node.body };
   }
   comment(value) {
@@ -53687,8 +53721,9 @@ var GitHubCommentVisibility = class {
       repo: this.repo,
       comment_id: commentId
     });
-    if (!data.node_id || data.body !== expectedBody)
-      throw new Error("Comment changed before visibility update");
+    if (!data.node_id || typeof data.body !== "string")
+      throw new Error("Invalid comment visibility response");
+    if (data.body !== expectedBody) throw new OrganizerCommentChangedError();
     const response = await this.api.graphql(
       `query CommentVisibility($id: ID!) {
 				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
@@ -53698,8 +53733,9 @@ var GitHubCommentVisibility = class {
     if (!this.object(response) || !this.object(response.node))
       throw new Error("Invalid comment visibility response");
     const comment = response.node;
-    if (comment.id !== data.node_id || comment.body !== expectedBody || typeof comment.isMinimized !== "boolean")
-      throw new Error("Comment changed before visibility update");
+    if (comment.id !== data.node_id || typeof comment.body !== "string" || typeof comment.isMinimized !== "boolean")
+      throw new Error("Invalid comment visibility response");
+    if (comment.body !== expectedBody) throw new OrganizerCommentChangedError();
     if (resolved === comment.isMinimized) return;
     if (!resolved && comment.minimizedReason !== "resolved") return;
     await this.change(data.node_id, resolved);
@@ -70512,30 +70548,7 @@ var ActionRunner = class {
         };
       }
     } catch (error2) {
-      if (error2 instanceof EventConcurrentModificationError) {
-        report = {
-          details: [],
-          diagnostics: [
-            {
-              code: "event.concurrently-modified",
-              severity: "info",
-              message: "event.concurrently-modified"
-            }
-          ]
-        };
-      } else {
-        const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
-        report = {
-          details: [],
-          diagnostics: [
-            { code: "action.execution.failed", severity: "error", message }
-          ],
-          failure: messages5.error(
-            error2 instanceof Error ? error2.name : "",
-            message
-          )
-        };
-      }
+      report = this.exceptionReport(error2, messages5);
     }
     await this.collaborators.actionReport.write(
       messages5.t(title),
@@ -70545,6 +70558,26 @@ var ActionRunner = class {
     if (report.failure) setFailed(report.failure);
     if (diagnosticsOutput)
       this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
+  }
+  exceptionReport(error2, messages5) {
+    if (error2 instanceof OrganizerCommentChangedError || error2 instanceof EventConcurrentModificationError) {
+      const code = error2 instanceof OrganizerCommentChangedError ? "action.comment-concurrently-modified" : "event.concurrently-modified";
+      return {
+        details: error2 instanceof OrganizerCommentChangedError ? [messages5.t("report.comment-changed")] : [],
+        diagnostics: [{ code, severity: "info", message: code }]
+      };
+    }
+    const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
+    return {
+      details: [],
+      diagnostics: [
+        { code: "action.execution.failed", severity: "error", message }
+      ],
+      failure: messages5.error(
+        error2 instanceof Error ? error2.name : "",
+        message
+      )
+    };
   }
 };
 
@@ -71759,6 +71792,7 @@ var EN_MESSAGES7 = {
   "action.communication.reconcile-email": "Send meetup emails",
   "action.assets.reconcile-documents": "Update meetup files",
   "report.failed": "failure={reason}",
+  "report.comment-changed": "A comment changed during verification. Processing is deferred until the next run; the organizer response is preserved.",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
   "report.error.unexpected": "Unexpected technical failure.",
@@ -71937,6 +71971,7 @@ var FR_MESSAGES7 = {
   "action.communication.reconcile-email": "Envoyer les emails du meetup",
   "action.assets.reconcile-documents": "Mettre \xE0 jour les fichiers du meetup",
   "report.failed": "failure={reason}",
+  "report.comment-changed": "Un commentaire a chang\xE9 pendant sa v\xE9rification. Le traitement reprendra au prochain passage ; la r\xE9ponse de l'organisateur est conserv\xE9e.",
   "report.technical-failure": "technical_failure={codes}",
   "report.summary-unavailable": "summary=unavailable",
   "report.error.unexpected": "Erreur technique inattendue.",

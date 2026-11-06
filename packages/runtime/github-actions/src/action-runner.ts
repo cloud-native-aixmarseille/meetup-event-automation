@@ -1,6 +1,9 @@
 import * as core from "@actions/core";
 import { EventConcurrentModificationError } from "@meetup-automation/event";
-import type { DiagnosticPolicy } from "@meetup-automation/journey";
+import {
+	OrganizerCommentChangedError,
+	type DiagnosticPolicy,
+} from "@meetup-automation/journey";
 import type { ActionFailurePresenter } from "./action-failure-presenter.js";
 import type { ActionOutput } from "./action-output.js";
 import type { ActionReport, ActionReportData } from "./action-report.js";
@@ -52,31 +55,7 @@ export class ActionRunner {
 				};
 			}
 		} catch (error) {
-			if (error instanceof EventConcurrentModificationError) {
-				report = {
-					details: [],
-					diagnostics: [
-						{
-							code: "event.concurrently-modified",
-							severity: "info",
-							message: "event.concurrently-modified",
-						},
-					],
-				};
-			} else {
-				const message =
-					this.collaborators.actionFailurePresenter.publicErrorMessage(error);
-				report = {
-					details: [],
-					diagnostics: [
-						{ code: "action.execution.failed", severity: "error", message },
-					],
-					failure: messages.error(
-						error instanceof Error ? error.name : "",
-						message,
-					),
-				};
-			}
+			report = this.exceptionReport(error, messages);
 		}
 		await this.collaborators.actionReport.write(
 			messages.t(title),
@@ -86,5 +65,38 @@ export class ActionRunner {
 		if (report.failure) core.setFailed(report.failure);
 		if (diagnosticsOutput)
 			this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
+	}
+	private exceptionReport(
+		error: unknown,
+		messages: ActionMessages,
+	): ActionReportData {
+		if (
+			error instanceof OrganizerCommentChangedError ||
+			error instanceof EventConcurrentModificationError
+		) {
+			const code =
+				error instanceof OrganizerCommentChangedError
+					? "action.comment-concurrently-modified"
+					: "event.concurrently-modified";
+			return {
+				details:
+					error instanceof OrganizerCommentChangedError
+						? [messages.t("report.comment-changed")]
+						: [],
+				diagnostics: [{ code, severity: "info", message: code }],
+			};
+		}
+		const message =
+			this.collaborators.actionFailurePresenter.publicErrorMessage(error);
+		return {
+			details: [],
+			diagnostics: [
+				{ code: "action.execution.failed", severity: "error", message },
+			],
+			failure: messages.error(
+				error instanceof Error ? error.name : "",
+				message,
+			),
+		};
 	}
 }

@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type {
 	CommunicationClock,
 	MailBatchFingerprint,
@@ -102,7 +103,8 @@ export class ApproveCommunicationBatch {
 					...result.emailParameters,
 				},
 			};
-		} catch {
+		} catch (error) {
+			if (error instanceof OrganizerCommentChangedError) throw error;
 			diagnostics.push({
 				code: "communication.approval-unavailable",
 				severity: "error",

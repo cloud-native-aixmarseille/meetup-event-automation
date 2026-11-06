@@ -1,3 +1,4 @@
+export { OrganizerCommentChangedError } from "./approval/organizer-comment-changed-error.js";
 export { ApprovalNotificationPolicy } from "./approval/approval-notification-policy.js";
 export { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
 export {

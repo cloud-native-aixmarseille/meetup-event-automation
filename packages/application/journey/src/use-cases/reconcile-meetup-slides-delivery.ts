@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type {
 	DeliveryLedger,
 	PostEventPolicy,
@@ -116,7 +117,8 @@ export class ReconcileMeetupSlidesDelivery {
 						? "slides-approval-rejected"
 						: "slides-approval-pending",
 				);
-		} catch {
+		} catch (error) {
+			if (error instanceof OrganizerCommentChangedError) throw error;
 			return this.dependencies.results.result(
 				"blocked",
 				"slides-approval-unavailable",
@@ -161,6 +163,8 @@ export class ReconcileMeetupSlidesDelivery {
 				}
 			});
 		} catch (error) {
+			if (!reserved && error instanceof OrganizerCommentChangedError)
+				throw error;
 			if (approvalBlocked) return approvalBlocked;
 			if (reserved)
 				await this.dependencies.ledger.markUncertain(

@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import {
 	CommunityGroupUrl,
 	ScheduledEventError,
@@ -104,5 +105,19 @@ describe("publication write guards", () => {
 		expect(result.status).toBe("blocked");
 		expect(f.journal.reserve).not.toHaveBeenCalled();
 		expect(saved).not.toHaveBeenCalled();
+	});
+
+	it("defers a changed approval without publishing the draft", async () => {
+		// Arrange
+		const f = fixture();
+		const changed = new OrganizerCommentChangedError();
+		f.approval.request.mockRejectedValue(changed);
+
+		// Act
+		const result = f.destination.reconcile(f.source);
+
+		// Assert
+		await expect(result).rejects.toBe(changed);
+		expect(f.gateway.publish).not.toHaveBeenCalled();
 	});
 });

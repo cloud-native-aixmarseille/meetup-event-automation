@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import {
 	CommunicationDomainComposition,
 	type DeliveryLedger,
@@ -328,4 +329,33 @@ describe("Meetup attendee slide delivery", () => {
 		expect(f.gateway.sendSlides).toHaveBeenCalledOnce();
 		expect(f.dependencies.repository.applyPatch).not.toHaveBeenCalled();
 	});
+
+	it.each(["initial", "before-send"])(
+		"defers a changed approval at %s without reserving or sending",
+		async (phase) => {
+			// Arrange
+			const f = fixture();
+			const changed = new OrganizerCommentChangedError();
+			if (phase === "before-send")
+				f.approval.request.mockResolvedValueOnce({
+					status: "approved",
+					notificationFailed: false,
+				});
+			f.approval.request.mockRejectedValue(changed);
+			const send = vi.fn();
+			f.gateway.sendSlides.mockImplementation(async (_event, _pdf, guard) => {
+				await guard();
+				send();
+			});
+
+			// Act
+			const result = f.operation.execute(identity);
+
+			// Assert
+			await expect(result).rejects.toBe(changed);
+			expect(send).not.toHaveBeenCalled();
+			expect(f.ledger.reservePending).not.toHaveBeenCalled();
+			expect(f.ledger.markUncertain).not.toHaveBeenCalled();
+		},
+	);
 });

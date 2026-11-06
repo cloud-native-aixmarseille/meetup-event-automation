@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import { describe, expect, it } from "vitest";
 import { communicationReviewFixture } from "../../testing/communication-review.fixtures.js";
 import { event } from "../../testing/meetup-journey.fixtures.js";
@@ -116,5 +117,32 @@ describe("preparation email review", () => {
 			code: "communication.approval-unavailable",
 			severity: "error",
 		});
+	});
+
+	it("defers a changed approval without authorizing email dispatch", async () => {
+		// Arrange
+		const f = communicationReviewFixture();
+		const changed = new OrganizerCommentChangedError();
+		f.approvals.request.mockRejectedValue(changed);
+		const review = new ApproveCommunicationBatch(
+			f.collaborators,
+			f.approvals,
+			f.clock,
+			f.reconciler,
+		);
+		const diagnostics: CommunicationJourneyDiagnostic[] = [];
+
+		// Act
+		const result = review.execute(
+			f.input,
+			f.input.mailRecipients,
+			event,
+			diagnostics,
+		);
+
+		// Assert
+		await expect(result).rejects.toBe(changed);
+		expect(f.gateway.dispatch).not.toHaveBeenCalled();
+		expect(diagnostics).toEqual([]);
 	});
 });

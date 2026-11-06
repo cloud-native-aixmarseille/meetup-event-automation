@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "@meetup-automation/journey";
 export interface GitHubCommentVisibilityApi {
 	graphql<Response>(
 		query: string,
@@ -32,8 +33,9 @@ export class GitHubCommentVisibility {
 			repo: this.repo,
 			comment_id: commentId,
 		});
-		if (!data.node_id || data.body !== expectedBody)
-			throw new Error("Comment changed before visibility update");
+		if (!data.node_id || typeof data.body !== "string")
+			throw new Error("Invalid comment visibility response");
+		if (data.body !== expectedBody) throw new OrganizerCommentChangedError();
 		const response = await this.api.graphql<unknown>(
 			`query CommentVisibility($id: ID!) {
 				node(id: $id) { ... on IssueComment { id body isMinimized minimizedReason } }
@@ -45,10 +47,11 @@ export class GitHubCommentVisibility {
 		const comment = response.node;
 		if (
 			comment.id !== data.node_id ||
-			comment.body !== expectedBody ||
+			typeof comment.body !== "string" ||
 			typeof comment.isMinimized !== "boolean"
 		)
-			throw new Error("Comment changed before visibility update");
+			throw new Error("Invalid comment visibility response");
+		if (comment.body !== expectedBody) throw new OrganizerCommentChangedError();
 		if (resolved === comment.isMinimized) return;
 		if (!resolved && comment.minimizedReason !== "resolved") return;
 		await this.change(data.node_id, resolved);

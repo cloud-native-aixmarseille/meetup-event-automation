@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import { EventDomainComposition } from "@meetup-automation/event";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -13,13 +14,24 @@ import { ManageMeetupCommunications } from "./manage-meetup-communications.js";
 import type { ManageMeetupCommunicationsDependencies } from "./manage-meetup-communications-contracts.js";
 
 describe("communication source consistency", () => {
-	it.each(["changed", "missing", "unavailable"])(
+	it.each([
+		"changed",
+		"missing",
+		"unavailable",
+		"approval-comment-changed",
+		"content-comment-changed",
+	])(
 		"distinguishes %s source observations before dispatch",
 		async (observation) => {
 			// Arrange
-			const failure = new Error("Synthetic source transport failure");
+			const commentChanged = observation.endsWith("comment-changed");
+			const failure = commentChanged
+				? new OrganizerCommentChangedError()
+				: new Error("Synthetic source transport failure");
 			const find = vi.fn().mockResolvedValueOnce(sourceDocument);
-			if (observation === "unavailable") find.mockRejectedValueOnce(failure);
+			if (commentChanged) find.mockResolvedValue(sourceDocument);
+			else if (observation === "unavailable")
+				find.mockRejectedValueOnce(failure);
 			else
 				find.mockResolvedValueOnce(
 					observation === "missing"
@@ -54,6 +66,12 @@ describe("communication source consistency", () => {
 				clock: { now: () => new Date("2026-10-01T10:00:00Z") },
 				reconcileCommunications: vi.fn(),
 			};
+			if (observation === "content-comment-changed")
+				vi.mocked(dependencies.contentGate.blocked).mockRejectedValue(failure);
+			if (observation === "approval-comment-changed")
+				vi.mocked(dependencies.organizerApproval.synchronize).mockRejectedValue(
+					failure,
+				);
 			const journey = new ManageMeetupCommunications(
 				{
 					communicationDispatchPolicy:
@@ -96,7 +114,7 @@ describe("communication source consistency", () => {
 			}
 
 			// Assert
-			if (observation === "unavailable") {
+			if (observation === "unavailable" || commentChanged) {
 				expect(error).toBe(failure);
 				expect(result).toBeUndefined();
 			} else {

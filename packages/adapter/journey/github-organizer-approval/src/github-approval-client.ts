@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "@meetup-automation/journey";
 import type {
 	ApprovalComment,
 	ApprovalCommentEdit,
@@ -87,8 +88,9 @@ export class GithubApprovalClient {
 		const current = (await this.list()).find(
 			(comment) => comment.id === commentId,
 		);
-		if (current?.body !== before)
-			throw new Error("Approval comment changed before persistence");
+		if (!current || typeof current.body !== "string")
+			throw new Error("Approval comment is unavailable before persistence");
+		if (current.body !== before) throw new OrganizerCommentChangedError();
 		await this.update(commentId, after);
 	}
 	async edits(

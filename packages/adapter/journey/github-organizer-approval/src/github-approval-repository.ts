@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "@meetup-automation/journey";
 import type { ApprovalPresenter } from "./approval-presenter.js";
 import type { ApprovalState, StoredApproval } from "./approval-state.js";
 import type { GithubApprovalClient } from "./github-approval-client.js";
@@ -19,6 +20,16 @@ export class GithubApprovalRepository {
 		private readonly presenter: ApprovalPresenter,
 	) {}
 	async states(): Promise<readonly ApprovalState[]> {
+		for (let attempt = 1; ; attempt += 1) {
+			try {
+				return await this.readStates();
+			} catch (error) {
+				if (!(error instanceof OrganizerCommentChangedError) || attempt >= 3)
+					throw error;
+			}
+		}
+	}
+	private async readStates(): Promise<readonly ApprovalState[]> {
 		const states: ApprovalState[] = [];
 		const comments = (await this.client.list()).filter(
 			(comment) =>

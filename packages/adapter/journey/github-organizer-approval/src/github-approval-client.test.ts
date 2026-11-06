@@ -49,7 +49,9 @@ describe("scoped GitHub approval client", () => {
 
 			// Assert
 			await expect(reading).rejects.toThrow(
-				"Approval comment changed during verification",
+				node?.id === "comment-1"
+					? "Organizer comment changed during verification"
+					: "Invalid approval comment snapshot",
 			);
 		},
 	);

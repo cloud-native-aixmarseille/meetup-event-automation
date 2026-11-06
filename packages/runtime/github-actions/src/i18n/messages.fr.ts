@@ -258,6 +258,8 @@ export const FR_MESSAGES = {
 	"action.communication.reconcile-email": "Envoyer les emails du meetup",
 	"action.assets.reconcile-documents": "Mettre à jour les fichiers du meetup",
 	"report.failed": "failure={reason}",
+	"report.comment-changed":
+		"Un commentaire a changé pendant sa vérification. Le traitement reprendra au prochain passage ; la réponse de l'organisateur est conservée.",
 	"report.technical-failure": "technical_failure={codes}",
 	"report.summary-unavailable": "summary=unavailable",
 	"report.error.unexpected": "Erreur technique inattendue.",
