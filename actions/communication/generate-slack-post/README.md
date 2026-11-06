@@ -30,7 +30,7 @@ Generate one durable proposal without applying it.
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/generate-slack-post@b57d81e986cedb0dde9ef5da90a756c3db653483 # 10.0.4
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/generate-slack-post@29ec95d387b9a453ca73c7d7a64d5a4f890b28b9 # 10.0.5
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
