@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type { SocialDeliveryRecord } from "@meetup-automation/communication";
 import type { EventIdentity } from "@meetup-automation/event";
 import type { ContentProposal } from "../proposals/promotional-content.js";
@@ -39,7 +40,8 @@ export class ReconcileSocialPublications {
 				publications.push(
 					this.result(proposal, await this.reconcile(identity, proposal)),
 				);
-			} catch {
+			} catch (error) {
+				if (error instanceof OrganizerCommentChangedError) throw error;
 				publications.push({
 					...this.result(proposal, "uncertain"),
 					diagnostics: [

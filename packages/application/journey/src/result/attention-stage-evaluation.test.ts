@@ -87,6 +87,15 @@ describe("attention stage evidence policy", () => {
 		{
 			diagnostics: [
 				{
+					code: "action.comment-concurrently-modified",
+					severity: "info" as const,
+					message: "concurrent",
+				},
+			],
+		},
+		{
+			diagnostics: [
+				{
 					code: "communication.ledger-read-failed",
 					severity: "error" as const,
 					message: "failed",
@@ -181,5 +190,39 @@ describe("publication readiness evidence", () => {
 			outcome: "success",
 			blocked: false,
 		});
+	});
+
+	it("keeps concurrent comment work incomplete without adding a technical task", () => {
+		// Arrange
+		const composition = new JourneyPolicyComposition();
+		const evaluation = new AttentionStageEvaluation({
+			diagnosticPolicy: composition.diagnosticPolicy(),
+			organizerDiagnosticPolicy: composition.organizerDiagnosticPolicy(),
+		});
+		const reports = attentionReports({
+			communications: {
+				diagnostics: [
+					{
+						code: "action.comment-concurrently-modified",
+						severity: "info",
+						message: "changed",
+					},
+				],
+			},
+		});
+
+		// Act
+		const stages = evaluation.evaluate(reports);
+		const diagnostics = evaluation.diagnostics(reports);
+
+		// Assert
+		expect(
+			stages.find((stage) => stage.owner === "communications"),
+		).toMatchObject({
+			outcome: "success",
+			blocked: false,
+			prerequisiteBlocked: true,
+		});
+		expect(diagnostics).toEqual([]);
 	});
 });

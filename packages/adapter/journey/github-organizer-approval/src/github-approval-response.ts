@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "@meetup-automation/journey";
 import type { ApprovalSchema } from "./approval-schema.js";
 import type {
 	ApprovalComment,
@@ -133,9 +134,11 @@ export class GithubApprovalResponse {
 			typeof value.node.id !== "string" ||
 			typeof value.node.body !== "string" ||
 			value.node.id !== comment.node_id ||
-			value.node.body !== comment.body
+			typeof comment.body !== "string"
 		)
-			throw new Error("Approval comment changed during verification");
+			throw new Error("Invalid approval comment snapshot");
+		if (value.node.body !== comment.body)
+			throw new OrganizerCommentChangedError();
 		return { ...value.node, id: value.node.id, body: value.node.body };
 	}
 

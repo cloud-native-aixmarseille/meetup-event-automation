@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import { describe, expect, it } from "vitest";
 import { identity } from "../../testing/meetup-journey.fixtures.js";
 import { socialFixture } from "../../testing/social-publication.fixtures.js";
@@ -453,5 +454,20 @@ describe("social persistence failures", () => {
 			severity: "error",
 		});
 		expect(f.posts.publish).not.toHaveBeenCalled();
+	});
+
+	it("defers a changed approval before reserving or publishing", async () => {
+		// Arrange
+		const f = await socialFixture();
+		const changed = new OrganizerCommentChangedError();
+		f.dependencies.approvals.request.mockRejectedValue(changed);
+
+		// Act
+		const result = f.useCase.execute(identity);
+
+		// Assert
+		await expect(result).rejects.toBe(changed);
+		expect(f.posts.publish).not.toHaveBeenCalled();
+		expect([...f.records.values()][0].attempts).toEqual([]);
 	});
 });

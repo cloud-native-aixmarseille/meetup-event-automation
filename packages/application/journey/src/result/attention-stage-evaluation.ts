@@ -89,9 +89,11 @@ export class AttentionStageEvaluation {
 		const merged = [...diagnostics.values()];
 		return merged.filter(
 			(item) =>
-				!["action.execution.failed", "event.concurrently-modified"].includes(
-					item.code,
-				) &&
+				![
+					"action.execution.failed",
+					"event.concurrently-modified",
+					"action.comment-concurrently-modified",
+				].includes(item.code) &&
 				!this.collaborators.organizerDiagnosticPolicy.derivative(item, merged),
 		);
 	}
@@ -111,7 +113,10 @@ export class AttentionStageEvaluation {
 			!stage.diagnostics.some(
 				(item) =>
 					this.collaborators.diagnosticPolicy.isTechnicalFailure(item) ||
-					item.code === "event.concurrently-modified",
+					[
+						"event.concurrently-modified",
+						"action.comment-concurrently-modified",
+					].includes(item.code),
 			)
 		);
 	}
@@ -124,7 +129,13 @@ export class AttentionStageEvaluation {
 		return owners.filter((owner) => input[owner] !== undefined);
 	}
 	private organizerPrerequisite(item: PublicDiagnostic): boolean {
-		if (item.code === "event.concurrently-modified") return true;
+		if (
+			[
+				"event.concurrently-modified",
+				"action.comment-concurrently-modified",
+			].includes(item.code)
+		)
+			return true;
 		return (
 			this.collaborators.diagnosticPolicy.classify(item) === "organizer" &&
 			![

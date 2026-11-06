@@ -176,6 +176,7 @@ const ORGANIZER_CODES = new Set([
 
 const INFORMATIONAL_CODES = new Set([
 	"event.concurrently-modified",
+	"action.comment-concurrently-modified",
 	"communication.delivery-already-recorded",
 	"communication.dispatch-disabled-by-config",
 	"communication.duplicate-intent",

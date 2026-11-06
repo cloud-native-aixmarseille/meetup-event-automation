@@ -135,6 +135,15 @@ describe("merged organizer feedback reconciliation", () => {
 		{
 			diagnostics: [
 				{
+					code: "action.comment-concurrently-modified",
+					severity: "info" as const,
+					message: "changed",
+				},
+			],
+		},
+		{
+			diagnostics: [
+				{
 					code: "action.execution.failed",
 					severity: "error" as const,
 					message: "failed",

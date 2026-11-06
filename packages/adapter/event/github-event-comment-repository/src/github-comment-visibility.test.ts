@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "@meetup-automation/journey";
 import { describe, expect, it, vi } from "vitest";
 import { GitHubCommentVisibility } from "./github-comment-visibility.js";
 
@@ -87,7 +88,7 @@ describe("GitHub comment visibility", () => {
 		const update = f.visibility.synchronize(42, "Verified decision", true);
 
 		// Assert
-		await expect(update).rejects.toThrow("changed before visibility update");
+		await expect(update).rejects.toBeInstanceOf(OrganizerCommentChangedError);
 		expect(f.graphql).not.toHaveBeenCalled();
 	});
 	it.each([

@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type { ReconcileCommunicationsInput } from "@meetup-automation/communication";
 import type { EventDocument, EventRepository } from "@meetup-automation/event";
 import type {
@@ -171,7 +172,8 @@ export class ManageMeetupCommunications {
 				code: "communication.content-review",
 				severity: "error",
 			});
-		} catch {
+		} catch (error) {
+			if (error instanceof OrganizerCommentChangedError) throw error;
 			diagnostics.push({
 				code: "communication.approval-unavailable",
 				severity: "error",
@@ -190,7 +192,8 @@ export class ManageMeetupCommunications {
 					severity: "warning",
 				});
 			return true;
-		} catch {
+		} catch (error) {
+			if (error instanceof OrganizerCommentChangedError) throw error;
 			diagnostics.push({
 				code: "communication.approval-unavailable",
 				severity: "error",

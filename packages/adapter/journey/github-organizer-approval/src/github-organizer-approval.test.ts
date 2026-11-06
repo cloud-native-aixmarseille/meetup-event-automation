@@ -4,7 +4,7 @@ import {
 	JourneyPolicyComposition,
 } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	approvalDependencies,
 	communityRequest,
@@ -885,7 +885,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		await expect(result).rejects.toThrow(
-			"Approval comment changed during verification",
+			"Organizer comment changed during verification",
 		);
 		expect(f.permission).not.toHaveBeenCalled();
 	});
@@ -918,7 +918,7 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		await expect(result).rejects.toThrow(
-			"Approval comment changed before persistence",
+			"Organizer comment changed during verification",
 		);
 		expect(f.comments[0]?.body).toContain("- [x] ✅ Approve sending");
 	});
@@ -1820,4 +1820,41 @@ describe("Meetup attendee delivery approvals", () => {
 			expect.objectContaining({ kind: "meetup-slides" }),
 		);
 	});
+
+	it.each(["approved", "rejected", "unauthorized"] as const)(
+		"rechecks a %s response after refreshing a changed snapshot",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			const approvals =
+				new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+					f.repository,
+					f.records,
+					f.finalizer,
+					f.notifications,
+					f.client,
+				);
+			await approvals.request(request);
+			const original = f.client.edits.bind(f.client);
+			vi.spyOn(f.client, "edits").mockImplementationOnce(async (comments) => {
+				decision(f, {}, status === "rejected" ? "rejected" : "approved");
+				return original(comments);
+			});
+			if (status === "unauthorized")
+				f.permission.mockResolvedValue({ data: { permission: "read" } });
+
+			// Act
+			const result = await approvals.request(request);
+
+			// Assert
+			expect(result.status).toBe(
+				status === "unauthorized" ? "pending" : status,
+			);
+			expect(f.permission).toHaveBeenCalledWith(
+				expect.objectContaining({ username: "organizer" }),
+			);
+			expect(f.create).toHaveBeenCalledOnce();
+			expect(f.dispatch).toHaveBeenCalledOnce();
+		},
+	);
 });

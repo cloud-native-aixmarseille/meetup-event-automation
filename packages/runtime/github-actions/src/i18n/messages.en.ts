@@ -249,6 +249,8 @@ export const EN_MESSAGES = {
 	"action.communication.reconcile-email": "Send meetup emails",
 	"action.assets.reconcile-documents": "Update meetup files",
 	"report.failed": "failure={reason}",
+	"report.comment-changed":
+		"A comment changed during verification. Processing is deferred until the next run; the organizer response is preserved.",
 	"report.technical-failure": "technical_failure={codes}",
 	"report.summary-unavailable": "summary=unavailable",
 	"report.error.unexpected": "Unexpected technical failure.",

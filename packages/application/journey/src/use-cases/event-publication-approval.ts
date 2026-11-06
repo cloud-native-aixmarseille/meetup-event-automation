@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type { EventClock } from "@meetup-automation/event";
 import {
 	type EventPublicationIdentity,
@@ -43,7 +44,8 @@ export class EventPublicationApproval<Event extends ScheduledEvent> {
 					venue: event.venue,
 				},
 			});
-		} catch {
+		} catch (error) {
+			if (error instanceof OrganizerCommentChangedError) throw error;
 			throw new ScheduledEventError("approval-unavailable");
 		}
 	}

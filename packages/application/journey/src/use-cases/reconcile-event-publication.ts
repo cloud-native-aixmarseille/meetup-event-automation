@@ -1,3 +1,4 @@
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import {
 	type EventClock,
 	EventConcurrentModificationError,
@@ -85,6 +86,7 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 			return await this.complete(source, event, saved);
 		} catch (error) {
 			if (
+				error instanceof OrganizerCommentChangedError ||
 				error instanceof EventConcurrentModificationError ||
 				error instanceof EventNotFoundError
 			)
@@ -237,6 +239,7 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 			return { status: "updated", diagnostics };
 		} catch (error) {
 			if (
+				error instanceof OrganizerCommentChangedError ||
 				error instanceof EventConcurrentModificationError ||
 				error instanceof EventNotFoundError ||
 				error instanceof ScheduledEventError
