@@ -20,10 +20,15 @@ export class GithubApprovalRepository {
 	) {}
 	async states(): Promise<readonly ApprovalState[]> {
 		const states: ApprovalState[] = [];
-		for (const comment of await this.client.list()) {
-			if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
-				continue;
-			const record = await this.trusted.read(comment);
+		const comments = (await this.client.list()).filter(
+			(comment) =>
+				comment.user?.login.toLowerCase() === this.authorLogin.toLowerCase(),
+		);
+		const edits = await this.client.edits(comments);
+		for (const [index, comment] of comments.entries()) {
+			const current = edits[index];
+			if (!current) throw new Error("Missing verified approval editor");
+			const record = await this.trusted.read(comment, current);
 			if (!record) continue;
 			if (
 				states.some(

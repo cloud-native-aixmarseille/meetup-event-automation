@@ -1,4 +1,9 @@
 export const STAGE_MESSAGES_EN = {
+	"comment.guidance.meetup.slides-approval-rejected":
+		"Slides delivery was rejected. Review the PDF before requesting approval again.",
+	"comment.guidance.meetup.slides-approval-unavailable":
+		"Slides delivery approval could not be verified. Check GitHub access and retry.",
+
 	"comment.guidance.communication.email-parameters-invalid":
 		"Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
 	"comment.guidance.meetup.uncertain":

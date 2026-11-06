@@ -88,6 +88,7 @@ export class ApprovalRequestPolicy {
 	validate(request: OrganizerApprovalRequest): void {
 		this.validateIdentity(request);
 		if (
+			request.kind === "meetup-slides" ||
 			request.kind === "meetup-publication" ||
 			request.kind === "community-publication" ||
 			request.kind === "social-publication" ||
@@ -146,6 +147,11 @@ export class ApprovalRequestPolicy {
 			previous.eventDate !== request.eventDate
 		)
 			return false;
+		if (previous.kind === "meetup-slides" && request.kind === "meetup-slides")
+			return (
+				this.fingerprints.digest(previous.slides) ===
+				this.fingerprints.digest(request.slides)
+			);
 		if (previous.kind === "content-review" && request.kind === "content-review")
 			return (
 				this.fingerprints.digest(previous.content) ===

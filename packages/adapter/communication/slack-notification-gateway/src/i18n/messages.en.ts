@@ -1,4 +1,6 @@
 export const EN_MESSAGES = {
+	"request.meetup-slides":
+		"Slides delivery needs approval · {date} · <{url}|Review the PDF and approve sending>",
 	"request.social-publication":
 		"Post on {target} · {date}\nReview and approve publication: {url}",
 	"request.community-publication":

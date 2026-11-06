@@ -6,6 +6,7 @@ import {
 	type PublicationUrlPolicyEngine,
 } from "@meetup-automation/publication";
 import { ReferentialDomainComposition } from "@meetup-automation/referential";
+import { MeetupSlidesApproval } from "./use-cases/meetup-slides-approval.js";
 import { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
 import { ApprovalValueFingerprint } from "./approval/approval-value-fingerprint.js";
 import { MeetupPublicationRevision } from "./approval/meetup-publication-revision.js";
@@ -29,6 +30,18 @@ import { FeedbackAgendaProjection } from "./use-cases/feedback-agenda-projection
 import { ScheduledEventProjection } from "./use-cases/scheduled-event-projection.js";
 import { SpeakerSynchronizationStageRunner } from "./use-cases/speaker-synchronization-stage-runner.js";
 export class JourneyPolicyComposition {
+	meetupSlidesApproval(
+		approvals: import("./ports/organizer-approval.js").OrganizerApproval,
+		clock: import("@meetup-automation/event").EventClock,
+		language: string,
+	): MeetupSlidesApproval {
+		return new MeetupSlidesApproval(
+			approvals,
+			new ApprovalValueFingerprint(new ContentFingerprint()),
+			clock,
+			language,
+		);
+	}
 	approvalRequestPolicy(): ApprovalRequestPolicy {
 		return new ApprovalRequestPolicy(
 			new ApprovalValueFingerprint(new ContentFingerprint()),

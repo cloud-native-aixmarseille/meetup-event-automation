@@ -1,4 +1,11 @@
 export const EN_MESSAGES = {
+	"approval.slides.details":
+		"### Send slides to Meetup attendees\n\n{date} · [Meetup event]({eventUrl})\n\n[Review the public PDF](<{pdfUrl}>). The message will be sent in {language, select, fr {French} other {English}} to members marked as having attended this event.",
+	"approval.slides.request":
+		"Review the PDF and audience, then choose.\n\n- [{approveMark}] ✅ Approve sending\n- [{rejectMark}] ❌ Reject sending",
+	"approval.slides.final":
+		"{status, select, approved {✅ Sending approved} rejected {❌ Sending rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThe issue checklist confirms completed delivery.",
+
 	"approval.delivery.status":
 		"- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {✅ Send accepted ({count})} pending {⏳ Sending ({count})} uncertain {⚠️ Uncertain result ({count}) — check the mail service before recovery} rejected {❌ Send rejected ({count})} other {Awaiting dispatch}}.",
 	"approval.delivery.notice":
@@ -44,9 +51,10 @@ export const EN_MESSAGES = {
 	"follow-up.instructions":
 		"Update manual tasks in the issue's Post event checklist.",
 	"follow-up.task":
-		"{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
+		"{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Slides email to Meetup attendees after approval} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
 	"follow-up.stopped": "Follow-up paused.",
-	"follow-up.waiting": "Thank-you emails are not ready yet.",
+	"follow-up.waiting":
+		"Thank-you emails are blocked before approval. Review the outstanding tasks in the issue diagnostics.",
 	"follow-up.emails-complete": "No thank-you emails pending.",
 	"approval.parameters.instructions":
 		"Edit the values between backticks, then approve sending. Private contact details stay in the catalog.",

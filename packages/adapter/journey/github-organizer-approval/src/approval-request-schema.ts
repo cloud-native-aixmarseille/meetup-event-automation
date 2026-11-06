@@ -8,6 +8,7 @@ import type { SocialPublicationApprovalSchema } from "./social-publication-appro
 
 /** Narrow the request part of external metadata without trusting asserted types. */
 export interface ApprovalRequestSchemaCollaborators {
+	readonly slides: import("./meetup-slides-approval-schema.js").MeetupSlidesApprovalSchema;
 	readonly socialPublicationApprovalSchema: Pick<
 		SocialPublicationApprovalSchema,
 		"validate"
@@ -41,6 +42,12 @@ export class ApprovalRequestSchema {
 			typeof value.requestedAt !== "string"
 		)
 			throw new Error("Invalid approval request");
+		if (value.kind === "meetup-slides") {
+			this.collaborators.slides.validate(value);
+			return;
+		}
+		if (value.slides !== undefined)
+			throw new Error("Invalid slides approval kind");
 		if (value.kind === "social-publication") {
 			this.social(value);
 			return;
@@ -48,13 +55,7 @@ export class ApprovalRequestSchema {
 		if (value.social !== undefined)
 			throw new Error("Invalid social publication approval kind");
 		if (value.kind === "content-review") {
-			if (
-				value.publication !== undefined ||
-				value.recipientCount !== undefined ||
-				value.details !== undefined
-			)
-				throw new Error("Invalid content approval fields");
-			this.collaborators.contentApprovalSchema.validate(value.content);
+			this.content(value);
 			return;
 		}
 		if (value.content !== undefined)
@@ -74,6 +75,16 @@ export class ApprovalRequestSchema {
 			throw new Error("Invalid approval request");
 		this.collaborators.emailApprovalDetailsSchema.validate(value.details);
 	}
+	private content(value: Record<string, unknown>): void {
+		if (
+			value.publication !== undefined ||
+			value.recipientCount !== undefined ||
+			value.details !== undefined
+		)
+			throw new Error("Invalid content approval fields");
+		this.collaborators.contentApprovalSchema.validate(value.content);
+	}
+
 	private social(value: Record<string, unknown>): void {
 		if (
 			value.content !== undefined ||

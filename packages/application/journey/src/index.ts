@@ -83,6 +83,7 @@ export type {
 	OrganizerFollowUp,
 	OrganizerFollowUpInput,
 } from "./ports/organizer-follow-up.js";
+export { MeetupSlidesApproval } from "./use-cases/meetup-slides-approval.js";
 export { FOLLOW_UP_TASKS } from "./ports/organizer-follow-up.js";
 export * from "./proposals/content-plan-factory.js";
 export * from "./proposals/content-proposal-factory.js";

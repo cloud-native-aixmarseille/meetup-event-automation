@@ -4,6 +4,56 @@ import { GithubOrganizerApprovalComposition } from "./dependency-composition.js"
 import { GithubApprovalClient } from "./github-approval-client.js";
 
 describe("scoped GitHub approval client", () => {
+	it("verifies comment editors in bounded batches", async () => {
+		// Arrange
+		const f = fixture();
+		const comments = Array.from({ length: 101 }, (_, index) => ({
+			id: index + 1,
+			node_id: `comment-${index + 1}`,
+			body: `body-${index}`,
+		}));
+		f.graphql.mockImplementation(async (_query, { ids }) => ({
+			nodes: ids.map((id: string) => ({
+				id,
+				body: comments.find((comment) => comment.node_id === id)?.body,
+				editor: null,
+				lastEditedAt: null,
+			})),
+		}));
+
+		// Act
+		const edits = await f.client.edits(comments);
+
+		// Assert
+		expect(edits).toHaveLength(101);
+		expect(f.graphql).toHaveBeenCalledTimes(2);
+		expect(
+			f.graphql.mock.calls.map(([, variables]) => variables.ids.length),
+		).toEqual([100, 1]);
+	});
+	it.each([
+		null,
+		{ id: "different", body: "expected", editor: null, lastEditedAt: null },
+		{ id: "comment-1", body: "changed", editor: null, lastEditedAt: null },
+	])(
+		"rejects missing or concurrently changed snapshots in a batch: %j",
+		async (node) => {
+			// Arrange
+			const f = fixture();
+			f.graphql.mockResolvedValue({ nodes: [node] });
+
+			// Act
+			const reading = f.client.edits([
+				{ id: 1, node_id: "comment-1", body: "expected" },
+			]);
+
+			// Assert
+			await expect(reading).rejects.toThrow(
+				"Approval comment changed during verification",
+			);
+		},
+	);
+
 	it("reads decision comments beyond the first page", async () => {
 		// Arrange
 		const f = fixture();

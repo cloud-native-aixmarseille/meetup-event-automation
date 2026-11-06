@@ -49,29 +49,38 @@ export function fixture() {
 	const minimized = new Set<string>();
 	const graphql = vi
 		.fn()
-		.mockImplementation(async (query: string, variables: { id: string }) => {
-			if (query.includes("mutation ResolveComment")) {
-				minimized.add(variables.id);
-				return { minimizeComment: { minimizedComment: { isMinimized: true } } };
-			}
-			if (query.includes("mutation ReopenComment")) {
-				minimized.delete(variables.id);
+		.mockImplementation(
+			async (
+				query: string,
+				variables: { id: string; ids?: readonly string[] },
+			) => {
+				if (variables.ids)
+					return { nodes: variables.ids.map((id) => edits.get(id) ?? null) };
+				if (query.includes("mutation ResolveComment")) {
+					minimized.add(variables.id);
+					return {
+						minimizeComment: { minimizedComment: { isMinimized: true } },
+					};
+				}
+				if (query.includes("mutation ReopenComment")) {
+					minimized.delete(variables.id);
+					return {
+						unminimizeComment: { unminimizedComment: { isMinimized: false } },
+					};
+				}
 				return {
-					unminimizeComment: { unminimizedComment: { isMinimized: false } },
-				};
-			}
-			return {
-				node: {
-					...edits.get(variables.id),
-					isMinimized: minimized.has(variables.id),
-					minimizedReason: minimized.has(variables.id) ? "resolved" : null,
-					userContentEdits: {
-						nodes: histories.get(variables.id) ?? [],
-						pageInfo: { hasNextPage: false, endCursor: null },
+					node: {
+						...edits.get(variables.id),
+						isMinimized: minimized.has(variables.id),
+						minimizedReason: minimized.has(variables.id) ? "resolved" : null,
+						userContentEdits: {
+							nodes: histories.get(variables.id) ?? [],
+							pageInfo: { hasNextPage: false, endCursor: null },
+						},
 					},
-				},
-			};
-		});
+				};
+			},
+		);
 	const list = vi.fn(async () => ({ data: [...comments], headers: {} }));
 	const create = vi.fn(async ({ body }: { body: string }) => {
 		const id = comments.length + 100;

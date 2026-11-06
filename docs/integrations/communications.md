@@ -297,14 +297,22 @@ remaining integration or delivery actions. Field corrections stay in the merged
 diagnostic checklist. Follow-up tasks cover:
 
 - Thank the host and speakers, with one approval for the complete email batch.
-- Send the PDF to Meetup attendees automatically.
+- Approve sending the public PDF to Meetup attendees in its separate request.
 - Import attendance into CNCF.
 - Share the event recap on LinkedIn.
 
 The task overview exists even if email preparation is blocked or emails are
 already complete. Complete manual tasks in the issue's **Post event** checklist;
 approval authorizes the host and speaker emails. Meetup slide delivery runs
-separately through [Contact attendees](event-publication.md#send-slides-to-attendees).
+separately through [Contact attendees](event-publication.md#send-slides-to-attendees)
+and requires its own approval. The slide-sharing task remains pending until the
+issue records completion; an absent task never proves delivery.
+
+If the overview says thank-you emails are blocked before approval, review the
+issue diagnostic checklist. Conflicted or unfinished managed slides prevent the
+email batch from being prepared. Resolve the asset diagnostics and reconcile
+again to obtain the email approval controls.
+
 Progress updates the shared comment without
 invalidating a reviewed email batch. Email details, final decisions and delivery
 reservations retain their existing verification rules. Earlier attention comments

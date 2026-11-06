@@ -104,6 +104,7 @@ export interface AttentionApproval {
 	readonly kind:
 		| "email-introduction"
 		| "email-thanks"
+		| "meetup-slides"
 		| "meetup-publication"
 		| "community-publication"
 		| "social-publication"

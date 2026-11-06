@@ -22,6 +22,7 @@ export class EventPublicationResults {
 							"source",
 							"unavailable",
 							"approval-unavailable",
+							"slides-approval-unavailable",
 							"approval-notification-failed",
 						].includes(code)
 							? "error"

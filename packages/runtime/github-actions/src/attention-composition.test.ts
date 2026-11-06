@@ -146,7 +146,7 @@ describe("post-event attention composition", () => {
 		// Assert
 		expect(result.posted).toBe(true);
 		expect(f.comments).toHaveLength(1);
-		expect(body).toContain("Thank-you emails are not ready yet.");
+		expect(body).toContain("Thank-you emails are blocked before approval.");
 		expect(body).toContain("Email preparation or sending failed.");
 		expect(body).toContain("/actions/runs/123");
 		expect(body).not.toContain("- [ ] Approve");
@@ -198,7 +198,7 @@ describe("post-event attention composition", () => {
 			state.episodes.filter(
 				(episode) => episode.condition.code === "follow-up",
 			),
-		).toHaveLength(4);
+		).toHaveLength(5);
 		expect(state.commentId).toBe(100);
 		expect(f.dispatch).not.toHaveBeenCalled();
 		expect(

@@ -72,8 +72,14 @@ function fixture() {
 	};
 	const group = MeetupGroupUrl.parse("https://www.meetup.com/example-meetups/");
 	if (!group) throw new Error("Invalid fixture group");
+	const approval = {
+		request: vi
+			.fn()
+			.mockResolvedValue({ status: "approved", notificationFailed: false }),
+	};
 	const operation = new ReconcileMeetupSlidesDelivery(
 		{
+			approval,
 			repository: dependencies.repository,
 			codec: dependencies.documentCodec,
 			clock: dependencies.clock,
@@ -87,10 +93,65 @@ function fixture() {
 		},
 		{ provider: "meetup", target: group.eventUrlPrefix },
 	);
-	return { dependencies, meetup, ledger, gateway, operation };
+	return { dependencies, meetup, ledger, gateway, operation, approval };
 }
 
 describe("Meetup attendee slide delivery", () => {
+	it.each(["pending", "rejected"])(
+		"does not open the sender or reserve a delivery for %s approval",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			f.approval.request.mockResolvedValue({
+				status,
+				notificationFailed: false,
+			});
+
+			// Act
+			const result = await f.operation.execute(identity);
+
+			// Assert
+			expect(result.diagnostics[0]?.code).toBe(
+				`publication.meetup.slides-approval-${status}`,
+			);
+			expect(f.gateway.sendSlides).not.toHaveBeenCalled();
+			expect(f.ledger.reservePending).not.toHaveBeenCalled();
+			expect(f.dependencies.repository.applyPatch).not.toHaveBeenCalled();
+		},
+	);
+	it("blocks dispatch when approval verification is unavailable", async () => {
+		// Arrange
+		const f = fixture();
+		f.approval.request.mockRejectedValue(new Error("API unavailable"));
+
+		// Act
+		const result = await f.operation.execute(identity);
+
+		// Assert
+		expect(result.diagnostics[0]?.code).toBe(
+			"publication.meetup.slides-approval-unavailable",
+		);
+		expect(f.gateway.sendSlides).not.toHaveBeenCalled();
+		expect(f.ledger.reservePending).not.toHaveBeenCalled();
+	});
+	it("rechecks approval immediately before submitting the attendee message", async () => {
+		// Arrange
+		const f = fixture();
+		f.approval.request
+			.mockResolvedValueOnce({ status: "approved", notificationFailed: false })
+			.mockResolvedValue({ status: "pending", notificationFailed: false });
+
+		// Act
+		const result = await f.operation.execute(identity);
+
+		// Assert
+		expect(result.diagnostics[0]?.code).toBe(
+			"publication.meetup.slides-approval-pending",
+		);
+		expect(f.ledger.reservePending).not.toHaveBeenCalled();
+		expect(f.ledger.markAccepted).not.toHaveBeenCalled();
+	});
+
 	it("sends the public PDF and adds completion without requiring a form checkbox", async () => {
 		// Arrange
 		const f = fixture();

@@ -18,6 +18,7 @@ export type ApprovalNotificationFacts = {
 			readonly recipientCount: number;
 			readonly mailKind?: "host-introduction" | "speaker-introduction";
 	  }
+	| { readonly kind: "meetup-slides" }
 	| { readonly kind: "meetup-publication" }
 	| { readonly kind: "community-publication" }
 	| { readonly kind: "content-review"; readonly target: string }

@@ -20,6 +20,7 @@ const STANDARD_ERROR_NAMES = new Set([
 	"URIError",
 	"EvalError",
 	"AggregateError",
+	"GraphqlResponseError",
 	"AbortError",
 	"TimeoutError",
 ]);
@@ -69,7 +70,7 @@ export class ActionFailurePresenter {
 	}
 	private context(error: Error): readonly string[] {
 		const fields = error as Error & { code?: unknown; status?: unknown };
-		const details: string[] = [];
+		const details: string[] = [...this.graphqlContext(error)];
 		if (typeof fields.code === "string" && NETWORK_ERROR_CODES.has(fields.code))
 			details.push(`code=${fields.code}`);
 		if (
@@ -89,5 +90,25 @@ export class ActionFailurePresenter {
 			if (locations.size === 3) break;
 		}
 		return [...details, ...locations];
+	}
+	private graphqlContext(error: Error): readonly string[] {
+		const errors: unknown = Reflect.get(error, "errors");
+		if (!Array.isArray(errors)) return [];
+		const allowed = new Set([
+			"RATE_LIMITED",
+			"FORBIDDEN",
+			"NOT_FOUND",
+			"INTERNAL",
+			"SERVICE_UNAVAILABLE",
+			"UNPROCESSABLE",
+			"MAX_NODE_LIMIT_EXCEEDED",
+		]);
+		const types = new Set<string>();
+		for (const item of errors) {
+			if (!item || typeof item !== "object") continue;
+			const type: unknown = Reflect.get(item, "type");
+			if (typeof type === "string" && allowed.has(type)) types.add(type);
+		}
+		return [...types].map((type) => `graphql=${type}`);
 	}
 }

@@ -26171,6 +26171,7 @@ var STANDARD_ERROR_NAMES = /* @__PURE__ */ new Set([
   "URIError",
   "EvalError",
   "AggregateError",
+  "GraphqlResponseError",
   "AbortError",
   "TimeoutError"
 ]);
@@ -26215,7 +26216,7 @@ var ActionFailurePresenter = class {
   }
   context(error2) {
     const fields = error2;
-    const details = [];
+    const details = [...this.graphqlContext(error2)];
     if (typeof fields.code === "string" && NETWORK_ERROR_CODES.has(fields.code))
       details.push(`code=${fields.code}`);
     if (typeof fields.status === "number" && Number.isInteger(fields.status) && fields.status >= 100 && fields.status <= 599)
@@ -26230,6 +26231,26 @@ var ActionFailurePresenter = class {
       if (locations.size === 3) break;
     }
     return [...details, ...locations];
+  }
+  graphqlContext(error2) {
+    const errors = Reflect.get(error2, "errors");
+    if (!Array.isArray(errors)) return [];
+    const allowed = /* @__PURE__ */ new Set([
+      "RATE_LIMITED",
+      "FORBIDDEN",
+      "NOT_FOUND",
+      "INTERNAL",
+      "SERVICE_UNAVAILABLE",
+      "UNPROCESSABLE",
+      "MAX_NODE_LIMIT_EXCEEDED"
+    ]);
+    const types = /* @__PURE__ */ new Set();
+    for (const item of errors) {
+      if (!item || typeof item !== "object") continue;
+      const type = Reflect.get(item, "type");
+      if (typeof type === "string" && allowed.has(type)) types.add(type);
+    }
+    return [...types].map((type) => `graphql=${type}`);
   }
 };
 
@@ -28331,7 +28352,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "social-publication" || request2.kind === "content-review")
+    if (request2.kind === "meetup-slides" || request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "social-publication" || request2.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -28351,6 +28372,8 @@ var ApprovalRequestPolicy = class {
   matches(previous, request2, status) {
     if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
       return false;
+    if (previous.kind === "meetup-slides" && request2.kind === "meetup-slides")
+      return this.fingerprints.digest(previous.slides) === this.fingerprints.digest(request2.slides);
     if (previous.kind === "content-review" && request2.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
     if (previous.kind === "social-publication" && request2.kind === "social-publication")
@@ -30758,7 +30781,9 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       ),
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
-        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && this.actionFor(episode) !== "social-approval")) && !(episode.status !== "unknown" && checklist.entries.some(
+        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && !["social-approval", "slides-approval"].includes(
+          this.actionFor(episode) ?? ""
+        ))) && !(episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
@@ -30775,6 +30800,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("meetup-slides:"))
+      return "slides-approval";
     if (episode.condition.resource.startsWith("content-review:"))
       return "content-approval";
     if (episode.condition.resource.startsWith("social-publication:"))
@@ -30892,13 +30919,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || postEvent && approval.kind === "meetup-slides" || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-slides" || approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           target: approval.target,
@@ -32944,6 +32971,31 @@ var SpeakerCatalogHistoryError = class extends Error {
   }
 };
 
+// packages/application/journey/src/use-cases/meetup-slides-approval.ts
+var MeetupSlidesApproval = class {
+  constructor(approvals, fingerprints, clock, language) {
+    this.approvals = approvals;
+    this.fingerprints = fingerprints;
+    this.clock = clock;
+    this.language = language;
+  }
+  approvals;
+  fingerprints;
+  clock;
+  language;
+  async request(eventDate, eventUrl, pdfUrl) {
+    const slides = { eventUrl, pdfUrl, language: this.language };
+    const request2 = {
+      kind: "meetup-slides",
+      eventDate,
+      slides,
+      revision: this.fingerprints.digest({ eventDate, ...slides }),
+      requestedAt: this.clock.now()
+    };
+    return this.approvals.request(request2);
+  }
+};
+
 // packages/application/journey/src/approval/approval-value-fingerprint.ts
 var ApprovalValueFingerprint = class {
   constructor(hash) {
@@ -33133,6 +33185,8 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       "publication.community.unpublished",
       "publication.meetup.unpublished",
       "publication.community.approval-pending",
+      "publication.meetup.slides-approval-pending",
+      "publication.meetup.slides-approval-rejected",
       "publication.meetup.approval-pending",
       "publication.community.approval-rejected",
       "publication.meetup.approval-rejected",
@@ -33158,6 +33212,8 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "communication.social.blocked",
   "communication.social.uncertain",
   "communication.social.expired",
+  "publication.meetup.slides-approval-pending",
+  "publication.meetup.slides-approval-rejected",
   "publication.meetup.slides-pdf-pending",
   "publication.meetup.slides-delivery-recovery",
   "publication.meetup.slides-link",
@@ -33346,7 +33402,11 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
   collaborators;
   suppressed(item, diagnostics) {
     if (item.severity === "info" || item.fixApplied === true) return true;
-    if (item.code === "communication.social.pending") return true;
+    if ([
+      "communication.social.pending",
+      "publication.meetup.slides-approval-pending"
+    ].includes(item.code))
+      return true;
     const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
     return causes?.some(
       (prefix) => diagnostics.some(
@@ -33511,7 +33571,6 @@ var AttentionEventFacts = class _AttentionEventFacts {
   ]);
   followUp(event) {
     return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
-      if (name === "Share slides to meetup") return [];
       const completed = index < 2 ? this.collaborators.communicationChecklist.status(
         event,
         index === 0 ? "host-thanks" : "speaker-thanks"
@@ -34013,6 +34072,14 @@ var SpeakerSynchronizationStageRunner = class {
 
 // packages/application/journey/src/policy-composition.ts
 var JourneyPolicyComposition = class {
+  meetupSlidesApproval(approvals, clock, language) {
+    return new MeetupSlidesApproval(
+      approvals,
+      new ApprovalValueFingerprint(new ContentFingerprint()),
+      clock,
+      language
+    );
+  }
   approvalRequestPolicy() {
     return new ApprovalRequestPolicy(
       new ApprovalValueFingerprint(new ContentFingerprint())
@@ -39496,6 +39563,9 @@ var EN_MESSAGES2 = {
   "action.communication.prepare-reminders": "Prepare social reminders",
   "report.social.empty": "social_publications=0",
   "report.social.result": "social_target={target} status={status}",
+  "diagnostic.publication.meetup.slides-approval-pending": "Review the public PDF and approve sending to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-approval-rejected": "Slides delivery was rejected. Review the PDF before requesting approval again.",
+  "diagnostic.publication.meetup.slides-approval-unavailable": "Slides delivery approval could not be verified. Check GitHub access and retry.",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
@@ -39671,6 +39741,9 @@ var FR_MESSAGES2 = {
   "action.communication.reconcile-social": "Mettre \xE0 jour les publications sur les r\xE9seaux",
   "report.social.empty": "publications_sociales=0",
   "report.social.result": "cible_sociale={target} statut={status}",
+  "diagnostic.publication.meetup.slides-approval-pending": "V\xE9rifiez le PDF public et approuvez l'envoi aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-approval-rejected": "L'envoi des slides a \xE9t\xE9 refus\xE9. R\xE9visez le PDF avant de demander une nouvelle approbation.",
+  "diagnostic.publication.meetup.slides-approval-unavailable": "Impossible de v\xE9rifier l'approbation d'envoi des slides. V\xE9rifiez l'acc\xE8s GitHub et relancez.",
   "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",

@@ -1,4 +1,11 @@
 export const FR_MESSAGES = {
+	"approval.slides.details":
+		"### Envoyer les slides aux participants Meetup\n\n{date} · [Événement Meetup]({eventUrl})\n\n[Vérifier le PDF public](<{pdfUrl}>). Le message sera envoyé en {language, select, fr {français} other {anglais}} aux membres indiqués comme présents à cet événement.",
+	"approval.slides.request":
+		"Vérifiez le PDF et les destinataires, puis cochez un choix.\n\n- [{approveMark}] ✅ Approuver l'envoi\n- [{rejectMark}] ❌ Refuser l'envoi",
+	"approval.slides.final":
+		"{status, select, approved {✅ Envoi approuvé} rejected {❌ Envoi refusé} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\nLa case du ticket confirme l'envoi effectué.",
+
 	"approval.delivery.status":
 		"- {kind, select, host_introduction {Hôte} speaker_introduction {Intervenants} host_thanks {Remerciements hôte} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {✅ Envoi accepté ({count})} pending {⏳ Envoi en cours ({count})} uncertain {⚠️ Résultat incertain ({count}) — vérifier le service d'envoi avant toute reprise} rejected {❌ Envoi refusé ({count})} other {En attente d'envoi}}.",
 	"approval.delivery.notice":
@@ -45,9 +52,10 @@ export const FR_MESSAGES = {
 	"follow-up.instructions":
 		"Cochez les tâches manuelles dans la liste Post event du ticket.",
 	"follow-up.task":
-		"{task, select, thank_host {Remercier l'hôte} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un récapitulatif du meetup sur LinkedIn} other {Tâche après le meetup}}",
+		"{task, select, thank_host {Remercier l'hôte} thank_speakers {Remercier les intervenants} share_slides {Envoi des slides aux participants Meetup après approbation} import_attendance {Importer la participation dans CNCF} share_social {Publier un récapitulatif du meetup sur LinkedIn} other {Tâche après le meetup}}",
 	"follow-up.stopped": "Suivi suspendu.",
-	"follow-up.waiting": "Les emails de remerciement ne sont pas encore prêts.",
+	"follow-up.waiting":
+		"Les emails de remerciement sont bloqués avant approbation. Consultez les tâches à corriger dans le diagnostic du ticket.",
 	"follow-up.emails-complete": "Aucun email de remerciement en attente.",
 	"approval.parameters.instructions":
 		"Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonnées privées restent dans le référentiel.",

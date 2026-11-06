@@ -19,6 +19,7 @@ import { SlackAttentionPresenter } from "./slack-attention-presenter.js";
 import { SlackCommunityApprovalPresenter } from "./slack-community-approval-presenter.js";
 import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import { SlackEmailApprovalPresenter } from "./slack-email-approval-presenter.js";
+import { SlackSlidesApprovalPresenter } from "./slack-slides-approval-presenter.js";
 import { SlackMeetupApprovalPresenter } from "./slack-meetup-approval-presenter.js";
 import { SlackMessageReference } from "./slack-message-reference.js";
 import { SlackSocialPublicationApprovalPresenter } from "./slack-social-publication-approval-presenter.js";
@@ -53,6 +54,7 @@ export class SlackNotificationGatewayComposition {
 		const messages = this.slackApprovalMessages(locale);
 		return new SlackApprovalPresenter({
 			"email-introduction": new SlackEmailApprovalPresenter(messages),
+			"meetup-slides": new SlackSlidesApprovalPresenter(messages),
 			"meetup-publication": new SlackMeetupApprovalPresenter(messages),
 			"community-publication": new SlackCommunityApprovalPresenter(messages),
 			"content-review": new SlackContentApprovalPresenter(messages),

@@ -19,6 +19,7 @@ export class ApprovalNotificationPolicy {
 						? { mailKind: request.details.mailKind }
 						: {}),
 				};
+			case "meetup-slides":
 			case "meetup-publication":
 			case "community-publication":
 				return { kind: request.kind, eventDate: request.eventDate };

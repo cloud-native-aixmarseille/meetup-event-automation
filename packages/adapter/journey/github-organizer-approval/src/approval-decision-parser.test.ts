@@ -1,3 +1,4 @@
+import { MeetupSlidesApprovalPresenter } from "./meetup-slides-approval-presenter.js";
 import {
 	ApprovalRequestPolicy,
 	DraftProposalComposition,
@@ -129,6 +130,9 @@ describe("approval decision parsing", () => {
 							locale,
 						),
 					),
+				"meetup-slides": new MeetupSlidesApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
+				),
 				"email-thanks":
 					new GithubOrganizerApprovalComposition().emailApprovalPresenter(
 						new ApprovalMessages(
@@ -196,6 +200,9 @@ describe("approval decision parsing", () => {
 							"en",
 						),
 					),
+				"meetup-slides": new MeetupSlidesApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
+				),
 				"email-thanks":
 					new GithubOrganizerApprovalComposition().emailApprovalPresenter(
 						new ApprovalMessages(
@@ -268,6 +275,9 @@ describe("approval decision parsing", () => {
 								"en",
 							),
 						),
+					"meetup-slides": new MeetupSlidesApprovalPresenter(
+						new GithubOrganizerApprovalComposition().approvalMessages("en"),
+					),
 					"email-thanks":
 						new GithubOrganizerApprovalComposition().emailApprovalPresenter(
 							new ApprovalMessages(

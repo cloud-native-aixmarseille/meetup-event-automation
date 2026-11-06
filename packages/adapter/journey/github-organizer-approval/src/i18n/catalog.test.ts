@@ -4,6 +4,18 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.slides.details": {
+		date: "2099-06-08",
+		eventUrl: "https://www.meetup.com/example/events/123/",
+		pdfUrl: "https://drive.google.com/file/d/pdf/view",
+		language: "fr",
+	},
+	"approval.slides.request": { approveMark: " ", rejectMark: " " },
+	"approval.slides.final": {
+		status: "approved",
+		actor: "organizer",
+		decidedAt: "2099-06-09T10:00:00Z",
+	},
 	"approval.delivery.status": {
 		kind: "host_introduction",
 		status: "accepted",

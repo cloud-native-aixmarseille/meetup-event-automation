@@ -155,6 +155,7 @@ export class EvaluateAttention {
 		for (const approval of facts.approvals ?? []) {
 			const relevant =
 				approval.kind === (postEvent ? "email-thanks" : "email-introduction") ||
+				(postEvent && approval.kind === "meetup-slides") ||
 				(!postEvent &&
 					(approval.kind === "meetup-publication" ||
 						approval.kind === "community-publication" ||
@@ -169,7 +170,8 @@ export class EvaluateAttention {
 					...this.condition(
 						"approval-pending",
 						"approvals",
-						approval.kind === "meetup-publication" ||
+						approval.kind === "meetup-slides" ||
+							approval.kind === "meetup-publication" ||
 							approval.kind === "community-publication" ||
 							approval.kind === "social-publication" ||
 							approval.kind === "content-review"

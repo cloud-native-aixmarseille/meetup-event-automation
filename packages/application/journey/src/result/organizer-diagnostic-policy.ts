@@ -16,7 +16,13 @@ export class OrganizerDiagnosticPolicy {
 	): boolean {
 		if (item.severity === "info" || item.fixApplied === true) return true;
 		// Verified approval attention owns the actionable comment link and its lifetime.
-		if (item.code === "communication.social.pending") return true;
+		if (
+			[
+				"communication.social.pending",
+				"publication.meetup.slides-approval-pending",
+			].includes(item.code)
+		)
+			return true;
 		const causes = OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
 		return (
 			causes?.some((prefix) =>

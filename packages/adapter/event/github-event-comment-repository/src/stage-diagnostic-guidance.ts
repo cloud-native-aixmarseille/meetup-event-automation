@@ -5,6 +5,20 @@ import type { MessageId } from "./i18n/catalog.js";
 export const STAGE_GUIDANCE = [
 	...AUTHENTICATION_GUIDANCE,
 	[
+		"publication.meetup.slides-approval-rejected",
+		[
+			"Automated slide sharing",
+			"comment.guidance.meetup.slides-approval-rejected",
+		],
+	],
+	[
+		"publication.meetup.slides-approval-unavailable",
+		[
+			"Automated slide sharing",
+			"comment.guidance.meetup.slides-approval-unavailable",
+		],
+	],
+	[
 		"publication.website.access",
 		["Website", "comment.guidance.website.access"],
 	],

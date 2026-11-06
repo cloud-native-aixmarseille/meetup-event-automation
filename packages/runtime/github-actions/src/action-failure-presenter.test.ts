@@ -3,6 +3,33 @@ import { ActionFailurePresenter } from "./action-failure-presenter.js";
 import { RuntimeInputError } from "./runtime-input-error.js";
 
 describe("public action failure presentation", () => {
+	it("reports bounded GraphQL categories without provider messages, paths or arbitrary types", () => {
+		// Arrange
+		const error = Object.assign(new Error("PRIVATE_TOKEN"), {
+			name: "GraphqlResponseError",
+			errors: [
+				{
+					type: "RATE_LIMITED",
+					message: "private@example.test",
+					path: ["PRIVATE_PATH"],
+				},
+				{ type: "FORBIDDEN" },
+				{ type: "PRIVATE_TYPE" },
+				{ type: "RATE_LIMITED" },
+				null,
+			],
+		});
+
+		// Act
+		const message = new ActionFailurePresenter().publicErrorMessage(error);
+
+		// Assert
+		expect(message).toBe(
+			"error=GraphqlResponseError message=redacted; graphql=RATE_LIMITED; graphql=FORBIDDEN",
+		);
+		expect(message).not.toMatch(/PRIVATE|private/);
+	});
+
 	it("redacts unexpected exception messages", () => {
 		// Arrange
 		const error = new Error("email@example.test");

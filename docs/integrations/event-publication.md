@@ -377,6 +377,13 @@ verifies public placement and adds **Slides PDF** to the issue. Publication
 processes the PDF later in the same reconciliation run; the scheduled audit
 resumes pending work. No manual sharing checkbox is required.
 
+Review the separate slides-delivery approval comment before sending. It shows
+the Meetup event, public PDF, message language and attendee audience. Choose
+**Approve sending** or **Reject sending**. The approval covers those exact facts;
+changing the PDF link, event, date or language requires a new decision. Automation
+rechecks authorization immediately before reserving and submitting the message.
+Unavailable verification leaves delivery blocked.
+
 For `locale: fr`, the message is:
 
 - Subject: `Présentation du meetup`

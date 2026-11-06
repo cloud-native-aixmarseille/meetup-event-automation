@@ -10,7 +10,7 @@ import type { GithubApprovalResponse } from "./github-approval-response.js";
 export interface GithubApprovalClientCollaborators {
 	readonly githubApprovalResponse: Pick<
 		GithubApprovalResponse,
-		"comments" | "identity" | "permission" | "edit" | "history"
+		"comments" | "identity" | "permission" | "edit" | "edits" | "history"
 	>;
 }
 
@@ -85,6 +85,32 @@ export class GithubApprovalClient {
 			throw new Error("Approval comment changed before persistence");
 		await this.update(commentId, after);
 	}
+	async edits(
+		comments: readonly ApprovalComment[],
+	): Promise<readonly ApprovalCommentEdit[]> {
+		const edits: ApprovalCommentEdit[] = [];
+		for (let start = 0; start < comments.length; start += 100) {
+			const batch = comments.slice(start, start + 100);
+			const ids = batch.map((comment) => {
+				if (!comment.node_id)
+					throw new Error("Missing approval comment node identity");
+				return comment.node_id;
+			});
+			const response = await this.api.graphql<unknown>(
+				`query ApprovalCommentEditors($ids: [ID!]!) {
+					nodes(ids: $ids) { ... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					} }
+				}`,
+				{ ids },
+			);
+			edits.push(
+				...this.collaborators.githubApprovalResponse.edits(response, batch),
+			);
+		}
+		return edits;
+	}
+
 	async edit(comment: ApprovalComment): Promise<ApprovalCommentEdit> {
 		if (!comment.node_id)
 			throw new Error("Missing approval comment node identity");
