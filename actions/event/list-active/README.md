@@ -30,7 +30,7 @@ List open meetup issue numbers from the caller repository using the configured e
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/list-active@0031e8202c730cbc9453761d8a5ef0ba9f996857 # 10.0.6
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/list-active@82abd50f105df6bd47bf5e290a6197c63cfaa667 # 10.0.7
   with:
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # This input is required.

@@ -30,7 +30,7 @@ Select the active feedback event across the repository and reconcile the existin
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/feedback/reconcile-short-link@0031e8202c730cbc9453761d8a5ef0ba9f996857 # 10.0.6
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/feedback/reconcile-short-link@82abd50f105df6bd47bf5e290a6197c63cfaa667 # 10.0.7
   with:
     # Language for generated reports (en or fr).
     # This input is required.
