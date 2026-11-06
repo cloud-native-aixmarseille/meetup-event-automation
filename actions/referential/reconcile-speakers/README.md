@@ -30,7 +30,7 @@ Reconcile the validated private speaker catalog and reserved IDs from the call-f
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/reconcile-speakers@82abd50f105df6bd47bf5e290a6197c63cfaa667 # 10.0.7
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/reconcile-speakers@de12a46ad8b81af238f79e40e4bf3be831214352 # 10.0.8
   with:
     # Language for generated reports (en or fr).
     # This input is required.
