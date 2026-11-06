@@ -64,16 +64,30 @@ export class GithubApprovalResponse {
 		value: unknown,
 		comments: readonly ApprovalComment[],
 	): readonly ApprovalCommentEdit[] {
-		if (
-			!this.collaborators.approvalSchema.object(value) ||
-			!Array.isArray(value.nodes) ||
-			value.nodes.length !== comments.length
-		)
-			throw new Error("Invalid approval editor batch response");
-		const nodes = value.nodes;
+		const nodes = this.batchNodes(value, comments.length);
 		return comments.map((comment, index) =>
 			this.edit({ node: nodes[index] }, comment),
 		);
+	}
+
+	histories(
+		value: unknown,
+		comments: readonly ApprovalComment[],
+	): readonly ApprovalHistoryPage[] {
+		const nodes = this.batchNodes(value, comments.length);
+		return comments.map((comment, index) =>
+			this.history({ node: nodes[index] }, comment),
+		);
+	}
+
+	private batchNodes(value: unknown, count: number): readonly unknown[] {
+		if (
+			!this.collaborators.approvalSchema.object(value) ||
+			!Array.isArray(value.nodes) ||
+			value.nodes.length !== count
+		)
+			throw new Error("Invalid approval batch response");
+		return value.nodes;
 	}
 
 	edit(value: unknown, comment: ApprovalComment): ApprovalCommentEdit {

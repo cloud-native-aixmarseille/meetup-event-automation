@@ -4,6 +4,47 @@ import { TrustedStateComments } from "./trusted-state-comments.js";
 const SOCIAL_JOURNAL_MARKER = "<!-- meetup-social-delivery:v1 ";
 
 describe("trusted internal state history", () => {
+	it("groups edited comments and reads fresh history on every verification", async () => {
+		// Arrange
+		const f = automationStateFixture();
+		const body = `${SOCIAL_JOURNAL_MARKER}{} -->`;
+		for (let id = 1; id <= 3; id += 1) await f.client.create(body);
+		await f.client.replace(1, body, body.replace("{}", '{"next":true}'));
+		await f.client.replace(3, body, body.replace("{}", '{"next":true}'));
+
+		// Act
+		const records = await f.trusted.list();
+		f.histories.set(3, []);
+		const reread = f.trusted.list();
+
+		// Assert
+		expect(records).toHaveLength(3);
+		await expect(reread).rejects.toThrow("history is unavailable");
+		expect(f.client.edits).toHaveBeenCalledTimes(2);
+		expect(f.client.histories).toHaveBeenCalledTimes(2);
+		expect(f.client.histories).toHaveBeenLastCalledWith([
+			f.comments[0],
+			f.comments[2],
+		]);
+	});
+	it.each(["editors", "histories"])(
+		"rejects missing %s in a batch",
+		async (batch) => {
+			// Arrange
+			const f = automationStateFixture();
+			const body = `${SOCIAL_JOURNAL_MARKER}{} -->`;
+			await f.client.create(body);
+			await f.client.replace(1, body, body.replace("{}", '{"next":true}'));
+			if (batch === "editors") f.client.edits.mockResolvedValue([]);
+			else f.client.histories.mockResolvedValue([]);
+
+			// Act
+			const reading = f.trusted.list();
+
+			// Assert
+			await expect(reading).rejects.toThrow(/unavailable/);
+		},
+	);
 	it("reads bot-owned records while ignoring organizer and other bot comments", async () => {
 		// Arrange
 		const f = automationStateFixture();
@@ -26,7 +67,7 @@ describe("trusted internal state history", () => {
 
 		// Assert
 		expect(records.map((record) => record.id)).toEqual([1]);
-		expect(f.client.edit).toHaveBeenCalledTimes(1);
+		expect(f.client.edits).toHaveBeenCalledExactlyOnceWith([f.comments[0]]);
 	});
 	it("accepts a bot update with intact bot-owned history", async () => {
 		// Arrange
@@ -105,12 +146,14 @@ describe("trusted internal state history", () => {
 		// Arrange
 		const f = automationStateFixture();
 		await f.client.create(`${SOCIAL_JOURNAL_MARKER}{} -->`);
-		f.client.edit.mockResolvedValue({
-			id: "comment-1",
-			body: "Changed",
-			editor: null,
-			lastEditedAt: null,
-		});
+		f.client.edits.mockResolvedValue([
+			{
+				id: "comment-1",
+				body: "Changed",
+				editor: null,
+				lastEditedAt: null,
+			},
+		]);
 
 		// Act
 		const load = f.trusted.list();

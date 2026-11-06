@@ -93,6 +93,125 @@ describe("scoped GitHub approval client", () => {
 });
 
 describe("verified approval history", () => {
+	it("reads bounded history batches and completes long histories in their original order", async () => {
+		// Arrange
+		const f = fixture();
+		const comments = Array.from({ length: 6 }, (_, index) => ({
+			id: index + 1,
+			node_id: `comment-${index + 1}`,
+			body: `body-${index}`,
+		}));
+		const edit = {
+			diff: "saved body",
+			deletedAt: null,
+			editor: { login: "automation", __typename: "Bot" },
+		};
+		f.graphql.mockImplementation(async (_query, variables) => {
+			const nodes = (variables.ids ?? [variables.id]).map((id: string) => ({
+				id,
+				body: comments.find((comment) => comment.node_id === id)?.body,
+				userContentEdits: {
+					nodes: [{ ...edit, diff: variables.after ? "oldest body" : id }],
+					pageInfo: {
+						hasNextPage: id === "comment-2" && !variables.after,
+						endCursor: "next-page",
+					},
+				},
+			}));
+			return variables.ids ? { nodes } : { node: nodes[0] };
+		});
+
+		// Act
+		const histories = await f.client.histories(comments);
+
+		// Assert
+		expect(
+			histories.map((history) => history.map((entry) => entry.diff)),
+		).toEqual([
+			["comment-1"],
+			["comment-2", "oldest body"],
+			["comment-3"],
+			["comment-4"],
+			["comment-5"],
+			["comment-6"],
+		]);
+		expect(f.graphql.mock.calls.map(([, variables]) => variables)).toEqual([
+			{ ids: comments.slice(0, 5).map((comment) => comment.node_id) },
+			{ id: "comment-2", after: "next-page" },
+			{ ids: ["comment-6"] },
+		]);
+		expect(f.graphql.mock.calls[0][0]).toContain("userContentEdits(first: 20)");
+	});
+	it.each([
+		"missing node",
+		"missing history",
+		"changed identity",
+		"changed body",
+		"missing cursor",
+		"missing result",
+	])("rejects an unverifiable batched history: %s", async (variant) => {
+		// Arrange
+		const f = fixture();
+		const comment = { id: 1, node_id: "comment-1", body: "saved body" };
+		const node = {
+			id: variant === "changed identity" ? "different" : comment.node_id,
+			body: variant === "changed body" ? "changed" : comment.body,
+			userContentEdits:
+				variant === "missing history"
+					? null
+					: {
+							nodes: [],
+							pageInfo: { hasNextPage: true, endCursor: null },
+						},
+		};
+		f.graphql.mockResolvedValue({
+			nodes:
+				variant === "missing result"
+					? []
+					: [variant === "missing node" ? null : node],
+		});
+
+		// Act
+		const reading = f.client.histories([comment]);
+
+		// Assert
+		await expect(reading).rejects.toThrow();
+		expect(f.graphql).toHaveBeenCalledTimes(1);
+	});
+	it("rejects a repeated cursor when continuing a batched history", async () => {
+		// Arrange
+		const f = fixture();
+		const comment = { id: 1, node_id: "comment-1", body: "saved body" };
+		const node = {
+			id: comment.node_id,
+			body: comment.body,
+			userContentEdits: {
+				nodes: [],
+				pageInfo: { hasNextPage: true, endCursor: "cursor" },
+			},
+		};
+		f.graphql
+			.mockResolvedValueOnce({ nodes: [node] })
+			.mockResolvedValue({ node });
+
+		// Act
+		const reading = f.client.histories([comment]);
+
+		// Assert
+		await expect(reading).rejects.toThrow("Invalid approval history cursor");
+		expect(f.graphql).toHaveBeenCalledTimes(2);
+	});
+	it("does not request empty history batches", async () => {
+		// Arrange
+		const f = fixture();
+
+		// Act
+		const histories = await f.client.histories([]);
+
+		// Assert
+		expect(histories).toEqual([]);
+		expect(f.graphql).not.toHaveBeenCalled();
+	});
 	it("loads all history pages against the same comment snapshot", async () => {
 		// Arrange
 		const f = fixture();

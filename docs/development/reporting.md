@@ -188,6 +188,14 @@ only the `meetup` and `community` sections, following the
 Proposal, social delivery, and import metadata changes must come from the trusted
 bot. Every human recovery edit is checked against its preceding saved body.
 
+Each state read fetches fresh editor metadata and complete edit histories. Editor
+metadata is requested in batches of 100 comments. History reads start with 20
+edits for each of five comments, then paginate longer histories individually.
+Every page must match the original comment identity and body; missing history or
+invalid cursors block verification. Batching reduces GraphQL quota consumption
+without caching authorization or skipping older edits. Quota failures report
+exhaustion and the reset time when GitHub supplies valid rate-limit headers.
+
 The complete rendered comment must fit within the adapter's 60,000-character
 budget. Oversized state fails before writing; it is never truncated or split into
 additional comments. Preserve the consolidated comment and its edit history.

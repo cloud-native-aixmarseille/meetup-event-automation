@@ -104,7 +104,19 @@ export function fixture(locale = "en") {
 				variables: { id: string; ids?: readonly string[] },
 			) => {
 				if (variables.ids)
-					return { nodes: variables.ids.map((id) => edits.get(id) ?? null) };
+					return {
+						nodes: variables.ids.map((id) =>
+							edits.has(id)
+								? {
+										...edits.get(id),
+										userContentEdits: {
+											nodes: history.get(id) ?? [],
+											pageInfo: { hasNextPage: false, endCursor: null },
+										},
+									}
+								: null,
+						),
+					};
 				if (query.includes("mutation ResolveComment")) {
 					minimized.add(variables.id);
 					return {
