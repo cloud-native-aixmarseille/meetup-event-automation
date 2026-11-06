@@ -6,6 +6,7 @@ import {
 import type {
 	StateCommentClient,
 	StateCommentEdit,
+	StateContentEdit,
 } from "./state-comment-client.js";
 
 /** Maintainers may recover publication journals without changing approval or delivery authority. */
@@ -17,7 +18,7 @@ export class StateEditAuthority {
 	) {}
 	async verify(
 		current: StateCommentEdit,
-		history: Awaited<ReturnType<StateCommentClient["history"]>>,
+		history: readonly StateContentEdit[],
 	): Promise<void> {
 		if (
 			!this.bot(current.editor) &&

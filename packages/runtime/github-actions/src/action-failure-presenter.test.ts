@@ -3,6 +3,44 @@ import { ActionFailurePresenter } from "./action-failure-presenter.js";
 import { RuntimeInputError } from "./runtime-input-error.js";
 
 describe("public action failure presentation", () => {
+	it("reports exhausted GraphQL quota without untyped provider error details", () => {
+		// Arrange
+		const error = Object.assign(new Error("PRIVATE_MESSAGE"), {
+			name: "GraphqlResponseError",
+			errors: [{ message: "PRIVATE_TOKEN" }],
+			headers: {
+				"x-ratelimit-remaining": "0",
+				"x-ratelimit-reset": "1893456000",
+				authorization: "PRIVATE_TOKEN",
+			},
+		});
+
+		// Act
+		const message = new ActionFailurePresenter().publicErrorMessage(error);
+
+		// Assert
+		expect(message).toBe(
+			"error=GraphqlResponseError message=redacted; graphql-quota=exhausted; graphql-reset=2030-01-01T00:00:00.000Z",
+		);
+	});
+	it.each([
+		null,
+		"PRIVATE_HEADER",
+		{ "x-ratelimit-remaining": "1" },
+		{ "x-ratelimit-remaining": "0", "x-ratelimit-reset": "PRIVATE_RESET" },
+	])("does not expose arbitrary quota headers: %j", (headers) => {
+		// Arrange
+		const error = Object.assign(new Error("PRIVATE_MESSAGE"), {
+			name: "GraphqlResponseError",
+			headers,
+		});
+
+		// Act
+		const message = new ActionFailurePresenter().publicErrorMessage(error);
+
+		// Assert
+		expect(message).not.toMatch(/PRIVATE|graphql-reset/);
+	});
 	it("reports bounded GraphQL categories without provider messages, paths or arbitrary types", () => {
 		// Arrange
 		const error = Object.assign(new Error("PRIVATE_TOKEN"), {

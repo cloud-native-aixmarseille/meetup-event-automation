@@ -10,7 +10,13 @@ import type { GithubApprovalResponse } from "./github-approval-response.js";
 export interface GithubApprovalClientCollaborators {
 	readonly githubApprovalResponse: Pick<
 		GithubApprovalResponse,
-		"comments" | "identity" | "permission" | "edit" | "edits" | "history"
+		| "comments"
+		| "identity"
+		| "permission"
+		| "edit"
+		| "edits"
+		| "history"
+		| "histories"
 	>;
 }
 
@@ -132,10 +138,61 @@ export class GithubApprovalClient {
 	async history(
 		comment: ApprovalComment,
 	): Promise<readonly ApprovalContentEdit[]> {
+		return this.historyPages(comment, undefined);
+	}
+
+	async histories(
+		comments: readonly ApprovalComment[],
+	): Promise<readonly (readonly ApprovalContentEdit[])[]> {
+		const histories: (readonly ApprovalContentEdit[])[] = [];
+		// Bound response size while sharing the minimum GraphQL request cost.
+		for (let start = 0; start < comments.length; start += 5) {
+			const batch = comments.slice(start, start + 5);
+			const ids = batch.map((comment) => {
+				if (!comment.node_id)
+					throw new Error("Missing approval comment node identity");
+				return comment.node_id;
+			});
+			const response = await this.api.graphql<unknown>(
+				`query ApprovalCommentHistories($ids: [ID!]!) {
+					nodes(ids: $ids) { ... on IssueComment {
+						id body userContentEdits(first: 20) {
+							nodes { diff deletedAt editor { login __typename } }
+							pageInfo { hasNextPage endCursor }
+						}
+					} }
+				}`,
+				{ ids },
+			);
+			const pages = this.collaborators.githubApprovalResponse.histories(
+				response,
+				batch,
+			);
+			for (const [index, page] of pages.entries()) {
+				if (!page.pageInfo.hasNextPage) {
+					histories.push(page.nodes);
+					continue;
+				}
+				if (!page.pageInfo.endCursor)
+					throw new Error("Invalid approval history cursor");
+				histories.push([
+					...page.nodes,
+					...(await this.historyPages(batch[index], page.pageInfo.endCursor)),
+				]);
+			}
+		}
+		return histories;
+	}
+
+	private async historyPages(
+		comment: ApprovalComment,
+		after: string | undefined,
+	): Promise<readonly ApprovalContentEdit[]> {
 		if (!comment.node_id)
 			throw new Error("Missing approval comment node identity");
 		const edits: ApprovalContentEdit[] = [];
-		let after: string | undefined;
+		const cursors = new Set<string>();
+		if (after) cursors.add(after);
 		do {
 			const response: unknown = await this.api.graphql<unknown>(
 				`query ApprovalCommentHistory($id: ID!, $after: String) {
@@ -155,8 +212,9 @@ export class GithubApprovalClient {
 			edits.push(...history.nodes);
 			if (!history.pageInfo.hasNextPage) return edits;
 			const next = history.pageInfo.endCursor;
-			if (!next || next === after)
+			if (!next || cursors.has(next))
 				throw new Error("Invalid approval history cursor");
+			cursors.add(next);
 			after = next;
 		} while (after);
 		return edits;

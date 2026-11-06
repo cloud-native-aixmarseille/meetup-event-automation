@@ -61376,7 +61376,10 @@ var ActionFailurePresenter = class {
   }
   context(error2) {
     const fields2 = error2;
-    const details = [...this.graphqlContext(error2)];
+    const details = [
+      ...this.graphqlContext(error2),
+      ...this.quotaContext(error2)
+    ];
     if (typeof fields2.code === "string" && NETWORK_ERROR_CODES.has(fields2.code))
       details.push(`code=${fields2.code}`);
     if (typeof fields2.status === "number" && Number.isInteger(fields2.status) && fields2.status >= 100 && fields2.status <= 599)
@@ -61411,6 +61414,19 @@ var ActionFailurePresenter = class {
       if (typeof type === "string" && allowed.has(type)) types4.add(type);
     }
     return [...types4].map((type) => `graphql=${type}`);
+  }
+  quotaContext(error2) {
+    if (error2.name !== "GraphqlResponseError") return [];
+    const headers = Reflect.get(error2, "headers");
+    if (!headers || typeof headers !== "object") return [];
+    if (Reflect.get(headers, "x-ratelimit-remaining") !== "0") return [];
+    const details = ["graphql-quota=exhausted"];
+    const reset = Reflect.get(headers, "x-ratelimit-reset");
+    if (typeof reset === "string" && /^\d{10}$/.test(reset))
+      details.push(
+        `graphql-reset=${new Date(Number(reset) * 1e3).toISOString()}`
+      );
+    return details;
   }
 };
 
@@ -79194,21 +79210,34 @@ var TrustedStateComments = class {
   authority;
   async list() {
     const records = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
-        continue;
-      const current = await this.client.edit(comment);
+    const comments = (await this.client.list()).filter(
+      (comment) => comment.user?.type === "Bot" && comment.user.login.toLowerCase() === this.author.toLowerCase()
+    );
+    const edits = await this.client.edits(comments);
+    if (edits.length !== comments.length)
+      throw new Error("Automation state editors are unavailable");
+    const edited = comments.filter((_2, index) => this.edited(edits[index]));
+    const histories = await this.client.histories(edited);
+    if (histories.length !== edited.length)
+      throw new Error("Automation state history is unavailable");
+    let historyIndex = 0;
+    for (const [index, comment] of comments.entries()) {
+      const current = edits[index];
       if (current.id !== comment.node_id || current.body !== comment.body)
         throw new Error("Automation state changed during verification");
       const managed = this.codec.managed(current.body);
-      if (current.lastEditedAt !== null || current.editor !== null)
-        await this.verifyHistory(comment, current, managed);
+      if (this.edited(current)) {
+        await this.verifyHistory(histories[historyIndex], current, managed);
+        historyIndex += 1;
+      }
       if (managed) records.push(comment);
     }
     return records;
   }
-  async verifyHistory(comment, current, managed) {
-    const history = await this.client.history(comment);
+  edited(current) {
+    return current.lastEditedAt !== null || current.editor !== null;
+  }
+  async verifyHistory(history, current, managed) {
     if (!current.editor || history.length === 0 || history.some((edit) => edit.deletedAt || edit.diff === null))
       throw new Error("Automation state history is unavailable");
     const previouslyManaged = history.some(
@@ -80946,10 +80975,53 @@ var GithubApprovalClient = class {
     return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
   }
   async history(comment) {
+    return this.historyPages(comment, void 0);
+  }
+  async histories(comments) {
+    const histories = [];
+    for (let start = 0; start < comments.length; start += 5) {
+      const batch = comments.slice(start, start + 5);
+      const ids = batch.map((comment) => {
+        if (!comment.node_id)
+          throw new Error("Missing approval comment node identity");
+        return comment.node_id;
+      });
+      const response = await this.api.graphql(
+        `query ApprovalCommentHistories($ids: [ID!]!) {
+					nodes(ids: $ids) { ... on IssueComment {
+						id body userContentEdits(first: 20) {
+							nodes { diff deletedAt editor { login __typename } }
+							pageInfo { hasNextPage endCursor }
+						}
+					} }
+				}`,
+        { ids }
+      );
+      const pages = this.collaborators.githubApprovalResponse.histories(
+        response,
+        batch
+      );
+      for (const [index, page] of pages.entries()) {
+        if (!page.pageInfo.hasNextPage) {
+          histories.push(page.nodes);
+          continue;
+        }
+        if (!page.pageInfo.endCursor)
+          throw new Error("Invalid approval history cursor");
+        histories.push([
+          ...page.nodes,
+          ...await this.historyPages(batch[index], page.pageInfo.endCursor)
+        ]);
+      }
+    }
+    return histories;
+  }
+  async historyPages(comment, after) {
     if (!comment.node_id)
       throw new Error("Missing approval comment node identity");
     const edits = [];
-    let after;
+    const cursors = /* @__PURE__ */ new Set();
+    if (after) cursors.add(after);
     do {
       const response = await this.api.graphql(
         `query ApprovalCommentHistory($id: ID!, $after: String) {
@@ -80969,8 +81041,9 @@ var GithubApprovalClient = class {
       edits.push(...history.nodes);
       if (!history.pageInfo.hasNextPage) return edits;
       const next = history.pageInfo.endCursor;
-      if (!next || next === after)
+      if (!next || cursors.has(next))
         throw new Error("Invalid approval history cursor");
+      cursors.add(next);
       after = next;
     } while (after);
     return edits;
@@ -81061,12 +81134,21 @@ var GithubApprovalResponse = class {
     return value.data.permission;
   }
   edits(value, comments) {
-    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.nodes) || value.nodes.length !== comments.length)
-      throw new Error("Invalid approval editor batch response");
-    const nodes = value.nodes;
+    const nodes = this.batchNodes(value, comments.length);
     return comments.map(
       (comment, index) => this.edit({ node: nodes[index] }, comment)
     );
+  }
+  histories(value, comments) {
+    const nodes = this.batchNodes(value, comments.length);
+    return comments.map(
+      (comment, index) => this.history({ node: nodes[index] }, comment)
+    );
+  }
+  batchNodes(value, count) {
+    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.nodes) || value.nodes.length !== count)
+      throw new Error("Invalid approval batch response");
+    return value.nodes;
   }
   edit(value, comment) {
     const node = this.snapshot(value, comment);

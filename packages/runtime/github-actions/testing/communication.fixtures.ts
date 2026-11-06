@@ -157,6 +157,10 @@ export function githubClients(
 										body: comment.body,
 										editor: comment.editor ?? null,
 										lastEditedAt: comment.updated_at ?? null,
+										userContentEdits: {
+											nodes: history.get(id) ?? [],
+											pageInfo: { hasNextPage: false, endCursor: null },
+										},
 									}
 								: null;
 						}),

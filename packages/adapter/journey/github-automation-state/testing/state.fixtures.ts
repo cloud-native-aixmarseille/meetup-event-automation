@@ -5,8 +5,8 @@ import { AutomationStateCodec } from "../src/automation-state-codec.js";
 import { GithubAutomationStateComposition } from "../src/dependency-composition.js";
 import type {
 	StateComment,
-	StateCommentClient,
 	StateCommentEdit,
+	StateContentEdit,
 } from "../src/state-comment-client.js";
 
 export function automationStateFixture(
@@ -24,10 +24,7 @@ export function automationStateFixture(
 			: null,
 	}));
 	const edits = new Map<number, StateCommentEdit>();
-	const histories = new Map<
-		number,
-		Awaited<ReturnType<StateCommentClient["history"]>>
-	>();
+	const histories = new Map<number, readonly StateContentEdit[]>();
 	const minimized = new Set<number>();
 	const bot = { login: author, __typename: "Bot" };
 	const client = {
@@ -63,17 +60,19 @@ export function automationStateFixture(
 				]),
 			]);
 		}),
-		edit: vi.fn(
-			async (comment: StateComment) =>
-				edits.get(comment.id) ?? {
-					id: comment.node_id ?? "",
-					body: comment.body ?? "",
-					editor: null,
-					lastEditedAt: null,
-				},
+		edits: vi.fn(async (batch: readonly StateComment[]) =>
+			batch.map(
+				(comment) =>
+					edits.get(comment.id) ?? {
+						id: comment.node_id ?? "",
+						body: comment.body ?? "",
+						editor: null,
+						lastEditedAt: null,
+					},
+			),
 		),
-		history: vi.fn(
-			async (comment: StateComment) => histories.get(comment.id) ?? [],
+		histories: vi.fn(async (batch: readonly StateComment[]) =>
+			batch.map((comment) => histories.get(comment.id) ?? []),
 		),
 	};
 	const visibility = {

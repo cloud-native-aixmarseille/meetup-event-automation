@@ -32778,7 +32778,10 @@ var ActionFailurePresenter = class {
   }
   context(error2) {
     const fields = error2;
-    const details = [...this.graphqlContext(error2)];
+    const details = [
+      ...this.graphqlContext(error2),
+      ...this.quotaContext(error2)
+    ];
     if (typeof fields.code === "string" && NETWORK_ERROR_CODES.has(fields.code))
       details.push(`code=${fields.code}`);
     if (typeof fields.status === "number" && Number.isInteger(fields.status) && fields.status >= 100 && fields.status <= 599)
@@ -32813,6 +32816,19 @@ var ActionFailurePresenter = class {
       if (typeof type === "string" && allowed.has(type)) types.add(type);
     }
     return [...types].map((type) => `graphql=${type}`);
+  }
+  quotaContext(error2) {
+    if (error2.name !== "GraphqlResponseError") return [];
+    const headers = Reflect.get(error2, "headers");
+    if (!headers || typeof headers !== "object") return [];
+    if (Reflect.get(headers, "x-ratelimit-remaining") !== "0") return [];
+    const details = ["graphql-quota=exhausted"];
+    const reset = Reflect.get(headers, "x-ratelimit-reset");
+    if (typeof reset === "string" && /^\d{10}$/.test(reset))
+      details.push(
+        `graphql-reset=${new Date(Number(reset) * 1e3).toISOString()}`
+      );
+    return details;
   }
 };
 

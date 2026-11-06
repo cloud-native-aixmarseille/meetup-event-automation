@@ -18,12 +18,15 @@ export interface StateCommentClient {
 	list(): Promise<readonly StateComment[]>;
 	create(body: string): Promise<number>;
 	replace(id: number, before: string, after: string): Promise<void>;
-	edit(comment: StateComment): Promise<StateCommentEdit>;
-	history(comment: StateComment): Promise<
-		readonly {
-			readonly diff: string | null;
-			readonly deletedAt: string | null;
-			readonly editor: StateCommentEdit["editor"];
-		}[]
-	>;
+	edits(
+		comments: readonly StateComment[],
+	): Promise<readonly StateCommentEdit[]>;
+	histories(
+		comments: readonly StateComment[],
+	): Promise<readonly (readonly StateContentEdit[])[]>;
+}
+export interface StateContentEdit {
+	readonly diff: string | null;
+	readonly deletedAt: string | null;
+	readonly editor: StateCommentEdit["editor"];
 }

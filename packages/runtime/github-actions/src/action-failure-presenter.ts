@@ -70,7 +70,10 @@ export class ActionFailurePresenter {
 	}
 	private context(error: Error): readonly string[] {
 		const fields = error as Error & { code?: unknown; status?: unknown };
-		const details: string[] = [...this.graphqlContext(error)];
+		const details: string[] = [
+			...this.graphqlContext(error),
+			...this.quotaContext(error),
+		];
 		if (typeof fields.code === "string" && NETWORK_ERROR_CODES.has(fields.code))
 			details.push(`code=${fields.code}`);
 		if (
@@ -110,5 +113,18 @@ export class ActionFailurePresenter {
 			if (typeof type === "string" && allowed.has(type)) types.add(type);
 		}
 		return [...types].map((type) => `graphql=${type}`);
+	}
+	private quotaContext(error: Error): readonly string[] {
+		if (error.name !== "GraphqlResponseError") return [];
+		const headers: unknown = Reflect.get(error, "headers");
+		if (!headers || typeof headers !== "object") return [];
+		if (Reflect.get(headers, "x-ratelimit-remaining") !== "0") return [];
+		const details = ["graphql-quota=exhausted"];
+		const reset: unknown = Reflect.get(headers, "x-ratelimit-reset");
+		if (typeof reset === "string" && /^\d{10}$/.test(reset))
+			details.push(
+				`graphql-reset=${new Date(Number(reset) * 1000).toISOString()}`,
+			);
+		return details;
 	}
 }
