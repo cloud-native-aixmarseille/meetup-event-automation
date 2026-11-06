@@ -36129,6 +36129,10 @@ var AttentionStageInput = class {
     });
   }
   safeField(field) {
+    if (typeof field === "string" && /^assets\.content\/[a-zA-Z0-9_-]{1,100}\/[a-z][a-z0-9-]{0,63}$/.test(
+      field
+    ))
+      return true;
     if (typeof field === "string" && /^assets\.image\/[a-zA-Z0-9_-]{1,100}\/(cover|host-logo|speaker-picture|fallback|embedded)\/[a-zA-Z0-9_.:-]{1,100}$/.test(
       field
     ))

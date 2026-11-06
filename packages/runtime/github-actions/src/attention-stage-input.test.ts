@@ -4,6 +4,38 @@ import { RuntimeInputError } from "./runtime-input-error.js";
 
 describe("workflow attention input decoding", () => {
 	it.each([
+		["assets.content/document_123/slides", true],
+		["assets.content/document_123/brief", true],
+		["assets.content/private@example.test/slides", false],
+		["assets.content/](https://example.test)/slides", false],
+		["assets.content/document_123/private@example.test", false],
+		[`assets.content/${"a".repeat(101)}/slides`, false],
+	] as const)("validates structured content location %s", (field, retained) => {
+		// Arrange
+		const encoded = JSON.stringify({
+			assets: {
+				outcome: "success",
+				diagnostics: JSON.stringify([
+					{
+						code: "publication.assets.content.conflict",
+						severity: "warning",
+						field,
+						message: "private@example.test",
+					},
+				]),
+			},
+		});
+
+		// Act
+		const result = new AttentionStageInput().parse(encoded);
+
+		// Assert
+		expect(result.assets?.diagnostics[0].field).toBe(
+			retained ? field : undefined,
+		);
+		expect(JSON.stringify(result)).not.toContain("private@example.test");
+	});
+	it.each([
 		["assets.image/document_123/speaker-picture/2", true],
 		["assets.image/document_123/embedded/image.3", true],
 		["assets.image/document_123/host-logo/private@example.test", false],
