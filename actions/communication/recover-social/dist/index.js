@@ -26171,6 +26171,7 @@ var STANDARD_ERROR_NAMES = /* @__PURE__ */ new Set([
   "URIError",
   "EvalError",
   "AggregateError",
+  "GraphqlResponseError",
   "AbortError",
   "TimeoutError"
 ]);
@@ -26215,7 +26216,7 @@ var ActionFailurePresenter = class {
   }
   context(error2) {
     const fields = error2;
-    const details = [];
+    const details = [...this.graphqlContext(error2)];
     if (typeof fields.code === "string" && NETWORK_ERROR_CODES.has(fields.code))
       details.push(`code=${fields.code}`);
     if (typeof fields.status === "number" && Number.isInteger(fields.status) && fields.status >= 100 && fields.status <= 599)
@@ -26230,6 +26231,26 @@ var ActionFailurePresenter = class {
       if (locations.size === 3) break;
     }
     return [...details, ...locations];
+  }
+  graphqlContext(error2) {
+    const errors = Reflect.get(error2, "errors");
+    if (!Array.isArray(errors)) return [];
+    const allowed = /* @__PURE__ */ new Set([
+      "RATE_LIMITED",
+      "FORBIDDEN",
+      "NOT_FOUND",
+      "INTERNAL",
+      "SERVICE_UNAVAILABLE",
+      "UNPROCESSABLE",
+      "MAX_NODE_LIMIT_EXCEEDED"
+    ]);
+    const types = /* @__PURE__ */ new Set();
+    for (const item of errors) {
+      if (!item || typeof item !== "object") continue;
+      const type = Reflect.get(item, "type");
+      if (typeof type === "string" && allowed.has(type)) types.add(type);
+    }
+    return [...types].map((type) => `graphql=${type}`);
   }
 };
 
@@ -28398,6 +28419,7 @@ var ApprovalNotificationPolicy = class {
           recipientCount: request2.recipientCount,
           ...request2.details?.mailKind ? { mailKind: request2.details.mailKind } : {}
         };
+      case "meetup-slides":
       case "meetup-publication":
       case "community-publication":
         return { kind: request2.kind, eventDate: request2.eventDate };
@@ -28464,7 +28486,7 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "social-publication" || request2.kind === "content-review")
+    if (request2.kind === "meetup-slides" || request2.kind === "meetup-publication" || request2.kind === "community-publication" || request2.kind === "social-publication" || request2.kind === "content-review")
       return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
@@ -28484,6 +28506,8 @@ var ApprovalRequestPolicy = class {
   matches(previous, request2, status) {
     if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
       return false;
+    if (previous.kind === "meetup-slides" && request2.kind === "meetup-slides")
+      return this.fingerprints.digest(previous.slides) === this.fingerprints.digest(request2.slides);
     if (previous.kind === "content-review" && request2.kind === "content-review")
       return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
     if (previous.kind === "social-publication" && request2.kind === "social-publication")
@@ -31219,7 +31243,9 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       ),
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
-        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && this.actionFor(episode) !== "social-approval")) && !(episode.status !== "unknown" && checklist.entries.some(
+        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && !["social-approval", "slides-approval"].includes(
+          this.actionFor(episode) ?? ""
+        ))) && !(episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
@@ -31236,6 +31262,8 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
+    if (episode.condition.resource.startsWith("meetup-slides:"))
+      return "slides-approval";
     if (episode.condition.resource.startsWith("content-review:"))
       return "content-approval";
     if (episode.condition.resource.startsWith("social-publication:"))
@@ -31353,13 +31381,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || postEvent && approval.kind === "meetup-slides" || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-slides" || approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           target: approval.target,
@@ -33612,6 +33640,31 @@ var SpeakerCatalogHistoryError = class extends Error {
   }
 };
 
+// packages/application/journey/src/use-cases/meetup-slides-approval.ts
+var MeetupSlidesApproval = class {
+  constructor(approvals, fingerprints, clock, language) {
+    this.approvals = approvals;
+    this.fingerprints = fingerprints;
+    this.clock = clock;
+    this.language = language;
+  }
+  approvals;
+  fingerprints;
+  clock;
+  language;
+  async request(eventDate, eventUrl, pdfUrl) {
+    const slides = { eventUrl, pdfUrl, language: this.language };
+    const request2 = {
+      kind: "meetup-slides",
+      eventDate,
+      slides,
+      revision: this.fingerprints.digest({ eventDate, ...slides }),
+      requestedAt: this.clock.now()
+    };
+    return this.approvals.request(request2);
+  }
+};
+
 // packages/application/journey/src/approval/approval-value-fingerprint.ts
 var ApprovalValueFingerprint = class {
   constructor(hash) {
@@ -33801,6 +33854,8 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       "publication.community.unpublished",
       "publication.meetup.unpublished",
       "publication.community.approval-pending",
+      "publication.meetup.slides-approval-pending",
+      "publication.meetup.slides-approval-rejected",
       "publication.meetup.approval-pending",
       "publication.community.approval-rejected",
       "publication.meetup.approval-rejected",
@@ -33826,6 +33881,8 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "communication.social.blocked",
   "communication.social.uncertain",
   "communication.social.expired",
+  "publication.meetup.slides-approval-pending",
+  "publication.meetup.slides-approval-rejected",
   "publication.meetup.slides-pdf-pending",
   "publication.meetup.slides-delivery-recovery",
   "publication.meetup.slides-link",
@@ -34014,7 +34071,11 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
   collaborators;
   suppressed(item, diagnostics) {
     if (item.severity === "info" || item.fixApplied === true) return true;
-    if (item.code === "communication.social.pending") return true;
+    if ([
+      "communication.social.pending",
+      "publication.meetup.slides-approval-pending"
+    ].includes(item.code))
+      return true;
     const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
     return causes?.some(
       (prefix) => diagnostics.some(
@@ -34179,7 +34240,6 @@ var AttentionEventFacts = class _AttentionEventFacts {
   ]);
   followUp(event) {
     return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
-      if (name === "Share slides to meetup") return [];
       const completed = index < 2 ? this.collaborators.communicationChecklist.status(
         event,
         index === 0 ? "host-thanks" : "speaker-thanks"
@@ -34681,6 +34741,14 @@ var SpeakerSynchronizationStageRunner = class {
 
 // packages/application/journey/src/policy-composition.ts
 var JourneyPolicyComposition = class {
+  meetupSlidesApproval(approvals, clock, language) {
+    return new MeetupSlidesApproval(
+      approvals,
+      new ApprovalValueFingerprint(new ContentFingerprint()),
+      clock,
+      language
+    );
+  }
   approvalRequestPolicy() {
     return new ApprovalRequestPolicy(
       new ApprovalValueFingerprint(new ContentFingerprint())
@@ -40339,6 +40407,9 @@ var EN_MESSAGES2 = {
   "action.communication.prepare-reminders": "Prepare social reminders",
   "report.social.empty": "social_publications=0",
   "report.social.result": "social_target={target} status={status}",
+  "diagnostic.publication.meetup.slides-approval-pending": "Review the public PDF and approve sending to Meetup attendees.",
+  "diagnostic.publication.meetup.slides-approval-rejected": "Slides delivery was rejected. Review the PDF before requesting approval again.",
+  "diagnostic.publication.meetup.slides-approval-unavailable": "Slides delivery approval could not be verified. Check GitHub access and retry.",
   "diagnostic.publication.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "diagnostic.publication.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
@@ -40514,6 +40585,9 @@ var FR_MESSAGES2 = {
   "action.communication.reconcile-social": "Mettre \xE0 jour les publications sur les r\xE9seaux",
   "report.social.empty": "publications_sociales=0",
   "report.social.result": "cible_sociale={target} statut={status}",
+  "diagnostic.publication.meetup.slides-approval-pending": "V\xE9rifiez le PDF public et approuvez l'envoi aux participants Meetup.",
+  "diagnostic.publication.meetup.slides-approval-rejected": "L'envoi des slides a \xE9t\xE9 refus\xE9. R\xE9visez le PDF avant de demander une nouvelle approbation.",
+  "diagnostic.publication.meetup.slides-approval-unavailable": "Impossible de v\xE9rifier l'approbation d'envoi des slides. V\xE9rifiez l'acc\xE8s GitHub et relancez.",
   "diagnostic.publication.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "diagnostic.publication.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
   "diagnostic.publication.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
@@ -45623,6 +45697,9 @@ var ApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
+  "approval.slides.details": "### Send slides to Meetup attendees\n\n{date} \xB7 [Meetup event]({eventUrl})\n\n[Review the public PDF](<{pdfUrl}>). The message will be sent in {language, select, fr {French} other {English}} to members marked as having attended this event.",
+  "approval.slides.request": "Review the PDF and audience, then choose.\n\n- [{approveMark}] \u2705 Approve sending\n- [{rejectMark}] \u274C Reject sending",
+  "approval.slides.final": "{status, select, approved {\u2705 Sending approved} rejected {\u274C Sending rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThe issue checklist confirms completed delivery.",
   "approval.delivery.status": "- {kind, select, host_introduction {Host} speaker_introduction {Speakers} host_thanks {Host thanks} speaker_thanks {Speaker thanks} other {Emails}}: {status, select, accepted {\u2705 Send accepted ({count})} pending {\u23F3 Sending ({count})} uncertain {\u26A0\uFE0F Uncertain result ({count}) \u2014 check the mail service before recovery} rejected {\u274C Send rejected ({count})} other {Awaiting dispatch}}.",
   "approval.delivery.notice": "Accepted means the mail service accepted the request, not that the email reached the inbox.",
   "approval.content.image-label": "#### Image {index, number}",
@@ -45647,9 +45724,9 @@ var EN_MESSAGES4 = {
   "approval.meetup.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
   "follow-up.title": "## Post-event follow-up \xB7 {date}",
   "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Automatic slides email to Meetup attendees} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Slides email to Meetup attendees after approval} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
   "follow-up.stopped": "Follow-up paused.",
-  "follow-up.waiting": "Thank-you emails are not ready yet.",
+  "follow-up.waiting": "Thank-you emails are blocked before approval. Review the outstanding tasks in the issue diagnostics.",
   "follow-up.emails-complete": "No thank-you emails pending.",
   "approval.parameters.instructions": "Edit the values between backticks, then approve sending. Private contact details stay in the catalog.",
   "approval.details.summary": "Email details",
@@ -45665,6 +45742,9 @@ var EN_MESSAGES4 = {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
+  "approval.slides.details": "### Envoyer les slides aux participants Meetup\n\n{date} \xB7 [\xC9v\xE9nement Meetup]({eventUrl})\n\n[V\xE9rifier le PDF public](<{pdfUrl}>). Le message sera envoy\xE9 en {language, select, fr {fran\xE7ais} other {anglais}} aux membres indiqu\xE9s comme pr\xE9sents \xE0 cet \xE9v\xE9nement.",
+  "approval.slides.request": "V\xE9rifiez le PDF et les destinataires, puis cochez un choix.\n\n- [{approveMark}] \u2705 Approuver l'envoi\n- [{rejectMark}] \u274C Refuser l'envoi",
+  "approval.slides.final": "{status, select, approved {\u2705 Envoi approuv\xE9} rejected {\u274C Envoi refus\xE9} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nLa case du ticket confirme l'envoi effectu\xE9.",
   "approval.delivery.status": "- {kind, select, host_introduction {H\xF4te} speaker_introduction {Intervenants} host_thanks {Remerciements h\xF4te} speaker_thanks {Remerciements intervenants} other {Emails}} : {status, select, accepted {\u2705 Envoi accept\xE9 ({count})} pending {\u23F3 Envoi en cours ({count})} uncertain {\u26A0\uFE0F R\xE9sultat incertain ({count}) \u2014 v\xE9rifier le service d'envoi avant toute reprise} rejected {\u274C Envoi refus\xE9 ({count})} other {En attente d'envoi}}.",
   "approval.delivery.notice": "Accept\xE9 signifie que le service d'envoi a pris la demande en charge, pas que l'email a \xE9t\xE9 re\xE7u.",
   "approval.content.image-label": "#### Visuel {index, number}",
@@ -45689,9 +45769,9 @@ var FR_MESSAGES4 = {
   "approval.meetup.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'\xE9v\xE9nement reste en brouillon.} other {}}",
   "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
   "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi automatique des slides aux participants Meetup} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi des slides aux participants Meetup apr\xE8s approbation} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
   "follow-up.stopped": "Suivi suspendu.",
-  "follow-up.waiting": "Les emails de remerciement ne sont pas encore pr\xEAts.",
+  "follow-up.waiting": "Les emails de remerciement sont bloqu\xE9s avant approbation. Consultez les t\xE2ches \xE0 corriger dans le diagnostic du ticket.",
   "follow-up.emails-complete": "Aucun email de remerciement en attente.",
   "approval.parameters.instructions": "Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonn\xE9es priv\xE9es restent dans le r\xE9f\xE9rentiel.",
   "approval.details.summary": "D\xE9tail des emails",
@@ -46228,6 +46308,40 @@ var ApprovalDetailsPreview = class {
   }
 };
 
+// packages/adapter/journey/github-organizer-approval/src/meetup-slides-approval-presenter.ts
+var MeetupSlidesApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const details = this.messages.t("approval.slides.details", {
+      date: record.eventDate,
+      ...record.slides
+    });
+    const controls = record.decision ? this.messages.t("approval.slides.final", record.decision) : this.messages.t("approval.slides.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [details, controls].join("\n\n");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/meetup-slides-approval-schema.ts
+var MeetupSlidesApprovalSchema = class {
+  constructor(schema, urls) {
+    this.schema = schema;
+    this.urls = urls;
+  }
+  schema;
+  urls;
+  validate(value) {
+    const slides = value.slides;
+    if (value.publication !== void 0 || value.content !== void 0 || value.social !== void 0 || value.details !== void 0 || value.recipientCount !== void 0 || !this.schema.object(slides) || typeof slides.eventUrl !== "string" || MeetupEventUrl.parse(slides.eventUrl)?.value !== slides.eventUrl || typeof slides.pdfUrl !== "string" || !slides.pdfUrl.startsWith("https://drive.google.com/file/d/") || this.urls.normalize(slides.pdfUrl) !== slides.pdfUrl || slides.language !== "fr" && slides.language !== "en")
+      throw new Error("Invalid Meetup slides approval details");
+  }
+};
+
 // packages/adapter/journey/github-organizer-approval/src/approval-request-schema.ts
 var ApprovalRequestSchema = class {
   constructor(collaborators) {
@@ -46237,6 +46351,12 @@ var ApprovalRequestSchema = class {
   validate(value) {
     if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
       throw new Error("Invalid approval request");
+    if (value.kind === "meetup-slides") {
+      this.collaborators.slides.validate(value);
+      return;
+    }
+    if (value.slides !== void 0)
+      throw new Error("Invalid slides approval kind");
     if (value.kind === "social-publication") {
       this.social(value);
       return;
@@ -46244,9 +46364,7 @@ var ApprovalRequestSchema = class {
     if (value.social !== void 0)
       throw new Error("Invalid social publication approval kind");
     if (value.kind === "content-review") {
-      if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
-        throw new Error("Invalid content approval fields");
-      this.collaborators.contentApprovalSchema.validate(value.content);
+      this.content(value);
       return;
     }
     if (value.content !== void 0)
@@ -46258,6 +46376,11 @@ var ApprovalRequestSchema = class {
     if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !this.collaborators.approvalSchema.count(value.recipientCount))
       throw new Error("Invalid approval request");
     this.collaborators.emailApprovalDetailsSchema.validate(value.details);
+  }
+  content(value) {
+    if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
+      throw new Error("Invalid content approval fields");
+    this.collaborators.contentApprovalSchema.validate(value.content);
   }
   social(value) {
     if (value.content !== void 0 || value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
@@ -46537,6 +46660,10 @@ var ApprovalRequestSchemaComposition = class {
   create(approvalSchema, meetupApprovalDetailsSchema, emailApprovalDetailsSchema) {
     const values = new ContentValueSchema(new PublicAssetUrl());
     return new ApprovalRequestSchema({
+      slides: new MeetupSlidesApprovalSchema(
+        approvalSchema,
+        new PresentationFileUrl()
+      ),
       approvalSchema,
       meetupApprovalDetailsSchema,
       emailApprovalDetailsSchema,
@@ -47057,6 +47184,29 @@ var GithubApprovalClient = class {
       throw new Error("Approval comment changed before persistence");
     await this.update(commentId, after);
   }
+  async edits(comments) {
+    const edits = [];
+    for (let start = 0; start < comments.length; start += 100) {
+      const batch = comments.slice(start, start + 100);
+      const ids = batch.map((comment) => {
+        if (!comment.node_id)
+          throw new Error("Missing approval comment node identity");
+        return comment.node_id;
+      });
+      const response = await this.api.graphql(
+        `query ApprovalCommentEditors($ids: [ID!]!) {
+					nodes(ids: $ids) { ... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					} }
+				}`,
+        { ids }
+      );
+      edits.push(
+        ...this.collaborators.githubApprovalResponse.edits(response, batch)
+      );
+    }
+    return edits;
+  }
   async edit(comment) {
     if (!comment.node_id)
       throw new Error("Missing approval comment node identity");
@@ -47123,10 +47273,14 @@ var GithubApprovalRepository = class {
   presenter;
   async states() {
     const states = [];
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
-        continue;
-      const record = await this.trusted.read(comment);
+    const comments = (await this.client.list()).filter(
+      (comment) => comment.user?.login.toLowerCase() === this.authorLogin.toLowerCase()
+    );
+    const edits = await this.client.edits(comments);
+    for (const [index, comment] of comments.entries()) {
+      const current = edits[index];
+      if (!current) throw new Error("Missing verified approval editor");
+      const record = await this.trusted.read(comment, current);
       if (!record) continue;
       if (states.some(
         (state) => this.collaborators.approvalRequestPolicy.scope(state.record) === this.collaborators.approvalRequestPolicy.scope(record)
@@ -47185,6 +47339,14 @@ var GithubApprovalResponse = class {
     if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || typeof value.data.permission !== "string")
       throw new Error("Invalid approval permission response");
     return value.data.permission;
+  }
+  edits(value, comments) {
+    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.nodes) || value.nodes.length !== comments.length)
+      throw new Error("Invalid approval editor batch response");
+    const nodes = value.nodes;
+    return comments.map(
+      (comment, index) => this.edit({ node: nodes[index] }, comment)
+    );
   }
   edit(value, comment) {
     const node = this.snapshot(value, comment);
@@ -47541,8 +47703,7 @@ var TrustedApprovalState = class {
   collaborators;
   client;
   authorLogin;
-  async read(comment) {
-    const current = await this.client.edit(comment);
+  async read(comment, current) {
     if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
       return this.record(current.body);
     for (const edit of await this.client.history(comment)) {
@@ -47604,6 +47765,7 @@ var GithubOrganizerApprovalComposition = class {
     return new ApprovalPresenter(this.approvalCommentCodec(), {
       "email-introduction": email,
       "email-thanks": email,
+      "meetup-slides": new MeetupSlidesApprovalPresenter(messages5),
       "meetup-publication": this.meetupApprovalPresenter(messages5),
       "community-publication": new CommunityApprovalPresenter(messages5),
       "content-review": this.contentApprovalPresenter(messages5),
@@ -48287,6 +48449,20 @@ var EMAIL_GUIDANCE = [
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   ...AUTHENTICATION_GUIDANCE,
+  [
+    "publication.meetup.slides-approval-rejected",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-approval-rejected"
+    ]
+  ],
+  [
+    "publication.meetup.slides-approval-unavailable",
+    [
+      "Automated slide sharing",
+      "comment.guidance.meetup.slides-approval-unavailable"
+    ]
+  ],
   [
     "publication.website.access",
     ["Website", "comment.guidance.website.access"]
@@ -49442,6 +49618,8 @@ var FR_MESSAGES5 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.guidance.meetup.slides-approval-rejected": "Slides delivery was rejected. Review the PDF before requesting approval again.",
+  "comment.guidance.meetup.slides-approval-unavailable": "Slides delivery approval could not be verified. Check GitHub access and retry.",
   "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
   "comment.guidance.meetup.uncertain": 'Automation could not confirm the changes on Meetup. [Open the Meetup event]({eventUrl}) and compare its title, description and image with the content approved here. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the warning returns, ask a maintainer to investigate the run.',
   "comment.guidance.meetup.uncertain-missing-link": 'Automation could not confirm the changes on Meetup. No valid Meetup event link was found in the issue. [Rerun synchronization]({workflowUrl}) using the "Run workflow" button. If the link remains missing, ask a maintainer to investigate the run; do not recreate the event.',
@@ -49523,6 +49701,8 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.guidance.meetup.slides-approval-rejected": "L'envoi des slides a \xE9t\xE9 refus\xE9. R\xE9visez le PDF avant de demander une nouvelle approbation.",
+  "comment.guidance.meetup.slides-approval-unavailable": "Impossible de v\xE9rifier l'approbation d'envoi des slides. V\xE9rifiez l'acc\xE8s GitHub et relancez.",
   "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
   "comment.guidance.meetup.uncertain": `La synchronisation n'a pas pu confirmer les changements sur Meetup. [Ouvrez l'\xE9v\xE9nement sur Meetup]({eventUrl}) et comparez son titre, sa description et son image aux contenus approuv\xE9s ici. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si l'alerte revient, demandez \xE0 un mainteneur d'examiner le run.`,
   "comment.guidance.meetup.uncertain-missing-link": `La synchronisation n'a pas pu confirmer les changements sur Meetup. Aucun lien d'\xE9v\xE9nement Meetup valide n'a \xE9t\xE9 trouv\xE9 dans l'issue. [Relancez la synchronisation]({workflowUrl}) avec le bouton "Run workflow". Si le lien reste absent, demandez \xE0 un mainteneur d'examiner le run ; ne recr\xE9ez pas l'\xE9v\xE9nement.`,
@@ -49886,6 +50066,8 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
       const messages5 = this.collaborators.createAttentionMessages(locale);
       if (description === messages5.t("action.content-approval-pending"))
         return "content-approval";
+      if (description === messages5.t("action.slides-approval-pending"))
+        return "slides-approval";
       if (description === messages5.t("action.social-approval-pending"))
         return "social-approval";
       if (description === messages5.t("action.approval-pending"))
@@ -49968,6 +50150,8 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "slides-approval")
+      return this.messages.t("action.slides-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
       return this.messages.t("action.content-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
@@ -50350,6 +50534,7 @@ var GithubAttentionResponse = class {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "action.slides-approval-pending": "Approve sending the PDF to Meetup attendees.",
   "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -50428,6 +50613,7 @@ var messages = {
 
 // packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "action.slides-approval-pending": "Approuver l'envoi du PDF aux participants Meetup.",
   "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
@@ -51173,6 +51359,7 @@ var GithubSocialDeliveryJournalComposition = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
 var messages3 = {
+  "action.slides-approval-pending": "Approve sending the PDF to Meetup attendees.",
   "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
@@ -51251,6 +51438,7 @@ var messages3 = {
 
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
 var messages4 = {
+  "action.slides-approval-pending": "Approuver l'envoi du PDF aux participants Meetup.",
   "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
   "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
   "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
@@ -51347,6 +51535,7 @@ var SlackAttentionMessages = class extends MessageLocalizer {
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
 var EN_MESSAGES6 = {
+  "request.meetup-slides": "Slides delivery needs approval \xB7 {date} \xB7 <{url}|Review the PDF and approve sending>",
   "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
   "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
   "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
@@ -51356,6 +51545,7 @@ var EN_MESSAGES6 = {
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
 var FR_MESSAGES6 = {
+  "request.meetup-slides": "Envoi des slides \xE0 approuver \xB7 {date} \xB7 <{url}|V\xE9rifier le PDF et approuver l'envoi>",
   "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
   "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
   "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
@@ -51671,6 +51861,8 @@ var SlackAttentionPresenter = class {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "slides-approval")
+      return this.messages.t("action.slides-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
       return this.messages.t("action.content-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "social-approval")
@@ -51746,6 +51938,20 @@ var SlackEmailApprovalPresenter = class {
   }
 };
 
+// packages/adapter/communication/slack-notification-gateway/src/slack-slides-approval-presenter.ts
+var SlackSlidesApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.meetup-slides", {
+      date: request2.eventDate,
+      url: request2.approvalUrl
+    });
+  }
+};
+
 // packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
 var SlackMeetupApprovalPresenter = class {
   constructor(messages5) {
@@ -51812,6 +52018,7 @@ var SlackNotificationGatewayComposition = class {
     const messages5 = this.slackApprovalMessages(locale);
     return new SlackApprovalPresenter({
       "email-introduction": new SlackEmailApprovalPresenter(messages5),
+      "meetup-slides": new SlackSlidesApprovalPresenter(messages5),
       "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
       "community-publication": new SlackCommunityApprovalPresenter(messages5),
       "content-review": new SlackContentApprovalPresenter(messages5),

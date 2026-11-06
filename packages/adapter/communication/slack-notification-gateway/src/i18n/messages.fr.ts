@@ -1,4 +1,6 @@
 export const FR_MESSAGES = {
+	"request.meetup-slides":
+		"Envoi des slides à approuver · {date} · <{url}|Vérifier le PDF et approuver l'envoi>",
 	"request.social-publication":
 		"Publication sur {target} · {date}\nVérifiez et validez la publication : {url}",
 	"request.community-publication":

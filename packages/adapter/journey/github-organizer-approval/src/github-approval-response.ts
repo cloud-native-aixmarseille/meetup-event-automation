@@ -60,6 +60,22 @@ export class GithubApprovalResponse {
 		return value.data.permission;
 	}
 
+	edits(
+		value: unknown,
+		comments: readonly ApprovalComment[],
+	): readonly ApprovalCommentEdit[] {
+		if (
+			!this.collaborators.approvalSchema.object(value) ||
+			!Array.isArray(value.nodes) ||
+			value.nodes.length !== comments.length
+		)
+			throw new Error("Invalid approval editor batch response");
+		const nodes = value.nodes;
+		return comments.map((comment, index) =>
+			this.edit({ node: nodes[index] }, comment),
+		);
+	}
+
 	edit(value: unknown, comment: ApprovalComment): ApprovalCommentEdit {
 		const node = this.snapshot(value, comment);
 		if (!this.nullableText(node.lastEditedAt) || !this.actor(node.editor))

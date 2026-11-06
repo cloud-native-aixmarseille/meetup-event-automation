@@ -1,4 +1,6 @@
 export const messages = {
+	"action.slides-approval-pending":
+		"Approve sending the PDF to Meetup attendees.",
 	"failure.publication.meetup.authentication-configuration":
 		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
 	"failure.publication.meetup.authentication-captcha-required":

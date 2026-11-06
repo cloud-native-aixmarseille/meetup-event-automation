@@ -143,6 +143,8 @@ export class AttentionStageEvaluation {
 				"publication.community.unpublished",
 				"publication.meetup.unpublished",
 				"publication.community.approval-pending",
+				"publication.meetup.slides-approval-pending",
+				"publication.meetup.slides-approval-rejected",
 				"publication.meetup.approval-pending",
 				"publication.community.approval-rejected",
 				"publication.meetup.approval-rejected",

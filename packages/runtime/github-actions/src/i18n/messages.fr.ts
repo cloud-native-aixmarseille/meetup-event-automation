@@ -41,6 +41,12 @@ export const FR_MESSAGES = {
 		"Mettre à jour les publications sur les réseaux",
 	"report.social.empty": "publications_sociales=0",
 	"report.social.result": "cible_sociale={target} statut={status}",
+	"diagnostic.publication.meetup.slides-approval-pending":
+		"Vérifiez le PDF public et approuvez l'envoi aux participants Meetup.",
+	"diagnostic.publication.meetup.slides-approval-rejected":
+		"L'envoi des slides a été refusé. Révisez le PDF avant de demander une nouvelle approbation.",
+	"diagnostic.publication.meetup.slides-approval-unavailable":
+		"Impossible de vérifier l'approbation d'envoi des slides. Vérifiez l'accès GitHub et relancez.",
 	"diagnostic.publication.meetup.slides-source":
 		"Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
 	"diagnostic.publication.meetup.slides-link":

@@ -67,6 +67,14 @@ stable recipient IDs and idempotency keys across source edits. Approval never
 clears a delivery reservation. Gateway acceptance records request acceptance,
 not successful email delivery.
 
+### Attendee slides delivery
+
+Sending the public PDF through Meetup requires a separate organizer decision
+bound to the event URL, date, PDF URL and message language. Recheck approval at
+the send boundary. Accepted ledger entries restore completion without another
+send; approval cannot clear pending or uncertain reservations. The follow-up
+view keeps slide sharing pending until the issue records completion.
+
 ### Notifications and other approval kinds
 
 Reserve introduction approval alerts before posting. Store their Slack message
@@ -91,6 +99,11 @@ compare-and-set writes; source rereads and workflow locks reduce, but cannot
 eliminate, a final concurrent human edit.
 
 ## Decision history
+
+- 2026-11-06: Attendee slides delivery requires its own verified approval,
+  replacing unconditional dispatch once the public PDF was available. The
+  follow-up projection no longer omits slide sharing from pending work. This
+  preserves the delivery ledger while separating approval from completion.
 
 - 2026-11-02: Preparation approval is split into host and speaker types,
   superseding the single combined introduction batch. Public date/link parameters

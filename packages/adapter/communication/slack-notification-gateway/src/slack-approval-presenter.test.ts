@@ -6,6 +6,7 @@ import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 import { SlackCommunityApprovalPresenter } from "./slack-community-approval-presenter.js";
 import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import { SlackEmailApprovalPresenter } from "./slack-email-approval-presenter.js";
+import { SlackSlidesApprovalPresenter } from "./slack-slides-approval-presenter.js";
 import { SlackMeetupApprovalPresenter } from "./slack-meetup-approval-presenter.js";
 
 const facts = {
@@ -37,6 +38,11 @@ describe("Slack approval presentation", () => {
 					new SlackNotificationGatewayComposition().slackApprovalMessages("en"),
 				),
 				"community-publication": new SlackCommunityApprovalPresenter(
+					new SlackNotificationGatewayComposition().slackApprovalMessages(
+						locale,
+					),
+				),
+				"meetup-slides": new SlackSlidesApprovalPresenter(
 					new SlackNotificationGatewayComposition().slackApprovalMessages(
 						locale,
 					),

@@ -1,4 +1,9 @@
 export const STAGE_MESSAGES_FR = {
+	"comment.guidance.meetup.slides-approval-rejected":
+		"L'envoi des slides a été refusé. Révisez le PDF avant de demander une nouvelle approbation.",
+	"comment.guidance.meetup.slides-approval-unavailable":
+		"Impossible de vérifier l'approbation d'envoi des slides. Vérifiez l'accès GitHub et relancez.",
+
 	"comment.guidance.communication.email-parameters-invalid":
 		"Corrigez les paramètres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des paramètres inchangés. Puis approuvez l'envoi.",
 	"comment.guidance.meetup.uncertain":

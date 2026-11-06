@@ -23,7 +23,7 @@ export interface ApprovalContentEdit {
 export interface GithubApprovalApi {
 	graphql<Response>(
 		query: string,
-		variables: { id: string; after?: string },
+		variables: { id: string; after?: string } | { ids: readonly string[] },
 	): Promise<Response>;
 	readonly rest: {
 		readonly issues: {

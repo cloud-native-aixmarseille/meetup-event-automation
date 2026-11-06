@@ -39,6 +39,12 @@ export const EN_MESSAGES = {
 	"action.communication.prepare-reminders": "Prepare social reminders",
 	"report.social.empty": "social_publications=0",
 	"report.social.result": "social_target={target} status={status}",
+	"diagnostic.publication.meetup.slides-approval-pending":
+		"Review the public PDF and approve sending to Meetup attendees.",
+	"diagnostic.publication.meetup.slides-approval-rejected":
+		"Slides delivery was rejected. Review the PDF before requesting approval again.",
+	"diagnostic.publication.meetup.slides-approval-unavailable":
+		"Slides delivery approval could not be verified. Check GitHub access and retry.",
 	"diagnostic.publication.meetup.slides-source":
 		"Fix the issue errors before sending slides to Meetup attendees.",
 	"diagnostic.publication.meetup.slides-link":

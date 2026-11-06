@@ -507,7 +507,8 @@ the API; it is not a second meetup role. Organizer notifications receive their
 explicit destination through `slack-organizer-channel-id`. Public Slack
 announcement tasks are manual and do not share this routing.
 
-The journey's `OrganizerApproval` port gates email batches, content review, and separate Meetup and OCGroups publication.
+The journey's `OrganizerApproval` port gates email batches, attendee slides
+delivery, content review, and separate Meetup and OCGroups publication.
 Journey policies own request eligibility, matching and revision fingerprints.
 They also own whether a request can be reviewed, the non-authorizing follow-up
 placeholder and post-event progress. Rendering and checkbox parsing consult the
@@ -518,8 +519,12 @@ receives its identity source explicitly. Persistence, decision finalization and
 notification delivery are separate collaborators. Follow-up persistence and
 attention synchronization expose their own capabilities.
 The GitHub adapter owns trusted request comments, GitHub GraphQL editor/history
-verification, and current write-permission checks. Its comment presenter delegates
-to explicitly injected email, content, Meetup, and OCGroups renderers through a complete kind map.
+verification, and current write-permission checks. It reads editor snapshots in
+batches of at most 100 comments and verifies each ID and body against the REST
+snapshot. Missing or changed nodes fail closed; human edits still require trusted
+bot history. Decision finalization separately rechecks the current editor.
+Its comment presenter delegates to explicitly injected email, slides-delivery,
+content, Meetup, and OCGroups renderers through a complete kind map.
 The outer presenter encodes metadata once; the kind-specific renderers format
 their content. Slack uses its own injected renderer map and catalogs.
 A decision parser compares controls against exact localized requests rendered

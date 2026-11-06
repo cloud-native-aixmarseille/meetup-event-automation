@@ -117,7 +117,6 @@ export class AttentionEventFacts {
 	]);
 	private followUp(event: MeetupEvent): string[] {
 		return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
-			if (name === "Share slides to meetup") return [];
 			const completed =
 				index < 2
 					? this.collaborators.communicationChecklist.status(

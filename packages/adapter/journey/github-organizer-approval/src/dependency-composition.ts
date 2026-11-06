@@ -20,6 +20,7 @@ import {
 	ApprovalNotifications,
 	type ApprovalNotificationsArguments,
 } from "./approval-notifications.js";
+import { MeetupSlidesApprovalPresenter } from "./meetup-slides-approval-presenter.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
 import { ApprovalPresenterFactory } from "./approval-presenter-factory.js";
 import {
@@ -138,6 +139,7 @@ export class GithubOrganizerApprovalComposition {
 		return new ApprovalPresenter(this.approvalCommentCodec(), {
 			"email-introduction": email,
 			"email-thanks": email,
+			"meetup-slides": new MeetupSlidesApprovalPresenter(messages),
 			"meetup-publication": this.meetupApprovalPresenter(messages),
 			"community-publication": new CommunityApprovalPresenter(messages),
 			"content-review": this.contentApprovalPresenter(messages),

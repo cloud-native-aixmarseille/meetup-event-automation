@@ -142,35 +142,60 @@ export function githubClients(
 	const minimized = new Set<string>();
 	const graphql = vi
 		.fn()
-		.mockImplementation(async (query: string, variables: { id: string }) => {
-			if (query.includes("mutation ResolveComment")) {
-				minimized.add(variables.id);
-				return { minimizeComment: { minimizedComment: { isMinimized: true } } };
-			}
-			if (query.includes("mutation ReopenComment")) {
-				minimized.delete(variables.id);
+		.mockImplementation(
+			async (
+				query: string,
+				variables: { id: string; ids?: readonly string[] },
+			) => {
+				if (variables.ids)
+					return {
+						nodes: variables.ids.map((id) => {
+							const comment = comments.find(({ node_id }) => node_id === id);
+							return comment
+								? {
+										id,
+										body: comment.body,
+										editor: comment.editor ?? null,
+										lastEditedAt: comment.updated_at ?? null,
+									}
+								: null;
+						}),
+					};
+				if (query.includes("mutation ResolveComment")) {
+					minimized.add(variables.id);
+					return {
+						minimizeComment: { minimizedComment: { isMinimized: true } },
+					};
+				}
+				if (query.includes("mutation ReopenComment")) {
+					minimized.delete(variables.id);
+					return {
+						unminimizeComment: { unminimizedComment: { isMinimized: false } },
+					};
+				}
+				const comment = comments.find(
+					({ node_id }) => node_id === variables.id,
+				);
 				return {
-					unminimizeComment: { unminimizedComment: { isMinimized: false } },
+					node: comment
+						? {
+								id: comment.node_id,
+								body: comment.body,
+								isMinimized: minimized.has(variables.id),
+								minimizedReason: minimized.has(variables.id)
+									? "resolved"
+									: null,
+								editor: comment.editor ?? null,
+								lastEditedAt: comment.updated_at ?? null,
+								userContentEdits: {
+									nodes: history.get(variables.id) ?? [],
+									pageInfo: { hasNextPage: false, endCursor: null },
+								},
+							}
+						: null,
 				};
-			}
-			const comment = comments.find(({ node_id }) => node_id === variables.id);
-			return {
-				node: comment
-					? {
-							id: comment.node_id,
-							body: comment.body,
-							isMinimized: minimized.has(variables.id),
-							minimizedReason: minimized.has(variables.id) ? "resolved" : null,
-							editor: comment.editor ?? null,
-							lastEditedAt: comment.updated_at ?? null,
-							userContentEdits: {
-								nodes: history.get(variables.id) ?? [],
-								pageInfo: { hasNextPage: false, endCursor: null },
-							},
-						}
-					: null,
-			};
-		});
+			},
+		);
 	const github = {
 		graphql,
 		rest: {

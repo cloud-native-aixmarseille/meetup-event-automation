@@ -16,6 +16,7 @@ export type AttentionChecklistAction =
 	| "email-approval"
 	| "meetup-approval"
 	| "community-approval"
+	| "slides-approval"
 	| "social-approval"
 	| "delivery-recovery";
 /** Public tasks decoded from the verified consolidated checklist. */

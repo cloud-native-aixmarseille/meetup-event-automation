@@ -10,6 +10,34 @@ import { JourneyPolicyComposition } from "../policy-composition.js";
 import { AttentionEventFacts } from "./attention-event-facts.js";
 
 describe("public attention event facts", () => {
+	it.each([undefined, false, true])(
+		"only reports slides completed when the task is checked: %s",
+		(completed) => {
+			// Arrange
+			const event = createTestEvent({
+				operationalChecklists: {
+					communication: [],
+					slidesAndContent: [],
+					postEvent:
+						completed === undefined
+							? []
+							: [{ name: "Share slides to meetup", completed }],
+				},
+			});
+			const policy = new JourneyPolicyComposition().attentionEventFacts(
+				createPublicationUrlPolicyEngine(),
+			);
+
+			// Act
+			const result = policy.create({ event, diagnostics: [] });
+
+			// Assert
+			expect(result.followUpPending.includes("share-slides")).toBe(
+				completed !== true,
+			);
+		},
+	);
+
 	it("uses the CNCF publication task instead of a missing-data reminder for an absent link", () => {
 		// Arrange
 		const event = createTestEvent({
@@ -102,6 +130,7 @@ describe("public attention event facts", () => {
 
 		// Assert
 		expect(result.followUpPending).toEqual([
+			"share-slides",
 			"import-attendance",
 			"share-social",
 		]);

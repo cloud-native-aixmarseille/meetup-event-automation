@@ -17,11 +17,14 @@ export interface TrustedApprovalStateCollaborators {
 export class TrustedApprovalState {
 	constructor(
 		private readonly collaborators: TrustedApprovalStateCollaborators,
-		private readonly client: GithubApprovalClient,
+		private readonly client: Pick<GithubApprovalClient, "history">,
 		private readonly authorLogin: string,
 	) {}
-	async read(comment: ApprovalComment): Promise<StoredApproval | undefined> {
-		const current = await this.client.edit(comment);
+
+	async read(
+		comment: ApprovalComment,
+		current: ApprovalCommentEdit,
+	): Promise<StoredApproval | undefined> {
 		if (
 			this.isAuthor(current.editor) ||
 			(!current.editor && current.lastEditedAt === null)

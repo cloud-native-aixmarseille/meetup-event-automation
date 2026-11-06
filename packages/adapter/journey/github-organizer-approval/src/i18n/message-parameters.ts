@@ -1,4 +1,12 @@
 export interface MessageParameters {
+	"approval.slides.details": {
+		date: string;
+		eventUrl: string;
+		pdfUrl: string;
+		language: string;
+	};
+	"approval.slides.request": { approveMark: string; rejectMark: string };
+	"approval.slides.final": { status: string; actor: string; decidedAt: string };
 	"approval.delivery.status": { kind: string; status: string; count: number };
 	"approval.delivery.notice": Record<string, never>;
 	"approval.parameters.instructions": Record<string, never>;

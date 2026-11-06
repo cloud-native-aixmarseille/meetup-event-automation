@@ -17,6 +17,7 @@ describe("approval rendering composition", () => {
 			const record = createStoredApproval(input);
 			const codec = { marker: vi.fn().mockReturnValue("metadata") };
 			const renderers = {
+				"meetup-slides": { issue: vi.fn().mockReturnValue("slides") },
 				"social-publication": { issue: vi.fn().mockReturnValue("social") },
 				"email-introduction": {
 					issue: vi.fn().mockReturnValue("introduction"),
@@ -31,6 +32,7 @@ describe("approval rendering composition", () => {
 			const presenter = new ApprovalPresenter(codec, renderers);
 			const decision = { status: "pending" as const };
 			const expected = {
+				"meetup-slides": "slides",
 				"social-publication": "social",
 				"email-introduction": "introduction",
 				"email-thanks": "thanks",

@@ -7,6 +7,8 @@ import {
 	PublicAssetUrl,
 	PublicationDomainComposition,
 } from "@meetup-automation/publication";
+import { MeetupSlidesApprovalSchema } from "./meetup-slides-approval-schema.js";
+import { PresentationFileUrl } from "@meetup-automation/publication";
 import { ApprovalRequestSchema } from "./approval-request-schema.js";
 import { ApprovalSchema } from "./approval-schema.js";
 import { CommunityApprovalDetailsSchema } from "./community-approval-details-schema.js";
@@ -46,6 +48,10 @@ export class ApprovalRequestSchemaComposition {
 	): ApprovalRequestSchema {
 		const values = new ContentValueSchema(new PublicAssetUrl());
 		return new ApprovalRequestSchema({
+			slides: new MeetupSlidesApprovalSchema(
+				approvalSchema,
+				new PresentationFileUrl(),
+			),
 			approvalSchema,
 			meetupApprovalDetailsSchema,
 			emailApprovalDetailsSchema,

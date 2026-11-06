@@ -34,7 +34,9 @@ export class AttentionTaskSelection {
 						view.state.commentId &&
 						(episode.condition.code === "follow-up" ||
 							(episode.condition.code === "approval-pending" &&
-								this.actionFor(episode) !== "social-approval"))
+								!["social-approval", "slides-approval"].includes(
+									this.actionFor(episode) ?? "",
+								)))
 					) &&
 					!(
 						episode.status !== "unknown" &&
@@ -58,6 +60,8 @@ export class AttentionTaskSelection {
 		if (episode.condition.code === "delivery-recovery")
 			return "delivery-recovery";
 		if (episode.condition.code !== "approval-pending") return undefined;
+		if (episode.condition.resource.startsWith("meetup-slides:"))
+			return "slides-approval";
 		if (episode.condition.resource.startsWith("content-review:"))
 			return "content-approval";
 		if (episode.condition.resource.startsWith("social-publication:"))

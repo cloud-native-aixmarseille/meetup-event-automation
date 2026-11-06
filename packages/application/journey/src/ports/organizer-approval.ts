@@ -1,6 +1,7 @@
 export type OrganizerApprovalKind =
 	| "email-introduction"
 	| "email-thanks"
+	| "meetup-slides"
 	| "meetup-publication"
 	| "community-publication"
 	| "social-publication"
@@ -51,6 +52,20 @@ export type OrganizerApprovalRequest = {
 	readonly requestedAt: string;
 } & (
 	| {
+			readonly kind: "meetup-slides";
+			readonly slides: {
+				readonly eventUrl: string;
+				readonly pdfUrl: string;
+				readonly language: string;
+			};
+			readonly publication?: never;
+			readonly recipientCount?: never;
+			readonly details?: never;
+			readonly content?: never;
+			readonly social?: never;
+	  }
+	| {
+			readonly slides?: never;
 			readonly kind: "email-introduction" | "email-thanks";
 			readonly recipientCount: number;
 			readonly details?: OrganizerApprovalDetails;
@@ -59,6 +74,7 @@ export type OrganizerApprovalRequest = {
 			readonly social?: never;
 	  }
 	| {
+			readonly slides?: never;
 			readonly kind: "meetup-publication";
 			readonly publication: EventPublicationApprovalDetails;
 			readonly recipientCount?: never;
@@ -67,6 +83,7 @@ export type OrganizerApprovalRequest = {
 			readonly social?: never;
 	  }
 	| {
+			readonly slides?: never;
 			readonly kind: "community-publication";
 			readonly publication: EventPublicationApprovalDetails;
 			readonly recipientCount?: never;
@@ -75,6 +92,7 @@ export type OrganizerApprovalRequest = {
 			readonly social?: never;
 	  }
 	| {
+			readonly slides?: never;
 			readonly kind: "content-review";
 			readonly content: ContentApprovalDetails;
 			readonly publication?: never;
@@ -83,6 +101,7 @@ export type OrganizerApprovalRequest = {
 			readonly social?: never;
 	  }
 	| {
+			readonly slides?: never;
 			readonly kind: "social-publication";
 			readonly social: SocialPublicationApprovalDetails;
 			readonly content?: never;

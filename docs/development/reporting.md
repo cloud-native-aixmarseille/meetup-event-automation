@@ -28,6 +28,9 @@ Return `ActionReportData` on every normal path, including skipped or blocked wor
 
 - Select short technical facts: mode, state, counts, persistence and affected files.
   Use the runtime catalog's `key=value` messages.
+- Unexpected GraphQL failures retain only allowlisted error categories such as
+  `RATE_LIMITED` or `FORBIDDEN`, alongside the redacted exception and bundle
+  locations. Provider messages, query paths and arbitrary error types stay private.
 - Retain redacted diagnostic codes, severity, field and `fixApplied` in consumed
   JSON outputs. Never include provider responses, credentials or contact records.
 - `ActionReport` deduplicates facts and renders codes with safe field metadata in

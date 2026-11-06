@@ -4,6 +4,10 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"request.meetup-slides": {
+		date: "2099-06-08",
+		url: "https://github.com/example/events/issues/1",
+	},
 	"request.social-publication": {
 		date: "2099-06-08",
 		target: "announcement",

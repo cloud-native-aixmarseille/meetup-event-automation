@@ -19,6 +19,7 @@ import {
 	type OrganizerApproval,
 	PublicationDestinationComposition,
 	ReconcileMeetupSlidesDelivery,
+	JourneyPolicyComposition,
 	SelectMeetupTopics,
 } from "@meetup-automation/journey";
 import {
@@ -93,6 +94,11 @@ export class PublicationAdapterComposition {
 		return new ReconcileMeetupSlidesDelivery(
 			{
 				...source,
+				approval: new JourneyPolicyComposition().meetupSlidesApproval(
+					input.approval,
+					input.clock,
+					input.locale,
+				),
 				clock: input.clock,
 				concurrency: new EventDomainComposition().eventDocumentConcurrency(),
 				postEvent: new CommunicationDomainComposition().postEventPolicy(),

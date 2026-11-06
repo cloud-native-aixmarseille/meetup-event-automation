@@ -55,7 +55,10 @@ describe("trusted approval state", () => {
 		);
 
 		// Act
-		const trusted = await state.read(f.comments[0]);
+		const trusted = await state.read(
+			f.comments[0],
+			await f.client.edit(f.comments[0]),
+		);
 
 		// Assert
 		expect(trusted?.decision).toBeUndefined();
@@ -92,7 +95,10 @@ describe("trusted approval state", () => {
 		);
 
 		// Act
-		const trusted = await state.read(f.comments[0]);
+		const trusted = await state.read(
+			f.comments[0],
+			await f.client.edit(f.comments[0]),
+		);
 
 		// Assert
 		expect(trusted).toMatchObject(request);
@@ -142,7 +148,10 @@ describe("trusted approval state", () => {
 			);
 
 			// Act
-			const operation = state.read(f.comments[0]);
+			const operation = state.read(
+				f.comments[0],
+				await f.client.edit(f.comments[0]),
+			);
 
 			// Assert
 			await expect(operation).rejects.toThrow();

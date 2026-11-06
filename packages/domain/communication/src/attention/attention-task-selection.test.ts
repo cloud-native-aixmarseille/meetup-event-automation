@@ -77,6 +77,22 @@ describe("organizer attention task selection", () => {
 			expect(result.checklist).toEqual([concrete]);
 		},
 	);
+	it("retains the separate slides approval link in the shared follow-up view", () => {
+		// Arrange
+		const pending = episode("approval-pending", "meetup-slides:revision");
+		const selection = new AttentionTaskSelection();
+
+		// Act
+		const result = selection.select(
+			{ state: { ...state, commentId: 200 }, conditions: [pending] },
+			{ entries: [] },
+		);
+
+		// Assert
+		expect(result.details).toEqual([pending]);
+		expect(selection.actionFor(pending)).toBe("slides-approval");
+	});
+
 	it("retains unrelated confirmations and technical failures with concrete tasks", () => {
 		// Arrange
 		const conditions = [
@@ -100,6 +116,7 @@ describe("organizer attention task selection", () => {
 		["approval-pending", "content-review:revision", "content-approval"],
 		["approval-pending", "meetup-publication:revision", "meetup-approval"],
 		["approval-pending", "social-publication:revision", "social-approval"],
+		["approval-pending", "meetup-slides:revision", "slides-approval"],
 		[
 			"approval-pending",
 			"community-publication:revision",

@@ -25,6 +25,10 @@ import type {
 import type { EventPublicationResults } from "./event-publication-results.js";
 
 export interface SlidesDeliveryDependencies {
+	readonly approval: Pick<
+		import("./meetup-slides-approval.js").MeetupSlidesApproval,
+		"request"
+	>;
 	readonly repository: EventRepository;
 	readonly codec: EventDocumentCodec;
 	readonly clock: EventClock;
@@ -89,7 +93,36 @@ export class ReconcileMeetupSlidesDelivery {
 		);
 		if (!pdfUrl?.startsWith("https://drive.google.com/file/d/"))
 			return this.blocked("pdf-pending");
+		const approval = await this.approval(event, eventUrl, pdfUrl);
+		if (approval) return approval;
 		return this.send(document, event, eventUrl, pdfUrl, deliveryKey);
+	}
+
+	private async approval(
+		event: MeetupEvent,
+		eventUrl: string,
+		pdfUrl: string,
+	): Promise<EventPublicationResult | undefined> {
+		try {
+			const result = await this.dependencies.approval.request(
+				event.date,
+				eventUrl,
+				pdfUrl,
+			);
+			if (result.status !== "approved")
+				return this.dependencies.results.result(
+					"blocked",
+					result.status === "rejected"
+						? "slides-approval-rejected"
+						: "slides-approval-pending",
+				);
+		} catch {
+			return this.dependencies.results.result(
+				"blocked",
+				"slides-approval-unavailable",
+			);
+		}
+		return undefined;
 	}
 
 	private async send(
@@ -100,9 +133,13 @@ export class ReconcileMeetupSlidesDelivery {
 		deliveryKey: string,
 	): Promise<EventPublicationResult> {
 		let reserved = false;
+		let approvalBlocked: EventPublicationResult | undefined;
 		try {
 			await this.dependencies.gateway.sendSlides(eventUrl, pdfUrl, async () => {
 				await this.ensureCurrent(document);
+				approvalBlocked = await this.approval(event, eventUrl, pdfUrl);
+				if (approvalBlocked)
+					throw new Error("Slides approval is no longer valid");
 				const reservation = await this.dependencies.ledger.reservePending({
 					idempotencyKey: deliveryKey,
 					intentId: deliveryKey,
@@ -124,6 +161,7 @@ export class ReconcileMeetupSlidesDelivery {
 				}
 			});
 		} catch (error) {
+			if (approvalBlocked) return approvalBlocked;
 			if (reserved)
 				await this.dependencies.ledger.markUncertain(
 					deliveryKey,

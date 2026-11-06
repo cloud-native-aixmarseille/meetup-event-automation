@@ -1,3 +1,4 @@
+import { MeetupSlidesApprovalPresenter } from "../src/meetup-slides-approval-presenter.js";
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import {
@@ -33,6 +34,17 @@ import { ApprovalMessages } from "../src/i18n/approval-messages.js";
 import { ResolveApprovalDecision } from "../src/resolve-approval-decision.js";
 import { SocialPublicationApprovalPresenter } from "../src/social-publication-approval-presenter.js";
 import { TrustedApprovalState } from "../src/trusted-approval-state.js";
+export const slidesRequest = {
+	kind: "meetup-slides",
+	revision: "b".repeat(64),
+	eventDate: "2099-06-08",
+	requestedAt: "2099-06-01T10:00:00.000Z",
+	slides: {
+		eventUrl: "https://www.meetup.com/example/events/123/",
+		pdfUrl: "https://drive.google.com/file/d/public-pdf/view",
+		language: "fr",
+	},
+} satisfies OrganizerApprovalRequest;
 export const request = {
 	kind: "email-introduction",
 	revision: "a".repeat(64),
@@ -54,6 +66,9 @@ export function fixture(locale = "en") {
 						locale,
 					),
 				),
+			"meetup-slides": new MeetupSlidesApprovalPresenter(
+				new GithubOrganizerApprovalComposition().approvalMessages("en"),
+			),
 			"email-thanks":
 				new GithubOrganizerApprovalComposition().emailApprovalPresenter(
 					new ApprovalMessages(
@@ -83,31 +98,42 @@ export function fixture(locale = "en") {
 	const minimized = new Set<string>();
 	const graphql = vi
 		.fn()
-		.mockImplementation(async (query: string, variables: { id: string }) => {
-			if (query.includes("mutation ResolveComment")) {
-				minimized.add(variables.id);
-				return { minimizeComment: { minimizedComment: { isMinimized: true } } };
-			}
-			if (query.includes("mutation ReopenComment")) {
-				minimized.delete(variables.id);
+		.mockImplementation(
+			async (
+				query: string,
+				variables: { id: string; ids?: readonly string[] },
+			) => {
+				if (variables.ids)
+					return { nodes: variables.ids.map((id) => edits.get(id) ?? null) };
+				if (query.includes("mutation ResolveComment")) {
+					minimized.add(variables.id);
+					return {
+						minimizeComment: { minimizedComment: { isMinimized: true } },
+					};
+				}
+				if (query.includes("mutation ReopenComment")) {
+					minimized.delete(variables.id);
+					return {
+						unminimizeComment: { unminimizedComment: { isMinimized: false } },
+					};
+				}
 				return {
-					unminimizeComment: { unminimizedComment: { isMinimized: false } },
+					node: edits.has(variables.id)
+						? {
+								...edits.get(variables.id),
+								isMinimized: minimized.has(variables.id),
+								minimizedReason: minimized.has(variables.id)
+									? "resolved"
+									: null,
+								userContentEdits: {
+									nodes: history.get(variables.id) ?? [],
+									pageInfo: { hasNextPage: false, endCursor: null },
+								},
+							}
+						: null,
 				};
-			}
-			return {
-				node: edits.has(variables.id)
-					? {
-							...edits.get(variables.id),
-							isMinimized: minimized.has(variables.id),
-							minimizedReason: minimized.has(variables.id) ? "resolved" : null,
-							userContentEdits: {
-								nodes: history.get(variables.id) ?? [],
-								pageInfo: { hasNextPage: false, endCursor: null },
-							},
-						}
-					: null,
-			};
-		});
+			},
+		);
 	const permission = vi
 		.fn()
 		.mockResolvedValue({ data: { permission: "write" } });

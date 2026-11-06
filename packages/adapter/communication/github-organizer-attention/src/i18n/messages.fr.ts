@@ -1,4 +1,6 @@
 export const messages = {
+	"action.slides-approval-pending":
+		"Approuver l'envoi du PDF aux participants Meetup.",
 	"failure.publication.meetup.authentication-configuration":
 		"Les identifiants Meetup manquent dans la configuration de l'automatisation. Vérifiez PUBLICATION_CREDENTIALS.",
 	"failure.publication.meetup.authentication-captcha-required":

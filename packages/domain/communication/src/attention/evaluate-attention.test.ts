@@ -5,6 +5,35 @@ import type { AttentionFacts } from "./evaluate-attention.js";
 import { EvaluateAttention } from "./evaluate-attention.js";
 
 describe("actionable attention conditions", () => {
+	it("keeps attendee slides approval actionable after the event", () => {
+		// Arrange
+		const input = facts({
+			approvals: [
+				{
+					kind: "meetup-slides",
+					revision: "b".repeat(64),
+					status: "pending",
+					eventDate: "2099-06-08",
+					requestedAt: "2099-06-09T09:00:00Z",
+					commentId: 42,
+				},
+			],
+		});
+		const policy = new CommunicationDomainComposition().evaluateAttention();
+
+		// Act
+		const result = policy.execute(input, new Date("2099-06-09T10:00:00Z"));
+
+		// Assert
+		expect(result.conditions).toContainEqual(
+			expect.objectContaining({
+				code: "approval-pending",
+				resource: `meetup-slides:${"b".repeat(64)}`,
+				commentId: 42,
+			}),
+		);
+	});
+
 	it("names missing fields without duplicating the date or host tasks", () => {
 		// Arrange
 		const input = facts({

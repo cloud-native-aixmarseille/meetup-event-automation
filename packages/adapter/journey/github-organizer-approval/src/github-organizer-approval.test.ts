@@ -1,3 +1,4 @@
+import { MeetupSlidesApprovalPresenter } from "./meetup-slides-approval-presenter.js";
 import {
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
@@ -10,6 +11,7 @@ import {
 	decision,
 	fixture,
 	publicationRequest,
+	slidesRequest,
 	request,
 } from "../testing/approval.fixtures.js";
 import { contentRequest } from "../testing/content.fixtures.js";
@@ -708,6 +710,9 @@ describe("organizer approval requests", () => {
 									locale === "en" ? "fr" : "en",
 								),
 							),
+						"meetup-slides": new MeetupSlidesApprovalPresenter(
+							new GithubOrganizerApprovalComposition().approvalMessages("en"),
+						),
 						"email-thanks":
 							new GithubOrganizerApprovalComposition().emailApprovalPresenter(
 								new ApprovalMessages(
@@ -872,7 +877,7 @@ describe("organizer approval requests", () => {
 		await approvals.request(request);
 		decision(f);
 		f.graphql.mockResolvedValue({
-			node: { id: "comment-100", body: "newer request" },
+			nodes: [{ id: "comment-100", body: "newer request" }],
 		});
 
 		// Act
@@ -1772,5 +1777,47 @@ describe("completed approval comment visibility", () => {
 		// Assert
 		await expect(result).rejects.toThrow("Unavailable");
 		expect(f.visibility.synchronize).not.toHaveBeenCalled();
+	});
+});
+
+describe("Meetup attendee delivery approvals", () => {
+	it("persists a verified choice and requires new approval for a changed PDF", async () => {
+		// Arrange
+		const f = fixture();
+		const composition = new GithubOrganizerApprovalComposition();
+		const approvals = composition.githubOrganizerApproval(
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		await approvals.request(slidesRequest);
+		const record = composition
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
+		decision(f, { body: f.presenter.issue(record, { status: "approved" }) });
+
+		// Act
+		const approved = await approvals.request(slidesRequest);
+		const persisted = composition
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
+		const changed = await approvals.request({
+			...slidesRequest,
+			slides: {
+				...slidesRequest.slides,
+				pdfUrl: "https://drive.google.com/file/d/new-pdf/view",
+			},
+		});
+
+		// Assert
+		expect(approved.status).toBe("approved");
+		expect(persisted.decision?.actor).toBe("organizer");
+		expect(changed.status).toBe("pending");
+		expect(f.create).toHaveBeenCalledOnce();
+		expect(f.dispatch).toHaveBeenCalledWith(
+			expect.objectContaining({ kind: "meetup-slides" }),
+		);
 	});
 });
