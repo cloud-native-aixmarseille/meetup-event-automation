@@ -98,6 +98,7 @@ Use the current guides above for setup and supported operational behavior.
 | [Draft generation and review](adr/0008-draft-generation.md)               | Event copy, cover artwork, social formats, reminders, and provider boundaries.    |
 | [Event publication destinations](adr/0009-community-event-publication.md) | Shared lifecycle, Meetup and OCGroups adapters, approval, and recovery.           |
 | [LinkedIn Page and Slack publication](adr/0010-social-publication.md)     | Social dispatch, publication approval, scheduling, and recovery.                  |
+| [Organizer notification journey](adr/0012-notification-journey.md)        | Proposed shared-channel routing, concise Slack pointers, and reminder cadence.    |
 
 ## Directory layout
 
@@ -139,7 +140,8 @@ docs/
     ├── 0011-template-discovery.md
     ├── 0008-draft-generation.md
     ├── 0009-community-event-publication.md
-    └── 0010-social-publication.md
+    ├── 0010-social-publication.md
+    └── 0012-notification-journey.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside
