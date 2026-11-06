@@ -64,9 +64,9 @@ the Google file. For example, `{{event.title}}`, `{{event.date:D MMMM YYYY}}`,
 | ----------------------------------------------- | --------------------------------------------------------------------------- |
 | `event.title`                                   | Validated event title.                                                      |
 | `event.date`                                    | Localized long event date.                                                  |
-| `event.date.month`                              | Localized month name.                                                       |
-| `event.date.numeric`                            | Event date as `DD/MM/YYYY`.                                                 |
-| `event.date.weekday`                            | Localized weekday and full event date.                                      |
+| `event.date:MMMM`                               | Localized month name.                                                       |
+| `event.date:DD/MM/YYYY`                         | Event date as `DD/MM/YYYY`.                                                 |
+| `event.date:weekday`                            | Localized weekday and full event date.                                      |
 | `event.start_time`                              | Configured local event start time as `HH:mm`.                               |
 | `host.name`                                     | Resolved host display name.                                                 |
 | `host.address`, `host.postal_code`, `host.city` | Explicit public venue fields.                                               |
@@ -74,7 +74,7 @@ the Google file. For example, `{{event.title}}`, `{{event.date:D MMMM YYYY}}`,
 | `event.feedback_url`                            | Public feedback URL.                                                        |
 | `talk.title`, `talk.abstract`, `talk.speakers`  | Talk title, abstract, and co-speaker names at the numbered agenda position. |
 | `speaker.name`                                  | Public speaker name at the same numbered position as portraits.             |
-| `next_event.date`, `next_event.date.numeric`    | Next published meetup date, localized long form or `DD/MM/YYYY`.            |
+| `next_event.date`, `next_event.date:DD/MM/YYYY` | Next published meetup date, localized long form or `DD/MM/YYYY`.            |
 | `next_event.host.name`, `next_event.host.city`  | Next published meetup's host display name and explicit public city.         |
 
 Numbered selectors are one-based positions in the current validated agenda,

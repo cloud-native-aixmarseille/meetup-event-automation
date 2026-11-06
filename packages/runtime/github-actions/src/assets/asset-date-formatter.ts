@@ -9,15 +9,12 @@ export class AssetDateFormatter {
 	format(
 		date: string | undefined,
 		timeZone: string,
-		format: "long" | "month" | "numeric" | "weekday" = "long",
+		format = "long",
 	): string | undefined {
 		if (!date) return undefined;
 		try {
 			new Intl.DateTimeFormat(this.locale, { timeZone });
-			return this.dates.format(
-				date,
-				format === "numeric" ? "DD/MM/YYYY" : format,
-			);
+			return this.dates.format(date, format);
 		} catch {
 			return undefined;
 		}

@@ -9,8 +9,13 @@ import {
 	requestOptions,
 } from "./google-drive-asset-repository-contracts.js";
 
+import type { DriveManifestDateFormats } from "./drive-manifest-date-formats.js";
+
 export class GoogleDriveManifestRepository implements AssetManifestRepository {
-	constructor(private readonly client: GoogleDriveClient) {}
+	constructor(
+		private readonly client: GoogleDriveClient,
+		private readonly dates: Pick<DriveManifestDateFormats, "decode">,
+	) {}
 
 	async load(folderId: string, fileId: string): Promise<unknown | undefined> {
 		const id = await this.find(folderId, fileId);
@@ -30,7 +35,9 @@ export class GoogleDriveManifestRepository implements AssetManifestRepository {
 			chunks.push(Buffer.from(chunk));
 		}
 		try {
-			return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+			return this.dates.decode(
+				JSON.parse(Buffer.concat(chunks).toString("utf8")),
+			);
 		} catch {
 			throw new ContentError("recovery");
 		}
@@ -98,6 +105,3 @@ export class GoogleDriveManifestRepository implements AssetManifestRepository {
 		return file?.id ?? undefined;
 	}
 }
-export type GoogleDriveManifestRepositoryArguments = ConstructorParameters<
-	typeof GoogleDriveManifestRepository
->;

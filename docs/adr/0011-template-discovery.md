@@ -66,3 +66,23 @@ media and file identities. Announcement collections use groups to retain one ima
 This extends manual-edit protection to repeated containers and adds no consumer
 asset configuration. It deliberately requires explicit recovery for uncertain
 structural writes rather than inferring success from partially observed media.
+
+## Date operand decision - 2026-11-06
+
+Date formatting belongs to the shared renderer. Authored fields use `event.date`
+or `next_event.date`, with a `:format` operand when needed. This supersedes the
+preformatted `.month`, `.numeric`, and `.weekday` public fields documented in
+the original asset field registry. The native template and consumer release must
+be updated together.
+
+Existing copies retain their frozen definitions. On sidecar reads, the Drive
+adapter converts stored date fields and current/pending binding keys to explicit
+formats. It retains anchors, revision guards, fallback text, and applied/desired
+fingerprints. A narrow injected Slides codec updates collection member keys;
+the Drive adapter does not interpret the Slides layout descriptor. The domain
+continues to validate the resulting contract and binding associations. No write
+is authorized by this conversion, and manual-edit conflicts remain conflicts.
+
+Changing a collection descriptor changes its desired fingerprint. Its next
+reconciliation therefore refreshes an unchanged owned container under the usual
+revision and conflict checks. Ambiguous or malformed saved state fails closed.

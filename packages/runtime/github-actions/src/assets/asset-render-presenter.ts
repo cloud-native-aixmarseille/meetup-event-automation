@@ -29,28 +29,12 @@ export class AssetRenderPresenterImpl implements AssetRenderPresenter {
 				"event.title": input.title,
 				"event.start_time": input.startTime,
 				"event.date": date.format(input.date, input.timeZone),
-				"event.date.month": date.format(input.date, input.timeZone, "month"),
-				"event.date.numeric": date.format(
-					input.date,
-					input.timeZone,
-					"numeric",
-				),
-				"event.date.weekday": date.format(
-					input.date,
-					input.timeZone,
-					"weekday",
-				),
 				"host.name": input.hostName,
 				"host.address": input.venue?.address,
 				"host.postal_code": input.venue?.postalCode,
 				"host.city": input.venue?.city,
 				"event.feedback_url": input.feedbackUrl,
 				"next_event.date": date.format(input.nextEvent?.date, input.timeZone),
-				"next_event.date.numeric": date.format(
-					input.nextEvent?.date,
-					input.timeZone,
-					"numeric",
-				),
 				"next_event.host.name": input.nextEvent?.hostName,
 				"next_event.host.city": input.nextEvent?.city,
 				agenda: input.agenda

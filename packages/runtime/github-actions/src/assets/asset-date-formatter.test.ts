@@ -4,9 +4,9 @@ import { AssetDateFormatter } from "./asset-date-formatter.js";
 
 describe("asset calendar formats", () => {
 	it.each([
-		["en", "October", "Thursday, October 15, 2026"],
-		["fr", "octobre", "jeudi 15 octobre 2026"],
-	])("formats the same event calendar day in %s", (locale, month, weekday) => {
+		["en", "October 15, 2026"],
+		["fr", "15 octobre 2026"],
+	])("formats the same event calendar day in %s", (locale, expected) => {
 		// Arrange
 		const formatter = new AssetDateFormatter(
 			new TemplatingComposition().dates(locale),
@@ -15,13 +15,13 @@ describe("asset calendar formats", () => {
 
 		// Act
 		const actual = [
-			formatter.format("2026-10-15", "Pacific/Kiritimati", "month"),
-			formatter.format("2026-10-15", "America/Los_Angeles", "numeric"),
-			formatter.format("2026-10-15", "Europe/Paris", "weekday"),
+			formatter.format("2026-10-15", "Pacific/Kiritimati"),
+			formatter.format("2026-10-15", "America/Los_Angeles"),
+			formatter.format("2026-10-15", "Europe/Paris"),
 		];
 
 		// Assert
-		expect(actual).toEqual([month, "15/10/2026", weekday]);
+		expect(actual).toEqual([expected, expected, expected]);
 	});
 
 	it.each([

@@ -48,11 +48,12 @@ describe("asset public presentation", () => {
 
 		// Assert
 		expect(result.hostLogo).toEqual(hostLogo);
+		expect(result.dates).toEqual({
+			"event.date": "2026-10-15",
+			"next_event.date": "2026-11-12",
+		});
 		expect(result.text).toMatchObject({
 			"event.start_time": "19:15",
-			"event.date.month": "octobre",
-			"event.date.numeric": "15/10/2026",
-			"event.date.weekday": "jeudi 15 octobre 2026",
 			"host.address": "1 Public Square",
 			"host.postal_code": "13001",
 			"host.city": "Marseille",
@@ -61,7 +62,6 @@ describe("asset public presentation", () => {
 			"talk.speakers:opening": "Alice et Bob",
 			"speaker.name:portrait": "Alice",
 			"next_event.date": "12 novembre 2026",
-			"next_event.date.numeric": "12/11/2026",
 			"next_event.host.name": "Next host",
 			"next_event.host.city": "Aix",
 		});

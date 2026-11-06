@@ -28632,9 +28632,6 @@ var ContentBindingPolicy = class {
 var TEXT_TOKENS = [
   "event.title",
   "event.date",
-  "event.date.month",
-  "event.date.numeric",
-  "event.date.weekday",
   "event.start_time",
   "host.name",
   "host.address",
@@ -28643,7 +28640,6 @@ var TEXT_TOKENS = [
   "agenda",
   "event.feedback_url",
   "next_event.date",
-  "next_event.date.numeric",
   "next_event.host.name",
   "next_event.host.city"
 ];
@@ -38640,10 +38636,7 @@ var AssetDateFormatter = class {
     if (!date) return void 0;
     try {
       new Intl.DateTimeFormat(this.locale, { timeZone });
-      return this.dates.format(
-        date,
-        format === "numeric" ? "DD/MM/YYYY" : format
-      );
+      return this.dates.format(date, format);
     } catch {
       return void 0;
     }
@@ -38697,28 +38690,12 @@ var AssetRenderPresenterImpl = class {
         "event.title": input.title,
         "event.start_time": input.startTime,
         "event.date": date.format(input.date, input.timeZone),
-        "event.date.month": date.format(input.date, input.timeZone, "month"),
-        "event.date.numeric": date.format(
-          input.date,
-          input.timeZone,
-          "numeric"
-        ),
-        "event.date.weekday": date.format(
-          input.date,
-          input.timeZone,
-          "weekday"
-        ),
         "host.name": input.hostName,
         "host.address": input.venue?.address,
         "host.postal_code": input.venue?.postalCode,
         "host.city": input.venue?.city,
         "event.feedback_url": input.feedbackUrl,
         "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
-        "next_event.date.numeric": date.format(
-          input.nextEvent?.date,
-          input.timeZone,
-          "numeric"
-        ),
         "next_event.host.name": input.nextEvent?.hostName,
         "next_event.host.city": input.nextEvent?.city,
         agenda: input.agenda.map(

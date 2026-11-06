@@ -53,7 +53,8 @@ describe("template contracts", () => {
 				{ type: "text", token: "host.address", required: true },
 				{
 					type: "text",
-					token: "next_event.date.numeric",
+					token: "next_event.date",
+					format: "DD/MM/YYYY",
 					required: false,
 					fallback: "TBA",
 				},

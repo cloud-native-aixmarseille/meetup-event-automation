@@ -68,14 +68,16 @@ workflow locale. Numeric patterns retain the requested order and ASCII digits.
 All formats preserve the event's calendar day independently of the runner's
 timezone. Invalid calendar dates and unsupported patterns are rejected.
 
-For event date `2027-04-05`:
+For an event or next meetup dated `2027-04-05`:
 
-| Expression                   | Locale | Result         |
-| ---------------------------- | ------ | -------------- |
-| `[EVENT_DATE:YYYY-MM-DD]`    | `en`   | `2027-04-05`   |
-| `{{event.date:DD/MM/YYYY}}`  | `fr`   | `05/04/2027`   |
-| `[EVENT_DATE:D MMMM YYYY]`   | `fr`   | `5 avril 2027` |
-| `{{event.date:D MMMM YYYY}}` | `en`   | `5 April 2027` |
+| Expression                       | Locale | Result         |
+| -------------------------------- | ------ | -------------- |
+| `[EVENT_DATE:YYYY-MM-DD]`        | `en`   | `2027-04-05`   |
+| `{{event.date:DD/MM/YYYY}}`      | `fr`   | `05/04/2027`   |
+| `[EVENT_DATE:D MMMM YYYY]`       | `fr`   | `5 avril 2027` |
+| `{{event.date:D MMMM YYYY}}`     | `en`   | `5 April 2027` |
+| `{{event.date:MMMM}}`            | `fr`   | `avril`        |
+| `{{next_event.date:DD/MM/YYYY}}` | `fr`   | `05/04/2027`   |
 
 ## Document ownership
 

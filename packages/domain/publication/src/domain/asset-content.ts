@@ -1,9 +1,6 @@
 export const TEXT_TOKENS = [
 	"event.title",
 	"event.date",
-	"event.date.month",
-	"event.date.numeric",
-	"event.date.weekday",
 	"event.start_time",
 	"host.name",
 	"host.address",
@@ -12,7 +9,6 @@ export const TEXT_TOKENS = [
 	"agenda",
 	"event.feedback_url",
 	"next_event.date",
-	"next_event.date.numeric",
 	"next_event.host.name",
 	"next_event.host.city",
 ] as const;

@@ -26,6 +26,20 @@ export class SlideCollectionIdentity {
 			throw new ContentError("contract");
 		}
 	}
+	/** Rewrites persisted text keys using the validated Slides layout schema. */
+	rekey(source: string, keys: ReadonlyMap<string, string>): string {
+		const template = this.decode(source);
+		return JSON.stringify({
+			...template,
+			members: template.members.map((member) => ({
+				...member,
+				key:
+					member.type === "text"
+						? (keys.get(member.key) ?? member.key)
+						: member.key,
+			})),
+		});
+	}
 	private template(value: unknown): value is SlideCollectionTemplate {
 		if (
 			!this.record(value) ||

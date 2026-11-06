@@ -1,6 +1,14 @@
 import { setTimeout } from "node:timers/promises";
 import { drive } from "@googleapis/drive";
-import { ContentFingerprint } from "@meetup-automation/publication";
+import {
+	DriveManifestDateFormats,
+	type StoredCollectionKeys,
+} from "./drive-manifest-date-formats.js";
+import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
+import {
+	ContentTextKey,
+	ContentFingerprint,
+} from "@meetup-automation/publication";
 import { DriveAssetMetadata } from "./drive-asset-metadata.js";
 import { DriveBoundedStream } from "./drive-bounded-stream.js";
 import { DrivePdfBinary } from "./drive-pdf-binary.js";
@@ -10,10 +18,7 @@ import {
 } from "./google-drive-asset-repository.js";
 import { GoogleDriveAssetRepositoryFactory } from "./google-drive-asset-repository-factory.js";
 import { GoogleDriveAuthentication } from "./google-drive-authentication.js";
-import {
-	GoogleDriveManifestRepository,
-	type GoogleDriveManifestRepositoryArguments,
-} from "./google-drive-manifest-repository.js";
+import { GoogleDriveManifestRepository } from "./google-drive-manifest-repository.js";
 import { GoogleDrivePdfDownload } from "./google-drive-pdf-download.js";
 import { GoogleDrivePdfComposition } from "./pdf-export-composition.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
@@ -57,8 +62,15 @@ export class GoogleDriveAssetRepositoryComposition {
 		return new GoogleDriveAuthentication();
 	}
 	googleDriveManifestRepository(
-		...args: GoogleDriveManifestRepositoryArguments
+		client: GoogleDriveClient,
+		collections: StoredCollectionKeys,
 	): GoogleDriveManifestRepository {
-		return new GoogleDriveManifestRepository(...args);
+		return new GoogleDriveManifestRepository(
+			client,
+			new DriveManifestDateFormats(
+				new ContentTextKey(new ContentFingerprint()),
+				collections,
+			),
+		);
 	}
 }

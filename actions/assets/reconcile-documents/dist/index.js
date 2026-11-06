@@ -65205,9 +65205,6 @@ var ContentBindingPolicy = class {
 var TEXT_TOKENS = [
   "event.title",
   "event.date",
-  "event.date.month",
-  "event.date.numeric",
-  "event.date.weekday",
   "event.start_time",
   "host.name",
   "host.address",
@@ -65216,7 +65213,6 @@ var TEXT_TOKENS = [
   "agenda",
   "event.feedback_url",
   "next_event.date",
-  "next_event.date.numeric",
   "next_event.host.name",
   "next_event.host.city"
 ];
@@ -75766,10 +75762,7 @@ var AssetDateFormatter = class {
     if (!date) return void 0;
     try {
       new Intl.DateTimeFormat(this.locale, { timeZone });
-      return this.dates.format(
-        date,
-        format === "numeric" ? "DD/MM/YYYY" : format
-      );
+      return this.dates.format(date, format);
     } catch {
       return void 0;
     }
@@ -75823,28 +75816,12 @@ var AssetRenderPresenterImpl = class {
         "event.title": input.title,
         "event.start_time": input.startTime,
         "event.date": date.format(input.date, input.timeZone),
-        "event.date.month": date.format(input.date, input.timeZone, "month"),
-        "event.date.numeric": date.format(
-          input.date,
-          input.timeZone,
-          "numeric"
-        ),
-        "event.date.weekday": date.format(
-          input.date,
-          input.timeZone,
-          "weekday"
-        ),
         "host.name": input.hostName,
         "host.address": input.venue?.address,
         "host.postal_code": input.venue?.postalCode,
         "host.city": input.venue?.city,
         "event.feedback_url": input.feedbackUrl,
         "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
-        "next_event.date.numeric": date.format(
-          input.nextEvent?.date,
-          input.timeZone,
-          "numeric"
-        ),
         "next_event.host.name": input.nextEvent?.hostName,
         "next_event.host.city": input.nextEvent?.city,
         agenda: input.agenda.map(
@@ -82869,6 +82846,87 @@ var GoogleDriveContentMediaComposition = class {
 var import_drive4 = __toESM(require_build2(), 1);
 import { setTimeout as setTimeout2 } from "node:timers/promises";
 
+// packages/adapter/publication/google-drive-asset-repository/src/drive-manifest-date-formats.ts
+import { isDeepStrictEqual } from "node:util";
+var DriveManifestDateFormats = class {
+  constructor(textKeys, collections) {
+    this.textKeys = textKeys;
+    this.collections = collections;
+  }
+  textKeys;
+  collections;
+  decode(value) {
+    if (!this.record(value) || value.version !== 1 || !this.record(value.contract))
+      return value;
+    const keys = /* @__PURE__ */ new Map();
+    const contract = {
+      ...value.contract,
+      fields: this.fields(value.contract.fields, keys)
+    };
+    return {
+      ...value,
+      contract,
+      bindings: this.bindings(value.bindings, keys),
+      ...this.record(value.pending) ? {
+        pending: {
+          ...value.pending,
+          bindings: this.bindings(value.pending.bindings, keys)
+        }
+      } : {}
+    };
+  }
+  fields(value, keys) {
+    if (!Array.isArray(value) || value.length > 100) return value;
+    const fields2 = value.map((field) => {
+      if (!this.record(field)) return field;
+      if (field.type !== "collection") return this.text(field, keys);
+      if (!Array.isArray(field.fields) || field.fields.length > 100)
+        return field;
+      const members = /* @__PURE__ */ new Map();
+      const fields3 = field.fields.map(
+        (item) => this.record(item) ? this.text(item, members) : item
+      );
+      return {
+        ...field,
+        fields: fields3,
+        template: members.size && typeof field.template === "string" ? this.collections.rekey(field.template, members) : field.template
+      };
+    });
+    return fields2.filter(
+      (field, index) => !this.record(field) || field.type !== "text" || !fields2.slice(0, index).some((prior) => isDeepStrictEqual(prior, field))
+    );
+  }
+  text(field, keys) {
+    if (field.type !== "text" || typeof field.token !== "string") return field;
+    const dates = {
+      "event.date.month": { token: "event.date", format: "month" },
+      "event.date.numeric": { token: "event.date", format: "DD/MM/YYYY" },
+      "event.date.weekday": { token: "event.date", format: "weekday" },
+      "next_event.date.numeric": {
+        token: "next_event.date",
+        format: "DD/MM/YYYY"
+      }
+    };
+    const date = Object.hasOwn(dates, field.token) ? dates[field.token] : void 0;
+    if (!date) return field;
+    if (field.format !== void 0 || field.slot !== void 0)
+      throw new ContentError("recovery");
+    keys.set(field.token, this.textKeys.of(date));
+    return { ...field, ...date };
+  }
+  bindings(value, keys) {
+    if (!Array.isArray(value)) return value;
+    return value.map((binding) => {
+      if (!this.record(binding) || binding.type !== "text" || typeof binding.key !== "string")
+        return binding;
+      return { ...binding, key: keys.get(binding.key) ?? binding.key };
+    });
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
 // packages/adapter/publication/google-drive-asset-repository/src/drive-asset-metadata.ts
 var DriveAssetMetadata = class {
   templateProperties(template) {
@@ -83155,10 +83213,12 @@ var GoogleDriveAssetRepositoryFactory = class {
 // packages/adapter/publication/google-drive-asset-repository/src/google-drive-manifest-repository.ts
 import { Readable as Readable2 } from "node:stream";
 var GoogleDriveManifestRepository = class {
-  constructor(client) {
+  constructor(client, dates) {
     this.client = client;
+    this.dates = dates;
   }
   client;
+  dates;
   async load(folderId, fileId) {
     const id = await this.find(folderId, fileId);
     if (!id) return void 0;
@@ -83177,7 +83237,9 @@ var GoogleDriveManifestRepository = class {
       chunks.push(Buffer.from(chunk));
     }
     try {
-      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      return this.dates.decode(
+        JSON.parse(Buffer.concat(chunks).toString("utf8"))
+      );
     } catch {
       throw new ContentError("recovery");
     }
@@ -83914,8 +83976,14 @@ var GoogleDriveAssetRepositoryComposition = class {
   googleDriveAuthentication() {
     return new GoogleDriveAuthentication();
   }
-  googleDriveManifestRepository(...args) {
-    return new GoogleDriveManifestRepository(...args);
+  googleDriveManifestRepository(client, collections) {
+    return new GoogleDriveManifestRepository(
+      client,
+      new DriveManifestDateFormats(
+        new ContentTextKey(new ContentFingerprint()),
+        collections
+      )
+    );
   }
 };
 
@@ -84133,6 +84201,17 @@ var SlideCollectionIdentity = class {
     } catch {
       throw new ContentError("contract");
     }
+  }
+  /** Rewrites persisted text keys using the validated Slides layout schema. */
+  rekey(source, keys) {
+    const template = this.decode(source);
+    return JSON.stringify({
+      ...template,
+      members: template.members.map((member) => ({
+        ...member,
+        key: member.type === "text" ? keys.get(member.key) ?? member.key : member.key
+      }))
+    });
   }
   template(value) {
     if (!this.record(value) || !["slide", "grid"].includes(String(value.mode)) || !this.objectId(value.rootId) || !this.objectId(value.pageId) || !Array.isArray(value.members) || !value.members.length || value.members.length > 100 || !value.members.every((member) => this.member(member)) || Object.keys(value).some(
@@ -84657,7 +84736,7 @@ var SlideContentRequests = class {
 };
 
 // packages/adapter/publication/google-slides-content-repository/src/slide-template-bindings.ts
-import { isDeepStrictEqual } from "node:util";
+import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
 var SlideTemplateBindings = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -84754,7 +84833,7 @@ var SlideTemplateBindings = class {
       (item) => item.textRun?.content?.trim()
     );
     const style = runs[0]?.textRun?.style ?? {};
-    if (runs.some((item) => !isDeepStrictEqual(item.textRun?.style ?? {}, style)))
+    if (runs.some((item) => !isDeepStrictEqual2(item.textRun?.style ?? {}, style)))
       throw new ContentError("location");
     return style;
   }
@@ -99983,7 +100062,7 @@ ${this.messages.t("state.description")}`;
 };
 
 // packages/adapter/journey/github-automation-state/src/github-automation-state.ts
-import { isDeepStrictEqual as isDeepStrictEqual2 } from "node:util";
+import { isDeepStrictEqual as isDeepStrictEqual3 } from "node:util";
 var GithubAutomationState = class {
   constructor(client, comments, codec, presenter, visibility) {
     this.client = client;
@@ -100002,7 +100081,7 @@ var GithubAutomationState = class {
   }
   async write(scope, previous, next) {
     const snapshot = await this.snapshot();
-    if (!isDeepStrictEqual2(snapshot.state.records[scope], previous))
+    if (!isDeepStrictEqual3(snapshot.state.records[scope], previous))
       throw new Error("Automation state changed before persistence");
     await this.persist(snapshot, {
       ...snapshot.state,
@@ -100093,7 +100172,7 @@ var StateMessages = class extends MessageLocalizer {
 };
 
 // packages/adapter/journey/github-automation-state/src/state-edit-authority.ts
-import { isDeepStrictEqual as isDeepStrictEqual3 } from "node:util";
+import { isDeepStrictEqual as isDeepStrictEqual4 } from "node:util";
 var StateEditAuthority = class {
   constructor(client, codec, author) {
     this.client = client;
@@ -100131,7 +100210,7 @@ var StateEditAuthority = class {
       return false;
     const previous = this.codec.read(before);
     const next = this.codec.read(after);
-    return isDeepStrictEqual3(previous.records.content, next.records.content) && isDeepStrictEqual3(previous.records.social, next.records.social) && isDeepStrictEqual3(previous.imports, next.imports);
+    return isDeepStrictEqual4(previous.records.content, next.records.content) && isDeepStrictEqual4(previous.records.social, next.records.social) && isDeepStrictEqual4(previous.imports, next.imports);
   }
 };
 
@@ -103240,7 +103319,8 @@ var DocumentComposition = class _DocumentComposition {
           new TemplatingComposition().renderer(locale)
         ),
         new GoogleDriveAssetRepositoryComposition().googleDriveManifestRepository(
-          new GoogleDriveAssetRepositoryComposition().googleDriveAssetRepositoryFactory().client(credentials)
+          new GoogleDriveAssetRepositoryComposition().googleDriveAssetRepositoryFactory().client(credentials),
+          new GoogleSlidesContentRepositoryComposition().collectionIdentity()
         ),
         {
           "application/vnd.google-apps.presentation": new GoogleSlidesContentRepositoryComposition().googleSlidesContentRepositoryFactory().create(authentication, images),
