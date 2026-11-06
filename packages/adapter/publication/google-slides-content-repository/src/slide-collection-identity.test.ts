@@ -4,6 +4,34 @@ import { collectionFixture } from "../testing/collections.fixtures.js";
 import { SlideCollectionIdentity } from "./slide-collection-identity.js";
 
 describe("collection ownership", () => {
+	it("updates frozen text references while preserving image keys and layout geometry", () => {
+		// Arrange
+		const f = collectionFixture("grid");
+		const subject = f.composition.collectionIdentity();
+		const template = {
+			...subject.decode(f.field.template),
+			members: [
+				{ objectId: "date-shape", type: "text", key: "event.date.numeric" },
+				{ objectId: "portrait", type: "image", key: "event.date.numeric" },
+			],
+		};
+		const key = new PublicationDomainComposition()
+			.contentTextKey()
+			.of({ token: "event.date", format: "DD/MM/YYYY" });
+		// Act
+		const decoded = subject.decode(
+			subject.rekey(
+				JSON.stringify(template),
+				new Map([["event.date.numeric", key]]),
+			),
+		);
+		// Assert
+		expect(decoded).toEqual({
+			...template,
+			members: [{ ...template.members[0], key }, template.members[1]],
+		});
+	});
+
 	it("rejects a frozen member outside its owned container", () => {
 		// Arrange
 		const f = collectionFixture("grid");

@@ -1,7 +1,11 @@
 import { Readable } from "node:stream";
-import type { ContentManifest } from "@meetup-automation/publication";
+import {
+	PublicationDomainComposition,
+	type ContentManifest,
+} from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
+import { DriveManifestDateFormats } from "./drive-manifest-date-formats.js";
 import { GoogleDriveManifestRepository } from "./google-drive-manifest-repository.js";
 
 const manifest: ContentManifest = {
@@ -26,9 +30,15 @@ describe("Drive binding sidecars", () => {
 			create: vi.fn(),
 			update: vi.fn(),
 		};
-		const repository = new GoogleDriveManifestRepository({
-			files,
-		} as unknown as GoogleDriveClient);
+		const repository = new GoogleDriveManifestRepository(
+			{
+				files,
+			} as unknown as GoogleDriveClient,
+			new DriveManifestDateFormats(
+				new PublicationDomainComposition().contentTextKey(),
+				{ rekey: vi.fn() },
+			),
+		);
 
 		// Act
 		await repository.save("folder", manifest);
@@ -67,9 +77,15 @@ describe("Drive binding sidecars", () => {
 				data: Readable.from([JSON.stringify(manifest)]),
 			})),
 		};
-		const repository = new GoogleDriveManifestRepository({
-			files,
-		} as unknown as GoogleDriveClient);
+		const repository = new GoogleDriveManifestRepository(
+			{
+				files,
+			} as unknown as GoogleDriveClient,
+			new DriveManifestDateFormats(
+				new PublicationDomainComposition().contentTextKey(),
+				{ rekey: vi.fn() },
+			),
+		);
 
 		// Act
 		const result = await repository.load("folder", "file");
@@ -91,9 +107,15 @@ describe("Drive binding sidecars", () => {
 			get: vi.fn(),
 			create: vi.fn(),
 		};
-		const repository = new GoogleDriveManifestRepository({
-			files,
-		} as unknown as GoogleDriveClient);
+		const repository = new GoogleDriveManifestRepository(
+			{
+				files,
+			} as unknown as GoogleDriveClient,
+			new DriveManifestDateFormats(
+				new PublicationDomainComposition().contentTextKey(),
+				{ rekey: vi.fn() },
+			),
+		);
 
 		// Act
 		const result = repository.load("folder", "file");

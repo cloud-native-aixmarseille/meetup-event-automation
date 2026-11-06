@@ -18,6 +18,37 @@ function subject() {
 }
 
 describe("template field policy", () => {
+	it.each(["event.date", "next_event.date"])(
+		"uses a format operand for %s",
+		(token) => {
+			// Arrange
+			const fields = subject();
+			// Act
+			const field = fields.text(token, "DD/MM/YYYY", defaults);
+			const parsed = fields.contract("slides", mimeType, [field]);
+			// Assert
+			expect(parsed?.fields).toEqual([
+				expect.objectContaining({ token, format: "DD/MM/YYYY" }),
+			]);
+			expect(field.required).toBe(token === "event.date");
+			if (token === "next_event.date")
+				expect(field.fallback).toBe(defaults.missingNextEvent);
+		},
+	);
+	it.each([
+		"event.date.numeric",
+		"event.date.month",
+		"event.date.weekday",
+		"next_event.date.numeric",
+	])("rejects an unregistered authored property %s", (token) => {
+		// Arrange
+		const fields = subject();
+		// Act
+		const parse = () => fields.text(token, undefined, defaults);
+		// Assert
+		expect(parse).toThrowError(expect.objectContaining({ code: "contract" }));
+	});
+
 	it("recognizes event start time as a required scalar template field", () => {
 		// Arrange
 		const fields = subject();

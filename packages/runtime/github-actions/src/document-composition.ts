@@ -148,6 +148,7 @@ export class DocumentComposition {
 					new GoogleDriveAssetRepositoryComposition()
 						.googleDriveAssetRepositoryFactory()
 						.client(credentials),
+					new GoogleSlidesContentRepositoryComposition().collectionIdentity(),
 				),
 				{
 					"application/vnd.google-apps.presentation":
