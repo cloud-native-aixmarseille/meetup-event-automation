@@ -1,6 +1,7 @@
 import type { SocialDeliveryRecord } from "@meetup-automation/communication";
 import type { EventIdentity } from "@meetup-automation/event";
 import type { ContentProposal } from "../proposals/promotional-content.js";
+import type { ContentContext } from "../review/content-workspace.js";
 import type { SocialPublicationApprovalRequest } from "./social-publication-approval-request.js";
 import type {
 	SocialPublicationDependencies,
@@ -71,6 +72,9 @@ export class ReconcileSocialPublications {
 		if (record.manual) return "manual";
 		const attempt = record.attempts.at(-1);
 		if (attempt?.status === "accepted") return "complete";
+		if (this.attemptStatus(record, proposal) === "uncertain")
+			return "uncertain";
+		if (await this.review.expired(identity, proposal)) return "expired";
 		const pending = await this.review.pendingContent(identity, proposal);
 		if (pending) return pending;
 		const context = await this.review.context(identity, proposal);
@@ -93,6 +97,16 @@ export class ReconcileSocialPublications {
 		}
 		const status = this.attemptStatus(record, proposal);
 		if (status) return status;
+		return this.dispatch(identity, proposal, record, context);
+	}
+
+	private async dispatch(
+		identity: EventIdentity,
+		proposal: ContentProposal,
+		record: SocialDeliveryRecord,
+		context: ContentContext,
+	): Promise<SocialPublicationStatus> {
+		const attempt = record.attempts.at(-1);
 		if (this.dependencies.timing.expired(context.plan, this.dependencies.now()))
 			return "expired";
 		if (
@@ -148,7 +162,7 @@ export class ReconcileSocialPublications {
 				: [
 						{
 							code: `communication.social.${status}`,
-							severity: "warning",
+							severity: status === "expired" ? "info" : "warning",
 							category: "incomplete",
 							field: `social.${proposal.plan.target.replace(":", ".")}`,
 							message: `Social publication requires organizer action: ${status}`,

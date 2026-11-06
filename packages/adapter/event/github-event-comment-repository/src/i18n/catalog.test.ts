@@ -4,10 +4,26 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"comment.assets.content-slide": {
+		documentUrl:
+			"https://docs.google.com/presentation/d/example/edit#slide=id.page_1",
+	},
+	"comment.guidance.meetup.slides-pdf-pending": {
+		workflowUrl:
+			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+	},
+	"comment.guidance.meetup.prerequisites": {
+		workflowUrl:
+			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+	},
+	"comment.unknown": {
+		workflowUrl:
+			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+	},
 	"comment.assets.content-file": {
 		documentUrl: "https://drive.google.com/file/d/document_123/view",
 	},
-	"comment.assets.content-conflict": {
+	"comment.assets.content-repair": {
 		workflowUrl:
 			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
 	},

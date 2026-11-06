@@ -1,3 +1,4 @@
+import type { SocialPostTiming } from "@meetup-automation/communication";
 import type { EventIdentity } from "@meetup-automation/event";
 import type { ContentProposalStore } from "../proposals/promotional-content-ports.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
@@ -13,6 +14,8 @@ export class ManageContentReview {
 		private readonly workspace: Pick<ContentWorkspace, "read">,
 		private readonly review: Pick<ContentReview, "review">,
 		private readonly apply: Pick<ApplyPromotionalContent, "execute">,
+		private readonly timing: Pick<SocialPostTiming, "expired">,
+		private readonly now: () => string,
 	) {}
 	async execute(identity: EventIdentity): Promise<readonly PublicDiagnostic[]> {
 		const diagnostics: PublicDiagnostic[] = [
@@ -28,6 +31,11 @@ export class ManageContentReview {
 				proposal.plan.target,
 				proposal.plan.language,
 			);
+			if (
+				proposal.plan.target.includes(":") &&
+				this.timing.expired(context?.plan ?? proposal.plan, this.now())
+			)
+				continue;
 			if (!context) {
 				diagnostics.push({
 					code: "publication.content.stale",

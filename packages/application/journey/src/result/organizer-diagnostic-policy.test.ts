@@ -25,6 +25,11 @@ describe("organizer diagnostic root causes", () => {
 
 	it.each([
 		[
+			"publication.meetup.slides-pdf-pending",
+			"publication.assets.content.conflict",
+		],
+		["publication.meetup.prerequisites", "event.date.missing"],
+		[
 			"publication.assets.pdf.source-pending",
 			"publication.assets.content.conflict",
 		],

@@ -1,9 +1,18 @@
 export const STAGE_MESSAGES_EN = {
-	"comment.assets.content-file": "[Open the affected file]({documentUrl}).",
+	"comment.guidance.meetup.prerequisites":
+		"Meetup publication is blocked. Check the title, description, venue, date and times. See the latest [Event / Reconcile active run]({workflowUrl}) for details.",
+	"comment.assets.content-repair":
+		'A maintainer must [keep the manual edit or restore the automatic content](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict). After repair, [rerun synchronization with Event / Reconcile active]({workflowUrl}): click "Run workflow", keep the "main" branch and confirm with "Run workflow".',
+	"comment.assets.content-missing":
+		"An automatically filled text box or image was deleted. Automatic updates have stopped to preserve your edits.",
+	"comment.assets.content-slide": "[Open the slide to repair]({documentUrl}).",
+	"comment.assets.content-heading": "Event materials",
+	"comment.assets.content-file":
+		"[Open the document to repair]({documentUrl}).",
 	"comment.assets.content-conflict":
-		"Automation cannot locate a managed area or it differs from its recorded state. Ask a maintainer to compare the file with its recorded state and choose a [recovery that preserves manual additions](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), then [rerun synchronization]({workflowUrl}).",
+		"An automatically filled text box or image was edited or deleted. Automatic updates have stopped to preserve your edits.",
 	"comment.assets.slides-blocked":
-		"This conflict blocks the PDF and preparation of thank-you emails. Delivery approval requests will be prepared after it is resolved.",
+		"This blocks PDF creation and thank-you email preparation.",
 	"comment.guidance.meetup.slides-approval-rejected":
 		"Slides delivery was rejected. Review the PDF before requesting approval again.",
 	"comment.guidance.meetup.slides-approval-unavailable":

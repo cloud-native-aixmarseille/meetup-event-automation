@@ -32,7 +32,7 @@ export const FR_MESSAGES = {
 	"comment.guidance.meetup.slides-link":
 		"Renseignez le lien Meetup publié avant d'envoyer les slides.",
 	"comment.guidance.meetup.slides-pdf-pending":
-		"Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+		'Le PDF des slides n\'est pas prêt. Ouvrez [Event / Reconcile active]({workflowUrl}), cliquez sur "Run workflow", gardez la branche "main" et confirmez avec "Run workflow". Le résultat sera indiqué ici ; l\'envoi nécessitera ensuite votre approbation.',
 	"comment.guidance.meetup.slides-delivery-recovery":
 		"Vérifiez le message aux participants Meetup avant de réessayer ; l'envoi est incertain.",
 	"comment.guidance.meetup.slides-form-unavailable":
@@ -63,7 +63,7 @@ export const FR_MESSAGES = {
 	"comment.resolved": "✅ Informations complètes.",
 	"comment.duplicate": "Ce commentaire automatique en double a été remplacé.",
 	"comment.unknown":
-		"Demandez à un responsable de consulter les diagnostics du workflow.",
+		"Demandez à un mainteneur de consulter le dernier run de [Event / Reconcile active]({workflowUrl}), puis le résumé du job concerné.",
 	"comment.referential":
 		"Demandez à un responsable de corriger le référentiel des hôtes ou des intervenants.",
 	"comment.agenda.item": "Programme (élément {item}{speaker})",

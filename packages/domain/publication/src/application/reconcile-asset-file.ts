@@ -5,6 +5,7 @@ import type {
 } from "../domain/asset-content.js";
 import type { AssetFileName } from "../domain/asset-file-name.js";
 import { ContentError } from "../domain/content-error.js";
+import { ContentConflictError } from "../domain/content-conflict-error.js";
 import { ContentImageError } from "../domain/content-image-error.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
@@ -104,7 +105,7 @@ export class ReconcileAssetFile {
 						...this.diagnostic(error.code),
 						...(error.code === "conflict"
 							? {
-									field: `assets.content/${file?.id ?? template.id}/${template.kind}`,
+									field: `assets.content/${file?.id ?? template.id}/${template.kind}${error instanceof ContentConflictError ? `/${error.reason}/${error.pageId ?? "document"}` : ""}`,
 								}
 							: {}),
 					},

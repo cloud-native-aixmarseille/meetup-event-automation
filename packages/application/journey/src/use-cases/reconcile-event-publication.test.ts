@@ -32,6 +32,25 @@ function fixture() {
 }
 
 describe("publication write guards", () => {
+	it("skips publication after event start without a prerequisite warning", async () => {
+		// Arrange
+		const f = fixture();
+		vi.spyOn(f.dependencies.clock, "now").mockReturnValue(
+			"2027-01-01T12:00:00Z",
+		);
+		// Act
+		const result = await f.destination.reconcile(f.source);
+		// Assert
+		expect(result.status).toBe("skipped");
+		expect(result.diagnostics).toEqual([
+			expect.objectContaining({
+				severity: "info",
+				code: "publication.community.inactive",
+			}),
+		]);
+		expect(f.gateway.save).not.toHaveBeenCalled();
+		expect(f.journal.reserve).not.toHaveBeenCalled();
+	});
 	it("does not reserve an event when an asset upload fails and permits retry", async () => {
 		// Arrange
 		const f = fixture();

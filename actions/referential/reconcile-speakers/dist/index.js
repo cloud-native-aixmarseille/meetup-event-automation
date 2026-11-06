@@ -28887,6 +28887,18 @@ var DiscoverAssetContent = class {
   }
 };
 
+// packages/domain/publication/src/domain/content-conflict-error.ts
+var ContentConflictError = class extends ContentError {
+  constructor(reason, pageId) {
+    super("conflict");
+    this.reason = reason;
+    this.pageId = pageId;
+    this.name = "ContentConflictError";
+  }
+  reason;
+  pageId;
+};
+
 // packages/domain/publication/src/domain/content-image-error.ts
 var ContentImageError = class _ContentImageError extends ContentError {
   constructor(reason, location) {
@@ -28963,7 +28975,7 @@ var ReconcileAssetFile = class {
       } : {
         ...this.diagnostic(error2.code),
         ...error2.code === "conflict" ? {
-          field: `assets.content/${file?.id ?? template.id}/${template.kind}`
+          field: `assets.content/${file?.id ?? template.id}/${template.kind}${error2 instanceof ContentConflictError ? `/${error2.reason}/${error2.pageId ?? "document"}` : ""}`
         } : {}
       }
     );
@@ -29768,7 +29780,10 @@ var ContentRenderPlan = class {
       );
       const location = matches[0];
       if (matches.length !== 1 || location.fingerprint !== binding.applied)
-        throw new ContentError("conflict");
+        throw new ContentConflictError(
+          matches.length !== 1 ? "missing" : "changed",
+          binding.anchor.pageId
+        );
       const value = values.find(
         (item) => item.key === binding.key && item.type === binding.type
       );
@@ -30345,11 +30360,19 @@ var ScheduledEventPolicy = class {
     return this.validSchedule(event, now2);
   }
   validSchedule(event, now2) {
+    const start = this.start(event);
+    return start !== void 0 && start > Date.parse(now2);
+  }
+  started(event, now2) {
+    const start = this.start(event);
+    return start !== void 0 && start <= Date.parse(now2);
+  }
+  start(event) {
     if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
-      return false;
+      return void 0;
     const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
-      return false;
+      return void 0;
     try {
       const format = new Intl.DateTimeFormat("sv-SE", {
         timeZone: event.timeZone,
@@ -30362,9 +30385,9 @@ var ScheduledEventPolicy = class {
       });
       const start = this.instant(event.date, event.startTime, format);
       const end = this.instant(event.date, event.endTime, format);
-      return start !== void 0 && end !== void 0 && start > Date.parse(now2) && end > start;
+      return start !== void 0 && end !== void 0 && end > start ? start : void 0;
     } catch {
-      return false;
+      return void 0;
     }
   }
   validTime(value) {
@@ -30546,6 +30569,9 @@ var CommunityEventPolicy = class {
     this.schedule = schedule;
   }
   schedule;
+  started(event, now2) {
+    return this.schedule.started(event, now2);
+  }
   valid(event, now2) {
     return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/?$/.test(
       event.meetupUrl
@@ -33421,6 +33447,15 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
   }
   static PREREQUISITES = /* @__PURE__ */ new Map([
     [
+      "publication.meetup.slides-pdf-pending",
+      [
+        "publication.assets.content.",
+        "publication.assets.pdf.",
+        "publication.assets.file."
+      ]
+    ],
+    ["publication.meetup.prerequisites", ["event.", "referential.reference."]],
+    [
       "publication.assets.pdf.source-pending",
       [
         "publication.assets.content.",
@@ -35285,7 +35320,7 @@ var AttentionStageInput = class {
     });
   }
   safeField(field) {
-    if (typeof field === "string" && /^assets\.content\/[a-zA-Z0-9_-]{1,100}\/[a-z][a-z0-9-]{0,63}$/.test(
+    if (typeof field === "string" && /^assets\.content\/[a-zA-Z0-9_-]{1,100}\/[a-z][a-z0-9-]{0,63}(?:\/(?:missing|changed)\/[a-zA-Z0-9_-]{1,100})?$/.test(
       field
     ))
       return true;

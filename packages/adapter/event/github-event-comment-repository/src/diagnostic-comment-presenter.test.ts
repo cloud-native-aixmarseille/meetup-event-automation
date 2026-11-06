@@ -16,6 +16,43 @@ const errorDiagnostic: EventDiagnostic = {
 };
 
 describe("renderDiagnosticComment", () => {
+	it("renders one actionable slides repair instead of repeated PDF and email blockers", () => {
+		// Arrange
+		const composition = new GithubEventCommentRepositoryComposition();
+		const diagnostics: EventDiagnostic[] = [
+			{
+				...errorDiagnostic,
+				code: "publication.assets.content.conflict",
+				field: "assets.content/slides_123/slides/missing/news_slide",
+			},
+			{ ...errorDiagnostic, code: "publication.assets.pdf.source-pending" },
+			{
+				...errorDiagnostic,
+				code: "publication.meetup.slides-pdf-pending",
+				field: "publicationLinks.meetup",
+			},
+			{ ...errorDiagnostic, code: "communication.slides-unavailable" },
+			{
+				...errorDiagnostic,
+				code: "communication.social.expired",
+				severity: "info",
+				field: "social.slack-engineering.d0",
+			},
+		];
+		// Act
+		const body = composition
+			.diagnosticCommentPresenter()
+			.render(diagnostics, composition.eventCommentMessages("fr"), {
+				repository: "example/meetups",
+			});
+		// Assert
+		expect(body.match(/- \[ \]/g)).toHaveLength(1);
+		expect(body).toContain("a été supprimé");
+		expect(body).toContain("emails de remerciement");
+		expect(body).toContain("#slide=id.news_slide");
+		expect(body).not.toContain("**Meetup Link**");
+		expect(body).not.toContain("Publication (");
+	});
 	it.each([
 		[
 			"en",
@@ -205,7 +242,7 @@ describe("renderDiagnosticComment", () => {
 		expect(body).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
 		expect(body).toContain("**Event Date**: Saisissez une date valide"); // codespell:ignore valide
 		expect(body).toContain("**Programme (élément 1, intervenant 2)**");
-		expect(body).toContain("Demandez à un responsable de consulter"); // codespell:ignore responsable
+		expect(body).toContain("Demandez à un mainteneur de consulter"); // codespell:ignore responsable
 		expect(body).not.toContain("private@example.test");
 		expect(body).not.toContain(errorDiagnostic.message);
 		expect(resolved).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
@@ -448,7 +485,7 @@ describe("renderDiagnosticComment", () => {
 		expect(body).toContain("**Event Date**: Enter a valid calendar date");
 		expect(body).toContain("**Referentials**: Ask a maintainer to correct");
 		expect(body).toContain(
-			"**Meetup issue**: Ask a maintainer to review the workflow diagnostics.",
+			"**Meetup issue**: Ask a maintainer to open the latest [Event / Reconcile active run]",
 		);
 		expect(body).not.toContain("alice@example.com");
 		expect(body).not.toContain("Private Street");

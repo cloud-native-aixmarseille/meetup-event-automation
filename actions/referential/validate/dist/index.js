@@ -35450,6 +35450,18 @@ var DiscoverAssetContent = class {
   }
 };
 
+// packages/domain/publication/src/domain/content-conflict-error.ts
+var ContentConflictError = class extends ContentError {
+  constructor(reason, pageId) {
+    super("conflict");
+    this.reason = reason;
+    this.pageId = pageId;
+    this.name = "ContentConflictError";
+  }
+  reason;
+  pageId;
+};
+
 // packages/domain/publication/src/domain/content-image-error.ts
 var ContentImageError = class _ContentImageError extends ContentError {
   constructor(reason, location) {
@@ -35526,7 +35538,7 @@ var ReconcileAssetFile = class {
       } : {
         ...this.diagnostic(error2.code),
         ...error2.code === "conflict" ? {
-          field: `assets.content/${file?.id ?? template.id}/${template.kind}`
+          field: `assets.content/${file?.id ?? template.id}/${template.kind}${error2 instanceof ContentConflictError ? `/${error2.reason}/${error2.pageId ?? "document"}` : ""}`
         } : {}
       }
     );
@@ -36331,7 +36343,10 @@ var ContentRenderPlan = class {
       );
       const location = matches[0];
       if (matches.length !== 1 || location.fingerprint !== binding.applied)
-        throw new ContentError("conflict");
+        throw new ContentConflictError(
+          matches.length !== 1 ? "missing" : "changed",
+          binding.anchor.pageId
+        );
       const value = values.find(
         (item) => item.key === binding.key && item.type === binding.type
       );
@@ -36908,11 +36923,19 @@ var ScheduledEventPolicy = class {
     return this.validSchedule(event, now2);
   }
   validSchedule(event, now2) {
+    const start = this.start(event);
+    return start !== void 0 && start > Date.parse(now2);
+  }
+  started(event, now2) {
+    const start = this.start(event);
+    return start !== void 0 && start <= Date.parse(now2);
+  }
+  start(event) {
     if (!this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
-      return false;
+      return void 0;
     const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
-      return false;
+      return void 0;
     try {
       const format = new Intl.DateTimeFormat("sv-SE", {
         timeZone: event.timeZone,
@@ -36925,9 +36948,9 @@ var ScheduledEventPolicy = class {
       });
       const start = this.instant(event.date, event.startTime, format);
       const end = this.instant(event.date, event.endTime, format);
-      return start !== void 0 && end !== void 0 && start > Date.parse(now2) && end > start;
+      return start !== void 0 && end !== void 0 && end > start ? start : void 0;
     } catch {
-      return false;
+      return void 0;
     }
   }
   validTime(value) {
@@ -37109,6 +37132,9 @@ var CommunityEventPolicy = class {
     this.schedule = schedule;
   }
   schedule;
+  started(event, now2) {
+    return this.schedule.started(event, now2);
+  }
   valid(event, now2) {
     return this.text(event.title, 120) && this.text(event.description, 8e3) && this.venue(event.venue) && this.registration(event.registration) && /^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/?$/.test(
       event.meetupUrl
@@ -39999,6 +40025,15 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
   }
   static PREREQUISITES = /* @__PURE__ */ new Map([
     [
+      "publication.meetup.slides-pdf-pending",
+      [
+        "publication.assets.content.",
+        "publication.assets.pdf.",
+        "publication.assets.file."
+      ]
+    ],
+    ["publication.meetup.prerequisites", ["event.", "referential.reference."]],
+    [
       "publication.assets.pdf.source-pending",
       [
         "publication.assets.content.",
@@ -41863,7 +41898,7 @@ var AttentionStageInput = class {
     });
   }
   safeField(field) {
-    if (typeof field === "string" && /^assets\.content\/[a-zA-Z0-9_-]{1,100}\/[a-z][a-z0-9-]{0,63}$/.test(
+    if (typeof field === "string" && /^assets\.content\/[a-zA-Z0-9_-]{1,100}\/[a-z][a-z0-9-]{0,63}(?:\/(?:missing|changed)\/[a-zA-Z0-9_-]{1,100})?$/.test(
       field
     ))
       return true;
@@ -49401,6 +49436,10 @@ var EMAIL_GUIDANCE = [
 var STAGE_GUIDANCE = [
   ...AUTHENTICATION_GUIDANCE,
   [
+    "publication.meetup.prerequisites",
+    ["Meetup Link", "comment.guidance.meetup.prerequisites"]
+  ],
+  [
     "publication.meetup.slides-approval-rejected",
     [
       "Automated slide sharing",
@@ -49995,6 +50034,7 @@ var DiagnosticPresenter = class {
     ["event_status", "Event Status"]
   ]);
   presentDiagnostic(item, messages3, links) {
+    const workflowUrl = this.workflowUrl(links);
     if (item.code === "publication.assets.content.conflict")
       return this.contentConflict(item, messages3, links);
     if (item.code.startsWith("publication.assets.content.image"))
@@ -50011,26 +50051,36 @@ var DiagnosticPresenter = class {
     );
     const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
     const [field, section] = this.publicField(item.field, fallback, messages3);
-    const message = guidance ? messages3.t(guidance[1]) : messages3.t(referential ? "comment.referential" : "comment.unknown");
+    const message = guidance ? messages3.t(guidance[1], { workflowUrl }) : referential ? messages3.t("comment.referential") : messages3.t("comment.unknown", { workflowUrl });
     const order = FIELD_ORDER.indexOf(section);
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
   }
   contentConflict(item, messages3, links) {
     const location = item.field?.match(
-      /^assets\.content\/([a-zA-Z0-9_-]{1,100})\/([a-z][a-z0-9-]{0,63})$/
+      /^assets\.content\/([a-zA-Z0-9_-]{1,100})\/([a-z][a-z0-9-]{0,63})(?:\/(missing|changed)\/([a-zA-Z0-9_-]{1,100}))?$/
     );
-    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+    const workflowUrl = this.workflowUrl(links);
+    const slide = location?.[2] === "slides" && location[4] && location[4] !== "document";
     return {
-      field: "Event materials",
+      field: messages3.t("comment.assets.content-heading"),
       message: [
-        location ? messages3.t("comment.assets.content-file", {
-          documentUrl: `https://drive.google.com/file/d/${location[1]}/view`
-        }) : "",
-        messages3.t("comment.assets.content-conflict", { workflowUrl }),
-        location?.[2] === "slides" ? messages3.t("comment.assets.slides-blocked") : ""
+        location ? messages3.t(
+          slide ? "comment.assets.content-slide" : "comment.assets.content-file",
+          {
+            documentUrl: slide ? `https://docs.google.com/presentation/d/${location[1]}/edit#slide=id.${location[4]}` : `https://drive.google.com/file/d/${location[1]}/view`
+          }
+        ) : "",
+        messages3.t(
+          location?.[3] === "missing" ? "comment.assets.content-missing" : "comment.assets.content-conflict"
+        ),
+        location?.[2] === "slides" ? messages3.t("comment.assets.slides-blocked") : "",
+        messages3.t("comment.assets.content-repair", { workflowUrl })
       ].filter(Boolean).join(" "),
       order: FIELD_ORDER.indexOf("Event materials")
     };
+  }
+  workflowUrl(links) {
+    return `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
   }
   imageDiagnostic(item, messages3) {
     const location = item.field?.match(
@@ -50054,7 +50104,7 @@ var DiagnosticPresenter = class {
     };
   }
   meetupRecovery(messages3, links) {
-    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+    const workflowUrl = this.workflowUrl(links);
     return links.meetup ? messages3.t("comment.guidance.meetup.uncertain", {
       eventUrl: links.meetup.replace(
         /[()<>\s]/g,
@@ -50423,7 +50473,7 @@ var EN_MESSAGES3 = {
   "comment.guidance.content.prerequisites": "Complete the date, venue, and agenda before generating content.",
   "comment.guidance.meetup.slides-source": "Fix the issue errors before sending slides to Meetup attendees.",
   "comment.guidance.meetup.slides-link": "Provide the published Meetup event link before sending slides.",
-  "comment.guidance.meetup.slides-pdf-pending": "Run document and PDF reconciliation before sending slides to Meetup attendees.",
+  "comment.guidance.meetup.slides-pdf-pending": 'The slides PDF is not ready. Open [Event / Reconcile active]({workflowUrl}), click "Run workflow", keep the "main" branch and confirm with "Run workflow". The result will appear here; sending will then require your approval.',
   "comment.guidance.meetup.slides-delivery-recovery": "Check the Meetup attendee message before retrying; delivery is unconfirmed.",
   "comment.guidance.meetup.slides-form-unavailable": "The Meetup attendee message form could not be verified. Check organizer access and the browser flow.",
   "comment.guidance.meetup.slides-source-changed": "The event changed before sending slides. Run publication reconciliation again.",
@@ -50439,7 +50489,7 @@ var EN_MESSAGES3 = {
   "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
   "comment.resolved": "\u2705 Event details complete.",
   "comment.duplicate": "Superseded duplicate automation comment.",
-  "comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
+  "comment.unknown": "Ask a maintainer to open the latest [Event / Reconcile active run]({workflowUrl}) and read the affected job summary.",
   "comment.referential": "Ask a maintainer to correct the host or speaker catalog.",
   "comment.agenda.item": "Agenda (item {item}{speaker})",
   "comment.agenda.speaker-suffix": ", speaker {speaker}",
@@ -50511,7 +50561,7 @@ var FR_MESSAGES3 = {
   "comment.guidance.content.prerequisites": "Compl\xE9tez la date, le lieu et le programme avant de g\xE9n\xE9rer le contenu.",
   "comment.guidance.meetup.slides-source": "Corrigez les erreurs de l'issue avant d'envoyer les slides aux participants Meetup.",
   "comment.guidance.meetup.slides-link": "Renseignez le lien Meetup publi\xE9 avant d'envoyer les slides.",
-  "comment.guidance.meetup.slides-pdf-pending": "Lancez la synchronisation des documents et du PDF avant d'envoyer les slides aux participants Meetup.",
+  "comment.guidance.meetup.slides-pdf-pending": `Le PDF des slides n'est pas pr\xEAt. Ouvrez [Event / Reconcile active]({workflowUrl}), cliquez sur "Run workflow", gardez la branche "main" et confirmez avec "Run workflow". Le r\xE9sultat sera indiqu\xE9 ici ; l'envoi n\xE9cessitera ensuite votre approbation.`,
   "comment.guidance.meetup.slides-delivery-recovery": "V\xE9rifiez le message aux participants Meetup avant de r\xE9essayer ; l'envoi est incertain.",
   "comment.guidance.meetup.slides-form-unavailable": "Le formulaire de message aux participants Meetup n'a pas pu \xEAtre v\xE9rifi\xE9. V\xE9rifiez les droits organisateur et le parcours du navigateur.",
   "comment.guidance.meetup.slides-source-changed": "L'\xE9v\xE9nement a chang\xE9 avant l'envoi des slides. Relancez la synchronisation des publications.",
@@ -50527,7 +50577,7 @@ var FR_MESSAGES3 = {
   "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
   "comment.resolved": "\u2705 Informations compl\xE8tes.",
   "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
-  "comment.unknown": "Demandez \xE0 un responsable de consulter les diagnostics du workflow.",
+  "comment.unknown": "Demandez \xE0 un mainteneur de consulter le dernier run de [Event / Reconcile active]({workflowUrl}), puis le r\xE9sum\xE9 du job concern\xE9.",
   "comment.referential": "Demandez \xE0 un responsable de corriger le r\xE9f\xE9rentiel des h\xF4tes ou des intervenants.",
   "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
   "comment.agenda.speaker-suffix": ", intervenant {speaker}",
@@ -50584,9 +50634,14 @@ var FR_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
-  "comment.assets.content-file": "[Open the affected file]({documentUrl}).",
-  "comment.assets.content-conflict": "Automation cannot locate a managed area or it differs from its recorded state. Ask a maintainer to compare the file with its recorded state and choose a [recovery that preserves manual additions](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), then [rerun synchronization]({workflowUrl}).",
-  "comment.assets.slides-blocked": "This conflict blocks the PDF and preparation of thank-you emails. Delivery approval requests will be prepared after it is resolved.",
+  "comment.guidance.meetup.prerequisites": "Meetup publication is blocked. Check the title, description, venue, date and times. See the latest [Event / Reconcile active run]({workflowUrl}) for details.",
+  "comment.assets.content-repair": 'A maintainer must [keep the manual edit or restore the automatic content](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict). After repair, [rerun synchronization with Event / Reconcile active]({workflowUrl}): click "Run workflow", keep the "main" branch and confirm with "Run workflow".',
+  "comment.assets.content-missing": "An automatically filled text box or image was deleted. Automatic updates have stopped to preserve your edits.",
+  "comment.assets.content-slide": "[Open the slide to repair]({documentUrl}).",
+  "comment.assets.content-heading": "Event materials",
+  "comment.assets.content-file": "[Open the document to repair]({documentUrl}).",
+  "comment.assets.content-conflict": "An automatically filled text box or image was edited or deleted. Automatic updates have stopped to preserve your edits.",
+  "comment.assets.slides-blocked": "This blocks PDF creation and thank-you email preparation.",
   "comment.guidance.meetup.slides-approval-rejected": "Slides delivery was rejected. Review the PDF before requesting approval again.",
   "comment.guidance.meetup.slides-approval-unavailable": "Slides delivery approval could not be verified. Check GitHub access and retry.",
   "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
@@ -50670,9 +50725,14 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
-  "comment.assets.content-file": "[Ouvrir le fichier concern\xE9]({documentUrl}).",
-  "comment.assets.content-conflict": "L'automatisation ne retrouve pas une zone g\xE9r\xE9e ou constate une diff\xE9rence avec son \xE9tat enregistr\xE9. Demandez \xE0 un mainteneur de comparer le fichier avec son \xE9tat enregistr\xE9 et de choisir une [reprise qui pr\xE9serve les ajouts manuels](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), puis [relancez la synchronisation]({workflowUrl}).",
-  "comment.assets.slides-blocked": "Ce conflit bloque le PDF et la pr\xE9paration des emails de remerciement. Les demandes d'approbation des envois seront propos\xE9es apr\xE8s correction.",
+  "comment.guidance.meetup.prerequisites": "La publication Meetup est bloqu\xE9e. V\xE9rifiez le titre, la description, le lieu, la date et les horaires. Le d\xE9tail est dans le dernier run de [Event / Reconcile active]({workflowUrl}).",
+  "comment.assets.content-repair": 'Un mainteneur doit [conserver la modification manuelle ou r\xE9tablir le contenu automatique](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict). Apr\xE8s r\xE9paration, ouvrez [Event / Reconcile active]({workflowUrl}), cliquez sur "Run workflow", gardez la branche "main" et confirmez avec "Run workflow".',
+  "comment.assets.content-missing": "Un texte ou une image rempli automatiquement a \xE9t\xE9 supprim\xE9. La mise \xE0 jour automatique est arr\xEAt\xE9e pour conserver vos modifications.",
+  "comment.assets.content-slide": "[Ouvrir la diapositive \xE0 r\xE9parer]({documentUrl}).",
+  "comment.assets.content-heading": "Documents du meetup",
+  "comment.assets.content-file": "[Ouvrir le document \xE0 r\xE9parer]({documentUrl}).",
+  "comment.assets.content-conflict": "Un texte ou une image rempli automatiquement a \xE9t\xE9 modifi\xE9 ou supprim\xE9. La mise \xE0 jour automatique est arr\xEAt\xE9e pour conserver vos modifications.",
+  "comment.assets.slides-blocked": "Cela bloque la cr\xE9ation du PDF et la pr\xE9paration des emails de remerciement.",
   "comment.guidance.meetup.slides-approval-rejected": "L'envoi des slides a \xE9t\xE9 refus\xE9. R\xE9visez le PDF avant de demander une nouvelle approbation.",
   "comment.guidance.meetup.slides-approval-unavailable": "Impossible de v\xE9rifier l'approbation d'envoi des slides. V\xE9rifiez l'acc\xE8s GitHub et relancez.",
   "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",

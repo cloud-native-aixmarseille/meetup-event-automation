@@ -130,8 +130,18 @@ describe("localization contract", () => {
 		// Assert
 		expect(guidance.length).toBeGreaterThan(0);
 		for (const item of guidance) {
-			expect(item.english.message).toBe(english.t(item.key));
-			expect(item.french.message).toBe(french.t(item.key));
+			expect(item.english.message).toBe(
+				english.t(item.key, {
+					workflowUrl:
+						"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+				}),
+			);
+			expect(item.french.message).toBe(
+				french.t(item.key, {
+					workflowUrl:
+						"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+				}),
+			);
 			expect(item.french.message).not.toBe(item.english.message);
 			expect(item.french.message).not.toContain(privateMessage);
 		}
@@ -189,7 +199,12 @@ describe("localization contract", () => {
 				});
 
 			// Assert
-			expect(presented.message).toBe(messages.t(key));
+			expect(presented.message).toBe(
+				messages.t(key, {
+					workflowUrl:
+						"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+				}),
+			);
 			expect(JSON.stringify(presented)).not.toContain("private@example.test");
 		},
 	);

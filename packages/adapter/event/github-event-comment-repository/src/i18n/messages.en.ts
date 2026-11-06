@@ -31,7 +31,7 @@ export const EN_MESSAGES = {
 	"comment.guidance.meetup.slides-link":
 		"Provide the published Meetup event link before sending slides.",
 	"comment.guidance.meetup.slides-pdf-pending":
-		"Run document and PDF reconciliation before sending slides to Meetup attendees.",
+		'The slides PDF is not ready. Open [Event / Reconcile active]({workflowUrl}), click "Run workflow", keep the "main" branch and confirm with "Run workflow". The result will appear here; sending will then require your approval.',
 	"comment.guidance.meetup.slides-delivery-recovery":
 		"Check the Meetup attendee message before retrying; delivery is unconfirmed.",
 	"comment.guidance.meetup.slides-form-unavailable":
@@ -61,7 +61,8 @@ export const EN_MESSAGES = {
 		"Enter a valid HTTPS link to the OpenFeedback event page.",
 	"comment.resolved": "✅ Event details complete.",
 	"comment.duplicate": "Superseded duplicate automation comment.",
-	"comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
+	"comment.unknown":
+		"Ask a maintainer to open the latest [Event / Reconcile active run]({workflowUrl}) and read the affected job summary.",
 	"comment.referential":
 		"Ask a maintainer to correct the host or speaker catalog.",
 	"comment.agenda.item": "Agenda (item {item}{speaker})",

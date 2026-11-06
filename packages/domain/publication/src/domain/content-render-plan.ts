@@ -8,6 +8,7 @@ import type {
 import type { ContentAnchorIdentity } from "./content-anchor-identity.js";
 import type { ContentContractPolicy } from "./content-contract-policy.js";
 import { ContentError } from "./content-error.js";
+import { ContentConflictError } from "./content-conflict-error.js";
 
 export interface ContentRenderPlanCollaborators {
 	readonly contentContractPolicy: Pick<ContentContractPolicy, "name">;
@@ -29,7 +30,10 @@ export class ContentRenderPlan {
 			);
 			const location = matches[0];
 			if (matches.length !== 1 || location.fingerprint !== binding.applied)
-				throw new ContentError("conflict");
+				throw new ContentConflictError(
+					matches.length !== 1 ? "missing" : "changed",
+					binding.anchor.pageId,
+				);
 			const value = values.find(
 				(item) => item.key === binding.key && item.type === binding.type,
 			);

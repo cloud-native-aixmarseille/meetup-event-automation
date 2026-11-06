@@ -56,6 +56,8 @@ export class ReconcileEventPublication<Event extends ScheduledEvent, Settings>
 				source.event,
 				this.configuration.settings,
 			);
+			if (event && this.configuration.policy.started(event, this.clock.now()))
+				return this.results.result("skipped", "inactive");
 			if (!event || !this.configuration.policy.valid(event, this.clock.now()))
 				return this.blocked("prerequisites");
 			const remote = await this.resolveIdentity(source);

@@ -1,7 +1,7 @@
 import type { slides_v1 } from "@googleapis/slides";
 import {
 	type ContentBinding,
-	ContentError,
+	ContentConflictError,
 } from "@meetup-automation/publication";
 
 export class SlideContentElement {
@@ -17,7 +17,7 @@ export class SlideContentElement {
 			.flatMap((page) => page.pageElements ?? [])
 			.filter((element) => element.objectId === binding.anchor.objectId);
 		if (pages.length !== 1 || elements.length !== 1)
-			throw new ContentError("conflict");
+			throw new ContentConflictError("missing", binding.anchor.pageId);
 		return elements[0];
 	}
 }

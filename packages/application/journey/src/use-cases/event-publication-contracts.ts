@@ -73,7 +73,10 @@ export type EventPublicationConfiguration<
 			settings: Settings,
 		): Event | undefined | Promise<Event | undefined>;
 	};
-	policy: { valid(event: Event, now: string): boolean };
+	policy: {
+		valid(event: Event, now: string): boolean;
+		started(event: Event, now: string): boolean;
+	};
 	identityPolicy: EventPublicationIdentityPolicy;
 	pendingRecovery: "verified-link" | "journal-identity";
 	issueProjection: {
