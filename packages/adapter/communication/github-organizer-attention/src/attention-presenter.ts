@@ -48,7 +48,11 @@ export class AttentionPresenter {
 		});
 	}
 	issue(state: AttentionState, metadata: string): string {
-		return [this.diagnostics.prefix(), metadata, this.details(state)]
+		return [
+			state.commentId ? "" : this.diagnostics.prefix(),
+			metadata,
+			this.details(state),
+		]
 			.filter(Boolean)
 			.join("\n\n");
 	}
@@ -61,10 +65,17 @@ export class AttentionPresenter {
 	details(state: AttentionState): string {
 		const view = this.collaborators.attentionPolicy.view(state);
 		const lines = this.status(state);
-		for (const episode of this.collaborators.attentionTaskSelection.select(
+		const selected = this.collaborators.attentionTaskSelection.select(
 			view,
 			this.diagnostics.read(),
-		).details) {
+		);
+		if (state.commentId)
+			lines.push(
+				...selected.checklist.map(
+					(entry) => `- [ ] **${entry.label}**: ${entry.description}`,
+				),
+			);
+		for (const episode of selected.details) {
 			const url = this.url(episode, state);
 			const link =
 				url === this.overviewUrl(state)

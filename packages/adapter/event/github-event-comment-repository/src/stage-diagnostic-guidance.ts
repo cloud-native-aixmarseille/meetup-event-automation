@@ -240,10 +240,6 @@ export const STAGE_GUIDANCE = [
 		["Event materials", "comment.guidance.assets.missing"],
 	],
 	[
-		"publication.assets.content.conflict",
-		["Event materials", "comment.guidance.assets.recovery"],
-	],
-	[
 		"publication.assets.content.recovery",
 		["Event materials", "comment.guidance.assets.recovery"],
 	],

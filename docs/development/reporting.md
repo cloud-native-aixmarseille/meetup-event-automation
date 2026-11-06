@@ -110,6 +110,12 @@ communication report. Existing bot-state verification, pending delivery
 reservations and post-event approval controls remain authoritative. Failed
 comment persistence prevents a new Slack notification and fails the action.
 
+The shared post-event follow-up includes the merged checklist's concrete actions
+and keeps specific approval and recovery links. It does not redirect organizers
+to another diagnostic comment for blockers. Once the shared view is saved, the
+separate diagnostic comment is minimized; its checklist remains intact for the
+checklist writer and incomplete-run recovery.
+
 After durable persistence, completed approval and attention comments are minimized
 with GitHub's `RESOLVED` classifier. Their bodies, decisions, and history remain
 intact. Outstanding checklist entries, active or unknown attention, and pending

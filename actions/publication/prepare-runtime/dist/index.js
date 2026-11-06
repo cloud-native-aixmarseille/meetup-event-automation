@@ -28165,7 +28165,7 @@ var ReconcileAssetFile = class {
       return { file, status };
     } catch (error2) {
       if (!(error2 instanceof ContentError)) throw error2;
-      return this.failed(file, error2, input.diagnostics, input.template.id);
+      return this.failed(file, error2, input.diagnostics, input.template);
     }
   }
   async prepare(input, file) {
@@ -28183,12 +28183,17 @@ var ReconcileAssetFile = class {
       model: contract ? await input.model?.(contract) : void 0
     };
   }
-  failed(file, error2, diagnostics, templateId) {
+  failed(file, error2, diagnostics, template) {
     diagnostics.push(
       error2 instanceof ContentImageError ? {
         ...this.diagnostic(`image-${error2.reason}`),
-        field: `assets.image/${file?.id ?? templateId}/${error2.location?.kind ?? "embedded"}/${error2.location?.slot ?? "unknown"}`
-      } : this.diagnostic(error2.code)
+        field: `assets.image/${file?.id ?? template.id}/${error2.location?.kind ?? "embedded"}/${error2.location?.slot ?? "unknown"}`
+      } : {
+        ...this.diagnostic(error2.code),
+        ...error2.code === "conflict" ? {
+          field: `assets.content/${file?.id ?? template.id}/${template.kind}`
+        } : {}
+      }
     );
     return {
       file,
@@ -30011,7 +30016,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       details: conditions.filter(
         (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && !["social-approval", "slides-approval"].includes(
           this.actionFor(episode) ?? ""
-        ))) && !(episode.status !== "unknown" && checklist.entries.some(
+        ))) && !(!view.state.commentId && episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )

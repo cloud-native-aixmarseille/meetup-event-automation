@@ -211,6 +211,7 @@ describe("asset file failure classification", () => {
 				expect(diagnostics).toContainEqual(
 					expect.objectContaining({
 						code: "publication.assets.content.conflict",
+						field: `assets.content/${stage === "execute" ? file.id : f.input.templateId}/slides`,
 					}),
 				);
 			}

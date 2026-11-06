@@ -1,4 +1,9 @@
 export const STAGE_MESSAGES_FR = {
+	"comment.assets.content-file": "[Ouvrir le fichier concerné]({documentUrl}).",
+	"comment.assets.content-conflict":
+		"L'automatisation ne retrouve pas une zone gérée ou constate une différence avec son état enregistré. Demandez à un mainteneur de comparer le fichier avec son état enregistré et de choisir une [reprise qui préserve les ajouts manuels](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), puis [relancez la synchronisation]({workflowUrl}).",
+	"comment.assets.slides-blocked":
+		"Ce conflit bloque le PDF et la préparation des emails de remerciement. Les demandes d'approbation des envois seront proposées après correction.",
 	"comment.guidance.meetup.slides-approval-rejected":
 		"L'envoi des slides a été refusé. Révisez le PDF avant de demander une nouvelle approbation.",
 	"comment.guidance.meetup.slides-approval-unavailable":
