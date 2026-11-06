@@ -5,6 +5,10 @@ import { RuntimeInputError } from "./runtime-input-error.js";
 describe("workflow attention input decoding", () => {
 	it.each([
 		["assets.content/document_123/slides", true],
+		["assets.content/document_123/slides/missing/news_slide", true],
+		["assets.content/document_123/slides/changed/news_slide", true],
+		["assets.content/document_123/slides/missing/private@example.test", false],
+		["assets.content/document_123/slides/unknown/news_slide", false],
 		["assets.content/document_123/brief", true],
 		["assets.content/private@example.test/slides", false],
 		["assets.content/](https://example.test)/slides", false],

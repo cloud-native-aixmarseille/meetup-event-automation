@@ -9,8 +9,15 @@ import type { ScheduledEventPolicy } from "./scheduled-event-policy.js";
 
 export class CommunityEventPolicy {
 	constructor(
-		private readonly schedule: Pick<ScheduledEventPolicy, "validSchedule">,
+		private readonly schedule: Pick<
+			ScheduledEventPolicy,
+			"validSchedule" | "started"
+		>,
 	) {}
+
+	started(event: CommunityEvent, now: string): boolean {
+		return this.schedule.started(event, now);
+	}
 
 	valid(event: CommunityEvent, now: string): boolean {
 		return (

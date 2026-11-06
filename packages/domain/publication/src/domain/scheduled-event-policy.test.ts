@@ -13,6 +13,37 @@ const event: ScheduledEvent = {
 };
 
 describe("scheduled event validation", () => {
+	it.each([
+		["2026-10-01T16:44:59Z", false],
+		["2026-10-01T16:45:00Z", true],
+		["2026-10-02T12:00:00Z", true],
+		["invalid", false],
+	] as const)("recognizes a started event at %s", (now, expected) => {
+		// Arrange
+		const policy = new ScheduledEventPolicy();
+		// Act
+		const started = policy.started(event, now);
+		// Assert
+		expect(started).toBe(expected);
+	});
+	it.each([
+		{ date: "2026-02-30" },
+		{ timeZone: "invalid" },
+		{ date: "2026-10-25", startTime: "02:30" },
+	])(
+		"does not mistake an invalid schedule for a past event: %j",
+		(overrides) => {
+			// Arrange
+			const policy = new ScheduledEventPolicy();
+			// Act
+			const started = policy.started(
+				{ ...event, ...overrides },
+				"2027-01-01T12:00:00Z",
+			);
+			// Assert
+			expect(started).toBe(false);
+		},
+	);
 	it.each(["2026-10-25", "2027-03-28"])(
 		"rejects ambiguous or nonexistent local times on %s",
 		(date) => {

@@ -94,6 +94,16 @@ Pending social publication decisions come from verified approval attention, with
 one destination-specific link to each review comment. They are not duplicated as
 diagnostic checklist instructions. A recorded decision clears its approval task
 independently of delivery success; delivery failures keep their own run link.
+Expired announcement windows are informational, and content review stops asking
+for replacement announcement drafts after their current publication window closes.
+Rescheduled events use the current schedule. Uncertain deliveries still require
+verification after expiry; they are never treated as resolved by the clock.
+Publication of an event that has already started is skipped, not reported as a
+missing prerequisite. Post-event slides and email approval gates remain active.
+Slides content conflicts appear once, with a document or slide link and repair
+instructions, instead of repeated PDF and delivery prerequisite tasks. Standalone
+PDF preparation and unknown diagnostics link to **Event / Reconcile active**;
+rerun instructions identify the **Run workflow** button and **main** branch.
 
 Social publication has an optional independent stage in the same canonical
 comment. Reports include only the stages attempted by their workflow. An omitted

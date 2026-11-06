@@ -1,9 +1,19 @@
 export const STAGE_MESSAGES_FR = {
-	"comment.assets.content-file": "[Ouvrir le fichier concerné]({documentUrl}).",
+	"comment.guidance.meetup.prerequisites":
+		"La publication Meetup est bloquée. Vérifiez le titre, la description, le lieu, la date et les horaires. Le détail est dans le dernier run de [Event / Reconcile active]({workflowUrl}).",
+	"comment.assets.content-repair":
+		'Un mainteneur doit [conserver la modification manuelle ou rétablir le contenu automatique](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict). Après réparation, ouvrez [Event / Reconcile active]({workflowUrl}), cliquez sur "Run workflow", gardez la branche "main" et confirmez avec "Run workflow".',
+	"comment.assets.content-missing":
+		"Un texte ou une image rempli automatiquement a été supprimé. La mise à jour automatique est arrêtée pour conserver vos modifications.",
+	"comment.assets.content-slide":
+		"[Ouvrir la diapositive à réparer]({documentUrl}).",
+	"comment.assets.content-heading": "Documents du meetup",
+	"comment.assets.content-file":
+		"[Ouvrir le document à réparer]({documentUrl}).",
 	"comment.assets.content-conflict":
-		"L'automatisation ne retrouve pas une zone gérée ou constate une différence avec son état enregistré. Demandez à un mainteneur de comparer le fichier avec son état enregistré et de choisir une [reprise qui préserve les ajouts manuels](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), puis [relancez la synchronisation]({workflowUrl}).",
+		"Un texte ou une image rempli automatiquement a été modifié ou supprimé. La mise à jour automatique est arrêtée pour conserver vos modifications.",
 	"comment.assets.slides-blocked":
-		"Ce conflit bloque le PDF et la préparation des emails de remerciement. Les demandes d'approbation des envois seront proposées après correction.",
+		"Cela bloque la création du PDF et la préparation des emails de remerciement.",
 	"comment.guidance.meetup.slides-approval-rejected":
 		"L'envoi des slides a été refusé. Révisez le PDF avant de demander une nouvelle approbation.",
 	"comment.guidance.meetup.slides-approval-unavailable":

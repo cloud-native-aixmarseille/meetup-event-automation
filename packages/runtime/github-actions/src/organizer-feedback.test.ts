@@ -62,7 +62,7 @@ describe("OrganizerFeedback", () => {
 		const diagnostic = {
 			code: "publication.assets.content.conflict",
 			severity: "warning",
-			field: "assets.content/slides_123/slides",
+			field: "assets.content/slides_123/slides/missing/news_slide",
 			message: "private provider response",
 		};
 		const input = reports({

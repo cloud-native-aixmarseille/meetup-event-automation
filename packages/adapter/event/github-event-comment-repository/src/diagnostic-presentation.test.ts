@@ -12,6 +12,53 @@ const diagnostic: EventDiagnostic = {
 };
 
 describe("organizer diagnostic presentation", () => {
+	it("links a deleted automatic field to its slide with concrete rerun instructions", () => {
+		// Arrange
+		const messages = new EventCommentMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
+		const item = {
+			...diagnostic,
+			code: "publication.assets.content.conflict",
+			field: "assets.content/slides_123/slides/missing/news_slide",
+		};
+		// Act
+		const result = new DiagnosticPresenter().presentDiagnostic(item, messages, {
+			repository: "example/meetups",
+		});
+		// Assert
+		expect(result.field).toBe("Documents du meetup");
+		expect(result.message).toContain(
+			"https://docs.google.com/presentation/d/slides_123/edit#slide=id.news_slide",
+		);
+		expect(result.message).toContain("a été supprimé");
+		expect(result.message).toContain('cliquez sur "Run workflow"');
+		expect(result.message).toContain('branche "main"');
+		expect(result.message).not.toContain("état enregistré");
+	});
+	it.each([
+		"publication.meetup.slides-pdf-pending",
+		"publication.meetup.prerequisites",
+		"publication.unknown",
+	])("links the workflow for standalone guidance: %s", (code) => {
+		// Arrange
+		const messages = new EventCommentMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
+		// Act
+		const result = new DiagnosticPresenter().presentDiagnostic(
+			{ ...diagnostic, code },
+			messages,
+			{ repository: "example/meetups" },
+		);
+		// Assert
+		expect(result.message).toContain(
+			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+		);
+		expect(result.message).not.toContain("{workflowUrl}");
+	});
 	it.each(["en", "fr"])(
 		"explains a slides conflict with file, recovery and rerun links in %s",
 		(locale) => {
@@ -34,7 +81,9 @@ describe("organizer diagnostic presentation", () => {
 			);
 
 			// Assert
-			expect(result.field).toBe("Event materials");
+			expect(result.field).toBe(
+				locale === "fr" ? "Documents du meetup" : "Event materials",
+			);
 			expect(result.message).toContain(
 				"https://drive.google.com/file/d/slides_123/view",
 			);
@@ -43,10 +92,10 @@ describe("organizer diagnostic presentation", () => {
 				"example/meetups/actions/workflows/event-reconcile-active.yml",
 			);
 			expect(result.message).toContain(
-				locale === "fr" ? "emails de remerciement" : "thank-you emails",
+				locale === "fr" ? "emails de remerciement" : "thank-you email",
 			);
 			expect(result.message).toContain(
-				locale === "fr" ? "préserve les ajouts" : "preserves manual additions",
+				locale === "fr" ? "conserver vos modifications" : "preserve your edits",
 			);
 			expect(result.message).not.toContain(diagnostic.message);
 		},
@@ -308,7 +357,7 @@ describe("organizer diagnostic presentation", () => {
 			"en",
 			"publication.assets.content.conflict",
 			"Event materials",
-			"Ask a maintainer",
+			"A maintainer must",
 		],
 	])(
 		"renders concrete %s %s guidance without private data",

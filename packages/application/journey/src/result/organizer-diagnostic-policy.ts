@@ -38,6 +38,15 @@ export class OrganizerDiagnosticPolicy {
 	}
 	private static readonly PREREQUISITES = new Map([
 		[
+			"publication.meetup.slides-pdf-pending",
+			[
+				"publication.assets.content.",
+				"publication.assets.pdf.",
+				"publication.assets.file.",
+			],
+		],
+		["publication.meetup.prerequisites", ["event.", "referential.reference."]],
+		[
 			"publication.assets.pdf.source-pending",
 			[
 				"publication.assets.content.",

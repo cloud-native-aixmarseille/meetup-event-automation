@@ -205,8 +205,11 @@ destinations, or revoked authority blocks unsent work. Regenerate and review
 changed content. Published corrections remain manual.
 
 Successful destinations stay complete if another destination fails. The shared
-organizer checklist reports pending, blocked, uncertain and expired work by
-destination and purpose, preserving tasks owned by other workflows. Provider
+organizer checklist reports pending, blocked and uncertain work by destination
+and purpose, preserving tasks owned by other workflows. Expired announcements
+and reminders do not request replacement drafts or another send. A completed
+social evaluation clears those expired tasks; an uncertain delivery still needs
+verification even after the event. Provider
 receipts and attempts remain in the `social` section of the issue's single
 [collapsed automation-state comment](../development/reporting.md#internal-automation-state).
 Never edit or

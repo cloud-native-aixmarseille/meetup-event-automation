@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { contentFixture } from "../../testing/content.fixtures.js";
-import { ContentError } from "../domain/content-error.js";
+import { ContentConflictError } from "../domain/content-conflict-error.js";
 import { ContentImageError } from "../domain/content-image-error.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type { AssetRepository } from "./ports.js";
@@ -139,7 +139,7 @@ describe("asset file failure classification", () => {
 			const f = contentFixture();
 			const error = technical
 				? new Error("Synthetic renderer transport failure")
-				: new ContentError("conflict");
+				: new ContentConflictError("missing", "news_slide");
 			vi.spyOn(f.service, "preflight").mockResolvedValue(undefined);
 			vi.spyOn(f.service, "execute").mockResolvedValue({
 				status: "ready",
@@ -211,7 +211,7 @@ describe("asset file failure classification", () => {
 				expect(diagnostics).toContainEqual(
 					expect.objectContaining({
 						code: "publication.assets.content.conflict",
-						field: `assets.content/${stage === "execute" ? file.id : f.input.templateId}/slides`,
+						field: `assets.content/${stage === "execute" ? file.id : f.input.templateId}/slides/missing/news_slide`,
 					}),
 				);
 			}

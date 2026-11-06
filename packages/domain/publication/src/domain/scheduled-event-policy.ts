@@ -22,19 +22,34 @@ export class ScheduledEventPolicy {
 		event: Pick<ScheduledEvent, "date" | "startTime" | "endTime" | "timeZone">,
 		now: string,
 	): boolean {
+		const start = this.start(event);
+		return start !== undefined && start > Date.parse(now);
+	}
+
+	started(
+		event: Pick<ScheduledEvent, "date" | "startTime" | "endTime" | "timeZone">,
+		now: string,
+	): boolean {
+		const start = this.start(event);
+		return start !== undefined && start <= Date.parse(now);
+	}
+
+	private start(
+		event: Pick<ScheduledEvent, "date" | "startTime" | "endTime" | "timeZone">,
+	): number | undefined {
 		if (
 			!this.validTime(event.startTime) ||
 			!this.validTime(event.endTime) ||
 			event.endTime <= event.startTime ||
 			!/^\d{4}-\d{2}-\d{2}$/.test(event.date)
 		)
-			return false;
+			return undefined;
 		const date = new Date(`${event.date}T12:00:00Z`);
 		if (
 			!Number.isFinite(date.getTime()) ||
 			date.toISOString().slice(0, 10) !== event.date
 		)
-			return false;
+			return undefined;
 		try {
 			const format = new Intl.DateTimeFormat("sv-SE", {
 				timeZone: event.timeZone,
@@ -47,14 +62,11 @@ export class ScheduledEventPolicy {
 			});
 			const start = this.instant(event.date, event.startTime, format);
 			const end = this.instant(event.date, event.endTime, format);
-			return (
-				start !== undefined &&
-				end !== undefined &&
-				start > Date.parse(now) &&
-				end > start
-			);
+			return start !== undefined && end !== undefined && end > start
+				? start
+				: undefined;
 		} catch {
-			return false;
+			return undefined;
 		}
 	}
 

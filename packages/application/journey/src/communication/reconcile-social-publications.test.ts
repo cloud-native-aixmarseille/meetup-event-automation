@@ -286,6 +286,54 @@ describe("social publication reconciliation", () => {
 });
 
 describe("scheduled social publication", () => {
+	it.each(["pending", "stale", "approved"])(
+		"keeps an expired %s announcement out of organizer tasks",
+		async (state) => {
+			// Arrange
+			const f = await socialFixture("slack-engineering:d0");
+			f.state.now = "2026-10-29T12:00:00Z";
+			const snapshot = await f.store.load();
+			await f.store.save(
+				snapshot,
+				snapshot.proposals.map((proposal) => ({
+					...proposal,
+					decision: state === "pending" ? null : proposal.decision,
+					plan:
+						state === "stale"
+							? { ...proposal.plan, sourceFingerprint: "changed" }
+							: proposal.plan,
+				})),
+			);
+			// Act
+			const result = await f.useCase.execute(identity);
+			// Assert
+			expect(result.publications[0].status).toBe("expired");
+			expect(result.diagnostics).toEqual([
+				expect.objectContaining({
+					code: "communication.social.expired",
+					severity: "info",
+				}),
+			]);
+			expect(f.posts.publish).not.toHaveBeenCalled();
+			expect(f.dependencies.approvals.request).not.toHaveBeenCalled();
+		},
+	);
+	it("retains an uncertain delivery after its publication window closes", async () => {
+		// Arrange
+		const f = await socialFixture();
+		f.posts.publish.mockResolvedValueOnce({
+			status: "uncertain",
+			code: "lost-response",
+		});
+		await f.useCase.execute(identity);
+		f.state.now = "2026-10-29T12:00:00Z";
+		// Act
+		const result = await f.useCase.execute(identity);
+		// Assert
+		expect(result.publications[0].status).toBe("uncertain");
+		expect(result.diagnostics[0].severity).toBe("warning");
+		expect(f.posts.publish).toHaveBeenCalledOnce();
+	});
 	it.each([
 		["2026-10-21T06:59:59Z", "scheduled", 0],
 		["2026-10-21T07:00:00Z", "published", 1],

@@ -57,6 +57,7 @@ export { CommunityEventUrlPolicy } from "./domain/community-event-url-policy.js"
 export { CommunityGroupUrl } from "./domain/community-group-url.js";
 export { ContentContractPolicy } from "./domain/content-contract-policy.js";
 export { ContentError } from "./domain/content-error.js";
+export { ContentConflictError } from "./domain/content-conflict-error.js";
 export { ContentImageError } from "./domain/content-image-error.js";
 export { ContentFingerprint } from "./domain/content-fingerprint.js";
 export type * from "./domain/content-media.js";

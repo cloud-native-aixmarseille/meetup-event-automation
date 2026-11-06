@@ -35,6 +35,20 @@ export class SocialPublicationReview {
 			"isPublished"
 		>,
 	) {}
+	async expired(
+		identity: EventIdentity,
+		proposal: ContentProposal,
+	): Promise<boolean> {
+		const context = await this.dependencies.workspace.read(
+			identity,
+			proposal.plan.target,
+			proposal.plan.language,
+		);
+		return this.dependencies.timing.expired(
+			context?.plan ?? proposal.plan,
+			this.dependencies.now(),
+		);
+	}
 	async pendingContent(
 		identity: EventIdentity,
 		proposal: ContentProposal,

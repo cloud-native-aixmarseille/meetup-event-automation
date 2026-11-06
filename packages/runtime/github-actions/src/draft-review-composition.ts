@@ -97,6 +97,8 @@ export class DraftReviewComposition {
 				base.timing,
 				() => new Date().toISOString(),
 			),
+			base.timing,
+			() => new Date().toISOString(),
 		);
 	}
 }

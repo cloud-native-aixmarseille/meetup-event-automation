@@ -401,10 +401,24 @@ preserve an existing PDF without treating it as a fresh export.
 
 ## Recover a content conflict
 
-The organizer checklist links to the affected file, this recovery procedure and
-the synchronization workflow. A slides conflict also explains that PDF export and
-thank-you email preparation are blocked. Delivery approval requests become
-available after the conflict and any other prerequisites are resolved.
+The organizer checklist links to the affected file, or directly to the slide when
+its location is known. A deleted automatic field is identified separately from an
+edited field. Automatic updates stop to preserve manual edits; a slides conflict
+also blocks PDF creation and thank-you email preparation.
+
+For organizers: ask a repository maintainer to keep the manual change or restore
+the automatic field using the procedure below. After repair, open the linked
+**Event / Reconcile active** workflow, click **Run workflow**, keep the **main**
+branch, and confirm with **Run workflow**. The checklist refreshes after the run.
+Delivery approval requests become available once all prerequisites are resolved.
+
+For maintainers: compare the linked slide with its `.bindings.json` file in the
+same Drive folder. Each binding identifies the text box or image previously
+filled by automation. If an organizer intentionally replaced a text box, use
+`remove` below for the deleted binding to keep the replacement. If the edit was
+accidental, restore the original box with its original object ID, or restore its
+text. Review all affected bindings; recreating a similar-looking box does not
+restore its identity.
 
 Inspect the file and its sidecar before recovery. Do not delete the managed copy,
 recreate its URL or clear delivery records. An uncertain copy operation still

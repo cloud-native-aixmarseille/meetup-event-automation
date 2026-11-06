@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { SocialPostTiming } from "@meetup-automation/communication";
 import {
 	event,
 	identity,
@@ -15,7 +16,10 @@ import type { ContentWorkspace } from "./content-workspace.js";
 import { ManageContentReview } from "./manage-content-review.js";
 import type { SubmitPromotionalContent } from "./submit-promotional-content.js";
 
-function fixture(target: ContentTarget = "title") {
+function fixture(
+	target: ContentTarget = "title",
+	now = "2026-09-20T12:00:00Z",
+) {
 	const f = contentFixture(target);
 	const proposal: ContentProposal = {
 		...f.proposal,
@@ -48,6 +52,8 @@ function fixture(target: ContentTarget = "title") {
 		workspace,
 		review,
 		apply,
+		new SocialPostTiming(),
+		() => now,
 	);
 	return {
 		...f,
@@ -63,6 +69,46 @@ function fixture(target: ContentTarget = "title") {
 }
 
 describe("content review coordination", () => {
+	it.each([
+		"slack-engineering:announcement",
+		"slack-engineering:d7",
+		"slack-engineering:d0",
+	] as const)(
+		"does not request a new %s proposal after its publication window",
+		async (target) => {
+			// Arrange
+			const f = fixture(target, "2027-01-01T12:00:00Z");
+			f.review.review.mockResolvedValue("stale");
+			// Act
+			const result = await f.manager.execute(identity);
+			// Assert
+			expect(result).toEqual([]);
+			expect(f.review.review).not.toHaveBeenCalled();
+			expect(f.apply.execute).not.toHaveBeenCalled();
+		},
+	);
+	it("keeps reviews for a rescheduled event after the original date", async () => {
+		// Arrange
+		const f = fixture("slack-engineering:d0", "2027-01-01T12:00:00Z");
+		const context = await f.workspace.read(
+			identity,
+			"slack-engineering:d0",
+			"fr",
+		);
+		if (!context) throw new Error("Missing fixture context");
+		f.workspace.read.mockResolvedValue({
+			...context,
+			plan: {
+				...f.plan,
+				plannedAt: "2027-02-01T08:00:00Z",
+				facts: { ...f.plan.facts, date: "2027-02-01" },
+			},
+		});
+		// Act
+		const result = await f.manager.execute(identity);
+		// Assert
+		expect(result[0].code).toBe("publication.content.pending");
+	});
 	it("identifies the destination and milestone when reminder content awaits approval", async () => {
 		// Arrange
 		const f = fixture("slack-engineering:d0");

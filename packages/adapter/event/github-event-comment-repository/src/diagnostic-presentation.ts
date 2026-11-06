@@ -45,6 +45,7 @@ export class DiagnosticPresenter {
 		messages: EventCommentMessages,
 		links: DiagnosticLinks,
 	): DiagnosticPresentation {
+		const workflowUrl = this.workflowUrl(links);
 		if (item.code === "publication.assets.content.conflict")
 			return this.contentConflict(item, messages, links);
 		if (item.code.startsWith("publication.assets.content.image"))
@@ -63,8 +64,10 @@ export class DiagnosticPresenter {
 			guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
 		const [field, section] = this.publicField(item.field, fallback, messages);
 		const message = guidance
-			? messages.t(guidance[1])
-			: messages.t(referential ? "comment.referential" : "comment.unknown");
+			? messages.t(guidance[1], { workflowUrl })
+			: referential
+				? messages.t("comment.referential")
+				: messages.t("comment.unknown", { workflowUrl });
 		const order = FIELD_ORDER.indexOf(section);
 		return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
 	}
@@ -75,26 +78,44 @@ export class DiagnosticPresenter {
 		links: DiagnosticLinks,
 	): DiagnosticPresentation {
 		const location = item.field?.match(
-			/^assets\.content\/([a-zA-Z0-9_-]{1,100})\/([a-z][a-z0-9-]{0,63})$/,
+			/^assets\.content\/([a-zA-Z0-9_-]{1,100})\/([a-z][a-z0-9-]{0,63})(?:\/(missing|changed)\/([a-zA-Z0-9_-]{1,100}))?$/,
 		);
-		const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+		const workflowUrl = this.workflowUrl(links);
+		const slide =
+			location?.[2] === "slides" && location[4] && location[4] !== "document";
 		return {
-			field: "Event materials",
+			field: messages.t("comment.assets.content-heading"),
 			message: [
 				location
-					? messages.t("comment.assets.content-file", {
-							documentUrl: `https://drive.google.com/file/d/${location[1]}/view`,
-						})
+					? messages.t(
+							slide
+								? "comment.assets.content-slide"
+								: "comment.assets.content-file",
+							{
+								documentUrl: slide
+									? `https://docs.google.com/presentation/d/${location[1]}/edit#slide=id.${location[4]}`
+									: `https://drive.google.com/file/d/${location[1]}/view`,
+							},
+						)
 					: "",
-				messages.t("comment.assets.content-conflict", { workflowUrl }),
+				messages.t(
+					location?.[3] === "missing"
+						? "comment.assets.content-missing"
+						: "comment.assets.content-conflict",
+				),
 				location?.[2] === "slides"
 					? messages.t("comment.assets.slides-blocked")
 					: "",
+				messages.t("comment.assets.content-repair", { workflowUrl }),
 			]
 				.filter(Boolean)
 				.join(" "),
 			order: FIELD_ORDER.indexOf("Event materials"),
 		};
+	}
+
+	private workflowUrl(links: DiagnosticLinks): string {
+		return `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
 	}
 
 	private imageDiagnostic(
@@ -133,7 +154,7 @@ export class DiagnosticPresenter {
 		messages: EventCommentMessages,
 		links: DiagnosticLinks,
 	): string {
-		const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+		const workflowUrl = this.workflowUrl(links);
 		return links.meetup
 			? messages.t("comment.guidance.meetup.uncertain", {
 					eventUrl: links.meetup.replace(/[()<>\s]/g, (character) =>
