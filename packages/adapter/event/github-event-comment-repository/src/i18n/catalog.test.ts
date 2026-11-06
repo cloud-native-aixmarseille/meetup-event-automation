@@ -4,6 +4,13 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"comment.assets.content-file": {
+		documentUrl: "https://drive.google.com/file/d/document_123/view",
+	},
+	"comment.assets.content-conflict": {
+		workflowUrl:
+			"https://github.com/example/meetups/actions/workflows/event-reconcile-active.yml",
+	},
 	"comment.assets.image-context": {
 		kind: "host-logo",
 		slot: "logo",

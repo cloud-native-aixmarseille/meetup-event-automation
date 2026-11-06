@@ -8,6 +8,32 @@ import { GithubOrganizerAttentionComposition } from "./dependency-composition.js
 import { AttentionMessages } from "./i18n/attention-messages.js";
 
 describe("GitHub attention presentation", () => {
+	it("includes concrete blockers and separate approval links in the shared follow-up", () => {
+		// Arrange
+		const f = fixture();
+		const action =
+			"Review the conflicting [slides](https://drive.google.com/file/d/slides/view).";
+		f.checklist.set(
+			80,
+			`<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Communication**: Approve sending the PDF to Meetup attendees.\n- [ ] **Event materials**: ${action}`,
+		);
+		const pending = episode("approval-pending", "meetup-slides:revision");
+		pending.condition = { ...pending.condition, commentId: 300 };
+
+		// Act
+		const body = f.presenter.details({
+			...state(),
+			commentId: 200,
+			post: undefined,
+			episodes: [pending],
+		});
+
+		// Assert
+		expect(body).toContain(action);
+		expect(body).toContain("#issuecomment-300");
+		expect(body).not.toContain("meetup-automation:event-diagnostics");
+		expect(body.match(/Approve sending the PDF/g)).toHaveLength(1);
+	});
 	it.each([
 		[
 			"publication.meetup.authentication-account-unavailable",

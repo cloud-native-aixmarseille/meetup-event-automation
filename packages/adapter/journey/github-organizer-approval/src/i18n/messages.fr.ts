@@ -50,12 +50,12 @@ export const FR_MESSAGES = {
 
 	"follow-up.title": "## Suivi après le meetup · {date}",
 	"follow-up.instructions":
-		"Cochez les tâches manuelles dans la liste Post event du ticket.",
+		"Les envois d'emails et de slides nécessitent une approbation. Après l'import des participants dans CNCF et la publication du récapitulatif sur LinkedIn, cochez ces deux tâches dans \"Post event\".",
 	"follow-up.task":
 		"{task, select, thank_host {Remercier l'hôte} thank_speakers {Remercier les intervenants} share_slides {Envoi des slides aux participants Meetup après approbation} import_attendance {Importer la participation dans CNCF} share_social {Publier un récapitulatif du meetup sur LinkedIn} other {Tâche après le meetup}}",
 	"follow-up.stopped": "Suivi suspendu.",
 	"follow-up.waiting":
-		"Les emails de remerciement sont bloqués avant approbation. Consultez les tâches à corriger dans le diagnostic du ticket.",
+		"Aucun email de remerciement n'est prêt à approuver. Les blocages connus et les actions à effectuer sont détaillés ci-dessous.",
 	"follow-up.emails-complete": "Aucun email de remerciement en attente.",
 	"approval.parameters.instructions":
 		"Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonnées privées restent dans le référentiel.",

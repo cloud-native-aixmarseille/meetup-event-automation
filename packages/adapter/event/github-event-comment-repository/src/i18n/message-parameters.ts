@@ -1,4 +1,6 @@
 export interface MessageParameters {
+	"comment.assets.content-file": { documentUrl: string };
+	"comment.assets.content-conflict": { workflowUrl: string };
 	"comment.assets.image-context": {
 		kind: string;
 		slot: string;

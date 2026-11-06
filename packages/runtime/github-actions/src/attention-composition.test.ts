@@ -133,6 +133,38 @@ describe("attention runtime composition", () => {
 
 describe("post-event attention composition", () => {
 	afterEach(() => vi.unstubAllGlobals());
+	it("carries a document blocker into the shared follow-up and preserves it on an incomplete run", async () => {
+		// Arrange
+		const f = followUpFixture();
+		const action =
+			"Les [slides](https://drive.google.com/file/d/slides/view) bloquent le PDF et les remerciements.";
+		await f.client.create(
+			`<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Event materials**: ${action}`,
+		);
+
+		// Act
+		await f.run("fr");
+		await f.run("fr", [{ owner: "assets", outcome: "failure", blocked: true }]);
+		const shared =
+			f.comments.find((comment) =>
+				comment.body?.startsWith("<!-- meetup-organizer-approval:v1"),
+			)?.body ?? "";
+
+		// Assert
+		expect(shared).toContain(action);
+		expect(shared).toContain(
+			"Aucun email de remerciement n'est prêt à approuver.",
+		);
+		expect(shared).toContain("/actions/runs/123");
+		expect(shared).not.toContain(
+			"Consultez les tâches à corriger dans le diagnostic",
+		);
+		expect(shared).not.toContain("- [ ] ✅ Approuver");
+		expect(f.comments[0]?.body).toContain(action);
+		expect(f.minimized.has("comment-100")).toBe(true);
+		expect(f.minimized.has("comment-101")).toBe(false);
+		expect(f.dispatch).not.toHaveBeenCalled();
+	});
 	it("keeps blocked preparation and recovery guidance visible alongside task progress", async () => {
 		// Arrange
 		const f = followUpFixture();
@@ -146,7 +178,7 @@ describe("post-event attention composition", () => {
 		// Assert
 		expect(result.posted).toBe(true);
 		expect(f.comments).toHaveLength(1);
-		expect(body).toContain("Thank-you emails are blocked before approval.");
+		expect(body).toContain("No thank-you emails are ready for approval.");
 		expect(body).toContain("Email preparation or sending failed.");
 		expect(body).toContain("/actions/runs/123");
 		expect(body).not.toContain("- [ ] Approve");

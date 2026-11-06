@@ -183,6 +183,32 @@ describe("trusted durable attention repository", () => {
 });
 
 describe("attention comment resolution", () => {
+	it("retries retiring a transferred checklist after visibility fails", async () => {
+		// Arrange
+		const f = fixture();
+		const body =
+			"<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Agenda**: Add a speaker.";
+		await f.client.create(body);
+		await f.repository.load();
+		f.visibility.synchronize.mockRejectedValueOnce(new Error("Unavailable"));
+
+		// Act
+		const first = await f.repository
+			.retire(200)
+			.catch((error: Error) => error.message);
+		await f.repository.retire(200);
+
+		// Assert
+		expect(first).toBe("Unavailable");
+		expect(f.comments[0].body).toContain("Add a speaker.");
+		expect(f.comments[0].body).toContain("#issuecomment-200");
+		expect(f.visibility.synchronize).toHaveBeenCalledTimes(2);
+		expect(f.visibility.synchronize).toHaveBeenLastCalledWith(
+			100,
+			f.comments[0].body,
+			true,
+		);
+	});
 	it("hides completed status and restores the same comment for new work", async () => {
 		// Arrange
 		const f = fixture();

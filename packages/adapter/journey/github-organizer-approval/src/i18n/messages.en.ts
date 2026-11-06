@@ -49,12 +49,12 @@ export const EN_MESSAGES = {
 
 	"follow-up.title": "## Post-event follow-up · {date}",
 	"follow-up.instructions":
-		"Update manual tasks in the issue's Post event checklist.",
+		'Email and slides delivery require approval. After importing attendees into CNCF and publishing the recap on LinkedIn, check those two tasks in "Post event".',
 	"follow-up.task":
 		"{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Slides email to Meetup attendees after approval} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
 	"follow-up.stopped": "Follow-up paused.",
 	"follow-up.waiting":
-		"Thank-you emails are blocked before approval. Review the outstanding tasks in the issue diagnostics.",
+		"No thank-you emails are ready for approval. Known blockers and the required actions are listed below.",
 	"follow-up.emails-complete": "No thank-you emails pending.",
 	"approval.parameters.instructions":
 		"Edit the values between backticks, then approve sending. Private contact details stay in the catalog.",

@@ -45,6 +45,8 @@ export class DiagnosticPresenter {
 		messages: EventCommentMessages,
 		links: DiagnosticLinks,
 	): DiagnosticPresentation {
+		if (item.code === "publication.assets.content.conflict")
+			return this.contentConflict(item, messages, links);
 		if (item.code.startsWith("publication.assets.content.image"))
 			return this.imageDiagnostic(item, messages);
 		if (item.code === "publication.meetup.uncertain")
@@ -65,6 +67,34 @@ export class DiagnosticPresenter {
 			: messages.t(referential ? "comment.referential" : "comment.unknown");
 		const order = FIELD_ORDER.indexOf(section);
 		return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+	}
+
+	private contentConflict(
+		item: EventDiagnostic,
+		messages: EventCommentMessages,
+		links: DiagnosticLinks,
+	): DiagnosticPresentation {
+		const location = item.field?.match(
+			/^assets\.content\/([a-zA-Z0-9_-]{1,100})\/([a-z][a-z0-9-]{0,63})$/,
+		);
+		const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+		return {
+			field: "Event materials",
+			message: [
+				location
+					? messages.t("comment.assets.content-file", {
+							documentUrl: `https://drive.google.com/file/d/${location[1]}/view`,
+						})
+					: "",
+				messages.t("comment.assets.content-conflict", { workflowUrl }),
+				location?.[2] === "slides"
+					? messages.t("comment.assets.slides-blocked")
+					: "",
+			]
+				.filter(Boolean)
+				.join(" "),
+			order: FIELD_ORDER.indexOf("Event materials"),
+		};
 	}
 
 	private imageDiagnostic(

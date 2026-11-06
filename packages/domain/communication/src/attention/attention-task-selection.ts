@@ -39,6 +39,7 @@ export class AttentionTaskSelection {
 								)))
 					) &&
 					!(
+						!view.state.commentId &&
 						episode.status !== "unknown" &&
 						checklist.entries.some(
 							(entry) =>

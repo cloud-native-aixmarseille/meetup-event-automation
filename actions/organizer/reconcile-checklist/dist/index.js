@@ -38108,7 +38108,7 @@ var ReconcileAssetFile = class {
       return { file, status };
     } catch (error2) {
       if (!(error2 instanceof ContentError)) throw error2;
-      return this.failed(file, error2, input.diagnostics, input.template.id);
+      return this.failed(file, error2, input.diagnostics, input.template);
     }
   }
   async prepare(input, file) {
@@ -38126,12 +38126,17 @@ var ReconcileAssetFile = class {
       model: contract ? await input.model?.(contract) : void 0
     };
   }
-  failed(file, error2, diagnostics, templateId) {
+  failed(file, error2, diagnostics, template) {
     diagnostics.push(
       error2 instanceof ContentImageError ? {
         ...this.diagnostic(`image-${error2.reason}`),
-        field: `assets.image/${file?.id ?? templateId}/${error2.location?.kind ?? "embedded"}/${error2.location?.slot ?? "unknown"}`
-      } : this.diagnostic(error2.code)
+        field: `assets.image/${file?.id ?? template.id}/${error2.location?.kind ?? "embedded"}/${error2.location?.slot ?? "unknown"}`
+      } : {
+        ...this.diagnostic(error2.code),
+        ...error2.code === "conflict" ? {
+          field: `assets.content/${file?.id ?? template.id}/${template.kind}`
+        } : {}
+      }
     );
     return {
       file,
@@ -39954,7 +39959,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       details: conditions.filter(
         (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && !["social-approval", "slides-approval"].includes(
           this.actionFor(episode) ?? ""
-        ))) && !(episode.status !== "unknown" && checklist.entries.some(
+        ))) && !(!view.state.commentId && episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
@@ -47187,10 +47192,6 @@ var STAGE_GUIDANCE = [
     ["Event materials", "comment.guidance.assets.missing"]
   ],
   [
-    "publication.assets.content.conflict",
-    ["Event materials", "comment.guidance.assets.recovery"]
-  ],
-  [
     "publication.assets.content.recovery",
     ["Event materials", "comment.guidance.assets.recovery"]
   ],
@@ -47553,6 +47554,8 @@ var DiagnosticPresenter = class {
     ["event_status", "Event Status"]
   ]);
   presentDiagnostic(item, messages3, links) {
+    if (item.code === "publication.assets.content.conflict")
+      return this.contentConflict(item, messages3, links);
     if (item.code.startsWith("publication.assets.content.image"))
       return this.imageDiagnostic(item, messages3);
     if (item.code === "publication.meetup.uncertain")
@@ -47570,6 +47573,23 @@ var DiagnosticPresenter = class {
     const message = guidance ? messages3.t(guidance[1]) : messages3.t(referential ? "comment.referential" : "comment.unknown");
     const order = FIELD_ORDER.indexOf(section);
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  contentConflict(item, messages3, links) {
+    const location = item.field?.match(
+      /^assets\.content\/([a-zA-Z0-9_-]{1,100})\/([a-z][a-z0-9-]{0,63})$/
+    );
+    const workflowUrl = `https://github.com/${links.repository.split("/").map(encodeURIComponent).join("/")}/actions/workflows/event-reconcile-active.yml`;
+    return {
+      field: "Event materials",
+      message: [
+        location ? messages3.t("comment.assets.content-file", {
+          documentUrl: `https://drive.google.com/file/d/${location[1]}/view`
+        }) : "",
+        messages3.t("comment.assets.content-conflict", { workflowUrl }),
+        location?.[2] === "slides" ? messages3.t("comment.assets.slides-blocked") : ""
+      ].filter(Boolean).join(" "),
+      order: FIELD_ORDER.indexOf("Event materials")
+    };
   }
   imageDiagnostic(item, messages3) {
     const location = item.field?.match(
@@ -48123,6 +48143,9 @@ var FR_MESSAGES = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
+  "comment.assets.content-file": "[Open the affected file]({documentUrl}).",
+  "comment.assets.content-conflict": "Automation cannot locate a managed area or it differs from its recorded state. Ask a maintainer to compare the file with its recorded state and choose a [recovery that preserves manual additions](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), then [rerun synchronization]({workflowUrl}).",
+  "comment.assets.slides-blocked": "This conflict blocks the PDF and preparation of thank-you emails. Delivery approval requests will be prepared after it is resolved.",
   "comment.guidance.meetup.slides-approval-rejected": "Slides delivery was rejected. Review the PDF before requesting approval again.",
   "comment.guidance.meetup.slides-approval-unavailable": "Slides delivery approval could not be verified. Check GitHub access and retry.",
   "comment.guidance.communication.email-parameters-invalid": "Correct the editable email parameters: use a YYYY-MM-DD date and HTTPS links, and keep the parameter names unchanged. Then approve sending.",
@@ -48206,6 +48229,9 @@ var STAGE_MESSAGES_EN = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
+  "comment.assets.content-file": "[Ouvrir le fichier concern\xE9]({documentUrl}).",
+  "comment.assets.content-conflict": "L'automatisation ne retrouve pas une zone g\xE9r\xE9e ou constate une diff\xE9rence avec son \xE9tat enregistr\xE9. Demandez \xE0 un mainteneur de comparer le fichier avec son \xE9tat enregistr\xE9 et de choisir une [reprise qui pr\xE9serve les ajouts manuels](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), puis [relancez la synchronisation]({workflowUrl}).",
+  "comment.assets.slides-blocked": "Ce conflit bloque le PDF et la pr\xE9paration des emails de remerciement. Les demandes d'approbation des envois seront propos\xE9es apr\xE8s correction.",
   "comment.guidance.meetup.slides-approval-rejected": "L'envoi des slides a \xE9t\xE9 refus\xE9. R\xE9visez le PDF avant de demander une nouvelle approbation.",
   "comment.guidance.meetup.slides-approval-unavailable": "Impossible de v\xE9rifier l'approbation d'envoi des slides. V\xE9rifiez l'acc\xE8s GitHub et relancez.",
   "comment.guidance.communication.email-parameters-invalid": "Corrigez les param\xE8tres de l'email : date au format YYYY-MM-DD, liens HTTPS et noms des param\xE8tres inchang\xE9s. Puis approuvez l'envoi.",
@@ -50563,7 +50589,11 @@ var AttentionPresenter = class {
     });
   }
   issue(state, metadata) {
-    return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
+    return [
+      state.commentId ? "" : this.diagnostics.prefix(),
+      metadata,
+      this.details(state)
+    ].filter(Boolean).join("\n\n");
   }
   resolved(state) {
     return this.collaborators.attentionPolicy.resolved(state) && this.diagnostics.read().entries.length === 0;
@@ -50571,10 +50601,17 @@ var AttentionPresenter = class {
   details(state) {
     const view = this.collaborators.attentionPolicy.view(state);
     const lines = this.status(state);
-    for (const episode of this.collaborators.attentionTaskSelection.select(
+    const selected = this.collaborators.attentionTaskSelection.select(
       view,
       this.diagnostics.read()
-    ).details) {
+    );
+    if (state.commentId)
+      lines.push(
+        ...selected.checklist.map(
+          (entry) => `- [ ] **${entry.label}**: ${entry.description}`
+        )
+      );
+    for (const episode of selected.details) {
       const url = this.url(episode, state);
       const link = url === this.overviewUrl(state) ? "" : ` ([${this.messages.t("attention.review")}](${url}))`;
       lines.push(`- [ ] ${this.text(episode)}${link}`);
@@ -50890,11 +50927,10 @@ var GithubAttentionRepository = class {
       throw new Error("Attention state must be loaded before retiring");
     if (!this.snapshot) return;
     await this.consolidate();
-    await this.client.replace(
-      this.snapshot.id,
-      this.snapshot.body,
-      this.presenter.retired(commentId)
-    );
+    const body = this.presenter.retired(commentId);
+    await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    this.snapshot.body = body;
+    await this.visibility.synchronize(this.snapshot.id, body, true);
     this.snapshot = void 0;
   }
 };

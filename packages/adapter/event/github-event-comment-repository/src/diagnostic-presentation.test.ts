@@ -13,6 +13,77 @@ const diagnostic: EventDiagnostic = {
 
 describe("organizer diagnostic presentation", () => {
 	it.each(["en", "fr"])(
+		"explains a slides conflict with file, recovery and rerun links in %s",
+		(locale) => {
+			// Arrange
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
+			const item = {
+				...diagnostic,
+				code: "publication.assets.content.conflict",
+				field: "assets.content/slides_123/slides",
+			};
+
+			// Act
+			const result = new DiagnosticPresenter().presentDiagnostic(
+				item,
+				messages,
+				{ repository: "example/meetups" },
+			);
+
+			// Assert
+			expect(result.field).toBe("Event materials");
+			expect(result.message).toContain(
+				"https://drive.google.com/file/d/slides_123/view",
+			);
+			expect(result.message).toContain("#recover-a-content-conflict");
+			expect(result.message).toContain(
+				"example/meetups/actions/workflows/event-reconcile-active.yml",
+			);
+			expect(result.message).toContain(
+				locale === "fr" ? "emails de remerciement" : "thank-you emails",
+			);
+			expect(result.message).toContain(
+				locale === "fr" ? "préserve les ajouts" : "preserves manual additions",
+			);
+			expect(result.message).not.toContain(diagnostic.message);
+		},
+	);
+	it.each([
+		"assets",
+		"assets.content/private@example.test/slides",
+		"assets.content/](https://evil.test)/slides",
+	])(
+		"does not turn an unverified conflict location into a link: %s",
+		(field) => {
+			// Arrange
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				"en",
+			);
+			const item = {
+				...diagnostic,
+				code: "publication.assets.content.conflict",
+				field,
+			};
+
+			// Act
+			const result = new DiagnosticPresenter().presentDiagnostic(
+				item,
+				messages,
+				{ repository: "example/meetups" },
+			);
+
+			// Assert
+			expect(result.message).toContain("rerun synchronization");
+			expect(result.message).not.toContain("drive.google.com");
+			expect(result.message).not.toContain("private@example.test");
+			expect(result.message).not.toContain("evil.test");
+		},
+	);
+	it.each(["en", "fr"])(
 		"identifies the missing reminder in %s without exposing raw diagnostics",
 		(locale) => {
 			// Arrange
@@ -237,7 +308,7 @@ describe("organizer diagnostic presentation", () => {
 			"en",
 			"publication.assets.content.conflict",
 			"Event materials",
-			"Review manual edits",
+			"Ask a maintainer",
 		],
 	])(
 		"renders concrete %s %s guidance without private data",

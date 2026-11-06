@@ -85,11 +85,12 @@ describe("organizer attention task selection", () => {
 		// Act
 		const result = selection.select(
 			{ state: { ...state, commentId: 200 }, conditions: [pending] },
-			{ entries: [] },
+			{ entries: [entry("other", "slides-approval")] },
 		);
 
 		// Assert
 		expect(result.details).toEqual([pending]);
+		expect(result.checklist).toEqual([]);
 		expect(selection.actionFor(pending)).toBe("slides-approval");
 	});
 

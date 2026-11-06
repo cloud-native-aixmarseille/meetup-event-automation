@@ -61,7 +61,7 @@ export class ReconcileAssetFile {
 			return { file, status };
 		} catch (error) {
 			if (!(error instanceof ContentError)) throw error;
-			return this.failed(file, error, input.diagnostics, input.template.id);
+			return this.failed(file, error, input.diagnostics, input.template);
 		}
 	}
 
@@ -92,15 +92,22 @@ export class ReconcileAssetFile {
 		file: AssetFile | undefined,
 		error: ContentError,
 		diagnostics: PublicationDiagnostic[],
-		templateId: string,
+		template: AssetTemplate,
 	): { file?: AssetFile; status: ContentStatus } {
 		diagnostics.push(
 			error instanceof ContentImageError
 				? {
 						...this.diagnostic(`image-${error.reason}`),
-						field: `assets.image/${file?.id ?? templateId}/${error.location?.kind ?? "embedded"}/${error.location?.slot ?? "unknown"}`,
+						field: `assets.image/${file?.id ?? template.id}/${error.location?.kind ?? "embedded"}/${error.location?.slot ?? "unknown"}`,
 					}
-				: this.diagnostic(error.code),
+				: {
+						...this.diagnostic(error.code),
+						...(error.code === "conflict"
+							? {
+									field: `assets.content/${file?.id ?? template.id}/${template.kind}`,
+								}
+							: {}),
+					},
 		);
 		return {
 			file,

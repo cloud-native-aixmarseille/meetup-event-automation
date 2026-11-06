@@ -401,6 +401,11 @@ preserve an existing PDF without treating it as a fresh export.
 
 ## Recover a content conflict
 
+The organizer checklist links to the affected file, this recovery procedure and
+the synchronization workflow. A slides conflict also explains that PDF export and
+thank-you email preparation are blocked. Delivery approval requests become
+available after the conflict and any other prerequisites are resolved.
+
 Inspect the file and its sidecar before recovery. Do not delete the managed copy,
 recreate its URL or clear delivery records. An uncertain copy operation still
 requires manual inspection for duplicate files. Missing, duplicate or malformed

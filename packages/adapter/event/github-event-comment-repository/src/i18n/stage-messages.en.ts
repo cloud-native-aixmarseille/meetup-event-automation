@@ -1,4 +1,9 @@
 export const STAGE_MESSAGES_EN = {
+	"comment.assets.content-file": "[Open the affected file]({documentUrl}).",
+	"comment.assets.content-conflict":
+		"Automation cannot locate a managed area or it differs from its recorded state. Ask a maintainer to compare the file with its recorded state and choose a [recovery that preserves manual additions](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/docs/integrations/assets.md#recover-a-content-conflict), then [rerun synchronization]({workflowUrl}).",
+	"comment.assets.slides-blocked":
+		"This conflict blocks the PDF and preparation of thank-you emails. Delivery approval requests will be prepared after it is resolved.",
 	"comment.guidance.meetup.slides-approval-rejected":
 		"Slides delivery was rejected. Review the PDF before requesting approval again.",
 	"comment.guidance.meetup.slides-approval-unavailable":
