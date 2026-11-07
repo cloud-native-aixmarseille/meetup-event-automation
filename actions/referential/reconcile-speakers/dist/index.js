@@ -28235,7 +28235,21 @@ var ApprovalRequestPolicy = class {
       return this.fingerprints.digest(previous.social) === this.fingerprints.digest(request2.social);
     if ((previous.kind === "meetup-publication" || previous.kind === "community-publication") && (request2.kind === "meetup-publication" || request2.kind === "community-publication"))
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
-    return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
+    return previous.recipientCount === request2.recipientCount && this.sameMessages(previous.details, request2.details) && (status !== "pending" || this.sameDetails(previous.details, request2.details));
+  }
+  emailParametersChanged(original, edited) {
+    return this.fingerprints.digest(original) !== this.fingerprints.digest(edited);
+  }
+  sameMessages(left, right) {
+    return this.fingerprints.digest(
+      left?.emails.flatMap(
+        (email) => email.message ? [email.message] : []
+      ) ?? []
+    ) === this.fingerprints.digest(
+      right?.emails.flatMap(
+        (email) => email.message ? [email.message] : []
+      ) ?? []
+    );
   }
   sameDetails(left, right) {
     if (!left || !right) return left === right;
@@ -33488,7 +33502,7 @@ var AttentionEventFacts = class _AttentionEventFacts {
 
 // packages/application/journey/src/use-cases/communication-approval-details.ts
 var CommunicationApprovalDetails = class {
-  create(event, mails) {
+  create(event, mails, parameters) {
     const ordered = [...mails].sort(
       (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
     );
@@ -33498,6 +33512,15 @@ var CommunicationApprovalDetails = class {
       return {
         kind: mail.kind,
         recipientName: name ?? "",
+        message: {
+          recipientEmail: mail.recipient.email,
+          templateName: mail.templateName,
+          idempotencyKey: mail.idempotencyKey,
+          placeholders: structuredClone(mail.placeholders),
+          parameterKeys: Object.keys(parameters).filter(
+            (key) => !Object.hasOwn(mail.recipient.placeholders ?? {}, key)
+          )
+        },
         links,
         omittedLinks: 0
       };

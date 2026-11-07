@@ -53,10 +53,10 @@ describe.each(["introduction", "thanks"] as const)(
 					placeholders: expect.objectContaining(edited),
 				}),
 			);
-			expect(JSON.stringify(f.approvals.request.mock.calls)).not.toContain(
+			expect(JSON.stringify(f.approvals.request.mock.calls)).toContain(
 				"private-host@example.test",
 			);
-			expect(JSON.stringify(f.approvals.request.mock.calls)).not.toContain(
+			expect(JSON.stringify(f.approvals.request.mock.calls)).toContain(
 				"Private contact",
 			);
 		});

@@ -74,6 +74,8 @@ export class GithubApprovalRepository {
 			record,
 			record.decision ?? { status: "pending" },
 		);
+		if (body.length > 60_000)
+			throw new Error("Approval comment exceeds the review budget");
 		if (!existing) {
 			const id = await this.client.create(body);
 			return { record, comment: { id, body } };

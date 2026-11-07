@@ -8,7 +8,7 @@ import type { ResolveApprovalDecision } from "./resolve-approval-decision.js";
 export interface FinalizeApprovalDecisionCollaborators {
 	readonly approvalRequestPolicy: Pick<
 		import("@meetup-automation/journey").ApprovalRequestPolicy,
-		"resolved"
+		"resolved" | "emailParametersChanged"
 	>;
 	readonly attentionPolicy: Pick<
 		import("@meetup-automation/communication").AttentionPolicy,
@@ -39,6 +39,11 @@ export class FinalizeApprovalDecision {
 	): Promise<OrganizerApprovalResult> {
 		const { record, comment } = state;
 		const decision = await this.decisions.execute(record, comment);
+		if (this.refreshEmailPreview(record, decision)) {
+			const persisted = await this.repository.save(record, state);
+			await this.refreshVisibility(persisted);
+			return { status: "pending", notificationFailed: false };
+		}
 		if (this.pendingEmailEdit(record, decision))
 			return { ...decision, notificationFailed: false };
 		const textValid =
@@ -82,8 +87,8 @@ export class FinalizeApprovalDecision {
 				status: decision.status,
 				actor: decision.actor,
 				decidedAt: decision.decidedAt,
-				...(decision.emailParameters
-					? { emailParameters: decision.emailParameters }
+				...((decision.emailParameters ?? record.emailDraft)
+					? { emailParameters: decision.emailParameters ?? record.emailDraft }
 					: {}),
 				...(decision.editedText === undefined
 					? {}
@@ -92,7 +97,27 @@ export class FinalizeApprovalDecision {
 					? { selectedImage: decision.selectedImage }
 					: {}),
 			};
+			delete record.emailDraft;
 		}
+	}
+
+	private refreshEmailPreview(
+		record: import("./approval-state.js").StoredApproval,
+		decision: import("./approval-state.js").ApprovalDecision,
+	): boolean {
+		const original = record.emailDraft ?? record.details?.parameters;
+		if (
+			record.decision ||
+			!original ||
+			!decision.emailParameters ||
+			!this.collaborators.approvalRequestPolicy.emailParametersChanged(
+				original,
+				decision.emailParameters,
+			)
+		)
+			return false;
+		record.emailDraft = decision.emailParameters;
+		return true;
 	}
 
 	private pendingEmailEdit(

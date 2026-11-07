@@ -10,7 +10,7 @@ export class EmailApprovalDecisionParser {
 		body: string,
 		presenters: readonly Pick<ApprovalPresenter, "issue">[],
 	): ApprovalDecision {
-		const original = record.details?.parameters;
+		const original = record.emailDraft ?? record.details?.parameters;
 		if (!original) return { status: "pending" };
 		try {
 			const edited = this.parameters.read(body, original);

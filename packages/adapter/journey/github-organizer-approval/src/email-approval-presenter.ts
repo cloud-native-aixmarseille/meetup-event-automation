@@ -37,8 +37,11 @@ export class EmailApprovalPresenter {
 			? [
 					this.collaborators.approvalDetailsPresenter.render({
 						...record.details,
-						...(record.decision?.emailParameters
-							? { parameters: record.decision.emailParameters }
+						...((record.decision?.emailParameters ?? record.emailDraft)
+							? {
+									parameters:
+										record.decision?.emailParameters ?? record.emailDraft,
+								}
 							: {}),
 					}),
 				]

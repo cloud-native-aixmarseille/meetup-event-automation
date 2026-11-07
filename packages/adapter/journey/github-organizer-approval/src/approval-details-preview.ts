@@ -1,8 +1,18 @@
 import type { OrganizerApprovalDetails } from "@meetup-automation/journey";
 
-/** Fit public email facts into GitHub's comment and escaped metadata budget. */
+/** Bound summaries without ever truncating a complete message approval. */
 export class ApprovalDetailsPreview {
 	create(details: OrganizerApprovalDetails): OrganizerApprovalDetails {
+		const complete = details.emails.some(
+			(email) => email.message !== undefined,
+		);
+		if (
+			complete &&
+			(details.omittedEmails ||
+				details.emails.length > 20 ||
+				details.emails.some((email) => !email.message))
+		)
+			throw new Error("Complete email approval exceeds the review budget");
 		const emails = details.emails.slice(0, 20).map((email) => ({
 			...email,
 			recipientName: this.text(email.recipientName),
@@ -13,7 +23,7 @@ export class ApprovalDetailsPreview {
 			omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0),
 		}));
 		// JSON size is a storage budget, not request equality or an authorization key.
-		while (JSON.stringify(emails).length > 4_000) {
+		while (!complete && JSON.stringify(emails).length > 4_000) {
 			const largest = [...emails].sort(
 				(a, b) => JSON.stringify(b).length - JSON.stringify(a).length,
 			)[0];

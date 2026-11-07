@@ -58,7 +58,7 @@ export const FR_MESSAGES = {
 		"Les remerciements à l'hôte et aux intervenants sont à approuver séparément dans leurs commentaires dédiés. Les demandes en attente et les blocages sont détaillés ci-dessous.",
 	"follow-up.emails-complete": "Aucun email de remerciement en attente.",
 	"approval.parameters.instructions":
-		"Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonnées privées restent dans le référentiel.",
+		"Le détail contient les données transmises au service mailings, adresse email comprise. Pour modifier une date ou un lien, changez sa valeur entre backticks et enregistrez. Attendez l'actualisation du détail avant d'approuver.",
 	"approval.details.summary": "Détail des emails",
 	"approval.details.email":
 		"{kind, select, host_introduction {Informations pour l'hôte} speaker_introduction {Informations pour l'intervenant} host_thanks {Remerciement à l'hôte} speaker_thanks {Remerciement à l'intervenant} other {Email}}",

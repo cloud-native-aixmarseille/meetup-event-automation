@@ -15,7 +15,8 @@ export class ResolveApprovalDecision {
 	): Promise<ApprovalDecision> {
 		if (record.decision) return record.decision;
 		const decision = this.parser.parse(record, comment.body ?? "");
-		if (decision.status === "pending") return decision;
+		if (decision.status === "pending" && !decision.emailParameters)
+			return decision;
 		const edit = await this.client.edit(comment);
 		const editedAt = Date.parse(edit.lastEditedAt ?? "");
 		if (

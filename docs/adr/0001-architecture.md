@@ -84,8 +84,10 @@ its filename, Slides, and Docs consumers.
 
 Stable participant IDs identify people; names and CSV line links are presentation
 data. Private contact records remain in the consumer and authorized delivery
-boundary. Prompts, issues, Slack, assets, logs, and outputs receive only the public
-projection they need. Versioned codecs preserve supported stored representations.
+boundary, with the explicit [email review exception](0003-organizer-approvals.md):
+GitHub approval comments display every outgoing mail value. Prompts, other issue
+content, Slack, assets, logs, and outputs receive only their public projection.
+Versioned codecs preserve supported stored representations.
 Provider revisions, workflow locks, and durable reservations protect effects;
 they do not make GitHub writes transactional with human edits.
 
@@ -102,6 +104,11 @@ automation surface; consumers choose when to adopt it. Current quality commands
 and release mechanics belong in the development guide rather than this record.
 
 ## Decision history
+
+On 2026-11-07, the explicit email approval requirement replaced the public-only
+projection for email review comments with complete outgoing payload values.
+The [approval decision](0003-organizer-approvals.md) records the scope and rationale;
+other privacy boundaries remain in force.
 
 On 2026-10-29, JavaScript/TypeScript CodeQL gained a configuration excluding
 generated bundles. Completed main job

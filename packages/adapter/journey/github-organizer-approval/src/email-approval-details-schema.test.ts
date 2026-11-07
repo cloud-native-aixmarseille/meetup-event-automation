@@ -1,3 +1,5 @@
+import { ApprovalSchema } from "./approval-schema.js";
+import { EmailApprovalMessageSchema } from "./email-approval-message-schema.js";
 import type { OrganizerApprovalDetails } from "@meetup-automation/journey";
 import { EmailReviewParameterPolicy } from "@meetup-automation/journey";
 import { emailReviewFor } from "../testing/email-review.fixtures.js";
@@ -41,6 +43,7 @@ describe("approval detail validation", () => {
 		const validate = () =>
 			new EmailApprovalDetailsSchema({
 				parameterPolicy: new EmailReviewParameterPolicy(),
+				messageSchema: new EmailApprovalMessageSchema(new ApprovalSchema()),
 				approvalSchema:
 					new GithubOrganizerApprovalComposition().approvalSchema(),
 			}).validate(input);
@@ -57,6 +60,7 @@ describe("approval detail validation", () => {
 		const validate = () =>
 			new EmailApprovalDetailsSchema({
 				parameterPolicy: new EmailReviewParameterPolicy(),
+				messageSchema: new EmailApprovalMessageSchema(new ApprovalSchema()),
 				approvalSchema:
 					new GithubOrganizerApprovalComposition().approvalSchema(),
 			}).validate(input);
@@ -77,6 +81,7 @@ describe("scoped email details", () => {
 		const input = emailReviewFor(kind).details;
 		const schema = new EmailApprovalDetailsSchema({
 			parameterPolicy: new EmailReviewParameterPolicy(),
+			messageSchema: new EmailApprovalMessageSchema(new ApprovalSchema()),
 			approvalSchema: new GithubOrganizerApprovalComposition().approvalSchema(),
 		});
 		// Act
@@ -90,4 +95,37 @@ describe("scoped email details", () => {
 		expect(valid).not.toThrow();
 		expect(mixed).toThrow("Invalid email approval scope");
 	});
+});
+
+it("refuses oversized complete payloads instead of authorizing truncated values", () => {
+	// Arrange
+	const request = emailReviewFor("host-thanks");
+	const details = request.details;
+	if (!details?.emails[0]?.message) throw new Error("Missing fixture");
+	const email = details.emails[0];
+	const message = details.emails[0].message;
+	const schema =
+		new GithubOrganizerApprovalComposition().approvalRequestSchema();
+	const input = {
+		...request,
+		details: {
+			...details,
+			emails: [
+				{
+					...email,
+					message: {
+						...message,
+						placeholders: {
+							...message.placeholders,
+							firstName: "a".repeat(12000),
+						},
+					},
+				},
+			],
+		},
+	};
+	// Act
+	const validate = () => schema.validate(input);
+	// Assert
+	expect(validate).toThrow("Invalid approval details");
 });

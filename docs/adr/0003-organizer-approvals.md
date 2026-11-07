@@ -46,8 +46,10 @@ thank-you messages. All four types share parameter review, decision verification
 and delivery reporting. The follow-up comment summarizes tasks and links to
 pending requests. Fingerprints
 cover outgoing inputs, including recipient addresses, templates, placeholders,
-event facts, and policy. Only fingerprints and public review details cross into
-comments and Slack. Partial completion and locale changes do not invalidate an
+event facts, and policy. GitHub email reviews store and display the complete
+recipient address, template, idempotency key, and placeholders. Slack retains a
+public summary and link. Parameter edits refresh the payload with unchecked
+choices before a separate approval. Partial completion and locale changes do not invalidate an
 otherwise unchanged batch. Changed material inputs require a new request.
 
 Present, unchecked email tasks participate in planning. Checked or absent tasks
@@ -101,6 +103,15 @@ compare-and-set writes; source rereads and workflow locks reduce, but cannot
 eliminate, a final concurrent human edit.
 
 ## Decision history
+
+- 2026-11-07: Explicit organizer requirements replace public-only email summaries
+  with complete outgoing values, including email addresses, for all four types.
+  This supersedes the earlier rule excluding contacts from approval comments;
+  the restriction remains for logs, action outputs, Slack, and unrelated data.
+  Parameter edits require a refreshed preview and a separate decision so a stale
+  payload cannot authorize delivery. Complete reviews fail closed on size limits.
+  Stored decisions and delivery reservations remain authoritative; completed
+  emails are neither reopened nor reconstructed from current contact data.
 
 - 2026-11-07: Thank-you emails use the same independent host/speaker approval
   pattern as preparation emails, including editable public parameters and

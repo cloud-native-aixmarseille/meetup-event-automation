@@ -191,7 +191,7 @@ describe("approval request details", () => {
 
 describe.each(["en", "fr"])("scoped email review in %s", (locale) => {
 	it.each(["host-thanks", "speaker-thanks"] as const)(
-		"shows public parameters and recipient-specific details for %s",
+		"shows complete parameters and recipient-specific details for %s",
 		(kind) => {
 			// Arrange
 			const composition = new GithubOrganizerApprovalComposition();
@@ -218,9 +218,11 @@ describe.each(["en", "fr"])("scoped email review in %s", (locale) => {
 			expect(body).toContain("Example Host");
 			if (kind === "speaker-thanks") {
 				expect(body).toContain(
-					'href="https://openfeedback.io/example/0/talk?displayVotes=true"',
+					"&quot;url&quot;: &quot;https://openfeedback.io/example/0/talk?displayVotes=true&quot;",
 				);
-				expect(body).toContain("Reliable platforms</a>");
+				expect(body).toContain(
+					"&quot;title&quot;: &quot;Reliable platforms&quot;",
+				);
 			}
 			expect(body).not.toContain("## Post-event follow-up");
 			expect(body).not.toContain("## Suivi après le meetup");

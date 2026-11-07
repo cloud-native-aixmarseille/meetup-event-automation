@@ -15,6 +15,7 @@ import { CommunityApprovalDetailsSchema } from "./community-approval-details-sch
 import { ContentApprovalSchema } from "./content-approval-schema.js";
 import { ContentValueSchema } from "./content-value-schema.js";
 import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
+import { EmailApprovalMessageSchema } from "./email-approval-message-schema.js";
 import type { FollowUpSchema } from "./follow-up-schema.js";
 import type { MeetupApprovalDetailsSchema } from "./meetup-approval-details-schema.js";
 import { SocialPublicationApprovalSchema } from "./social-publication-approval-schema.js";
@@ -25,6 +26,7 @@ export class ApprovalRequestSchemaComposition {
 	email(approvalSchema: ApprovalSchema): EmailApprovalDetailsSchema {
 		return new EmailApprovalDetailsSchema({
 			approvalSchema,
+			messageSchema: new EmailApprovalMessageSchema(approvalSchema),
 			parameterPolicy: new EmailReviewParameterPolicy(),
 		});
 	}
