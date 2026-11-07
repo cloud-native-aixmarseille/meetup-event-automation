@@ -45217,7 +45217,8 @@ var GithubAttentionBudgetSource = class {
         owner: this.owner,
         repo: this.repo,
         since,
-        sort: "updated",
+        // Edits must not move already-read rows past an unread page boundary.
+        sort: "created",
         direction: "asc",
         per_page: 100,
         page

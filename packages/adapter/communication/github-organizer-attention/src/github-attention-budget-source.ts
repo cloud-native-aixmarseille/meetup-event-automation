@@ -5,7 +5,7 @@ export interface GithubBudgetCommentsApi {
 				owner: string;
 				repo: string;
 				since: string;
-				sort: "updated";
+				sort: "created";
 				direction: "asc";
 				per_page: number;
 				page: number;
@@ -36,7 +36,8 @@ export class GithubAttentionBudgetSource {
 				owner: this.owner,
 				repo: this.repo,
 				since,
-				sort: "updated",
+				// Edits must not move already-read rows past an unread page boundary.
+				sort: "created",
 				direction: "asc",
 				per_page: 100,
 				page,
