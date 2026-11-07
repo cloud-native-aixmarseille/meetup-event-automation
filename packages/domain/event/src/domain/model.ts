@@ -69,7 +69,13 @@ export type EventOperationalChecklists = Readonly<{
 	postEvent: readonly OperationalChecklistItem[];
 }>;
 
-export const POST_EVENT_TASK_NAMES = Object.freeze({
+export const EVENT_TASK_NAMES = Object.freeze({
+	introduceHost: "Mail introduction hoster",
+	introduceSpeakers: "Mail introduction speakers",
+	publishMeetup: "Meetup event published",
+	announceSlackAixMarseilleTech: "Slack - AixMarseille.Tech",
+	announceSlackOpenBar: "Slack - OpenBaR",
+	announceLinkedIn: "LinkedIn",
 	thankHost: "Mail thanks hoster",
 	thankSpeakers: "Mail thanks speakers",
 	shareSlides: "Share slides to meetup",
@@ -78,11 +84,11 @@ export const POST_EVENT_TASK_NAMES = Object.freeze({
 } as const);
 
 export const EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
-	POST_EVENT_TASK_NAMES.thankHost,
-	POST_EVENT_TASK_NAMES.thankSpeakers,
-	POST_EVENT_TASK_NAMES.shareSlides,
-	POST_EVENT_TASK_NAMES.importAttendance,
-	POST_EVENT_TASK_NAMES.shareOnSocialNetworks,
+	EVENT_TASK_NAMES.thankHost,
+	EVENT_TASK_NAMES.thankSpeakers,
+	EVENT_TASK_NAMES.shareSlides,
+	EVENT_TASK_NAMES.importAttendance,
+	EVENT_TASK_NAMES.shareOnSocialNetworks,
 ] as const);
 
 /**

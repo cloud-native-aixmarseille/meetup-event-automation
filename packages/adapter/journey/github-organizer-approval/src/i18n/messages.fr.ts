@@ -46,7 +46,7 @@ export const FR_MESSAGES = {
 	"approval.meetup.request":
 		"Cochez un choix. L'automatisation publiera le brouillon approuvé.\n\n- [{approveMark}] ✅ Approuver la publication\n- [{rejectMark}] ❌ Refuser la publication",
 	"approval.meetup.final":
-		"{status, select, approved {✅ Publication approuvée} rejected {❌ Publication refusée} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'événement reste en brouillon.} other {}}",
+		"{status, select, approved {✅ Publication approuvée} rejected {❌ Publication refusée} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Le marqueur de fin ✅ dans l'issue confirme la publication.} rejected {L'événement reste en brouillon.} other {}}",
 
 	"follow-up.title": "## Suivi après le meetup · {date}",
 	"follow-up.instructions":

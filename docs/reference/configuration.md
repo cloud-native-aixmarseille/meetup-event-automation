@@ -203,7 +203,7 @@ The date passing alone does not mark an event held. It enables
 [post-event follow-up](../integrations/communications.md#when-messages-are-due)
 from the next Paris calendar day, with organizer approval still required for mail.
 
-Email tasks use completion checkboxes. See
+Email completion is recorded with a plain-text checkmark. See
 [approval and automatic completion](../integrations/communications.md) for task names, timing,
 and duplicate protection.
 

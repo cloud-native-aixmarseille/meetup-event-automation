@@ -45,7 +45,7 @@ export const EN_MESSAGES = {
 	"approval.meetup.request":
 		"Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] ✅ Approve publication\n- [{rejectMark}] ❌ Reject publication",
 	"approval.meetup.final":
-		"{status, select, approved {✅ Publication approved} rejected {❌ Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
+		"{status, select, approved {✅ Publication approved} rejected {❌ Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The ✅ completion marker in the issue confirms publication.} rejected {The event stays in draft.} other {}}",
 
 	"follow-up.title": "## Post-event follow-up · {date}",
 	"follow-up.instructions":

@@ -137,8 +137,21 @@ remains a separate organizer decision. See [referential ownership](0005-referent
 Keep automated email tasks out of the creation form. Missing completion means
 pending work; readiness, timing and explicit batch approval govern sending.
 Journey records accepted host and speaker groups, and the issue codec renders
-their completion in separate automated sections. Preserve existing completed
-items and the delivery ledger so removing a status never resends accepted mail.
+their completion as plain-text checkmarks in separate automated sections. Preserve
+existing completed items and the delivery ledger so removing a status never
+resends accepted mail.
+
+### Recording irreversible journey actions
+
+A bot-performed journey action that cannot be reverted, such as a sent email, a
+published event, or a delivered announcement, is recorded once in the issue
+description as a plain-text checkmark without a clickable checkbox. The issue
+codec owns the formatting list and writes the marker; domain models retain the
+task name and completion state without issue-formatting rules. Completed
+checkboxes are also valid input. Issue editors can still change completion text;
+delivery ledgers and publication journals retain responsibility for duplicate
+prevention. The post-event overview and diagnostic checklist report outstanding
+tasks instead of repeating completed task rows.
 
 ## Alternatives and consequences
 
@@ -153,6 +166,19 @@ The system cannot detect a schedule that never runs; external monitoring remains
 an operational responsibility.
 
 ## Decision history
+
+On 2026-11-08, the completion-format list moved to the issue codec to keep
+GitHub representation out of the domain model. The checkmark decision remains
+accepted; "locked" describes the absence of a clickable checkbox, not immutable
+issue text. Delivery records, rather than the marker, prevent repeat effects.
+
+On 2026-11-07, completion of irreversible bot journey actions (introduction and
+thank-you emails, slide sharing, Meetup publication, and Slack/LinkedIn
+announcements) moved from editable issue checkboxes to locked checkmarks in the
+issue description. The post-event follow-up overview and the diagnostic checklist
+now list only outstanding tasks; a done action is recorded once in the issue and
+is no longer repeated as a status line. The issue codec is the single writer of
+the completion marker and still reads legacy checkboxes as completed.
 
 On 2026-11-07, thank-you approvals moved from the combined follow-up comment to
 independent host and speaker requests, as recorded in

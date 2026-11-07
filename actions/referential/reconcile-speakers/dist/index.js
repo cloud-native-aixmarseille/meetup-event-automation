@@ -27841,40 +27841,14 @@ var ManagedLabelsRule = class {
   }
 };
 
-// packages/domain/event/src/domain/meetup-publication-checklist.ts
-var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
-  static taskName = "Meetup event published";
-  isPublished(event) {
-    const matches = event.operationalChecklists.communication.filter(
-      (item) => item.name === _MeetupPublicationChecklist.taskName
-    );
-    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
-  }
-  withStatus(event, published) {
-    const communication = [];
-    let found = false;
-    for (const item of event.operationalChecklists.communication) {
-      if (item.name !== _MeetupPublicationChecklist.taskName) {
-        communication.push(item);
-        continue;
-      }
-      if (!found) communication.push({ name: item.name, completed: published });
-      found = true;
-    }
-    if (!found)
-      communication.push({
-        name: _MeetupPublicationChecklist.taskName,
-        completed: published
-      });
-    return {
-      ...event,
-      operationalChecklists: { ...event.operationalChecklists, communication }
-    };
-  }
-};
-
 // packages/domain/event/src/domain/model.ts
-var POST_EVENT_TASK_NAMES = Object.freeze({
+var EVENT_TASK_NAMES = Object.freeze({
+  introduceHost: "Mail introduction hoster",
+  introduceSpeakers: "Mail introduction speakers",
+  publishMeetup: "Meetup event published",
+  announceSlackAixMarseilleTech: "Slack - AixMarseille.Tech",
+  announceSlackOpenBar: "Slack - OpenBaR",
+  announceLinkedIn: "LinkedIn",
   thankHost: "Mail thanks hoster",
   thankSpeakers: "Mail thanks speakers",
   shareSlides: "Share slides to meetup",
@@ -27882,11 +27856,11 @@ var POST_EVENT_TASK_NAMES = Object.freeze({
   shareOnSocialNetworks: "Social networks"
 });
 var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
-  POST_EVENT_TASK_NAMES.thankHost,
-  POST_EVENT_TASK_NAMES.thankSpeakers,
-  POST_EVENT_TASK_NAMES.shareSlides,
-  POST_EVENT_TASK_NAMES.importAttendance,
-  POST_EVENT_TASK_NAMES.shareOnSocialNetworks
+  EVENT_TASK_NAMES.thankHost,
+  EVENT_TASK_NAMES.thankSpeakers,
+  EVENT_TASK_NAMES.shareSlides,
+  EVENT_TASK_NAMES.importAttendance,
+  EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
 var MeetupEventOperations = class {
   /**
@@ -27934,6 +27908,37 @@ var MeetupEventOperations = class {
       logistics: { ...event.logistics },
       operationalChecklists,
       followUpComplete: event.followUpComplete && this.postEventChecklistIsComplete(operationalChecklists.postEvent)
+    };
+  }
+};
+
+// packages/domain/event/src/domain/meetup-publication-checklist.ts
+var MeetupPublicationChecklist = class {
+  isPublished(event) {
+    const matches = event.operationalChecklists.communication.filter(
+      (item) => item.name === EVENT_TASK_NAMES.publishMeetup
+    );
+    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+  }
+  withStatus(event, published) {
+    const communication = [];
+    let found = false;
+    for (const item of event.operationalChecklists.communication) {
+      if (item.name !== EVENT_TASK_NAMES.publishMeetup) {
+        communication.push(item);
+        continue;
+      }
+      if (!found) communication.push({ name: item.name, completed: published });
+      found = true;
+    }
+    if (!found)
+      communication.push({
+        name: EVENT_TASK_NAMES.publishMeetup,
+        completed: published
+      });
+    return {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
     };
   }
 };
@@ -33673,19 +33678,23 @@ var LEGACY_SPEAKER_THANKS = "Thanks speakers and share openfeedback reports";
 var TASKS = {
   "host-introduction": {
     section: "communication",
-    names: ["Mail introduction hoster", INTRODUCTION]
+    names: [EVENT_TASK_NAMES.introduceHost, INTRODUCTION]
   },
   "speaker-introduction": {
     section: "communication",
-    names: ["Mail introduction speakers", INTRODUCTION]
+    names: [EVENT_TASK_NAMES.introduceSpeakers, INTRODUCTION]
   },
   "host-thanks": {
     section: "postEvent",
-    names: ["Mail thanks hoster", "Thanks hoster"]
+    names: [EVENT_TASK_NAMES.thankHost, "Thanks hoster"]
   },
   "speaker-thanks": {
     section: "postEvent",
-    names: ["Mail thanks speakers", "Thanks speakers", LEGACY_SPEAKER_THANKS]
+    names: [
+      EVENT_TASK_NAMES.thankSpeakers,
+      "Thanks speakers",
+      LEGACY_SPEAKER_THANKS
+    ]
   }
 };
 var CommunicationChecklist = class {
@@ -34010,7 +34019,7 @@ var EventPublicationEvaluation = class {
         references: event.publicationLinks,
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
-          POST_EVENT_TASK_NAMES.importAttendance
+          EVENT_TASK_NAMES.importAttendance
         )
       }
     );

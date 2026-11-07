@@ -1,24 +1,24 @@
-import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type {
 	DeliveryLedger,
 	PostEventPolicy,
 } from "@meetup-automation/communication";
 import {
-	EventConcurrentModificationError,
+	EVENT_TASK_NAMES,
 	type EventClock,
+	EventConcurrentModificationError,
 	type EventDocument,
 	type EventDocumentCodec,
 	type EventDocumentConcurrency,
 	type EventIdentity,
 	type EventRepository,
 	type MeetupEvent,
-	POST_EVENT_TASK_NAMES,
 } from "@meetup-automation/event";
 import type {
 	AttendeeSlidesGateway,
 	MeetupEventIdentityPolicy,
 	PresentationFileUrl,
 } from "@meetup-automation/publication";
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type {
 	EventPublicationResult,
 	PublicationDestinationKey,
@@ -68,7 +68,7 @@ export class ReconcileMeetupSlidesDelivery {
 		)
 			return { status: "skipped", diagnostics: [] };
 		const tasks = event.operationalChecklists.postEvent.filter(
-			(item) => item.name === POST_EVENT_TASK_NAMES.shareSlides,
+			(item) => item.name === EVENT_TASK_NAMES.shareSlides,
 		);
 		if (
 			tasks.length > 1 ||
@@ -193,7 +193,7 @@ export class ReconcileMeetupSlidesDelivery {
 		event: MeetupEvent,
 	): Promise<EventPublicationResult> {
 		const items = event.operationalChecklists.postEvent;
-		const name = POST_EVENT_TASK_NAMES.shareSlides;
+		const name = EVENT_TASK_NAMES.shareSlides;
 		const postEvent = items.some((item) => item.name === name)
 			? items.map((item) =>
 					item.name === name ? { ...item, completed: true } : item,

@@ -5,9 +5,11 @@ import type {
 	OperationalChecklistItem,
 } from "@meetup-automation/event";
 import {
-	CHECKLIST_LABELS,
 	AUTOMATED_TASK_HEADINGS,
+	CHECKLIST_LABELS,
+	CHECKMARK_TASK_NAMES,
 	type Checkbox,
+	COMPLETION_MARKER,
 	type Section,
 } from "./github-issue-form-event-document-codec-contracts.js";
 import type { IssueFormSections } from "./issue-form-sections.js";
@@ -19,7 +21,10 @@ export interface IssueFormChecklistsCollaborators {
 		IssueFormSections,
 		"cleanResponse" | "parseSections" | "replaceOrAppendSection" | "readSection"
 	>;
-	readonly markdownLines: Pick<MarkdownLines, "parseCheckboxLine">;
+	readonly markdownLines: Pick<
+		MarkdownLines,
+		"parseCheckboxLine" | "parseCompletionLine"
+	>;
 }
 
 export class IssueFormChecklists {
@@ -54,6 +59,12 @@ export class IssueFormChecklists {
 		const checkboxes: Checkbox[] = [];
 		for (const [index, line] of value.split(/\r?\n/).entries()) {
 			if (!line.trim()) {
+				continue;
+			}
+			const completion =
+				this.collaborators.markdownLines.parseCompletionLine(line);
+			if (completion) {
+				checkboxes.push({ checked: true, label: completion.label });
 				continue;
 			}
 			const checkbox = this.collaborators.markdownLines.parseCheckboxLine(line);
@@ -131,7 +142,9 @@ export class IssueFormChecklists {
 				.every(
 					(line) =>
 						this.collaborators.markdownLines.parseCheckboxLine(line) !==
-						undefined,
+							undefined ||
+						this.collaborators.markdownLines.parseCompletionLine(line) !==
+							undefined,
 				)
 		);
 	}
@@ -149,10 +162,17 @@ export class IssueFormChecklists {
 			]),
 		);
 		return items
-			.map(
-				({ name, completed }) =>
-					`- [${completed ? "x" : " "}] ${labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : undefined) ?? name}`,
-			)
+			.map(({ name, completed }) => {
+				const label =
+					labels.get(name) ??
+					(AUTOMATED_TASK_HEADINGS.has(name)
+						? CHECKLIST_LABELS.get(name)
+						: undefined) ??
+					name;
+				return completed && CHECKMARK_TASK_NAMES.has(name)
+					? `${COMPLETION_MARKER} ${label}`
+					: `- [${completed ? "x" : " "}] ${label}`;
+			})
 			.join("\n");
 	}
 
