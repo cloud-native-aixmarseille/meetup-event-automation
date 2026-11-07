@@ -41,8 +41,10 @@ comments when new work appears, preserving unrelated moderation decisions.
 
 ### Email batches and completion
 
-Host and speaker preparation emails require independent decisions. Thank-you
-emails retain one batch approval in the follow-up comment. Fingerprints
+Host and speaker emails require independent decisions for both preparation and
+thank-you messages. All four types share parameter review, decision verification,
+and delivery reporting. The follow-up comment summarizes tasks and links to
+pending requests. Fingerprints
 cover outgoing inputs, including recipient addresses, templates, placeholders,
 event facts, and policy. Only fingerprints and public review details cross into
 comments and Slack. Partial completion and locale changes do not invalidate an
@@ -99,6 +101,13 @@ compare-and-set writes; source rereads and workflow locks reduce, but cannot
 eliminate, a final concurrent human edit.
 
 ## Decision history
+
+- 2026-11-07: Thank-you emails use the same independent host/speaker approval
+  pattern as preparation emails, including editable public parameters and
+  read-only recipient feedback links. This replaces the combined thank-you
+  approval inside the follow-up overview. Existing overview state and recorded
+  decisions remain stored, but cannot authorize a separately scoped request.
+  Delivery reservations continue to prevent resending accepted or uncertain work.
 
 - 2026-11-06: Attendee slides delivery requires its own verified approval,
   replacing unconditional dispatch once the public PDF was available. The

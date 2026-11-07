@@ -77,22 +77,28 @@ describe("organizer attention task selection", () => {
 			expect(result.checklist).toEqual([concrete]);
 		},
 	);
-	it("retains the separate slides approval link in the shared follow-up view", () => {
-		// Arrange
-		const pending = episode("approval-pending", "meetup-slides:revision");
-		const selection = new AttentionTaskSelection();
+	it.each([
+		["meetup-slides:revision", "slides-approval"],
+		["email-revision", "email-approval"],
+	] as const)(
+		"retains the separate %s link in the shared follow-up view",
+		(resource, action) => {
+			// Arrange
+			const pending = episode("approval-pending", resource);
+			const selection = new AttentionTaskSelection();
 
-		// Act
-		const result = selection.select(
-			{ state: { ...state, commentId: 200 }, conditions: [pending] },
-			{ entries: [entry("other", "slides-approval")] },
-		);
+			// Act
+			const result = selection.select(
+				{ state: { ...state, commentId: 200 }, conditions: [pending] },
+				{ entries: [entry("other", action)] },
+			);
 
-		// Assert
-		expect(result.details).toEqual([pending]);
-		expect(result.checklist).toEqual([]);
-		expect(selection.actionFor(pending)).toBe("slides-approval");
-	});
+			// Assert
+			expect(result.details).toEqual([pending]);
+			expect(result.checklist).toEqual([]);
+			expect(selection.actionFor(pending)).toBe(action);
+		},
+	);
 
 	it("retains unrelated confirmations and technical failures with concrete tasks", () => {
 		// Arrange

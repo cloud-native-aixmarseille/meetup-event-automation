@@ -21,12 +21,8 @@ export class FollowUpPresenter {
 				`${pending ? "⏳" : "✅"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`,
 			);
 		}
-		const progress = this.policy.progressState(
-			record.followUp,
-			record.recipientCount ?? 0,
-		);
-		if (progress !== "review")
-			lines.push(this.messages.t(`follow-up.${progress}`, {}));
+		const progress = this.policy.progressState(record.followUp);
+		lines.push(this.messages.t(`follow-up.${progress}`, {}));
 
 		return lines;
 	}

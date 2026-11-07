@@ -1,4 +1,3 @@
-import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type {
 	CommunicationClock,
 	MailBatchFingerprint,
@@ -8,11 +7,12 @@ import type {
 	ReconcileCommunicationsInput,
 } from "@meetup-automation/communication";
 import type { MeetupEvent } from "@meetup-automation/event";
+import { OrganizerCommentChangedError } from "../approval/organizer-comment-changed-error.js";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
 import type { OrganizerApproval } from "../ports/organizer-approval.js";
 import type { CommunicationApprovalDetails } from "./communication-approval-details.js";
 
-/** Review preparation mail separately by recipient role; preserve full-group revisions on retries. */
+/** Review each email type independently; preserve full-group revisions on retries. */
 export interface ApproveCommunicationBatchCollaborators {
 	readonly mailBatchFingerprint: Pick<MailBatchFingerprint, "create">;
 	readonly communicationApprovalDetails: Pick<
@@ -41,8 +41,6 @@ export class ApproveCommunicationBatch {
 			now: this.clock.now(),
 		});
 		if (!plan.intents.length) return [input];
-		if (plan.intents.some((mail) => mail.kind.endsWith("-thanks")))
-			return [await this.approve(input, recipients, event, diagnostics)];
 		const groups: ReconcileCommunicationsInput[] = [];
 		for (const role of ["hosting", "speaker"] as const) {
 			const mailRecipients = input.mailRecipients.filter(
@@ -150,10 +148,12 @@ export class ApproveCommunicationBatch {
 			event,
 			mails,
 		);
-		const introduction = mails[0]?.kind;
-		const parameters = introduction?.endsWith("-introduction")
-			? this.collaborators.parameters.project(input.mailPlaceholders ?? {})
-			: undefined;
+		const mailKind = mails[0]?.kind;
+		if (!mailKind || mails.some((mail) => mail.kind !== mailKind))
+			throw new Error("Communication approval must contain one email type");
+		const parameters = this.collaborators.parameters.project(
+			input.mailPlaceholders ?? {},
+		);
 		return {
 			kind: mails.some((mail) => mail.kind.endsWith("-thanks"))
 				? "email-thanks"
@@ -167,10 +167,8 @@ export class ApproveCommunicationBatch {
 			recipientCount: mails.length,
 			details: {
 				...details,
-				...(introduction === "host-introduction" ||
-				introduction === "speaker-introduction"
-					? { mailKind: introduction, parameters }
-					: {}),
+				mailKind,
+				parameters,
 			},
 			requestedAt: now.toISOString(),
 		} satisfies import("../ports/organizer-approval.js").OrganizerApprovalRequest;

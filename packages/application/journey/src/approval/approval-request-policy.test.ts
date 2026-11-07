@@ -59,6 +59,7 @@ describe("approval review eligibility", () => {
 	it.each([
 		[{ recipientCount: 0, decided: false }, "inactive"],
 		[{ recipientCount: 1, followUpActive: false, decided: false }, "inactive"],
+		[{ recipientCount: 2, followUpActive: true, decided: false }, "inactive"],
 		[{ recipientCount: 1, decided: true }, "final"],
 		[{ recipientCount: 1, decided: false }, "pending"],
 		[{ decided: false }, "pending"],
@@ -242,4 +243,55 @@ describe("approval comment completion", () => {
 			expect(resolved).toBe(expected);
 		},
 	);
+});
+
+describe("email approval scopes", () => {
+	it.each([
+		"host-introduction",
+		"speaker-introduction",
+		"host-thanks",
+		"speaker-thanks",
+	] as const)("validates the phase of %s", (mailKind) => {
+		// Arrange
+		const policy = new ApprovalRequestPolicy(
+			new DraftProposalComposition().fingerprints(),
+		);
+		const kind = mailKind.endsWith("-thanks")
+			? "email-thanks"
+			: "email-introduction";
+		const input = {
+			...request,
+			kind,
+			details: { ...request.details, mailKind },
+		} satisfies OrganizerApprovalRequest;
+		// Act
+		const validate = () => policy.validate(input);
+		const mismatch = () =>
+			policy.validate({
+				...input,
+				kind: kind === "email-thanks" ? "email-introduction" : "email-thanks",
+			});
+		// Assert
+		expect(validate).not.toThrow();
+		expect(mismatch).toThrow("Invalid email approval scope");
+	});
+	it("does not reuse another recipient group's decision even with the same revision", () => {
+		// Arrange
+		const policy = new ApprovalRequestPolicy(
+			new DraftProposalComposition().fingerprints(),
+		);
+		const host = {
+			...request,
+			kind: "email-thanks" as const,
+			details: { ...request.details, mailKind: "host-thanks" as const },
+		};
+		const speaker = {
+			...host,
+			details: { ...host.details, mailKind: "speaker-thanks" as const },
+		};
+		// Act
+		const matches = policy.matches(host, speaker, "approved");
+		// Assert
+		expect(matches).toBe(false);
+	});
 });

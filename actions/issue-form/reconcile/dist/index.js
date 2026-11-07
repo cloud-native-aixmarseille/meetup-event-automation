@@ -34735,8 +34735,7 @@ var ApprovalRequestPolicy = class {
       return `content:${request.content.key}`;
     if (request.kind === "social-publication")
       return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
-    if (request.kind === "email-introduction" && request.details?.mailKind)
-      return `email:${request.details.mailKind}`;
+    if (request.details?.mailKind) return `email:${request.details.mailKind}`;
     return request.kind;
   }
   canReplaceCombinedEmail(previous, input, decided) {
@@ -34755,7 +34754,7 @@ var ApprovalRequestPolicy = class {
     }) !== "pending";
   }
   reviewPhase(facts) {
-    if (facts.recipientCount === 0 || facts.followUpActive === false)
+    if (facts.recipientCount === 0 || facts.followUpActive !== void 0)
       return "inactive";
     return facts.decided ? "final" : "pending";
   }
@@ -34783,13 +34782,13 @@ var ApprovalRequestPolicy = class {
       throw new Error("Invalid approval request");
   }
   validateEmailCount(request) {
-    if (request.details?.mailKind && request.kind !== "email-introduction")
-      throw new Error("Invalid preparation email scope");
+    if (request.details?.mailKind && !request.details.mailKind.endsWith(request.kind.replace("email-", "-")))
+      throw new Error("Invalid email approval scope");
     if (request.details && request.details.emails.length + request.details.omittedEmails !== request.recipientCount)
       throw new Error("Invalid approval details");
   }
   matches(previous, request, status) {
-    if (previous.kind !== request.kind || previous.revision !== request.revision || previous.eventDate !== request.eventDate)
+    if (previous.kind !== request.kind || this.scope(previous) !== this.scope(request) || previous.revision !== request.revision || previous.eventDate !== request.eventDate)
       return false;
     if (previous.kind === "meetup-slides" && request.kind === "meetup-slides")
       return this.fingerprints.digest(previous.slides) === this.fingerprints.digest(request.slides);
@@ -37227,9 +37226,11 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       ),
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
-        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && !["social-approval", "slides-approval"].includes(
-          this.actionFor(episode) ?? ""
-        ))) && !(!view.state.commentId && episode.status !== "unknown" && checklist.entries.some(
+        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && ![
+          "social-approval",
+          "slides-approval",
+          "email-approval"
+        ].includes(this.actionFor(episode) ?? ""))) && !(!view.state.commentId && episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
@@ -53141,6 +53142,10 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "email-approval" && episode.condition.target)
+      return this.messages.t("action.email-target-approval-pending", {
+        target: episode.condition.target.replaceAll("-", "_")
+      });
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "slides-approval")
       return this.messages.t("action.slides-approval-pending");
     if (this.collaborators.attentionTaskSelection.actionFor(episode) === "content-approval")
@@ -53561,6 +53566,7 @@ var messages = {
   "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.email-target-approval-pending": "{target, select, host_introduction {Approve or reject the host preparation email.} speaker_introduction {Approve or reject the speaker preparation emails.} host_thanks {Approve or reject the host thank-you email.} speaker_thanks {Approve or reject the speaker thank-you emails.} other {Approve or reject the emails.}}",
   "action.approval-pending": "Approve or reject the emails.",
   "action.integration-failure": "Automation failed: {task}.",
   "action.delivery-recovery": "Verify delivery before retrying.",
@@ -53640,6 +53646,7 @@ var messages2 = {
   "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
   "action.manual-publication": "{task}.",
   "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.email-target-approval-pending": "{target, select, host_introduction {Approuvez ou refusez l'email de pr\xE9paration pour l'h\xF4te.} speaker_introduction {Approuvez ou refusez les emails de pr\xE9paration pour les intervenants.} host_thanks {Approuvez ou refusez l'email de remerciement pour l'h\xF4te.} speaker_thanks {Approuvez ou refusez les emails de remerciement pour les intervenants.} other {Approuvez ou refusez les emails.}}",
   "action.approval-pending": "Approuvez ou refusez les emails.",
   "action.integration-failure": "Automatisation en \xE9chec : {task}.",
   "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",

@@ -1,10 +1,10 @@
 # Email and Slack communications
 
 The issue-update and daily-audit workflows request organizer confirmation before
-sending preparation emails separately for the host and speakers, or a thank-you
-batch. They post each request on
-the meetup issue and alert the meetup organizer Slack channel. Post-event approval,
-task status, and reminders share one follow-up comment and grouped notifications.
+sending preparation and thank-you emails separately for the host and speakers.
+They post each request on the meetup issue and alert the meetup organizer Slack
+channel. Post-event task status and links to pending approvals share one follow-up
+comment and grouped notifications.
 Checked email tasks mean completed; after approval, the automation sends and checks them.
 
 Email reconciliation selects the currently eligible introduction or thank-you
@@ -116,13 +116,12 @@ and plain-text versions include one results link per talk.
 
 ## Confirm an email batch
 
-Preparation emails have one approval comment for the host and one for speakers.
-Approving or refusing one type does not decide the other. Thank-you emails keep
-one approval in the post-event follow-up comment.
+Preparation and thank-you emails each have one approval comment for the host and
+one for speakers. Approving or refusing one type does not decide the other. The
+post-event follow-up comment summarizes tasks and links to pending requests.
 
 Expand **Email details** to review the public recipient names and template
-parameters. For preparation emails, edit the values between backticks in the
-marked list before approving. The editable fields are `eventDate`,
+parameters. Edit the values between backticks in the marked list before approving. The editable fields are `eventDate`,
 `eventMeetupUrl`, `eventCncfUrl`, and `eventSlidesUrl` when supplied. Keep their
 names and the surrounding comment unchanged. Dates use `YYYY-MM-DD`; links must
 use HTTPS. These edits apply to this email type only, without changing the issue,
@@ -175,7 +174,7 @@ For introductions, the automation adds a reaction to the original Slack request:
 delivery. Failed reactions are retried on later reconciliations, including
 after email tasks are complete. They do not reopen the decision or resend mail.
 
-Each preparation type and the thank-you batch require separate approvals.
+Each preparation and thank-you type requires its own approval.
 Approval covers that group's current email inputs, including recipient
 addresses, templates, placeholders, date and policy. Only a fingerprint and
 public facts are persisted; contact details never appear in the request.
@@ -292,11 +291,11 @@ tasks not already covered by its guidance. It verifies
 bot revisions before retaining notification state, and saves that state in the
 shared comment before removing a separate attention comment. Interrupted
 consolidation resumes without losing a Slack reservation. From the day after the event, one **Post-event
-follow-up** comment holds the thank-you approval, all five task statuses, and
+follow-up** comment holds links to pending thank-you approvals, all five task statuses, and
 remaining integration or delivery actions. Field corrections stay in the merged
 diagnostic checklist. Follow-up tasks cover:
 
-- Thank the host and speakers, with one approval for the complete email batch.
+- Thank the host and speakers, with a separate approval for each email type.
 - Approve sending the public PDF to Meetup attendees in its separate request.
 - Import attendance into CNCF.
 - Share the event recap on LinkedIn.
@@ -308,10 +307,10 @@ separately through [Contact attendees](event-publication.md#send-slides-to-atten
 and requires its own approval. The slide-sharing task remains pending until the
 issue records completion; an absent task never proves delivery.
 
-If the overview says thank-you emails are blocked before approval, review the
+If a thank-you request is missing, review the blockers in the overview and the
 issue diagnostic checklist. Conflicted or unfinished managed slides prevent the
 email batch from being prepared. Resolve the asset diagnostics and reconcile
-again to obtain the email approval controls.
+again to obtain the dedicated email approval comments.
 
 Progress updates the shared comment without
 invalidating a reviewed email batch. Email details, final decisions and delivery

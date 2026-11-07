@@ -55,7 +55,7 @@ export const FR_MESSAGES = {
 		"{task, select, thank_host {Remercier l'hôte} thank_speakers {Remercier les intervenants} share_slides {Envoi des slides aux participants Meetup après approbation} import_attendance {Importer la participation dans CNCF} share_social {Publier un récapitulatif du meetup sur LinkedIn} other {Tâche après le meetup}}",
 	"follow-up.stopped": "Suivi suspendu.",
 	"follow-up.waiting":
-		"Aucun email de remerciement n'est prêt à approuver. Les blocages connus et les actions à effectuer sont détaillés ci-dessous.",
+		"Les remerciements à l'hôte et aux intervenants sont à approuver séparément dans leurs commentaires dédiés. Les demandes en attente et les blocages sont détaillés ci-dessous.",
 	"follow-up.emails-complete": "Aucun email de remerciement en attente.",
 	"approval.parameters.instructions":
 		"Modifiez les valeurs entre backticks, puis approuvez l'envoi. Les coordonnées privées restent dans le référentiel.",
@@ -72,7 +72,7 @@ export const FR_MESSAGES = {
 	"approval.details.omitted-links":
 		"{count, plural, one {# autre lien.} other {# autres liens.}}",
 	"approval.final":
-		"### {kind, select, introduction {Emails de préparation} host_introduction {Email de préparation — hôte} speaker_introduction {Emails de préparation — intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} · {count, plural, one {# destinataire} other {# destinataires}} maximum\n\n{status, select, approved {✅ Approuvé} rejected {❌ Refusé} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Les emails déjà envoyés ne seront pas renvoyés.} rejected {Ces emails ne seront pas envoyés.} other {}}",
+		"### {kind, select, introduction {Emails de préparation} host_introduction {Email de préparation — hôte} speaker_introduction {Emails de préparation — intervenants} thanks {Emails de remerciement} host_thanks {Email de remerciement — hôte} speaker_thanks {Emails de remerciement — intervenants} other {Action}}\n\n{date} · {count, plural, one {# destinataire} other {# destinataires}} maximum\n\n{status, select, approved {✅ Approuvé} rejected {❌ Refusé} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Les emails déjà envoyés ne seront pas renvoyés.} rejected {Ces emails ne seront pas envoyés.} other {}}",
 	"approval.request":
-		"### {kind, select, introduction {Emails de préparation} host_introduction {Email de préparation — hôte} speaker_introduction {Emails de préparation — intervenants} thanks {Emails de remerciement} other {Action}}\n\n{date} · {count, plural, one {# destinataire} other {# destinataires}} maximum\n\nCochez un choix. Les emails déjà envoyés sont ignorés. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] ✅ Approuver l'envoi\n- [{rejectMark}] ❌ Refuser l'envoi",
+		"### {kind, select, introduction {Emails de préparation} host_introduction {Email de préparation — hôte} speaker_introduction {Emails de préparation — intervenants} thanks {Emails de remerciement} host_thanks {Email de remerciement — hôte} speaker_thanks {Emails de remerciement — intervenants} other {Action}}\n\n{date} · {count, plural, one {# destinataire} other {# destinataires}} maximum\n\nCochez un choix. Les emails déjà envoyés sont ignorés. Toute modification demande une nouvelle validation.\n\n- [{approveMark}] ✅ Approuver l'envoi\n- [{rejectMark}] ❌ Refuser l'envoi",
 } as const;

@@ -44,19 +44,18 @@ describe("follow-up approval progress", () => {
 		expect(result).toBeUndefined();
 	});
 	it.each([
-		[false, 1, ["thank-host"], "stopped"],
-		[true, 1, ["thank-host"], "review"],
-		[true, 0, ["thank-host"], "waiting"],
-		[true, 0, ["thank-speakers"], "waiting"],
-		[true, 0, ["share-slides"], "emails-complete"],
+		[false, ["thank-host"], "stopped"],
+		[true, ["thank-host"], "waiting"],
+		[true, ["thank-speakers"], "waiting"],
+		[true, ["share-slides"], "emails-complete"],
 	] as const)(
-		"classifies active=%s recipients=%s tasks=%s",
-		(active, count, pendingTasks, expected) => {
+		"classifies active=%s tasks=%s",
+		(active, pendingTasks, expected) => {
 			// Arrange
 			const policy = new FollowUpApprovalPolicy();
 
 			// Act
-			const result = policy.progressState({ active, pendingTasks }, count);
+			const result = policy.progressState({ active, pendingTasks });
 
 			// Assert
 			expect(result).toBe(expected);

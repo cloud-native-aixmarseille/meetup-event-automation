@@ -28172,8 +28172,7 @@ var ApprovalRequestPolicy = class {
       return `content:${request2.content.key}`;
     if (request2.kind === "social-publication")
       return `social:${request2.social.intentId}:${request2.social.recovery ? "recovery" : "publication"}`;
-    if (request2.kind === "email-introduction" && request2.details?.mailKind)
-      return `email:${request2.details.mailKind}`;
+    if (request2.details?.mailKind) return `email:${request2.details.mailKind}`;
     return request2.kind;
   }
   canReplaceCombinedEmail(previous, input, decided) {
@@ -28192,7 +28191,7 @@ var ApprovalRequestPolicy = class {
     }) !== "pending";
   }
   reviewPhase(facts) {
-    if (facts.recipientCount === 0 || facts.followUpActive === false)
+    if (facts.recipientCount === 0 || facts.followUpActive !== void 0)
       return "inactive";
     return facts.decided ? "final" : "pending";
   }
@@ -28220,13 +28219,13 @@ var ApprovalRequestPolicy = class {
       throw new Error("Invalid approval request");
   }
   validateEmailCount(request2) {
-    if (request2.details?.mailKind && request2.kind !== "email-introduction")
-      throw new Error("Invalid preparation email scope");
+    if (request2.details?.mailKind && !request2.details.mailKind.endsWith(request2.kind.replace("email-", "-")))
+      throw new Error("Invalid email approval scope");
     if (request2.details && request2.details.emails.length + request2.details.omittedEmails !== request2.recipientCount)
       throw new Error("Invalid approval details");
   }
   matches(previous, request2, status) {
-    if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
+    if (previous.kind !== request2.kind || this.scope(previous) !== this.scope(request2) || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
       return false;
     if (previous.kind === "meetup-slides" && request2.kind === "meetup-slides")
       return this.fingerprints.digest(previous.slides) === this.fingerprints.digest(request2.slides);
@@ -30664,9 +30663,11 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       ),
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
-        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && !["social-approval", "slides-approval"].includes(
-          this.actionFor(episode) ?? ""
-        ))) && !(!view.state.commentId && episode.status !== "unknown" && checklist.entries.some(
+        (episode) => !(view.state.commentId && (episode.condition.code === "follow-up" || episode.condition.code === "approval-pending" && ![
+          "social-approval",
+          "slides-approval",
+          "email-approval"
+        ].includes(this.actionFor(episode) ?? ""))) && !(!view.state.commentId && episode.status !== "unknown" && checklist.entries.some(
           (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )

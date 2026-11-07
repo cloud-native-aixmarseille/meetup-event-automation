@@ -18,10 +18,8 @@ import {
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fixture } from "../../../adapter/communication/github-organizer-attention/testing/attention.fixtures.js";
-import {
-	decision,
-	request,
-} from "../../../adapter/journey/github-organizer-approval/testing/approval.fixtures.js";
+import { decision } from "../../../adapter/journey/github-organizer-approval/testing/approval.fixtures.js";
+import { emailReviewFor } from "../../../adapter/journey/github-organizer-approval/testing/email-review.fixtures.js";
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
 import {
@@ -153,7 +151,7 @@ describe("post-event attention composition", () => {
 		// Assert
 		expect(shared).toContain(action);
 		expect(shared).toContain(
-			"Aucun email de remerciement n'est prêt à approuver.",
+			"Les remerciements à l'hôte et aux intervenants sont à approuver séparément",
 		);
 		expect(shared).toContain("/actions/runs/123");
 		expect(shared).not.toContain(
@@ -178,13 +176,15 @@ describe("post-event attention composition", () => {
 		// Assert
 		expect(result.posted).toBe(true);
 		expect(f.comments).toHaveLength(1);
-		expect(body).toContain("No thank-you emails are ready for approval.");
+		expect(body).toContain(
+			"Approve host and speaker thank-you emails separately",
+		);
 		expect(body).toContain("Email preparation or sending failed.");
 		expect(body).toContain("/actions/runs/123");
 		expect(body).not.toContain("- [ ] Approve");
 	});
 
-	it("uses one approval and task comment, with one notification for all follow-up tasks", async () => {
+	it("links independent email approvals from one overview and one grouped notification", async () => {
 		// Arrange
 		const f = followUpFixture();
 		const approvals = new GithubOrganizerApproval(
@@ -212,7 +212,8 @@ describe("post-event attention composition", () => {
 
 		// Act
 		const first = await f.run();
-		await approvals.request({ ...request, kind: "email-thanks" });
+		await approvals.request(emailReviewFor("host-thanks"));
+		await approvals.request(emailReviewFor("speaker-thanks"));
 		const second = await f.run();
 		const body = f.comments[0]?.body ?? "";
 		const shared = await followUp.followUpAttention();
@@ -224,8 +225,12 @@ describe("post-event attention composition", () => {
 		expect(first.posted).toBe(true);
 		expect(second.posted).toBe(false);
 		expect(second.notificationFailed).toBe(false);
-		expect(f.comments).toHaveLength(1);
-		expect(body).toContain("- [ ] ✅ Approve sending");
+		expect(f.comments).toHaveLength(3);
+		expect(body).not.toContain("- [ ] ✅ Approve sending");
+		expect(body).toContain("host thank-you email.");
+		expect(body).toContain("speaker thank-you emails.");
+		expect(body).toContain("#issuecomment-101");
+		expect(body).toContain("#issuecomment-102");
 		expect(
 			state.episodes.filter(
 				(episode) => episode.condition.code === "follow-up",
@@ -261,9 +266,10 @@ describe("post-event attention composition", () => {
 			f.notifications,
 			f.client,
 		);
-		await f.run();
-		await approvals.request({ ...request, kind: "email-thanks" });
+		await approvals.request(emailReviewFor("host-thanks"));
 		decision(f);
+		await approvals.request(emailReviewFor("host-thanks"));
+		await f.run();
 		f.current.event = {
 			...f.current.event,
 			operationalChecklists: {
@@ -280,16 +286,13 @@ describe("post-event attention composition", () => {
 
 		// Act
 		const result = await f.run("fr");
-		const approved = await approvals.request({
-			...request,
-			kind: "email-thanks",
-		});
+		const approved = await approvals.request(emailReviewFor("host-thanks"));
 
 		// Assert
 		expect(result.active).toBe(0);
 		expect(result.notificationFailed).toBe(false);
 		expect(approved.status).toBe("approved");
-		expect(f.comments).toHaveLength(1);
+		expect(f.comments).toHaveLength(2);
 		expect(
 			f.fetcher.mock.calls.filter(([url]) =>
 				String(url).endsWith("chat.postMessage"),

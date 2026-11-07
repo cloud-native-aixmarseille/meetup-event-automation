@@ -34,9 +34,11 @@ export class AttentionTaskSelection {
 						view.state.commentId &&
 						(episode.condition.code === "follow-up" ||
 							(episode.condition.code === "approval-pending" &&
-								!["social-approval", "slides-approval"].includes(
-									this.actionFor(episode) ?? "",
-								)))
+								![
+									"social-approval",
+									"slides-approval",
+									"email-approval",
+								].includes(this.actionFor(episode) ?? "")))
 					) &&
 					!(
 						!view.state.commentId &&

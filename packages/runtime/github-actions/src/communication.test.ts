@@ -1140,7 +1140,7 @@ describe("organizer approval for email batches", () => {
 			expect(body).not.toContain("<details open");
 		},
 	);
-	it("requires a new approval when a speaker feedback destination changes", async () => {
+	it("requires a new speaker approval when feedback changes while preserving host approval", async () => {
 		// Arrange
 		const f = await setup({
 			labels: [
@@ -1188,8 +1188,15 @@ describe("organizer approval for email batches", () => {
 			code: "communication.approval-pending",
 			severity: "warning",
 		});
-		expect(f.createDispatchEvent).not.toHaveBeenCalled();
-		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
+		expect(f.createDispatchEvent).toHaveBeenCalledOnce();
+		expect(
+			f.createDispatchEvent.mock.calls[0]?.[0].client_payload["template-name"],
+		).toBe("meetup-thanks-hosting");
+		expect(
+			f.comments.find(({ body }) =>
+				body.includes("Thank-you emails — speakers"),
+			)?.body,
+		).toContain("- [ ] ✅ Approve sending");
 	});
 
 	it("keeps the thank-you approval after the speaker email succeeds and the host email is deferred", async () => {
@@ -1732,7 +1739,7 @@ describe("scheduled post-event thanks", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2099-06-09T10:00:00Z"));
 		const f = await setup();
-		// Act: prepare the shared request; no delivery before approval.
+		// Act: prepare each email type; no delivery before approval.
 		const pending = await new CommunicationRuntime({
 			createJourney: (input) =>
 				CommunicationComposition.createCommunicationContainer(input).get(
@@ -1748,11 +1755,9 @@ describe("scheduled post-event thanks", () => {
 		expect(pending.counts.accepted).toBe(0);
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
 		expect(
-			f.comments.filter((comment) =>
-				comment.body.includes("Post-event follow-up"),
-			),
-		).toHaveLength(1);
-		// Arrange: approve the prepared batch.
+			f.comments.filter((comment) => comment.body.includes("Thank-you email")),
+		).toHaveLength(2);
+		// Arrange: approve both prepared types.
 		approveEmailRequests(f);
 
 		// Act

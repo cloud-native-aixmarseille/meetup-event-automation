@@ -4,6 +4,7 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./slack-attention-messages.js";
 
 const parameters = {
+	"action.email-target-approval-pending": { target: "host_thanks" },
 	"action.social-target-approval-pending": { target: "slack-community:d0" },
 	"action.required-data": { task: "agenda" },
 	"slack.title": { issue: "42" },

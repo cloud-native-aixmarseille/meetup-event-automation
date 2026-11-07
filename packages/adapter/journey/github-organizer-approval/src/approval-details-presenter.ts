@@ -25,7 +25,14 @@ export class ApprovalDetailsPresenter {
 					]
 				: []),
 			...details.emails.map((email) =>
-				this.email(details.parameters ? { ...email, links: [] } : email),
+				this.email(
+					details.parameters
+						? {
+								...email,
+								links: email.links.filter((link) => link.kind === "feedback"),
+							}
+						: email,
+				),
 			),
 		];
 		if (details.omittedEmails > 0)

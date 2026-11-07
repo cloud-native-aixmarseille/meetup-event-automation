@@ -71,8 +71,8 @@ conditions create new semantic episodes, while locale and unrelated edits do not
 Reserve before posting. An uncertain acknowledgement blocks replacement posts
 across later days until resolved; reruns do not clear that authority.
 
-Pre-event guidance uses the diagnostic checklist. Post-event tasks and thank-you
-approval share one overview. Moving between comment representations must preserve
+Pre-event guidance uses the diagnostic checklist. Post-event tasks and links to pending thank-you
+approvals share one overview. Moving between comment representations must preserve
 verified reservations before retiring an older view. Notification delivery state
 remains independent of email delivery and approval decisions.
 
@@ -85,8 +85,8 @@ that the event happened or add a held label; email still needs verified approval
 
 The shared overview includes host/speaker thanks, slides, attendance, and social
 sharing. It exists even when only manual work remains or email preparation is
-blocked. A non-authorizing overview gains approval controls only when a safe
-batch is ready. Thank-you notifications use attention, with D+1/D+7 task milestones,
+blocked. The overview remains non-authorizing; each email type has its own
+approval comment. Thank-you notifications use attention, with D+1/D+7 task milestones,
 rather than separate Slack requests and reactions.
 
 Closed meetup issues are archival. Filter them before form decoding and skip
@@ -121,6 +121,11 @@ The system cannot detect a schedule that never runs; external monitoring remains
 an operational responsibility.
 
 ## Decision history
+
+On 2026-11-07, thank-you approvals moved from the combined follow-up comment to
+independent host and speaker requests, as recorded in
+[organizer approvals](0003-organizer-approvals.md#decision-history). The overview
+retains task progress and notification reservations and links to pending requests.
 
 On 2026-11-05, internal proposal and publication records moved into one
 authoritative, always-minimized state comment per issue. Separate marker-only
