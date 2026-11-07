@@ -30,13 +30,13 @@ const mail: MailMessageIntent = {
 	},
 };
 
-describe("public email approval details", () => {
-	it("shows public participant names and template links without copying private placeholders", () => {
+describe("complete email approval details", () => {
+	it("captures the exact destination, template and all planned placeholders", () => {
 		// Arrange
 		const mails = [mail];
 
 		// Act
-		const details = new CommunicationApprovalDetails().create(event, mails);
+		const details = new CommunicationApprovalDetails().create(event, mails, {});
 
 		// Assert
 		expect(details).toEqual({
@@ -44,6 +44,13 @@ describe("public email approval details", () => {
 				{
 					kind: "speaker-introduction",
 					recipientName: "Example Speaker",
+					message: {
+						recipientEmail: mail.recipient.email,
+						templateName: mail.templateName,
+						idempotencyKey: mail.idempotencyKey,
+						placeholders: mail.placeholders,
+						parameterKeys: [],
+					},
 					links: [
 						{ kind: "meetup", url: mail.placeholders.eventMeetupUrl },
 						{ kind: "community", url: mail.placeholders.eventCncfUrl },
@@ -54,7 +61,9 @@ describe("public email approval details", () => {
 			],
 			omittedEmails: 0,
 		});
-		expect(JSON.stringify(details).toLowerCase()).not.toContain("private");
+		expect(details.emails[0]?.message?.placeholders).not.toBe(
+			mail.placeholders,
+		);
 	});
 
 	it("shows only that speaker's feedback links for a thank-you email", () => {
@@ -75,7 +84,11 @@ describe("public email approval details", () => {
 		};
 
 		// Act
-		const details = new CommunicationApprovalDetails().create(event, [thanks]);
+		const details = new CommunicationApprovalDetails().create(
+			event,
+			[thanks],
+			{},
+		);
 
 		// Assert
 		expect(details.emails[0]?.links).toEqual([
@@ -87,7 +100,7 @@ describe("public email approval details", () => {
 		]);
 	});
 
-	it("identifies the host by its public name without exposing the contact's identity", () => {
+	it("identifies the host and records the contact delivery values", () => {
 		// Arrange
 		const hosting: MailMessageIntent = {
 			...mail,
@@ -97,18 +110,29 @@ describe("public email approval details", () => {
 		};
 
 		// Act
-		const details = new CommunicationApprovalDetails().create(event, [hosting]);
+		const details = new CommunicationApprovalDetails().create(
+			event,
+			[hosting],
+			{},
+		);
 
 		// Assert
 		expect(details.emails[0]).toEqual({
 			kind: "host-thanks",
 			recipientName: "Example Host",
+			message: {
+				recipientEmail: hosting.recipient.email,
+				templateName: hosting.templateName,
+				idempotencyKey: hosting.idempotencyKey,
+				placeholders: hosting.placeholders,
+				parameterKeys: [],
+			},
 			links: [],
 			omittedLinks: 0,
 		});
 	});
 
-	it("projects the complete public batch independently of a notification channel budget", () => {
+	it("projects the complete batch independently of a notification channel budget", () => {
 		// Arrange
 		const mails: MailMessageIntent[] = Array.from(
 			{ length: 30 },
@@ -127,7 +151,7 @@ describe("public email approval details", () => {
 		);
 
 		// Act
-		const details = new CommunicationApprovalDetails().create(event, mails);
+		const details = new CommunicationApprovalDetails().create(event, mails, {});
 
 		// Assert
 		expect(details.emails.length + details.omittedEmails).toBe(30);
@@ -137,4 +161,25 @@ describe("public email approval details", () => {
 		for (const email of details.emails)
 			expect(email.links.length + email.omittedLinks).toBe(12);
 	});
+});
+
+it("keeps recipient overrides separate from editable shared defaults", () => {
+	// Arrange
+	const overridden = {
+		...mail,
+		recipient: { ...mail.recipient, placeholders: { eventDate: "2099-07-01" } },
+		placeholders: { ...mail.placeholders, eventDate: "2099-07-01" },
+	};
+	// Act
+	const details = new CommunicationApprovalDetails().create(
+		event,
+		[overridden],
+		{
+			eventDate: "2099-06-08",
+			eventSlidesUrl: String(mail.placeholders.eventSlidesUrl),
+		},
+	);
+	// Assert
+	expect(details.emails[0]?.message?.parameterKeys).toEqual(["eventSlidesUrl"]);
+	expect(details.emails[0]?.message?.placeholders.eventDate).toBe("2099-07-01");
 });

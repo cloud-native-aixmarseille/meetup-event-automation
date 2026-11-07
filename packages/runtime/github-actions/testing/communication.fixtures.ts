@@ -319,7 +319,7 @@ https://openfeedback.io/event-1
 export function approveEmailRequests(
 	fixture: ReturnType<typeof githubClients>,
 	choice = "Approve",
-	mailKind?: "host-introduction" | "speaker-introduction",
+	mailKind?: import("@meetup-automation/communication").MailCommunicationKind,
 ) {
 	const comments = fixture.comments.filter((comment) =>
 		comment.body.startsWith("<!-- meetup-organizer-approval:v1 "),
@@ -338,4 +338,24 @@ export function approveEmailRequests(
 		comment.editor = { login: "organizer", __typename: "User" };
 		comment.updated_at = record.requestedAt;
 	}
+}
+
+/** Decode visible JSON blocks rather than trusting the comment metadata. */
+export function reviewedMailPayloads(body: string): unknown[] {
+	return [...body.matchAll(/<pre>([\s\S]*?)<\/pre>/g)].map((match) => {
+		const entities: Record<string, string> = {
+			"&quot;": '"',
+			"&#39;": "'",
+			"&#64;": "@",
+			"&lt;": "<",
+			"&gt;": ">",
+			"&amp;": "&",
+		};
+		return JSON.parse(
+			(match[1] ?? "").replace(
+				/&(?:quot|#39|#64|lt|gt|amp);/g,
+				(entity) => entities[entity] ?? entity,
+			),
+		);
+	});
 }

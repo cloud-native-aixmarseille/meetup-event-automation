@@ -32,6 +32,7 @@ export class ApprovalDetailsPresenter {
 								links: email.links.filter((link) => link.kind === "feedback"),
 							}
 						: email,
+					details.parameters,
 				),
 			),
 		];
@@ -42,17 +43,37 @@ export class ApprovalDetailsPresenter {
 		return [...lines, "", "</details>"].join("\n");
 	}
 
-	private email(email: ApprovalEmailDetail): string {
+	private email(
+		email: ApprovalEmailDetail,
+		parameters: OrganizerApprovalDetails["parameters"],
+	): string {
 		const heading = this.messages.t("approval.details.email", {
 			kind: email.kind.replaceAll("-", "_"),
 		});
 		const name = email.recipientName
 			? `: ${this.escape(email.recipientName)}`
 			: "";
-		const lines = [
-			`<p><strong>${this.escape(heading)}${name}</strong></p>`,
+		const lines = [`<p><strong>${this.escape(heading)}${name}</strong></p>`];
+		if (email.message) {
+			const message = email.message;
+			const placeholders = { ...message.placeholders };
+			for (const key of message.parameterKeys)
+				if (parameters?.[key] !== undefined)
+					placeholders[key] = parameters[key];
+			const payload = {
+				"idempotency-key": message.idempotencyKey,
+				"template-name": message.templateName,
+				"to-email": message.recipientEmail,
+				placeholders,
+			};
+			return [
+				...lines,
+				`<pre>${this.escape(JSON.stringify(payload, null, 2))}</pre>`,
+			].join("\n");
+		}
+		lines.push(
 			`<p>${this.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`,
-		];
+		);
 		if (email.links.length)
 			lines.push(
 				"<ul>",

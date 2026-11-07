@@ -1,4 +1,7 @@
-import type { MailCommunicationKind } from "@meetup-automation/communication";
+import type {
+	MailCommunicationKind,
+	MailMessageIntent,
+} from "@meetup-automation/communication";
 
 export interface ApprovalEmailLink {
 	readonly kind: "meetup" | "community" | "slides" | "feedback";
@@ -8,8 +11,17 @@ export interface ApprovalEmailLink {
 
 export interface ApprovalEmailDetail {
 	readonly kind: MailCommunicationKind;
-	/** Public event participant name, never a private contact name or email address. */
+	/** Public participant label, separate from the exact delivery destination. */
 	readonly recipientName: string;
+	/** Absent only from previously stored summaries. New reviews include every value. */
+	readonly message?: {
+		readonly recipientEmail: string;
+		readonly templateName: MailMessageIntent["templateName"];
+		readonly idempotencyKey: string;
+		readonly placeholders: MailMessageIntent["placeholders"];
+		/** Shared editable values that are not overridden by this recipient. */
+		readonly parameterKeys: readonly string[];
+	};
 	readonly links: readonly ApprovalEmailLink[];
 	readonly omittedLinks: number;
 }

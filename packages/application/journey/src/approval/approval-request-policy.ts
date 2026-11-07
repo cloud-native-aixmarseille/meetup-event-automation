@@ -2,7 +2,7 @@ import type { OrganizerApprovalRequest } from "../ports/organizer-approval.js";
 import type { OrganizerApprovalDetails } from "../ports/organizer-approval-details.js";
 import type { ApprovalValueFingerprint } from "./approval-value-fingerprint.js";
 
-/** An approval authorizes a revision and its reviewed public facts. */
+/** An approval authorizes a revision and its reviewed values. */
 export class ApprovalRequestPolicy {
 	constructor(
 		private readonly fingerprints: Pick<ApprovalValueFingerprint, "digest">,
@@ -185,8 +185,36 @@ export class ApprovalRequestPolicy {
 			);
 		return (
 			previous.recipientCount === request.recipientCount &&
+			this.sameMessages(previous.details, request.details) &&
 			(status !== "pending" ||
 				this.sameDetails(previous.details, request.details))
+		);
+	}
+
+	emailParametersChanged(
+		original: import("./email-review-parameters.js").EmailReviewParameters,
+		edited: import("./email-review-parameters.js").EmailReviewParameters,
+	): boolean {
+		return (
+			this.fingerprints.digest(original) !== this.fingerprints.digest(edited)
+		);
+	}
+
+	private sameMessages(
+		left: OrganizerApprovalDetails | undefined,
+		right: OrganizerApprovalDetails | undefined,
+	): boolean {
+		return (
+			this.fingerprints.digest(
+				left?.emails.flatMap((email) =>
+					email.message ? [email.message] : [],
+				) ?? [],
+			) ===
+			this.fingerprints.digest(
+				right?.emails.flatMap((email) =>
+					email.message ? [email.message] : [],
+				) ?? [],
+			)
 		);
 	}
 

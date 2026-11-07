@@ -16,6 +16,7 @@ export type StoredApproval<
 }[Kind];
 
 interface StoredApprovalMetadata {
+	emailDraft?: import("@meetup-automation/journey").EmailReviewParameters;
 	delivery?: readonly import("@meetup-automation/journey").EmailDeliverySummary[];
 	readonly requestId: string;
 	notification: "new" | "reserved" | "sent" | "retry";

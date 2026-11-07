@@ -8,6 +8,7 @@ import type { ApprovalSchema } from "./approval-schema.js";
 export interface EmailApprovalDetailsSchemaCollaborators {
 	readonly approvalSchema: Pick<ApprovalSchema, "object" | "count" | "text">;
 	readonly parameterPolicy: import("@meetup-automation/journey").EmailReviewParameterPolicy;
+	readonly messageSchema: import("./email-approval-message-schema.js").EmailApprovalMessageSchema;
 }
 
 export class EmailApprovalDetailsSchema {
@@ -41,6 +42,11 @@ export class EmailApprovalDetailsSchema {
 			throw new Error("Invalid email approval scope");
 		if (details.parameters !== undefined)
 			this.collaborators.parameterPolicy.validate(details.parameters);
+		for (const email of details.emails)
+			this.collaborators.messageSchema.validateParameters(
+				email.message,
+				details.parameters,
+			);
 	}
 
 	private email(email: unknown): email is ApprovalEmailDetail {
@@ -54,6 +60,8 @@ export class EmailApprovalDetailsSchema {
 				"speaker-thanks",
 			].includes(email.kind) &&
 			this.collaborators.approvalSchema.text(email.recipientName, 200) &&
+			(email.message === undefined ||
+				this.collaborators.messageSchema.valid(email.message)) &&
 			this.collaborators.approvalSchema.count(email.omittedLinks) &&
 			Array.isArray(email.links) &&
 			email.links.length <= 8 &&

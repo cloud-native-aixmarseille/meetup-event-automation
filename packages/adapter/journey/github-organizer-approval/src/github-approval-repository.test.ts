@@ -1,3 +1,4 @@
+import { emailReviewFor } from "../testing/email-review.fixtures.js";
 import { OrganizerCommentChangedError } from "@meetup-automation/journey";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -138,4 +139,39 @@ describe("approval snapshot retries", () => {
 		expect(states[0]?.record.decision).toBeUndefined();
 		expect(f.update).not.toHaveBeenCalled();
 	});
+});
+
+it("holds an escaped payload that exceeds the final comment budget before writing", async () => {
+	// Arrange
+	const f = fixture();
+	const input = emailReviewFor("host-thanks");
+	if (!input.details?.emails[0]?.message) throw new Error("Missing fixture");
+	const email = input.details.emails[0];
+	const message = input.details.emails[0].message;
+	const record = createStoredApproval({
+		...input,
+		details: {
+			...input.details,
+			emails: [
+				{
+					...email,
+					message: {
+						...message,
+						placeholders: {
+							...message.placeholders,
+							firstName: "<".repeat(7000),
+						},
+					},
+				},
+			],
+		},
+	});
+	// Act
+	const save = f.repository.save(record);
+	// Assert
+	await expect(save).rejects.toThrow(
+		"Approval comment exceeds the review budget",
+	);
+	expect(f.create).not.toHaveBeenCalled();
+	expect(f.update).not.toHaveBeenCalled();
 });

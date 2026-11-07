@@ -61,3 +61,27 @@ describe("GitHub approval preview budget", () => {
 		expect(preview.emails[0]?.links[0]?.title).toBe("A B");
 	});
 });
+
+it("refuses to omit recipients from a complete payload approval", () => {
+	// Arrange
+	const details: OrganizerApprovalDetails = {
+		omittedEmails: 0,
+		emails: Array.from({ length: 21 }, () => ({
+			kind: "host-thanks",
+			recipientName: "Host",
+			links: [],
+			omittedLinks: 0,
+			message: {
+				recipientEmail: "host@example.test",
+				templateName: "meetup-thanks-hosting",
+				idempotencyKey: "mail-example",
+				placeholders: { name: "Contact" },
+				parameterKeys: [],
+			},
+		})),
+	};
+	// Act
+	const preview = () => new ApprovalDetailsPreview().create(details);
+	// Assert
+	expect(preview).toThrow("Complete email approval exceeds the review budget");
+});

@@ -17,6 +17,7 @@ vi.mock("@actions/github", () => ({ getOctokit: getOctokitMock }));
 
 import {
 	approveEmailRequests,
+	reviewedMailPayloads,
 	cleanupCommunicationFixtures,
 	createWorkspace,
 	eventBody,
@@ -1099,7 +1100,7 @@ describe("organizer approval for email batches", () => {
 		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
 	});
 	it.each(["scheduled", "held"])(
-		"shows human-readable collapsed details before approving %s emails",
+		"shows the exact mailings payload for every %s email before dispatch",
 		async (status) => {
 			// Arrange
 			const f = await setup({
@@ -1110,9 +1111,7 @@ describe("organizer approval for email batches", () => {
 					"speakers:confirmed",
 				],
 			});
-
-			// Act
-			const result = await new CommunicationRuntime({
+			const runtime = new CommunicationRuntime({
 				createJourney: (input) =>
 					CommunicationComposition.createCommunicationContainer(input).get(
 						ManageMeetupCommunications,
@@ -1121,23 +1120,38 @@ describe("organizer approval for email batches", () => {
 				automationConfigFactory:
 					new JourneyPolicyComposition().automationConfigFactory(),
 				localeResolver: new LocalizationComposition().localeResolver(),
-			}).runCommunicationReconcile(f.input);
+			});
+			// Act: prepare the complete review without sending.
+			const pending = await runtime.runCommunicationReconcile(f.input);
 			const body = f.comments.map((comment) => comment.body).join("\n\n");
-
+			const reviewed = reviewedMailPayloads(body);
 			// Assert
-			expect(result.counts.dispatched).toBe(0);
+			expect(pending.counts.dispatched).toBe(0);
+			expect(reviewed).toHaveLength(2);
 			expect(body).toContain("<details>\n<summary>Email details</summary>");
-			expect(body).toContain("Public Venue");
-			expect(body).toContain("Ada Speaker");
-			expect(body).toContain(
-				status === "held"
-					? "Feedback results: A public talk"
-					: "eventSlidesUrl",
+			expect(reviewed).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({ "to-email": "host@example.invalid" }),
+					expect.objectContaining({ "to-email": "speaker@example.invalid" }),
+				]),
 			);
-			expect(body).not.toContain("Private Host Contact");
-			expect(body).not.toContain("1 Private Street");
-			expect(body).not.toContain("@example.invalid");
-			expect(body).not.toContain("<details open");
+			expect(body).not.toContain("host-opted-out@example.invalid");
+			// Act: approve and dispatch the same requests, then retry.
+			approveEmailRequests(f);
+			await runtime.runCommunicationReconcile(f.input);
+			await runtime.runCommunicationReconcile(f.input);
+			// Assert
+			expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
+			expect(
+				f.createDispatchEvent.mock.calls.map(
+					([request]) => request.client_payload,
+				),
+			).toEqual(expect.arrayContaining(reviewed));
+			expect(
+				reviewedMailPayloads(
+					f.comments.map((comment) => comment.body).join("\n"),
+				),
+			).toEqual(reviewed);
 		},
 	);
 	it("requires a new speaker approval when feedback changes while preserving host approval", async () => {
@@ -1363,7 +1377,7 @@ describe("organizer approval for email batches", () => {
 				repo: "meetups",
 				username: "organizer",
 			});
-			expect(JSON.stringify(f.comments)).not.toContain("@example.invalid");
+			expect(JSON.stringify(f.comments)).toContain("@example.invalid");
 		},
 	);
 	it("sends each preparation type with its approved values and reports delivery in its review", async () => {
@@ -1388,7 +1402,19 @@ describe("organizer approval for email batches", () => {
 		);
 		approveEmailRequests(f, "Approve", "host-introduction");
 
-		// Act
+		// Act: editing parameters refreshes the payload and resets the choices.
+		const refreshed = await runtime.runCommunicationReconcile(f.input);
+		const reviewed = reviewedMailPayloads(hostReview.body);
+		// Assert
+		expect(refreshed.counts.dispatched).toBe(0);
+		expect(hostReview.body).toContain("- [ ] ✅ Approve sending");
+		expect(reviewed).toEqual([
+			expect.objectContaining({
+				placeholders: expect.objectContaining({ eventDate: "2099-06-09" }),
+			}),
+		]);
+		// Act: approve the refreshed details.
+		approveEmailRequests(f, "Approve", "host-introduction");
 		const hostResult = await runtime.runCommunicationReconcile(f.input);
 		const dispatchesAfterHost = f.createDispatchEvent.mock.calls.length;
 		const speakerBodyBeforeApproval = f.comments[1]?.body;
@@ -1401,6 +1427,9 @@ describe("organizer approval for email batches", () => {
 
 		// Assert
 		expect(hostResult.counts.accepted).toBe(1);
+		expect(f.createDispatchEvent.mock.calls[0]?.[0].client_payload).toEqual(
+			reviewed[0],
+		);
 		expect(dispatchesAfterHost).toBe(1);
 		expect(speakerBodyBeforeApproval).toContain("- [ ] ✅ Approve sending");
 		expect(speakerResult.counts.accepted).toBe(1);
@@ -1424,7 +1453,7 @@ describe("organizer approval for email batches", () => {
 		expect(ledger).toBeDefined();
 		expect(f.minimized.has(ledger?.node_id ?? "")).toBe(true);
 		expect(f.minimized.has(hostReview.node_id ?? "")).toBe(true);
-		expect(JSON.stringify(f.comments)).not.toContain("@example.invalid");
+		expect(JSON.stringify(f.comments)).toContain("@example.invalid");
 	});
 	it("requires a new confirmation after a private recipient address changes", async () => {
 		// Arrange
@@ -1472,7 +1501,7 @@ describe("organizer approval for email batches", () => {
 				}),
 			}),
 		);
-		expect(JSON.stringify(f.comments)).not.toContain("changed@example.invalid");
+		expect(JSON.stringify(f.comments)).toContain("changed@example.invalid");
 	});
 	it("retains approval across partial completion and a safe retry", async () => {
 		// Arrange

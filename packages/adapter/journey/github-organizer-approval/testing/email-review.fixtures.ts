@@ -15,6 +15,19 @@ export const emailReviewRequest = {
 			{
 				kind: "host-introduction",
 				recipientName: "Example Host",
+				message: {
+					recipientEmail: "contact@example.test",
+					templateName: "meetup-intro-hosting",
+					idempotencyKey: "mail-example",
+					placeholders: {
+						eventDate: "2099-06-08",
+						eventMeetupUrl: "https://www.meetup.com/example/events/123",
+						eventSlidesUrl:
+							"https://docs.google.com/presentation/d/example/edit",
+						firstName: "Contact Name",
+					},
+					parameterKeys: ["eventDate", "eventMeetupUrl", "eventSlidesUrl"],
+				},
 				links: [],
 				omittedLinks: 0,
 			},
@@ -42,6 +55,30 @@ export function emailReviewFor(
 				{
 					...emailReviewRequest.details.emails[0],
 					kind: mailKind,
+					message: {
+						...emailReviewRequest.details.emails[0].message,
+						placeholders: {
+							...emailReviewRequest.details.emails[0].message.placeholders,
+							...(mailKind === "speaker-thanks"
+								? {
+										speakerFeedbackTalks: [
+											{
+												title: "Reliable platforms",
+												url: "https://openfeedback.io/example/0/talk?displayVotes=true",
+											},
+										],
+									}
+								: {}),
+						},
+						templateName: {
+							"host-introduction": "meetup-intro-hosting",
+							"speaker-introduction": "meetup-intro-speakers",
+							"host-thanks": "meetup-thanks-hosting",
+							"speaker-thanks": "meetup-thanks-speakers",
+						}[
+							mailKind
+						] as import("@meetup-automation/communication").MailTemplateName,
+					},
 					links:
 						mailKind === "speaker-thanks"
 							? [

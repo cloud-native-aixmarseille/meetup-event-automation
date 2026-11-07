@@ -144,16 +144,17 @@ export class ApproveCommunicationBatch {
 		if (batch.diagnostics.some(({ severity }) => severity === "error"))
 			throw new Error("Communication approval batch is invalid");
 		const mails = batch.intents.filter((intent) => intent.channel === "mail");
+		const parameters = this.collaborators.parameters.project(
+			input.mailPlaceholders ?? {},
+		);
 		const details = this.collaborators.communicationApprovalDetails.create(
 			event,
 			mails,
+			parameters,
 		);
 		const mailKind = mails[0]?.kind;
 		if (!mailKind || mails.some((mail) => mail.kind !== mailKind))
 			throw new Error("Communication approval must contain one email type");
-		const parameters = this.collaborators.parameters.project(
-			input.mailPlaceholders ?? {},
-		);
 		return {
 			kind: mails.some((mail) => mail.kind.endsWith("-thanks"))
 				? "email-thanks"

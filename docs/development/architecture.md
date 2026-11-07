@@ -531,12 +531,14 @@ A decision parser compares controls against exact localized requests rendered
 from trusted metadata. Text proposals expose a bounded editable preview; the
 journey validates replacement text before the adapter can finalize it. The
 original draft remains unchanged and the trusted decision records its exact
-replacement. Preparation email approvals use separate host and speaker scopes.
+replacement. Preparation and thank-you approvals use separate host and speaker scopes.
 Their marked public date/link values are editable; the journey's
 `EmailReviewParameterPolicy` validates the allowlist and value formats. Adapters
 parse that marked region while checking the remainder against trusted rendering.
-Final decisions persist the exact approved overrides beside the source revision;
-private recipients and template inputs remain covered by the source fingerprint.
+Authorized parameter edits persist a pending draft and refresh the complete mail
+payload before a separate approval can authorize dispatch. Final decisions persist
+the exact approved overrides beside the source revision. Recipients, templates,
+and all placeholders are displayed in each email review and covered by its fingerprint.
 Changed source inputs require fresh approval before remaining deliveries. Decision resolution
 verifies the editor's identity and permission separately. It durably records the
 verified human identity and final decision in the original bot comment before
@@ -544,7 +546,8 @@ authorizing the action.
 Later human edits recover state from the most recent bot-authored revision;
 missing or deleted history fails closed. Both supported catalogs are recognized
 when checking pending request integrity, so locale changes preserve approval.
-Only a content fingerprint and public facts cross this boundary. Requests are independent
+Email comments store the complete reviewed delivery values; other review kinds
+retain their owned projections. Requests are independent
 of delivery records: approval never clears a delivery reservation. Partial
 completion does not invalidate the full batch fingerprint. Slack notification
 reservations prevent automatic retries after ambiguous acknowledgements. The
@@ -736,10 +739,13 @@ inputs, reviewed outputs, and recovery behavior.
   synthetic fixtures in this repository.
 - Public event data may include intended display names and published event
   details. Keep email addresses, phone numbers, private addresses, contact-only
-  names, raw CSV rows, credentials, and provider payloads out of public issues,
-  logs, summaries, outputs, caches, and artifacts.
-- Restricted contact data may pass through the ephemeral runner and approved
-  delivery processors only. Downstream mail processors must deduplicate the
+  names, raw CSV rows, credentials, and provider payloads out of logs, summaries,
+  outputs, caches, and artifacts. Email approval comments deliberately expose
+  each outgoing address and all mail placeholders so organizers can review the
+  actual delivery. Other issue comments and Slack use public projections.
+- Contact data used by mail passes through the runner, its explicit GitHub approval
+  review, and approved delivery processors. Unused catalog fields and credentials
+  never enter the review. Downstream mail processors must deduplicate the
   idempotency key, suppress payload logging, and document retention before
   dispatch is enabled.
 - Use safe diagnostic templates and codes at output boundaries. Do not publish

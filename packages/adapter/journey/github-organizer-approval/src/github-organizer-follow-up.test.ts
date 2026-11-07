@@ -56,7 +56,9 @@ describe("post-event follow-up", () => {
 		expect(f.comments[0]?.body).toContain("✅ Approved");
 		expect(f.comments[1]?.body).toContain("Thank-you emails — speakers");
 		expect(f.comments[1]?.body).toContain("- [ ] ✅ Approve");
-		expect(f.comments[1]?.body).toContain("Reliable platforms</a>");
+		expect(f.comments[1]?.body).toContain(
+			"&quot;title&quot;: &quot;Reliable platforms&quot;",
+		);
 		expect(f.comments[2]?.body).toContain("✅ Thank the host");
 		expect(f.comments[2]?.body).not.toContain("- [ ]");
 		expect(

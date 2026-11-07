@@ -5,11 +5,12 @@ import type {
 	OrganizerApprovalDetails,
 } from "../ports/organizer-approval-details.js";
 
-/** Project only public event facts and the links used by each email template. */
+/** Capture the complete planned message for each recipient before authorization. */
 export class CommunicationApprovalDetails {
 	create(
 		event: MeetupEvent,
 		mails: readonly MailMessageIntent[],
+		parameters: import("../approval/email-review-parameters.js").EmailReviewParameters,
 	): OrganizerApprovalDetails {
 		const ordered = [...mails].sort((left, right) =>
 			left.idempotencyKey.localeCompare(right.idempotencyKey),
@@ -25,6 +26,15 @@ export class CommunicationApprovalDetails {
 			return {
 				kind: mail.kind,
 				recipientName: name ?? "",
+				message: {
+					recipientEmail: mail.recipient.email,
+					templateName: mail.templateName,
+					idempotencyKey: mail.idempotencyKey,
+					placeholders: structuredClone(mail.placeholders),
+					parameterKeys: Object.keys(parameters).filter(
+						(key) => !Object.hasOwn(mail.recipient.placeholders ?? {}, key),
+					),
+				},
 				links,
 				omittedLinks: 0,
 			};

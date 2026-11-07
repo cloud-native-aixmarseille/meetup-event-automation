@@ -26,6 +26,7 @@ export class StoredApprovalSchema {
 			throw new Error("Invalid approval state");
 		const state = value;
 		this.collaborators.approvalRequestSchema.validate(value);
+		this.emailDraft(value, state.emailDraft, state.decision);
 		this.collaborators.followUpSchema.validate(state.followUp);
 		this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
 			hasFollowUp: state.followUp !== undefined,
@@ -67,12 +68,29 @@ export class StoredApprovalSchema {
 			throw new Error("Invalid approval reaction state");
 	}
 
+	private emailDraft(
+		value: import("@meetup-automation/journey").OrganizerApprovalRequest,
+		draft: unknown,
+		decision: unknown,
+	): void {
+		if (draft === undefined) return;
+		if (!value.details?.parameters || decision !== undefined)
+			throw new Error("Invalid email draft parameters");
+		this.collaborators.parameterPolicy.validateEdit(
+			value.details.parameters,
+			draft,
+		);
+	}
+
 	private emailDecision(
 		value: import("@meetup-automation/journey").OrganizerApprovalRequest,
 		decision: Record<string, unknown>,
 	): void {
 		if (decision.emailParameters !== undefined) {
-			if (decision.status !== "approved" || !value.details?.parameters)
+			if (
+				!["approved", "rejected"].includes(String(decision.status)) ||
+				!value.details?.parameters
+			)
 				throw new Error("Invalid email parameter decision");
 			this.collaborators.parameterPolicy.validateEdit(
 				value.details.parameters,

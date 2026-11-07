@@ -120,13 +120,24 @@ Preparation and thank-you emails each have one approval comment for the host and
 one for speakers. Approving or refusing one type does not decide the other. The
 post-event follow-up comment summarizes tasks and links to pending requests.
 
-Expand **Email details** to review the public recipient names and template
-parameters. Edit the values between backticks in the marked list before approving. The editable fields are `eventDate`,
-`eventMeetupUrl`, `eventCncfUrl`, and `eventSlidesUrl` when supplied. Keep their
-names and the surrounding comment unchanged. Dates use `YYYY-MM-DD`; links must
-use HTTPS. These edits apply to this email type only, without changing the issue,
-referentials, or the other email type. Private contact names, addresses and email
-addresses remain in the catalog and cannot be changed from the approval comment.
+Expand **Email details** to review each recipient's complete `mailings` payload:
+`to-email`, `template-name`, `idempotency-key`, and every `placeholders` value,
+including contact names and speaker feedback arrays. These values are stored in
+the issue comment and visible to everyone who can read that issue. Slack keeps
+only the approval summary and link; logs and action outputs do not contain mail
+payloads.
+
+To change `eventDate`, `eventMeetupUrl`, `eventCncfUrl`, or `eventSlidesUrl`, edit
+the supplied values between backticks and save. Keep their names and the rest of
+the comment unchanged. Dates use `YYYY-MM-DD`; links must use HTTPS. The automation
+refreshes the complete payload and clears the choices. Review that refreshed
+payload, then approve in a separate edit. A parameter change and approval in the
+same edit only refreshes the preview; it does not send mail.
+
+Changes apply to this email type only, without changing the issue or referentials.
+Recipient-specific values take precedence over shared parameters. To change a
+recipient address or contact value, update its source and wait for a new request.
+The payload JSON is read-only.
 
 ```markdown
 - `eventDate` : `2099-06-08`
@@ -140,10 +151,14 @@ Select one choice after saving any parameter edits:
 - [ ] ❌ Reject sending
 ```
 
-Leaving both unchecked keeps the request pending and preserves parameter edits.
+Leaving both unchecked keeps the request pending. Valid parameter edits refresh
+the preview without authorizing delivery.
 Selecting both, editing other parts of the request, or entering invalid values
 does not authorize sending. Speaker thank-you feedback links remain read-only.
-Large batches show a bounded recipient summary with explicit omitted counts.
+Complete reviews allow at most 20 recipients and 12,000 characters of stored
+details, with a 60,000-character budget for the final escaped comment. A batch
+exceeding these budgets is held; approval never hides or truncates
+outgoing values.
 
 When the automation processes a valid choice, it updates that same comment to
 show **Approved** or **Rejected**, the organizer, and the decision time. The
@@ -154,8 +169,8 @@ comment is posted.
 
 Anyone with repository **write** access or higher can decide. The automation
 reads the current comment and its last editor from GitHub, checks that editor's
-current repository permission, and accepts one selected choice with valid public
-parameter edits and otherwise unchanged request content. It saves the verified identity before authorizing dispatch and
+current repository permission, and accepts one selected choice on an unchanged
+reviewed payload. Parameter edits require a refreshed preview before approval. It saves the verified identity before authorizing dispatch and
 rechecks the recorded organizer's write access before dispatch on later runs.
 GitHub's bot-authored edit history protects the recorded decision against later
 human edits. Missing or unverifiable history blocks sending. Edited request
@@ -176,8 +191,7 @@ after email tasks are complete. They do not reopen the decision or resend mail.
 
 Each preparation and thank-you type requires its own approval.
 Approval covers that group's current email inputs, including recipient
-addresses, templates, placeholders, date and policy. Only a fingerprint and
-public facts are persisted; contact details never appear in the request.
+addresses, templates, placeholders, date and policy. The fingerprint and complete review values are persisted in the approval comment.
 Changes to those inputs create a new request in the same GitHub comment, with
 unchecked choices. Introduction requests send a new Slack alert; thank-you requests
 update the shared post-event status and follow its reminder policy. The previous

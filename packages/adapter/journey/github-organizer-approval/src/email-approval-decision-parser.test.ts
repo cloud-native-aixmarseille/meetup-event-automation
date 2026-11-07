@@ -40,32 +40,45 @@ describe.each([
 			});
 		},
 	);
-	it.each(["metadata", "unsafe-url", "two-choices"])(
-		"keeps %s edits unauthorized",
-		(variant) => {
-			// Arrange
-			const composition = new GithubOrganizerApprovalComposition();
-			const presenter = composition.approvalPresenter(
-				composition.approvalMessages("en"),
-			);
-			const record = createStoredApproval(emailReviewRequest);
-			const parser = new EmailApprovalDecisionParser(
-				new EmailParametersPreview(new EmailReviewParameterPolicy()),
-			);
-			const valid = presenter.issue(record, { status: "approved" });
-			const body =
-				variant === "metadata"
-					? valid.replace('"recipientCount":1', '"recipientCount":2')
-					: variant === "unsafe-url"
+	it.each([
+		"metadata",
+		"unsafe-url",
+		"two-choices",
+		"recipient",
+		"placeholder",
+	])("keeps %s edits unauthorized", (variant) => {
+		// Arrange
+		const composition = new GithubOrganizerApprovalComposition();
+		const presenter = composition.approvalPresenter(
+			composition.approvalMessages("en"),
+		);
+		const record = createStoredApproval(emailReviewRequest);
+		const parser = new EmailApprovalDecisionParser(
+			new EmailParametersPreview(new EmailReviewParameterPolicy()),
+		);
+		const valid = presenter.issue(record, { status: "approved" });
+		const body =
+			variant === "metadata"
+				? valid.replace('"recipientCount":1', '"recipientCount":2')
+				: variant === "unsafe-url"
+					? valid.replace(
+							"`https://www.meetup.com/example/events/123`",
+							"`javascript:alert(1)`",
+						)
+					: variant === "recipient"
 						? valid.replace(
-								"`https://www.meetup.com/example/events/123`",
-								"`javascript:alert(1)`",
+								"contact&#64;example.test",
+								"changed&#64;example.test",
 							)
-						: valid.replace("- [ ] ❌", "- [x] ❌");
-			// Act
-			const decision = parser.parse(record, body, [presenter]);
-			// Assert
-			expect(decision.status).toBe("pending");
-		},
-	);
+						: variant === "placeholder"
+							? valid.replace(
+									"&quot;Contact Name&quot;",
+									"&quot;Changed Name&quot;",
+								)
+							: valid.replace("- [ ] ❌", "- [x] ❌");
+		// Act
+		const decision = parser.parse(record, body, [presenter]);
+		// Assert
+		expect(decision.status).toBe("pending");
+	});
 });

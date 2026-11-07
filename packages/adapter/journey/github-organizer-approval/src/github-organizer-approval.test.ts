@@ -15,7 +15,10 @@ import {
 	request,
 } from "../testing/approval.fixtures.js";
 import { contentRequest } from "../testing/content.fixtures.js";
-import { emailReviewRequest } from "../testing/email-review.fixtures.js";
+import {
+	emailReviewRequest,
+	emailReviewFor,
+} from "../testing/email-review.fixtures.js";
 import { socialPublicationRequest } from "../testing/social-publication.fixtures.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
 import { CommunityApprovalPresenter } from "./community-approval-presenter.js";
@@ -68,7 +71,7 @@ describe("publication requests without decorative icons", () => {
 
 describe("email parameter approval integrity", () => {
 	it.each(["write", "read"])(
-		"checks %s access before authorizing edited parameters",
+		"checks %s access before refreshing edited parameters",
 		async (permission) => {
 			// Arrange
 			const f = fixture();
@@ -93,12 +96,12 @@ describe("email parameter approval integrity", () => {
 			const result = await approvals.request(emailReviewRequest);
 			const again = await approvals.request(emailReviewRequest);
 			// Assert
-			expect(result.status).toBe(
-				permission === "write" ? "approved" : "pending",
-			);
+			expect(result.status).toBe("pending");
 			expect(again.status).toBe(result.status);
 			if (permission === "write")
-				expect(again.emailParameters?.eventDate).toBe("2099-06-09");
+				expect(f.comments[0]?.body).toContain(
+					"&quot;eventDate&quot;: &quot;2099-06-09&quot;",
+				);
 			else expect(result.emailParameters).toBeUndefined();
 		},
 	);
@@ -124,7 +127,10 @@ describe("email parameter approval integrity", () => {
 		const result = await approvals.request(emailReviewRequest);
 		// Assert
 		expect(result.status).toBe("pending");
-		expect(f.comments[0]?.body).toBe(edited);
+		expect(f.comments[0]?.body).toContain(
+			"&quot;eventDate&quot;: &quot;2099-06-09&quot;",
+		);
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
 		expect(f.react).not.toHaveBeenCalled();
 	});
 	it("replaces a pending combined request without duplicating its organizer task", async () => {
@@ -1857,4 +1863,94 @@ describe("Meetup attendee delivery approvals", () => {
 			expect(f.dispatch).toHaveBeenCalledOnce();
 		},
 	);
+});
+
+describe.each([
+	"host-introduction",
+	"speaker-introduction",
+	"host-thanks",
+	"speaker-thanks",
+] as const)("complete %s authorization", (kind) => {
+	it.each(["pending", "approved"] as const)(
+		"refreshes a %s edit before accepting a separate approval",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			const composition = new GithubOrganizerApprovalComposition();
+			const approvals = composition.githubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+			const request = emailReviewFor(kind);
+			await approvals.request(request);
+			const record = composition
+				.approvalCommentCodec()
+				.read(f.comments[0]?.body ?? "");
+			decision(f, {
+				body: f.presenter
+					.issue(record, { status })
+					.replace("`2099-06-08`", "`2099-06-09`"),
+			});
+			// Act: a changed preview cannot authorize dispatch.
+			const refreshed = await approvals.request(request);
+			const refreshedBody = f.comments[0]?.body ?? "";
+			// Assert
+			expect(refreshed.status).toBe("pending");
+			expect(refreshedBody).toContain("- [ ] ✅ Approve sending");
+			expect(refreshedBody).toContain(
+				"&quot;eventDate&quot;: &quot;2099-06-09&quot;",
+			);
+			// Act: approve the exact refreshed payload.
+			decision(f, {
+				body: refreshedBody.replace("- [ ] ✅ Approve", "- [x] ✅ Approve"),
+			});
+			const approved = await approvals.request(request);
+			const retried = await approvals.request(request);
+			// Assert
+			expect(approved.status).toBe("approved");
+			expect(retried.emailParameters?.eventDate).toBe("2099-06-09");
+			expect(f.comments[0]?.body).toContain(
+				"&quot;eventDate&quot;: &quot;2099-06-09&quot;",
+			);
+			expect(f.comments[0]?.body).toContain("contact&#64;example.test");
+			expect(f.create).toHaveBeenCalledOnce();
+		},
+	);
+
+	it("requires a complete review before sending a previously summarized batch", async () => {
+		// Arrange
+		const f = fixture();
+		const composition = new GithubOrganizerApprovalComposition();
+		const approvals = composition.githubOrganizerApproval(
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		const request = emailReviewFor(kind);
+		if (!request.details) throw new Error("Missing fixture");
+		const summary = {
+			...request,
+			details: {
+				...request.details,
+				emails: request.details.emails.map(
+					({ message: _message, ...email }) => email,
+				),
+			},
+		};
+		await approvals.request(summary);
+		decision(f);
+		await approvals.request(summary);
+		// Act
+		const result = await approvals.request(request);
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(f.comments[0]?.body).toContain("contact&#64;example.test");
+		expect(f.comments[0]?.body).toContain("- [ ] ✅ Approve sending");
+		expect(f.create).toHaveBeenCalledOnce();
+	});
 });

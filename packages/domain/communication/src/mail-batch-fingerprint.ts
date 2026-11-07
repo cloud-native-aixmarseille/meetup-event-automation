@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { MailMessageIntent } from "./model.js";
 
-/** Only the digest leaves the mail context; private payloads are never approval records. */
+/** Bind approval to every outgoing value, independently of delivery reservations. */
 export class MailBatchFingerprint {
 	create(
 		eventDate: string,
