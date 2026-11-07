@@ -26355,8 +26355,16 @@ var EventChecklists = class {
     return this.itemsEqual(left.slidesAndContent, right.slidesAndContent) && this.itemsEqual(left.communication, right.communication) && this.itemsEqual(left.postEvent, right.postEvent);
   }
   itemsEqual(left, right) {
-    return left.length === right.length && left.every(
-      (item, index) => item.name === right[index].name && item.completed === right[index].completed
+    const leftItems = this.ordered(left);
+    const rightItems = this.ordered(right);
+    return left.length === right.length && leftItems.every(
+      (item, index) => item.name === rightItems[index].name && item.completed === rightItems[index].completed
+    );
+  }
+  /** Section rendering can reorder tasks; names, state and multiplicity must survive. */
+  ordered(items) {
+    return [...items].sort(
+      (left, right) => left.name === right.name ? Number(left.completed) - Number(right.completed) : left.name < right.name ? -1 : 1
     );
   }
 };

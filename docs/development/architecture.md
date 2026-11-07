@@ -566,6 +566,9 @@ undo durable decisions. See the
 [communication integration guide](../integrations/communications.md#confirm-an-email-batch).
 The journey maps task names to recipient groups, and records completion through the
 event codec only after all recipients in a group have durable accepted records.
+Checklist preservation compares task names, completion and duplicate counts
+within each group, independently of presentation order. The document codec may
+regroup automated tasks into their dedicated sections.
 It rechecks the source before dispatch and before updating completion. Delivery
 reserves an intent as `pending` before calling a gateway and marks it `accepted` after acknowledgement. Pending
 and uncertain intents are not automatically resent. A definitively deferred

@@ -238,6 +238,8 @@ approving the batch. Existing checked items remain completed work.
 The speaker introduction task tracks all speaker introduction emails; the host
 introduction task tracks the host contact's introduction email. Each
 item is completed independently after its recipients' dispatches are accepted.
+Sharing slides before the thank-you emails does not prevent their completion
+from being recorded.
 The automation also supports these task names:
 
 | Task                                             | Behavior                                                                                                      |

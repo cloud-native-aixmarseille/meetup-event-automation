@@ -19,13 +19,28 @@ export class EventChecklists {
 		left: readonly OperationalChecklistItem[],
 		right: readonly OperationalChecklistItem[],
 	): boolean {
+		const leftItems = this.ordered(left);
+		const rightItems = this.ordered(right);
 		return (
 			left.length === right.length &&
-			left.every(
+			leftItems.every(
 				(item, index) =>
-					item.name === right[index].name &&
-					item.completed === right[index].completed,
+					item.name === rightItems[index].name &&
+					item.completed === rightItems[index].completed,
 			)
+		);
+	}
+
+	/** Section rendering can reorder tasks; names, state and multiplicity must survive. */
+	private ordered(
+		items: readonly OperationalChecklistItem[],
+	): OperationalChecklistItem[] {
+		return [...items].sort((left, right) =>
+			left.name === right.name
+				? Number(left.completed) - Number(right.completed)
+				: left.name < right.name
+					? -1
+					: 1,
 		);
 	}
 }
