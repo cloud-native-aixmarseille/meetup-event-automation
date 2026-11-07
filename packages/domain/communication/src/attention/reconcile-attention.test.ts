@@ -130,6 +130,8 @@ describe("durable attention reconciliation", () => {
 		const initial = new ReconcileAttention(
 			{
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionRoutingPolicy:
+					new CommunicationDomainComposition().attentionRoutingPolicy(),
 				attentionEpisodes:
 					new CommunicationDomainComposition().attentionEpisodes(),
 			},
@@ -138,6 +140,7 @@ describe("durable attention reconciliation", () => {
 			{
 				now: () => new Date("2099-06-01T10:00:00Z"),
 			},
+			fixture.budget,
 		);
 
 		// Act
@@ -191,6 +194,8 @@ describe("durable attention reconciliation", () => {
 		const initial = new ReconcileAttention(
 			{
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionRoutingPolicy:
+					new CommunicationDomainComposition().attentionRoutingPolicy(),
 				attentionEpisodes:
 					new CommunicationDomainComposition().attentionEpisodes(),
 			},
@@ -203,6 +208,7 @@ describe("durable attention reconciliation", () => {
 				}),
 			},
 			{ now: () => new Date("2099-06-01T10:00:00Z") },
+			fixture.budget,
 		);
 
 		// Act
@@ -236,5 +242,143 @@ describe("durable attention reconciliation", () => {
 		expect(retried.notificationFailed).toBe(false);
 		expect(fixture.notification.post).toHaveBeenCalledTimes(1);
 		expect(fixture.notification.update).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe("bounded routine attention", () => {
+	it("preserves unnotified tasks when the shared budget is exhausted and no message exists", async () => {
+		// Arrange
+		const f = reconciliationFixture();
+		f.budget.reserve.mockResolvedValue(false);
+		// Act
+		const result = await f.useCase.execute(observation());
+		// Assert
+		expect(result).toEqual({
+			active: 1,
+			posted: false,
+			notificationFailed: false,
+		});
+		expect(f.state()?.episodes[0]?.lastWindow).toBeUndefined();
+		expect(f.state()?.episodes[0]?.status).toBe("active");
+		expect(f.notification.post).not.toHaveBeenCalled();
+		expect(f.notification.update).not.toHaveBeenCalled();
+	});
+	it("silently updates an older message without acknowledging a suppressed milestone", async () => {
+		// Arrange
+		const f = reconciliationFixture();
+		await f.useCase.execute(observation());
+		f.budget.reserve.mockResolvedValue(false);
+		f.time("2099-06-05T10:00:00Z");
+		// Act
+		await f.useCase.execute(
+			observation({
+				conditions: [
+					condition(),
+					condition({
+						key: "required-data:title",
+						code: "required-data",
+						resource: "title",
+					}),
+				],
+			}),
+		);
+		// Assert
+		expect(f.notification.post).toHaveBeenCalledTimes(1);
+		expect(f.notification.update).toHaveBeenCalledOnce();
+		expect(f.state()?.episodes[0]?.lastWindow).toBe("preparation:7");
+		expect(f.state()?.episodes[1]?.lastWindow).toBeUndefined();
+		expect(f.budget.settle).toHaveBeenCalledTimes(1);
+	});
+	it("reassesses the current milestone when capacity returns without replaying skipped reminders", async () => {
+		// Arrange
+		const f = reconciliationFixture();
+		f.budget.reserve.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+		// Act
+		await f.useCase.execute(observation());
+		f.time("2099-06-05T10:00:00Z");
+		await f.useCase.execute(observation());
+		await f.useCase.execute(observation());
+		// Assert
+		expect(f.notification.post).toHaveBeenCalledOnce();
+		expect(f.state()?.episodes[0]?.lastWindow).toBe("preparation:3");
+	});
+	it("sends terminal reminders without budget access but keeps daily grouping", async () => {
+		// Arrange
+		const f = reconciliationFixture();
+		f.time("2099-06-07T10:00:00Z");
+		f.budget.reserve.mockRejectedValue(new Error("budget unavailable"));
+		// Act
+		await f.useCase.execute(observation());
+		await f.useCase.execute(observation());
+		// Assert
+		expect(f.notification.post).toHaveBeenCalledOnce();
+		expect(f.budget.reserve).not.toHaveBeenCalled();
+		expect(f.budget.settle).not.toHaveBeenCalled();
+	});
+	it("retains GitHub tasks and sends nothing when shared persistence fails", async () => {
+		// Arrange
+		const f = reconciliationFixture();
+		f.budget.reserve.mockRejectedValue(new Error("budget unavailable"));
+		// Act
+		const operation = f.useCase.execute(observation());
+		// Assert
+		await expect(operation).rejects.toThrow("budget unavailable");
+		expect(f.state()?.episodes).toHaveLength(1);
+		expect(f.notification.post).not.toHaveBeenCalled();
+	});
+});
+
+describe("external delivery recovery reminders", () => {
+	it("preserves uncertainty through missing stages and clears it only on verified success", async () => {
+		// Arrange
+		const f = reconciliationFixture();
+		f.budget.reserve.mockResolvedValue(false);
+		const evaluate = new CommunicationDomainComposition().evaluateAttention();
+		const now = new Date("2099-06-01T10:00:00Z");
+		const failing = evaluate.execute(
+			facts({
+				stages: [
+					{
+						owner: "social",
+						outcome: "success",
+						blocked: false,
+						deliveryRecovery: "uncertain",
+					},
+				],
+			}),
+			now,
+		);
+		const incomplete = evaluate.execute(
+			facts({
+				stages: [{ owner: "social", outcome: "unknown", blocked: false }],
+			}),
+			now,
+		);
+		const success = evaluate.execute(
+			facts({
+				stages: [{ owner: "social", outcome: "success", blocked: false }],
+			}),
+			now,
+		);
+		// Act
+		await f.useCase.execute(failing);
+		await f.useCase.execute(incomplete);
+		const uncertain = f.state();
+		await f.useCase.execute(success);
+		// Assert
+		expect(f.notification.post).toHaveBeenCalledOnce();
+		expect(f.budget.reserve).not.toHaveBeenCalled();
+		expect(
+			uncertain?.episodes.find(
+				(episode) => episode.condition.code === "delivery-recovery",
+			)?.status,
+		).toBe("unknown");
+		expect(
+			f
+				.state()
+				?.episodes.find(
+					(episode) => episode.condition.code === "delivery-recovery",
+				)?.status,
+		).toBe("resolved");
 	});
 });

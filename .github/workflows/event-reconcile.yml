@@ -156,7 +156,6 @@ jobs:
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
           google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       - name: Generate event title
         id: title
         if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' && steps.decisions.outcome == 'success' }}
@@ -229,7 +228,6 @@ jobs:
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
           google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
       - name: Reconcile event assets
         id: assets
         if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
@@ -331,7 +329,6 @@ jobs:
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
           publication-credentials: ${{ secrets.publication-credentials }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
       - name: Save encrypted Meetup session
         continue-on-error: true
@@ -383,7 +380,6 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           mailings-token: ${{ steps.mailings-token.outputs.token }}
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
     outputs:
       initialized: ${{ steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}

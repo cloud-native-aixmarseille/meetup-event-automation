@@ -1,4 +1,3 @@
-import * as core from "@actions/core";
 import type {
 	ContentReviewWork,
 	ManageContentReview,
@@ -36,11 +35,7 @@ export class ReviewDraftsAction {
 			...(await this.input.readConfiguration()),
 			...this.media.artwork(),
 		};
-		const journey = this.compose(
-			input,
-			this.input.secret("slack-token"),
-			core.getInput("slack-organizer-channel-id", { required: true }),
-		);
+		const journey = this.compose(input, this.input.secret("slack-token"));
 		const diagnostics = await journey.execute({
 			repository: `${input.owner}/${input.repo}`,
 			issueNumber: input.issueNumber,

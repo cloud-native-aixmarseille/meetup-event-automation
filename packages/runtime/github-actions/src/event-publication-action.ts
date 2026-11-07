@@ -69,9 +69,6 @@ export class EventPublicationAction {
 					}
 				: undefined,
 			slackToken: this.secret("slack-token"),
-			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
-				required: true,
-			}),
 			commentAuthorLogin: core.getInput("managed-comment-author", {
 				required: true,
 			}),

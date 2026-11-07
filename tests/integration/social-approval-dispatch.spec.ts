@@ -17,7 +17,6 @@ describe("GitHub approval to social delivery", () => {
 				github.repository,
 				github.records,
 				github.finalizer,
-				github.notifications,
 				github.client,
 			);
 		const reconcile = new SocialPublicationComposition().create({

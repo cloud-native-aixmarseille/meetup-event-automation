@@ -25,10 +25,6 @@ on:
         description: Provider post URL for published, or GitHub organizer evidence comment URL for not-published.
         required: true
         type: string
-      slack-organizer-channel-id:
-        description: Internal organizer channel receiving recovery approval requests.
-        required: true
-        type: string
       locale:
         description: Language for the recovery report (en or fr).
         required: true
@@ -38,7 +34,7 @@ on:
         description: GitHub App private key.
         required: true
       slack-token:
-        description: Slack token for organizer recovery notifications and decision reactions.
+        description: Slack token for decision reactions on recorded organizer messages.
         required: true
 permissions: {}
 jobs:
@@ -68,7 +64,6 @@ jobs:
           outcome: ${{ inputs.outcome }}
           reference: ${{ inputs.reference }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
 concurrency:
   group: ${{ format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number) }}
   cancel-in-progress: false

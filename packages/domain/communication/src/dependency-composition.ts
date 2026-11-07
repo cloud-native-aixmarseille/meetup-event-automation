@@ -1,4 +1,6 @@
 import { AttentionEpisodes } from "./attention/attention-episodes.js";
+import { AttentionBudgetPolicy } from "./attention/attention-budget-policy.js";
+import { AttentionRoutingPolicy } from "./attention/attention-routing-policy.js";
 import { AttentionPolicy } from "./attention/attention-policy.js";
 import { AttentionStateEquality } from "./attention/attention-state-equality.js";
 import { AttentionStateRules } from "./attention/attention-state-rules.js";
@@ -25,6 +27,12 @@ import {
 } from "./reconcile-communications.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class CommunicationDomainComposition {
+	attentionBudgetPolicy(): AttentionBudgetPolicy {
+		return new AttentionBudgetPolicy();
+	}
+	attentionRoutingPolicy(): AttentionRoutingPolicy {
+		return new AttentionRoutingPolicy(this.attentionPolicy());
+	}
 	attentionEpisodes(): AttentionEpisodes {
 		return new AttentionEpisodes({ attentionPolicy: this.attentionPolicy() });
 	}
@@ -88,6 +96,7 @@ export class CommunicationDomainComposition {
 	reconcileAttention(...args: ReconcileAttentionArguments): ReconcileAttention {
 		return new ReconcileAttention(
 			{
+				attentionRoutingPolicy: this.attentionRoutingPolicy(),
 				attentionPolicy: this.attentionPolicy(),
 				attentionEpisodes: this.attentionEpisodes(),
 			},

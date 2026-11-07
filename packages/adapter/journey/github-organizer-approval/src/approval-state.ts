@@ -19,7 +19,7 @@ interface StoredApprovalMetadata {
 	emailDraft?: import("@meetup-automation/journey").EmailReviewParameters;
 	delivery?: readonly import("@meetup-automation/journey").EmailDeliverySummary[];
 	readonly requestId: string;
-	notification: "new" | "reserved" | "sent" | "retry";
+	notification: "grouped" | "new" | "reserved" | "sent" | "retry";
 	notificationMessage?: ApprovalNotificationMessage;
 	decision?: FinalApprovalDecision;
 	reactionSent?: boolean;

@@ -195,7 +195,6 @@ describe("event publication action", () => {
 		"github-token",
 		"issue-number",
 		"slack-token",
-		"slack-organizer-channel-id",
 	])("rejects missing %s before publication", async (name) => {
 		// Arrange
 		delete mocks.inputs[name];

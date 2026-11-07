@@ -17,7 +17,6 @@ const actionContracts = [
 			"managed-comment-author",
 			"social-credentials",
 			"slack-token",
-			"slack-organizer-channel-id",
 		],
 		outputs: ["diagnostics"],
 	},
@@ -31,7 +30,6 @@ const actionContracts = [
 			"outcome",
 			"reference",
 			"slack-token",
-			"slack-organizer-channel-id",
 		],
 		outputs: [],
 	},
@@ -58,7 +56,6 @@ const actionContracts = [
 			"managed-comment-author",
 			"publication-credentials",
 			"slack-token",
-			"slack-organizer-channel-id",
 		],
 		outputs: ["diagnostics"],
 	},
@@ -76,7 +73,6 @@ const actionContracts = [
 			"google-credentials",
 			"google-drive-public-folder-id",
 			"slack-token",
-			"slack-organizer-channel-id",
 		],
 		outputs: ["diagnostics"],
 	},
@@ -291,7 +287,6 @@ const actionContracts = [
 			"issue-number",
 			"mailings-token",
 			"managed-comment-author",
-			"slack-organizer-channel-id",
 			"slack-token",
 		],
 		outputs: ["diagnostics"],
@@ -382,7 +377,7 @@ describe("public action contracts", () => {
 		},
 	);
 
-	it.each(["mailings-token", "slack-organizer-channel-id", "slack-token"])(
+	it.each(["mailings-token", "slack-token"])(
 		"requires an explicit %s for communication reconciliation",
 		async (inputName) => {
 			// Arrange

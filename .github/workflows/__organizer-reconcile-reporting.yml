@@ -55,6 +55,10 @@ permissions: {}
 jobs:
   report:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ format('meetup-organizer-{0}-{1}', github.repository_id, inputs.slack-organizer-channel-id) }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
     steps:

@@ -55,7 +55,6 @@ describe("communication action report facts", () => {
 			"github-token": "private-token",
 			"mailings-token": "private-mailings-token",
 			"slack-token": "private-slack-token",
-			"slack-organizer-channel-id": "organizer-channel-id",
 			"managed-comment-author": "automation[bot]",
 		})) {
 			vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
@@ -75,7 +74,6 @@ describe("communication action report facts", () => {
 		"conference-hall-api-key",
 		"mailings-token",
 		"slack-token",
-		"slack-organizer-channel-id",
 	])("requires %s before reconciling communications", async (input) => {
 		// Arrange
 		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
@@ -91,23 +89,6 @@ describe("communication action report facts", () => {
 		);
 		expect(boundary.execute).not.toHaveBeenCalled();
 		expect(core.setOutput).not.toHaveBeenCalled();
-	});
-
-	it("requires the organizer channel even when a generic Slack channel is configured", async () => {
-		// Arrange
-		vi.stubEnv("INPUT_SLACK-ORGANIZER-CHANNEL-ID", "");
-		vi.stubEnv("INPUT_SLACK-CHANNEL-ID", "public-channel-id");
-
-		// Act
-		const operation = subject().runCommunicationReconcileAction(
-			new GithubActionsComposition().actionMessages("en"),
-		);
-
-		// Assert
-		await expect(operation).rejects.toThrow(
-			"Input required and not supplied: slack-organizer-channel-id",
-		);
-		expect(boundary.execute).not.toHaveBeenCalled();
 	});
 
 	it.each(["warning", "error"] as const)(
@@ -208,7 +189,6 @@ describe("communication action report facts", () => {
 				slidesUrl: "https://docs.google.com/presentation/d/event-slides/edit",
 				mailingsToken: "private-mailings-token",
 				slackToken: "private-slack-token",
-				slackOrganizerChannelId: "organizer-channel-id",
 			}),
 		);
 		expect(report.details).toContain("communication_mode=dispatch");

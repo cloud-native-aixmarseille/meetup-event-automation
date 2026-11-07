@@ -46,7 +46,6 @@ export class CommunicationRuntime {
 		const githubToken = input.githubToken.trim();
 		const mailingsToken = input.mailingsToken.trim();
 		const slackToken = input.slackToken.trim();
-		const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
 		const journey = this.collaborators.createJourney({
 			meetupEventUrlPrefix: input.meetupEventUrlPrefix,
 			communityEventUrlPrefixes: input.communityEventUrlPrefixes,
@@ -64,7 +63,6 @@ export class CommunicationRuntime {
 			mailingsToken,
 			openFeedbackApiKey: input.openFeedbackApiKey,
 			slackToken,
-			slackOrganizerChannelId,
 		});
 		const result = await journey.execute({
 			issueNumber: input.issueNumber,

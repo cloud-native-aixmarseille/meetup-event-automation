@@ -108,7 +108,7 @@ describe("attention reminder policy", () => {
 		expect(equal).toBe(same);
 	});
 	it.each([23, 24, 25])(
-		"waits 24 elapsed hours before approval reminders (%s)",
+		"switches from an initial approval pointer to daily reminders after 24 hours (%s)",
 		(hours) => {
 			// Arrange
 			const openedAt = "2099-06-01T10:00:00Z";
@@ -130,7 +130,11 @@ describe("attention reminder policy", () => {
 			);
 
 			// Assert
-			expect(window !== undefined).toBe(hours >= 24);
+			expect(window).toBe(
+				hours >= 24
+					? `day:${new CommunicationDomainComposition().attentionPolicy().day(new Date(Date.parse(openedAt) + hours * 3_600_000))}`
+					: "approval:0",
+			);
 		},
 	);
 	it.each(["occurrence", "follow-up"] as const)(

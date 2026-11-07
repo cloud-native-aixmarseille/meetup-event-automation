@@ -27,7 +27,6 @@ export class SocialRecoveryComposition {
 		readonly locale: Locale;
 		readonly commentAuthorLogin: string;
 		readonly slackToken: string;
-		readonly slackOrganizerChannelId: string;
 	}): RecoverSocialPublication {
 		const adapters = new GithubOrganizerApprovalComposition();
 		const client = adapters.githubApprovalClient(
@@ -41,11 +40,7 @@ export class SocialRecoveryComposition {
 			client,
 			input.commentAuthorLogin,
 			adapters.approvalPresenter(adapters.approvalMessages(input.locale)),
-			slack.slackApprovalNotification(
-				input.slackToken,
-				slack.slackApprovalPresenter(input.locale),
-			),
-			input.slackOrganizerChannelId,
+			slack.slackApprovalNotification(input.slackToken),
 			OrganizerApprovalComposition.visibility(input),
 		).approval;
 		const fingerprints = new DraftProposalComposition().fingerprints();

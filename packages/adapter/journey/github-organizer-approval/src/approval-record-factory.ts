@@ -44,7 +44,7 @@ export class ApprovalRecordFactory {
 		const record = {
 			...request,
 			requestId: `approval-${this.nextIdentity()}`,
-			notification: "new" as const,
+			notification: "grouped" as const,
 		};
 		this.collaborators.storedApprovalSchema.validate(record);
 		return record;

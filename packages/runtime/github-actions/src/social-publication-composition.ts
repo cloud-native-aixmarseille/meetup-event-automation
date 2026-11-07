@@ -34,7 +34,6 @@ import { SocialPublicationConfiguration } from "./social-publication-configurati
 export interface SocialPublicationInput extends DraftSource {
 	readonly credentials: SocialCredentials;
 	readonly slackToken: string;
-	readonly slackOrganizerChannelId: string;
 }
 export class SocialPublicationComposition {
 	create(input: SocialPublicationInput) {
@@ -50,11 +49,7 @@ export class SocialPublicationComposition {
 			base.client,
 			input.commentAuthorLogin,
 			adapters.approvalPresenter(adapters.approvalMessages(input.locale)),
-			slack.slackApprovalNotification(
-				input.slackToken,
-				slack.slackApprovalPresenter(input.locale),
-			),
-			input.slackOrganizerChannelId,
+			slack.slackApprovalNotification(input.slackToken),
 			OrganizerApprovalComposition.visibility(input),
 		).approval;
 		const settings = new SocialPublicationConfiguration(new RuntimeInput());

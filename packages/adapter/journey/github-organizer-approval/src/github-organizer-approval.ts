@@ -6,7 +6,6 @@ import type {
 	OrganizerApprovalResult,
 } from "@meetup-automation/journey";
 import type { ApprovalDetailsPreview } from "./approval-details-preview.js";
-import type { ApprovalNotifications } from "./approval-notifications.js";
 import type { ApprovalRecordFactory } from "./approval-record-factory.js";
 import type { ApprovalRequestSchema } from "./approval-request-schema.js";
 import type { FinalizeApprovalDecision } from "./finalize-approval-decision.js";
@@ -30,7 +29,6 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 		private readonly repository: GithubApprovalRepository,
 		private readonly records: ApprovalRecordFactory,
 		private readonly finalizer: FinalizeApprovalDecision,
-		private readonly notifications: ApprovalNotifications,
 		private readonly permissions: Pick<GithubApprovalClient, "canApprove">,
 	) {}
 	async request(
@@ -69,10 +67,7 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 				return result;
 			return {
 				status: "pending",
-				notificationFailed: await this.notifications.send(
-					existing.record,
-					existing.comment.id,
-				),
+				notificationFailed: false,
 			};
 		}
 		const record = this.records.create(input);
@@ -87,10 +82,7 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 		await this.finalizer.refreshVisibility(state);
 		return {
 			status: "pending",
-			notificationFailed: await this.notifications.send(
-				record,
-				state.comment.id,
-			),
+			notificationFailed: false,
 		};
 	}
 	private async existingRequest(input: OrganizerApprovalRequest) {

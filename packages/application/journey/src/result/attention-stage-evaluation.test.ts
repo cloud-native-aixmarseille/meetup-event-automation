@@ -189,6 +189,9 @@ describe("publication readiness evidence", () => {
 			owner: "event",
 			outcome: "success",
 			blocked: false,
+			...(code === "publication.meetup.uncertain"
+				? { deliveryRecovery: "uncertain" }
+				: {}),
 		});
 	});
 
@@ -225,4 +228,37 @@ describe("publication readiness evidence", () => {
 		});
 		expect(diagnostics).toEqual([]);
 	});
+});
+
+describe("external delivery recovery classification", () => {
+	it.each([
+		["communication.social.blocked", "blocked"],
+		["communication.social.uncertain", "uncertain"],
+		["publication.meetup.uncertain", "uncertain"],
+		["publication.community.uncertain", "uncertain"],
+		["publication.meetup.slides-delivery-recovery", "uncertain"],
+	])(
+		"retains the recovery signal for %s without publishing diagnostic text",
+		(code, expected) => {
+			// Arrange
+			const composition = new JourneyPolicyComposition();
+			const evaluation = new AttentionStageEvaluation({
+				diagnosticPolicy: composition.diagnosticPolicy(),
+				organizerDiagnosticPolicy: composition.organizerDiagnosticPolicy(),
+			});
+			const reports = attentionReports({
+				event: {
+					outcome: "success",
+					diagnostics: [{ code, severity: "warning", message: "private data" }],
+				},
+			});
+			// Act
+			const stages = evaluation.evaluate(reports);
+			// Assert
+			expect(
+				stages.find((stage) => stage.owner === "event")?.deliveryRecovery,
+			).toBe(expected);
+			expect(JSON.stringify(stages)).not.toContain("private data");
+		},
+	);
 });

@@ -2,7 +2,6 @@ import { MeetupSlidesApprovalPresenter } from "../src/meetup-slides-approval-pre
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import {
-	ApprovalNotificationPolicy,
 	ApprovalRequestPolicy,
 	DraftProposalComposition,
 	EmailReviewParameterPolicy,
@@ -223,13 +222,9 @@ export function fixture(locale = "en") {
 		"meetups",
 		42,
 	);
-	const dispatch = vi.fn().mockResolvedValue({
-		outcome: "accepted",
-		message: { destination: "C12345", messageId: "100.001" },
-	});
+
 	const react = vi.fn().mockResolvedValue(true);
 	const dependencies = approvalDependencies(client, presenter, {
-		send: dispatch,
 		react,
 	});
 	return {
@@ -246,7 +241,6 @@ export function fixture(locale = "en") {
 		create,
 		list,
 		client,
-		dispatch,
 		...dependencies,
 		attention: new GithubApprovalAttentionSource(
 			dependencies.repository,
@@ -349,11 +343,9 @@ export function approvalDependencies(
 		() => `00000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`,
 	);
 	const notifications = new ApprovalNotifications(
-		new ApprovalNotificationPolicy(),
 		client,
 		presenter,
 		notificationPort,
-		"organizer-channel",
 	);
 	const repository = new GithubApprovalRepository(
 		{
@@ -426,3 +418,24 @@ export const communityRequest = {
 		url: "https://community.example.test/dashboard/group/events/10000000-0000-4000-8000-000000000001/update",
 	},
 } satisfies OrganizerApprovalRequest;
+
+export async function recordNotification(
+	f: ReturnType<typeof fixture>,
+	status: "sent" | "reserved" = "sent",
+) {
+	const comment = f.comments[0];
+	const record = new GithubOrganizerApprovalComposition()
+		.approvalCommentCodec()
+		.read(comment.body ?? "");
+	record.notification = status;
+	if (status === "sent")
+		record.notificationMessage = {
+			destination: "C12345",
+			messageId: "100.001",
+		};
+	await f.client.replace(
+		comment.id,
+		comment.body ?? "",
+		f.presenter.issue(record, { status: "pending" }),
+	);
+}

@@ -85,19 +85,20 @@ Records group decisions and proposals by feature or architectural scope. Each
 includes its status, context, decisions, and trade-offs.
 Use the current guides above for setup and supported operational behavior.
 
-| Scope                                                                     | Decisions                                                                         |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [Architecture](adr/0001-architecture.md)                                  | Repository ownership, package boundaries, dependency injection, and localization. |
-| [Action contracts and workflow composition](adr/0002-action-contracts.md) | Public interfaces, scoped effects, reconciliation, and locking.                   |
-| [Organizer approvals and email delivery](adr/0003-organizer-approvals.md) | Authority, final decisions, completion, and duplicate protection.                 |
-| [Organizer workflow and attention](adr/0004-organizer-workflow.md)        | Checklists, diagnostics, reminders, follow-up, and issue archival.                |
-| [Referentials and Conference Hall](adr/0005-referentials.md)              | Source authority, stable identities, reviewed catalogs, and talk selection.       |
-| [Feedback and shared links](adr/0006-feedback.md)                         | OpenFeedback agendas, resource identity, and Kutt target selection.               |
-| [Template discovery](adr/0011-template-discovery.md)                      | Native field discovery and agenda-position selectors.                             |
-| [Managed assets](adr/0007-assets.md)                                      | Template bindings, public fields, images, and presentation PDFs.                  |
-| [Draft generation and review](adr/0008-draft-generation.md)               | Event copy, cover artwork, social formats, reminders, and provider boundaries.    |
-| [Event publication destinations](adr/0009-community-event-publication.md) | Shared lifecycle, Meetup and OCGroups adapters, approval, and recovery.           |
-| [LinkedIn Page and Slack publication](adr/0010-social-publication.md)     | Social dispatch, publication approval, scheduling, and recovery.                  |
+| Scope                                                                     | Decisions                                                                            |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [Architecture](adr/0001-architecture.md)                                  | Repository ownership, package boundaries, dependency injection, and localization.    |
+| [Action contracts and workflow composition](adr/0002-action-contracts.md) | Public interfaces, scoped effects, reconciliation, and locking.                      |
+| [Organizer approvals and email delivery](adr/0003-organizer-approvals.md) | Authority, final decisions, completion, and duplicate protection.                    |
+| [Organizer workflow and attention](adr/0004-organizer-workflow.md)        | Checklists, diagnostics, reminders, follow-up, and issue archival.                   |
+| [Referentials and Conference Hall](adr/0005-referentials.md)              | Source authority, stable identities, reviewed catalogs, and talk selection.          |
+| [Feedback and shared links](adr/0006-feedback.md)                         | OpenFeedback agendas, resource identity, and Kutt target selection.                  |
+| [Template discovery](adr/0011-template-discovery.md)                      | Native field discovery and agenda-position selectors.                                |
+| [Notification journey](adr/0012-notification-journey.md)                  | Reviewed proposal and acceptance; shared-channel decisions consolidated in ADR 0004. |
+| [Managed assets](adr/0007-assets.md)                                      | Template bindings, public fields, images, and presentation PDFs.                     |
+| [Draft generation and review](adr/0008-draft-generation.md)               | Event copy, cover artwork, social formats, reminders, and provider boundaries.       |
+| [Event publication destinations](adr/0009-community-event-publication.md) | Shared lifecycle, Meetup and OCGroups adapters, approval, and recovery.              |
+| [LinkedIn Page and Slack publication](adr/0010-social-publication.md)     | Social dispatch, publication approval, scheduling, and recovery.                     |
 
 ## Directory layout
 
@@ -137,6 +138,7 @@ docs/
     ├── 0006-feedback.md
     ├── 0007-assets.md
     ├── 0011-template-discovery.md
+    ├── 0012-notification-journey.md
     ├── 0008-draft-generation.md
     ├── 0009-community-event-publication.md
     └── 0010-social-publication.md

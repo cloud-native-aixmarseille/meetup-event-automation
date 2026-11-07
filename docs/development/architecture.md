@@ -549,20 +549,13 @@ when checking pending request integrity, so locale changes preserve approval.
 Email comments store the complete reviewed delivery values; other review kinds
 retain their owned projections. Requests are independent
 of delivery records: approval never clears a delivery reservation. Partial
-completion does not invalidate the full batch fingerprint. Slack notification
-reservations prevent automatic retries after ambiguous acknowledgements. The
-journey's `ApprovalNotificationPolicy` selects standalone approval notifications
-and projects their public facts. Thank-you approvals use follow-up attention, so
-the policy excludes their separate posts and decision reactions. The GitHub
-notification coordinator consumes this injected policy and owns durable
-reservations, acknowledgements, and retries without branching on approval kinds.
-The journey's `OrganizerApprovalNotification` port accepts public approval facts and
-the approval comment URL, and returns an opaque message reference for accepted
-requests. The Slack adapter owns notification formatting and its English/French
-catalogs. It uses the message reference for idempotent decision reactions on the
-original message. Synchronization finalizes choices
-and retries reactions even when no email task remains. Slack failures do not
-undo durable decisions. See the
+completion does not invalidate the full batch fingerprint. All approval kinds use
+grouped attention for Slack notifications. The approval adapter stores each review
+on GitHub; attention links to those comments under the shared channel budget.
+The journey's `OrganizerApprovalNotification` port supports idempotent decision
+reactions for already recorded message references. Synchronization finalizes
+choices and retries those reactions even when no email task remains. Slack
+failures do not undo durable decisions. See the
 [communication integration guide](../integrations/communications.md#confirm-an-email-batch).
 The journey maps task names to recipient groups, and records completion through the
 event codec only after all recipients in a group have durable accepted records.
@@ -638,7 +631,8 @@ attention comment; equal copied states allow recovery after an interrupted remov
 Runtime composition injects the clock and ports. A pending post blocks further
 posts across days and requires operator investigation. Existing mail records and
 approval decisions remain independent. Once follow-up begins, the approval adapter
-stores the attention record inside the single thank-you approval and task comment.
+stores the attention record in the dedicated follow-up task comment. Each email
+type retains its own review comment.
 The communication domain owns attention invariants, equality, task selection and
 the action represented by an approval resource. Presenters consume those decisions.
 GitHub decodes the verified diagnostic checklist into typed tasks. GitHub and
@@ -647,8 +641,14 @@ composition supplies these capabilities without adapter-to-adapter dependencies.
 with zero recipients shows task progress while a safe email batch is unavailable;
 it cannot authorize mail. Progress writes first verify and finalize any human
 choice. Moving attention into the follow-up comment preserves notification
-reservations before removing the separate view. Thank-you requests use grouped attention notifications, without
-separate Slack approval posts or reactions. See
+reservations before removing the separate view. Every approval kind uses grouped
+attention notifications. The communication domain classifies urgent conditions
+and limits routine posts to three across seven Paris dates. The journey's
+`SharedAttentionBudget` coordinates reservations through a persistence port. The
+GitHub adapter aggregates verified `attention` sections from existing technical
+issue comments and writes only the current issue's records. Reporting holds both
+the issue lock and a queued repository/channel lock across reservation and delivery.
+Silent edits consume no slots and suppression never acknowledges or resolves tasks. See
 [organizer attention](../integrations/communications.md#organizer-attention).
 
 OpenFeedback creation uses a stable source key to recover events on retries.

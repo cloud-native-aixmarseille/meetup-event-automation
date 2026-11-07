@@ -1,3 +1,4 @@
+import { recordNotification } from "../testing/approval.fixtures.js";
 import { MeetupSlidesApprovalPresenter } from "./meetup-slides-approval-presenter.js";
 import {
 	FollowUpApprovalPolicy,
@@ -39,7 +40,6 @@ describe("publication requests without decorative icons", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(socialPublicationRequest);
@@ -80,7 +80,6 @@ describe("email parameter approval integrity", () => {
 					f.repository,
 					f.records,
 					f.finalizer,
-					f.notifications,
 					f.client,
 				);
 			await approvals.request(emailReviewRequest);
@@ -113,7 +112,6 @@ describe("email parameter approval integrity", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 		await approvals.request(emailReviewRequest);
@@ -141,7 +139,6 @@ describe("email parameter approval integrity", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 		await approvals.request(request);
@@ -162,7 +159,6 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 		const first = socialPublicationRequest;
@@ -219,7 +215,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -255,10 +250,10 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
+		await recordNotification(f);
 		decision(f);
 		f.react.mockImplementationOnce(async () => {
 			f.update.mockRejectedValueOnce(new Error("write failed"));
@@ -279,7 +274,6 @@ describe("organizer approval requests", () => {
 		expect(second.notificationFailed).toBe(false);
 		expect(f.react).toHaveBeenCalledTimes(2);
 		expect(f.react.mock.calls[1]).toEqual(f.react.mock.calls[0]);
-		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
 	it("does not accept a forged final decision in a pending request", async () => {
 		// Arrange
@@ -297,7 +291,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -336,19 +329,15 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
+		await recordNotification(f);
 		decision(f, {}, "rejected");
 		await approvals.synchronize();
 		const original = new GithubOrganizerApprovalComposition()
 			.approvalCommentCodec()
 			.read(f.comments[0]?.body ?? "");
-		f.dispatch.mockResolvedValueOnce({
-			outcome: "accepted",
-			message: { destination: "C67890", messageId: "200.001" },
-		});
 
 		// Act
 		const result = await approvals.request({
@@ -366,10 +355,9 @@ describe("organizer approval requests", () => {
 		expect(replacement.requestId).not.toBe(original.requestId);
 		expect(replacement.decision).toBeUndefined();
 		expect(f.comments).toHaveLength(1);
-		expect(f.dispatch).toHaveBeenCalledTimes(2);
+
 		expect(f.react.mock.calls).toEqual([
 			[{ destination: "C12345", messageId: "100.001" }, "rejected"],
-			[{ destination: "C67890", messageId: "200.001" }, "approved"],
 		]);
 	});
 	it.each(["approved", "rejected"] as const)(
@@ -390,10 +378,10 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
+			await recordNotification(f);
 			const commentId = f.comments[0]?.id;
 			decision(f, {}, status);
 
@@ -411,7 +399,7 @@ describe("organizer approval requests", () => {
 			expect(f.comments[0]?.body).not.toContain("- [");
 			expect(f.comments[0]?.body).toContain("@organizer");
 			expect(f.comments[0]?.body).toContain(request.requestedAt);
-			expect(f.dispatch).toHaveBeenCalledTimes(1);
+
 			expect(f.react).toHaveBeenCalledExactlyOnceWith(
 				{ destination: "C12345", messageId: "100.001" },
 				status,
@@ -436,10 +424,10 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
+			await recordNotification(f);
 			decision(f, {}, status);
 			await approvals.synchronize();
 			const original = f.comments[0]?.body ?? "";
@@ -475,7 +463,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -508,10 +495,10 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
+		await recordNotification(f);
 		decision(f);
 		f.react.mockResolvedValueOnce(false);
 
@@ -526,7 +513,6 @@ describe("organizer approval requests", () => {
 		expect(firstBody).not.toContain("- [");
 		expect(second.notificationFailed).toBe(false);
 		expect(f.react).toHaveBeenCalledTimes(2);
-		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
 	it("retains a decision on a sent notification without a message reference", async () => {
 		// Arrange
@@ -544,10 +530,9 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
-		f.dispatch.mockResolvedValue({ outcome: "accepted" });
+
 		await approvals.request(request);
 		decision(f);
 
@@ -563,7 +548,6 @@ describe("organizer approval requests", () => {
 		});
 		expect(f.comments[0]?.body).toContain("✅ Approved");
 		expect(f.react).not.toHaveBeenCalled();
-		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
 	it("keeps an uncertain notification visible after an organizer decision without reposting", async () => {
 		// Arrange
@@ -581,11 +565,11 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
-		f.dispatch.mockResolvedValue({ outcome: "uncertain" });
+
 		await approvals.request(request);
+		await recordNotification(f, "reserved");
 		decision(f);
 
 		// Act
@@ -599,7 +583,6 @@ describe("organizer approval requests", () => {
 			decidedAt: request.requestedAt,
 		});
 		expect(f.react).not.toHaveBeenCalled();
-		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
 	it("does not authorize dispatch after the recorded organizer loses write access", async () => {
 		// Arrange
@@ -617,7 +600,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -650,7 +632,6 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
@@ -696,10 +677,10 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
+			await recordNotification(f);
 			decision(f);
 			const translatedDependencies = approvalDependencies(
 				f.client,
@@ -751,7 +732,7 @@ describe("organizer approval requests", () => {
 							),
 					},
 				),
-				{ send: f.dispatch, react: f.react },
+				{ react: f.react },
 			);
 			const translated = new GithubOrganizerApproval(
 				{
@@ -766,7 +747,6 @@ describe("organizer approval requests", () => {
 				translatedDependencies.repository,
 				translatedDependencies.records,
 				translatedDependencies.finalizer,
-				translatedDependencies.notifications,
 				f.client,
 			);
 
@@ -780,7 +760,7 @@ describe("organizer approval requests", () => {
 			expect(f.comments).toHaveLength(1);
 			expect(f.comments[0]?.body).not.toContain("- [");
 			expect(f.comments[0]?.body).toContain("@organizer");
-			expect(f.dispatch).toHaveBeenCalledTimes(1);
+
 			expect(f.react).toHaveBeenCalledTimes(1);
 		},
 	);
@@ -802,7 +782,6 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
@@ -842,10 +821,10 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
+			await recordNotification(f);
 			const pending = f.comments[0]?.body ?? "";
 			decision(f, {}, status);
 			await approvals.request(request);
@@ -877,7 +856,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -895,41 +873,9 @@ describe("organizer approval requests", () => {
 		);
 		expect(f.permission).not.toHaveBeenCalled();
 	});
-	it("preserves a choice made while the Slack notification is in flight", async () => {
-		// Arrange
-		const f = fixture();
-		const approvals = new GithubOrganizerApproval(
-			{
-				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
-				approvalRequestSchema:
-					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
-				approvalRequestPolicy:
-					new JourneyPolicyComposition().approvalRequestPolicy(),
-				approvalDetailsPreview:
-					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
-			},
-			f.repository,
-			f.records,
-			f.finalizer,
-			f.notifications,
-			f.client,
-		);
-		f.dispatch.mockImplementation(async () => {
-			decision(f);
-			return { outcome: "accepted" };
-		});
 
-		// Act
-		const result = approvals.request(request);
-
-		// Assert
-		await expect(result).rejects.toThrow(
-			"Organizer comment changed during verification",
-		);
-		expect(f.comments[0]?.body).toContain("- [x] ✅ Approve sending");
-	});
 	it.each(["en", "fr"])(
-		"creates one issue request and one Slack alert in %s",
+		"reuses one issue request without posting a separate Slack alert in %s",
 		async (locale) => {
 			// Arrange
 			const f = fixture(locale);
@@ -946,7 +892,6 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 
@@ -958,10 +903,7 @@ describe("organizer approval requests", () => {
 			expect(first.status).toBe("pending");
 			expect(second.status).toBe("pending");
 			expect(f.create).toHaveBeenCalledTimes(1);
-			expect(f.dispatch).toHaveBeenCalledTimes(1);
-			expect(f.dispatch.mock.calls[0]?.[0].approvalUrl).toBe(
-				"https://github.com/example/meetups/issues/42#issuecomment-100",
-			);
+
 			expect(f.comments[0]?.body).toContain(
 				locale === "fr" ? "- [ ] ✅ Approuver" : "- [ ] ✅ Approve",
 			);
@@ -985,7 +927,6 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
@@ -1019,7 +960,6 @@ describe("organizer approval requests", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);
@@ -1056,7 +996,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -1086,7 +1025,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -1100,7 +1038,6 @@ describe("organizer approval requests", () => {
 		expect(result.status).toBe("rejected");
 		expect(f.comments[0]?.body).toContain("❌ Rejected by @organizer");
 		expect(f.comments[0]?.body).not.toContain("- [");
-		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
 	it("invalidates a prior approval when the revision changes, even if old facts return", async () => {
 		// Arrange
@@ -1118,7 +1055,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -1135,7 +1071,6 @@ describe("organizer approval requests", () => {
 		expect(changed.status).toBe("pending");
 		expect(restored.status).toBe("pending");
 		expect(f.create).toHaveBeenCalledTimes(1);
-		expect(f.dispatch).toHaveBeenCalledTimes(3);
 	});
 	it("ignores forged managed comments from other authors", async () => {
 		// Arrange
@@ -1153,7 +1088,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		f.comments.push({
@@ -1185,7 +1119,6 @@ describe("organizer approval requests", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		f.comments.push({
@@ -1199,97 +1132,6 @@ describe("organizer approval requests", () => {
 
 		// Assert
 		await expect(result).rejects.toThrow();
-		expect(f.dispatch).not.toHaveBeenCalled();
-	});
-	it("does not repeat a Slack alert with an uncertain acknowledgement", async () => {
-		// Arrange
-		const f = fixture();
-		const approvals = new GithubOrganizerApproval(
-			{
-				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
-				approvalRequestSchema:
-					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
-				approvalRequestPolicy:
-					new JourneyPolicyComposition().approvalRequestPolicy(),
-				approvalDetailsPreview:
-					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
-			},
-			f.repository,
-			f.records,
-			f.finalizer,
-			f.notifications,
-			f.client,
-		);
-		f.dispatch.mockResolvedValue({ outcome: "uncertain" });
-
-		// Act
-		const first = await approvals.request(request);
-		const second = await approvals.request(request);
-
-		// Assert
-		expect(first.notificationFailed).toBe(true);
-		expect(second.notificationFailed).toBe(true);
-		expect(f.dispatch).toHaveBeenCalledTimes(1);
-	});
-	it("retries a definitively deferred Slack alert", async () => {
-		// Arrange
-		const f = fixture();
-		const approvals = new GithubOrganizerApproval(
-			{
-				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
-				approvalRequestSchema:
-					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
-				approvalRequestPolicy:
-					new JourneyPolicyComposition().approvalRequestPolicy(),
-				approvalDetailsPreview:
-					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
-			},
-			f.repository,
-			f.records,
-			f.finalizer,
-			f.notifications,
-			f.client,
-		);
-		f.dispatch.mockResolvedValueOnce({
-			outcome: "deferred",
-			diagnosticCode: "rate-limited",
-		});
-
-		// Act
-		await approvals.request(request);
-		const result = await approvals.request(request);
-
-		// Assert
-		expect(result.notificationFailed).toBe(false);
-		expect(f.dispatch).toHaveBeenCalledTimes(2);
-	});
-	it("does not send Slack if notification reservation cannot be persisted", async () => {
-		// Arrange
-		const f = fixture();
-		const approvals = new GithubOrganizerApproval(
-			{
-				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
-				approvalRequestSchema:
-					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
-				approvalRequestPolicy:
-					new JourneyPolicyComposition().approvalRequestPolicy(),
-				approvalDetailsPreview:
-					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
-			},
-			f.repository,
-			f.records,
-			f.finalizer,
-			f.notifications,
-			f.client,
-		);
-		f.update.mockRejectedValue(new Error("write failed"));
-
-		// Act
-		const result = approvals.request(request);
-
-		// Assert
-		await expect(result).rejects.toThrow("write failed");
-		expect(f.dispatch).not.toHaveBeenCalled();
 	});
 });
 
@@ -1312,10 +1154,10 @@ describe("Meetup publication approvals", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(publicationRequest);
+			await recordNotification(f);
 			decision(f, {}, status);
 
 			// Act
@@ -1329,13 +1171,7 @@ describe("Meetup publication approvals", () => {
 				status,
 			});
 			expect(f.comments[0]?.body).not.toContain("- [");
-			expect(f.dispatch).toHaveBeenCalledWith({
-				destination: "organizer-channel",
-				kind: "meetup-publication",
-				eventDate: publicationRequest.eventDate,
-				approvalUrl:
-					"https://github.com/example/meetups/issues/42#issuecomment-100",
-			});
+
 			expect(f.react).toHaveBeenCalledWith(expect.anything(), status);
 		},
 	);
@@ -1356,7 +1192,6 @@ describe("Meetup publication approvals", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(publicationRequest);
@@ -1395,7 +1230,6 @@ describe("Meetup publication approvals", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(publicationRequest);
@@ -1424,7 +1258,6 @@ describe("Meetup publication approvals", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(publicationRequest);
@@ -1474,10 +1307,10 @@ describe("OCGroups publication approvals", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(communityRequest);
+			await recordNotification(f);
 			decision(f, {}, status);
 
 			// Act
@@ -1491,13 +1324,7 @@ describe("OCGroups publication approvals", () => {
 				status,
 			});
 			expect(f.comments[0]?.body).not.toContain("- [");
-			expect(f.dispatch).toHaveBeenCalledWith({
-				destination: "organizer-channel",
-				kind: "community-publication",
-				eventDate: communityRequest.eventDate,
-				approvalUrl:
-					"https://github.com/example/meetups/issues/42#issuecomment-100",
-			});
+
 			expect(f.react).toHaveBeenCalledWith(expect.anything(), status);
 		},
 	);
@@ -1518,7 +1345,6 @@ describe("OCGroups publication approvals", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(communityRequest);
@@ -1557,7 +1383,6 @@ describe("OCGroups publication approvals", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(communityRequest);
@@ -1586,7 +1411,6 @@ describe("OCGroups publication approvals", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(communityRequest);
@@ -1626,7 +1450,6 @@ describe("organizer text replacement", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 		const preview = new ContentTextPreview();
@@ -1675,7 +1498,6 @@ describe("organizer text replacement", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 		const preview = new ContentTextPreview();
@@ -1710,7 +1532,6 @@ describe("organizer text replacement", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 		const preview = new ContentTextPreview();
@@ -1738,7 +1559,6 @@ describe("completed approval comment visibility", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 
@@ -1769,7 +1589,6 @@ describe("completed approval comment visibility", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 		await approvals.request(request);
@@ -1795,7 +1614,6 @@ describe("Meetup attendee delivery approvals", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(slidesRequest);
@@ -1822,9 +1640,6 @@ describe("Meetup attendee delivery approvals", () => {
 		expect(persisted.decision?.actor).toBe("organizer");
 		expect(changed.status).toBe("pending");
 		expect(f.create).toHaveBeenCalledOnce();
-		expect(f.dispatch).toHaveBeenCalledWith(
-			expect.objectContaining({ kind: "meetup-slides" }),
-		);
 	});
 
 	it.each(["approved", "rejected", "unauthorized"] as const)(
@@ -1837,7 +1652,6 @@ describe("Meetup attendee delivery approvals", () => {
 					f.repository,
 					f.records,
 					f.finalizer,
-					f.notifications,
 					f.client,
 				);
 			await approvals.request(request);
@@ -1860,7 +1674,6 @@ describe("Meetup attendee delivery approvals", () => {
 				expect.objectContaining({ username: "organizer" }),
 			);
 			expect(f.create).toHaveBeenCalledOnce();
-			expect(f.dispatch).toHaveBeenCalledOnce();
 		},
 	);
 });
@@ -1881,7 +1694,6 @@ describe.each([
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			const request = emailReviewFor(kind);
@@ -1928,7 +1740,6 @@ describe.each([
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		const request = emailReviewFor(kind);

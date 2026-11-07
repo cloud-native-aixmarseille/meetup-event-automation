@@ -51,7 +51,7 @@ describe("publication recovery authority", () => {
 			expect(f.client.canApprove).toHaveBeenCalledWith("maintainer");
 		},
 	);
-	it.each(["content", "social", "imports"] as const)(
+	it.each(["content", "social", "attention", "imports"] as const)(
 		"rejects a maintainer changing protected %s state",
 		async (scope) => {
 			// Arrange
@@ -65,7 +65,7 @@ describe("publication recovery authority", () => {
 							records: {
 								...before.records,
 								[scope]: [
-									`<!-- meetup-${scope === "content" ? "content-proposal" : "social-delivery"}:v1 {} -->`,
+									`<!-- meetup-${scope === "content" ? "content-proposal" : scope === "attention" ? "attention-budget" : "social-delivery"}:v1 {} -->`,
 								],
 							},
 						};

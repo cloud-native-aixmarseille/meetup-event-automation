@@ -386,7 +386,6 @@ jobs:
           managed-comment-author: integration-tests[bot]
           mailings-token: synthetic-mailings-token
           slack-token: synthetic-slack-token
-          slack-organizer-channel-id: synthetic-slack-channel
 
       - name: Assert communication reconciliation
         shell: bash

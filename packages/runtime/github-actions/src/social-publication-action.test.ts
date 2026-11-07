@@ -1,11 +1,9 @@
-import * as core from "@actions/core";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it, vi } from "vitest";
 import type { DraftSource } from "./draft-workspace-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { SocialPublicationAction } from "./social-publication-action.js";
 
-vi.mock("@actions/core", () => ({ getInput: vi.fn(() => "CORGANIZERS") }));
 function fixture() {
 	const source = {
 		owner: "example",
@@ -53,9 +51,6 @@ describe("social publication action", () => {
 			issueNumber: 42,
 		});
 		expect(f.input.secret).toHaveBeenCalledExactlyOnceWith("slack-token");
-		expect(core.getInput).toHaveBeenCalledWith("slack-organizer-channel-id", {
-			required: true,
-		});
 	});
 	it("reports independent destination outcomes while preserving unresolved diagnostics", async () => {
 		// Arrange

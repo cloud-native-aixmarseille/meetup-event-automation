@@ -86,6 +86,9 @@ importers:
       '@meetup-automation/communication':
         specifier: workspace:*
         version: link:../../../domain/communication
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../../application/journey
       '@meetup-automation/localization':
         specifier: workspace:*
         version: link:../../../presentation/localization

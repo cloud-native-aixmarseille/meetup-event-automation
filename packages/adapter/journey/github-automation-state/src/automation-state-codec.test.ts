@@ -2,6 +2,30 @@ import { describe, expect, it } from "vitest";
 import { AutomationStateCodec } from "./automation-state-codec.js";
 
 describe("automation state envelope", () => {
+	it("starts accounting without changing existing records when no budget has been stored", () => {
+		// Arrange
+		const codec = new AutomationStateCodec();
+		const content = ["<!-- meetup-content-proposal:v1 {} -->"];
+		const records = { content, social: [], meetup: [], community: [] };
+		const body = `<!-- meetup-automation-state:v1 ${JSON.stringify({ version: 1, records, imports: [] })} -->\n\nState`;
+		// Act
+		const state = codec.read(body);
+		// Assert
+		expect(state.records).toEqual({ ...records, attention: [] });
+	});
+	it("rejects a corrupted budget instead of resetting its accounting", () => {
+		// Arrange
+		const codec = new AutomationStateCodec();
+		const state = {
+			...codec.empty(),
+			records: { ...codec.empty().records, attention: null },
+		};
+		const body = `<!-- meetup-automation-state:v1 ${JSON.stringify(state)} -->\n\nState`;
+		// Act
+		const read = () => codec.read(body);
+		// Assert
+		expect(read).toThrow("Invalid automation state records");
+	});
 	it.each(["-->", "--!>"])(
 		"preserves embedded records containing %s without terminating the marker",
 		(ending) => {

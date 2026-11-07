@@ -30,11 +30,11 @@ describe("Slack attention presentation", () => {
 	it.each([
 		[
 			"publication.meetup.authentication-account-unavailable",
-			"Le compte connecté n'a pas pu être vérifié malgré les retries.",
+			"Publication Meetup bloquée. Consultez le workflow.",
 		],
 		[
 			"publication.meetup.editor",
-			"Le chargement ou la préparation de l'éditeur Meetup a échoué.",
+			"Publication Meetup bloquée. Consultez le workflow.",
 		],
 	])("shows the classified failure and its run: %s", (resource, message) => {
 		// Arrange
@@ -95,10 +95,10 @@ describe("Slack attention presentation", () => {
 		},
 	);
 	it.each([
-		["en", "+2 more tasks → View all"],
-		["fr", "+2 autres tâches → Tout voir"],
+		["en", "+5 more tasks → View all"],
+		["fr", "+5 autres tâches → Tout voir"],
 	])(
-		"limits Slack to six actions with linked overflow in %s",
+		"limits Slack to three pointers with linked overflow in %s",
 		(locale, overflow) => {
 			// Arrange
 			const presenter = attentionFixture(locale);
@@ -117,7 +117,7 @@ describe("Slack attention presentation", () => {
 			const rendered = presenter.render({ state: state(), conditions });
 
 			// Assert
-			expect(rendered.split("•")).toHaveLength(7);
+			expect(rendered.split("•")).toHaveLength(4);
 			expect(rendered).toContain(
 				`<https://github.com/example/meetups/issues/42|${overflow}>`,
 			);
@@ -149,7 +149,7 @@ describe("Slack attention presentation", () => {
 		// Act
 		const body = presenter.render({ state: state(), conditions: [pending] });
 		// Assert
-		expect(body).toContain("Modifiez le texte si besoin");
+		expect(body).toContain("Contenu à approuver.");
 		expect(body).toContain("#issuecomment-200");
 		expect(body).not.toContain("courriels");
 	});
@@ -183,7 +183,8 @@ describe("Slack attention presentation", () => {
 
 		// Assert
 		expect(rendered.split("Approve or reject the emails.")).toHaveLength(2);
-		expect(rendered).toContain("• OpenFeedback Link: Synchronize each talk.");
+		expect(rendered).toContain("#issuecomment-200|OpenFeedback Link>");
+		expect(rendered).not.toContain("Synchronize each talk.");
 		expect(rendered).toContain("#issuecomment-200|Meetup #42");
 	});
 	it("links to unverified delivery recovery while ordinary tasks are stopped", () => {
@@ -215,8 +216,8 @@ describe("Slack attention presentation", () => {
 			entries: [
 				{
 					field: "other",
-					label: "Communication",
-					description: "Review <!channel> & details",
+					label: "Communication <!channel> & details",
+					description: "Review the details.",
 				},
 			],
 		});
@@ -252,7 +253,8 @@ describe("Slack attention presentation", () => {
 
 		// Assert
 		expect(rendered).toContain("⚠️");
-		expect(rendered).toContain("• Communication: Add a recipient address.");
+		expect(rendered).toContain("issues/42|Communication>");
+		expect(rendered).not.toContain("Add a recipient address.");
 		expect(rendered).not.toContain("No pending tasks.");
 	});
 	it("coalesces equal output for unknown resources", () => {

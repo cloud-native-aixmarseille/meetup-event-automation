@@ -104,9 +104,6 @@ describe("event publication workflow", () => {
 		expect(job?.concurrency).toBeUndefined();
 		expect(steps.find((step) => step.id === "publication")?.with).toMatchObject(
 			{
-				"slack-organizer-channel-id": workflowExpression(
-					"inputs.slack-organizer-channel-id",
-				),
 				"slack-token": workflowExpression("secrets.slack-token"),
 				"publication-credentials": workflowExpression(
 					"secrets.publication-credentials",

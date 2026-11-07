@@ -2,39 +2,38 @@ export const messages = {
 	"action.slides-approval-pending":
 		"Approuver l'envoi du PDF aux participants Meetup.",
 	"failure.publication.meetup.authentication-configuration":
-		"Les identifiants Meetup manquent dans la configuration de l'automatisation. Vérifiez PUBLICATION_CREDENTIALS.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-captcha-required":
-		"Meetup demande un CAPTCHA que l'automatisation n'a pas pu résoudre. Publication suspendue.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-captcha-rejected":
-		"Meetup a refusé la réponse au CAPTCHA. Les retries sont épuisés ; relancez la synchronisation plus tard.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-captcha-unavailable":
-		"Le solveur de CAPTCHA a échoué avant la fin de la connexion. Vérifiez sa disponibilité et relancez la synchronisation.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-session-not-reusable":
-		"Meetup renvoie la vérification du compte vers la connexion malgré les retries. La session n'a pas été conservée ; relancez la synchronisation.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-login-page-unavailable":
-		"La page de connexion Meetup n'a pas pu être chargée malgré les retries. Relancez la synchronisation plus tard.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-login-form-unavailable":
-		"Le formulaire email/mot de passe Meetup n'a pas pu être rempli malgré les retries. Vérifiez les sélecteurs du formulaire.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-submit-unavailable":
-		"Le bouton de connexion Meetup n'a pas pu être activé malgré les retries. Vérifiez les contrôles de la page de connexion.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-redirect-timeout":
-		"Meetup n'a pas terminé la redirection après connexion malgré les retries. Aucun refus des identifiants n'a été détecté ; relancez plus tard.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-account-unavailable":
-		"Le compte connecté n'a pas pu être vérifié malgré les retries. Vérifiez le chargement et les sélecteurs de la page du compte.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-account-mismatch":
-		"Le compte connecté sur Meetup ne correspond pas au compte configuré. La session a été écartée.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-unexpected-page":
-		"La connexion Meetup a abouti à une page inattendue. L'authentification s'est arrêtée ; vérifiez le parcours avant de relancer.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-rate-limited":
-		"Meetup a renvoyé HTTP 429 pendant l'authentification. Les retries sont arrêtés ; attendez avant de relancer la synchronisation.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.authentication-browser":
-		"Chrome n'a pas démarré ou sa connexion d'authentification a échoué malgré les retries. Vérifiez le runtime du navigateur.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.editor":
-		"Le chargement ou la préparation de l'éditeur Meetup a échoué. Vérifiez les contrôles de l'éditeur dans le run en échec.",
+		"Publication Meetup bloquée. Consultez le workflow.",
 	"failure.publication.meetup.verification":
-		"La vérification de l'événement Meetup a échoué. Vérifiez l'événement enregistré avant de relancer.",
-	"action.content-approval-pending":
-		"Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+		"Publication Meetup bloquée. Consultez le workflow.",
+	"action.content-approval-pending": "Contenu à approuver.",
 	"action.social-target-approval-pending":
 		"Publication à approuver : {target}.",
 	"action.social-approval-pending":

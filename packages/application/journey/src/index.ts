@@ -1,5 +1,4 @@
 export { OrganizerCommentChangedError } from "./approval/organizer-comment-changed-error.js";
-export { ApprovalNotificationPolicy } from "./approval/approval-notification-policy.js";
 export { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
 export {
 	EmailReviewParameterPolicy,
@@ -71,10 +70,7 @@ export type {
 	OrganizerApprovalDetails,
 } from "./ports/organizer-approval-details.js";
 export type {
-	ApprovalNotificationFacts,
 	ApprovalNotificationMessage,
-	ApprovalNotificationRequest,
-	ApprovalNotificationResult,
 	OrganizerApprovalNotification,
 } from "./ports/organizer-approval-notification.js";
 export type {
@@ -166,3 +162,4 @@ export type {
 	AutomationStateRepository,
 	AutomationStateScope,
 } from "./ports/automation-state.js";
+export { SharedAttentionBudget } from "./use-cases/shared-attention-budget.js";

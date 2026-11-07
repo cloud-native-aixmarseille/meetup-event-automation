@@ -47,14 +47,14 @@ export class SlackAttentionPresenter {
 			`${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` · ${date}` : ""}`,
 			"",
 		];
-		lines.push(...actions.slice(0, 6));
+		lines.push(...actions.slice(0, 3));
 		if (!actions.length)
 			lines.push(this.escape(this.messages.t("attention.clear")));
-		if (actions.length > 6)
+		if (actions.length > 3)
 			lines.push(
 				this.link(
 					this.overviewUrl(view.state),
-					this.messages.t("slack.more", { count: actions.length - 6 }),
+					this.messages.t("slack.more", { count: actions.length - 3 }),
 				),
 			);
 		return lines.join("\n");
@@ -70,7 +70,8 @@ export class SlackAttentionPresenter {
 					this.slackCondition(episode, view.state),
 				),
 				...selection.checklist.map(
-					(entry) => `• ${this.escape(`${entry.label}: ${entry.description}`)}`,
+					(entry) =>
+						`• ${this.link(this.overviewUrl(view.state), entry.label)}`,
 				),
 				...selection.remaining.map((episode) =>
 					this.slackCondition(episode, view.state),

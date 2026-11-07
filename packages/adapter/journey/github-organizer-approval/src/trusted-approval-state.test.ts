@@ -25,7 +25,6 @@ describe("trusted approval state", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -80,7 +79,6 @@ describe("trusted approval state", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(request);
@@ -121,7 +119,6 @@ describe("trusted approval state", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			await approvals.request(request);

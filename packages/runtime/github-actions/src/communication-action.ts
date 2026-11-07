@@ -69,9 +69,6 @@ export class CommunicationAction {
 				githubToken: core.getInput("github-token", { required: true }),
 				mailingsToken: core.getInput("mailings-token", { required: true }),
 				slackToken: core.getInput("slack-token", { required: true }),
-				slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
-					required: true,
-				}),
 				owner,
 				repo,
 				repositoryId: process.env.GITHUB_REPOSITORY_ID,

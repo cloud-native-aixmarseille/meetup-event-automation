@@ -38,7 +38,7 @@ export class AttentionPolicy {
 		if (policy === "approval") {
 			const age =
 				now.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
-			return age >= 86_400_000 ? `day:${day}` : undefined;
+			return age >= 86_400_000 ? `day:${day}` : "approval:0";
 		}
 		const eventDay = this.eventDay(date);
 		if (eventDay === undefined) return undefined;

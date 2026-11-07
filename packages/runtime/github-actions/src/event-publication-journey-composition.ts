@@ -31,7 +31,6 @@ export class EventPublicationJourneyComposition {
 			commentAuthorLogin: string;
 			adapters: readonly ConfiguredPublicationAdapter[];
 			slackToken: string;
-			slackOrganizerChannelId: string;
 			website?: {
 				settings: EventWebsiteSettings;
 				createClient: () => GithubWebsiteClient;

@@ -235,10 +235,12 @@ with the issue number, recorded `intent-id`, and one outcome:
   was verified. If uncertain, retain the reservation.
 
 The recovery workflow also requires `locale`, `github-app-client-id`,
-`slack-organizer-channel-id`, `github-app-private-key` and `slack-token`, as shown
+`github-app-private-key` and `slack-token`, as shown
 in its YAML contract. It requires no social provider or AI credentials and sends
 no public post. It creates a separate recovery approval. Approve that exact
 request and rerun the same recovery inputs to record the outcome.
+The next attention audit includes a pending recovery approval in its grouped
+urgent reminder, including after the event. Full evidence stays in the approval comment.
 
 A confirmed published result retains the receipt and suppresses future sends.
 Confirmed non-publication permits one subsequent attempt only while current

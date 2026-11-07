@@ -73,6 +73,7 @@ export class StateEditAuthority {
 		return (
 			isDeepStrictEqual(previous.records.content, next.records.content) &&
 			isDeepStrictEqual(previous.records.social, next.records.social) &&
+			isDeepStrictEqual(previous.records.attention, next.records.attention) &&
 			isDeepStrictEqual(previous.imports, next.imports)
 		);
 	}

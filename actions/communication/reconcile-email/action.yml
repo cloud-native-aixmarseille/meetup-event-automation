@@ -50,15 +50,8 @@ inputs:
   mailings-token:
     description: Token used to dispatch due email communications to the configured mailings repository.
     required: true
-  slack-organizer-channel-id:
-    description:
-      Internal meetup organizer Slack channel for approval requests and actionable organizer
-      reminders. Public announcement channels are separate.
-    required: true
   slack-token:
-    description:
-      Slack bot token with chat:write and reactions:write for organizer notifications and
-      decision reactions.
+    description: Slack bot token with reactions:write to finalize decisions on recorded organizer messages.
     required: true
   conference-hall-event:
     description: Conference Hall CFP slug for live linked profiles and selected proposals.

@@ -36,7 +36,7 @@ export class StoredApprovalSchema {
 		if (
 			typeof state.requestId !== "string" ||
 			!/^approval-[a-f0-9-]{36}$/.test(state.requestId) ||
-			!["new", "reserved", "sent", "retry"].some(
+			!["grouped", "new", "reserved", "sent", "retry"].some(
 				(status) => status === state.notification,
 			)
 		)

@@ -1,4 +1,3 @@
-import * as core from "@actions/core";
 import type { ActionReportData } from "./action-report.js";
 import type { DraftSourceInput } from "./draft-source-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
@@ -21,9 +20,6 @@ export class SocialPublicationAction {
 			...input,
 			credentials: this.dependencies.credentials.read(input.destinations),
 			slackToken: this.dependencies.input.secret("slack-token"),
-			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
-				required: true,
-			}),
 		});
 		const result = await journey.execute({
 			repository: `${input.owner}/${input.repo}`,

@@ -15,6 +15,38 @@ misleading. Follow-up and archival processing needed explicit lifecycle rules.
 
 ## Accepted decisions
 
+### Shared-channel notification budget (2026-11-07)
+
+Accepted from [ADR 0012](0012-notification-journey.md). Slack remains mandatory in
+one shared organizer channel. GitHub owns full task and approval details; Slack
+shows at most three concise pointers and an overflow link. Every approval type
+uses grouped attention, including introduction and thank-you email. Existing
+recorded Slack decision reactions remain retryable.
+
+Allow at most three fresh routine notification attempts in any seven consecutive
+`Europe/Paris` dates, across all meetup issues in the repository and channel.
+D-7/D-3, missing-date and post-event reminders, and initial approval pointers use
+this budget. Approvals overdue by 24 hours, blocked or uncertain external
+deliveries, actionable integration failures, D-1 and D0 are exempt. Urgent posts
+still obey per-issue daily grouping and reservation holds.
+
+Store routine reservations in the existing, verified technical comment of each
+issue. Aggregate recent bot activity across open and closed issues, and serialize
+reporting through a queued repository/channel lock in addition to the issue
+lock. GitHub comments have no atomic compare-and-swap; every direct action caller
+must honor both locks. No storage branch or additional write permission is needed.
+Pending, accepted and definitively deferred attempts hold their dated slot;
+retries reuse its key and reserve the current date before another attempt.
+A slot leaves the window after seven dates, but an uncertain per-issue post
+remains blocked until explicitly verified.
+
+Suppression never acknowledges or clears a task. Update an existing message
+silently; if none exists, keep the work on GitHub. Reassess the current due
+milestone when capacity returns, without replaying obsolete reminders. Failed
+persistence stops a new post. These decisions replace separate initial approval
+alerts and the earlier uncapped routine cadence; checklist and approval authority
+remain unchanged.
+
 ### Host selection and social task ownership (2026-10-30)
 
 Status: Accepted. This replaces the separate host confirmation requirement and

@@ -30592,7 +30592,7 @@ var AttentionPolicy = class {
       return `week:${Math.floor((day - this.day(new Date(episode.openedAt))) / 7)}`;
     if (policy === "approval") {
       const age = now2.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
-      return age >= 864e5 ? `day:${day}` : void 0;
+      return age >= 864e5 ? `day:${day}` : "approval:0";
     }
     const eventDay = this.eventDay(date);
     if (eventDay === void 0) return void 0;
@@ -30767,7 +30767,11 @@ var EvaluateAttention = class {
       ],
       conditions,
       evaluated,
-      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
+      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`).concat(
+        stopped ? [] : facts.stages.filter(
+          (stage) => stage.outcome === "success" && !stage.blocked && !stage.prerequisiteBlocked && !stage.deliveryRecovery
+        ).map((stage) => `delivery-recovery:external-${stage.owner}`)
+      ),
       stopped,
       eventDate: facts.eventDate,
       runId: facts.runId
@@ -30782,6 +30786,18 @@ var EvaluateAttention = class {
     }
   }
   stage(stage, evaluated, conditions) {
+    if (stage.deliveryRecovery) {
+      conditions.push({
+        ...this.condition(
+          "delivery-recovery",
+          stage.owner,
+          `external-${stage.owner}`,
+          "daily"
+        ),
+        recovery: stage.deliveryRecovery === "uncertain" ? true : void 0
+      });
+      return;
+    }
     if (stage.prerequisiteBlocked) return;
     if (stage.outcome !== "unknown") evaluated.push(stage.owner);
     if (stage.outcome === "success" && !stage.blocked) return;
@@ -30825,20 +30841,32 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || postEvent && approval.kind === "meetup-slides" || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
-      if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
+      if (this.relevantApproval(approval, facts.eventDate, postEvent))
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
             approval.kind === "meetup-slides" || approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
-            "approval"
+            approval.recovery ? "daily" : "approval"
           ),
           target: approval.target,
           since: approval.requestedAt,
           commentId: approval.commentId
         });
     }
+  }
+  relevantApproval(approval, eventDate, postEvent) {
+    if (approval.status !== "pending") return false;
+    if (approval.recovery) return true;
+    if (approval.eventDate !== eventDate) return false;
+    const kinds = postEvent ? ["email-thanks", "meetup-slides"] : [
+      "email-introduction",
+      "meetup-publication",
+      "community-publication",
+      "social-publication",
+      "content-review"
+    ];
+    return kinds.includes(approval.kind);
   }
   preparation(facts, eventDay, day, conditions) {
     if (facts.occurrence !== "scheduled" || eventDay !== void 0 && day > eventDay)
@@ -30880,16 +30908,18 @@ var EvaluateAttention = class {
 
 // packages/domain/communication/src/attention/reconcile-attention.ts
 var ReconcileAttention = class {
-  constructor(collaborators, repository, notification, clock) {
+  constructor(collaborators, repository, notification, clock, budget) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.notification = notification;
     this.clock = clock;
+    this.budget = budget;
   }
   collaborators;
   repository;
   notification;
   clock;
+  budget;
   async execute(observation) {
     const now2 = this.clock.now();
     const day = this.collaborators.attentionPolicy.day(now2);
@@ -30912,7 +30942,15 @@ var ReconcileAttention = class {
     if (state.post?.status === "retry" && Date.parse(state.post.retryAt ?? "") > now2.getTime())
       return { ...base, notificationFailed: true };
     if (due.length && state.post?.day !== day || due.length && state.post?.status === "retry")
-      return this.post(state, now2);
+      return this.post(
+        state,
+        now2,
+        this.collaborators.attentionRoutingPolicy.urgent(
+          due,
+          state.eventDate,
+          now2
+        )
+      );
     return this.update(state, now2);
   }
   async update(state, now2) {
@@ -30934,10 +30972,13 @@ var ReconcileAttention = class {
     await this.repository.save(state);
     return base;
   }
-  async post(state, now2) {
+  async post(state, now2, urgent) {
     const day = this.collaborators.attentionPolicy.day(now2);
+    const reservationId = state.post?.status === "retry" ? state.post.reservationId : `attention:${day}:${day}`;
+    if (!urgent && !await this.budget.reserve(reservationId, day))
+      return this.update(state, now2);
     state.post = {
-      reservationId: `attention:${day}:${now2.getTime()}`,
+      reservationId,
       day,
       reservedAt: now2.toISOString(),
       status: "pending"
@@ -30961,6 +31002,8 @@ var ReconcileAttention = class {
       state.post.retryAt = new Date(now2.getTime() + delay * 1e3).toISOString();
     }
     await this.repository.save(state);
+    if (!urgent && result.outcome !== "uncertain")
+      await this.budget.settle(reservationId, day, result.outcome);
     return {
       active: view.conditions.length,
       posted: result.outcome === "accepted",
@@ -31053,6 +31096,45 @@ var AttentionEpisodes = class {
       );
       if (window) episode.lastWindow = window;
     }
+  }
+};
+
+// packages/domain/communication/src/attention/attention-budget-policy.ts
+var AttentionBudgetPolicy = class {
+  reserve(slots, key, day) {
+    const retained = slots.filter((slot) => slot.day >= day - 6);
+    const existing = retained.find((slot) => slot.key === key);
+    if (existing?.status === "accepted") return void 0;
+    const others = retained.filter((slot) => slot.key !== key);
+    if (others.length >= 3) return void 0;
+    return [...others, { key, day, status: "pending" }];
+  }
+  settle(slots, key, status) {
+    const existing = slots.find((slot) => slot.key === key);
+    if (!existing || existing.status === "accepted" && status !== "accepted")
+      throw new Error("Invalid attention budget settlement");
+    return slots.map((slot) => slot.key === key ? { ...slot, status } : slot);
+  }
+};
+
+// packages/domain/communication/src/attention/attention-routing-policy.ts
+var AttentionRoutingPolicy = class {
+  constructor(policy) {
+    this.policy = policy;
+  }
+  policy;
+  urgent(due, eventDate, now2) {
+    return due.some((episode) => {
+      const { code, resource, since } = episode.condition;
+      if (code === "delivery-recovery") return true;
+      if (code === "integration-failure" && resource !== "event-data")
+        return true;
+      if (code === "approval-pending" && (episode.condition.policy === "daily" || now2.getTime() - Date.parse(since ?? episode.openedAt) >= 864e5))
+        return true;
+      return ["preparation:1", "preparation:0"].includes(
+        this.policy.window(episode, eventDate, now2) ?? ""
+      );
+    });
   }
 };
 
@@ -31730,6 +31812,12 @@ var ReconcileCommunications = class {
 
 // packages/domain/communication/src/dependency-composition.ts
 var CommunicationDomainComposition = class {
+  attentionBudgetPolicy() {
+    return new AttentionBudgetPolicy();
+  }
+  attentionRoutingPolicy() {
+    return new AttentionRoutingPolicy(this.attentionPolicy());
+  }
   attentionEpisodes() {
     return new AttentionEpisodes({ attentionPolicy: this.attentionPolicy() });
   }
@@ -31791,6 +31879,7 @@ var CommunicationDomainComposition = class {
   reconcileAttention(...args) {
     return new ReconcileAttention(
       {
+        attentionRoutingPolicy: this.attentionRoutingPolicy(),
         attentionPolicy: this.attentionPolicy(),
         attentionEpisodes: this.attentionEpisodes()
       },
@@ -33014,14 +33103,33 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       const failureResource = diagnostics.find(
         (item) => _AttentionStageEvaluation.MEETUP_FAILURES.has(item.code) && this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
       )?.code;
+      const deliveryRecovery = this.deliveryRecovery(diagnostics);
       return {
         owner,
         outcome,
         blocked,
+        ...deliveryRecovery ? { deliveryRecovery } : {},
         ...failureResource ? { failureResource } : {},
         ...prerequisiteBlocked ? { prerequisiteBlocked: true } : {}
       };
     });
+  }
+  deliveryRecovery(diagnostics) {
+    const actionable = diagnostics.filter(
+      (item) => this.collaborators.diagnosticPolicy.classify(item) !== "informational"
+    );
+    if (actionable.some(
+      (item) => [
+        "communication.social.uncertain",
+        "publication.meetup.uncertain",
+        "publication.community.uncertain",
+        "publication.meetup.slides-delivery-recovery"
+      ].includes(item.code)
+    ))
+      return "uncertain";
+    return actionable.some(
+      (item) => item.code === "communication.social.blocked"
+    ) ? "blocked" : void 0;
   }
   static MEETUP_FAILURES = /* @__PURE__ */ new Set([
     "publication.meetup.authentication-configuration",
@@ -35452,9 +35560,6 @@ var CommunicationInput = class {
       throw new Error(
         "owner and repo must be valid GitHub repository segments"
       );
-    }
-    if (!input.slackOrganizerChannelId.trim()) {
-      throw new Error("slackOrganizerChannelId must not be empty");
     }
     if (!input.managedCommentAuthor.trim()) {
       throw new Error("managedCommentAuthor must not be empty");

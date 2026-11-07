@@ -18,6 +18,10 @@ import {
 export function followUpFixture() {
 	const f = fixture();
 	const client = getOctokit("synthetic-token");
+	client.rest.issues.listCommentsForRepo = vi.fn().mockResolvedValue({
+		data: [],
+		headers: {},
+	}) as unknown as typeof client.rest.issues.listCommentsForRepo;
 	client.rest.issues.getComment = f.api.rest.issues
 		.getComment as unknown as typeof client.rest.issues.getComment;
 	client.rest.issues.listComments =
