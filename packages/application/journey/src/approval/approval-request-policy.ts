@@ -12,8 +12,7 @@ export class ApprovalRequestPolicy {
 			return `content:${request.content.key}`;
 		if (request.kind === "social-publication")
 			return `social:${request.social.intentId}:${request.social.recovery ? "recovery" : "publication"}`;
-		if (request.kind === "email-introduction" && request.details?.mailKind)
-			return `email:${request.details.mailKind}`;
+		if (request.details?.mailKind) return `email:${request.details.mailKind}`;
 		return request.kind;
 	}
 	canReplaceCombinedEmail(
@@ -66,7 +65,7 @@ export class ApprovalRequestPolicy {
 		readonly followUpActive?: boolean;
 		readonly decided: boolean;
 	}): "inactive" | "final" | "pending" {
-		if (facts.recipientCount === 0 || facts.followUpActive === false)
+		if (facts.recipientCount === 0 || facts.followUpActive !== undefined)
 			return "inactive";
 		return facts.decided ? "final" : "pending";
 	}
@@ -126,8 +125,11 @@ export class ApprovalRequestPolicy {
 			{ kind: "email-introduction" | "email-thanks" }
 		>,
 	): void {
-		if (request.details?.mailKind && request.kind !== "email-introduction")
-			throw new Error("Invalid preparation email scope");
+		if (
+			request.details?.mailKind &&
+			!request.details.mailKind.endsWith(request.kind.replace("email-", "-"))
+		)
+			throw new Error("Invalid email approval scope");
 		if (
 			request.details &&
 			request.details.emails.length + request.details.omittedEmails !==
@@ -143,6 +145,7 @@ export class ApprovalRequestPolicy {
 	): boolean {
 		if (
 			previous.kind !== request.kind ||
+			this.scope(previous) !== this.scope(request) ||
 			previous.revision !== request.revision ||
 			previous.eventDate !== request.eventDate
 		)

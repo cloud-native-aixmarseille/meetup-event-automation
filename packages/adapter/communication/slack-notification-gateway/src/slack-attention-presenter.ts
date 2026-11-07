@@ -120,6 +120,14 @@ export class SlackAttentionPresenter {
 	private action(episode: AttentionEpisode): string {
 		if (
 			this.collaborators.attentionTaskSelection.actionFor(episode) ===
+				"email-approval" &&
+			episode.condition.target
+		)
+			return this.messages.t("action.email-target-approval-pending", {
+				target: episode.condition.target.replaceAll("-", "_"),
+			});
+		if (
+			this.collaborators.attentionTaskSelection.actionFor(episode) ===
 			"slides-approval"
 		)
 			return this.messages.t("action.slides-approval-pending");

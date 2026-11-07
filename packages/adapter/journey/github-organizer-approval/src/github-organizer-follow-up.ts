@@ -19,7 +19,8 @@ export class GithubOrganizerFollowUp implements OrganizerFollowUp {
 		input: OrganizerFollowUpInput,
 	): Promise<number | undefined> {
 		const existing = (await this.repository.states()).find(
-			({ record }) => record.kind === "email-thanks",
+			({ record }) =>
+				record.kind === "email-thanks" && !record.details?.mailKind,
 		);
 		if (!existing && !input.active) return undefined;
 		if (existing) await this.finalizer.execute(existing);

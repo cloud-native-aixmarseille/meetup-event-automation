@@ -59,6 +59,8 @@ export const messages = {
 	"action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
 	"action.manual-publication": "{task}.",
 	"action.meetup-approval-pending": "Approve or reject Meetup publication.",
+	"action.email-target-approval-pending":
+		"{target, select, host_introduction {Approve or reject the host preparation email.} speaker_introduction {Approve or reject the speaker preparation emails.} host_thanks {Approve or reject the host thank-you email.} speaker_thanks {Approve or reject the speaker thank-you emails.} other {Approve or reject the emails.}}",
 	"action.approval-pending": "Approve or reject the emails.",
 	"action.integration-failure": "Automation failed: {task}.",
 	"action.delivery-recovery": "Verify delivery before retrying.",

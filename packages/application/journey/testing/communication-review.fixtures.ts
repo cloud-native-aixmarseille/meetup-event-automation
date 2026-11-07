@@ -11,7 +11,9 @@ import type {
 } from "../src/ports/organizer-approval.js";
 import { CommunicationApprovalDetails } from "../src/use-cases/communication-approval-details.js";
 
-export function communicationReviewFixture() {
+export function communicationReviewFixture(
+	phase: "introduction" | "thanks" = "introduction",
+) {
 	const domain = new CommunicationDomainComposition();
 	const entries = new Map<string, DeliveryLedgerEntry>();
 	const ledger = {
@@ -44,7 +46,12 @@ export function communicationReviewFixture() {
 		dispatch: vi.fn(async () => ({ outcome: "accepted" as const })),
 	};
 	const planner = domain.planCommunications();
-	const clock = { now: () => new Date("2099-06-01T10:00:00Z") };
+	const clock = {
+		now: () =>
+			new Date(
+				phase === "thanks" ? "2099-06-09T10:00:00Z" : "2099-06-01T10:00:00Z",
+			),
+	};
 	const reconciler = domain.reconcileCommunications({
 		planner,
 		clock,

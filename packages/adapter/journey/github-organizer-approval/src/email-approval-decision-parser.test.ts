@@ -1,12 +1,18 @@
 import { EmailReviewParameterPolicy } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { createStoredApproval } from "../testing/approval.fixtures.js";
-import { emailReviewRequest } from "../testing/email-review.fixtures.js";
+import { emailReviewFor } from "../testing/email-review.fixtures.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { EmailApprovalDecisionParser } from "./email-approval-decision-parser.js";
 import { EmailParametersPreview } from "./email-parameters-preview.js";
 
-describe("editable email approvals", () => {
+describe.each([
+	"host-introduction",
+	"speaker-introduction",
+	"host-thanks",
+	"speaker-thanks",
+] as const)("editable %s approvals", (kind) => {
+	const emailReviewRequest = emailReviewFor(kind);
 	it.each(["en", "fr"])(
 		"approves edited public values while protecting the rest of the %s request",
 		(locale) => {
@@ -28,7 +34,7 @@ describe("editable email approvals", () => {
 			expect(decision).toEqual({
 				status: "approved",
 				emailParameters: {
-					...emailReviewRequest.details.parameters,
+					...emailReviewRequest.details?.parameters,
 					eventDate: "2099-06-09",
 				},
 			});

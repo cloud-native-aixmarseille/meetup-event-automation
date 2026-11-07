@@ -30,9 +30,12 @@ export class EmailApprovalDetailsSchema {
 			throw new Error("Invalid approval details");
 		if (
 			details.mailKind !== undefined &&
-			(!["host-introduction", "speaker-introduction"].includes(
-				String(details.mailKind),
-			) ||
+			(![
+				"host-introduction",
+				"speaker-introduction",
+				"host-thanks",
+				"speaker-thanks",
+			].includes(String(details.mailKind)) ||
 				!details.emails.every((email) => email.kind === details.mailKind))
 		)
 			throw new Error("Invalid email approval scope");

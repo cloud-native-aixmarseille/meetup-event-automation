@@ -16,7 +16,7 @@ export type ApprovalNotificationFacts = {
 	| {
 			readonly kind: "email-introduction";
 			readonly recipientCount: number;
-			readonly mailKind?: "host-introduction" | "speaker-introduction";
+			readonly mailKind?: import("@meetup-automation/communication").MailCommunicationKind;
 	  }
 	| { readonly kind: "meetup-slides" }
 	| { readonly kind: "meetup-publication" }

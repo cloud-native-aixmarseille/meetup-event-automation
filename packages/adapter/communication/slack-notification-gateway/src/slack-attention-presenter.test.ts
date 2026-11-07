@@ -286,3 +286,38 @@ describe("Slack attention presentation", () => {
 		);
 	});
 });
+
+it.each(["en", "fr"])(
+	"identifies each thank-you approval and its link in %s",
+	(locale) => {
+		// Arrange
+		const presenter = attentionFixture(locale);
+		const conditions = ["host-thanks", "speaker-thanks"].map(
+			(target, index) => {
+				const value = episode("approval-pending", `revision-${index}`);
+				return {
+					...value,
+					condition: { ...value.condition, target, commentId: 200 + index },
+				};
+			},
+		);
+		// Act
+		const body = presenter.render({
+			state: { ...state(), commentId: 100 },
+			conditions,
+		});
+		// Assert
+		expect(body).toContain(
+			locale === "fr"
+				? "l'email de remerciement pour l'hôte"
+				: "host thank-you email",
+		);
+		expect(body).toContain(
+			locale === "fr"
+				? "emails de remerciement pour les intervenants"
+				: "speaker thank-you emails",
+		);
+		expect(body).toContain("#issuecomment-200");
+		expect(body).toContain("#issuecomment-201");
+	},
+);

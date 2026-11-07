@@ -63,6 +63,8 @@ export const messages = {
 	"action.manual-publication": "{task}.",
 	"action.meetup-approval-pending":
 		"Approuvez ou refusez la publication Meetup.",
+	"action.email-target-approval-pending":
+		"{target, select, host_introduction {Approuvez ou refusez l'email de préparation pour l'hôte.} speaker_introduction {Approuvez ou refusez les emails de préparation pour les intervenants.} host_thanks {Approuvez ou refusez l'email de remerciement pour l'hôte.} speaker_thanks {Approuvez ou refusez les emails de remerciement pour les intervenants.} other {Approuvez ou refusez les emails.}}",
 	"action.approval-pending": "Approuvez ou refusez les emails.",
 	"action.integration-failure": "Automatisation en échec : {task}.",
 	"action.delivery-recovery": "Vérifiez l'envoi avant toute reprise.",

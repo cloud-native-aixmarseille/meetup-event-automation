@@ -15,7 +15,7 @@ export class FollowUpApprovalPolicy {
 		request: OrganizerApprovalRequest,
 		previous?: FollowUpProgress,
 	): FollowUpProgress | undefined {
-		return request.kind === "email-thanks"
+		return request.kind === "email-thanks" && !request.details?.mailKind
 			? (previous ?? { active: true, pendingTasks: FOLLOW_UP_TASKS })
 			: undefined;
 	}
@@ -33,10 +33,8 @@ export class FollowUpApprovalPolicy {
 	}
 	progressState(
 		progress: FollowUpProgress,
-		recipientCount: number,
-	): "stopped" | "waiting" | "emails-complete" | "review" {
+	): "stopped" | "waiting" | "emails-complete" {
 		if (!progress.active) return "stopped";
-		if (recipientCount > 0) return "review";
 		return progress.pendingTasks.some(
 			(task) => task === "thank-host" || task === "thank-speakers",
 		)

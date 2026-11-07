@@ -1,5 +1,6 @@
 import type { OrganizerApprovalDetails } from "@meetup-automation/journey";
 import { EmailReviewParameterPolicy } from "@meetup-automation/journey";
+import { emailReviewFor } from "../testing/email-review.fixtures.js";
 import { describe, expect, it } from "vitest";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
@@ -62,5 +63,31 @@ describe("approval detail validation", () => {
 
 		// Assert
 		expect(validate).not.toThrow();
+	});
+});
+
+describe("scoped email details", () => {
+	it.each([
+		"host-introduction",
+		"speaker-introduction",
+		"host-thanks",
+		"speaker-thanks",
+	] as const)("rejects mixed email kinds within %s", (kind) => {
+		// Arrange
+		const input = emailReviewFor(kind).details;
+		const schema = new EmailApprovalDetailsSchema({
+			parameterPolicy: new EmailReviewParameterPolicy(),
+			approvalSchema: new GithubOrganizerApprovalComposition().approvalSchema(),
+		});
+		// Act
+		const valid = () => schema.validate(input);
+		const mixed = () =>
+			schema.validate({
+				...input,
+				mailKind: kind === "host-thanks" ? "speaker-thanks" : "host-thanks",
+			});
+		// Assert
+		expect(valid).not.toThrow();
+		expect(mixed).toThrow("Invalid email approval scope");
 	});
 });

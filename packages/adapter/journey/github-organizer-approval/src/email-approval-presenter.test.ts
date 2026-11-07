@@ -9,6 +9,7 @@ import {
 	detailedRequest,
 	request,
 } from "../testing/approval.fixtures.js";
+import { emailReviewFor } from "../testing/email-review.fixtures.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { EmailApprovalPresenter } from "./email-approval-presenter.js";
 import { EmailDeliveryPresenter } from "./email-delivery-presenter.js";
@@ -186,4 +187,43 @@ describe("approval request details", () => {
 		expect(body).toContain("Reliable platforms</a>");
 		expect(body).not.toContain("- [ ]");
 	});
+});
+
+describe.each(["en", "fr"])("scoped email review in %s", (locale) => {
+	it.each(["host-thanks", "speaker-thanks"] as const)(
+		"shows public parameters and recipient-specific details for %s",
+		(kind) => {
+			// Arrange
+			const composition = new GithubOrganizerApprovalComposition();
+			const presenter = composition.approvalPresenter(
+				composition.approvalMessages(locale),
+			);
+			const record = createStoredApproval(emailReviewFor(kind));
+			// Act
+			const body = presenter.issue(record, { status: "pending" });
+			// Assert
+			expect(body).toContain(
+				locale === "fr"
+					? kind === "host-thanks"
+						? "Email de remerciement — hôte"
+						: "Emails de remerciement — intervenants"
+					: kind === "host-thanks"
+						? "Thank-you email — host"
+						: "Thank-you emails — speakers",
+			);
+			expect(body).toContain("- `eventDate` : `2099-06-08`");
+			expect(body).toContain(
+				"- `eventSlidesUrl` : `https://docs.google.com/presentation/d/example/edit`",
+			);
+			expect(body).toContain("Example Host");
+			if (kind === "speaker-thanks") {
+				expect(body).toContain(
+					'href="https://openfeedback.io/example/0/talk?displayVotes=true"',
+				);
+				expect(body).toContain("Reliable platforms</a>");
+			}
+			expect(body).not.toContain("## Post-event follow-up");
+			expect(body).not.toContain("## Suivi après le meetup");
+		},
+	);
 });

@@ -156,8 +156,9 @@ Mark cancelled or postponed events accordingly; no `event:held` label is needed
 for follow-up, and the calendar alone does not change the recorded occurrence.
 
 Use the single **Post-event follow-up** comment to review all five task statuses
-and approve or reject the thank-you email batch. Leave both choices unchecked to
-wait; checking both keeps the request pending. Approval sends only the unfinished
+and follow the links to the separate host and speaker thank-you requests. Review
+the parameters and feedback links in each request, then approve or reject that
+email type. Leave both choices unchecked to wait; checking both keeps the request pending. Approval sends only the unfinished
 emails, with completion recorded after accepted dispatch. Speaker emails include
 OpenFeedback report links. Slide sharing on Meetup is automatic. Import attendance
 into CNCF and post the event recap, then check the corresponding organizer tasks.
