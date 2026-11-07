@@ -1,5 +1,8 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { LocalizationComposition } from "@meetup-automation/localization";
+import { AttentionBudgetRecord } from "./attention-budget-record.js";
+import { GithubAttentionBudget } from "./github-attention-budget.js";
+import { GithubAttentionBudgetSource } from "./github-attention-budget-source.js";
 import {
 	AttentionCommentRetention,
 	type AttentionCommentRetentionArguments,
@@ -30,6 +33,28 @@ import {
 } from "./trusted-attention-state.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class GithubOrganizerAttentionComposition {
+	attentionBudgetRecord(): AttentionBudgetRecord {
+		return new AttentionBudgetRecord(this.attentionRecordFields());
+	}
+	githubAttentionBudgetSource(
+		...args: ConstructorParameters<typeof GithubAttentionBudgetSource>
+	): GithubAttentionBudgetSource {
+		return new GithubAttentionBudgetSource(...args);
+	}
+	githubAttentionBudget(
+		source: ConstructorParameters<typeof GithubAttentionBudget>[0],
+		createState: ConstructorParameters<typeof GithubAttentionBudget>[1],
+		issueNumber: number,
+		channel: string,
+	): GithubAttentionBudget {
+		return new GithubAttentionBudget(
+			source,
+			createState,
+			this.attentionBudgetRecord(),
+			issueNumber,
+			channel,
+		);
+	}
 	attentionRecordFields(): AttentionRecordFields {
 		return new AttentionRecordFields();
 	}

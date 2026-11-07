@@ -35,6 +35,10 @@ describe("attention runtime composition", () => {
 		// Arrange
 		const f = fixture();
 		const client = getOctokit("synthetic-token");
+		client.rest.issues.listCommentsForRepo = vi.fn().mockResolvedValue({
+			data: [],
+			headers: {},
+		}) as unknown as typeof client.rest.issues.listCommentsForRepo;
 		client.rest.issues.getComment = f.api.rest.issues
 			.getComment as unknown as typeof client.rest.issues.getComment;
 		client.rest.issues.listComments =
@@ -120,7 +124,12 @@ describe("attention runtime composition", () => {
 			"https://slack.com/api/chat.postMessage",
 			"https://slack.com/api/chat.update",
 		]);
-		expect(f.comments).toHaveLength(1);
+		expect(
+			f.comments.filter(
+				(comment) =>
+					!comment.body?.startsWith("<!-- meetup-automation-state:v1 "),
+			),
+		).toHaveLength(1);
 		expect(f.comments[0]?.body).toContain('"status":"accepted"');
 		expect(f.comments[0]?.body).not.toContain("hoster:confirmed");
 		expect(f.comments[0]?.body).not.toContain("Sélectionnez un hôte");
@@ -161,7 +170,6 @@ describe("post-event attention composition", () => {
 		expect(f.comments[0]?.body).toContain(action);
 		expect(f.minimized.has("comment-100")).toBe(true);
 		expect(f.minimized.has("comment-101")).toBe(false);
-		expect(f.dispatch).not.toHaveBeenCalled();
 	});
 	it("keeps blocked preparation and recovery guidance visible alongside task progress", async () => {
 		// Arrange
@@ -175,7 +183,12 @@ describe("post-event attention composition", () => {
 
 		// Assert
 		expect(result.posted).toBe(true);
-		expect(f.comments).toHaveLength(1);
+		expect(
+			f.comments.filter(
+				(comment) =>
+					!comment.body?.startsWith("<!-- meetup-automation-state:v1 "),
+			),
+		).toHaveLength(1);
 		expect(body).toContain(
 			"Approve host and speaker thank-you emails separately",
 		);
@@ -200,7 +213,6 @@ describe("post-event attention composition", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		const followUp = new GithubOrganizerFollowUp(
@@ -225,19 +237,23 @@ describe("post-event attention composition", () => {
 		expect(first.posted).toBe(true);
 		expect(second.posted).toBe(false);
 		expect(second.notificationFailed).toBe(false);
-		expect(f.comments).toHaveLength(3);
+		expect(
+			f.comments.filter(
+				(comment) =>
+					!comment.body?.startsWith("<!-- meetup-automation-state:v1 "),
+			),
+		).toHaveLength(3);
 		expect(body).not.toContain("- [ ] ✅ Approve sending");
 		expect(body).toContain("host thank-you email.");
 		expect(body).toContain("speaker thank-you emails.");
-		expect(body).toContain("#issuecomment-101");
 		expect(body).toContain("#issuecomment-102");
+		expect(body).toContain("#issuecomment-103");
 		expect(
 			state.episodes.filter(
 				(episode) => episode.condition.code === "follow-up",
 			),
 		).toHaveLength(5);
 		expect(state.commentId).toBe(100);
-		expect(f.dispatch).not.toHaveBeenCalled();
 		expect(
 			f.fetcher.mock.calls.filter(([url]) =>
 				String(url).endsWith("chat.postMessage"),
@@ -263,7 +279,6 @@ describe("post-event attention composition", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		await approvals.request(emailReviewFor("host-thanks"));
@@ -292,7 +307,12 @@ describe("post-event attention composition", () => {
 		expect(result.active).toBe(0);
 		expect(result.notificationFailed).toBe(false);
 		expect(approved.status).toBe("approved");
-		expect(f.comments).toHaveLength(2);
+		expect(
+			f.comments.filter(
+				(comment) =>
+					!comment.body?.startsWith("<!-- meetup-automation-state:v1 "),
+			),
+		).toHaveLength(2);
 		expect(
 			f.fetcher.mock.calls.filter(([url]) =>
 				String(url).endsWith("chat.postMessage"),
@@ -329,7 +349,12 @@ describe("post-event attention composition", () => {
 		expect(retry.notificationFailed).toBe(true);
 		expect(state.post?.status).toBe("pending");
 		expect(f.fetcher).toHaveBeenCalledTimes(1);
-		expect(f.comments).toHaveLength(2);
+		expect(
+			f.comments.filter(
+				(comment) =>
+					!comment.body?.startsWith("<!-- meetup-automation-state:v1 "),
+			),
+		).toHaveLength(2);
 		expect(f.comments[0]?.body).toContain("Post-event tasks and approvals");
 		expect(f.comments[0]?.body).not.toContain("meetup-organizer-attention:v1");
 	});

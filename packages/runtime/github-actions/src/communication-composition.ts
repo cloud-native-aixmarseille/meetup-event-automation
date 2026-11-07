@@ -47,7 +47,6 @@ type CommunicationCompositionInput = EventCompositionInput & {
 	readonly mailingsToken: string;
 	readonly openFeedbackApiKey?: string;
 	readonly slackToken: string;
-	readonly slackOrganizerChannelId: string;
 };
 
 type DeliveryLedgerFactory = (
@@ -156,11 +155,7 @@ export class CommunicationComposition {
 				),
 				new SlackNotificationGatewayComposition().slackApprovalNotification(
 					input.slackToken,
-					new SlackNotificationGatewayComposition().slackApprovalPresenter(
-						input.locale,
-					),
 				),
-				input.slackOrganizerChannelId,
 				OrganizerApprovalComposition.visibility(input),
 			);
 			return new JourneyCommunicationComposition().manageMeetupCommunications({

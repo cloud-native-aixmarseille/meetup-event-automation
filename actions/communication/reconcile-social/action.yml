@@ -34,10 +34,7 @@ inputs:
     description: JSON credentials for configured Slack workspaces and optional LinkedIn access token with Google service account for announcement media.
     required: true
   slack-token:
-    description: Slack bot token for organizer review requests and decision reactions.
-    required: true
-  slack-organizer-channel-id:
-    description: Internal organizer channel receiving content reviews.
+    description: Slack bot token with reactions:write to finalize decisions on recorded organizer messages.
     required: true
 outputs:
   diagnostics:

@@ -26,7 +26,10 @@ export class GithubApprovalAttentionSource implements AttentionApprovalSource {
 					? { target: state.record.details.mailKind }
 					: {}),
 				...(state.record.kind === "social-publication"
-					? { target: state.record.social.target }
+					? {
+							target: state.record.social.target,
+							...(state.record.social.recovery ? { recovery: true } : {}),
+						}
 					: {}),
 				revision: state.record.revision,
 				requestedAt: state.record.requestedAt,

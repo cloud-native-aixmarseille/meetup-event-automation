@@ -8,7 +8,6 @@ export class EventPublicationApprovalComposition {
 			issueNumber: number;
 			commentAuthorLogin: string;
 			slackToken: string;
-			slackOrganizerChannelId: string;
 		},
 	) {
 		return OrganizerApprovalComposition.create(
@@ -24,11 +23,7 @@ export class EventPublicationApprovalComposition {
 			),
 			new SlackNotificationGatewayComposition().slackApprovalNotification(
 				input.slackToken,
-				new SlackNotificationGatewayComposition().slackApprovalPresenter(
-					input.locale,
-				),
 			),
-			input.slackOrganizerChannelId,
 			OrganizerApprovalComposition.visibility(input),
 		).approval;
 	}

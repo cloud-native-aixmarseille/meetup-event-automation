@@ -14,7 +14,6 @@ export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
 	readonly mailingsToken: string;
 	readonly openFeedbackApiKey: string;
 	readonly slackToken: string;
-	readonly slackOrganizerChannelId: string;
 	readonly owner: string;
 	readonly repo: string;
 	readonly repositoryId?: string;
@@ -72,9 +71,6 @@ export class CommunicationInput {
 			throw new Error(
 				"owner and repo must be valid GitHub repository segments",
 			);
-		}
-		if (!input.slackOrganizerChannelId.trim()) {
-			throw new Error("slackOrganizerChannelId must not be empty");
 		}
 		if (!input.managedCommentAuthor.trim()) {
 			throw new Error("managedCommentAuthor must not be empty");

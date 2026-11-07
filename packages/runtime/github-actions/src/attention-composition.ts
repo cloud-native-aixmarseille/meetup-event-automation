@@ -15,6 +15,7 @@ import {
 	type AutomationConfig,
 	JourneyComposition,
 	ManageMeetupAttention,
+	SharedAttentionBudget,
 } from "@meetup-automation/journey";
 import { SlackNotificationGatewayComposition } from "@meetup-automation/slack-notification-gateway";
 import {
@@ -29,6 +30,7 @@ import {
 } from "./composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 import { PublicationPolicyComposition } from "./publication-policy-composition.js";
+import { AutomationStateComposition } from "./automation-state-composition.js";
 
 type ApprovalCapabilities = ReturnType<
 	typeof OrganizerApprovalComposition.create
@@ -143,11 +145,7 @@ export class AttentionComposition {
 			),
 			new SlackNotificationGatewayComposition().slackApprovalNotification(
 				input.slackToken,
-				new SlackNotificationGatewayComposition().slackApprovalPresenter(
-					input.locale,
-				),
 			),
-			input.slackOrganizerChannelId,
 			OrganizerApprovalComposition.visibility(input),
 		);
 	}
@@ -197,9 +195,31 @@ export class AttentionComposition {
 								ATTENTION_SERVICES.notification,
 							),
 							clock,
+							AttentionComposition.budget(input),
 						),
 				},
 			);
 		});
+	}
+	private static budget(
+		input: AttentionCompositionInput,
+	): SharedAttentionBudget {
+		const attention = new GithubOrganizerAttentionComposition();
+		return new SharedAttentionBudget(
+			new CommunicationDomainComposition().attentionBudgetPolicy(),
+			attention.githubAttentionBudget(
+				attention.githubAttentionBudgetSource(
+					input.client,
+					input.owner,
+					input.repo,
+					input.commentAuthorLogin,
+				),
+				(issueNumber) =>
+					new AutomationStateComposition().create({ ...input, issueNumber }),
+				input.issueNumber,
+				input.slackOrganizerChannelId,
+			),
+			input.issueNumber,
+		);
 	}
 }

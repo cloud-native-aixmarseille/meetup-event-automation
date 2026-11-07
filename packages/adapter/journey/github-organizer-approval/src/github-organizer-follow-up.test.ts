@@ -27,7 +27,6 @@ describe("post-event follow-up", () => {
 			f.repository,
 			f.records,
 			f.finalizer,
-			f.notifications,
 			f.client,
 		);
 		const overview = new GithubOrganizerFollowUp(
@@ -68,7 +67,6 @@ describe("post-event follow-up", () => {
 			{ commentId: 101, status: "pending" },
 		]);
 		expect(restored).toEqual({ commentId, body: "serialized-reservation" });
-		expect(f.dispatch).not.toHaveBeenCalled();
 		expect(f.react).not.toHaveBeenCalled();
 	});
 
@@ -82,7 +80,6 @@ describe("post-event follow-up", () => {
 				f.repository,
 				f.records,
 				f.finalizer,
-				f.notifications,
 				f.client,
 			);
 			const overview = new GithubOrganizerFollowUp(

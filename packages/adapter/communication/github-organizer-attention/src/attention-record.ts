@@ -85,7 +85,7 @@ export class AttentionRecord {
 					? undefined
 					: this.collaborators.attentionRecordFields.text(
 							data.lastWindow,
-							/^(?:day|week|preparation|occurrence|follow-up):-?\d+$/,
+							/^(?:day|week|preparation|occurrence|follow-up|approval):-?\d+$/,
 						),
 		};
 	}

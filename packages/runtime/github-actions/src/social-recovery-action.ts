@@ -32,9 +32,6 @@ export class SocialRecoveryAction {
 				required: true,
 			}),
 			slackToken: this.secret("slack-token"),
-			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
-				required: true,
-			}),
 		});
 		const status = await journey.execute(recovery);
 		return {

@@ -105,3 +105,11 @@ export type {
 	SocialDeliveryRecord,
 	SocialDeliveryJournal,
 } from "./social/social-publication-ports.js";
+export type {
+	AttentionBudget,
+	AttentionBudgetRepository,
+	AttentionBudgetSlot,
+	AttentionBudgetSnapshot,
+} from "./attention/attention-budget.js";
+export { AttentionBudgetPolicy } from "./attention/attention-budget-policy.js";
+export { AttentionRoutingPolicy } from "./attention/attention-routing-policy.js";

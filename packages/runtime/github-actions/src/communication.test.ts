@@ -17,6 +17,7 @@ vi.mock("@actions/github", () => ({ getOctokit: getOctokitMock }));
 
 import {
 	approveEmailRequests,
+	recordEmailNotificationMessages,
 	reviewedMailPayloads,
 	cleanupCommunicationFixtures,
 	createWorkspace,
@@ -980,6 +981,7 @@ describe("organizer approval for email batches", () => {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			localeResolver: new LocalizationComposition().localeResolver(),
 		}).runCommunicationReconcile(f.input);
+		await recordEmailNotificationMessages(f);
 		approveEmailRequests(f);
 		vi.mocked(fetch).mockResolvedValue({
 			ok: true,
@@ -1040,7 +1042,7 @@ describe("organizer approval for email batches", () => {
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
 		expect(f.comments[0]?.body).toContain("✅ Approved");
 	});
-	it("finalizes rejection and reacts on Slack without sending email", async () => {
+	it("finalizes rejection without sending email or a separate Slack message", async () => {
 		// Arrange
 		const f = await setup();
 		await new CommunicationRuntime({
@@ -1085,17 +1087,7 @@ describe("organizer approval for email batches", () => {
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
 		expect(f.comments[0]?.body).toContain("❌ Rejected by @organizer");
 		expect(f.comments[0]?.body).not.toContain("- [");
-		expect(fetch).toHaveBeenCalledTimes(4);
-		expect(fetch).toHaveBeenLastCalledWith(
-			"https://slack.com/api/reactions.add",
-			expect.objectContaining({
-				body: JSON.stringify({
-					channel: "C12345",
-					timestamp: "100.001",
-					name: "x",
-				}),
-			}),
-		);
+		expect(fetch).not.toHaveBeenCalled();
 	});
 	beforeEach(() => {
 		vi.stubGlobal(
@@ -1398,28 +1390,11 @@ describe("organizer approval for email batches", () => {
 					? "- [x] Mail introduction"
 					: "- [x] Send host introduction email",
 			);
-			expect(fetch).toHaveBeenCalledTimes(4);
-			const notification = JSON.parse(
-				vi.mocked(fetch).mock.calls[0]?.[1]?.body as string,
-			);
-			expect(notification.channel).toBe("C12345");
+			expect(fetch).not.toHaveBeenCalled();
 			expect(f.issue.body).toContain("- [ ] Slack - Public Community");
-			expect(notification.text).toContain(
-				"https://github.com/organization/meetups/issues/42#issuecomment-",
-			);
 			expect(f.comments[0]?.body).toContain("✅ Approved by @organizer");
 			expect([...f.minimized]).toContain(f.comments[0]?.node_id);
 			expect(f.comments[0]?.body).not.toContain("- [");
-			expect(fetch).toHaveBeenCalledWith(
-				"https://slack.com/api/reactions.add",
-				expect.objectContaining({
-					body: JSON.stringify({
-						channel: "C12345",
-						timestamp: "100.001",
-						name: "white_check_mark",
-					}),
-				}),
-			);
 			expect(f.permission).toHaveBeenCalledWith({
 				owner: "organization",
 				repo: "meetups",
@@ -1603,7 +1578,7 @@ describe("organizer approval for email batches", () => {
 		expect(partial).toContain("- [ ] Mail introduction speakers");
 		expect(second.counts.accepted).toBe(1);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(3);
-		expect(fetch).toHaveBeenCalledTimes(4);
+		expect(fetch).not.toHaveBeenCalled();
 		expect(f.issue.body).toContain("- [x] Mail introduction speakers");
 	});
 	it("requires a separate approval for thank-you emails", async () => {
@@ -1780,34 +1755,6 @@ describe("required runtime configuration", () => {
 			expect(getOctokitMock).not.toHaveBeenCalled();
 		},
 	);
-});
-
-describe("organizer notification routing", () => {
-	it("rejects an empty organizer destination before accessing integrations", async () => {
-		// Arrange
-		const input = {
-			...runtimeInput("/synthetic/workspace"),
-			slackOrganizerChannelId: "  ",
-		};
-
-		// Act
-		const result = new CommunicationRuntime({
-			createJourney: (input) =>
-				CommunicationComposition.createCommunicationContainer(input).get(
-					ManageMeetupCommunications,
-				),
-			communicationInput: new GithubActionsComposition().communicationInput(),
-			automationConfigFactory:
-				new JourneyPolicyComposition().automationConfigFactory(),
-			localeResolver: new LocalizationComposition().localeResolver(),
-		}).runCommunicationReconcile(input);
-
-		// Assert
-		await expect(result).rejects.toThrow(
-			"slackOrganizerChannelId must not be empty",
-		);
-		expect(getOctokitMock).not.toHaveBeenCalled();
-	});
 });
 
 describe("scheduled post-event thanks", () => {

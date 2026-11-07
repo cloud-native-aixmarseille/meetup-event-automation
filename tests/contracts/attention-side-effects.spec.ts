@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { AttentionStageInput } from "../../packages/runtime/github-actions/src/attention-stage-input.js";
-import { automationActionPrefix, readWorkflow } from "./support.js";
+import {
+	automationActionPrefix,
+	readWorkflow,
+	workflowExpression,
+} from "./support.js";
 
 describe("organizer reporting composition", () => {
 	it("preserves evidence from every independent operation and reports after failed dependencies", async () => {
@@ -109,5 +113,22 @@ describe("organizer reporting composition", () => {
 			expect(step?.if).toContain("steps.app-token.outcome == 'success'");
 			expect(step?.if).toContain("steps.checkout.outcome == 'success'");
 		}
+	});
+});
+
+describe("shared organizer channel serialization", () => {
+	it("queues every report under the same channel lock without cancelling another issue", async () => {
+		// Arrange
+		const workflow = await readWorkflow("__organizer-reconcile-reporting");
+		// Act
+		const concurrency = workflow.jobs?.report?.concurrency;
+		// Assert
+		expect(concurrency).toEqual({
+			group: workflowExpression(
+				"format('meetup-organizer-{0}-{1}', github.repository_id, inputs.slack-organizer-channel-id)",
+			),
+			"cancel-in-progress": false,
+			queue: "max",
+		});
 	});
 });

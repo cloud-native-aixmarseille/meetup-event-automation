@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
+import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import type { CommunicationRuntime } from "../src/communication.js";
 import { eventPublicationSettings } from "./publication-urls.fixtures.js";
 
@@ -52,7 +53,6 @@ export function runtimeInput(
 		mailingsToken: "mailings-token",
 		openFeedbackApiKey: "oforg_synthetic",
 		slackToken: "slack-token",
-		slackOrganizerChannelId: "C12345",
 		owner: "organization",
 		repo: "meetups",
 		managedCommentAuthor: "automation[bot]",
@@ -358,4 +358,28 @@ export function reviewedMailPayloads(body: string): unknown[] {
 			),
 		);
 	});
+}
+
+export async function recordEmailNotificationMessages(
+	fixture: ReturnType<typeof githubClients>,
+) {
+	const composition = new GithubOrganizerApprovalComposition();
+	const codec = composition.approvalCommentCodec();
+	const presenter = composition.approvalPresenter(
+		composition.approvalMessages("en"),
+	);
+	for (const comment of fixture.comments.filter((comment) =>
+		comment.body.startsWith("<!-- meetup-organizer-approval:v1 "),
+	)) {
+		const record = codec.read(comment.body);
+		record.notification = "sent";
+		record.notificationMessage = {
+			destination: "C12345",
+			messageId: "100.001",
+		};
+		await fixture.updateComment({
+			comment_id: comment.id,
+			body: presenter.issue(record, { status: "pending" }),
+		});
+	}
 }

@@ -122,8 +122,8 @@ failure paths or data privacy.
 The pinned `actionlint` parser does not recognize GitHub's `concurrency.queue`
 setting ([upstream issue](https://github.com/rhysd/actionlint/issues/657)).
 The [linter configuration](../../.github/linters/actionlint.yml) excludes only that
-exact parser message in the shared-link workflow. The feedback workflow contract
-checks `queue: max` and `cancel-in-progress: false`; other syntax errors remain
+exact parser message in the shared-link and organizer-reporting workflows. Their
+contract checks require `queue: max` and `cancel-in-progress: false`; other syntax errors remain
 subject to normal linting.
 
 Use [the development checklist](README.md#choose-checks-for-the-change) to

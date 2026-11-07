@@ -27,6 +27,7 @@ describe("consolidated automation state", () => {
 		expect(f.comments).toHaveLength(1);
 		expect(f.minimized.has(f.comments[0].id)).toBe(true);
 		expect(saved.records).toEqual({
+			attention: [],
 			content: [proposal],
 			social: [delivery],
 			meetup: [publication],

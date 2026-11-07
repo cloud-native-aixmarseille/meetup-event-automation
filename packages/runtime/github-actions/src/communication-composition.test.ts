@@ -71,7 +71,6 @@ async function fixture(selected = true) {
 			conferenceHallApiKey: "synthetic-source-key",
 			mailingsToken: "synthetic-mailings-token",
 			slackToken: "",
-			slackOrganizerChannelId: "synthetic-channel",
 			config: {
 				...new JourneyPolicyComposition()
 					.automationConfigFactory()

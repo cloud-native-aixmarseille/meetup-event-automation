@@ -4,6 +4,34 @@ import { socialPublicationRequest } from "../testing/social-publication.fixtures
 import { contentRequest } from "../testing/content.fixtures.js";
 
 describe("approval attention", () => {
+	it("projects verified social recovery separately from a promotional approval", async () => {
+		// Arrange
+		const f = fixture();
+		await f.repository.save(
+			f.records.create({
+				...socialPublicationRequest,
+				social: {
+					...socialPublicationRequest.social,
+					recovery: {
+						outcome: "not-published",
+						reference:
+							"https://github.com/example/meetups/issues/42#issuecomment-90",
+					},
+				},
+			}),
+		);
+		// Act
+		const attention = await f.attention.synchronizeApprovals();
+		// Assert
+		expect(attention).toEqual([
+			expect.objectContaining({
+				kind: "social-publication",
+				recovery: true,
+				status: "pending",
+				commentId: 100,
+			}),
+		]);
+	});
 	it("exposes the destination of a verified social approval", async () => {
 		// Arrange
 		const f = fixture();

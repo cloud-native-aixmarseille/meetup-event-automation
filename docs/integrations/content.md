@@ -295,7 +295,8 @@ generated draft remains in history. Invalid text stays editable: titles must fit
 on one line within 80 characters, descriptions within 12000, and social posts
 within 2800 with the registration link. Source, media, and permission checks still
 apply. Decisions are final once recorded; later changes need a new proposal.
-The original Slack request receives a reaction for the recorded decision.
+The grouped organizer message links to pending content reviews and updates when
+a decision is recorded.
 
 Run the generation workflow again for an iteration request. It verifies the
 requester's current permission, records one new intent, and uses the current

@@ -20,7 +20,7 @@ preparation issues. Approval requires repository write access or higher.
 
 | Audience           | Channel selection                                                    | Behavior                                                                     |
 | ------------------ | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id` | The automation posts approval requests and grouped organizer attention.      |
+| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id` | The automation posts grouped organizer attention with approval links.        |
 | Public communities | The allowlist in `.github/meetup-social.json`                        | Separate social workflows publish reviewed posts after publication approval. |
 
 Use a dedicated organizer channel, separate from public event announcement
@@ -177,24 +177,23 @@ human edits. Missing or unverifiable history blocks sending. Edited request
 descriptions, ineligible editors and approvals for a different batch cannot
 authorize sending.
 
-Slack links to the request; decisions are made on GitHub. Set `SLACK_ORGANIZER_CHANNEL_ID`
-to the meetup organizer channel and invite the bot there. Each introduction
-request sends one alert. Thank-you requests use the shared post-event notification
-described below. Definitively rejected or rate-limited alerts can retry; an uncertain
-acknowledgement is reported without automatically posting a duplicate. The
-issue request remains usable if Slack fails.
+Slack links to GitHub; decisions are made on GitHub. Set
+`SLACK_ORGANIZER_CHANNEL_ID` to the shared meetup organizer channel and invite the
+bot there. All approval types use the grouped attention notification and its
+shared routine budget. The first approval pointer is routine; an approval still
+pending after 24 hours is urgent. The issue request remains usable if Slack fails.
 
-For introductions, the automation adds a reaction to the original Slack request:
-✅ for approval or ❌ for rejection. These reactions show the organizer's decision, not email
-delivery. Failed reactions are retried on later reconciliations, including
-after email tasks are complete. They do not reopen the decision or resend mail.
+A recorded Slack message reference can receive a decision reaction: ✅ for
+approval, ❌ for rejection, or 🔄 for another proposal. Reactions are retried
+without reopening a decision or resending mail. New approvals are reflected in
+the grouped message instead of creating a separate Slack request.
 
 Each preparation and thank-you type requires its own approval.
 Approval covers that group's current email inputs, including recipient
 addresses, templates, placeholders, date and policy. The fingerprint and complete review values are persisted in the approval comment.
 Changes to those inputs create a new request in the same GitHub comment, with
-unchecked choices. Introduction requests send a new Slack alert; thank-you requests
-update the shared post-event status and follow its reminder policy. The previous
+unchecked choices. Requests update the shared attention view and follow its
+reminder policy. The previous
 decision only applies to the previous revision; it is not reversed.
 Completed tasks are skipped, and approval survives partial completion and safe
 retries. Locale changes and unrelated checklist edits do not invalidate it.
@@ -339,14 +338,14 @@ deliveries continue to require recovery. Cancellation or postponement also hides
 pending approval controls. Diagnostic and delivery-record comments remain the
 detailed evidence sources.
 
-| Condition                                                   | Reminder policy                                                                                                                                                                                            |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Missing confirmations, required data, or manual publication | First detection within seven days before the event; reminders at three days, one day, and event day.                                                                                                       |
-| Missing or invalid date                                     | First detection, then weekly until scheduled or closed.                                                                                                                                                    |
-| Pending email approval                                      | Introduction requests have a dedicated initial alert. Thank-you approval appears in the grouped follow-up notification. Pending approval reminders start after 24 hours, at most once per Paris-local day. |
-| Integration failure or blocked delivery                     | Immediately, then at most once per Paris-local day.                                                                                                                                                        |
-| Pending or uncertain external delivery                      | Retained until verified, including after cancellation or closure.                                                                                                                                          |
-| Past scheduled or held event with unfinished follow-up      | First audit at least one day after the event, then at seven days; identifies email and manual tasks without claiming inbox delivery.                                                                       |
+| Condition                                                   | Reminder policy                                                                                                                          |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Missing confirmations, required data, or manual publication | First detection within seven days before the event; reminders at three days, one day, and event day.                                     |
+| Missing or invalid date                                     | First detection, then weekly until scheduled or closed.                                                                                  |
+| Pending email approval                                      | Initial approval pointers use the shared routine budget. After 24 hours, pending approvals are urgent, at most once per Paris-local day. |
+| Integration failure or blocked delivery                     | Immediately, then at most once per Paris-local day.                                                                                      |
+| Pending or uncertain external delivery                      | Retained until verified, including after cancellation or closure.                                                                        |
+| Past scheduled or held event with unfinished follow-up      | First audit at least one day after the event, then at seven days; identifies email and manual tasks without claiming inbox delivery.     |
 
 Milestones use `Europe/Paris` and the current clock. A missed audit sends only the
 most urgent current reminder. Repeated runs do not repeat the same milestone.
@@ -356,27 +355,39 @@ final for its batch revision. A returning condition starts a new episode. Locale
 wording, and unrelated issue edits do not restart episodes.
 
 Due conditions share one Slack attention message per issue and local day. Later
-changes edit that message using its stored channel and timestamp. Slack uses
-[formatted text](https://docs.slack.dev/messaging/formatting-message-text/) with a
-linked meetup heading, a localized date when known, and at most six actions.
-Delivery recovery, approvals, and independent integration failures come first,
-followed by the checklist's concrete field guidance, with Conference Hall blockers
-before other missing fields. Repeated approval and delivery recovery actions keep
-one direct link. Dependent email and feedback stages do not add duplicate
-prerequisite alerts; independent technical failures retain their run links.
-Previous failures in those stages remain unverified until an independent
-evaluation succeeds. An overflow link gives the number of additional tasks.
-Run and comment links have short labels; the heading links to the shared checklist.
-Missing dates and lifecycle boilerplate are omitted from Slack. Automatic link
-previews and channel-wide mentions are disabled. Only the first post requests
-fresh attention. Later failures that day therefore require organizers to read
-the updated message.
-Resolution updates the current message without posting an all-clear. Post-event
-notifications link to the shared follow-up comment and include thank-you approval;
-they do not send a separate thank-you approval alert or decision reaction.
-Introduction approval messages and their decision reactions remain separate.
-Public Slack announcements use the configured social destinations and separate
-publication approvals.
+changes edit that message using its recorded channel and timestamp. Slack shows
+a linked meetup heading, a localized date when known, and at most three concise
+actions or checklist labels. Direct approval and recovery links are retained;
+GitHub holds the full instructions. An overflow link points to all remaining
+tasks. Link previews and channel-wide mentions are disabled. Resolution edits
+the existing message without posting an all-clear. All approval types, including
+introduction, thank-you, publication and content reviews, use this grouped path.
+Public Slack announcements use separate social destinations and publication
+approvals.
+
+At most **three fresh routine attempts** are allowed across all meetup issues
+in the shared repository/channel during today and the previous six
+`Europe/Paris` dates. This is a rolling window, not a calendar-week quota.
+D-7/D-3 preparation, weekly missing-date reminders, initial approval pointers
+and D+1/D+7 follow-up use this budget. Overdue approvals, blocked or uncertain
+external deliveries, actionable integration failures, D-1 and D0 are urgent and
+exempt; total channel posts can therefore exceed three. Daily issue grouping
+and uncertain-post holds apply to urgent messages too.
+
+When the routine budget is full, update an existing message silently. If no
+message exists, leave the tasks on GitHub. Suppression does not acknowledge a
+reminder or change task completion. When capacity returns, select only the
+currently relevant milestone. Edits and reactions consume no slots.
+
+Each issue's collapsed technical comment retains its channel reservations.
+The reporting job queues under one repository/channel lock while its caller
+holds the issue lock. It reads verified recent bot state across open and closed
+issues before reserving a slot. Pending or uncertain attempts consume capacity
+in that seven-date window. A definitive retry reuses its reservation key and
+checks the current window again. Expired capacity does not release an uncertain
+per-issue post: its duplicate protection persists. Missing or untrusted budget
+evidence fails the operation before any new routine post. Do not delete or edit
+technical state to restore capacity.
 
 The reporting job runs even after failed dependencies. Skipped or cancelled stages
 are unknown and cannot resolve previous conditions. Expected organizer corrections keep CI successful; unexpected technical
@@ -435,8 +446,8 @@ rejected or uncertain attempts.
 Organizer approval comments, Slack alerts and decision reactions are excluded
 from these delivery counts.
 
-A `communication.approval-notification-failed` diagnostic can mean a request
-alert or decision reaction was not confirmed. Check the bot's channel membership
+A `communication.approval-notification-failed` diagnostic means a recorded
+notification or its decision reaction remains unconfirmed. Check the bot's channel membership
 and its `chat:write` and `reactions:write` scopes. A request without a stored
 Slack message reference cannot receive an automatic reaction. If its notification
 is confirmed sent, this missing reaction reference is not a notification failure;

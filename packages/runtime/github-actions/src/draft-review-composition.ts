@@ -39,7 +39,6 @@ export class DraftReviewComposition {
 	review(
 		input: DraftSource & DraftMediaInput,
 		slackToken: string,
-		channelId: string,
 	): ManageContentReview {
 		const images =
 			new HttpsAssetImageRepositoryComposition().contentImageLoader();
@@ -66,11 +65,7 @@ export class DraftReviewComposition {
 			base.client,
 			input.commentAuthorLogin,
 			adapters.approvalPresenter(adapters.approvalMessages(input.locale)),
-			slack.slackApprovalNotification(
-				slackToken,
-				slack.slackApprovalPresenter(input.locale),
-			),
-			channelId,
+			slack.slackApprovalNotification(slackToken),
 			OrganizerApprovalComposition.visibility(input),
 		).approval;
 		const review = new ContentReview(base.store, approvals, media, base.policy);

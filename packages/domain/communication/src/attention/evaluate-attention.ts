@@ -8,6 +8,8 @@ import type {
 	AttentionRecoveryItem,
 } from "./model.js";
 export interface AttentionStage {
+	/** Classified blocked or uncertain external delivery, requiring organizer recovery. */
+	readonly deliveryRecovery?: "blocked" | "uncertain";
 	readonly owner:
 		| "event"
 		| "assets"
@@ -76,7 +78,20 @@ export class EvaluateAttention {
 			evaluated,
 			verifiedRecovery: (facts.recovery ?? [])
 				.filter((item) => item.uncertain === false)
-				.map((item) => `delivery-recovery:${item.key}`),
+				.map((item) => `delivery-recovery:${item.key}`)
+				.concat(
+					stopped
+						? []
+						: facts.stages
+								.filter(
+									(stage) =>
+										stage.outcome === "success" &&
+										!stage.blocked &&
+										!stage.prerequisiteBlocked &&
+										!stage.deliveryRecovery,
+								)
+								.map((stage) => `delivery-recovery:external-${stage.owner}`),
+				),
 			stopped,
 			eventDate: facts.eventDate,
 			runId: facts.runId,
@@ -100,6 +115,18 @@ export class EvaluateAttention {
 		evaluated: AttentionOwner[],
 		conditions: AttentionCondition[],
 	): void {
+		if (stage.deliveryRecovery) {
+			conditions.push({
+				...this.condition(
+					"delivery-recovery",
+					stage.owner,
+					`external-${stage.owner}`,
+					"daily",
+				),
+				recovery: stage.deliveryRecovery === "uncertain" ? true : undefined,
+			});
+			return;
+		}
 		if (stage.prerequisiteBlocked) return;
 		if (stage.outcome !== "unknown") evaluated.push(stage.owner);
 		if (stage.outcome === "success" && !stage.blocked) return;
@@ -153,19 +180,7 @@ export class EvaluateAttention {
 		postEvent: boolean,
 	): void {
 		for (const approval of facts.approvals ?? []) {
-			const relevant =
-				approval.kind === (postEvent ? "email-thanks" : "email-introduction") ||
-				(postEvent && approval.kind === "meetup-slides") ||
-				(!postEvent &&
-					(approval.kind === "meetup-publication" ||
-						approval.kind === "community-publication" ||
-						approval.kind === "social-publication" ||
-						approval.kind === "content-review"));
-			if (
-				approval.status === "pending" &&
-				approval.eventDate === facts.eventDate &&
-				relevant
-			)
+			if (this.relevantApproval(approval, facts.eventDate, postEvent))
 				conditions.push({
 					...this.condition(
 						"approval-pending",
@@ -177,7 +192,7 @@ export class EvaluateAttention {
 							approval.kind === "content-review"
 							? `${approval.kind}:${approval.revision}`
 							: approval.revision,
-						"approval",
+						approval.recovery ? "daily" : "approval",
 					),
 					target: approval.target,
 					since: approval.requestedAt,
@@ -185,6 +200,26 @@ export class EvaluateAttention {
 				});
 		}
 	}
+	private relevantApproval(
+		approval: AttentionApproval,
+		eventDate: string,
+		postEvent: boolean,
+	): boolean {
+		if (approval.status !== "pending") return false;
+		if (approval.recovery) return true;
+		if (approval.eventDate !== eventDate) return false;
+		const kinds = postEvent
+			? ["email-thanks", "meetup-slides"]
+			: [
+					"email-introduction",
+					"meetup-publication",
+					"community-publication",
+					"social-publication",
+					"content-review",
+				];
+		return kinds.includes(approval.kind);
+	}
+
 	private preparation(
 		facts: AttentionFacts,
 		eventDay: number | undefined,

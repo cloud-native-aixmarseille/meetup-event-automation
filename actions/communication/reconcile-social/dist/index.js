@@ -63431,39 +63431,6 @@ var OrganizerCommentChangedError = class extends Error {
   }
 };
 
-// packages/application/journey/src/approval/approval-notification-policy.ts
-var ApprovalNotificationPolicy = class {
-  notificationFor(request3) {
-    switch (request3.kind) {
-      case "email-thanks":
-        return void 0;
-      case "email-introduction":
-        return {
-          kind: request3.kind,
-          eventDate: request3.eventDate,
-          recipientCount: request3.recipientCount,
-          ...request3.details?.mailKind ? { mailKind: request3.details.mailKind } : {}
-        };
-      case "meetup-slides":
-      case "meetup-publication":
-      case "community-publication":
-        return { kind: request3.kind, eventDate: request3.eventDate };
-      case "content-review":
-        return {
-          kind: request3.kind,
-          eventDate: request3.eventDate,
-          target: request3.content.target
-        };
-      case "social-publication":
-        return {
-          kind: request3.kind,
-          eventDate: request3.eventDate,
-          target: request3.social.target
-        };
-    }
-  }
-};
-
 // packages/application/journey/src/approval/approval-request-policy.ts
 var ApprovalRequestPolicy = class {
   constructor(fingerprints) {
@@ -66427,7 +66394,7 @@ var AttentionPolicy = class {
       return `week:${Math.floor((day - this.day(new Date(episode.openedAt))) / 7)}`;
     if (policy === "approval") {
       const age = now2.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
-      return age >= 864e5 ? `day:${day}` : void 0;
+      return age >= 864e5 ? `day:${day}` : "approval:0";
     }
     const eventDay = this.eventDay(date);
     if (eventDay === void 0) return void 0;
@@ -66602,7 +66569,11 @@ var EvaluateAttention = class {
       ],
       conditions,
       evaluated,
-      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
+      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`).concat(
+        stopped ? [] : facts.stages.filter(
+          (stage) => stage.outcome === "success" && !stage.blocked && !stage.prerequisiteBlocked && !stage.deliveryRecovery
+        ).map((stage) => `delivery-recovery:external-${stage.owner}`)
+      ),
       stopped,
       eventDate: facts.eventDate,
       runId: facts.runId
@@ -66617,6 +66588,18 @@ var EvaluateAttention = class {
     }
   }
   stage(stage, evaluated, conditions) {
+    if (stage.deliveryRecovery) {
+      conditions.push({
+        ...this.condition(
+          "delivery-recovery",
+          stage.owner,
+          `external-${stage.owner}`,
+          "daily"
+        ),
+        recovery: stage.deliveryRecovery === "uncertain" ? true : void 0
+      });
+      return;
+    }
     if (stage.prerequisiteBlocked) return;
     if (stage.outcome !== "unknown") evaluated.push(stage.owner);
     if (stage.outcome === "success" && !stage.blocked) return;
@@ -66660,20 +66643,32 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || postEvent && approval.kind === "meetup-slides" || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review");
-      if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
+      if (this.relevantApproval(approval, facts.eventDate, postEvent))
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
             approval.kind === "meetup-slides" || approval.kind === "meetup-publication" || approval.kind === "community-publication" || approval.kind === "social-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
-            "approval"
+            approval.recovery ? "daily" : "approval"
           ),
           target: approval.target,
           since: approval.requestedAt,
           commentId: approval.commentId
         });
     }
+  }
+  relevantApproval(approval, eventDate, postEvent) {
+    if (approval.status !== "pending") return false;
+    if (approval.recovery) return true;
+    if (approval.eventDate !== eventDate) return false;
+    const kinds = postEvent ? ["email-thanks", "meetup-slides"] : [
+      "email-introduction",
+      "meetup-publication",
+      "community-publication",
+      "social-publication",
+      "content-review"
+    ];
+    return kinds.includes(approval.kind);
   }
   preparation(facts, eventDay, day, conditions) {
     if (facts.occurrence !== "scheduled" || eventDay !== void 0 && day > eventDay)
@@ -66730,16 +66725,18 @@ var ATTENTION_CODES = [
 
 // packages/domain/communication/src/attention/reconcile-attention.ts
 var ReconcileAttention = class {
-  constructor(collaborators, repository, notification, clock) {
+  constructor(collaborators, repository, notification, clock, budget) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.notification = notification;
     this.clock = clock;
+    this.budget = budget;
   }
   collaborators;
   repository;
   notification;
   clock;
+  budget;
   async execute(observation) {
     const now2 = this.clock.now();
     const day = this.collaborators.attentionPolicy.day(now2);
@@ -66762,7 +66759,15 @@ var ReconcileAttention = class {
     if (state.post?.status === "retry" && Date.parse(state.post.retryAt ?? "") > now2.getTime())
       return { ...base, notificationFailed: true };
     if (due.length && state.post?.day !== day || due.length && state.post?.status === "retry")
-      return this.post(state, now2);
+      return this.post(
+        state,
+        now2,
+        this.collaborators.attentionRoutingPolicy.urgent(
+          due,
+          state.eventDate,
+          now2
+        )
+      );
     return this.update(state, now2);
   }
   async update(state, now2) {
@@ -66784,10 +66789,13 @@ var ReconcileAttention = class {
     await this.repository.save(state);
     return base;
   }
-  async post(state, now2) {
+  async post(state, now2, urgent) {
     const day = this.collaborators.attentionPolicy.day(now2);
+    const reservationId = state.post?.status === "retry" ? state.post.reservationId : `attention:${day}:${day}`;
+    if (!urgent && !await this.budget.reserve(reservationId, day))
+      return this.update(state, now2);
     state.post = {
-      reservationId: `attention:${day}:${now2.getTime()}`,
+      reservationId,
       day,
       reservedAt: now2.toISOString(),
       status: "pending"
@@ -66811,6 +66819,8 @@ var ReconcileAttention = class {
       state.post.retryAt = new Date(now2.getTime() + delay * 1e3).toISOString();
     }
     await this.repository.save(state);
+    if (!urgent && result.outcome !== "uncertain")
+      await this.budget.settle(reservationId, day, result.outcome);
     return {
       active: view.conditions.length,
       posted: result.outcome === "accepted",
@@ -66903,6 +66913,45 @@ var AttentionEpisodes = class {
       );
       if (window2) episode.lastWindow = window2;
     }
+  }
+};
+
+// packages/domain/communication/src/attention/attention-budget-policy.ts
+var AttentionBudgetPolicy = class {
+  reserve(slots, key, day) {
+    const retained = slots.filter((slot) => slot.day >= day - 6);
+    const existing = retained.find((slot) => slot.key === key);
+    if (existing?.status === "accepted") return void 0;
+    const others = retained.filter((slot) => slot.key !== key);
+    if (others.length >= 3) return void 0;
+    return [...others, { key, day, status: "pending" }];
+  }
+  settle(slots, key, status) {
+    const existing = slots.find((slot) => slot.key === key);
+    if (!existing || existing.status === "accepted" && status !== "accepted")
+      throw new Error("Invalid attention budget settlement");
+    return slots.map((slot) => slot.key === key ? { ...slot, status } : slot);
+  }
+};
+
+// packages/domain/communication/src/attention/attention-routing-policy.ts
+var AttentionRoutingPolicy = class {
+  constructor(policy) {
+    this.policy = policy;
+  }
+  policy;
+  urgent(due, eventDate, now2) {
+    return due.some((episode) => {
+      const { code, resource, since } = episode.condition;
+      if (code === "delivery-recovery") return true;
+      if (code === "integration-failure" && resource !== "event-data")
+        return true;
+      if (code === "approval-pending" && (episode.condition.policy === "daily" || now2.getTime() - Date.parse(since ?? episode.openedAt) >= 864e5))
+        return true;
+      return ["preparation:1", "preparation:0"].includes(
+        this.policy.window(episode, eventDate, now2) ?? ""
+      );
+    });
   }
 };
 
@@ -67580,6 +67629,12 @@ var ReconcileCommunications = class {
 
 // packages/domain/communication/src/dependency-composition.ts
 var CommunicationDomainComposition = class {
+  attentionBudgetPolicy() {
+    return new AttentionBudgetPolicy();
+  }
+  attentionRoutingPolicy() {
+    return new AttentionRoutingPolicy(this.attentionPolicy());
+  }
   attentionEpisodes() {
     return new AttentionEpisodes({ attentionPolicy: this.attentionPolicy() });
   }
@@ -67641,6 +67696,7 @@ var CommunicationDomainComposition = class {
   reconcileAttention(...args) {
     return new ReconcileAttention(
       {
+        attentionRoutingPolicy: this.attentionRoutingPolicy(),
         attentionPolicy: this.attentionPolicy(),
         attentionEpisodes: this.attentionEpisodes()
       },
@@ -69056,14 +69112,33 @@ var AttentionStageEvaluation = class _AttentionStageEvaluation {
       const failureResource = diagnostics.find(
         (item) => _AttentionStageEvaluation.MEETUP_FAILURES.has(item.code) && this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
       )?.code;
+      const deliveryRecovery = this.deliveryRecovery(diagnostics);
       return {
         owner,
         outcome,
         blocked,
+        ...deliveryRecovery ? { deliveryRecovery } : {},
         ...failureResource ? { failureResource } : {},
         ...prerequisiteBlocked ? { prerequisiteBlocked: true } : {}
       };
     });
+  }
+  deliveryRecovery(diagnostics) {
+    const actionable = diagnostics.filter(
+      (item) => this.collaborators.diagnosticPolicy.classify(item) !== "informational"
+    );
+    if (actionable.some(
+      (item) => [
+        "communication.social.uncertain",
+        "publication.meetup.uncertain",
+        "publication.community.uncertain",
+        "publication.meetup.slides-delivery-recovery"
+      ].includes(item.code)
+    ))
+      return "uncertain";
+    return actionable.some(
+      (item) => item.code === "communication.social.blocked"
+    ) ? "blocked" : void 0;
   }
   static MEETUP_FAILURES = /* @__PURE__ */ new Set([
     "publication.meetup.authentication-configuration",
@@ -72211,9 +72286,6 @@ var CommunicationInput = class {
       throw new Error(
         "owner and repo must be valid GitHub repository segments"
       );
-    }
-    if (!input.slackOrganizerChannelId.trim()) {
-      throw new Error("slackOrganizerChannelId must not be empty");
     }
     if (!input.managedCommentAuthor.trim()) {
       throw new Error("managedCommentAuthor must not be empty");
@@ -81500,10 +81572,7 @@ var SocialPublicationAction = class {
     const journey = this.dependencies.compose({
       ...input,
       credentials: this.dependencies.credentials.read(input.destinations),
-      slackToken: this.dependencies.input.secret("slack-token"),
-      slackOrganizerChannelId: getInput("slack-organizer-channel-id", {
-        required: true
-      })
+      slackToken: this.dependencies.input.secret("slack-token")
     });
     const result = await journey.execute({
       repository: `${input.owner}/${input.repo}`,
@@ -81526,6 +81595,7 @@ import { createHash as createHash3 } from "node:crypto";
 var AUTOMATION_STATE_MARKER = "<!-- meetup-automation-state:v1 ";
 var AutomationStateCodec = class {
   scope(body) {
+    if (body.startsWith("<!-- meetup-attention-budget:v1 ")) return "attention";
     if (body.startsWith("<!-- meetup-content-proposal:v1 ")) return "content";
     if (body.startsWith("<!-- meetup-social-delivery:v1 ")) return "social";
     if (body.startsWith("<!-- meetup-publication:v1\n")) return "meetup";
@@ -81538,7 +81608,13 @@ var AutomationStateCodec = class {
   empty() {
     return {
       version: 1,
-      records: { content: [], social: [], meetup: [], community: [] },
+      records: {
+        content: [],
+        social: [],
+        meetup: [],
+        community: [],
+        attention: []
+      },
       imports: []
     };
   }
@@ -81561,10 +81637,16 @@ var AutomationStateCodec = class {
     if (!this.object(value) || value.version !== 1 || !this.object(value.records) || !Array.isArray(value.imports))
       throw new Error("Invalid automation state envelope");
     this.fields(value, ["version", "records", "imports"]);
-    this.fields(value.records, ["content", "social", "meetup", "community"]);
+    this.fields(value.records, [
+      "content",
+      "social",
+      "meetup",
+      "community",
+      "attention"
+    ]);
     const records = this.empty().records;
     for (const scope of Object.keys(records)) {
-      const entries = value.records[scope];
+      const entries = scope === "attention" && value.records[scope] === void 0 ? [] : value.records[scope];
       if (!Array.isArray(entries) || entries.some(
         (body) => typeof body !== "string" || this.scope(body) !== scope
       ))
@@ -81754,7 +81836,7 @@ var StateEditAuthority = class {
       return false;
     const previous = this.codec.read(before);
     const next = this.codec.read(after);
-    return isDeepStrictEqual2(previous.records.content, next.records.content) && isDeepStrictEqual2(previous.records.social, next.records.social) && isDeepStrictEqual2(previous.imports, next.imports);
+    return isDeepStrictEqual2(previous.records.content, next.records.content) && isDeepStrictEqual2(previous.records.social, next.records.social) && isDeepStrictEqual2(previous.records.attention, next.records.attention) && isDeepStrictEqual2(previous.imports, next.imports);
   }
 };
 
@@ -81929,49 +82011,17 @@ var ApprovalDecisionParser = class {
 
 // packages/adapter/journey/github-organizer-approval/src/approval-notifications.ts
 var ApprovalNotifications = class {
-  constructor(policy, client, presenter, notifications, channelId) {
-    this.policy = policy;
+  constructor(client, presenter, notifications) {
     this.client = client;
     this.presenter = presenter;
     this.notifications = notifications;
-    this.channelId = channelId;
   }
-  policy;
   client;
   presenter;
   notifications;
-  channelId;
-  async send(record, commentId) {
-    const facts = this.policy.notificationFor(record);
-    if (!facts) return false;
-    if (record.notification !== "new" && record.notification !== "retry")
-      return record.notification === "reserved";
-    const before = this.presenter.issue(record, { status: "pending" });
-    record.notification = "reserved";
-    const reserved = this.presenter.issue(record, { status: "pending" });
-    await this.client.replace(commentId, before, reserved);
-    try {
-      const result = await this.notifications.send({
-        ...facts,
-        destination: this.channelId,
-        approvalUrl: this.client.url(commentId)
-      });
-      record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
-      if (result.outcome === "accepted" && result.message)
-        record.notificationMessage = result.message;
-    } catch {
-    }
-    await this.client.replace(
-      commentId,
-      reserved,
-      this.presenter.issue(record, { status: "pending" })
-    );
-    return record.notification !== "sent";
-  }
   async react(record, commentId) {
-    if (!this.policy.notificationFor(record)) return false;
     if (!record.decision || record.reactionSent) return false;
-    if (!record.notificationMessage) return record.notification !== "sent";
+    if (!record.notificationMessage) return record.notification === "reserved";
     const before = this.presenter.issue(record, record.decision);
     try {
       const accepted = await this.notifications.react(
@@ -82142,7 +82192,7 @@ var ApprovalRecordFactory = class {
     const record = {
       ...request3,
       requestId: `approval-${this.nextIdentity()}`,
-      notification: "new"
+      notification: "grouped"
     };
     this.collaborators.storedApprovalSchema.validate(record);
     return record;
@@ -82956,7 +83006,7 @@ var StoredApprovalSchema = class {
       hasFollowUp: state.followUp !== void 0,
       decided: state.decision !== void 0
     });
-    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
+    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["grouped", "new", "reserved", "sent", "retry"].some(
       (status) => status === state.notification
     ))
       throw new Error("Invalid approval state");
@@ -83504,7 +83554,10 @@ var GithubApprovalAttentionSource = class {
       const decision = await this.finalizer.execute(state);
       result.push({
         ...state.record.details?.mailKind ? { target: state.record.details.mailKind } : {},
-        ...state.record.kind === "social-publication" ? { target: state.record.social.target } : {},
+        ...state.record.kind === "social-publication" ? {
+          target: state.record.social.target,
+          ...state.record.social.recovery ? { recovery: true } : {}
+        } : {},
         revision: state.record.revision,
         requestedAt: state.record.requestedAt,
         commentId: state.comment.id,
@@ -83892,19 +83945,17 @@ var GithubFollowUpAttentionRepository = class {
 
 // packages/adapter/journey/github-organizer-approval/src/github-organizer-approval.ts
 var GithubOrganizerApproval = class {
-  constructor(collaborators, repository, records, finalizer, notifications, permissions) {
+  constructor(collaborators, repository, records, finalizer, permissions) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.records = records;
     this.finalizer = finalizer;
-    this.notifications = notifications;
     this.permissions = permissions;
   }
   collaborators;
   repository;
   records;
   finalizer;
-  notifications;
   permissions;
   async request(input, validateText) {
     input = this.reviewedRequest(input);
@@ -83927,10 +83978,7 @@ var GithubOrganizerApproval = class {
         return result;
       return {
         status: "pending",
-        notificationFailed: await this.notifications.send(
-          existing.record,
-          existing.comment.id
-        )
+        notificationFailed: false
       };
     }
     const record = this.records.create(input);
@@ -83944,10 +83992,7 @@ var GithubOrganizerApproval = class {
     await this.finalizer.refreshVisibility(state);
     return {
       status: "pending",
-      notificationFailed: await this.notifications.send(
-        record,
-        state.comment.id
-      )
+      notificationFailed: false
     };
   }
   async existingRequest(input) {
@@ -86411,7 +86456,7 @@ var AttentionRecord = class {
       ]),
       lastWindow: data.lastWindow === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
         data.lastWindow,
-        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
+        /^(?:day|week|preparation|occurrence|follow-up|approval):-?\d+$/
       )
     };
   }
@@ -86713,6 +86758,144 @@ var AttentionPresenter = class {
   overviewUrl(state) {
     const commentId = state.commentId ?? this.diagnostics.read().commentId;
     return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/attention-budget-record.ts
+var MARKER = "<!-- meetup-attention-budget:v1 ";
+var AttentionBudgetRecord = class {
+  constructor(fields2) {
+    this.fields = fields2;
+  }
+  fields;
+  read(body) {
+    if (!body.startsWith(MARKER) || !body.endsWith(" -->"))
+      throw new Error("Invalid attention budget record");
+    const data = this.fields.record(JSON.parse(body.slice(MARKER.length, -4)));
+    const channel = this.fields.text(data.channel, /^[CG][A-Z0-9]+$/);
+    if (!Array.isArray(data.slots) || data.slots.length > 100)
+      throw new Error("Invalid attention budget slots");
+    const slots = data.slots.map((value) => {
+      const slot = this.fields.record(value);
+      return {
+        key: this.fields.text(slot.key, /^\d+:attention:\d+:\d+$/),
+        day: this.fields.integer(slot.day, true),
+        status: this.fields.choice(slot.status, [
+          "pending",
+          "accepted",
+          "retry"
+        ])
+      };
+    });
+    if (new Set(slots.map((slot) => slot.key)).size !== slots.length)
+      throw new Error("Duplicate attention budget slot");
+    return { channel, slots };
+  }
+  write(record) {
+    const body = `${MARKER}${JSON.stringify(record)} -->`;
+    this.read(body);
+    return body;
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-budget.ts
+import { createHash as createHash4 } from "node:crypto";
+var GithubAttentionBudget = class {
+  constructor(source, createState, codec, issueNumber, channel) {
+    this.source = source;
+    this.createState = createState;
+    this.codec = codec;
+    this.issueNumber = issueNumber;
+    this.channel = channel;
+  }
+  source;
+  createState;
+  codec;
+  issueNumber;
+  channel;
+  async load(day) {
+    const issues = /* @__PURE__ */ new Set([
+      this.issueNumber,
+      ...await this.source.issues(day)
+    ]);
+    const slots = [];
+    let version;
+    for (const issue2 of issues) {
+      const records = await this.createState(issue2).read("attention");
+      if (issue2 === this.issueNumber) version = this.digest(records);
+      const entries = records.map((record) => this.codec.read(record));
+      if (new Set(entries.map((entry) => entry.channel)).size !== entries.length)
+        throw new Error("Duplicate channel attention budget");
+      for (const entry of entries) {
+        if (entry.slots.some((slot) => !slot.key.startsWith(`${issue2}:`)))
+          throw new Error("Attention budget belongs to another issue");
+        if (entry.channel === this.channel) slots.push(...entry.slots);
+      }
+    }
+    return { slots, version };
+  }
+  async save(previous, slots) {
+    const state = this.createState(this.issueNumber);
+    const records = await state.read("attention");
+    if (this.digest(records) !== previous.version) return false;
+    const next = records.filter(
+      (record) => this.codec.read(record).channel !== this.channel
+    );
+    next.push(
+      this.codec.write({
+        channel: this.channel,
+        slots: slots.filter(
+          (slot) => slot.key.startsWith(`${this.issueNumber}:`)
+        )
+      })
+    );
+    await state.write("attention", records, next);
+    return true;
+  }
+  digest(records) {
+    return createHash4("sha256").update(JSON.stringify(records)).digest("hex");
+  }
+};
+
+// packages/adapter/communication/github-organizer-attention/src/github-attention-budget-source.ts
+var GithubAttentionBudgetSource = class {
+  constructor(client, owner, repo, author) {
+    this.client = client;
+    this.owner = owner;
+    this.repo = repo;
+    this.author = author;
+  }
+  client;
+  owner;
+  repo;
+  author;
+  async issues(day) {
+    const issues = /* @__PURE__ */ new Set();
+    const since = new Date((day - 7) * 864e5).toISOString();
+    for (let page = 1; ; page++) {
+      const response = await this.client.rest.issues.listCommentsForRepo({
+        owner: this.owner,
+        repo: this.repo,
+        since,
+        sort: "updated",
+        direction: "asc",
+        per_page: 100,
+        page
+      });
+      for (const comment of response.data) {
+        if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+          continue;
+        issues.add(this.issue(comment.issue_url));
+      }
+      if (!response.headers.link?.includes('rel="next"')) return [...issues];
+    }
+  }
+  issue(url) {
+    const prefix = `https://api.github.com/repos/${this.owner}/${this.repo}/issues/`;
+    const number = url.startsWith(prefix) ? url.slice(prefix.length) : "";
+    if (!/^[1-9]\d*$/.test(number) || !Number.isSafeInteger(Number(number)))
+      throw new Error("Invalid attention budget issue identity");
+    return Number(number);
   }
 };
 
@@ -87274,6 +87457,21 @@ var TrustedAttentionState = class {
 
 // packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
 var GithubOrganizerAttentionComposition = class {
+  attentionBudgetRecord() {
+    return new AttentionBudgetRecord(this.attentionRecordFields());
+  }
+  githubAttentionBudgetSource(...args) {
+    return new GithubAttentionBudgetSource(...args);
+  }
+  githubAttentionBudget(source, createState, issueNumber, channel) {
+    return new GithubAttentionBudget(
+      source,
+      createState,
+      this.attentionBudgetRecord(),
+      issueNumber,
+      channel
+    );
+  }
   attentionRecordFields() {
     return new AttentionRecordFields();
   }
@@ -87346,15 +87544,14 @@ var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
       input.repo
     );
   }
-  static create(client, authorLogin, presenter, notificationPort, organizerChannelId, visibility) {
+  static create(client, authorLogin, presenter, notificationPort, visibility) {
     const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
       randomUUID2
     );
     const notifications = _OrganizerApprovalComposition.notifications(
       client,
       presenter,
-      notificationPort,
-      organizerChannelId
+      notificationPort
     );
     const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
       client,
@@ -87387,7 +87584,6 @@ var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
         repository,
         records,
         finalizer,
-        notifications,
         client
       ),
       followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
@@ -87401,13 +87597,11 @@ var OrganizerApprovalComposition = class _OrganizerApprovalComposition {
       )
     };
   }
-  static notifications(client, presenter, port, channel) {
+  static notifications(client, presenter, port) {
     return new GithubOrganizerApprovalComposition().approvalNotifications(
-      new ApprovalNotificationPolicy(),
       client,
       presenter,
-      port,
-      channel
+      port
     );
   }
   static deliveryReport(repository, finalizer, visibility) {
@@ -88003,7 +88197,7 @@ var DriveBoundedStream = class {
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/drive-content-image.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 
 // node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
 var decoder = new TextDecoder();
@@ -89023,13 +89217,13 @@ var DriveContentImage = class {
       mimeType,
       width: size.width,
       height: size.height,
-      fingerprint: createHash4("sha256").update(image.bytes).digest("hex")
+      fingerprint: createHash5("sha256").update(image.bytes).digest("hex")
     };
   }
 };
 
 // packages/adapter/publication/google-drive-asset-repository/src/drive-content-location.ts
-import { createHash as createHash5 } from "node:crypto";
+import { createHash as createHash6 } from "node:crypto";
 var DriveContentLocation = class {
   constructor(client, folders, sharing) {
     this.client = client;
@@ -89048,7 +89242,7 @@ var DriveContentLocation = class {
   }
   async place(input) {
     const { media, container, name } = input;
-    const key = createHash5("sha256").update(`${container.eventId}:assets:v1`).digest("hex");
+    const key = createHash6("sha256").update(`${container.eventId}:assets:v1`).digest("hex");
     if (!await this.eventFolder(container.id, key))
       throw new ContentMediaChangedError(
         "Cover destination is not this event's managed folder"
@@ -89668,22 +89862,22 @@ var HttpsAssetImageRepositoryComposition = class {
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
 var messages3 = {
   "action.slides-approval-pending": "Approve sending the PDF to Meetup attendees.",
-  "failure.publication.meetup.authentication-configuration": "Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "The Meetup login page could not load after retries. Retry synchronization later.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "The Meetup email/password form could not be filled after retries. Check the login form selectors.",
-  "failure.publication.meetup.authentication-submit-unavailable": "The Meetup login button could not be activated after retries. Check the login page controls.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
-  "failure.publication.meetup.authentication-account-unavailable": "The logged-in account could not be verified after retries. Check account-page loading and selectors.",
-  "failure.publication.meetup.authentication-account-mismatch": "The authenticated Meetup account does not match the configured account. The session was discarded.",
-  "failure.publication.meetup.authentication-unexpected-page": "Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
-  "failure.publication.meetup.authentication-browser": "Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
-  "failure.publication.meetup.editor": "Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
-  "failure.publication.meetup.verification": "Meetup event verification failed. Check the saved event before retrying.",
+  "failure.publication.meetup.authentication-configuration": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-captcha-required": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-submit-unavailable": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-account-unavailable": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-account-mismatch": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-unexpected-page": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-rate-limited": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.authentication-browser": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.editor": "Meetup publication blocked. Review the workflow.",
+  "failure.publication.meetup.verification": "Meetup publication blocked. Review the workflow.",
   "action.content-approval-pending": "Edit the proposed text if needed, then approve or request another proposal.",
   "action.social-target-approval-pending": "Publication approval: {target}.",
   "action.social-approval-pending": "Review the announcement and approve publication for this destination.",
@@ -89748,23 +89942,23 @@ var messages3 = {
 // packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
 var messages4 = {
   "action.slides-approval-pending": "Approuver l'envoi du PDF aux participants Meetup.",
-  "failure.publication.meetup.authentication-configuration": "Les identifiants Meetup manquent dans la configuration de l'automatisation. V\xE9rifiez PUBLICATION_CREDENTIALS.",
-  "failure.publication.meetup.authentication-captcha-required": "Meetup demande un CAPTCHA que l'automatisation n'a pas pu r\xE9soudre. Publication suspendue.",
-  "failure.publication.meetup.authentication-captcha-rejected": "Meetup a refus\xE9 la r\xE9ponse au CAPTCHA. Les retries sont \xE9puis\xE9s ; relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-captcha-unavailable": "Le solveur de CAPTCHA a \xE9chou\xE9 avant la fin de la connexion. V\xE9rifiez sa disponibilit\xE9 et relancez la synchronisation.",
-  "failure.publication.meetup.authentication-session-not-reusable": "Meetup renvoie la v\xE9rification du compte vers la connexion malgr\xE9 les retries. La session n'a pas \xE9t\xE9 conserv\xE9e ; relancez la synchronisation.",
-  "failure.publication.meetup.authentication-login-page-unavailable": "La page de connexion Meetup n'a pas pu \xEAtre charg\xE9e malgr\xE9 les retries. Relancez la synchronisation plus tard.",
-  "failure.publication.meetup.authentication-login-form-unavailable": "Le formulaire email/mot de passe Meetup n'a pas pu \xEAtre rempli malgr\xE9 les retries. V\xE9rifiez les s\xE9lecteurs du formulaire.",
-  "failure.publication.meetup.authentication-submit-unavailable": "Le bouton de connexion Meetup n'a pas pu \xEAtre activ\xE9 malgr\xE9 les retries. V\xE9rifiez les contr\xF4les de la page de connexion.",
-  "failure.publication.meetup.authentication-redirect-timeout": "Meetup n'a pas termin\xE9 la redirection apr\xE8s connexion malgr\xE9 les retries. Aucun refus des identifiants n'a \xE9t\xE9 d\xE9tect\xE9 ; relancez plus tard.",
-  "failure.publication.meetup.authentication-account-unavailable": "Le compte connect\xE9 n'a pas pu \xEAtre v\xE9rifi\xE9 malgr\xE9 les retries. V\xE9rifiez le chargement et les s\xE9lecteurs de la page du compte.",
-  "failure.publication.meetup.authentication-account-mismatch": "Le compte connect\xE9 sur Meetup ne correspond pas au compte configur\xE9. La session a \xE9t\xE9 \xE9cart\xE9e.",
-  "failure.publication.meetup.authentication-unexpected-page": "La connexion Meetup a abouti \xE0 une page inattendue. L'authentification s'est arr\xEAt\xE9e ; v\xE9rifiez le parcours avant de relancer.",
-  "failure.publication.meetup.authentication-rate-limited": "Meetup a renvoy\xE9 HTTP 429 pendant l'authentification. Les retries sont arr\xEAt\xE9s ; attendez avant de relancer la synchronisation.",
-  "failure.publication.meetup.authentication-browser": "Chrome n'a pas d\xE9marr\xE9 ou sa connexion d'authentification a \xE9chou\xE9 malgr\xE9 les retries. V\xE9rifiez le runtime du navigateur.",
-  "failure.publication.meetup.editor": "Le chargement ou la pr\xE9paration de l'\xE9diteur Meetup a \xE9chou\xE9. V\xE9rifiez les contr\xF4les de l'\xE9diteur dans le run en \xE9chec.",
-  "failure.publication.meetup.verification": "La v\xE9rification de l'\xE9v\xE9nement Meetup a \xE9chou\xE9. V\xE9rifiez l'\xE9v\xE9nement enregistr\xE9 avant de relancer.",
-  "action.content-approval-pending": "Modifiez le texte si besoin, puis validez ou demandez une autre proposition.",
+  "failure.publication.meetup.authentication-configuration": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-captcha-required": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-captcha-rejected": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-captcha-unavailable": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-session-not-reusable": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-login-page-unavailable": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-login-form-unavailable": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-submit-unavailable": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-redirect-timeout": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-account-unavailable": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-account-mismatch": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-unexpected-page": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-rate-limited": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.authentication-browser": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.editor": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "failure.publication.meetup.verification": "Publication Meetup bloqu\xE9e. Consultez le workflow.",
+  "action.content-approval-pending": "Contenu \xE0 approuver.",
   "action.social-target-approval-pending": "Publication \xE0 approuver : {target}.",
   "action.social-approval-pending": "V\xE9rifiez l'annonce et approuvez sa publication pour cette destination.",
   "failure.social": "La publication a \xE9chou\xE9.",
@@ -89840,36 +90034,6 @@ var SlackAttentionMessages = class extends MessageLocalizer {
   task(resource) {
     const key = `task.${resource}`;
     return this.t(Object.hasOwn(CATALOGS7.en, key) ? key : "task.unknown");
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES6 = {
-  "request.meetup-slides": "Slides delivery needs approval \xB7 {date} \xB7 <{url}|Review the PDF and approve sending>",
-  "request.social-publication": "Post on {target} \xB7 {date}\nReview and approve publication: {url}",
-  "request.community-publication": "CNCF \xB7 {date}\nReview and approve the event and OCGroups notifications: {url}",
-  "request.content": "Content for {date} \xB7 {target}\nEdit if needed, then approve: {url}",
-  "request.introduction": "{kind, select, host_introduction {Preparation email \u2014 host} speaker_introduction {Preparation emails \u2014 speakers} other {Introduction emails}} \xB7 {date} \xB7 Up to {count, plural, one {# recipient} other {# recipients}}\nApprove or reject: {url}",
-  "request.publication": "Meetup \xB7 {date}\nReview and approve publication: {url}"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES6 = {
-  "request.meetup-slides": "Envoi des slides \xE0 approuver \xB7 {date} \xB7 <{url}|V\xE9rifier le PDF et approuver l'envoi>",
-  "request.social-publication": "Publication sur {target} \xB7 {date}\nV\xE9rifiez et validez la publication : {url}",
-  "request.community-publication": "CNCF \xB7 {date}\nValidez l'\xE9v\xE9nement et les notifications OCGroups : {url}",
-  "request.content": "Contenu du {date} \xB7 {target}\nModifiez si besoin, puis validez : {url}",
-  "request.introduction": "{kind, select, host_introduction {Email de pr\xE9paration \u2014 h\xF4te} speaker_introduction {Emails de pr\xE9paration \u2014 intervenants} other {Emails de pr\xE9paration}} \xB7 {date} \xB7 {count, plural, one {# destinataire} other {# destinataires}} maximum\nApprouver ou refuser : {url}",
-  "request.publication": "Meetup \xB7 {date}\nV\xE9rifiez et validez la publication : {url}"
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
-var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
-
-// packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
-var SlackApprovalMessages = class extends MessageLocalizer {
-  constructor(collaborators, locale) {
-    super(collaborators, CATALOGS8, locale);
   }
 };
 
@@ -89985,26 +90149,12 @@ var SlackApiClient = class {
 
 // packages/adapter/communication/slack-notification-gateway/src/slack-approval-notification.ts
 var SlackApprovalNotification = class {
-  constructor(collaborators, client, presenter) {
+  constructor(collaborators, client) {
     this.collaborators = collaborators;
     this.client = client;
-    this.presenter = presenter;
   }
   collaborators;
   client;
-  presenter;
-  async send(input) {
-    const { result, payload } = await this.client.post("chat.postMessage", {
-      channel: input.destination,
-      text: this.presenter.render(input)
-    });
-    if (result.outcome !== "accepted") return result;
-    const message = this.collaborators.slackMessageReference.read(
-      payload,
-      input.destination
-    );
-    return message ? { outcome: "accepted", message } : { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-  }
   async react(message, decision) {
     if (!this.collaborators.slackMessageReference.valid(message)) return false;
     const { result, payload } = await this.client.post("reactions.add", {
@@ -90016,19 +90166,8 @@ var SlackApprovalNotification = class {
   }
 };
 
-// packages/adapter/communication/slack-notification-gateway/src/slack-approval-presenter.ts
-var SlackApprovalPresenter = class {
-  constructor(renderers) {
-    this.renderers = renderers;
-  }
-  renderers;
-  render(request3) {
-    return this.renderers[request3.kind].render(request3);
-  }
-};
-
 // packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
-import { createHash as createHash6 } from "node:crypto";
+import { createHash as createHash7 } from "node:crypto";
 var SlackAttentionNotification = class {
   constructor(collaborators, client, channel, presenter) {
     this.collaborators = collaborators;
@@ -90043,7 +90182,7 @@ var SlackAttentionNotification = class {
   channel;
   presenter;
   fingerprint(view) {
-    return createHash6("sha256").update(this.presenter.render(view)).digest("hex");
+    return createHash7("sha256").update(this.presenter.render(view)).digest("hex");
   }
   async post(view) {
     const response = await this.client.post(
@@ -90113,14 +90252,14 @@ var SlackAttentionPresenter = class {
       `${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` \xB7 ${date}` : ""}`,
       ""
     ];
-    lines.push(...actions.slice(0, 6));
+    lines.push(...actions.slice(0, 3));
     if (!actions.length)
       lines.push(this.escape(this.messages.t("attention.clear")));
-    if (actions.length > 6)
+    if (actions.length > 3)
       lines.push(
         this.link(
           this.overviewUrl(view.state),
-          this.messages.t("slack.more", { count: actions.length - 6 })
+          this.messages.t("slack.more", { count: actions.length - 3 })
         )
       );
     return lines.join("\n");
@@ -90136,7 +90275,7 @@ var SlackAttentionPresenter = class {
           (episode) => this.slackCondition(episode, view.state)
         ),
         ...selection.checklist.map(
-          (entry) => `\u2022 ${this.escape(`${entry.label}: ${entry.description}`)}`
+          (entry) => `\u2022 ${this.link(this.overviewUrl(view.state), entry.label)}`
         ),
         ...selection.remaining.map(
           (episode) => this.slackCondition(episode, view.state)
@@ -90207,79 +90346,6 @@ var SlackAttentionPresenter = class {
   }
 };
 
-// packages/adapter/communication/slack-notification-gateway/src/slack-community-approval-presenter.ts
-var SlackCommunityApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request3) {
-    return this.messages.t("request.community-publication", {
-      date: request3.eventDate,
-      url: request3.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-content-approval-presenter.ts
-var SlackContentApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request3) {
-    return this.messages.t("request.content", {
-      date: request3.eventDate,
-      target: request3.target,
-      url: request3.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-email-approval-presenter.ts
-var SlackEmailApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request3) {
-    return this.messages.t("request.introduction", {
-      date: request3.eventDate,
-      kind: request3.mailKind?.replaceAll("-", "_") ?? "introduction",
-      url: request3.approvalUrl,
-      count: request3.recipientCount
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-slides-approval-presenter.ts
-var SlackSlidesApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request3) {
-    return this.messages.t("request.meetup-slides", {
-      date: request3.eventDate,
-      url: request3.approvalUrl
-    });
-  }
-};
-
-// packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
-var SlackMeetupApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request3) {
-    return this.messages.t("request.publication", {
-      date: request3.eventDate,
-      url: request3.approvalUrl
-    });
-  }
-};
-
 // packages/adapter/communication/slack-notification-gateway/src/slack-message-reference.ts
 var SlackMessageReference = class {
   valid(message) {
@@ -90293,53 +90359,18 @@ var SlackMessageReference = class {
   }
 };
 
-// packages/adapter/communication/slack-notification-gateway/src/slack-social-publication-approval-presenter.ts
-var SlackSocialPublicationApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(request3) {
-    return this.messages.t("request.social-publication", {
-      date: request3.eventDate,
-      target: request3.target.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
-      url: request3.approvalUrl
-    });
-  }
-};
-
 // packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
 var SlackNotificationGatewayComposition = class {
   slackApiClient(token, fetcher = fetch) {
     return new SlackApiClient(token, fetcher);
   }
-  slackApprovalMessages(...args) {
-    return new SlackApprovalMessages(
-      { localeResolver: new LocalizationComposition().localeResolver() },
-      ...args
-    );
-  }
-  slackApprovalNotification(token, presenter, fetcher = fetch) {
+  slackApprovalNotification(token, fetcher = fetch) {
     return new SlackApprovalNotification(
       {
         slackMessageReference: this.slackMessageReference()
       },
-      this.slackApiClient(token, fetcher),
-      presenter
+      this.slackApiClient(token, fetcher)
     );
-  }
-  slackApprovalPresenter(locale) {
-    const messages5 = this.slackApprovalMessages(locale);
-    return new SlackApprovalPresenter({
-      "email-introduction": new SlackEmailApprovalPresenter(messages5),
-      "meetup-slides": new SlackSlidesApprovalPresenter(messages5),
-      "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
-      "community-publication": new SlackCommunityApprovalPresenter(messages5),
-      "content-review": new SlackContentApprovalPresenter(messages5),
-      "social-publication": new SlackSocialPublicationApprovalPresenter(
-        messages5
-      )
-    });
   }
   slackAttentionMessages(...args) {
     return new SlackAttentionMessages(
@@ -90684,7 +90715,7 @@ var CsvReferentialRepository = class {
 };
 
 // packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
-import { createHash as createHash7 } from "node:crypto";
+import { createHash as createHash8 } from "node:crypto";
 import { readFile as readFile6, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join5 } from "node:path";
 var CsvSpeakerCatalogStore = class {
@@ -90768,7 +90799,7 @@ var CsvSpeakerCatalogStore = class {
     return { csv, state, historicalIds };
   }
   revision(csv, state, historicalIds) {
-    return createHash7("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+    return createHash8("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
 
@@ -94735,27 +94766,27 @@ var SystemClockComposition = class {
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES7 = {
+var EN_MESSAGES6 = {
   "form.speakers.guidance": "Copy the speaker references into the agenda.",
   "form.speakers.show": "Available speakers"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES7 = {
+var FR_MESSAGES6 = {
   "form.speakers.guidance": "Copiez les r\xE9f\xE9rences des intervenants dans le programme.",
   "form.speakers.show": "Intervenants disponibles"
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS9 = {
-  en: { ...EN_MESSAGES7 },
-  fr: { ...FR_MESSAGES7 }
+var CATALOGS8 = {
+  en: { ...EN_MESSAGES6 },
+  fr: { ...FR_MESSAGES6 }
 };
 
 // packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
-    super(collaborators, CATALOGS9, locale);
+    super(collaborators, CATALOGS8, locale);
   }
 };
 
@@ -102643,12 +102674,12 @@ var LinkedInImageStatus = class {
 };
 
 // packages/adapter/communication/linkedin-social-gateway/src/linkedin-image-validation.ts
-import { createHash as createHash8 } from "node:crypto";
+import { createHash as createHash9 } from "node:crypto";
 var LinkedInImageValidation = class {
   valid(input) {
     if (!/^urn:li:organization:[1-9]\d*$/.test(
       input.destination.organizationUrn
-    ) || !input.description.trim() || input.description.length > 4086 || input.bytes.length === 0 || input.bytes.length >= 5e7 || !/^[a-f0-9]{64}$/.test(input.fingerprint) || createHash8("sha256").update(input.bytes).digest("hex") !== input.fingerprint)
+    ) || !input.description.trim() || input.description.length > 4086 || input.bytes.length === 0 || input.bytes.length >= 5e7 || !/^[a-f0-9]{64}$/.test(input.fingerprint) || createHash9("sha256").update(input.bytes).digest("hex") !== input.fingerprint)
       return false;
     try {
       const size = imageSize(input.bytes);
@@ -103048,11 +103079,7 @@ var SocialPublicationComposition2 = class {
       base.client,
       input.commentAuthorLogin,
       adapters.approvalPresenter(adapters.approvalMessages(input.locale)),
-      slack.slackApprovalNotification(
-        input.slackToken,
-        slack.slackApprovalPresenter(input.locale)
-      ),
-      input.slackOrganizerChannelId,
+      slack.slackApprovalNotification(input.slackToken),
       OrganizerApprovalComposition.visibility(input)
     ).approval;
     const settings = new SocialPublicationConfiguration(new RuntimeInput());

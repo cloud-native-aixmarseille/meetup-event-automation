@@ -112,7 +112,6 @@ describe("routine draft review", () => {
 				credentials: "synthetic-credentials",
 			}),
 			"synthetic-slack-token",
-			"CORGANIZERS",
 		);
 		expect(f.execute).toHaveBeenCalledExactlyOnceWith({
 			repository: "example/events",

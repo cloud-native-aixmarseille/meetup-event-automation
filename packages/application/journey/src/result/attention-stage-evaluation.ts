@@ -51,14 +51,40 @@ export class AttentionStageEvaluation {
 					AttentionStageEvaluation.MEETUP_FAILURES.has(item.code) &&
 					this.collaborators.diagnosticPolicy.isTechnicalFailure(item),
 			)?.code;
+			const deliveryRecovery = this.deliveryRecovery(diagnostics);
 			return {
 				owner,
 				outcome,
 				blocked,
+				...(deliveryRecovery ? { deliveryRecovery } : {}),
 				...(failureResource ? { failureResource } : {}),
 				...(prerequisiteBlocked ? { prerequisiteBlocked: true } : {}),
 			};
 		});
+	}
+	private deliveryRecovery(
+		diagnostics: readonly PublicDiagnostic[],
+	): AttentionStage["deliveryRecovery"] {
+		const actionable = diagnostics.filter(
+			(item) =>
+				this.collaborators.diagnosticPolicy.classify(item) !== "informational",
+		);
+		if (
+			actionable.some((item) =>
+				[
+					"communication.social.uncertain",
+					"publication.meetup.uncertain",
+					"publication.community.uncertain",
+					"publication.meetup.slides-delivery-recovery",
+				].includes(item.code),
+			)
+		)
+			return "uncertain";
+		return actionable.some(
+			(item) => item.code === "communication.social.blocked",
+		)
+			? "blocked"
+			: undefined;
 	}
 	private static readonly MEETUP_FAILURES = new Set([
 		"publication.meetup.authentication-configuration",

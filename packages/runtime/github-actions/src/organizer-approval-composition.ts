@@ -10,10 +10,7 @@ import {
 	GithubOrganizerApprovalComposition,
 } from "@meetup-automation/github-organizer-approval";
 import { GithubOrganizerAttentionComposition } from "@meetup-automation/github-organizer-attention";
-import {
-	ApprovalNotificationPolicy,
-	type OrganizerApprovalNotification,
-} from "@meetup-automation/journey";
+import type { OrganizerApprovalNotification } from "@meetup-automation/journey";
 
 /** Wire independent approval, follow-up, and attention capabilities per invocation. */
 export class OrganizerApprovalComposition {
@@ -33,7 +30,6 @@ export class OrganizerApprovalComposition {
 		authorLogin: string,
 		presenter: ApprovalPresenter,
 		notificationPort: OrganizerApprovalNotification,
-		organizerChannelId: string,
 		visibility: GitHubCommentVisibility,
 	) {
 		const records =
@@ -44,7 +40,6 @@ export class OrganizerApprovalComposition {
 			client,
 			presenter,
 			notificationPort,
-			organizerChannelId,
 		);
 		const repository =
 			new GithubOrganizerApprovalComposition().githubApprovalRepository(
@@ -82,7 +77,6 @@ export class OrganizerApprovalComposition {
 					repository,
 					records,
 					finalizer,
-					notifications,
 					client,
 				),
 			followUp:
@@ -102,14 +96,11 @@ export class OrganizerApprovalComposition {
 		client: GithubApprovalClient,
 		presenter: ApprovalPresenter,
 		port: OrganizerApprovalNotification,
-		channel: string,
 	) {
 		return new GithubOrganizerApprovalComposition().approvalNotifications(
-			new ApprovalNotificationPolicy(),
 			client,
 			presenter,
 			port,
-			channel,
 		);
 	}
 

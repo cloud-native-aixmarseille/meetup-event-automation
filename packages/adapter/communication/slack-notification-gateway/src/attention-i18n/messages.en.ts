@@ -2,37 +2,37 @@ export const messages = {
 	"action.slides-approval-pending":
 		"Approve sending the PDF to Meetup attendees.",
 	"failure.publication.meetup.authentication-configuration":
-		"Meetup login credentials are missing from the automation configuration. Check PUBLICATION_CREDENTIALS.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-captcha-required":
-		"Meetup requires a CAPTCHA that automation could not complete. Publication is paused.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-captcha-rejected":
-		"Meetup rejected the CAPTCHA response. Login retries are exhausted; retry synchronization later.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-captcha-unavailable":
-		"The CAPTCHA solver failed before login could complete. Check the solver's availability and retry synchronization.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-session-not-reusable":
-		"Meetup redirected account verification back to login after retries. The session was not retained; retry synchronization.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-login-page-unavailable":
-		"The Meetup login page could not load after retries. Retry synchronization later.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-login-form-unavailable":
-		"The Meetup email/password form could not be filled after retries. Check the login form selectors.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-submit-unavailable":
-		"The Meetup login button could not be activated after retries. Check the login page controls.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-redirect-timeout":
-		"Meetup did not complete the login redirect after retries. No credential rejection was detected; retry synchronization later.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-account-unavailable":
-		"The logged-in account could not be verified after retries. Check account-page loading and selectors.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-account-mismatch":
-		"The authenticated Meetup account does not match the configured account. The session was discarded.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-unexpected-page":
-		"Meetup login reached an unexpected page. Authentication stopped; check the login flow before retrying.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-rate-limited":
-		"Meetup returned HTTP 429 during authentication. Automatic retries stopped; wait before restarting synchronization.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.authentication-browser":
-		"Chrome could not start or its authentication connection failed after retries. Check the browser runtime.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.editor":
-		"Meetup event editor loading or preparation failed. Check the editor controls in the failed run.",
+		"Meetup publication blocked. Review the workflow.",
 	"failure.publication.meetup.verification":
-		"Meetup event verification failed. Check the saved event before retrying.",
+		"Meetup publication blocked. Review the workflow.",
 	"action.content-approval-pending":
 		"Edit the proposed text if needed, then approve or request another proposal.",
 	"action.social-target-approval-pending": "Publication approval: {target}.",

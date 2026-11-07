@@ -1,5 +1,6 @@
 /** Serialized records stay owned by their adapters; updates preserve other scopes. */
 export type AutomationStateScope =
+	| "attention"
 	| "content"
 	| "social"
 	| "meetup"

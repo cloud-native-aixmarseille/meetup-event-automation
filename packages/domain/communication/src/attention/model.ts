@@ -97,6 +97,7 @@ export type AttentionPostResult =
 	| { readonly outcome: "uncertain" }
 	| { readonly outcome: "retry"; readonly retryAfterSeconds?: number };
 export interface AttentionApproval {
+	readonly recovery?: boolean;
 	readonly target?: string;
 	readonly revision: string;
 	readonly requestedAt: string;

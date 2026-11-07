@@ -87,12 +87,19 @@ export function reconciliationFixture() {
 		})),
 		update: vi.fn(async (_message: unknown, _view: AttentionView) => true),
 	};
+	const budget = {
+		reserve: vi.fn(async () => true),
+		settle: vi.fn(async () => {}),
+	};
 	return {
+		budget,
 		repository,
 		notification,
 		useCase: new ReconcileAttention(
 			{
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionRoutingPolicy:
+					new CommunicationDomainComposition().attentionRoutingPolicy(),
 				attentionEpisodes:
 					new CommunicationDomainComposition().attentionEpisodes(),
 			},
@@ -101,6 +108,7 @@ export function reconciliationFixture() {
 			{
 				now: () => now,
 			},
+			budget,
 		),
 		state: () => structuredClone(saved),
 		time: (value: string) => {

@@ -186,7 +186,6 @@ jobs:
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
           google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
     outputs:
       initialized: ${{ steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.checkout.outcome == 'success' }}
       title-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'title') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.title.outcome), toJSON(steps.title.outputs.diagnostics)) || '' }}

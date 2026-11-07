@@ -8,77 +8,10 @@ function notification(fetcher: SlackFetch, token = "token") {
 	return new SlackApprovalNotification(
 		{ slackMessageReference: composition.slackMessageReference() },
 		composition.slackApiClient(token, fetcher),
-		composition.slackApprovalPresenter("en"),
 	);
 }
 
 describe("Slack approval notification", () => {
-	it("retains the acknowledged channel and message timestamp", async () => {
-		// Arrange
-		const fetcher = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({
-				ok: true,
-				channel: "C12345",
-				ts: "100.001",
-				private: "provider-data",
-			}),
-		});
-		const gateway = notification(fetcher, "private-token");
-
-		// Act
-		const result = await gateway.send({
-			destination: "C12345",
-			kind: "meetup-publication",
-			eventDate: "2099-06-08",
-			approvalUrl:
-				"https://github.com/example/meetups/issues/42#issuecomment-100",
-		});
-
-		// Assert
-		expect(result).toEqual({
-			outcome: "accepted",
-			message: { destination: "C12345", messageId: "100.001" },
-		});
-		expect(JSON.stringify(result)).not.toContain("private");
-		expect(fetcher).toHaveBeenCalledWith(
-			"https://slack.com/api/chat.postMessage",
-			expect.objectContaining({
-				body: JSON.stringify({
-					channel: "C12345",
-					text: "Meetup · 2099-06-08\nReview and approve publication: https://github.com/example/meetups/issues/42#issuecomment-100",
-				}),
-			}),
-		);
-	});
-	it.each([
-		{ ok: true },
-		{ ok: true, channel: "C12345", ts: 100.001 },
-		{ ok: true, channel: "invalid-channel", ts: "100.001" },
-	])(
-		"does not acknowledge a post without a usable reference: %j",
-		async (payload) => {
-			// Arrange
-			const gateway = notification(
-				vi.fn().mockResolvedValue({ ok: true, json: async () => payload }),
-			);
-
-			// Act
-			const result = await gateway.send({
-				destination: "C12345",
-				kind: "meetup-publication",
-				eventDate: "2099-06-08",
-				approvalUrl:
-					"https://github.com/example/meetups/issues/42#issuecomment-100",
-			});
-
-			// Assert
-			expect(result).toEqual({
-				outcome: "uncertain",
-				diagnosticCode: "ambiguous-response",
-			});
-		},
-	);
 	it.each([
 		["approved", "white_check_mark"],
 		["rejected", "x"],

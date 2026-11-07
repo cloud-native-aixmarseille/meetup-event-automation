@@ -11,6 +11,7 @@ export interface StoredAutomationState {
 /** Own the aggregate envelope and recognize existing adapter-owned records. */
 export class AutomationStateCodec {
 	scope(body: string): AutomationStateScope | undefined {
+		if (body.startsWith("<!-- meetup-attention-budget:v1 ")) return "attention";
 		if (body.startsWith("<!-- meetup-content-proposal:v1 ")) return "content";
 		if (body.startsWith("<!-- meetup-social-delivery:v1 ")) return "social";
 		if (body.startsWith("<!-- meetup-publication:v1\n")) return "meetup";
@@ -25,7 +26,13 @@ export class AutomationStateCodec {
 	empty(): StoredAutomationState {
 		return {
 			version: 1,
-			records: { content: [], social: [], meetup: [], community: [] },
+			records: {
+				content: [],
+				social: [],
+				meetup: [],
+				community: [],
+				attention: [],
+			},
 			imports: [],
 		};
 	}
@@ -56,10 +63,19 @@ export class AutomationStateCodec {
 		)
 			throw new Error("Invalid automation state envelope");
 		this.fields(value, ["version", "records", "imports"]);
-		this.fields(value.records, ["content", "social", "meetup", "community"]);
+		this.fields(value.records, [
+			"content",
+			"social",
+			"meetup",
+			"community",
+			"attention",
+		]);
 		const records = this.empty().records;
 		for (const scope of Object.keys(records) as AutomationStateScope[]) {
-			const entries = value.records[scope];
+			const entries =
+				scope === "attention" && value.records[scope] === undefined
+					? []
+					: value.records[scope];
 			if (
 				!Array.isArray(entries) ||
 				entries.some(

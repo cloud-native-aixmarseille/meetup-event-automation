@@ -113,6 +113,20 @@ export function fixture() {
 	const update = vi.fn(
 		async ({ comment_id: id, body }: { comment_id: number; body: string }) => {
 			const index = comments.findIndex((comment) => comment.id === id);
+			histories.set(`node-${id}`, [
+				{
+					diff: body,
+					deletedAt: null,
+					editor: { login: "automation", __typename: "Bot" },
+				},
+				...(histories.get(`node-${id}`) ?? [
+					{
+						diff: comments[index].body ?? "",
+						deletedAt: null,
+						editor: { login: "automation", __typename: "Bot" },
+					},
+				]),
+			]);
 			comments[index] = { ...comments[index], id, body };
 			edits.set(`node-${id}`, {
 				id: `node-${id}`,

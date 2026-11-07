@@ -168,9 +168,6 @@ describe("public reusable workflow contracts", () => {
 		expect(email?.with?.["slack-token"]).toBe(
 			workflowExpression("secrets.slack-token"),
 		);
-		expect(email?.with?.["slack-organizer-channel-id"]).toBe(
-			workflowExpression("inputs.slack-organizer-channel-id"),
-		);
 		expect(steps.findIndex((step) => step.id === "communications")).toBe(
 			steps.findIndex((step) => step.id === "mailings-token") + 1,
 		);

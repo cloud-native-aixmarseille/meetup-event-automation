@@ -1,6 +1,8 @@
 import type { CommunicationClock } from "../ports.js";
 import type { AttentionEpisodes } from "./attention-episodes.js";
 import type { AttentionPolicy } from "./attention-policy.js";
+import type { AttentionRoutingPolicy } from "./attention-routing-policy.js";
+import type { AttentionBudget } from "./attention-budget.js";
 import type { AttentionObservation, AttentionState } from "./model.js";
 import type { AttentionNotification, AttentionRepository } from "./ports.js";
 export interface AttentionResult {
@@ -10,6 +12,7 @@ export interface AttentionResult {
 }
 /** The official repository/issue lock serializes every invocation. */
 export interface ReconcileAttentionCollaborators {
+	readonly attentionRoutingPolicy: Pick<AttentionRoutingPolicy, "urgent">;
 	readonly attentionPolicy: Pick<AttentionPolicy, "day" | "view">;
 	readonly attentionEpisodes: Pick<
 		AttentionEpisodes,
@@ -23,6 +26,7 @@ export class ReconcileAttention {
 		private readonly repository: AttentionRepository,
 		private readonly notification: AttentionNotification,
 		private readonly clock: CommunicationClock,
+		private readonly budget: AttentionBudget,
 	) {}
 	async execute(observation: AttentionObservation): Promise<AttentionResult> {
 		const now = this.clock.now();
@@ -53,7 +57,15 @@ export class ReconcileAttention {
 			(due.length && state.post?.day !== day) ||
 			(due.length && state.post?.status === "retry")
 		)
-			return this.post(state, now);
+			return this.post(
+				state,
+				now,
+				this.collaborators.attentionRoutingPolicy.urgent(
+					due,
+					state.eventDate,
+					now,
+				),
+			);
 		return this.update(state, now);
 	}
 	private async update(
@@ -82,10 +94,18 @@ export class ReconcileAttention {
 	private async post(
 		state: AttentionState,
 		now: Date,
+		urgent: boolean,
 	): Promise<AttentionResult> {
 		const day = this.collaborators.attentionPolicy.day(now);
+		// Stable within an issue/day, including a crash before issue persistence.
+		const reservationId =
+			state.post?.status === "retry"
+				? state.post.reservationId
+				: `attention:${day}:${day}`;
+		if (!urgent && !(await this.budget.reserve(reservationId, day)))
+			return this.update(state, now);
 		state.post = {
-			reservationId: `attention:${day}:${now.getTime()}`,
+			reservationId,
 			day,
 			reservedAt: now.toISOString(),
 			status: "pending",
@@ -109,6 +129,8 @@ export class ReconcileAttention {
 			state.post.retryAt = new Date(now.getTime() + delay * 1000).toISOString();
 		}
 		await this.repository.save(state);
+		if (!urgent && result.outcome !== "uncertain")
+			await this.budget.settle(reservationId, day, result.outcome);
 		return {
 			active: view.conditions.length,
 			posted: result.outcome === "accepted",

@@ -11,10 +11,7 @@ inputs:
     description: HTTPS prefix accepted for event asset folder URLs.
     required: true
   slack-token:
-    description: Slack bot token for organizer approval notifications and decision reactions.
-    required: true
-  slack-organizer-channel-id:
-    description: Organizer Slack channel receiving publication approval requests.
+    description: Slack bot token with reactions:write to finalize decisions on recorded organizer messages.
     required: true
   issue-number:
     description: Meetup source issue number.

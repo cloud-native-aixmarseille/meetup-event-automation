@@ -170,7 +170,8 @@ blocked integration can actually be evaluated.
 ### Internal automation state
 
 Content proposals, social delivery records, and Meetup and OCGroups publication
-journals share one authoritative bot comment per issue. The
+journals and organizer notification budgets share one authoritative bot comment
+per issue. The
 `meetup-automation-state:v1` envelope retains each adapter's serialized records
 in independent sections. Organizer approval requests and checklists retain their
 existing controls and visibility rules.
@@ -195,12 +196,18 @@ visibility. Feature adapters retain schema validation and transition checks.
 Queries do not migrate or change visibility. Writes and attention reconciliation
 own those effects and require the existing repository/issue workflow lock;
 GitHub comment updates do not provide an atomic compare-and-swap operation.
+Notification budget writes also require the queued repository/channel lock in
+`__organizer-reconcile-reporting.yml`. The budget adapter reads recent trusted
+state across issues, including closed issues, and writes only the current
+issue's `attention` section. Other feature sections remain intact.
+See [organizer attention](../integrations/communications.md#organizer-attention)
+for cadence, urgent exemptions and reservation behavior.
 
 Duplicate envelopes, unavailable or altered history, stale writes, and uncertain
 readback block persistence. A maintainer with repository write access may recover
 only the `meetup` and `community` sections, following the
 [publication recovery procedures](../integrations/event-publication.md#recover-an-interrupted-run).
-Proposal, social delivery, and import metadata changes must come from the trusted
+Proposal, social delivery, attention budget, and import metadata changes must come from the trusted
 bot. Every human recovery edit is checked against its preceding saved body.
 
 Each state read fetches fresh editor metadata and complete edit histories. Editor
