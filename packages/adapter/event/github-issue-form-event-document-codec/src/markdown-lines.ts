@@ -1,4 +1,8 @@
-import type { Checkbox } from "./github-issue-form-event-document-codec-contracts.js";
+import {
+	type Checkbox,
+	COMPLETION_MARKER,
+	type Completion,
+} from "./github-issue-form-event-document-codec-contracts.js";
 
 export class MarkdownLines {
 	findLineEnd(value: string, start: number): number {
@@ -115,6 +119,23 @@ export class MarkdownLines {
 			checked: checkedMarker.toLowerCase() === "x",
 			label,
 		};
+	}
+
+	parseCompletionLine(line: string): Completion | undefined {
+		let cursor = this.skipHorizontalWhitespace(line, 0);
+		if (line[cursor] !== COMPLETION_MARKER) {
+			return undefined;
+		}
+		cursor += 1;
+		if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+			return undefined;
+		}
+		cursor = this.skipHorizontalWhitespace(line, cursor);
+		const label = line.slice(cursor).trim();
+		if (label === "") {
+			return undefined;
+		}
+		return { label };
 	}
 
 	private skipHorizontalWhitespace(line: string, cursor: number): number {

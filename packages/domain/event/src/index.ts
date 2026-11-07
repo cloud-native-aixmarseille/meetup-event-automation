@@ -72,6 +72,7 @@ export { MeetupPublicationChecklist } from "./domain/meetup-publication-checklis
 export {
 	type AgendaEntry,
 	EVENT_SCHEMA_VERSION,
+	EVENT_TASK_NAMES,
 	type EventConfirmations,
 	type EventIdentity,
 	type EventLifecycleState,
@@ -86,7 +87,6 @@ export {
 	type OccurrenceStatus,
 	type OperationalChecklistItem,
 	type ParticipantReference,
-	POST_EVENT_TASK_NAMES,
 } from "./domain/model.js";
 export {
 	OCCURRENCE_STATUS_LABELS,

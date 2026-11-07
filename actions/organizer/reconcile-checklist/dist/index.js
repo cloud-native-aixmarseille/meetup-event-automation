@@ -37163,41 +37163,15 @@ var ManagedLabelsRule = class {
   }
 };
 
-// packages/domain/event/src/domain/meetup-publication-checklist.ts
-var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
-  static taskName = "Meetup event published";
-  isPublished(event) {
-    const matches = event.operationalChecklists.communication.filter(
-      (item) => item.name === _MeetupPublicationChecklist.taskName
-    );
-    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
-  }
-  withStatus(event, published) {
-    const communication = [];
-    let found = false;
-    for (const item of event.operationalChecklists.communication) {
-      if (item.name !== _MeetupPublicationChecklist.taskName) {
-        communication.push(item);
-        continue;
-      }
-      if (!found) communication.push({ name: item.name, completed: published });
-      found = true;
-    }
-    if (!found)
-      communication.push({
-        name: _MeetupPublicationChecklist.taskName,
-        completed: published
-      });
-    return {
-      ...event,
-      operationalChecklists: { ...event.operationalChecklists, communication }
-    };
-  }
-};
-
 // packages/domain/event/src/domain/model.ts
 var EVENT_SCHEMA_VERSION = 1;
-var POST_EVENT_TASK_NAMES = Object.freeze({
+var EVENT_TASK_NAMES = Object.freeze({
+  introduceHost: "Mail introduction hoster",
+  introduceSpeakers: "Mail introduction speakers",
+  publishMeetup: "Meetup event published",
+  announceSlackAixMarseilleTech: "Slack - AixMarseille.Tech",
+  announceSlackOpenBar: "Slack - OpenBaR",
+  announceLinkedIn: "LinkedIn",
   thankHost: "Mail thanks hoster",
   thankSpeakers: "Mail thanks speakers",
   shareSlides: "Share slides to meetup",
@@ -37205,11 +37179,11 @@ var POST_EVENT_TASK_NAMES = Object.freeze({
   shareOnSocialNetworks: "Social networks"
 });
 var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
-  POST_EVENT_TASK_NAMES.thankHost,
-  POST_EVENT_TASK_NAMES.thankSpeakers,
-  POST_EVENT_TASK_NAMES.shareSlides,
-  POST_EVENT_TASK_NAMES.importAttendance,
-  POST_EVENT_TASK_NAMES.shareOnSocialNetworks
+  EVENT_TASK_NAMES.thankHost,
+  EVENT_TASK_NAMES.thankSpeakers,
+  EVENT_TASK_NAMES.shareSlides,
+  EVENT_TASK_NAMES.importAttendance,
+  EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
 var MeetupEventOperations = class {
   /**
@@ -37257,6 +37231,37 @@ var MeetupEventOperations = class {
       logistics: { ...event.logistics },
       operationalChecklists,
       followUpComplete: event.followUpComplete && this.postEventChecklistIsComplete(operationalChecklists.postEvent)
+    };
+  }
+};
+
+// packages/domain/event/src/domain/meetup-publication-checklist.ts
+var MeetupPublicationChecklist = class {
+  isPublished(event) {
+    const matches = event.operationalChecklists.communication.filter(
+      (item) => item.name === EVENT_TASK_NAMES.publishMeetup
+    );
+    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+  }
+  withStatus(event, published) {
+    const communication = [];
+    let found = false;
+    for (const item of event.operationalChecklists.communication) {
+      if (item.name !== EVENT_TASK_NAMES.publishMeetup) {
+        communication.push(item);
+        continue;
+      }
+      if (!found) communication.push({ name: item.name, completed: published });
+      found = true;
+    }
+    if (!found)
+      communication.push({
+        name: EVENT_TASK_NAMES.publishMeetup,
+        completed: published
+      });
+    return {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
     };
   }
 };
@@ -41943,19 +41948,23 @@ var LEGACY_SPEAKER_THANKS = "Thanks speakers and share openfeedback reports";
 var TASKS = {
   "host-introduction": {
     section: "communication",
-    names: ["Mail introduction hoster", INTRODUCTION]
+    names: [EVENT_TASK_NAMES.introduceHost, INTRODUCTION]
   },
   "speaker-introduction": {
     section: "communication",
-    names: ["Mail introduction speakers", INTRODUCTION]
+    names: [EVENT_TASK_NAMES.introduceSpeakers, INTRODUCTION]
   },
   "host-thanks": {
     section: "postEvent",
-    names: ["Mail thanks hoster", "Thanks hoster"]
+    names: [EVENT_TASK_NAMES.thankHost, "Thanks hoster"]
   },
   "speaker-thanks": {
     section: "postEvent",
-    names: ["Mail thanks speakers", "Thanks speakers", LEGACY_SPEAKER_THANKS]
+    names: [
+      EVENT_TASK_NAMES.thankSpeakers,
+      "Thanks speakers",
+      LEGACY_SPEAKER_THANKS
+    ]
   }
 };
 var CommunicationChecklist = class {
@@ -42280,7 +42289,7 @@ var EventPublicationEvaluation = class {
         references: event.publicationLinks,
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
-          POST_EVENT_TASK_NAMES.importAttendance
+          EVENT_TASK_NAMES.importAttendance
         )
       }
     );
@@ -48862,23 +48871,38 @@ var HEADINGS = Object.freeze({
   occurrenceStatus: "Event Status"
 });
 var CHECKLIST_LABELS = /* @__PURE__ */ new Map([
-  ["Mail introduction speakers", "Send speaker introduction emails"],
-  ["Mail introduction hoster", "Send host introduction email"],
-  ["Slack - AixMarseille.Tech", "Announce on Slack - AixMarseille.Tech"],
-  ["Slack - OpenBaR", "Announce on Slack - OpenBaR"],
-  ["LinkedIn", "Announce on LinkedIn"],
-  ["Mail thanks hoster", "Send host thank-you email"],
-  ["Mail thanks speakers", "Send speaker thank-you emails"],
-  ["Share slides to meetup", "Send slides to Meetup attendees"],
-  ["Sync attendees from tally sheet to CNCF", "Import attendees into CNCF"],
-  ["Social networks", "Share recap on LinkedIn"]
+  [EVENT_TASK_NAMES.introduceSpeakers, "Send speaker introduction emails"],
+  [EVENT_TASK_NAMES.introduceHost, "Send host introduction email"],
+  [
+    EVENT_TASK_NAMES.announceSlackAixMarseilleTech,
+    "Announce on Slack - AixMarseille.Tech"
+  ],
+  [EVENT_TASK_NAMES.announceSlackOpenBar, "Announce on Slack - OpenBaR"],
+  [EVENT_TASK_NAMES.announceLinkedIn, "Announce on LinkedIn"],
+  [EVENT_TASK_NAMES.thankHost, "Send host thank-you email"],
+  [EVENT_TASK_NAMES.thankSpeakers, "Send speaker thank-you emails"],
+  [EVENT_TASK_NAMES.shareSlides, "Send slides to Meetup attendees"],
+  [EVENT_TASK_NAMES.importAttendance, "Import attendees into CNCF"],
+  [EVENT_TASK_NAMES.shareOnSocialNetworks, "Share recap on LinkedIn"]
 ]);
 var AUTOMATED_TASK_HEADINGS = /* @__PURE__ */ new Map([
-  ["Mail introduction speakers", HEADINGS.introductionEmails],
-  ["Mail introduction hoster", HEADINGS.introductionEmails],
-  ["Mail thanks hoster", HEADINGS.thankYouEmails],
-  ["Mail thanks speakers", HEADINGS.thankYouEmails],
-  ["Share slides to meetup", HEADINGS.slidesDelivery]
+  [EVENT_TASK_NAMES.introduceSpeakers, HEADINGS.introductionEmails],
+  [EVENT_TASK_NAMES.introduceHost, HEADINGS.introductionEmails],
+  [EVENT_TASK_NAMES.thankHost, HEADINGS.thankYouEmails],
+  [EVENT_TASK_NAMES.thankSpeakers, HEADINGS.thankYouEmails],
+  [EVENT_TASK_NAMES.shareSlides, HEADINGS.slidesDelivery]
+]);
+var COMPLETION_MARKER = "\u2705";
+var CHECKMARK_TASK_NAMES = /* @__PURE__ */ new Set([
+  EVENT_TASK_NAMES.introduceHost,
+  EVENT_TASK_NAMES.introduceSpeakers,
+  EVENT_TASK_NAMES.thankHost,
+  EVENT_TASK_NAMES.thankSpeakers,
+  EVENT_TASK_NAMES.shareSlides,
+  EVENT_TASK_NAMES.publishMeetup,
+  EVENT_TASK_NAMES.announceSlackAixMarseilleTech,
+  EVENT_TASK_NAMES.announceSlackOpenBar,
+  EVENT_TASK_NAMES.announceLinkedIn
 ]);
 
 // packages/adapter/event/github-issue-form-event-document-codec/src/event-reference-metadata.ts
@@ -49055,6 +49079,11 @@ var IssueFormChecklists = class {
       if (!line.trim()) {
         continue;
       }
+      const completion = this.collaborators.markdownLines.parseCompletionLine(line);
+      if (completion) {
+        checkboxes.push({ checked: true, label: completion.label });
+        continue;
+      }
       const checkbox = this.collaborators.markdownLines.parseCheckboxLine(line);
       if (!checkbox) {
         diagnostics.push(
@@ -49109,7 +49138,7 @@ var IssueFormChecklists = class {
   operationalChecklistIsWellFormed(value) {
     const cleaned = this.collaborators.issueFormSections.cleanResponse(value);
     return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every(
-      (line) => this.collaborators.markdownLines.parseCheckboxLine(line) !== void 0
+      (line) => this.collaborators.markdownLines.parseCheckboxLine(line) !== void 0 || this.collaborators.markdownLines.parseCompletionLine(line) !== void 0
     );
   }
   renderOperationalChecklist(items, body, heading) {
@@ -49120,9 +49149,10 @@ var IssueFormChecklists = class {
         label
       ])
     );
-    return items.map(
-      ({ name, completed }) => `- [${completed ? "x" : " "}] ${labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : void 0) ?? name}`
-    ).join("\n");
+    return items.map(({ name, completed }) => {
+      const label = labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : void 0) ?? name;
+      return completed && CHECKMARK_TASK_NAMES.has(name) ? `${COMPLETION_MARKER} ${label}` : `- [${completed ? "x" : " "}] ${label}`;
+    }).join("\n");
   }
   taskName(label) {
     for (const [name, publicLabel] of CHECKLIST_LABELS) {
@@ -50078,6 +50108,22 @@ var MarkdownLines = class {
       checked: checkedMarker.toLowerCase() === "x",
       label
     };
+  }
+  parseCompletionLine(line) {
+    let cursor = this.skipHorizontalWhitespace(line, 0);
+    if (line[cursor] !== COMPLETION_MARKER) {
+      return void 0;
+    }
+    cursor += 1;
+    if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = this.skipHorizontalWhitespace(line, cursor);
+    const label = line.slice(cursor).trim();
+    if (label === "") {
+      return void 0;
+    }
+    return { label };
   }
   skipHorizontalWhitespace(line, cursor) {
     while (cursor < line.length && this.isHorizontalWhitespaceCharacter(line[cursor])) {

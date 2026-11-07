@@ -27841,40 +27841,14 @@ var ManagedLabelsRule = class {
   }
 };
 
-// packages/domain/event/src/domain/meetup-publication-checklist.ts
-var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
-  static taskName = "Meetup event published";
-  isPublished(event) {
-    const matches = event.operationalChecklists.communication.filter(
-      (item) => item.name === _MeetupPublicationChecklist.taskName
-    );
-    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
-  }
-  withStatus(event, published) {
-    const communication = [];
-    let found = false;
-    for (const item of event.operationalChecklists.communication) {
-      if (item.name !== _MeetupPublicationChecklist.taskName) {
-        communication.push(item);
-        continue;
-      }
-      if (!found) communication.push({ name: item.name, completed: published });
-      found = true;
-    }
-    if (!found)
-      communication.push({
-        name: _MeetupPublicationChecklist.taskName,
-        completed: published
-      });
-    return {
-      ...event,
-      operationalChecklists: { ...event.operationalChecklists, communication }
-    };
-  }
-};
-
 // packages/domain/event/src/domain/model.ts
-var POST_EVENT_TASK_NAMES = Object.freeze({
+var EVENT_TASK_NAMES = Object.freeze({
+  introduceHost: "Mail introduction hoster",
+  introduceSpeakers: "Mail introduction speakers",
+  publishMeetup: "Meetup event published",
+  announceSlackAixMarseilleTech: "Slack - AixMarseille.Tech",
+  announceSlackOpenBar: "Slack - OpenBaR",
+  announceLinkedIn: "LinkedIn",
   thankHost: "Mail thanks hoster",
   thankSpeakers: "Mail thanks speakers",
   shareSlides: "Share slides to meetup",
@@ -27882,11 +27856,11 @@ var POST_EVENT_TASK_NAMES = Object.freeze({
   shareOnSocialNetworks: "Social networks"
 });
 var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
-  POST_EVENT_TASK_NAMES.thankHost,
-  POST_EVENT_TASK_NAMES.thankSpeakers,
-  POST_EVENT_TASK_NAMES.shareSlides,
-  POST_EVENT_TASK_NAMES.importAttendance,
-  POST_EVENT_TASK_NAMES.shareOnSocialNetworks
+  EVENT_TASK_NAMES.thankHost,
+  EVENT_TASK_NAMES.thankSpeakers,
+  EVENT_TASK_NAMES.shareSlides,
+  EVENT_TASK_NAMES.importAttendance,
+  EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
 var MeetupEventOperations = class {
   /**
@@ -27934,6 +27908,37 @@ var MeetupEventOperations = class {
       logistics: { ...event.logistics },
       operationalChecklists,
       followUpComplete: event.followUpComplete && this.postEventChecklistIsComplete(operationalChecklists.postEvent)
+    };
+  }
+};
+
+// packages/domain/event/src/domain/meetup-publication-checklist.ts
+var MeetupPublicationChecklist = class {
+  isPublished(event) {
+    const matches = event.operationalChecklists.communication.filter(
+      (item) => item.name === EVENT_TASK_NAMES.publishMeetup
+    );
+    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+  }
+  withStatus(event, published) {
+    const communication = [];
+    let found = false;
+    for (const item of event.operationalChecklists.communication) {
+      if (item.name !== EVENT_TASK_NAMES.publishMeetup) {
+        communication.push(item);
+        continue;
+      }
+      if (!found) communication.push({ name: item.name, completed: published });
+      found = true;
+    }
+    if (!found)
+      communication.push({
+        name: EVENT_TASK_NAMES.publishMeetup,
+        completed: published
+      });
+    return {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
     };
   }
 };
@@ -34308,19 +34313,23 @@ var LEGACY_SPEAKER_THANKS = "Thanks speakers and share openfeedback reports";
 var TASKS = {
   "host-introduction": {
     section: "communication",
-    names: ["Mail introduction hoster", INTRODUCTION]
+    names: [EVENT_TASK_NAMES.introduceHost, INTRODUCTION]
   },
   "speaker-introduction": {
     section: "communication",
-    names: ["Mail introduction speakers", INTRODUCTION]
+    names: [EVENT_TASK_NAMES.introduceSpeakers, INTRODUCTION]
   },
   "host-thanks": {
     section: "postEvent",
-    names: ["Mail thanks hoster", "Thanks hoster"]
+    names: [EVENT_TASK_NAMES.thankHost, "Thanks hoster"]
   },
   "speaker-thanks": {
     section: "postEvent",
-    names: ["Mail thanks speakers", "Thanks speakers", LEGACY_SPEAKER_THANKS]
+    names: [
+      EVENT_TASK_NAMES.thankSpeakers,
+      "Thanks speakers",
+      LEGACY_SPEAKER_THANKS
+    ]
   }
 };
 var CommunicationChecklist = class {
@@ -34645,7 +34654,7 @@ var EventPublicationEvaluation = class {
         references: event.publicationLinks,
         attendanceImported: this.checklistTaskIsCompleted(
           event.operationalChecklists.postEvent,
-          POST_EVENT_TASK_NAMES.importAttendance
+          EVENT_TASK_NAMES.importAttendance
         )
       }
     );
@@ -45869,7 +45878,7 @@ var EN_MESSAGES4 = {
   "approval.content.final": "{status, select, approved {\u2705 Approved} rejected {\u274C Rejected} iteration_requested {\u{1F504} New proposal requested} other {Decision recorded}} by @{actor} on {decidedAt}.{image, plural, =0 {} other {\n\nSelected image: #}}",
   "approval.meetup.details": "### Publish on Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}).",
   "approval.meetup.request": "Select one choice. Automation publishes the approved draft.\n\n- [{approveMark}] \u2705 Approve publication\n- [{rejectMark}] \u274C Reject publication",
-  "approval.meetup.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The issue checkbox confirms publication.} rejected {The event stays in draft.} other {}}",
+  "approval.meetup.final": "{status, select, approved {\u2705 Publication approved} rejected {\u274C Publication rejected} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {The \u2705 completion marker in the issue confirms publication.} rejected {The event stays in draft.} other {}}",
   "follow-up.title": "## Post-event follow-up \xB7 {date}",
   "follow-up.instructions": 'Email and slides delivery require approval. After importing attendees into CNCF and publishing the recap on LinkedIn, check those two tasks in "Post event".',
   "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Slides email to Meetup attendees after approval} import_attendance {Import attendance into CNCF} share_social {Publish an event recap on LinkedIn} other {Post-event task}}",
@@ -45914,7 +45923,7 @@ var FR_MESSAGES4 = {
   "approval.content.final": "{status, select, approved {\u2705 Approuv\xE9} rejected {\u274C Refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.{image, plural, =0 {} other {\n\nVisuel choisi : #}}",
   "approval.meetup.details": "### Publier sur Meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifier le brouillon Meetup]({url}).",
   "approval.meetup.request": "Cochez un choix. L'automatisation publiera le brouillon approuv\xE9.\n\n- [{approveMark}] \u2705 Approuver la publication\n- [{rejectMark}] \u274C Refuser la publication",
-  "approval.meetup.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {La case de l'issue confirme la publication.} rejected {L'\xE9v\xE9nement reste en brouillon.} other {}}",
+  "approval.meetup.final": "{status, select, approved {\u2705 Publication approuv\xE9e} rejected {\u274C Publication refus\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Le marqueur de fin \u2705 dans l'issue confirme la publication.} rejected {L'\xE9v\xE9nement reste en brouillon.} other {}}",
   "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
   "follow-up.instructions": `Les envois d'emails et de slides n\xE9cessitent une approbation. Apr\xE8s l'import des participants dans CNCF et la publication du r\xE9capitulatif sur LinkedIn, cochez ces deux t\xE2ches dans "Post event".`,
   "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Envoi des slides aux participants Meetup apr\xE8s approbation} import_attendance {Importer la participation dans CNCF} share_social {Publier un r\xE9capitulatif du meetup sur LinkedIn} other {T\xE2che apr\xE8s le meetup}}",
@@ -47295,9 +47304,9 @@ var FollowUpPresenter = class {
       this.messages.t("follow-up.instructions", {})
     ];
     for (const task of FOLLOW_UP_TASKS) {
-      const pending = record.followUp.pendingTasks.includes(task);
+      if (!record.followUp.pendingTasks.includes(task)) continue;
       lines.push(
-        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
+        `\u23F3 ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
       );
     }
     const progress = this.policy.progressState(record.followUp);

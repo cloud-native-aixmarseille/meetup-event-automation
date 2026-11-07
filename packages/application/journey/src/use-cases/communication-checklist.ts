@@ -2,10 +2,11 @@ import type {
 	MailCommunicationKind,
 	MailRecipient,
 } from "@meetup-automation/communication";
-import type {
-	EventOperationalChecklists,
-	MeetupEvent,
-	OperationalChecklistItem,
+import {
+	EVENT_TASK_NAMES,
+	type EventOperationalChecklists,
+	type MeetupEvent,
+	type OperationalChecklistItem,
 } from "@meetup-automation/event";
 
 const INTRODUCTION = "Mail introduction";
@@ -13,19 +14,23 @@ const LEGACY_SPEAKER_THANKS = "Thanks speakers and share openfeedback reports";
 const TASKS = {
 	"host-introduction": {
 		section: "communication",
-		names: ["Mail introduction hoster", INTRODUCTION],
+		names: [EVENT_TASK_NAMES.introduceHost, INTRODUCTION],
 	},
 	"speaker-introduction": {
 		section: "communication",
-		names: ["Mail introduction speakers", INTRODUCTION],
+		names: [EVENT_TASK_NAMES.introduceSpeakers, INTRODUCTION],
 	},
 	"host-thanks": {
 		section: "postEvent",
-		names: ["Mail thanks hoster", "Thanks hoster"],
+		names: [EVENT_TASK_NAMES.thankHost, "Thanks hoster"],
 	},
 	"speaker-thanks": {
 		section: "postEvent",
-		names: ["Mail thanks speakers", "Thanks speakers", LEGACY_SPEAKER_THANKS],
+		names: [
+			EVENT_TASK_NAMES.thankSpeakers,
+			"Thanks speakers",
+			LEGACY_SPEAKER_THANKS,
+		],
 	},
 } as const;
 

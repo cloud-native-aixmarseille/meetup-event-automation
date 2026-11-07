@@ -1,3 +1,5 @@
+import { EVENT_TASK_NAMES } from "@meetup-automation/event";
+
 export const CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
 
 export const SCHEMA_MARKER_NAME = "meetup-event-schema";
@@ -30,25 +32,28 @@ export const HEADINGS = Object.freeze({
 });
 
 /** Public form labels mapped to stable operational task names at the codec boundary. */
-export const CHECKLIST_LABELS = new Map([
-	["Mail introduction speakers", "Send speaker introduction emails"],
-	["Mail introduction hoster", "Send host introduction email"],
-	["Slack - AixMarseille.Tech", "Announce on Slack - AixMarseille.Tech"],
-	["Slack - OpenBaR", "Announce on Slack - OpenBaR"],
-	["LinkedIn", "Announce on LinkedIn"],
-	["Mail thanks hoster", "Send host thank-you email"],
-	["Mail thanks speakers", "Send speaker thank-you emails"],
-	["Share slides to meetup", "Send slides to Meetup attendees"],
-	["Sync attendees from tally sheet to CNCF", "Import attendees into CNCF"],
-	["Social networks", "Share recap on LinkedIn"],
+export const CHECKLIST_LABELS = new Map<string, string>([
+	[EVENT_TASK_NAMES.introduceSpeakers, "Send speaker introduction emails"],
+	[EVENT_TASK_NAMES.introduceHost, "Send host introduction email"],
+	[
+		EVENT_TASK_NAMES.announceSlackAixMarseilleTech,
+		"Announce on Slack - AixMarseille.Tech",
+	],
+	[EVENT_TASK_NAMES.announceSlackOpenBar, "Announce on Slack - OpenBaR"],
+	[EVENT_TASK_NAMES.announceLinkedIn, "Announce on LinkedIn"],
+	[EVENT_TASK_NAMES.thankHost, "Send host thank-you email"],
+	[EVENT_TASK_NAMES.thankSpeakers, "Send speaker thank-you emails"],
+	[EVENT_TASK_NAMES.shareSlides, "Send slides to Meetup attendees"],
+	[EVENT_TASK_NAMES.importAttendance, "Import attendees into CNCF"],
+	[EVENT_TASK_NAMES.shareOnSocialNetworks, "Share recap on LinkedIn"],
 ]);
 
-export const AUTOMATED_TASK_HEADINGS = new Map([
-	["Mail introduction speakers", HEADINGS.introductionEmails],
-	["Mail introduction hoster", HEADINGS.introductionEmails],
-	["Mail thanks hoster", HEADINGS.thankYouEmails],
-	["Mail thanks speakers", HEADINGS.thankYouEmails],
-	["Share slides to meetup", HEADINGS.slidesDelivery],
+export const AUTOMATED_TASK_HEADINGS = new Map<string, string>([
+	[EVENT_TASK_NAMES.introduceSpeakers, HEADINGS.introductionEmails],
+	[EVENT_TASK_NAMES.introduceHost, HEADINGS.introductionEmails],
+	[EVENT_TASK_NAMES.thankHost, HEADINGS.thankYouEmails],
+	[EVENT_TASK_NAMES.thankSpeakers, HEADINGS.thankYouEmails],
+	[EVENT_TASK_NAMES.shareSlides, HEADINGS.slidesDelivery],
 ]);
 
 export interface GitHubIssueFormEventDocumentCodecOptions {
@@ -90,6 +95,26 @@ export type Section = Readonly<{
 
 export type Checkbox = Readonly<{
 	checked: boolean;
+	label: string;
+}>;
+
+/** Plain-text completion marker without a clickable checkbox. */
+export const COMPLETION_MARKER = "✅";
+
+/** Issue representation only; delivery records own duplicate prevention. */
+export const CHECKMARK_TASK_NAMES: ReadonlySet<string> = new Set([
+	EVENT_TASK_NAMES.introduceHost,
+	EVENT_TASK_NAMES.introduceSpeakers,
+	EVENT_TASK_NAMES.thankHost,
+	EVENT_TASK_NAMES.thankSpeakers,
+	EVENT_TASK_NAMES.shareSlides,
+	EVENT_TASK_NAMES.publishMeetup,
+	EVENT_TASK_NAMES.announceSlackAixMarseilleTech,
+	EVENT_TASK_NAMES.announceSlackOpenBar,
+	EVENT_TASK_NAMES.announceLinkedIn,
+]);
+
+export type Completion = Readonly<{
 	label: string;
 }>;
 

@@ -216,23 +216,27 @@ and integration errors before sending.
 ## Track email completion
 
 The form does not ask for email tasks. Automation schedules due emails for
-approval and adds completion to the issue after accepted delivery:
+approval and records completion on the issue after accepted delivery. Completed
+email tasks use a plain-text checkmark:
 
 ```markdown
 ### Automated introduction emails
 
-- [x] Send speaker introduction emails
-- [x] Send host introduction email
+✅ Send speaker introduction emails
+✅ Send host introduction email
 
 ### Automated thank-you emails
 
-- [x] Send host thank-you email
-- [x] Send speaker thank-you emails
+✅ Send host thank-you email
+✅ Send speaker thank-you emails
 ```
 
-A missing or unchecked email item means the group is pending. Approval is required
-before sending. If you sent a group's emails manually, add its checked item before
-approving the batch. Existing checked items remain completed work.
+The checkmark has no clickable checkbox. Anyone with issue-edit permission can
+still change the text; accepted delivery records prevent another send and restore
+missing completion markers. A group without completion or an accepted delivery
+record remains pending. Approval is required before sending. If you sent a group's
+emails manually, add its completion line before approving the batch. Existing
+checked items also count as completed work.
 
 The speaker introduction task tracks all speaker introduction emails; the host
 introduction task tracks the host contact's introduction email. Each
@@ -306,8 +310,10 @@ tasks not already covered by its guidance. It verifies
 bot revisions before retaining notification state, and saves that state in the
 shared comment before removing a separate attention comment. Interrupted
 consolidation resumes without losing a Slack reservation. From the day after the event, one **Post-event
-follow-up** comment holds links to pending thank-you approvals, all five task statuses, and
-remaining integration or delivery actions. Field corrections stay in the merged
+follow-up** comment holds links to pending thank-you approvals, unfinished tasks,
+and integration or delivery actions. Completed journey
+actions are recorded as checkmarks in the issue description, so the comment
+lists only what is still to do. Field corrections stay in the merged
 diagnostic checklist. Follow-up tasks cover:
 
 - Thank the host and speakers, with a separate approval for each email type.

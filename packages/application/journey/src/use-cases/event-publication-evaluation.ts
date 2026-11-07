@@ -1,8 +1,8 @@
 import {
+	EVENT_TASK_NAMES,
 	type EventDiagnostic,
 	type MeetupEvent,
 	type MeetupPublicationChecklist,
-	POST_EVENT_TASK_NAMES,
 } from "@meetup-automation/event";
 import type {
 	ManualPublicationPolicy,
@@ -97,7 +97,7 @@ export class EventPublicationEvaluation {
 				references: event.publicationLinks,
 				attendanceImported: this.checklistTaskIsCompleted(
 					event.operationalChecklists.postEvent,
-					POST_EVENT_TASK_NAMES.importAttendance,
+					EVENT_TASK_NAMES.importAttendance,
 				),
 			},
 		);

@@ -17,13 +17,13 @@ vi.mock("@actions/github", () => ({ getOctokit: getOctokitMock }));
 
 import {
 	approveEmailRequests,
-	recordEmailNotificationMessages,
-	reviewedMailPayloads,
 	cleanupCommunicationFixtures,
 	createWorkspace,
 	eventBody,
 	githubClients,
 	githubIssueResponse,
+	recordEmailNotificationMessages,
+	reviewedMailPayloads,
 	runtimeInput,
 } from "../testing/communication.fixtures.js";
 
@@ -103,9 +103,9 @@ describe("automatic communication completion after approval", () => {
 			}),
 		);
 		expect(f.issue.body).toContain("### Automated thank-you emails");
-		expect(f.issue.body).toContain("- [x] Send host thank-you email");
-		expect(f.issue.body).toContain("- [x] Send speaker thank-you emails");
-		expect(f.issue.body).toContain("- [x] Send slides to Meetup attendees");
+		expect(f.issue.body).toContain("✅ Send host thank-you email");
+		expect(f.issue.body).toContain("✅ Send speaker thank-you emails");
+		expect(f.issue.body).toContain("✅ Send slides to Meetup attendees");
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
 	});
 
@@ -441,7 +441,7 @@ describe("automatic communication completion after approval", () => {
 				}),
 			}),
 		);
-		expect(f.issue.body).toContain("- [x] Mail thanks speakers");
+		expect(f.issue.body).toContain("✅ Mail thanks speakers");
 		expect(f.issue.body).toContain("- [ ] Mail introduction");
 	});
 
@@ -858,7 +858,7 @@ describe("automatic communication completion after approval", () => {
 		expect(incompleteBody).toContain("- [ ] Mail introduction speakers");
 		expect(second.counts.accepted).toBe(1);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(3);
-		expect(f.issue.body).toContain("- [x] Mail introduction speakers");
+		expect(f.issue.body).toContain("✅ Mail introduction speakers");
 	});
 
 	it.each(["event:cancelled", "event:postponed"])(
@@ -1317,8 +1317,8 @@ describe("organizer approval for email batches", () => {
 		);
 		expect(third.counts.dispatched).toBe(0);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(3);
-		expect(f.issue.body).toContain("- [x] Mail thanks hoster");
-		expect(f.issue.body).toContain("- [x] Mail thanks speakers");
+		expect(f.issue.body).toContain("✅ Mail thanks hoster");
+		expect(f.issue.body).toContain("✅ Mail thanks speakers");
 	});
 	it.each([true, false])(
 		"requests approval and sends only after approval (form email task: %s)",
@@ -1388,7 +1388,7 @@ describe("organizer approval for email batches", () => {
 			expect(f.issue.body).toContain(
 				withTask
 					? "- [x] Mail introduction"
-					: "- [x] Send host introduction email",
+					: "✅ Send host introduction email",
 			);
 			expect(fetch).not.toHaveBeenCalled();
 			expect(f.issue.body).toContain("- [ ] Slack - Public Community");
@@ -1574,12 +1574,12 @@ describe("organizer approval for email batches", () => {
 
 		// Assert
 		expect(first.counts.deferred).toBe(1);
-		expect(partial).toContain("- [x] Mail introduction hoster");
+		expect(partial).toContain("✅ Mail introduction hoster");
 		expect(partial).toContain("- [ ] Mail introduction speakers");
 		expect(second.counts.accepted).toBe(1);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(3);
 		expect(fetch).not.toHaveBeenCalled();
-		expect(f.issue.body).toContain("- [x] Mail introduction speakers");
+		expect(f.issue.body).toContain("✅ Mail introduction speakers");
 	});
 	it("requires a separate approval for thank-you emails", async () => {
 		// Arrange
@@ -1803,8 +1803,8 @@ describe("scheduled post-event thanks", () => {
 				.map(([input]) => input.client_payload["template-name"])
 				.sort(),
 		).toEqual(["meetup-thanks-hosting", "meetup-thanks-speakers"]);
-		expect(f.issue.body).toContain("- [x] Mail thanks hoster");
-		expect(f.issue.body).toContain("- [x] Mail thanks speakers");
+		expect(f.issue.body).toContain("✅ Mail thanks hoster");
+		expect(f.issue.body).toContain("✅ Mail thanks speakers");
 		expect(f.issue.labels).not.toContain("event:held");
 	});
 });

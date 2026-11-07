@@ -143,9 +143,9 @@ describe("meetup issue template integration", () => {
 		expect(checklist.status(reread.event, "host-introduction")).toBe(
 			"completed",
 		);
-		expect(updated.body).toContain("- [x] Send speaker introduction emails");
-		expect(updated.body).toContain("- [x] Send host introduction email");
-		expect(automatedEmails).toContain("- [x] Send speaker introduction emails");
+		expect(updated.body).toContain("✅ Send speaker introduction emails");
+		expect(updated.body).toContain("✅ Send host introduction email");
+		expect(automatedEmails).toContain("✅ Send speaker introduction emails");
 		expect(publicAnnouncements).not.toContain(
 			"Send speaker introduction emails",
 		);
@@ -221,13 +221,13 @@ describe("meetup issue template integration", () => {
 			// Assert
 			expect(decoded.event.followUpComplete).toBe(false);
 			expect(updated.event.followUpComplete).toBe(recapCompleted);
-			expect(patch.body).toContain("- [x] Send speaker thank-you emails");
+			expect(patch.body).toContain("✅ Send speaker thank-you emails");
 			expect(patch.body).not.toContain("- [x] Mail thanks speakers");
-			expect(automatedThanks).toContain("- [x] Send host thank-you email");
+			expect(automatedThanks).toContain("✅ Send host thank-you email");
 			expect(manualFollowUp).not.toContain("Send host thank-you email");
 			expect(updated.event.operationalChecklists.postEvent).toHaveLength(5);
 			expect(patch.body).toContain(
-				"### Automated slide sharing\n\n- [x] Send slides to Meetup attendees",
+				"### Automated slide sharing\n\n✅ Send slides to Meetup attendees",
 			);
 		},
 	);

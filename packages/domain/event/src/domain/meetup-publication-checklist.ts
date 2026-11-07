@@ -1,13 +1,15 @@
-import type { MeetupEvent, OperationalChecklistItem } from "./model.js";
+import {
+	EVENT_TASK_NAMES,
+	type MeetupEvent,
+	type OperationalChecklistItem,
+} from "./model.js";
 
 export class MeetupPublicationChecklist {
-	static readonly taskName = "Meetup event published";
-
 	isPublished(
 		event: Pick<MeetupEvent, "publicationLinks" | "operationalChecklists">,
 	): boolean {
 		const matches = event.operationalChecklists.communication.filter(
-			(item) => item.name === MeetupPublicationChecklist.taskName,
+			(item) => item.name === EVENT_TASK_NAMES.publishMeetup,
 		);
 		return (
 			Boolean(event.publicationLinks.meetup) &&
@@ -20,7 +22,7 @@ export class MeetupPublicationChecklist {
 		const communication: OperationalChecklistItem[] = [];
 		let found = false;
 		for (const item of event.operationalChecklists.communication) {
-			if (item.name !== MeetupPublicationChecklist.taskName) {
+			if (item.name !== EVENT_TASK_NAMES.publishMeetup) {
 				communication.push(item);
 				continue;
 			}
@@ -29,7 +31,7 @@ export class MeetupPublicationChecklist {
 		}
 		if (!found)
 			communication.push({
-				name: MeetupPublicationChecklist.taskName,
+				name: EVENT_TASK_NAMES.publishMeetup,
 				completed: published,
 			});
 		return {
