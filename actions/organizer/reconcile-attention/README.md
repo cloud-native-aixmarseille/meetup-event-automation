@@ -13,7 +13,7 @@
 
 ## Overview
 
-Reconcile organizer attention and bounded Slack reminders from the persisted checklist and stage evidence.
+Reconcile organizer attention and bounded Slack reminders from the persisted checklist and stage evidence. Calls must hold issue and repository/channel concurrency locks; official workflows provide both.
 
 <!-- overview:end -->
 <!-- inputs:start -->

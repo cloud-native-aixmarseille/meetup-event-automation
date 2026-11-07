@@ -72,13 +72,9 @@ Publish exact approved social announcements and reminders to configured destinat
     # This input is required.
     social-credentials: ""
 
-    # Slack bot token for organizer review requests and decision reactions.
+    # Slack bot token with reactions:write to finalize decisions on recorded organizer messages.
     # This input is required.
     slack-token: ""
-
-    # Internal organizer channel receiving content reviews.
-    # This input is required.
-    slack-organizer-channel-id: ""
 ```
 
 <!-- usage:end -->
@@ -98,8 +94,7 @@ Publish exact approved social announcements and reminders to configured destinat
 | **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                                                                                | **true**     | -           |
 | **`managed-comment-author`**       | GitHub App bot login owning content and approval comments.                                                                              | **true**     | -           |
 | **`social-credentials`**           | JSON credentials for configured Slack workspaces and optional LinkedIn access token with Google service account for announcement media. | **true**     | -           |
-| **`slack-token`**                  | Slack bot token for organizer review requests and decision reactions.                                                                   | **true**     | -           |
-| **`slack-organizer-channel-id`**   | Internal organizer channel receiving content reviews.                                                                                   | **true**     | -           |
+| **`slack-token`**                  | Slack bot token with reactions:write to finalize decisions on recorded organizer messages.                                              | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

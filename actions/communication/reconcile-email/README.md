@@ -76,11 +76,7 @@ Reconcile due email batches, verified organizer approval, delivery records and c
     # This input is required.
     mailings-token: ""
 
-    # Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.
-    # This input is required.
-    slack-organizer-channel-id: ""
-
-    # Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
+    # Slack bot token with reactions:write to finalize decisions on recorded organizer messages.
     # This input is required.
     slack-token: ""
 
@@ -111,8 +107,7 @@ Reconcile due email batches, verified organizer approval, delivery records and c
 | **`github-token`**                 | Token for the caller repository. Requires issues:write for approval requests, checklist completion and the delivery ledger, and metadata:read to verify approvers.                                      | **true**     | -           |
 | **`managed-comment-author`**       | Trusted bot login allowed to create or update managed approval and delivery ledger comments, for example my-app[bot].                                                                                   | **true**     | -           |
 | **`mailings-token`**               | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                  | **true**     | -           |
-| **`slack-organizer-channel-id`**   | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.                                                            | **true**     | -           |
-| **`slack-token`**                  | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                                                                                 | **true**     | -           |
+| **`slack-token`**                  | Slack bot token with reactions:write to finalize decisions on recorded organizer messages.                                                                                                              | **true**     | -           |
 | **`conference-hall-event`**        | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                                                                               | **true**     | -           |
 | **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                                                                                                                                                | **true**     | -           |
 
