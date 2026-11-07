@@ -8,7 +8,7 @@ organizer Slack channel, covering content, cadence, re-notification thresholds,
 and cross-surface deduplication. This refines the attention and reminder cadence
 in [ADR 0004](0004-organizer-workflow.md) and reuses the Slack transport from
 [ADR 0010](0010-social-publication.md). It does not change diagnostic
-classification, checklist merging, durable attention state and reservations,
+classification, checklist merging, existing attention and reservation guarantees,
 approval authority, or the mandatory
 [feedback rules](../development/reporting.md#required-feedback-rules). Once
 accepted and implemented, its decisions consolidate into ADR 0004.
@@ -53,8 +53,8 @@ shared channel a concise, link-first escalation pointer, so the two surfaces sto
 duplicating each other and the channel receives fewer, higher-value
 notifications. Introduce a communication-domain notification routing policy that
 classifies each due condition and decides whether it warrants a fresh Slack
-notification. Durable attention state, episodes, and reservations are unchanged;
-only delivery content and frequency change.
+notification. Existing attention episodes and reservation guarantees are preserved;
+delivery content and frequency change, with shared accounting for the routine cap.
 
 ### Shared channel, always on
 
@@ -80,35 +80,54 @@ the shared checklist, into an explicit "pointer, not reproduction" rule.
 
 Keep the existing one-message-per-issue-per-day grouping and edit-in-place
 behavior. Raise the bar for what triggers a new notification versus a silent edit
-of the existing message. Only a bounded, named set of urgent conditions triggers
-a fresh notification: overdue approvals, blocked or uncertain external
-deliveries, integration failures requiring action, and terminal pre-event
-milestones (D-1 and D0). Lower-urgency conditions update the existing message in
-place without re-alerting. Urgency derives from the existing application
-`DiagnosticPolicy` classification and the `Europe/Paris` milestones, not a new
-severity scheme.
+of the existing message. A bounded, named set of urgent conditions can trigger
+a fresh notification outside the routine cap: overdue approvals, blocked or
+uncertain external deliveries, integration failures requiring action, and terminal pre-event
+milestones (D-1 and D0). Lower-urgency conditions use the bounded routine cadence
+below; other changes update the existing message in place without re-alerting.
+Urgency derives from the existing application `DiagnosticPolicy` classification
+and the `Europe/Paris` milestones, not a new severity scheme.
 
 ### Consolidated reminder cadence
 
-Reduce the number of routine milestone notifications, retaining terminal
-(D-1, D0) and overdue reminders, and surfacing collapsed intermediate milestones
-through in-message edits rather than fresh pings. This changes delivery frequency
-only. It never clears, hides, or resolves a task.
+Allow at most **three fresh routine Slack notifications in any rolling seven
+local calendar days**, using `Europe/Paris` (today and the preceding six dates).
+The budget applies to the shared organizer channel across all meetup issues,
+not separately to each issue. It is a ceiling, not a target: post only when a
+routine reminder is due. In-place edits do not consume the budget.
+
+Once the budget is exhausted, update the existing message without a fresh ping.
+If no message exists, keep the tasks visible on GitHub until the next eligible
+reminder. Do not mark suppressed reminders as delivered or replay every skipped
+milestone when capacity becomes available; reassess what is still due. This
+changes delivery frequency only. It never clears, hides, or resolves a task.
+
+The named urgent conditions above, including D-1, D0, and overdue approvals,
+are exempt from this routine budget. They still obey the existing per-issue daily
+grouping and reservation rules. Total channel notifications can therefore exceed
+three in a week when urgent conditions occur.
+
+Enforcing the shared cap requires durable channel-level accounting coordinated
+across concurrent issue runs. Reserve a routine slot before posting; pending or
+uncertain delivery holds that slot, and retries must not consume another one.
+Preserve existing per-issue reservations and duplicate protection. The
+communication domain owns the budget policy, orchestration coordinates it through
+ports, and adapters own persistence and Slack delivery.
 
 ### Cross-surface deduplication
 
-A condition already visible on GitHub does not also raise a fresh Slack
-notification unless it crosses the urgent threshold. Keep the no-all-clear,
-reservation, and duplicate-protection rules intact so each surface carries
-distinct signal.
+A condition already visible on GitHub raises a fresh Slack notification only
+when an urgent escalation or a routine reminder within the cap is due. Keep the
+no-all-clear, reservation, and duplicate-protection rules intact so each surface
+carries distinct signal.
 
 ### Feedback rules preserved
 
 All unresolved tasks always remain in the GitHub checklist or follow-up comment.
 Quieting Slack or consolidating cadence must never clear, hide, or resolve a
 task. Missing, skipped, failed, or concurrently invalidated stages still preserve
-previous tasks. Durable attention state and reservations are untouched. These are
-the mandatory
+previous tasks. Existing attention and reservation guarantees are preserved.
+These are the mandatory
 [feedback rules](../development/reporting.md#required-feedback-rules).
 
 ## Alternatives and consequences
@@ -126,11 +145,12 @@ the mandatory
 The shared channel keeps push escalation, which the community requires, but
 becomes signal-rich: fewer fresh notifications, each a concise pointer to GitHub
 for detail. Organizers who follow GitHub stop receiving the same content twice.
-Implementation adds a notification routing and formatting policy in the
-communication domain, a cadence adjustment, and updated reporting and attention
-regression coverage. The trade-off is that less-urgent items surface through
-in-message edits that may not re-alert, so GitHub remains the place to see the
-full current list.
+Implementation adds a communication-domain notification and cadence policy,
+shared budget accounting, adapter-owned presentation, and updated reporting and
+attention regression coverage. The shared cap requires coordination across issues;
+the existing issue lock alone cannot enforce it. Less-urgent items may wait for
+a fresh ping or surface through in-message edits, so GitHub remains the place to
+see the full current list.
 
 ## Open questions
 
@@ -146,14 +166,26 @@ full current list.
 Add focused coverage under the
 [reporting validation requirements](../development/reporting.md#validation):
 
-- Non-urgent conditions already visible on GitHub do not raise a fresh Slack
-  notification, while the named urgent set still escalates on the shared channel.
+- Across multiple meetup issues, at most three fresh routine notifications are
+  allowed in any rolling seven local dates, including across week boundaries.
+  In-place edits consume no slots; a fourth routine notification is suppressed.
+- Concurrent runs, reruns, and pending or uncertain deliveries cannot exceed the
+  shared budget or duplicate a post. Capacity returns as older slots leave the
+  window, without replaying obsolete reminders.
+- The named urgent set still escalates after the routine budget is exhausted,
+  subject to existing per-issue daily grouping and reservation rules.
 - Consolidating cadence and quieting Slack preserve every unresolved task;
   incomplete, missing, or failed stages retain previous tasks.
-- Existing duplicate-protection, reservation, no-all-clear, and one-message-per
-  -issue-per-day behavior continue to hold.
+- Existing duplicate protection, reservations, no-all-clear behavior, and grouping
+  by issue and local day continue to hold, including when no Slack message exists.
 
 ## Decision history and evidence
+
+2026-11-07: incorporated the
+[review suggestion to cap routine reminders at three per week](https://github.com/cloud-native-aixmarseille/meetup-event-automation/pull/803#issuecomment-6684333090).
+The proposal applies that ceiling across the shared channel over rolling local
+dates, with explicit urgent exceptions and shared accounting requirements.
+These details remain proposed; no runtime behavior changes in this PR.
 
 2026-11-06: proposed in response to organizer feedback about Slack spam and
 duplication with GitHub notifications. Review fixed two constraints: the

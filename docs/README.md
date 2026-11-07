@@ -98,7 +98,7 @@ Use the current guides above for setup and supported operational behavior.
 | [Draft generation and review](adr/0008-draft-generation.md)               | Event copy, cover artwork, social formats, reminders, and provider boundaries.    |
 | [Event publication destinations](adr/0009-community-event-publication.md) | Shared lifecycle, Meetup and OCGroups adapters, approval, and recovery.           |
 | [LinkedIn Page and Slack publication](adr/0010-social-publication.md)     | Social dispatch, publication approval, scheduling, and recovery.                  |
-| [Organizer notification journey](adr/0012-notification-journey.md)        | Proposed shared-channel routing, concise Slack pointers, and reminder cadence.    |
+| [Organizer notification journey](adr/0012-notification-journey.md)        | Proposed concise Slack pointers and a shared weekly cap on routine reminders.     |
 
 ## Directory layout
 
