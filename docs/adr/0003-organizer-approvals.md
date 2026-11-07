@@ -60,7 +60,9 @@ prerequisites. An approval cannot manufacture missing source data.
 
 The journey checks a task only after every intended recipient in its group has
 an accepted delivery record. A combined task waits for both recipient groups;
-manual work remains separate. Reconcile completion from existing accepted
+manual work remains separate. Completion equality preserves task names, checked
+state, section membership and duplicate counts while ignoring presentation order.
+Reconcile completion from existing accepted
 records after a failed issue write without sending again. Unchecking a task
 cannot request a resend.
 
@@ -103,6 +105,12 @@ compare-and-set writes; source rereads and workflow locks reduce, but cannot
 eliminate, a final concurrent human edit.
 
 ## Decision history
+
+- 2026-11-07: Checklist completion compares tasks semantically within each group.
+  This replaces positional array equality: rendering automated thank-you and
+  slide-sharing sections can reorder the tasks without losing any state.
+  Removed, renamed, duplicated or toggled tasks still fail the preservation check;
+  concurrency checks and accepted delivery reservations remain unchanged.
 
 - 2026-11-07: Explicit organizer requirements replace public-only email summaries
   with complete outgoing values, including email addresses, for all four types.

@@ -60,6 +60,54 @@ describe("automatic communication completion after approval", () => {
 			notificationFailed: false,
 		});
 	});
+	it("records thank-you completion when slides were shared first", async () => {
+		// Arrange
+		const body =
+			eventBody("2099-06-08")
+				.replace("- [ ] Mail thanks hoster\n", "")
+				.replace("- [ ] Mail thanks speakers\n", "")
+				.replace("- [ ] Share slides to meetup\n", "") +
+			"\n### Automated slide sharing\n\n- [x] Send slides to Meetup attendees\n";
+		const f = await setup({
+			body,
+			labels: [
+				"meetup",
+				"event:held",
+				"hoster:confirmed",
+				"speakers:confirmed",
+			],
+		});
+		const runtime = new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		});
+		// Act
+		const completed = await runtime.runCommunicationReconcile(f.input);
+		const retried = await runtime.runCommunicationReconcile(f.input);
+		// Assert
+		expect(completed.runtimeDiagnostics).not.toContainEqual(
+			expect.objectContaining({
+				code: "communication.checklist-update-failed",
+			}),
+		);
+		expect(retried.runtimeDiagnostics).not.toContainEqual(
+			expect.objectContaining({
+				code: "communication.checklist-update-failed",
+			}),
+		);
+		expect(f.issue.body).toContain("### Automated thank-you emails");
+		expect(f.issue.body).toContain("- [x] Send host thank-you email");
+		expect(f.issue.body).toContain("- [x] Send speaker thank-you emails");
+		expect(f.issue.body).toContain("- [x] Send slides to Meetup attendees");
+		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
+	});
+
 	it.each([
 		["scheduled", "Automated introduction emails"],
 		["held", "Automated thank-you emails"],
