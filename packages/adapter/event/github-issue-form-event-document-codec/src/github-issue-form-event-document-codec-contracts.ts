@@ -93,6 +93,13 @@ export type Checkbox = Readonly<{
 	label: string;
 }>;
 
+/** Locked completion marker for irreversible journey actions; never a checkbox. */
+export const COMPLETION_MARKER = "✅";
+
+export type Completion = Readonly<{
+	label: string;
+}>;
+
 export type ManagedMarkerMatch = Readonly<{
 	start: number;
 	end: number;

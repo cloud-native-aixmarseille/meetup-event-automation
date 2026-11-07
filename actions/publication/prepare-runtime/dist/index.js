@@ -27108,6 +27108,18 @@ var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
   POST_EVENT_TASK_NAMES.importAttendance,
   POST_EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
+var LOCKED_JOURNEY_ACTION_NAMES = /* @__PURE__ */ new Set([
+  "Mail introduction hoster",
+  "Mail introduction speakers",
+  POST_EVENT_TASK_NAMES.thankHost,
+  POST_EVENT_TASK_NAMES.thankSpeakers,
+  POST_EVENT_TASK_NAMES.shareSlides,
+  // Mirrors MeetupPublicationChecklist.taskName without importing it (avoids a cycle).
+  "Meetup event published",
+  "Slack - AixMarseille.Tech",
+  "Slack - OpenBaR",
+  "LinkedIn"
+]);
 var MeetupEventOperations = class {
   /**
    * A post-event checklist is complete only when it contains each expected task

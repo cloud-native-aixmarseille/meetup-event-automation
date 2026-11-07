@@ -35215,6 +35215,18 @@ var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
   POST_EVENT_TASK_NAMES.importAttendance,
   POST_EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
+var LOCKED_JOURNEY_ACTION_NAMES = /* @__PURE__ */ new Set([
+  "Mail introduction hoster",
+  "Mail introduction speakers",
+  POST_EVENT_TASK_NAMES.thankHost,
+  POST_EVENT_TASK_NAMES.thankSpeakers,
+  POST_EVENT_TASK_NAMES.shareSlides,
+  // Mirrors MeetupPublicationChecklist.taskName without importing it (avoids a cycle).
+  "Meetup event published",
+  "Slack - AixMarseille.Tech",
+  "Slack - OpenBaR",
+  "LinkedIn"
+]);
 var MeetupEventOperations = class {
   /**
    * A post-event checklist is complete only when it contains each expected task
@@ -52184,6 +52196,7 @@ var AUTOMATED_TASK_HEADINGS = /* @__PURE__ */ new Map([
   ["Mail thanks speakers", HEADINGS.thankYouEmails],
   ["Share slides to meetup", HEADINGS.slidesDelivery]
 ]);
+var COMPLETION_MARKER = "\u2705";
 
 // packages/adapter/event/github-issue-form-event-document-codec/src/event-reference-metadata.ts
 var EventReferenceMetadata = class {
@@ -52359,6 +52372,11 @@ var IssueFormChecklists = class {
       if (!line.trim()) {
         continue;
       }
+      const completion = this.collaborators.markdownLines.parseCompletionLine(line);
+      if (completion) {
+        checkboxes.push({ checked: true, label: completion.label });
+        continue;
+      }
       const checkbox = this.collaborators.markdownLines.parseCheckboxLine(line);
       if (!checkbox) {
         diagnostics.push(
@@ -52413,7 +52431,7 @@ var IssueFormChecklists = class {
   operationalChecklistIsWellFormed(value) {
     const cleaned = this.collaborators.issueFormSections.cleanResponse(value);
     return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every(
-      (line) => this.collaborators.markdownLines.parseCheckboxLine(line) !== void 0
+      (line) => this.collaborators.markdownLines.parseCheckboxLine(line) !== void 0 || this.collaborators.markdownLines.parseCompletionLine(line) !== void 0
     );
   }
   renderOperationalChecklist(items, body, heading) {
@@ -52424,9 +52442,10 @@ var IssueFormChecklists = class {
         label
       ])
     );
-    return items.map(
-      ({ name, completed }) => `- [${completed ? "x" : " "}] ${labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : void 0) ?? name}`
-    ).join("\n");
+    return items.map(({ name, completed }) => {
+      const label = labels.get(name) ?? (AUTOMATED_TASK_HEADINGS.has(name) ? CHECKLIST_LABELS.get(name) : void 0) ?? name;
+      return completed && LOCKED_JOURNEY_ACTION_NAMES.has(name) ? `${COMPLETION_MARKER} ${label}` : `- [${completed ? "x" : " "}] ${label}`;
+    }).join("\n");
   }
   taskName(label) {
     for (const [name, publicLabel] of CHECKLIST_LABELS) {
@@ -53382,6 +53401,22 @@ var MarkdownLines = class {
       checked: checkedMarker.toLowerCase() === "x",
       label
     };
+  }
+  parseCompletionLine(line) {
+    let cursor = this.skipHorizontalWhitespace(line, 0);
+    if (line[cursor] !== COMPLETION_MARKER) {
+      return void 0;
+    }
+    cursor += 1;
+    if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = this.skipHorizontalWhitespace(line, cursor);
+    const label = line.slice(cursor).trim();
+    if (label === "") {
+      return void 0;
+    }
+    return { label };
   }
   skipHorizontalWhitespace(line, cursor) {
     while (cursor < line.length && this.isHorizontalWhitespaceCharacter(line[cursor])) {

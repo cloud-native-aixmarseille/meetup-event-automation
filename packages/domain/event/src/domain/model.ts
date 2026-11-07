@@ -86,6 +86,26 @@ export const EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
 ] as const);
 
 /**
+ * Bot-performed journey actions that cannot be reverted once done, such as a
+ * sent email or a published event. Their completion is recorded in the issue as
+ * a locked checkmark rather than an editable checkbox, so an organizer cannot
+ * silently revert an irreversible step and trigger it again. This is the single
+ * source of truth consulted by the issue codec when rendering completion.
+ */
+export const LOCKED_JOURNEY_ACTION_NAMES: ReadonlySet<string> = new Set([
+	"Mail introduction hoster",
+	"Mail introduction speakers",
+	POST_EVENT_TASK_NAMES.thankHost,
+	POST_EVENT_TASK_NAMES.thankSpeakers,
+	POST_EVENT_TASK_NAMES.shareSlides,
+	// Mirrors MeetupPublicationChecklist.taskName without importing it (avoids a cycle).
+	"Meetup event published",
+	"Slack - AixMarseille.Tech",
+	"Slack - OpenBaR",
+	"LinkedIn",
+]);
+
+/**
  * Technology-independent representation of a meetup event.
  *
  * Fields may be empty while an event is being drafted. Invalid transport

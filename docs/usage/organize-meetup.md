@@ -120,9 +120,9 @@ See [channel separation](../integrations/communications.md#organizer-and-public-
 Once the event is ready, automation requests separate approval for host and speaker
 introduction emails. Open each request in the issue or follow its Slack link.
 Expand **Email details** to review and edit the public template parameters before
-checking **✅ Approve sending**. Automation sends the approved type and adds each completed item under
+checking **✅ Approve sending**. Automation sends the approved type and records each completed item under
 **Automated introduction emails** after all requests for that group are accepted.
-No email checkbox is needed in the form.
+Completed items use a locked checkmark that cannot be reverted. No email checkbox is needed in the form.
 
 Check **❌ Reject sending** to refuse that type. Once processed, either
 choice is final: the same comment shows the decision and organizer, with no
@@ -155,8 +155,10 @@ starts follow-up automatically. Keep the issue open while completing tasks.
 Mark cancelled or postponed events accordingly; no `event:held` label is needed
 for follow-up, and the calendar alone does not change the recorded occurrence.
 
-Use the single **Post-event follow-up** comment to review all five task statuses
-and follow the links to the separate host and speaker thank-you requests. Review
+Use the single **Post-event follow-up** comment to review the remaining tasks
+and follow the links to the separate host and speaker thank-you requests. Completed
+journey actions are recorded as locked checkmarks in the issue description, so this
+comment lists only what is still to do. Review
 the parameters and feedback links in each request, then approve or reject that
 email type. Leave both choices unchecked to wait; checking both keeps the request pending. Approval sends only the unfinished
 emails, with completion recorded after accepted dispatch. Speaker emails include

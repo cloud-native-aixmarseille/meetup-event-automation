@@ -16,9 +16,9 @@ export class FollowUpPresenter {
 			this.messages.t("follow-up.instructions", {}),
 		];
 		for (const task of FOLLOW_UP_TASKS) {
-			const pending = record.followUp.pendingTasks.includes(task);
+			if (!record.followUp.pendingTasks.includes(task)) continue;
 			lines.push(
-				`${pending ? "⏳" : "✅"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`,
+				`⏳ ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`,
 			);
 		}
 		const progress = this.policy.progressState(record.followUp);

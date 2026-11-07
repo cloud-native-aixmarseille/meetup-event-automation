@@ -81,6 +81,7 @@ export {
 	type EventPublicationLinks,
 	EXPECTED_POST_EVENT_TASK_NAMES,
 	type IssueState,
+	LOCKED_JOURNEY_ACTION_NAMES,
 	type MeetupEvent,
 	MeetupEventOperations,
 	type OccurrenceStatus,

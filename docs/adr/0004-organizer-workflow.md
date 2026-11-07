@@ -105,8 +105,21 @@ remains a separate organizer decision. See [referential ownership](0005-referent
 Keep automated email tasks out of the creation form. Missing completion means
 pending work; readiness, timing and explicit batch approval govern sending.
 Journey records accepted host and speaker groups, and the issue codec renders
-their completion in separate automated sections. Preserve existing completed
-items and the delivery ledger so removing a status never resends accepted mail.
+their completion as locked checkmarks in separate automated sections. Preserve
+existing completed items and the delivery ledger so removing a status never
+resends accepted mail.
+
+### Recording irreversible journey actions
+
+A bot-performed journey action that cannot be reverted, such as a sent email, a
+published event, or a delivered announcement, is recorded once in the issue
+description as a locked checkmark rather than an editable checkbox. An organizer
+cannot untick a checkmark, so an irreversible step cannot be silently reverted and
+retriggered. The issue codec owns a single list of these locked task names and is
+the only writer of the marker; it still reads a legacy checkbox as completed so
+existing issues migrate on the next write. Because completion lives in the issue,
+the post-event overview and diagnostic checklist report only outstanding tasks and
+no longer repeat a done action as a status line.
 
 ## Alternatives and consequences
 
@@ -121,6 +134,14 @@ The system cannot detect a schedule that never runs; external monitoring remains
 an operational responsibility.
 
 ## Decision history
+
+On 2026-11-07, completion of irreversible bot journey actions (introduction and
+thank-you emails, slide sharing, Meetup publication, and Slack/LinkedIn
+announcements) moved from editable issue checkboxes to locked checkmarks in the
+issue description. The post-event follow-up overview and the diagnostic checklist
+now list only outstanding tasks; a done action is recorded once in the issue and
+is no longer repeated as a status line. The issue codec is the single writer of
+the completion marker and still reads legacy checkboxes as completed.
 
 On 2026-11-07, thank-you approvals moved from the combined follow-up comment to
 independent host and speaker requests, as recorded in

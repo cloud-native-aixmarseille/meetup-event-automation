@@ -732,7 +732,7 @@ finished
 		expect(patch.body).toContain("### Aperitif\n\nYes");
 		expect(patch.body).toContain("### Restaurant / Bar\n\nNo");
 		expect(patch.body).toContain(
-			"### Automated thank-you emails\n\n- [x] Send host thank-you email",
+			"### Automated thank-you emails\n\n✅ Send host thank-you email",
 		);
 		expect(patch.body).not.toContain("### Drive Link");
 	});
@@ -763,6 +763,34 @@ finished
 		expect(patch.body).toContain(
 			"### Event materials\n\n- [ ] Review the cover image",
 		);
+	});
+
+	it("locks completed irreversible journey actions with a checkmark and keeps them stable", () => {
+		// Arrange
+		const source = document({
+			body: LEGACY_BODY.replace(
+				"### Communication\n\n- [x] Announcement",
+				"### Communication\n\n- [x] Announce on LinkedIn\n- [ ] Announce on Slack - OpenBaR",
+			),
+		});
+		const codec =
+			new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec();
+
+		// Act
+		const migration = codec.createPatch(source, codec.decode(source).event);
+		const migrated = document({ body: migration.body ?? source.body });
+		const reread = codec.decode(migrated);
+		const repeat = codec.createPatch(migrated, reread.event);
+
+		// Assert
+		expect(migration.body).toContain("✅ Announce on LinkedIn");
+		expect(migration.body).not.toContain("- [x] Announce on LinkedIn");
+		expect(migration.body).toContain("- [ ] Announce on Slack - OpenBaR");
+		expect(reread.event.operationalChecklists.communication).toContainEqual({
+			name: "LinkedIn",
+			completed: true,
+		});
+		expect(repeat.body).toBeUndefined();
 	});
 
 	it("reports an invalid logistics intent without discarding other facts", () => {
