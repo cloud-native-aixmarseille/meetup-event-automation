@@ -51,7 +51,7 @@ jobs:
       # This input is required.
       github-app-private-key: ""
 
-      # Slack token for organizer recovery notifications and decision reactions.
+      # Slack token for decision reactions on recorded organizer messages.
       # This input is required.
       slack-token: ""
     with:
@@ -75,10 +75,6 @@ jobs:
       # This input is required.
       reference: ""
 
-      # Internal organizer channel receiving recovery approval requests.
-      # This input is required.
-      slack-organizer-channel-id: ""
-
       # Language for the recovery report (en or fr).
       # This input is required.
       locale: ""
@@ -91,25 +87,24 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**                        | **Description**                                                                              | **Required** | **Type**   | **Default** |
-| -------------------------------- | -------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`github-app-client-id`**       | GitHub App client ID for the consumer repository.                                            | **true**     | **string** | -           |
-| **`issue-number`**               | Meetup source issue number.                                                                  | **true**     | **number** | -           |
-| **`intent-id`**                  | SHA-256 intent identity in the recorded social delivery journal.                             | **true**     | **string** | -           |
-| **`outcome`**                    | Verified outcome, published or not-published.                                                | **true**     | **string** | -           |
-| **`reference`**                  | Provider post URL for published, or GitHub organizer evidence comment URL for not-published. | **true**     | **string** | -           |
-| **`slack-organizer-channel-id`** | Internal organizer channel receiving recovery approval requests.                             | **true**     | **string** | -           |
-| **`locale`**                     | Language for the recovery report (en or fr).                                                 | **true**     | **string** | -           |
+| **Input**                  | **Description**                                                                              | **Required** | **Type**   | **Default** |
+| -------------------------- | -------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`github-app-client-id`** | GitHub App client ID for the consumer repository.                                            | **true**     | **string** | -           |
+| **`issue-number`**         | Meetup source issue number.                                                                  | **true**     | **number** | -           |
+| **`intent-id`**            | SHA-256 intent identity in the recorded social delivery journal.                             | **true**     | **string** | -           |
+| **`outcome`**              | Verified outcome, published or not-published.                                                | **true**     | **string** | -           |
+| **`reference`**            | Provider post URL for published, or GitHub organizer evidence comment URL for not-published. | **true**     | **string** | -           |
+| **`locale`**               | Language for the recovery report (en or fr).                                                 | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
 
 ## Secrets
 
-| **Secret**                   | **Description**                                                          | **Required** |
-| ---------------------------- | ------------------------------------------------------------------------ | ------------ |
-| **`github-app-private-key`** | GitHub App private key.                                                  | **true**     |
-| **`slack-token`**            | Slack token for organizer recovery notifications and decision reactions. | **true**     |
+| **Secret**                   | **Description**                                                    | **Required** |
+| ---------------------------- | ------------------------------------------------------------------ | ------------ |
+| **`github-app-private-key`** | GitHub App private key.                                            | **true**     |
+| **`slack-token`**            | Slack token for decision reactions on recorded organizer messages. | **true**     |
 
 <!-- secrets:end -->
 <!-- outputs:start -->

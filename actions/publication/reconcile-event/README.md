@@ -44,13 +44,9 @@ Reconcile configured publication destinations and publish each event after its v
     # This input is required.
     asset-folder-url-prefix: ""
 
-    # Slack bot token for organizer approval notifications and decision reactions.
+    # Slack bot token with reactions:write to finalize decisions on recorded organizer messages.
     # This input is required.
     slack-token: ""
-
-    # Organizer Slack channel receiving publication approval requests.
-    # This input is required.
-    slack-organizer-channel-id: ""
 
     # Meetup source issue number.
     # This input is required.
@@ -95,8 +91,7 @@ Reconcile configured publication destinations and publish each event after its v
 | **`meetup-event-url-prefix`**      | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                                | **true**     | -           |
 | **`community-event-url-prefixes`** | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                                   | **true**     | -           |
 | **`asset-folder-url-prefix`**      | HTTPS prefix accepted for event asset folder URLs.                                                                                                         | **true**     | -           |
-| **`slack-token`**                  | Slack bot token for organizer approval notifications and decision reactions.                                                                               | **true**     | -           |
-| **`slack-organizer-channel-id`**   | Organizer Slack channel receiving publication approval requests.                                                                                           | **true**     | -           |
+| **`slack-token`**                  | Slack bot token with reactions:write to finalize decisions on recorded organizer messages.                                                                 | **true**     | -           |
 | **`issue-number`**                 | Meetup source issue number.                                                                                                                                | **true**     | -           |
 | **`github-token`**                 | Consumer repository token with contents read and issues write.                                                                                             | **true**     | -           |
 | **`website-token`**                | GitHub App token scoped to the configured site repository with contents write; unused when site synchronization is not configured.                         | **true**     | -           |

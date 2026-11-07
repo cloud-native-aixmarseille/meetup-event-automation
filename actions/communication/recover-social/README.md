@@ -56,13 +56,9 @@ Request a verified organizer decision about an uncertain recorded social deliver
     # This input is required.
     reference: ""
 
-    # Slack bot token for organizer recovery review notifications.
+    # Slack bot token with reactions:write to finalize decisions on recorded organizer messages.
     # This input is required.
     slack-token: ""
-
-    # Internal organizer channel receiving recovery requests.
-    # This input is required.
-    slack-organizer-channel-id: ""
 
     # Language for the recovery report (en or fr).
     # This input is required.
@@ -74,17 +70,16 @@ Request a verified organizer decision about an uncertain recorded social deliver
 
 ## Inputs
 
-| **Input**                        | **Description**                                                                              | **Required** | **Default** |
-| -------------------------------- | -------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`github-token`**               | GitHub token with issue read and write permissions.                                          | **true**     | -           |
-| **`issue-number`**               | Meetup source issue number.                                                                  | **true**     | -           |
-| **`managed-comment-author`**     | GitHub App bot login owning content and delivery records.                                    | **true**     | -           |
-| **`intent-id`**                  | Recorded social delivery intent SHA-256 identity.                                            | **true**     | -           |
-| **`outcome`**                    | Verified outcome, published or not-published.                                                | **true**     | -           |
-| **`reference`**                  | Provider post URL for published, or GitHub organizer evidence comment URL for not-published. | **true**     | -           |
-| **`slack-token`**                | Slack bot token for organizer recovery review notifications.                                 | **true**     | -           |
-| **`slack-organizer-channel-id`** | Internal organizer channel receiving recovery requests.                                      | **true**     | -           |
-| **`locale`**                     | Language for the recovery report (en or fr).                                                 | **true**     | -           |
+| **Input**                    | **Description**                                                                              | **Required** | **Default** |
+| ---------------------------- | -------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`github-token`**           | GitHub token with issue read and write permissions.                                          | **true**     | -           |
+| **`issue-number`**           | Meetup source issue number.                                                                  | **true**     | -           |
+| **`managed-comment-author`** | GitHub App bot login owning content and delivery records.                                    | **true**     | -           |
+| **`intent-id`**              | Recorded social delivery intent SHA-256 identity.                                            | **true**     | -           |
+| **`outcome`**                | Verified outcome, published or not-published.                                                | **true**     | -           |
+| **`reference`**              | Provider post URL for published, or GitHub organizer evidence comment URL for not-published. | **true**     | -           |
+| **`slack-token`**            | Slack bot token with reactions:write to finalize decisions on recorded organizer messages.   | **true**     | -           |
+| **`locale`**                 | Language for the recovery report (en or fr).                                                 | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
