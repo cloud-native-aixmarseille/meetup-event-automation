@@ -57,7 +57,7 @@ export const EN_MESSAGES = {
 		"Approve host and speaker thank-you emails separately in their dedicated comments. Pending requests and blockers are listed below.",
 	"follow-up.emails-complete": "No thank-you emails pending.",
 	"approval.parameters.instructions":
-		"The details contain the values sent to mailings, including the email address. To change a date or link, edit its value between backticks and save. Wait for the details to refresh before approving.",
+		"Review the proposed delivery values. To change a date or link, edit its value between backticks and save. Wait for the details to refresh before approving.",
 	"approval.details.summary": "Email details",
 	"approval.details.email":
 		"{kind, select, host_introduction {Host introduction} speaker_introduction {Speaker introduction} host_thanks {Host thank-you} speaker_thanks {Speaker thank-you} other {Email}}",
