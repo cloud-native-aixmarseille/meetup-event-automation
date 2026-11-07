@@ -30,7 +30,7 @@ Prepare missing D-7 and D0 reminder drafts for configured destinations before th
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/prepare-reminders@5003e22528fba11c38833bf57c7c2807d46fade4 # 11.0.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/prepare-reminders@b411b3a6bb1b18158d4fcfb1fe61d5dc829d8de5 # 11.0.3
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
