@@ -44,7 +44,7 @@ on:
 permissions: {}
 jobs:
   event-promotion-generate-post:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@c358f1daeb8f9076027d61c0b07e249e5f904bbe # 12.0.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-promotion-generate-post.yml@ff2bf3a53d24f119928c911f2cb8b514561ed2f8 # 12.1.0
     permissions:
       contents: read
     secrets:
