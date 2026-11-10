@@ -69,6 +69,10 @@ Docker image. They require Docker. Super-linter's Biome checks are disabled;
 host-installed dependencies. This matches hosted linting before dependency
 installation.
 
+CI, bundle verification, and publication runtime setup allow dependency
+installation hooks. pnpm restricts them to the `allowBuilds` approvals in
+[`pnpm-workspace.yaml`](../../pnpm-workspace.yaml).
+
 The linter mounts the shared Git directory read-only so these commands also work
 from a linked Git worktree.
 

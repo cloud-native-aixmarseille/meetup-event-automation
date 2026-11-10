@@ -70,7 +70,10 @@ describe("event publication workflow", () => {
 		expect(
 			steps.findIndex((step) => step.id === "communications"),
 		).toBeGreaterThan(publication);
-		expect(steps[node].with?.["working-directory"]).toBe(runtimeDirectory);
+		expect(steps[node].with).toEqual({
+			"working-directory": runtimeDirectory,
+			"ignore-scripts": "false",
+		});
 		expect(steps[browser]["working-directory"]).toBe(runtimeDirectory);
 		expect(steps[python]["working-directory"]).toBe(
 			`${runtimeDirectory}/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python`,
