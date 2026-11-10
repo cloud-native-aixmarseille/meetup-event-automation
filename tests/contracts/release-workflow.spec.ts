@@ -50,14 +50,14 @@ describe("release workflow", () => {
 		// Assert
 		expect(plan).toMatchObject({
 			uses: `hoverkraft-tech/ci-github-publish/actions/release/plan@${releaseRevision}`,
-			with: { "target-sha": targetSha, "github-token": token },
+			with: { "target-ref": targetSha, "github-token": token },
 		});
 		expect(create).toMatchObject({
 			uses: `hoverkraft-tech/ci-github-publish/actions/release/create@${releaseRevision}`,
-			if: "steps.plan-release.outputs.has-changes == 'true' && steps.plan-release.outputs.tag != ''",
+			if: "steps.plan-release.outputs.should-release == 'true' && steps.plan-release.outputs.tag != ''",
 			with: {
 				tag: workflowExpression("steps.plan-release.outputs.tag"),
-				"target-sha": targetSha,
+				"target-ref": targetSha,
 				"github-token": token,
 				publish: "true",
 			},

@@ -10,6 +10,28 @@ import {
 } from "./support.js";
 
 describe("internal CI contracts", () => {
+	it("allows approved dependency installation hooks in CI and bundle verification", async () => {
+		// Arrange
+		const nodeChecks = await readWorkflow("__check-nodejs");
+		const bundleChecks = await readWorkflow("__check-dist");
+		const workspace = await readYaml<Record<string, unknown>>(
+			"pnpm-workspace.yaml",
+		);
+
+		// Act
+		const sharedChecks = nodeChecks.jobs?.["test-nodejs"];
+		const bundleSetup = bundleChecks.jobs?.["check-dist"].steps?.find((step) =>
+			step.uses?.startsWith(
+				"hoverkraft-tech/ci-github-nodejs/actions/setup-node@",
+			),
+		);
+
+		// Assert
+		expect(sharedChecks?.with?.["ignore-scripts"]).toBe(false);
+		expect(bundleSetup?.with?.["ignore-scripts"]).toBe("false");
+		expect(workspace.allowBuilds).toMatchObject({ esbuild: true, nx: true });
+	});
+
 	it("delegates configured source analysis to the shared workflow without excluding security queries", async () => {
 		// Arrange
 		const nodeChecks = await readWorkflow("__check-nodejs");

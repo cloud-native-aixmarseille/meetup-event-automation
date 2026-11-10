@@ -20,7 +20,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@97f64bc080b78daca8fb3ece49de448aaac83429 # 1.1.0
+      - uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@fbd3522b68c55a6314aadbededaa487825ba9b35 # 3.0.0
+        with:
+          ignore-scripts: "false"
 
       - name: Build and verify committed action bundles
         run: pnpm check:dist

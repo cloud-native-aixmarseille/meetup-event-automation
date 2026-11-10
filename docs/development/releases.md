@@ -60,6 +60,9 @@ generated changelog. Its tag points to the commit validated by this run, even if
 `main` advances during CI. Release creation uses the committed action bundles
 checked by shared CI; it does not publish private workspace packages to npm.
 
+Both release actions receive the validated commit SHA through `target-ref`.
+Publication requires the plan's `should-release` output and a nonempty tag.
+
 If CI fails, no release job runs. A missing Gemini key or failed summary prevents
 publication. A summary failure can leave an unpublished draft: fix the credential
 or provider problem and rerun the workflow. The release actions reuse the draft
