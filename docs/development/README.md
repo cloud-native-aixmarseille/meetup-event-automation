@@ -96,6 +96,30 @@ after its own rebuild, including missing files, independently of Git staging.
 See [repository tooling ownership](architecture.md#repository-tooling-ownership)
 for placement of build tools, repository checks, and CI fixtures.
 
+## Dependency bundle rebuilds
+
+Dependabot pull requests targeting `main` rebuild bundles through
+[`__rebuild-action-distributions.yml`](../../.github/workflows/__rebuild-action-distributions.yml).
+The shared builder installs the frozen pnpm workspace lockfile with approved
+hooks and runs `pnpm package` once for all actions. Its job has read permissions.
+
+[`__commit-action-distributions.yml`](../../.github/workflows/__commit-action-distributions.yml)
+runs after the builder completes. The shared writer checks the originating run,
+Dependabot identity, unchanged PR head and explicit output directories before
+creating one commit. It never executes PR code. Only this caller receives the
+existing CI App credentials, `CI_BOT_APP_CLIENT_ID` and `CI_BOT_APP_PRIVATE_KEY`.
+The App installation needs Contents write, Actions read and Pull requests read.
+
+Keep both callers pinned to the same shared workflow revision. Their output lists
+must match the bundle paths in the packaging module. The serialized artifact limit
+is 128 MiB. Large changes use an atomic Git ref update and do not receive an
+automatic GitHub commit signature; branch signing rules must permit this bot path.
+
+Normal bundle verification and integration tests remain required. Human source
+changes still include `pnpm package` output. Failed or superseded rebuilds leave
+the PR unchanged; rerun the builder for a fresh artifact after fixing the failure.
+The writer only becomes active once its caller is on the default branch.
+
 ## CI and public documentation
 
 Main and pull-request CI use

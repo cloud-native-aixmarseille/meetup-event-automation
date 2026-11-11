@@ -51,6 +51,7 @@ export interface Workflow {
 	name?: string;
 	on?: {
 		pull_request?: { branches?: string[] };
+		workflow_run?: { workflows: string[]; types: string[] };
 		schedule?: { cron: string }[];
 		workflow_dispatch?: { inputs?: Inputs };
 		workflow_call?: {

@@ -10,6 +10,66 @@ import {
 } from "./support.js";
 
 describe("internal CI contracts", () => {
+	it("keeps dependency rebuilding read-only and limits the trusted writer to every packaged bundle", async () => {
+		// Arrange
+		const builder = await readWorkflow("__rebuild-action-distributions");
+		const writer = await readWorkflow("__commit-action-distributions");
+		const packaging = await readFile(
+			join(root, "packages/runtime/github-actions/packaging/build-actions.mjs"),
+			"utf8",
+		);
+
+		// Act
+		const build = builder.jobs?.distributions;
+		const commit = writer.jobs?.distributions;
+		const outputs = [...packaging.matchAll(/"(actions\/[^"\n]+)\/index\.js"/g)]
+			.map((match) => match[1])
+			.sort();
+		const configuredOutputs = String(build?.with?.["output-directory"])
+			.trim()
+			.split("\n")
+			.sort();
+
+		// Assert
+		expect(builder.on?.pull_request).toEqual({ branches: ["main"] });
+		expect(writer.on?.workflow_run).toEqual({
+			workflows: [builder.name],
+			types: ["completed"],
+		});
+		expect(builder.permissions).toEqual({});
+		expect(writer.permissions).toEqual({});
+		expect(build?.uses).toMatch(
+			/^hoverkraft-tech\/ci-github-common\/\.github\/workflows\/action-distributions\.yml@[0-9a-f]{40}$/,
+		);
+		expect(commit?.uses).toBe(build?.uses);
+		expect(build?.permissions).toEqual({
+			actions: "read",
+			contents: "read",
+			"pull-requests": "read",
+		});
+		expect(commit?.permissions).toEqual(build?.permissions);
+		expect(build?.secrets).toBeUndefined();
+		expect(build?.with).not.toHaveProperty("github-app-client-id");
+		expect(build?.with).toMatchObject({
+			"working-directories": ".",
+			"package-manager": "pnpm",
+			"build-script": "package",
+			"ignore-scripts": false,
+			"required-files": "index.js",
+			"max-artifact-size": 128,
+			"pull-request-authors": '["dependabot"]',
+		});
+		expect(outputs.length).toBeGreaterThan(0);
+		expect(configuredOutputs).toEqual(outputs);
+		expect(commit?.with).toEqual({
+			...build?.with,
+			"github-app-client-id": workflowExpression("vars.CI_BOT_APP_CLIENT_ID"),
+		});
+		expect(commit?.secrets).toEqual({
+			"github-app-key": workflowExpression("secrets.CI_BOT_APP_PRIVATE_KEY"),
+		});
+	});
+
 	it("allows approved dependency installation hooks in CI and bundle verification", async () => {
 		// Arrange
 		const nodeChecks = await readWorkflow("__check-nodejs");
