@@ -11,7 +11,7 @@ permissions: {}
 
 jobs:
   distributions:
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/action-distributions.yml@0864018583d79f7e535f572005baa35f2e864849 # 4.1.0
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/action-distributions.yml@fa083d1ca667dac3b08d77547da8c8bad0204352 # ci-github-common PR #657
     permissions:
       actions: read
       contents: read
@@ -20,29 +20,7 @@ jobs:
       working-directories: .
       build-script: package
       ignore-scripts: false
-      output-directory: |
-        actions/assets/generate-cover/dist
-        actions/assets/reconcile-documents/dist
-        actions/assets/reconcile-slides-pdf/dist
-        actions/communication/generate-linkedin-post/dist
-        actions/communication/generate-slack-post/dist
-        actions/communication/prepare-reminders/dist
-        actions/communication/reconcile-email/dist
-        actions/communication/reconcile-social/dist
-        actions/communication/recover-social/dist
-        actions/event/generate-copy/dist
-        actions/event/list-active/dist
-        actions/event/reconcile/dist
-        actions/feedback/reconcile-event/dist
-        actions/feedback/reconcile-short-link/dist
-        actions/issue-form/reconcile/dist
-        actions/organizer/reconcile-attention/dist
-        actions/organizer/reconcile-checklist/dist
-        actions/organizer/review-drafts/dist
-        actions/publication/prepare-runtime/dist
-        actions/publication/reconcile-event/dist
-        actions/referential/reconcile-speakers/dist
-        actions/referential/validate/dist
+      output-directory: actions/**/dist
       required-files: index.js
       max-artifact-size: 128
       pull-request-authors: '["dependabot"]'

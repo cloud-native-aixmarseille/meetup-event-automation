@@ -105,13 +105,16 @@ hooks and runs `pnpm package` once for all actions. Its job has read permissions
 
 [`__commit-action-distributions.yml`](../../.github/workflows/__commit-action-distributions.yml)
 runs after the builder completes. The shared writer checks the originating run,
-Dependabot identity, unchanged PR head and explicit output directories before
+Dependabot identity, unchanged PR head and resolved output directories before
 creating one commit. It never executes PR code. Only this caller receives the
 existing CI App credentials, `CI_BOT_APP_CLIENT_ID` and `CI_BOT_APP_PRIVATE_KEY`.
 The App installation needs Contents write, Actions read and Pull requests read.
 
-Keep both callers pinned to the same shared workflow revision. Their output lists
-must match the bundle paths in the packaging module. The serialized artifact limit
+Keep both callers pinned to the same shared workflow revision and configure
+`output-directory: actions/**/dist`. The shared workflow resolves matching
+committed directories from the trusted PR base revision. New action directories
+become eligible after reaching the default branch. The contract check ensures
+the pattern covers every bundle in the packaging module. The serialized artifact limit
 is 128 MiB. Large changes use an atomic Git ref update and do not receive an
 automatic GitHub commit signature; branch signing rules must permit this bot path.
 
