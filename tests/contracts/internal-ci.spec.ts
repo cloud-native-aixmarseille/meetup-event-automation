@@ -1,5 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, matchesGlob } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	readWorkflow,
@@ -25,10 +25,7 @@ describe("internal CI contracts", () => {
 		const outputs = [...packaging.matchAll(/"(actions\/[^"\n]+)\/index\.js"/g)]
 			.map((match) => match[1])
 			.sort();
-		const configuredOutputs = String(build?.with?.["output-directory"])
-			.trim()
-			.split("\n")
-			.sort();
+		const outputPattern = String(build?.with?.["output-directory"]);
 
 		// Assert
 		expect(builder.on?.pull_request).toEqual({ branches: ["main"] });
@@ -59,7 +56,10 @@ describe("internal CI contracts", () => {
 			"pull-request-authors": '["dependabot"]',
 		});
 		expect(outputs.length).toBeGreaterThan(0);
-		expect(configuredOutputs).toEqual(outputs);
+		expect(outputPattern).toBe("actions/**/dist");
+		expect(outputs.every((output) => matchesGlob(output, outputPattern))).toBe(
+			true,
+		);
 		expect(commit?.with).toEqual({
 			...build?.with,
 			"github-app-client-id": workflowExpression("vars.CI_BOT_APP_CLIENT_ID"),
