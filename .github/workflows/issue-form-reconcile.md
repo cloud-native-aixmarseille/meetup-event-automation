@@ -43,7 +43,7 @@ on:
 permissions: {}
 jobs:
   issue-form-reconcile:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/issue-form-reconcile.yml@ff2bf3a53d24f119928c911f2cb8b514561ed2f8 # 12.1.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/issue-form-reconcile.yml@e2428fe38a634f1843f67a3e2843db590cd306bd # 12.1.1
     permissions:
       contents: read
     secrets:
