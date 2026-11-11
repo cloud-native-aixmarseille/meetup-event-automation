@@ -29,6 +29,14 @@
 			"quoteStyle": "double"
 		}
 	},
+	"markdown": {
+		"parser": {
+			"frontmatter": true
+		},
+		"formatter": {
+			"formatEmbeds": false
+		}
+	},
 	"assist": {
 		"enabled": true,
 		"actions": {

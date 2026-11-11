@@ -64,6 +64,7 @@ export class MeetupEventVerification {
 		const description = await this.page
 			.getByTestId("event-description-editor")
 			.locator('[contenteditable="true"]:visible')
+			// biome-ignore lint/performance/useDomNodeTextContent: Compare persisted paragraphs using their rendered line breaks.
 			.innerText();
 		// Drafts have no public projection. Reopen the editor to read persisted
 		// fields and distinguish drafts from organizer-published events.

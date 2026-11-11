@@ -76758,7 +76758,7 @@ var MeetupLeadership = class {
       });
       const count = roster.getByText(/^\d+ leadership team$/).filter({ visible: true });
       await count.waitFor();
-      const expected = Number.parseInt(await count.innerText(), 10);
+      const expected = Number.parseInt(await count.textContent() ?? "", 10);
       if (!Number.isSafeInteger(expected) || expected < 1 || expected > 1e3)
         throw new Error("Invalid Meetup leadership count");
       const selector = 'main [role="link"] a[href*="/members/"]';
@@ -76984,7 +76984,8 @@ var MeetupVenue = class {
       name: venue.name,
       exact: true
     });
-    return await selected.isVisible() && (await selected.locator("../..").innerText()).includes(venue.city);
+    return await selected.isVisible() && // biome-ignore lint/performance/useDomNodeTextContent: Only visible city text can confirm the selected venue.
+    (await selected.locator("../..").innerText()).includes(venue.city);
   }
 };
 

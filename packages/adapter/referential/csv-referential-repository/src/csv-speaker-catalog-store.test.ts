@@ -85,16 +85,20 @@ describe("CsvSpeakerCatalogStore", () => {
 			await store.save(original, original.entries, state);
 			const current = await store.read();
 			const unchanged = await store.save(current, current.entries, state);
-			const formatted = await promisify(execFile)(
+			await promisify(execFile)(
 				process.execPath,
-				[formatter, "format", "referentials/speaker-sync-state.json"],
+				[
+					formatter,
+					"format",
+					"--error-on-warnings",
+					"referentials/speaker-sync-state.json",
+				],
 				{ cwd: root, timeout: 10_000 },
 			);
 
 			// Assert
 			expect(current.reservedIds).toEqual(state);
 			expect(unchanged).toBe(false);
-			expect(formatted.stderr).toBe("");
 		},
 	);
 	it("round-trips unknown columns and local field whitespace and avoids repeated writes", async () => {

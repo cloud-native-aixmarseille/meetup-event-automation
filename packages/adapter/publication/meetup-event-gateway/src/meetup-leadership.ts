@@ -16,7 +16,7 @@ export class MeetupLeadership {
 				.getByText(/^\d+ leadership team$/)
 				.filter({ visible: true });
 			await count.waitFor();
-			const expected = Number.parseInt(await count.innerText(), 10);
+			const expected = Number.parseInt((await count.textContent()) ?? "", 10);
 			if (!Number.isSafeInteger(expected) || expected < 1 || expected > 1000)
 				throw new Error("Invalid Meetup leadership count");
 			const selector = 'main [role="link"] a[href*="/members/"]';
