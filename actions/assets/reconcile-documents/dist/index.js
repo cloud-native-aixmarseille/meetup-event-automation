@@ -43313,9 +43313,9 @@ var require_build = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js
+// node_modules/.pnpm/@googleapis+drive@27.0.0_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js
 var require_v2 = __commonJS({
-  "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js"(exports) {
+  "node_modules/.pnpm/@googleapis+drive@27.0.0_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.drive_v2 = void 0;
@@ -45714,9 +45714,9 @@ var require_v2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v3.js
+// node_modules/.pnpm/@googleapis+drive@27.0.0_supports-color@7.2.0/node_modules/@googleapis/drive/build/v3.js
 var require_v3 = __commonJS({
-  "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v3.js"(exports) {
+  "node_modules/.pnpm/@googleapis+drive@27.0.0_supports-color@7.2.0/node_modules/@googleapis/drive/build/v3.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.drive_v3 = void 0;
@@ -47785,9 +47785,9 @@ var require_v3 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js
+// node_modules/.pnpm/@googleapis+drive@27.0.0_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js
 var require_build2 = __commonJS({
-  "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js"(exports) {
+  "node_modules/.pnpm/@googleapis+drive@27.0.0_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AuthPlus = exports.drive_v3 = exports.drive_v2 = exports.auth = exports.VERSIONS = void 0;
@@ -72794,7 +72794,7 @@ function parseNumberSkeleton(tokens) {
   return result;
 }
 
-// node_modules/.pnpm/@formatjs+icu-messageformat-parser@3.5.21/node_modules/@formatjs/icu-messageformat-parser/index.js
+// node_modules/.pnpm/@formatjs+icu-messageformat-parser@3.5.22/node_modules/@formatjs/icu-messageformat-parser/index.js
 var ErrorKind = /* @__PURE__ */ (function(ErrorKind2) {
   ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_CLOSING_BRACE"] = 1] = "EXPECT_ARGUMENT_CLOSING_BRACE";
   ErrorKind2[ErrorKind2["EMPTY_ARGUMENT"] = 2] = "EMPTY_ARGUMENT";
@@ -74816,7 +74816,7 @@ function parse(message, opts = {}) {
   return result.val;
 }
 
-// node_modules/.pnpm/intl-messageformat@12.1.3/node_modules/intl-messageformat/index.js
+// node_modules/.pnpm/intl-messageformat@12.1.4/node_modules/intl-messageformat/index.js
 var ErrorCode = /* @__PURE__ */ (function(ErrorCode2) {
   ErrorCode2["MISSING_VALUE"] = "MISSING_VALUE";
   ErrorCode2["INVALID_VALUE"] = "INVALID_VALUE";
@@ -75126,7 +75126,7 @@ var IntlMessageFormat = class IntlMessageFormat2 {
   }
 };
 
-// node_modules/.pnpm/@formatjs+intl@6.1.3/node_modules/@formatjs/intl/index.js
+// node_modules/.pnpm/@formatjs+intl@6.1.4/node_modules/@formatjs/intl/index.js
 var IntlError = class IntlError2 extends Error {
   constructor(code, message, exception) {
     const err = exception ? exception instanceof Error ? exception : new Error(String(exception)) : void 0;
