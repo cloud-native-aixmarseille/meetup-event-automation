@@ -10,14 +10,13 @@ permissions: {}
 
 jobs:
   distributions:
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/action-distributions.yml@e5995967111277ec1933d6a9b1603f74de30dea9 # ci-github-common PR #655
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/action-distributions.yml@7cd885459ab541ed75a330d30d41530e8ba125ea # ci-github-common PR #655
     permissions:
       actions: read
       contents: read
       pull-requests: read
     with:
       working-directories: .
-      package-manager: pnpm
       build-script: package
       ignore-scripts: false
       output-directory: |
