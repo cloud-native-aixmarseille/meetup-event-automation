@@ -52,7 +52,6 @@ describe("internal CI contracts", () => {
 		expect(build?.with).not.toHaveProperty("github-app-client-id");
 		expect(build?.with).toMatchObject({
 			"working-directories": ".",
-			"package-manager": "pnpm",
 			"build-script": "package",
 			"ignore-scripts": false,
 			"required-files": "index.js",
