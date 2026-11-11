@@ -99,6 +99,10 @@ Do not hand-patch its output to simulate a successful generation.
 
 ## Review and validation
 
+Biome recognizes Markdown frontmatter and preserves embedded code, HTML, and
+frontmatter formatting. This keeps examples and generated references in their
+authored format while checking the surrounding Markdown.
+
 Before completing a documentation change:
 
 1. Check each changed claim against its implementation or public contract.

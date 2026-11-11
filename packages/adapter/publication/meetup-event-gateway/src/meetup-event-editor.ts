@@ -206,6 +206,7 @@ export class MeetupEventEditor {
 			if (line) await this.page.keyboard.insertText(line);
 		}
 		await editor.press("Tab");
+		// biome-ignore lint/performance/useDomNodeTextContent: Rendered text preserves paragraph breaks in the rich editor.
 		const actual = (await editor.innerText()).replace(/\s+/g, " ").trim();
 		if (actual !== value.replace(/\s+/g, " ").trim())
 			throw new Error(

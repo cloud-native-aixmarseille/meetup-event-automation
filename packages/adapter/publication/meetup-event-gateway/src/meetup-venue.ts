@@ -37,6 +37,7 @@ export class MeetupVenue {
 		});
 		return (
 			(await selected.isVisible()) &&
+			// biome-ignore lint/performance/useDomNodeTextContent: Only visible city text can confirm the selected venue.
 			(await selected.locator("../..").innerText()).includes(venue.city)
 		);
 	}
