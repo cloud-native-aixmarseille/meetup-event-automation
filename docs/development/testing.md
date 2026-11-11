@@ -175,8 +175,10 @@ A live organizer publication run is separate from these synthetic tests.
 ## Meetup browser editor
 
 Install Chromium with `pnpm exec playwright-core install chromium` before running
-the TypeScript test suite. CI uses `playwright-core install --with-deps chromium`
-to install browser system dependencies, including Xvfb, as well. Browser-process
+the TypeScript test suite. `pnpm test:ci` installs the same pinned Chromium build
+and uses the browser system libraries and Xvfb supplied by the GitHub-hosted
+Ubuntu runner. On a Linux host missing these prerequisites, run
+`pnpm exec playwright-core install-deps chromium` once during setup. Browser-process
 tests use `xvfb-run` to verify fresh profiles, cleanup, secret isolation, and
 timezone persistence across navigation and another CDP connection. The editor tests run real
 Chromium against intercepted synthetic pages; every request is fulfilled locally.
