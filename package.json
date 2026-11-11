@@ -41,7 +41,7 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:cov": "vitest run --coverage",
-		"test:ci": "playwright-core install --with-deps chromium && vitest run --reporter=default --reporter=junit --outputFile=junit.xml --coverage.enabled --coverage.reporter=lcov --coverage.reporter=text",
+		"test:ci": "playwright-core install chromium && vitest run --reporter=default --reporter=junit --outputFile=junit.xml --coverage.enabled --coverage.reporter=lcov --coverage.reporter=text",
 		"nx": "nx",
 		"workspace:build": "nx run-many -t typecheck",
 		"workspace:test": "nx run-many -t test",
