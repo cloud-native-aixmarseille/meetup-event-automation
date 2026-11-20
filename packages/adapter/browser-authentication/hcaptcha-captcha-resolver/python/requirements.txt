@@ -60,7 +60,7 @@ idna==3.20
     #   requests
 kiwisolver==1.5.1
     # via matplotlib
-loguru==0.7.3
+loguru==0.8.0
     # via
     #   -r requirements.in
     #   hcaptcha-challenger
@@ -85,7 +85,7 @@ pillow==13.0.0
     # via
     #   hcaptcha-challenger
     #   matplotlib
-playwright==1.64.1
+playwright==1.65.1
     # via
     #   -r requirements.in
     #   hcaptcha-challenger
@@ -103,8 +103,6 @@ pydantic-core==2.50.1
     # via pydantic
 pydantic-settings==2.16.0
     # via hcaptcha-challenger
-pyee==14.0.0
-    # via playwright
 pygments==2.21.0
     # via rich
 pyparsing==3.3.3
@@ -140,7 +138,6 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-settings
-    #   pyee
     #   typing-inspection
 typing-inspection==0.4.4
     # via
