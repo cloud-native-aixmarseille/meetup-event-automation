@@ -6,7 +6,7 @@
 	"exports": "./src/index.ts",
 	"dependencies": {
 		"@meetup-automation/publication": "workspace:*",
-		"image-size": "^2.0.4",
+		"image-size": "^2.1.0",
 		"ipaddr.js": "^2.5.0"
 	}
 }

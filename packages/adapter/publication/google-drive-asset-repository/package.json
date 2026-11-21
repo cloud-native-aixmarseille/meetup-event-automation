@@ -5,9 +5,9 @@
 	"type": "module",
 	"exports": "./src/index.ts",
 	"dependencies": {
-		"@googleapis/drive": "^27.0.0",
+		"@googleapis/drive": "^27.1.0",
 		"@meetup-automation/publication": "workspace:*",
-		"image-size": "^2.0.4"
+		"image-size": "^2.1.0"
 	},
 	"devDependencies": {
 		"@meetup-automation/templating": "workspace:*"
