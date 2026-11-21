@@ -44,7 +44,7 @@ jobs:
 
       # App-authenticated tags trigger the main CI documentation workflow.
       - id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
           private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }} # zizmor: ignore[secrets-outside-env] CI bot authentication triggers tag workflows
@@ -56,14 +56,14 @@ jobs:
 
       - name: Plan release
         id: plan-release
-        uses: hoverkraft-tech/ci-github-publish/actions/release/plan@4193622a365c0ab0bcbd6645895fd2c3126b72ba # 3.0.2
+        uses: hoverkraft-tech/ci-github-publish/actions/release/plan@80fa7011b27f49f2e04a19f932d36047d17a28f2 # 3.0.7
         with:
           target-ref: ${{ github.sha }}
           github-token: ${{ steps.app-token.outputs.token }}
 
       - name: Create and publish release
         if: steps.plan-release.outputs.should-release == 'true' && steps.plan-release.outputs.tag != ''
-        uses: hoverkraft-tech/ci-github-publish/actions/release/create@4193622a365c0ab0bcbd6645895fd2c3126b72ba # 3.0.2
+        uses: hoverkraft-tech/ci-github-publish/actions/release/create@80fa7011b27f49f2e04a19f932d36047d17a28f2 # 3.0.7
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # zizmor: ignore[secrets-outside-env] Gemini credential is scoped to release summarization
         with:

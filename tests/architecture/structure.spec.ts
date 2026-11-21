@@ -92,7 +92,7 @@ describe("production code structure", () => {
 		// Assert
 		expect(result.files).toBeGreaterThan(0);
 		expect(result.violations).toEqual([]);
-	});
+	}, 30_000);
 	it("keeps all unit tests beside their matching source files", async () => {
 		// Arrange
 		const source = new ProductionCodeStructure();

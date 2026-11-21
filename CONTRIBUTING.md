@@ -26,6 +26,8 @@ Follow the [Code of Conduct](CODE_OF_CONDUCT.md) in project interactions.
 5. Complete the [required design review](docs/development/architecture.md#required-design-review)
    for code changes. Identify responsibility and dependency boundaries and resolve
    design violations introduced or expanded by the change.
-6. Open a pull request describing the problem, resulting behavior, design-review
+6. Run `pnpm check:commits` and update any nonconforming branch commit or final
+   squash message.
+7. Open a pull request describing the problem, resulting behavior, design-review
    evidence, and checks run. Wait for maintainer review and passing CI before
    merging.

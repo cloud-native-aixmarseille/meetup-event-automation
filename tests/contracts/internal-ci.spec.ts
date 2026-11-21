@@ -325,4 +325,63 @@ describe("internal CI contracts", () => {
 			"github-token": workflowExpression("secrets.GITHUB_TOKEN"),
 		});
 	});
+
+	it("limits Renovate to dependencies outside Dependabot coverage", async () => {
+		// Arrange
+		const workflow = await readWorkflow("__renovate");
+		const configuration = await readYaml<{
+			enabledManagers: string[];
+			packageRules: Array<{
+				description: string;
+				enabled?: boolean;
+				matchManagers?: string[];
+				matchPackageNames?: string[];
+			}>;
+		}>(".github/renovate.json");
+
+		// Act
+		const job = workflow.jobs?.renovate;
+		const token = job?.steps?.find((step) => step.id === "app-token");
+		const renovate = job?.steps?.find((step) =>
+			step.uses?.startsWith("renovatebot/github-action@"),
+		);
+
+		// Assert
+		expect(workflow.permissions).toEqual({});
+		expect(job).toMatchObject({
+			"runs-on": "ubuntu-latest",
+			"timeout-minutes": 30,
+		});
+		expect(token?.with).toMatchObject({
+			owner: workflowExpression("github.repository_owner"),
+			repositories: workflowExpression("github.event.repository.name"),
+		});
+		expect(renovate?.uses).toMatch(/^renovatebot\/github-action@[0-9a-f]{40}$/);
+		expect(configuration.enabledManagers).toEqual([
+			"github-actions",
+			"mise",
+			"nodenv",
+			"custom.regex",
+		]);
+		expect(configuration.packageRules[0]).toMatchObject({
+			enabled: false,
+			matchPackageNames: ["*"],
+		});
+		expect(
+			configuration.packageRules.some(
+				(rule) =>
+					rule.enabled === true &&
+					rule.matchManagers?.includes("mise") &&
+					rule.matchManagers?.includes("nodenv"),
+			),
+		).toBe(true);
+		expect(
+			configuration.packageRules.some(
+				(rule) =>
+					rule.enabled === true &&
+					rule.matchManagers?.includes("mise") &&
+					rule.matchManagers?.includes("custom.regex"),
+			),
+		).toBe(true);
+	});
 });

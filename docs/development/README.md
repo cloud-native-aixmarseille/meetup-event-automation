@@ -27,7 +27,9 @@ responsibility cohesion or correct business-policy placement on its own.
 
 Use Node.js 24 and the pnpm version in [`package.json`](../../package.json).
 Action bundles target Node.js 24; the package's minimum supported development
-runtime is Node.js 22.12.0.
+runtime is Node.js 22.12.0. The exact local Node.js and pnpm versions are pinned
+in [`.node-version`](../../.node-version), [`mise.toml`](../../mise.toml), and
+[`package.json`](../../package.json).
 
 ```sh
 pnpm install --frozen-lockfile
@@ -54,12 +56,16 @@ Run commands from the repository root.
 | `pnpm check:interfaces`   | Reject optional/defaulted inputs, constant flags, empty-only inputs, and unused outputs           |
 | `pnpm check:structure`    | Check class ownership, entrypoints, and unit-test placement                                       |
 | `pnpm check:knip`         | Find unused code and dependencies                                                                 |
+| `pnpm check:commits`      | Validate branch commits against the Conventional Commits policy                                   |
 | `pnpm package`            | Rebuild committed action bundles                                                                  |
 | `pnpm check:dist`         | Rebuild bundles and fail if their bytes were stale or missing                                     |
 | `pnpm quality`            | Run lint, root/workspace type checks, architecture/contracts, packaging, tests, and bundle checks |
 
 Use `pnpm format` to apply formatting and `pnpm lint:fix` for Biome lint fixes.
 Both can edit files; review the resulting diff.
+Run `pnpm check:commits` before opening a pull request. It validates commits
+between the current branch's merge base with `origin/main` and `HEAD` using the
+same Commitlint configuration as shared CI.
 
 The [Makefile](../../Makefile) provides wrappers for these checks. `make lint`
 and `make lint-fix` additionally build and run the repository's Super-linter
@@ -145,6 +151,18 @@ Dependabot remain separate dependency checks, and the shared linter scans GitHub
 Actions. The shared Node.js workflow owns CodeQL initialization and analysis.
 CodeQL and bundle checks run for pull requests and main CI;
 dependency review runs on pull requests.
+
+Dependabot remains the primary updater for npm, pip, Docker, devcontainers, and
+GitHub Actions. [`renovate.json`](../../.github/renovate.json) covers dependencies
+outside that scope: tool versions in `mise.toml`, `.node-version`, the root
+`packageManager` field, and `docker://` action references. Renovate runs weekly
+through [`__renovate.yml`](../../.github/workflows/__renovate.yml) and groups
+Node.js and pnpm declarations in one pull request. Updates wait seven days after
+release and are never automerged.
+
+The Node.js workflow runs Vitest with two shards and merges JUnit and LCOV
+reports in a single job. Keep the coverage thresholds disabled in individual
+shards with `CI_TEST_SHARD`; the merge run validates them.
 
 Keep action inputs and outputs in `action.yml`, and workflow inputs, outputs,
 and secrets in the corresponding YAML. Their adjacent Markdown references are

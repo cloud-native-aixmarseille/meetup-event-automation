@@ -33,6 +33,7 @@
 		"check:interfaces": "vitest run tests/contracts/action-interface-usage.test.ts tests/contracts/action-interfaces.spec.ts",
 		"check:contracts": "vitest run tests/contracts",
 		"check:knip": "knip",
+		"check:commits": "commitlint --from \"$(git merge-base HEAD origin/main)\" --to HEAD",
 		"quality": "pnpm build && pnpm workspace:build && pnpm check:architecture && pnpm check:contracts && pnpm package && pnpm test && pnpm check:dist",
 		"all": "pnpm format && pnpm quality",
 		"build": "tsc --noEmit -p tsconfig.json",
@@ -41,7 +42,7 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:cov": "vitest run --coverage",
-		"test:ci": "playwright-core install chromium && vitest run --reporter=default --reporter=junit --outputFile=junit.xml --coverage.enabled --coverage.reporter=lcov --coverage.reporter=text",
+		"test:ci": "playwright-core install chromium && vitest run --reporter=default --reporter=junit --outputFile.junit=junit.xml --coverage.enabled --coverage.reporter=lcov --coverage.reporter=text",
 		"nx": "nx",
 		"workspace:build": "nx run-many -t typecheck",
 		"workspace:test": "nx run-many -t test",
@@ -55,6 +56,7 @@
 		"@babel/parser": "^8.1.2",
 		"@babel/types": "8.1.2",
 		"@biomejs/biome": "^2.6.7",
+		"@commitlint/cli": "21.2.4",
 		"@commitlint/config-conventional": "21.2.4",
 		"@types/node": "^26.6.6",
 		"@vitest/coverage-v8": "5.1.0",
@@ -66,10 +68,5 @@
 		"typescript": "^7.0.2",
 		"vitest": "5.1.0",
 		"yaml": "^2.9.1"
-	},
-	"commitlint": {
-		"extends": [
-			"@commitlint/config-conventional"
-		]
 	}
 }

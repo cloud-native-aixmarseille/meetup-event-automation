@@ -113,7 +113,7 @@ jobs:
     steps:
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -265,7 +265,7 @@ jobs:
           locale: ${{ inputs.locale }}
 
       - name: Install locked automation dependencies
-        uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@fbd3522b68c55a6314aadbededaa487825ba9b35 # 3.0.0
+        uses: hoverkraft-tech/ci-github-nodejs/actions/setup-node@98d91b1cc347efc64cd5fb20bc0ebc076acad114 # 3.1.0
         with:
           working-directory: ${{ steps.publication-runtime.outputs.runtime-directory }}
           ignore-scripts: "false"
@@ -307,7 +307,7 @@ jobs:
         id: website-token
         if: ${{ steps.publication-runtime.outputs.website-repository != '' }}
         continue-on-error: true
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
@@ -356,7 +356,7 @@ jobs:
       - name: Create mailings GitHub App token
         id: mailings-token
         if: ${{ !cancelled() && steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
