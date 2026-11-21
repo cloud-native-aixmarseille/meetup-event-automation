@@ -1,0 +1,54 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended"],
+	"enabledManagers": ["github-actions", "mise", "nodenv", "custom.regex"],
+	"semanticCommits": "enabled",
+	"semanticCommitType": "build",
+	"minimumReleaseAge": "7 days",
+	"minimumReleaseAgeBehaviour": "timestamp-optional",
+	"pinDigests": true,
+	"prConcurrentLimit": 5,
+	"packageRules": [
+		{
+			"description": "Dependabot is the primary updater for package ecosystems it supports.",
+			"matchPackageNames": ["*"],
+			"enabled": false
+		},
+		{
+			"description": "Update docker:// action references unsupported by Dependabot.",
+			"matchManagers": ["github-actions"],
+			"matchDatasources": ["docker"],
+			"matchDepTypes": ["docker"],
+			"enabled": true,
+			"automerge": false
+		},
+		{
+			"description": "Keep Node.js versions aligned across nodenv and mise.",
+			"matchManagers": ["mise", "nodenv"],
+			"matchPackageNames": ["node"],
+			"groupName": "Node.js toolchain",
+			"enabled": true,
+			"automerge": false
+		},
+		{
+			"description": "Keep pnpm versions aligned across mise and package.json.",
+			"matchManagers": ["mise", "custom.regex"],
+			"matchPackageNames": ["pnpm"],
+			"groupName": "pnpm toolchain",
+			"enabled": true,
+			"automerge": false
+		}
+	],
+	"customManagers": [
+		{
+			"customType": "regex",
+			"managerFilePatterns": ["/(^|/)package\\.json$/"],
+			"matchStrings": [
+				"\"packageManager\":\\s*\"pnpm@(?<currentValue>[^\"\\r\\n]+)\""
+			],
+			"datasourceTemplate": "npm",
+			"depNameTemplate": "pnpm",
+			"versioningTemplate": "npm"
+		}
+	]
+}

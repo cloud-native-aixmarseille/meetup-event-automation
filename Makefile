@@ -1,6 +1,6 @@
 PNPM ?= pnpm
 
-.PHONY: help setup typecheck test package lint lint-fix quality check-knip check-structure check-architecture check-contracts ci
+.PHONY: help setup typecheck test package lint lint-fix quality check-knip check-commits check-structure check-architecture check-contracts ci
 
 help: ## Display help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -47,6 +47,9 @@ quality: ## Execute deterministic quality checks
 
 check-knip: ## Validate unused files and dependencies
 	$(PNPM) check:knip
+
+check-commits: ## Validate branch commits against the commit message policy
+	$(PNPM) check:commits
 
 check-structure: ## Validate class ownership and package entrypoints
 	$(PNPM) check:structure

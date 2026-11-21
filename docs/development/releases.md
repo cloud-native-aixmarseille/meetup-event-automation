@@ -12,7 +12,7 @@ organization settings:
 
 | Setting                         | Purpose                                                                  |
 | ------------------------------- | ------------------------------------------------------------------------ |
-| Variable `CI_BOT_APP_CLIENT_ID` | Client ID of the installed release GitHub App.                           |
+| Variable `CI_BOT_APP_CLIENT_ID` | Client ID of the installed CI and release GitHub App.                    |
 | Secret `CI_BOT_APP_PRIVATE_KEY` | Private key for that GitHub App.                                         |
 | Secret `GEMINI_API_KEY`         | Gemini API key with access to the text model configured in the workflow. |
 
@@ -24,6 +24,10 @@ App-authenticated tags trigger the existing main CI and documentation workflow.
 Its separate documentation token also needs Pull requests write, as described in the
 [development guide](README.md#ci-and-public-documentation).
 
+The same App runs scheduled Renovate maintenance. It needs repository Contents,
+Issues, Pull requests, Workflows, Checks, and Statuses access at the permissions
+requested by [`__renovate.yml`](../../.github/workflows/__renovate.yml).
+
 The Gemini credential is passed only to the release summary step. Provider and
 model are explicit in the workflow's `changelog-summary` configuration. Consult
 the [Gemini model catalog](https://ai.google.dev/gemini-api/docs/models) when
@@ -32,10 +36,12 @@ updating the model.
 ## Merge messages
 
 Main CI validates commit messages with `@commitlint/config-conventional`. Use a
-Conventional Commit title and wrap body lines at 100 characters. A pull request's
+Conventional Commit title and keep headers, body lines, and footer lines at
+100 characters. A pull request's
 description can contain longer paragraphs; do not copy it unchanged into the
 squash commit body. Keep that body concise and validate the final message before
-merging. Passing pull request CI does not validate a later, edited merge message.
+merging. Run `pnpm check:commits` locally. Passing pull request CI does not
+validate a later, edited merge message.
 
 Tag creation has no new commits to check. The shared linter skips commitlint for
 that empty push while keeping it enabled for branch and pull request commits.

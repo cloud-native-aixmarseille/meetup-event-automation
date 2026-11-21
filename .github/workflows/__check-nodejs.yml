@@ -11,7 +11,7 @@ permissions: {}
 
 jobs:
   test-nodejs:
-    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@fbd3522b68c55a6314aadbededaa487825ba9b35 # 3.0.0
+    uses: hoverkraft-tech/ci-github-nodejs/.github/workflows/continuous-integration.yml@98d91b1cc347efc64cd5fb20bc0ebc076acad114 # 3.1.0
     permissions:
       contents: read
       id-token: write
@@ -30,4 +30,4 @@ jobs:
         workspace:build
         package
       test: |
-        {"coverage":"codecov"}
+        {"command":"test:ci","coverage":"codecov","report-file":"junit.xml,coverage/lcov.info","shards":2}

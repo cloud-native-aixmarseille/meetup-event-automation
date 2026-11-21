@@ -27,12 +27,15 @@ export default defineConfig({
 			],
 			include: ["src/**/*.ts", "packages/**/*.ts"],
 			provider: "v8",
-			thresholds: {
-				branches: 85,
-				functions: 85,
-				lines: 90,
-				statements: 90,
-			},
+			reportOnFailure: true,
+			thresholds: process.env.CI_TEST_SHARD
+				? undefined
+				: {
+						branches: 85,
+						functions: 85,
+						lines: 90,
+						statements: 90,
+					},
 		},
 		environment: "node",
 		globals: true,

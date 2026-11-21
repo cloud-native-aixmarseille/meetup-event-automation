@@ -29,7 +29,7 @@ jobs:
       statuses: write
 
   release:
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@4193622a365c0ab0bcbd6645895fd2c3126b72ba # 3.0.2
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@80fa7011b27f49f2e04a19f932d36047d17a28f2 # 3.0.7
     permissions:
       contents: write
       pull-requests: write
