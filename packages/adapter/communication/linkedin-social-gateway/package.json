@@ -6,6 +6,6 @@
 	"exports": "./src/index.ts",
 	"dependencies": {
 		"@meetup-automation/communication": "workspace:*",
-		"image-size": "^2.0.4"
+		"image-size": "^2.1.0"
 	}
 }
