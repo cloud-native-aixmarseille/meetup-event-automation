@@ -56,14 +56,14 @@ jobs:
 
       - name: Plan release
         id: plan-release
-        uses: hoverkraft-tech/ci-github-publish/actions/release/plan@80fa7011b27f49f2e04a19f932d36047d17a28f2 # 3.0.7
+        uses: hoverkraft-tech/ci-github-publish/actions/release/plan@d034b96d52f6f32c58a93bcd87a06932f50d8b26 # 3.1.0
         with:
           target-ref: ${{ github.sha }}
           github-token: ${{ steps.app-token.outputs.token }}
 
       - name: Create and publish release
         if: steps.plan-release.outputs.should-release == 'true' && steps.plan-release.outputs.tag != ''
-        uses: hoverkraft-tech/ci-github-publish/actions/release/create@80fa7011b27f49f2e04a19f932d36047d17a28f2 # 3.0.7
+        uses: hoverkraft-tech/ci-github-publish/actions/release/create@d034b96d52f6f32c58a93bcd87a06932f50d8b26 # 3.1.0
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # zizmor: ignore[secrets-outside-env] Gemini credential is scoped to release summarization
         with:
@@ -73,7 +73,6 @@ jobs:
           changelog-summary: |
             {
               "llmAuth": ${{ toJSON(env.GEMINI_API_KEY) }},
-              "llmProvider": "google-genai",
-              "llmModel": "gemini-3.8-flash"
+              "llmProvider": "google-genai"
             }
           github-token: ${{ steps.app-token.outputs.token }}

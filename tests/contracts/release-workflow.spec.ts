@@ -114,7 +114,6 @@ describe("release workflow", () => {
 		expect(configuration).toEqual({
 			llmAuth: syntheticKey,
 			llmProvider: "google-genai",
-			llmModel: "gemini-3.8-flash",
 		});
 		expect(create?.env).toEqual({
 			GEMINI_API_KEY: workflowExpression("secrets.GEMINI_API_KEY"),

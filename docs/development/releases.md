@@ -28,10 +28,7 @@ The same App runs scheduled Renovate maintenance. It needs repository Contents,
 Issues, Pull requests, Workflows, Checks, and Statuses access at the permissions
 requested by [`__renovate.yml`](../../.github/workflows/__renovate.yml).
 
-The Gemini credential is passed only to the release summary step. Provider and
-model are explicit in the workflow's `changelog-summary` configuration. Consult
-the [Gemini model catalog](https://ai.google.dev/gemini-api/docs/models) when
-updating the model.
+The Gemini credential is passed only to the release summary step. Provider is explicit in the workflow's `changelog-summary` configuration. The model is omitted so the action uses the maintained provider-aware default strategy.
 
 ## Merge messages
 
