@@ -92,33 +92,19 @@ describe("release workflow", () => {
 		});
 	});
 
-	it("passes an escaped Gemini key only to changelog generation", async () => {
+	it("uses the shared changelog summary secret", async () => {
 		// Arrange
 		const workflow = await readWorkflow("__release");
 		const steps = workflow.jobs?.release.steps ?? [];
 		const create = steps.find((step) =>
 			step.uses?.includes("/release/create@"),
 		);
-		const syntheticKey = 'synthetic-"key"\\value';
-
-		// Act
-		const configuration = JSON.parse(
-			String(create?.with?.["changelog-summary"]).replace(
-				workflowExpression("toJSON(env.GEMINI_API_KEY)"),
-				JSON.stringify(syntheticKey),
-			),
-		);
-		const secretConsumers = steps.filter((step) => step.env?.GEMINI_API_KEY);
 
 		// Assert
-		expect(configuration).toEqual({
-			llmAuth: syntheticKey,
-			llmProvider: "google-genai",
-		});
-		expect(create?.env).toEqual({
-			GEMINI_API_KEY: workflowExpression("secrets.GEMINI_API_KEY"),
-		});
-		expect(secretConsumers).toEqual([create]);
+		expect(create?.with?.["changelog-summary"]).toBe(
+			workflowExpression("secrets.CHANGELOG_SUMMARY"),
+		);
+		expect(create?.env).toBeUndefined();
 		expect(workflow.jobs?.ci.secrets).toBeUndefined();
 	});
 });
