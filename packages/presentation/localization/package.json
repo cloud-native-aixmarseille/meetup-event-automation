@@ -5,7 +5,7 @@
 	"type": "module",
 	"exports": "./src/index.ts",
 	"dependencies": {
-		"@formatjs/intl": "^6.1.5"
+		"@formatjs/intl": "^6.2.0"
 	},
 	"devDependencies": {
 		"@formatjs/icu-messageformat-parser": "^3.5.23"
